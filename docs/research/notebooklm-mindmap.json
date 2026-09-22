@@ -1,0 +1,205 @@
+{
+  "name": "High-Performance Audio Programming",
+  "children": [
+    {
+      "name": "Platforms & Frameworks",
+      "children": [
+        {
+          "name": "Android (Oboe & NDK)",
+          "children": [
+            {
+              "name": "C++ Low-latency API"
+            },
+            {
+              "name": "AudioStreamBuilder"
+            },
+            {
+              "name": "Exclusive sharing mode"
+            },
+            {
+              "name": "Data callbacks (onAudioReady)"
+            }
+          ]
+        },
+        {
+          "name": "iOS (AVFAudio & Engine)",
+          "children": [
+            {
+              "name": "AVAudioEngine node graph"
+            },
+            {
+              "name": "AVAudioSourceNode & SinkNode"
+            },
+            {
+              "name": "Manual rendering mode"
+            },
+            {
+              "name": "AUAudioUnit custom blocks"
+            }
+          ]
+        },
+        {
+          "name": "Third-Party Tools",
+          "children": [
+            {
+              "name": "Pure Data (libPD)"
+            },
+            {
+              "name": "The Amazing Audio Engine (TAAE)"
+            },
+            {
+              "name": "Ardour DAW engine"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Real-Time Compliance",
+      "children": [
+        {
+          "name": "Thread Safety",
+          "children": [
+            {
+              "name": "Lock-free queues"
+            },
+            {
+              "name": "Atomic variables"
+            },
+            {
+              "name": "Cross-thread communication"
+            }
+          ]
+        },
+        {
+          "name": "Performance Restrictions",
+          "children": [
+            {
+              "name": "No memory allocation"
+            },
+            {
+              "name": "No file I/O or networking"
+            },
+            {
+              "name": "No locking mechanisms"
+            },
+            {
+              "name": "Deterministic processing"
+            }
+          ]
+        },
+        {
+          "name": "Swift Low-Level Access",
+          "children": [
+            {
+              "name": "Unsafe pointers"
+            },
+            {
+              "name": "Memory boundary checks"
+            },
+            {
+              "name": "OSStatus signaling"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Synchronization & Logic",
+      "children": [
+        {
+          "name": "Timing Mechanics",
+          "children": [
+            {
+              "name": "Frame counting"
+            },
+            {
+              "name": "Song position calculation"
+            },
+            {
+              "name": "Clock drift prevention"
+            }
+          ]
+        },
+        {
+          "name": "Game & App Logic",
+          "children": [
+            {
+              "name": "Tap event windows"
+            },
+            {
+              "name": "Scoring and visual feedback"
+            },
+            {
+              "name": "Buffer scheduling completion"
+            }
+          ]
+        },
+        {
+          "name": "MIDI Integration",
+          "children": [
+            {
+              "name": "Note/Velocity tracking"
+            },
+            {
+              "name": "Bar and beat triggering"
+            },
+            {
+              "name": "MIDI tempo mapping"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Audio Processing Features",
+      "children": [
+        {
+          "name": "Mixing & Routing",
+          "children": [
+            {
+              "name": "Multi-track mixers"
+            },
+            {
+              "name": "VST3 multi-bus support"
+            },
+            {
+              "name": "One-to-many connections"
+            }
+          ]
+        },
+        {
+          "name": "Advanced DSP",
+          "children": [
+            {
+              "name": "McLeod Pitch Method (MPM)"
+            },
+            {
+              "name": "Parabolic interpolation"
+            },
+            {
+              "name": "Sample-rate independence"
+            },
+            {
+              "name": "AVX512 SIMD support"
+            }
+          ]
+        },
+        {
+          "name": "Analysis",
+          "children": [
+            {
+              "name": "Tap-on-bus modules"
+            },
+            {
+              "name": "Real-time visualization"
+            },
+            {
+              "name": "Side-channel stashing"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

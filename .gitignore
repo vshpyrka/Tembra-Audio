@@ -1,0 +1,18 @@
+# Pulled competitor APKs and extracted native libs (~720 MB) — reference only, never commit
+reference/competitor-apps/
+
+# macOS
+.DS_Store
+
+# Kotlin Multiplatform / Gradle / Xcode build output (for app/)
+app/**/build/
+app/.gradle/
+app/.kotlin/
+app/local.properties
+app/iosApp/Pods/
+app/iosApp/*.xcworkspace/xcuserdata/
+app/**/*.xcuserstate
+app/.idea/
+
+# Claude Code per-machine settings (the spec-kit skills in .claude/skills/ are committed)
+.claude/settings.local.json

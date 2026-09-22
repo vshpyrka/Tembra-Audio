@@ -1,0 +1,424 @@
+<!DOCTYPE html><html class="dark" lang="en"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {
+  "darkMode": "class",
+  "theme": {
+    "extend": {
+      "colors": {
+        "on-tertiary-container": "#40009b",
+        "on-tertiary-fixed": "#23005c",
+        "on-tertiary": "#3c0091",
+        "on-secondary-container": "#ff93c8",
+        "error-container": "#93000a",
+        "primary-container": "#a78bfa",
+        "surface-container-high": "#2a2a2d",
+        "secondary-container": "#85145a",
+        "surface-container-low": "#1b1b1e",
+        "tertiary": "#d0bcff",
+        "primary-fixed-dim": "#cebdff",
+        "inverse-primary": "#674bb5",
+        "tertiary-container": "#ab88ff",
+        "surface-dim": "#131316",
+        "surface-variant": "#353438",
+        "on-error": "#690005",
+        "surface": "#131316",
+        "secondary-fixed-dim": "#ffafd3",
+        "background": "#131316",
+        "secondary-fixed": "#ffd8e7",
+        "secondary": "#ffafd3",
+        "tertiary-fixed": "#e9ddff",
+        "on-secondary": "#620040",
+        "outline-variant": "#494552",
+        "on-error-container": "#ffdad6",
+        "surface-bright": "#39393c",
+        "surface-container-lowest": "#0e0e11",
+        "outline": "#948e9d",
+        "on-surface": "#e4e1e6",
+        "on-secondary-fixed-variant": "#85145a",
+        "on-primary": "#381385",
+        "on-primary-container": "#3c1989",
+        "on-background": "#e4e1e6",
+        "primary": "#cebdff",
+        "tertiary-fixed-dim": "#d0bcff",
+        "inverse-surface": "#e4e1e6",
+        "surface-container": "#1f1f22",
+        "on-secondary-fixed": "#3d0026",
+        "on-surface-variant": "#cac4d4",
+        "primary-fixed": "#e8ddff",
+        "on-primary-fixed-variant": "#4f319c",
+        "error": "#ffb4ab",
+        "surface-container-highest": "#353438",
+        "surface-tint": "#cebdff",
+        "on-tertiary-fixed-variant": "#5516be",
+        "on-primary-fixed": "#21005e",
+        "inverse-on-surface": "#303033"
+      },
+      "borderRadius": {
+        "DEFAULT": "0.25rem",
+        "lg": "0.5rem",
+        "xl": "0.75rem",
+        "full": "9999px"
+      },
+      "spacing": {
+        "space-xl": "1.75rem",
+        "gutter": "0.75rem",
+        "space-xs": "0.25rem",
+        "space-md": "0.75rem",
+        "space-sm": "0.5rem",
+        "space-lg": "1.25rem",
+        "margin": "1rem"
+      },
+      "fontFamily": {
+        "label-lg": ["Space Grotesk"],
+        "headline-md": ["Space Grotesk"],
+        "headline-sm": ["Space Grotesk"],
+        "body-lg": ["Inter"],
+        "label-sm": ["Space Grotesk"],
+        "headline-lg-mobile": ["Space Grotesk"],
+        "tabular-param": ["Inter"],
+        "tabular-timecode": ["Space Grotesk"],
+        "label-md": ["Space Grotesk"],
+        "body-sm": ["Inter"],
+        "headline-lg": ["Space Grotesk"],
+        "body-md": ["Inter"]
+      },
+      "fontSize": {
+        "label-lg": ["14px", {"lineHeight": "18px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+        "headline-md": ["22px", {"lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+        "headline-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+        "label-sm": ["10px", {"lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600"}],
+        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+        "tabular-param": ["11px", {"lineHeight": "14px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+        "tabular-timecode": ["15px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+        "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+      }
+    }
+  }
+};</script></head><body class="bg-surface font-body-md text-on-surface select-none"><header class="fixed top-0 left-0 right-0 h-14 bg-surface-container-low/95 backdrop-blur-xl z-50 flex items-center justify-between px-3 shadow-[0_1px_8px_rgba(0,0,0,0.35)]"><div class="flex items-center gap-space-sm"><button class="w-9 h-9 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[20px]">menu</span></button><div class="flex items-center gap-2 pl-1"><div class="w-6 h-6 rounded bg-primary-container flex items-center justify-center text-on-primary-container"><span class="material-symbols-outlined text-[16px]">graphic_eq</span></div><span class="font-headline-sm text-headline-sm tracking-tight text-on-surface font-bold">TEMBRA</span></div><div class="h-4 w-px bg-outline-variant mx-1"></div><div class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container-lowest text-on-surface-variant"><span class="font-label-md text-label-md text-on-surface font-medium">Music project - 001</span><span class="material-symbols-outlined text-primary text-[15px]">cloud_done</span></div></div><div class="hidden md:flex items-center gap-1"><button class="px-2.5 py-1 rounded font-label-md text-label-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors">File</button><button class="px-2.5 py-1 rounded font-label-md text-label-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors">Edit</button><button class="px-2.5 py-1 rounded font-label-md text-label-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors">Settings</button><button class="px-2.5 py-1 rounded font-label-md text-label-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors">Tutorials</button></div><div class="flex items-center gap-2"><button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[18px]">help_outline</span></button><button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[18px]">cloud_sync</span></button><button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[18px]">share</span></button><div class="relative p-0.5 rounded-full bg-secondary-container flex items-center justify-center"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><aside class="fixed left-0 top-14 bottom-16 w-16 bg-surface-container-lowest z-40 flex flex-col items-center py-2 shadow-[1px_0_12px_rgba(0,0,0,0.4)]"><nav class="w-full px-2 flex flex-col gap-1.5" data-active-classes="bg-secondary-container text-on-secondary-container font-bold rounded-lg"><a aria-current="page" class="flex flex-col items-center justify-center py-2 px-1 transition-all group bg-secondary-container text-on-secondary-container font-bold rounded-lg" data-path="timeline" href="#"><span class="material-symbols-outlined text-[22px] mb-0.5">waves</span><span class="font-label-sm text-label-sm">Timeline</span></a><a class="flex flex-col items-center justify-center py-2 px-1 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="tuner" href="#"><span class="material-symbols-outlined text-[22px] mb-0.5">graphic_eq</span><span class="font-label-sm text-label-sm">Tuner</span></a><a class="flex flex-col items-center justify-center py-2 px-1 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="effects" href="#"><span class="material-symbols-outlined text-[22px] mb-0.5">tune</span><span class="font-label-sm text-label-sm">Effects</span></a><a class="flex flex-col items-center justify-center py-2 px-1 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="pads" href="#"><span class="material-symbols-outlined text-[22px] mb-0.5">grid_view</span><span class="font-label-sm text-label-sm">Pads</span></a><a class="flex flex-col items-center justify-center py-2 px-1 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="remote" href="#"><span class="material-symbols-outlined text-[22px] mb-0.5">sensors</span><span class="font-label-sm text-label-sm">Remote</span></a><a class="flex flex-col items-center justify-center py-2 px-1 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="projects" href="#"><span class="material-symbols-outlined text-[22px] mb-0.5">folder_open</span><span class="font-label-sm text-label-sm">Projects</span></a></nav></aside><div class="pl-16"><main class="relative pt-14 pb-16 min-h-screen bg-surface w-full px-space-md"><div class="flex flex-col w-full pb-6 select-none relative overflow-x-hidden">
+<!-- Quick Arrange Tools Ribbon -->
+<section class="flex items-center justify-between gap-2 py-2 px-1 mb-2">
+<div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+<button class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary-container text-on-primary-container font-label-md text-label-md active:scale-95 transition-transform shadow-[0_0_10px_rgba(167,139,250,0.35)]">
+<span class="material-symbols-outlined text-[16px]">add</span>
+<span class="">Track</span>
+</button>
+<button class="w-8 h-8 rounded-lg bg-surface-container-high text-on-surface-variant hover:text-on-surface flex items-center justify-center active:scale-95 transition-colors">
+<span class="material-symbols-outlined text-[17px]">content_cut</span>
+</button>
+<button class="w-8 h-8 rounded-lg bg-surface-container-high text-on-surface-variant hover:text-on-surface flex items-center justify-center active:scale-95 transition-colors">
+<span class="material-symbols-outlined text-[17px]">headphones</span>
+</button>
+<div class="h-4 w-px bg-outline-variant mx-0.5"></div>
+<button class="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-surface-container text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px]">grid_4x4</span>
+<span class="">1/16</span>
+</button>
+<button class="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-surface-container text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px]">zoom_in</span>
+<span class="">1x</span>
+</button>
+</div>
+<!-- Mode Badge -->
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary-container/60 text-secondary font-label-sm text-label-sm shrink-0">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>
+<span class="">ARRANGE</span>
+</div>
+</section>
+<!-- Timeline Container with Full-Height Dynamic Playhead -->
+<div class="relative w-full rounded-xl bg-surface-container-lowest overflow-hidden shadow-[inset_0_1px_3px_rgba(0,0,0,0.6)]">
+<!-- Timeline Ruler -->
+<div class="relative h-7 bg-surface-container-low flex items-end px-3">
+<div class="grid grid-cols-8 w-full font-tabular-timecode text-[11px] text-outline font-semibold pb-1">
+<div class="flex items-center gap-1"><span class="">1</span><span class="text-[9px] text-outline-variant">|..</span></div>
+<div class="flex items-center gap-1"><span class="">2</span><span class="text-[9px] text-outline-variant">|..</span></div>
+<div class="flex items-center gap-1"><span class="">3</span><span class="text-[9px] text-outline-variant">|..</span></div>
+<div class="flex items-center gap-1"><span class="">4</span><span class="text-[9px] text-outline-variant">|..</span></div>
+<div class="flex items-center gap-1"><span class="">5</span><span class="text-[9px] text-outline-variant">|..</span></div>
+<div class="flex items-center gap-1"><span class="">6</span><span class="text-[9px] text-outline-variant">|..</span></div>
+<div class="flex items-center gap-1"><span class="">7</span><span class="text-[9px] text-outline-variant">|..</span></div>
+<div class="flex items-center gap-1"><span class="">8</span><span class="text-[9px] text-outline-variant">|..</span></div>
+</div>
+</div>
+<!-- Playhead Needle Overlay -->
+<div class="absolute top-0 bottom-0 left-[48%] w-px bg-primary pointer-events-none z-30 shadow-[0_0_8px_rgba(206,189,255,0.85)]" id="playhead-needle" style="left: 26.55%;">
+<!-- Playhead Cap Knob -->
+<div class="absolute -top-0 -left-[5px] w-2.5 h-3 bg-primary rounded-b flex items-center justify-center shadow-[0_0_6px_rgba(206,189,255,0.9)]">
+<div class="w-1 h-1 bg-surface-container-lowest rounded-full"></div>
+</div>
+</div>
+<!-- Track Arrange Canvas -->
+<div class="flex flex-col gap-1.5 p-1.5">
+<!-- Track 1: Lead Vocal / Synth -->
+<div class="flex flex-col rounded-lg bg-surface-container-low p-2">
+<div class="flex items-center justify-between mb-1.5">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm text-on-surface">Track 1</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high font-label-sm text-label-sm text-tertiary">Lead Vocal</span>
+</div>
+<div class="flex items-center gap-1.5">
+<button class="w-5 h-5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-[10px] hover:text-secondary active:scale-95">M</button>
+<button class="w-5 h-5 rounded bg-primary-container text-on-primary-container font-label-sm text-[10px] font-bold active:scale-95">S</button>
+<button class="text-on-surface-variant hover:text-on-surface">
+<span class="material-symbols-outlined text-[16px]">more_horiz</span>
+</button>
+</div>
+</div>
+<!-- Waveform Clip 1 (Continuous Full Take) -->
+<div class="relative w-full h-14 rounded-lg bg-primary-container/85 hover:bg-primary-container text-on-primary-container p-2 flex items-center overflow-hidden cursor-pointer shadow-[0_0_12px_rgba(167,139,250,0.22)] transition-colors">
+<div class="absolute left-2 top-1 font-label-sm text-[9px] uppercase tracking-wider opacity-60">take_01_vox.wav</div>
+<!-- Waveform SVG -->
+<svg class="w-full h-9 stroke-on-primary-container fill-none" preserveAspectRatio="none" viewBox="0 0 400 36">
+<path d="M 2,18 L 6,12 L 10,24 L 14,8 L 18,28 L 22,14 L 26,22 L 30,6 L 34,30 L 38,16 L 42,20 L 46,10 L 50,26 L 54,4 L 58,32 L 62,14 L 66,22 L 70,12 L 74,24 L 78,16 L 82,20 L 86,6 L 90,30 L 94,14 L 98,22 L 102,10 L 106,26 L 110,18 L 114,18 L 118,10 L 122,26 L 126,6 L 130,30 L 134,14 L 138,22 L 142,4 L 146,32 L 150,16 L 154,20 L 158,12 L 162,24 L 166,16 L 170,20 L 174,8 L 178,28 L 182,14 L 186,22 L 190,4 L 194,32 L 198,12 L 202,24 L 206,10 L 210,26 L 214,16 L 218,20 L 222,6 L 226,30 L 230,14 L 234,22 L 238,12 L 242,24 L 246,16 L 250,20 L 254,8 L 258,28 L 262,14 L 266,22 L 270,10 L 274,26 L 278,18 L 282,18 L 286,12 L 290,24 L 294,8 L 298,28 L 302,14 L 306,22 L 310,6 L 314,30 L 318,14 L 322,22 L 326,10 L 330,26 L 334,14 L 338,22 L 342,16 L 346,20 L 350,10 L 354,26 L 358,16 L 362,20 L 366,12 L 370,24 L 374,16 L 378,20 L 382,14 L 386,22 L 390,16 L 394,19 L 398,18" stroke-linecap="round" stroke-width="2"></path>
+</svg>
+</div>
+</div>
+<!-- Track 2: Bassline / 808 -->
+<div class="flex flex-col rounded-lg bg-surface-container-low p-2">
+<div class="flex items-center justify-between mb-1.5">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm text-on-surface">Track 2</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high font-label-sm text-label-sm text-secondary">Bass 808</span>
+</div>
+<div class="flex items-center gap-1.5">
+<button class="w-5 h-5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-[10px] hover:text-secondary">M</button>
+<button class="w-5 h-5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-[10px]">S</button>
+<button class="text-on-surface-variant hover:text-on-surface">
+<span class="material-symbols-outlined text-[16px]">more_horiz</span>
+</button>
+</div>
+</div>
+<!-- Two Waveform Blocks with Gaps -->
+<div class="grid grid-cols-2 gap-2 w-full">
+<div class="h-14 rounded-lg bg-secondary/80 hover:bg-secondary text-on-secondary p-2 flex items-center overflow-hidden cursor-pointer shadow-[0_0_10px_rgba(255,175,211,0.25)] transition-colors">
+<svg class="w-full h-8 stroke-on-secondary fill-none" preserveAspectRatio="none" viewBox="0 0 180 32">
+<path d="M 4,16 L 12,8 L 20,24 L 28,6 L 36,26 L 44,10 L 52,22 L 60,4 L 68,28 L 76,8 L 84,24 L 92,12 L 100,20 L 108,6 L 116,26 L 124,10 L 132,22 L 140,4 L 148,28 L 156,12 L 164,20 L 172,16" stroke-linecap="round" stroke-width="2.5"></path>
+</svg>
+</div>
+<div class="h-14 rounded-lg bg-secondary/80 hover:bg-secondary text-on-secondary p-2 flex items-center overflow-hidden cursor-pointer shadow-[0_0_10px_rgba(255,175,211,0.25)] transition-colors">
+<svg class="w-full h-8 stroke-on-secondary fill-none" preserveAspectRatio="none" viewBox="0 0 180 32">
+<path d="M 4,16 L 12,10 L 20,22 L 28,8 L 36,24 L 44,4 L 52,28 L 60,10 L 68,22 L 76,6 L 84,26 L 92,8 L 100,24 L 108,12 L 116,20 L 124,8 L 132,24 L 140,10 L 148,22 L 156,6 L 164,26 L 172,16" stroke-linecap="round" stroke-width="2.5"></path>
+</svg>
+</div>
+</div>
+</div>
+<!-- Track 3: Acoustic Drums / Perc (Segmented Rhythmic Pattern Blocks) -->
+<div class="flex flex-col rounded-lg bg-surface-container-low p-2">
+<div class="flex items-center justify-between mb-1.5">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm text-on-surface">Track 3</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high font-label-sm text-label-sm text-tertiary">Perc / Loops</span>
+</div>
+<div class="flex items-center gap-1.5">
+<button class="w-5 h-5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-[10px]">M</button>
+<button class="w-5 h-5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-[10px]">S</button>
+<button class="text-on-surface-variant hover:text-on-surface">
+<span class="material-symbols-outlined text-[16px]">more_horiz</span>
+</button>
+</div>
+</div>
+<div class="grid grid-cols-4 gap-1.5 w-full">
+<div class="h-12 rounded-lg bg-tertiary/70 hover:bg-tertiary text-on-tertiary flex items-center justify-center p-1.5 cursor-pointer transition-colors">
+<svg class="w-full h-7 stroke-on-tertiary fill-none" preserveAspectRatio="none" viewBox="0 0 60 28">
+<path d="M 6,14 L 14,4 L 22,24 L 30,8 L 38,20 L 46,6 L 54,22" stroke-linecap="round" stroke-width="2"></path>
+</svg>
+</div>
+<div class="h-12 rounded-lg bg-tertiary/70 hover:bg-tertiary text-on-tertiary flex items-center justify-center p-1.5 cursor-pointer transition-colors">
+<svg class="w-full h-7 stroke-on-tertiary fill-none" preserveAspectRatio="none" viewBox="0 0 60 28">
+<path d="M 6,14 L 14,4 L 22,24 L 30,8 L 38,20 L 46,6 L 54,22" stroke-linecap="round" stroke-width="2"></path>
+</svg>
+</div>
+<div class="h-12 rounded-lg bg-tertiary/70 hover:bg-tertiary text-on-tertiary flex items-center justify-center p-1.5 cursor-pointer transition-colors">
+<svg class="w-full h-7 stroke-on-tertiary fill-none" preserveAspectRatio="none" viewBox="0 0 60 28">
+<path d="M 6,14 L 14,4 L 22,24 L 30,8 L 38,20 L 46,6 L 54,22" stroke-linecap="round" stroke-width="2"></path>
+</svg>
+</div>
+<div class="h-12 rounded-lg bg-tertiary/70 hover:bg-tertiary text-on-tertiary flex items-center justify-center p-1.5 cursor-pointer transition-colors">
+<svg class="w-full h-7 stroke-on-tertiary fill-none" preserveAspectRatio="none" viewBox="0 0 60 28">
+<path d="M 6,14 L 14,4 L 22,24 L 30,8 L 38,20 L 46,6 L 54,22" stroke-linecap="round" stroke-width="2"></path>
+</svg>
+</div>
+</div>
+</div>
+<!-- Track 4: Rhythm Guitar / Pad with Interactive Automation Envelope HUD -->
+<div class="flex flex-col rounded-lg bg-surface-container-low p-2">
+<div class="flex items-center justify-between mb-1.5">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm text-on-surface">Track 4</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high font-label-sm text-label-sm text-on-secondary-container">Pad Filter</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="font-label-sm text-[9px] text-primary px-1.5 py-0.5 rounded bg-surface-container-highest">LPF Cutoff</span>
+<button class="text-on-surface-variant hover:text-on-surface">
+<span class="material-symbols-outlined text-[16px]">more_horiz</span>
+</button>
+</div>
+</div>
+<!-- Automation Curve Canvas & Node HUD -->
+<div class="relative w-full h-20 rounded-lg bg-surface-container-lowest overflow-hidden">
+<!-- Ambient gridlines -->
+<div class="absolute inset-0 grid grid-cols-4 grid-rows-2 opacity-15">
+<div class="bg-surface-variant/40"></div>
+<div class="bg-surface-variant/20"></div>
+<div class="bg-surface-variant/40"></div>
+<div class="bg-surface-variant/20"></div>
+</div>
+<!-- Bezier Envelope SVG -->
+<svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 380 80">
+<defs>
+<linearGradient id="curveGradient" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#a78bfa" stop-opacity="0.35"></stop>
+<stop offset="100%" stop-color="#a78bfa" stop-opacity="0.0"></stop>
+</linearGradient>
+</defs>
+<path d="M 0,65 C 60,65 90,20 160,25 C 230,30 260,60 380,15 L 380,80 L 0,80 Z" fill="url(#curveGradient)"></path>
+<path d="M 0,65 C 60,65 90,20 160,25 C 230,30 260,60 380,15" fill="none" stroke="#cebdff" stroke-width="2.5"></path>
+<!-- Draggable Node 1 -->
+<circle class="shadow-lg" cx="160" cy="25" fill="#cebdff" r="5"></circle>
+<circle cx="160" cy="25" fill="#131316" r="2.5"></circle>
+<!-- Draggable Node 2 -->
+<circle cx="270" cy="50" fill="#ffafd3" r="5"></circle>
+<circle cx="270" cy="50" fill="#131316" r="2.5"></circle>
+</svg>
+<!-- Floating Parameter Card HUD (as seen in Screenshot reference) -->
+<div class="absolute left-16 top-1.5 px-2.5 py-1.5 rounded-lg bg-surface-container-high/95 backdrop-blur shadow-md flex items-center gap-3">
+<div class="flex flex-col">
+<span class="font-label-sm text-[8px] text-outline-variant uppercase">Speed</span>
+<span class="font-tabular-param text-tabular-param text-on-surface">1.24x</span>
+</div>
+<div class="w-px h-5 bg-outline-variant/60"></div>
+<div class="flex flex-col">
+<span class="font-label-sm text-[8px] text-outline-variant uppercase">Ease</span>
+<span class="font-tabular-param text-tabular-param text-primary">Cubic</span>
+</div>
+<div class="w-px h-5 bg-outline-variant/60"></div>
+<div class="flex flex-col">
+<span class="font-label-sm text-[8px] text-outline-variant uppercase">Blend</span>
+<span class="font-tabular-param text-tabular-param text-secondary">82%</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Collapsible Sound Matrix & MPC Pads Drawer -->
+<section class="flex flex-col mt-3 rounded-xl bg-surface-container-low p-2.5 shadow-md">
+<!-- Category Filter Pill Bar -->
+<div class="flex items-center justify-between gap-1.5 pb-2 overflow-x-auto no-scrollbar">
+<div class="flex items-center gap-1.5">
+<button class="px-3 py-1 rounded-full bg-secondary-container text-on-secondary-container font-label-md text-label-md active:scale-95 shadow-sm">Bass</button>
+<button class="px-3 py-1 rounded-full bg-surface-container-highest text-on-surface-variant hover:text-on-surface font-label-md text-label-md">Drums</button>
+<button class="px-3 py-1 rounded-full bg-surface-container-highest text-on-surface-variant hover:text-on-surface font-label-md text-label-md">Piano</button>
+<button class="px-3 py-1 rounded-full bg-surface-container-highest text-on-surface-variant hover:text-on-surface font-label-md text-label-md">Rock</button>
+<button class="px-3 py-1 rounded-full bg-surface-container-highest text-on-surface-variant hover:text-on-surface font-label-md text-label-md">Pop</button>
+<button class="px-3 py-1 rounded-full bg-surface-container-highest text-on-surface-variant hover:text-on-surface font-label-md text-label-md">Vocals</button>
+</div>
+<button class="w-7 h-7 rounded-lg bg-surface-container flex items-center justify-center text-on-surface-variant shrink-0">
+<span class="material-symbols-outlined text-[16px]">expand_less</span>
+</button>
+</div>
+<!-- Tactile Sound Trigger Pads Matrix (4x2 / 7-col scroll grid) -->
+<div class="grid grid-cols-7 gap-1.5 pt-1">
+<!-- Pad 033 -->
+<button class="h-14 rounded-lg bg-[#5b2a3d] hover:bg-[#85145a] active:bg-[#9d4b68] flex flex-col justify-between p-1.5 text-secondary-fixed transition-all active:scale-95 shadow-sm" onclick="triggerPad(this)">
+<span class="font-tabular-param text-[8px] opacity-70">033</span>
+<span class="material-symbols-outlined text-[18px] mx-auto">drag_handle</span>
+</button>
+<!-- Pad 034 (Active Pulsing Pad) -->
+<button class="h-14 rounded-lg bg-[#85145a] active:bg-[#9d4b68] flex flex-col justify-between p-1.5 text-on-secondary-container transition-all active:scale-95 shadow-[0_0_10px_rgba(255,147,200,0.35)]" onclick="triggerPad(this)">
+<span class="font-tabular-param text-[8px] font-bold">034</span>
+<span class="material-symbols-outlined text-[18px] mx-auto">grid_view</span>
+</button>
+<!-- Pad 035 -->
+<button class="h-14 rounded-lg bg-[#5b2a3d] hover:bg-[#85145a] active:bg-[#9d4b68] flex flex-col justify-between p-1.5 text-secondary-fixed transition-all active:scale-95 shadow-sm" onclick="triggerPad(this)">
+<span class="font-tabular-param text-[8px] opacity-70">035</span>
+<span class="material-symbols-outlined text-[18px] mx-auto">adjust</span>
+</button>
+<!-- Pad 036 -->
+<button class="h-14 rounded-lg bg-[#5b2a3d] hover:bg-[#85145a] active:bg-[#9d4b68] flex flex-col justify-between p-1.5 text-secondary-fixed transition-all active:scale-95 shadow-sm" onclick="triggerPad(this)">
+<span class="font-tabular-param text-[8px] opacity-70">036</span>
+<span class="material-symbols-outlined text-[18px] mx-auto">flare</span>
+</button>
+<!-- Pad 037 -->
+<button class="h-14 rounded-lg bg-[#5b2a3d] hover:bg-[#85145a] active:bg-[#9d4b68] flex flex-col justify-between p-1.5 text-secondary-fixed transition-all active:scale-95 shadow-sm" onclick="triggerPad(this)">
+<span class="font-tabular-param text-[8px] opacity-70">037</span>
+<span class="material-symbols-outlined text-[18px] mx-auto">horizontal_split</span>
+</button>
+<!-- Pad 038 -->
+<button class="h-14 rounded-lg bg-[#5b2a3d] hover:bg-[#85145a] active:bg-[#9d4b68] flex flex-col justify-between p-1.5 text-secondary-fixed transition-all active:scale-95 shadow-sm" onclick="triggerPad(this)">
+<span class="font-tabular-param text-[8px] opacity-70">038</span>
+<span class="material-symbols-outlined text-[18px] mx-auto">grain</span>
+</button>
+<!-- Pad 039 -->
+<button class="h-14 rounded-lg bg-[#5b2a3d] hover:bg-[#85145a] active:bg-[#9d4b68] flex flex-col justify-between p-1.5 text-secondary-fixed transition-all active:scale-95 shadow-sm" onclick="triggerPad(this)">
+<span class="font-tabular-param text-[8px] opacity-70">039</span>
+<span class="material-symbols-outlined text-[18px] mx-auto">menu</span>
+</button>
+<!-- Row 2: Pad 042 -->
+<button class="h-14 rounded-lg bg-[#5b2a3d] hover:bg-[#85145a] active:bg-[#9d4b68] flex flex-col justify-between p-1.5 text-secondary-fixed transition-all active:scale-95 shadow-sm" onclick="triggerPad(this)">
+<span class="font-tabular-param text-[8px] opacity-70">042</span>
+<span class="material-symbols-outlined text-[18px] mx-auto">emergency</span>
+</button>
+<!-- Pad 040 -->
+<button class="h-14 rounded-lg bg-[#5b2a3d] hover:bg-[#85145a] active:bg-[#9d4b68] flex flex-col justify-between p-1.5 text-secondary-fixed transition-all active:scale-95 shadow-sm" onclick="triggerPad(this)">
+<span class="font-tabular-param text-[8px] opacity-70">040</span>
+<span class="material-symbols-outlined text-[18px] mx-auto">radio_button_unchecked</span>
+</button>
+<!-- Pad 043 -->
+<button class="h-14 rounded-lg bg-[#5b2a3d] hover:bg-[#85145a] active:bg-[#9d4b68] flex flex-col justify-between p-1.5 text-secondary-fixed transition-all active:scale-95 shadow-sm" onclick="triggerPad(this)">
+<span class="font-tabular-param text-[8px] opacity-70">043</span>
+<span class="material-symbols-outlined text-[18px] mx-auto">height</span>
+</button>
+<!-- Pad 041 -->
+<button class="h-14 rounded-lg bg-[#5b2a3d] hover:bg-[#85145a] active:bg-[#9d4b68] flex flex-col justify-between p-1.5 text-secondary-fixed transition-all active:scale-95 shadow-sm" onclick="triggerPad(this)">
+<span class="font-tabular-param text-[8px] opacity-70">041</span>
+<span class="material-symbols-outlined text-[18px] mx-auto">all_out</span>
+</button>
+<!-- Pad 044 -->
+<button class="h-14 rounded-lg bg-[#5b2a3d] hover:bg-[#85145a] active:bg-[#9d4b68] flex flex-col justify-between p-1.5 text-secondary-fixed transition-all active:scale-95 shadow-sm" onclick="triggerPad(this)">
+<span class="font-tabular-param text-[8px] opacity-70">044</span>
+<span class="material-symbols-outlined text-[18px] mx-auto">waves</span>
+</button>
+<!-- Pad 054 -->
+<button class="h-14 rounded-lg bg-[#5b2a3d] hover:bg-[#85145a] active:bg-[#9d4b68] flex flex-col justify-between p-1.5 text-secondary-fixed transition-all active:scale-95 shadow-sm" onclick="triggerPad(this)">
+<span class="font-tabular-param text-[8px] opacity-70">054</span>
+<span class="material-symbols-outlined text-[18px] mx-auto">light_mode</span>
+</button>
+<!-- Pad 056 -->
+<button class="h-14 rounded-lg bg-[#5b2a3d] hover:bg-[#85145a] active:bg-[#9d4b68] flex flex-col justify-between p-1.5 text-secondary-fixed transition-all active:scale-95 shadow-sm" onclick="triggerPad(this)">
+<span class="font-tabular-param text-[8px] opacity-70">056</span>
+<span class="material-symbols-outlined text-[18px] mx-auto">reorder</span>
+</button>
+</div>
+</section>
+<!-- Reference Snapshot Card -->
+
+</div>
+<script>
+  function triggerPad(el) {
+    el.classList.add('bg-secondary', 'text-on-secondary', 'scale-95');
+    setTimeout(() => {
+      el.classList.remove('bg-secondary', 'text-on-secondary', 'scale-95');
+    }, 160);
+  }
+
+  // Simple animated playhead drift for delightful live feel
+  (function() {
+    const playhead = document.getElementById('playhead-needle');
+    if (!playhead) return;
+    let pos = 48;
+    let dir = 0.05;
+    function step() {
+      pos += dir;
+      if (pos > 85) dir = -0.05;
+      if (pos < 20) dir = 0.05;
+      playhead.style.left = pos + '%';
+      requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  })();
+</script></main></div><footer class="fixed bottom-0 left-0 right-0 h-16 bg-surface-container-low/95 backdrop-blur-xl z-50 flex items-center justify-between px-4 shadow-[0_-1px_12px_rgba(0,0,0,0.45)]"><div class="flex items-center gap-space-sm w-56"><button class="text-on-surface-variant hover:text-on-surface transition-colors flex items-center"><span class="material-symbols-outlined text-[20px]">volume_up</span></button><div class="relative w-28 h-1.5 bg-surface-container-highest rounded-full overflow-hidden flex items-center"><div class="h-full w-3/4 bg-primary rounded-full"></div></div><span class="font-tabular-param text-tabular-param text-on-surface-variant">78%</span></div><div class="flex items-center gap-3"><div class="px-2.5 py-1 rounded bg-surface-container-lowest font-tabular-timecode text-tabular-timecode text-primary flex items-center gap-1"><span class="font-semibold">00:00.00</span><span class="text-outline text-label-sm">/</span><span class="text-on-surface-variant">00:42.20</span></div><div class="flex items-center gap-1.5"><button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[18px]">skip_previous</span></button><button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[18px]">fast_rewind</span></button><button class="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center hover:opacity-95 shadow-[0_0_12px_rgba(167,139,250,0.45)] transition-transform active:scale-95"><span class="material-symbols-outlined text-[24px]">play_arrow</span></button><button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[18px]">fast_forward</span></button><button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[18px]">repeat</span></button></div></div><div class="flex items-center gap-space-sm"><button class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-container text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[16px]">schedule</span><span class="font-label-sm text-label-sm">Metronome Off</span></button><div class="px-2 py-0.5 rounded bg-surface-container-highest font-label-sm text-label-sm text-on-surface font-semibold">1 x</div><button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[20px]">more_vert</span></button></div></footer>
+
+</body></html>
