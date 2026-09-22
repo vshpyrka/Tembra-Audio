@@ -1,0 +1,296 @@
+<!DOCTYPE html><html class="dark" lang="en"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {
+  "darkMode": "class",
+  "theme": {
+    "extend": {
+      "colors": {
+        "on-tertiary-container": "#40009b",
+        "on-tertiary-fixed": "#23005c",
+        "on-tertiary": "#3c0091",
+        "on-secondary-container": "#ff93c8",
+        "error-container": "#93000a",
+        "primary-container": "#a78bfa",
+        "surface-container-high": "#2a2a2d",
+        "secondary-container": "#85145a",
+        "surface-container-low": "#1b1b1e",
+        "tertiary": "#d0bcff",
+        "primary-fixed-dim": "#cebdff",
+        "inverse-primary": "#674bb5",
+        "tertiary-container": "#ab88ff",
+        "surface-dim": "#131316",
+        "surface-variant": "#353438",
+        "on-error": "#690005",
+        "surface": "#131316",
+        "secondary-fixed-dim": "#ffafd3",
+        "background": "#131316",
+        "secondary-fixed": "#ffd8e7",
+        "secondary": "#ffafd3",
+        "tertiary-fixed": "#e9ddff",
+        "on-secondary": "#620040",
+        "outline-variant": "#494552",
+        "on-error-container": "#ffdad6",
+        "surface-bright": "#39393c",
+        "surface-container-lowest": "#0e0e11",
+        "outline": "#948e9d",
+        "on-surface": "#e4e1e6",
+        "on-secondary-fixed-variant": "#85145a",
+        "on-primary": "#381385",
+        "on-primary-container": "#3c1989",
+        "on-background": "#e4e1e6",
+        "primary": "#cebdff",
+        "tertiary-fixed-dim": "#d0bcff",
+        "inverse-surface": "#e4e1e6",
+        "surface-container": "#1f1f22",
+        "on-secondary-fixed": "#3d0026",
+        "on-surface-variant": "#cac4d4",
+        "primary-fixed": "#e8ddff",
+        "on-primary-fixed-variant": "#4f319c",
+        "error": "#ffb4ab",
+        "surface-container-highest": "#353438",
+        "surface-tint": "#cebdff",
+        "on-tertiary-fixed-variant": "#5516be",
+        "on-primary-fixed": "#21005e",
+        "inverse-on-surface": "#303033"
+      },
+      "borderRadius": {
+        "DEFAULT": "0.25rem",
+        "lg": "0.5rem",
+        "xl": "0.75rem",
+        "full": "9999px"
+      },
+      "spacing": {
+        "space-xl": "1.75rem",
+        "gutter": "0.75rem",
+        "space-xs": "0.25rem",
+        "space-md": "0.75rem",
+        "space-sm": "0.5rem",
+        "space-lg": "1.25rem",
+        "margin": "1rem"
+      },
+      "fontFamily": {
+        "label-lg": ["Space Grotesk"],
+        "headline-md": ["Space Grotesk"],
+        "headline-sm": ["Space Grotesk"],
+        "body-lg": ["Inter"],
+        "label-sm": ["Space Grotesk"],
+        "headline-lg-mobile": ["Space Grotesk"],
+        "tabular-param": ["Inter"],
+        "tabular-timecode": ["Space Grotesk"],
+        "label-md": ["Space Grotesk"],
+        "body-sm": ["Inter"],
+        "headline-lg": ["Space Grotesk"],
+        "body-md": ["Inter"]
+      },
+      "fontSize": {
+        "label-lg": ["14px", {"lineHeight": "18px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+        "headline-md": ["22px", {"lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+        "headline-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+        "label-sm": ["10px", {"lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600"}],
+        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+        "tabular-param": ["11px", {"lineHeight": "14px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+        "tabular-timecode": ["15px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+        "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+      }
+    }
+  }
+};</script></head><body class="bg-surface font-body-md text-on-surface select-none"><header class="fixed top-0 left-0 right-0 h-14 bg-surface-container-low/95 backdrop-blur-xl z-50 flex items-center justify-between px-3 shadow-[0_1px_8px_rgba(0,0,0,0.35)]"><div class="flex items-center gap-space-sm"><button class="w-9 h-9 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[20px]">menu</span></button><div class="flex items-center gap-2 pl-1"><div class="w-6 h-6 rounded bg-primary-container flex items-center justify-center text-on-primary-container"><span class="material-symbols-outlined text-[16px]">graphic_eq</span></div><span class="font-headline-sm text-headline-sm tracking-tight text-on-surface font-bold">TEMBRA</span></div><div class="h-4 w-px bg-outline-variant mx-1"></div><div class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container-lowest text-on-surface-variant"><span class="font-label-md text-label-md text-on-surface font-medium">Music project - 001</span><span class="material-symbols-outlined text-primary text-[15px]">cloud_done</span></div></div><div class="flex items-center gap-2"><button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[18px]">help_outline</span></button><button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[18px]">cloud_sync</span></button><button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[18px]">share</span></button><div class="relative p-0.5 rounded-full bg-secondary-container flex items-center justify-center"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><aside class="fixed left-0 top-14 bottom-16 w-16 bg-surface-container-lowest z-40 flex flex-col items-center py-2 shadow-[1px_0_12px_rgba(0,0,0,0.4)]"><nav class="w-full px-2 flex flex-col gap-1.5" data-active-classes="bg-secondary-container text-on-secondary-container font-bold rounded-lg"><a class="flex flex-col items-center justify-center py-2 px-1 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="timeline" href="#"><span class="material-symbols-outlined text-[22px] mb-0.5">waves</span><span class="font-label-sm text-label-sm">Timeline</span></a><a aria-current="page" class="flex flex-col items-center justify-center py-2 px-1 transition-all group bg-secondary-container text-on-secondary-container font-bold rounded-lg" data-path="tuner" href="#"><span class="material-symbols-outlined text-[22px] mb-0.5">graphic_eq</span><span class="font-label-sm text-label-sm">Tuner</span></a><a class="flex flex-col items-center justify-center py-2 px-1 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="effects" href="#"><span class="material-symbols-outlined text-[22px] mb-0.5">tune</span><span class="font-label-sm text-label-sm">Effects</span></a><a class="flex flex-col items-center justify-center py-2 px-1 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="pads" href="#"><span class="material-symbols-outlined text-[22px] mb-0.5">grid_view</span><span class="font-label-sm text-label-sm">Pads</span></a><a class="flex flex-col items-center justify-center py-2 px-1 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="remote" href="#"><span class="material-symbols-outlined text-[22px] mb-0.5">sensors</span><span class="font-label-sm text-label-sm">Remote</span></a><a class="flex flex-col items-center justify-center py-2 px-1 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="projects" href="#"><span class="material-symbols-outlined text-[22px] mb-0.5">folder_open</span><span class="font-label-sm text-label-sm">Projects</span></a></nav></aside><div class="pl-16"><main class="relative pt-14 pb-16 min-h-screen bg-surface w-full px-space-md"><div class="flex flex-col w-full text-on-surface"><!-- WORKSPACE HEADER -->
+<div class="flex items-center justify-between bg-surface-container-low rounded-xl px-4 py-3 mb-space-md shadow-md">
+  <div class="flex items-center gap-3">
+    <div class="w-10 h-10 rounded-xl bg-secondary-container text-on-secondary-container flex items-center justify-center shadow-sm">
+      <span class="material-symbols-outlined text-[22px]">call_split</span>
+    </div>
+    <div>
+      <div class="flex items-center gap-2">
+        <h1 class="font-headline-sm text-headline-sm text-on-surface font-bold tracking-tight">Export Stems</h1>
+        <span class="px-2 py-0.5 rounded bg-primary-container text-on-primary-container font-label-sm text-label-sm uppercase font-semibold">4 OF 5 ARMED</span>
+      </div>
+      <div class="flex items-center gap-2 mt-0.5 text-on-surface-variant font-label-sm text-label-sm">
+        <span class="">Music project - 001</span>
+        <span class="text-outline-variant">•</span>
+        <span class="font-tabular-timecode text-tabular-param">00:42.20</span>
+        <span class="text-outline-variant">•</span>
+        <span class="">Est. Output: 68.3 MB</span>
+      </div>
+    </div>
+  </div>
+  <div class="flex items-center gap-2">
+    <button class="px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-colors flex items-center gap-1.5">
+      <span class="material-symbols-outlined text-[18px]">cloud_sync</span>Export to Cloud
+    </button>
+  </div>
+</div>
+
+<!-- SPLIT STEM SELECTION & ENCODING VIEW -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-md items-stretch">
+  <!-- LEFT: STEM SELECTION MATRIX (7 cols) -->
+  <section class="lg:col-span-7 bg-surface-container-low rounded-xl p-space-md shadow-md flex flex-col justify-between">
+    <div>
+      <div class="flex items-center justify-between mb-space-md pb-2 border-b border-surface-container-highest">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-secondary text-[22px]">view_week</span>
+          <div>
+            <span class="font-headline-sm text-headline-sm text-on-surface block font-semibold">Stem Routing Matrix</span>
+            <span class="font-label-sm text-label-sm text-outline">Select track stems to isolate and export</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button class="px-2.5 py-1 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-sm text-label-sm transition-colors">Select All</button>
+          <button class="px-2.5 py-1 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm transition-colors">Invert</button>
+        </div>
+      </div>
+      <div class="space-y-2.5">
+        <!-- Stem 1 -->
+        <label class="flex items-center justify-between p-3 rounded-lg bg-surface-container hover:bg-surface-container-high transition-colors cursor-pointer">
+          <div class="flex items-center gap-3">
+            <input checked="" class="w-4 h-4 rounded bg-surface-container-highest accent-primary cursor-pointer" type="checkbox">
+            <div class="w-2 h-7 rounded bg-primary"></div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-label-md text-label-md text-on-surface font-semibold">01 Lead Vocal</span>
+                <span class="px-1.5 py-0.5 rounded bg-secondary-container text-on-secondary-container font-label-sm text-label-sm font-bold">FX Baked</span>
+              </div>
+              <span class="font-label-sm text-label-sm text-outline">Mono Sum • 18.2 MB</span>
+            </div>
+          </div>
+          <span class="font-label-sm text-label-sm px-2 py-0.5 rounded bg-surface-container-lowest text-primary font-semibold">ARMED</span>
+        </label>
+        <!-- Stem 2 -->
+        <label class="flex items-center justify-between p-3 rounded-lg bg-surface-container hover:bg-surface-container-high transition-colors cursor-pointer">
+          <div class="flex items-center gap-3">
+            <input checked="" class="w-4 h-4 rounded bg-surface-container-highest accent-primary cursor-pointer" type="checkbox">
+            <div class="w-2 h-7 rounded bg-secondary"></div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-label-md text-label-md text-on-surface font-semibold">02 Analog 808 Bass</span>
+                <span class="px-1.5 py-0.5 rounded bg-surface-container-highest text-on-surface-variant font-label-sm text-label-sm font-medium">Dry/Wet</span>
+              </div>
+              <span class="font-label-sm text-label-sm text-outline">Stereo • 12.4 MB</span>
+            </div>
+          </div>
+          <span class="font-label-sm text-label-sm px-2 py-0.5 rounded bg-surface-container-lowest text-primary font-semibold">ARMED</span>
+        </label>
+        <!-- Stem 3 -->
+        <label class="flex items-center justify-between p-3 rounded-lg bg-surface-container hover:bg-surface-container-high transition-colors cursor-pointer">
+          <div class="flex items-center gap-3">
+            <input checked="" class="w-4 h-4 rounded bg-surface-container-highest accent-primary cursor-pointer" type="checkbox">
+            <div class="w-2 h-7 rounded bg-tertiary"></div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-label-md text-label-md text-on-surface font-semibold">03 Drum Groove &amp; Perc</span>
+                <span class="px-1.5 py-0.5 rounded bg-surface-container-highest text-on-surface-variant font-label-sm text-label-sm font-medium">Stereo Sum</span>
+              </div>
+              <span class="font-label-sm text-label-sm text-outline">Multi-mic • 22.1 MB</span>
+            </div>
+          </div>
+          <span class="font-label-sm text-label-sm px-2 py-0.5 rounded bg-surface-container-lowest text-primary font-semibold">ARMED</span>
+        </label>
+        <!-- Stem 4 -->
+        <label class="flex items-center justify-between p-3 rounded-lg bg-surface-container hover:bg-surface-container-high transition-colors cursor-pointer">
+          <div class="flex items-center gap-3">
+            <input checked="" class="w-4 h-4 rounded bg-surface-container-highest accent-primary cursor-pointer" type="checkbox">
+            <div class="w-2 h-7 rounded bg-primary-fixed-dim"></div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-label-md text-label-md text-on-surface font-semibold">04 Synth Arp &amp; Melodic</span>
+                <span class="px-1.5 py-0.5 rounded bg-surface-container-highest text-on-surface-variant font-label-sm text-label-sm font-medium">Stereo</span>
+              </div>
+              <span class="font-label-sm text-label-sm text-outline">Full Dynamics • 15.6 MB</span>
+            </div>
+          </div>
+          <span class="font-label-sm text-label-sm px-2 py-0.5 rounded bg-surface-container-lowest text-primary font-semibold">ARMED</span>
+        </label>
+        <!-- Stem 5 -->
+        <label class="flex items-center justify-between p-3 rounded-lg bg-surface-container hover:bg-surface-container-high opacity-60 transition-colors cursor-pointer">
+          <div class="flex items-center gap-3">
+            <input class="w-4 h-4 rounded bg-surface-container-highest accent-primary cursor-pointer" type="checkbox">
+            <div class="w-2 h-7 rounded bg-outline-variant"></div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-label-md text-label-md text-on-surface font-semibold">05 FX Returns &amp; Aux</span>
+                <span class="px-1.5 py-0.5 rounded bg-surface-container-highest text-on-surface-variant font-label-sm text-label-sm font-medium">Wet Only</span>
+              </div>
+              <span class="font-label-sm text-label-sm text-outline">Reverb/Delay • 9.8 MB</span>
+            </div>
+          </div>
+          <span class="font-label-sm text-label-sm px-2 py-0.5 rounded bg-surface-container-lowest text-outline font-medium">MUTED</span>
+        </label>
+      </div>
+    </div>
+    <div class="mt-4 pt-3 border-t border-surface-container-highest flex items-center justify-between font-label-sm text-label-sm text-on-surface-variant">
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-secondary text-[18px]">info</span>
+        <span class="">Offline batch processing enabled</span>
+      </div>
+      <span class="">Format applies to all active stems</span>
+    </div>
+  </section>
+
+  <!-- RIGHT: ENCODING FORMAT & RENDER CTA (5 cols) -->
+  <section class="lg:col-span-5 bg-surface-container-low rounded-xl p-space-md shadow-md flex flex-col justify-between space-y-space-md">
+    <div>
+      <div class="flex items-center justify-between mb-space-md pb-2 border-b border-surface-container-highest">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary text-[22px]">tune</span>
+          <div>
+            <span class="font-headline-sm text-headline-sm text-on-surface block font-semibold">Encoding Format</span>
+            <span class="font-label-sm text-label-sm text-outline">Configure target audio quality &amp; specs</span>
+          </div>
+        </div>
+      </div>
+      <div class="space-y-space-md">
+        <!-- AUDIO FORMAT -->
+        <div>
+          <span class="font-label-sm text-label-sm text-outline block mb-2 font-medium">AUDIO FORMAT</span>
+          <div class="grid grid-cols-4 gap-2">
+            <button class="py-2 rounded-lg bg-secondary-container text-on-secondary-container font-label-md text-label-md font-semibold text-center transition-colors">WAV</button>
+            <button class="py-2 rounded-lg bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high font-label-md text-label-md text-center transition-colors">FLAC</button>
+            <button class="py-2 rounded-lg bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high font-label-md text-label-md text-center transition-colors">MP3</button>
+            <button class="py-2 rounded-lg bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high font-label-md text-label-md text-center transition-colors">AAC</button>
+          </div>
+        </div>
+        <!-- SAMPLE RATE -->
+        <div>
+          <span class="font-label-sm text-label-sm text-outline block mb-2 font-medium">SAMPLE RATE</span>
+          <div class="grid grid-cols-3 gap-2">
+            <button class="py-2 rounded-lg bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high font-label-md text-label-md text-center transition-colors">44.1 kHz</button>
+            <button class="py-2 rounded-lg bg-primary-container text-on-primary-container font-label-md text-label-md font-semibold text-center transition-colors">48.0 kHz</button>
+            <button class="py-2 rounded-lg bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high font-label-md text-label-md text-center transition-colors">96.0 kHz</button>
+          </div>
+        </div>
+        <!-- BIT DEPTH -->
+        <div>
+          <span class="font-label-sm text-label-sm text-outline block mb-2 font-medium">BIT DEPTH</span>
+          <div class="grid grid-cols-3 gap-2">
+            <button class="py-2 rounded-lg bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high font-label-md text-label-md text-center transition-colors">16-bit</button>
+            <button class="py-2 rounded-lg bg-primary-container text-on-primary-container font-label-md text-label-md font-semibold text-center transition-colors">24-bit</button>
+            <button class="py-2 rounded-lg bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high font-label-md text-label-md text-center transition-colors">32-float</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUMMARY CARD & BOUNCE BUTTON -->
+    <div class="space-y-3 pt-2">
+      <div class="p-3 rounded-lg bg-surface-container-lowest flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-secondary text-[20px]">check_circle</span>
+          <span class="font-label-md text-label-md text-on-surface font-medium">4 Stems Selected</span>
+        </div>
+        <div class="font-tabular-param text-tabular-param text-on-surface-variant">
+          Total Size: <strong class="text-primary font-semibold">68.3 MB</strong>
+        </div>
+      </div>
+      <button class="w-full py-3.5 px-4 rounded-xl bg-primary-container text-on-primary-container hover:opacity-95 shadow-[0_0_20px_rgba(167,139,250,0.35)] transition-all transform active:scale-95 flex items-center justify-center gap-2.5 font-headline-sm text-headline-sm font-bold">
+        <span class="material-symbols-outlined text-[22px]">rocket_launch</span>Render Selected Stems (68.3 MB)
+      </button>
+    </div>
+  </section>
+</div></div></main></div><footer class="fixed bottom-0 left-0 right-0 h-16 bg-surface-container-low/95 backdrop-blur-xl z-50 flex items-center justify-between px-4 shadow-[0_-1px_12px_rgba(0,0,0,0.45)]"><div class="flex items-center gap-space-sm w-56"><button class="text-on-surface-variant hover:text-on-surface transition-colors flex items-center"><span class="material-symbols-outlined text-[20px]">volume_up</span></button><div class="relative w-28 h-1.5 bg-surface-container-highest rounded-full overflow-hidden flex items-center"><div class="h-full w-3/4 bg-primary rounded-full"></div></div><span class="font-tabular-param text-tabular-param text-on-surface-variant">78%</span></div><div class="flex items-center gap-3"><div class="px-2.5 py-1 rounded bg-surface-container-lowest font-tabular-timecode text-tabular-timecode text-primary flex items-center gap-1"><span class="font-semibold">00:00.00</span><span class="text-outline text-label-sm">/</span><span class="text-on-surface-variant">00:42.20</span></div><div class="flex items-center gap-1.5"><button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[18px]">skip_previous</span></button><button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[18px]">fast_rewind</span></button><button class="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center hover:opacity-95 shadow-[0_0_12px_rgba(167,139,250,0.45)] transition-transform active:scale-95"><span class="material-symbols-outlined text-[24px]">play_arrow</span></button><button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[18px]">fast_forward</span></button><button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[18px]">repeat</span></button></div></div><div class="flex items-center gap-space-sm"><button class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-container text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[16px]">schedule</span><span class="font-label-sm text-label-sm">Metronome Off</span></button><div class="px-2 py-0.5 rounded bg-surface-container-highest font-label-sm text-label-sm text-on-surface font-semibold">1 x</div><button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[20px]">more_vert</span></button></div></footer>
+
+
+
+</body></html>
