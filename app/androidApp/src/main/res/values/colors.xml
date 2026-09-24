@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- design/stitch/theme.json: dawSemanticColors.canvas_level0 / namedColors.background -->
+    <color name="ic_launcher_background">#0F0F12</color>
+    <color name="window_background">#131316</color>
+</resources>

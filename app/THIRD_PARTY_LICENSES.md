@@ -1,0 +1,49 @@
+# Third-party licences
+
+Every dependency of the application, with its licence (Constitution VI: permissive licences only in the
+shipped binary). Versions are pinned in `gradle/libs.versions.toml` unless a path is given.
+Last reviewed: 2026-09-24 (feature 001, project scaffold).
+
+## Shipped in the app binaries
+
+| Dependency | Version | Licence | Source |
+|---|---|---|---|
+| Kotlin standard library, kotlinx-coroutines | 2.4.20, 1.11.0 | Apache-2.0 | https://github.com/JetBrains/kotlin, https://github.com/Kotlin/kotlinx.coroutines |
+| Compose Multiplatform (runtime, foundation, material3, ui, components-resources) | 1.12.1 | Apache-2.0 | https://github.com/JetBrains/compose-multiplatform |
+| Jetpack Compose (Android artifacts used by Compose Multiplatform) | 1.12.1 | Apache-2.0 | https://developer.android.com/jetpack/androidx |
+| AndroidX Lifecycle multiplatform (`lifecycle-viewmodel-compose`, `lifecycle-runtime-compose`) | 2.11.0 | Apache-2.0 | https://github.com/JetBrains/compose-multiplatform-core |
+| AndroidX Activity Compose | 1.13.0 | Apache-2.0 | https://developer.android.com/jetpack/androidx/releases/activity |
+| Metro (compiler plugin runtime, `metrox-viewmodel-compose`) | 1.4.4 | Apache-2.0 | https://github.com/ZacSweers/metro |
+| Oboe (Android only, via Prefab) | 1.11.0 | Apache-2.0 | https://github.com/google/oboe |
+| miniaudio (`engine/third_party/miniaudio`) | 0.11.25 | MIT-0 or public domain (dual) | https://github.com/mackron/miniaudio |
+| dr_wav from dr_libs (`engine/third_party/dr_libs`) | 0.14.5 | MIT-0 or public domain (dual) | https://github.com/mackron/dr_libs |
+| Signalsmith Stretch with its `dsp/` headers (`engine/third_party/signalsmith-stretch`) | 1.1.0 | MIT | https://github.com/Signalsmith-Audio/signalsmith-stretch |
+| Space Grotesk (`shared/ui/src/commonMain/composeResources/font/space_grotesk_*.ttf`) | 2.0.0 (Medium and Bold static files; SemiBold instanced from the variable font with fontTools) | SIL Open Font License 1.1 (`composeResources/files/OFL-SpaceGrotesk.txt`) | https://github.com/floriankarsten/space-grotesk |
+| Inter (`shared/ui/src/commonMain/composeResources/font/inter_*.ttf`) | 4.x variable font from google/fonts, Regular/Medium/SemiBold instanced with fontTools | SIL Open Font License 1.1 (`composeResources/files/OFL-Inter.txt`) | https://github.com/rsms/inter |
+| Android NDK libc++ shared runtime (`libc++_shared.so`) | NDK 29.0.14206865 | Apache-2.0 with LLVM exceptions | https://developer.android.com/ndk |
+
+## Test-only
+
+| Dependency | Version | Licence | Source |
+|---|---|---|---|
+| kotlin-test, kotlinx-coroutines-test | 2.4.20, 1.11.0 | Apache-2.0 | JetBrains |
+| kotlinx-serialization-json (theme parity test on the JVM) | 1.11.0 | Apache-2.0 | https://github.com/Kotlin/kotlinx.serialization |
+| Compose UI test (`org.jetbrains.compose.ui:ui-test`, `ui-test-junit4-android`, `ui-test-manifest`) | 1.12.1 | Apache-2.0 | JetBrains, AndroidX |
+| AndroidX Test runner, Espresso core | 1.7.0, 3.7.0 | Apache-2.0 | https://developer.android.com/testing |
+| Catch2 (fetched by CMake for `engine/tests`) | v3.16.0 | Boost Software License 1.0 | https://github.com/catchorg/Catch2 |
+
+## Build tooling (not shipped)
+
+| Tool | Version | Licence |
+|---|---|---|
+| Gradle (wrapper) | 9.7.0 | Apache-2.0 |
+| Android Gradle Plugin | 9.3.3 | Apache-2.0 |
+| Kotlin Gradle Plugin, Compose Multiplatform Gradle plugin, Metro Gradle plugin | 2.4.20, 1.12.1, 1.4.4 | Apache-2.0 |
+| CMake (Android SDK package), Ninja | 3.31.6 | BSD-3-Clause, Apache-2.0 |
+| Android NDK | 29.0.14206865 | Apache-2.0 / NDK licence |
+| fontTools (used once to instance the static font files) | 4.x | MIT |
+
+## Attribution
+
+- `iosApp/` was derived from Kotlin/KMP-App-Template (JetBrains, Apache-2.0): https://github.com/Kotlin/KMP-App-Template
+- The Android launcher glyph and the iOS app icon are original placeholder artwork in the project's colours.

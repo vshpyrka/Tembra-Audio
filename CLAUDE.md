@@ -6,13 +6,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Tembra Audio is a free, open-source mobile DAW for Android and iOS: a Kotlin Multiplatform control plane and Compose Multiplatform UI on top of one shared C++ real-time audio engine (Oboe on Android, AVAudioEngine/RemoteIO on iOS).
 
-**There is no application code yet.** `app/` holds only a README with the planned layout. The repository is research, design and reports that feed the spec-kit constitution and the first feature specs. There are no build, lint or test commands until the project-scaffold feature lands; when it does, record them here.
+**Application code lives in `app/`** (Gradle root; scaffold landed with feature 001 on 2026-09-24). Modules: `:shared:core` (pure domain), `:shared:engine` (`AudioEngine` facade over the C++ engine: JNI on Android, cinterop on iOS), `:shared:data` (persistence), `:shared:ui` (Compose Multiplatform screens, ViewModels, theme, Metro graph; iOS framework `TembraShared`), `:androidApp`, `iosApp/` (Xcode), `engine/` (CMake C++ core, `include/tembra_engine.h` is the C ABI), `:engine:android` (CMake/NDK + Prefab Oboe build helper). Module map and "where does X go" table: `app/README.md`.
+
+Commands (run from `app/`, Gradle wrapper 9.7.0; prerequisites in `app/README.md`):
+
+- Build and run Android: `./gradlew :androidApp:installDebug` then `adb shell am start -n audio.tembra.app/audio.tembra.android.MainActivity`
+- Build and run iOS: `cd iosApp && xcodebuild -project iosApp.xcodeproj -scheme iosApp -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath build build`, then `xcrun simctl install/launch "iPhone 17" … audio.tembra.app`
+- Test lanes: `./gradlew checkAndroidHost` (JVM), `./gradlew checkIos` (simulator), `./gradlew checkAndroidDevice` (connected device), `./gradlew engineHostTest` (C++ Catch2). Compose UI tests live in the `uiTest` source set and run only on the simulator and the device.
+- Screenshots: `android screen capture --output <file>`; `xcrun simctl io "<device>" screenshot <file>`
+- Zero compiler warnings is a gate; run with `--warning-mode all`.
 
 ## Workflow: spec-kit drives all feature work
 
 The project uses GitHub spec-kit. It was initialised on 2026-09-18 with `uvx --from git+https://github.com/github/spec-kit.git specify init --here --integration claude --script sh` (the old `--ai` flag is gone; re-run the same command with `--force` to refresh templates). The skills live in `.claude/skills/speckit-*/` and are invoked with hyphens: `/speckit-constitution`, `/speckit-specify`, `/speckit-clarify`, `/speckit-plan`, `/speckit-checklist`, `/speckit-tasks`, `/speckit-analyze`, `/speckit-implement`, `/speckit-converge` (not the older dotted `/speckit.*` form). Helper scripts are in `.specify/scripts/bash/`. `specs/` is created by the first `/speckit-specify`.
 
-- `.specify/memory/constitution.md` is the ratified constitution (v1.0.0, 2026-09-19): seven principles plus stack constraints and quality gates, seeded from the research briefs below and `docs/research/kmp-code-architecture.md`. It supersedes this file where they disagree; amend it only through `/speckit-constitution`.
+- `.specify/memory/constitution.md` is the ratified constitution (v1.0.1, ratified 2026-09-19, amended 2026-09-24): seven principles plus stack constraints and quality gates, seeded from the research briefs below and `docs/research/kmp-code-architecture.md`. It supersedes this file where they disagree; amend it only through `/speckit-constitution`.
 - `specs/<feature>/spec.md` says WHAT (user-facing behaviour); `plan.md` holds technology choices. Keep them apart.
 - The first feature is the project scaffold that creates `app/shared`, `app/engine`, `app/androidApp`, `app/iosApp`.
 - Build order after that is in `docs/DAW-App-Research-Report.md` §6: audio spine first (engine + JNI/cinterop bridge playing one clip), then transport/timeline, mixer, metronome, effects + automation, recording + loops + speed, tuner, collaboration last.

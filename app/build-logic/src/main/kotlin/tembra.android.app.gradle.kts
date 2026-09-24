@@ -1,0 +1,27 @@
+// Convention plugin for the thin Android application module.
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.compose")
+    id("org.jetbrains.kotlin.plugin.compose")
+    id("dev.zacsweers.metro")
+}
+
+val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
+fun catalogVersion(alias: String): String = libs.findVersion(alias).get().requiredVersion
+
+android {
+    compileSdk = catalogVersion("android-compileSdk").toInt()
+    ndkVersion = catalogVersion("android-ndk")
+    defaultConfig {
+        minSdk = catalogVersion("android-minSdk").toInt()
+        targetSdk = catalogVersion("android-targetSdk").toInt()
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+    packaging {
+        resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
+    }
+}
