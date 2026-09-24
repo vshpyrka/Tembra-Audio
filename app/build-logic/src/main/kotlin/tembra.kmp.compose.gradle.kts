@@ -21,8 +21,15 @@ kotlin {
             implementation(composeDeps.ui)
             implementation(composeDeps.components.resources)
         }
-        commonTest.dependencies {
-            implementation(composeDeps.uiTest)
+        // Compose UI tests need a real UI platform: they live in `uiTest`, which feeds the iOS simulator and the
+        // Android device lanes but not the JVM host lane.
+        val uiTest by creating {
+            dependsOn(commonTest.get())
+            dependencies {
+                implementation(composeDeps.uiTest)
+            }
         }
+        iosTest.get().dependsOn(uiTest)
+        matching { it.name == "androidDeviceTest" }.configureEach { dependsOn(uiTest) }
     }
 }

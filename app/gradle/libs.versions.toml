@@ -11,6 +11,7 @@ metro = "1.4.4"
 androidx-activity = "1.13.0"
 androidx-compose = "1.12.1"
 androidx-test-runner = "1.7.0"
+androidx-test-espresso = "3.7.0"
 oboe = "1.11.0"
 android-compileSdk = "37"
 android-targetSdk = "36"
@@ -30,6 +31,7 @@ androidx-activity-compose = { module = "androidx.activity:activity-compose", ver
 androidx-compose-ui-test-junit4-android = { module = "androidx.compose.ui:ui-test-junit4-android", version.ref = "androidx-compose" }
 androidx-compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest", version.ref = "androidx-compose" }
 androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidx-test-runner" }
+androidx-test-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "androidx-test-espresso" }
 oboe = { module = "com.google.oboe:oboe", version.ref = "oboe" }
 
 # Gradle plugin artifacts consumed by build-logic (convention plugins)
