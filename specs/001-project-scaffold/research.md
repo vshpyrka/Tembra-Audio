@@ -35,7 +35,7 @@ and unsupported by the Android KMP library plugin; `buildSrc` — slower increme
 | Kotlin / Kotlin Multiplatform plugin / Compose compiler plugin | 2.4.20 | latest stable on Maven Central; compatibility guide row: Gradle 7.6.3–9.7.0, AGP 8.5.2–9.3.1, Xcode 26.4 |
 | Gradle | 9.7.0 | upper bound of the tested range (9.7.1 is current but untested) |
 | Android Gradle Plugin | 9.3.3 | newest patch of the 9.3 line; the tested range ends at 9.3.1 and 9.4.1 is outside it. Drop to 9.3.1 if 9.3.3 misbehaves |
-| Compose Multiplatform | 1.12.1 | latest stable; maps to Jetpack Compose 1.12.1; supports iOS 14+ |
+| Compose Multiplatform | 1.12.1 | latest stable; maps to Jetpack Compose 1.12.1; supports iOS 14+. Its `compose.material3` accessor maps to `org.jetbrains.compose.material3:material3:1.9.0`, the last stable Material 3 release on the decoupled track (pinned explicitly in the catalog) |
 | `org.jetbrains.androidx.lifecycle` (ViewModel, runtime-compose) | 2.11.0 | latest stable |
 | `org.jetbrains.compose.material3:material3-window-size-class` | 1.12.1 | ships with Compose Multiplatform |
 | kotlinx-coroutines | 1.11.0 | latest stable |

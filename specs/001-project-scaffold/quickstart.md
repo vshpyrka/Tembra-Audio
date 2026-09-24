@@ -30,7 +30,7 @@ echo "sdk.dir=$HOME/Library/Android/sdk" > app/local.properties
 ```bash
 cd app
 ./gradlew :androidApp:installDebug          # builds the C++ engine for arm64-v8a/x86_64, all shared modules, the APK
-android run --activity audio.tembra.android.MainActivity   # builds, installs and launches; or: adb shell am start -n audio.tembra.app/audio.tembra.android.MainActivity
+adb shell am start -n audio.tembra.app/audio.tembra.android.MainActivity   # launches on the connected device
 ```
 
 **Expected**: the app opens to the placeholder screen: "Tembra Audio", a button with
@@ -135,7 +135,7 @@ screenshot procedure from §7. CLAUDE.md must record the same build and test com
 
 ```bash
 cd app
-./gradlew build -x test --warning-mode all 2>&1 | grep -c -i 'warning'    # expected: 0 compiler/deprecation warnings
+./gradlew clean build -x check --console=plain --warning-mode all 2>&1 | grep -c -E 'kotlin:compiler:warning|^w: '   # expected: 0 from project code (see README § Known toolchain notes)
 cat THIRD_PARTY_LICENSES.md                                              # every row Apache-2.0, MIT, MIT-0/public domain, OFL-1.1, or BSL-1.0 (test-only)
 ```
 
