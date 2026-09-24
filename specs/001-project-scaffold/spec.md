@@ -289,4 +289,6 @@ feature.
   the transport-and-timeline feature; this feature ships exactly one screen, as requested.
 - No git branch was created for this feature because the repository has no commits yet and no
   branching hook is configured; the spec directory is `specs/001-project-scaffold`.
+- Medium window widths (600–839 dp) render the same as expanded widths ("wide"); only
+  compact widths (under 600 dp) use the single-column layout.
 - User-visible text is English only.
