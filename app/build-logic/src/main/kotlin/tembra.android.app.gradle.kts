@@ -11,6 +11,7 @@ fun catalogVersion(alias: String): String = libs.findVersion(alias).get().requir
 
 android {
     compileSdk = catalogVersion("android-compileSdk").toInt()
+    ndkVersion = catalogVersion("android-ndk")
     defaultConfig {
         minSdk = catalogVersion("android-minSdk").toInt()
         targetSdk = catalogVersion("android-targetSdk").toInt()

@@ -1,6 +1,8 @@
 package audio.tembra.ui.di
 
 import androidx.lifecycle.ViewModel
+import audio.tembra.engine.AudioEngine
+import audio.tembra.engine.NativeAudioEngine
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.ContributesTo
@@ -15,6 +17,11 @@ import kotlin.reflect.KClass
 @BindingContainer
 @ContributesTo(AppScope::class)
 object AppBindings {
+
+    /** One engine facade per process (Constitution II); the native library is loaded on first use. */
+    @Provides
+    @SingleIn(AppScope::class)
+    fun provideAudioEngine(): AudioEngine = NativeAudioEngine()
 
     /** Bridges Metro's ViewModel multibindings to the factory that `metroViewModel()` uses in Compose. */
     @Provides

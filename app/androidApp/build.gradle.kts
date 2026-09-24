@@ -19,6 +19,7 @@ android {
 
 dependencies {
     implementation(project(":shared:ui"))
+    implementation(project(":shared:data"))
     implementation(libs.androidx.activity.compose)
     implementation(libs.metrox.viewmodel.compose)
 }

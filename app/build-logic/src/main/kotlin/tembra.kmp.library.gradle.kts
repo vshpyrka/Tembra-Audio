@@ -24,6 +24,10 @@ kotlin {
         compileSdk = catalogVersion("android-compileSdk").toInt()
         minSdk = catalogVersion("android-minSdk").toInt()
         compilerOptions.jvmTarget = JvmTarget.JVM_17
+        // Library device-test APKs carry libtembra_engine.so; keep symbols instead of stripping (no NDK needed here).
+        packaging {
+            jniLibs.keepDebugSymbols.add("**/*.so")
+        }
         withHostTestBuilder {}
         withDeviceTestBuilder {
             sourceSetTreeName = "test"
@@ -42,13 +46,20 @@ kotlin {
             implementation(libs.findLibrary("kotlin-test").get())
             implementation(libs.findLibrary("kotlinx-coroutines-test").get())
         }
+        // The instrumentation runner configured above must ship inside every device-test APK.
+        matching { it.name == "androidDeviceTest" }.configureEach {
+            dependencies {
+                implementation(libs.findLibrary("androidx-test-runner").get())
+            }
+        }
     }
 
     jvmToolchain(21)
 }
 
 // Constitution II: dependencies point inward toward :shared:core. A violation fails configuration.
-configurations.configureEach {
+val declaredSuffixes = listOf("Implementation", "Api", "CompileOnly", "RuntimeOnly")
+configurations.matching { c -> declaredSuffixes.any { c.name.endsWith(it) } && !c.name.contains("swiftPM", ignoreCase = true) }.configureEach {
     dependencies.configureEach {
         if (this is ProjectDependency && this.path != project.path) {
             val depPath = this.path

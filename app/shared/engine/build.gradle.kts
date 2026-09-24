@@ -47,7 +47,7 @@ fun registerEngineBuild(target: String, sysroot: String): TaskProvider<Exec> {
         commandLine(
             "sh", "-c",
             "\"$cmake\" -S \"$source\" -B \"$out\" -G Ninja -DCMAKE_MAKE_PROGRAM=\"$ninja\" " +
-                "-DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 " +
+                "-DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0 " +
                 "-DCMAKE_OSX_SYSROOT=$sysroot -DCMAKE_BUILD_TYPE=Release && \"$cmake\" --build \"$out\""
         )
     }
@@ -64,7 +64,10 @@ tasks.register<Exec>("engineHostTest") {
     val ctest = ctestBin.absolutePath
     val source = engineSourceDir.absolutePath
     val out = layout.buildDirectory.dir("engine/host").get().asFile.absolutePath
-    inputs.dir(source)
+    inputs.dir("$source/include")
+    inputs.dir("$source/src")
+    inputs.dir("$source/tests")
+    inputs.file("$source/CMakeLists.txt")
     outputs.dir(out)
     commandLine(
         "sh", "-c",
@@ -95,10 +98,16 @@ kotlin {
     }
 }
 
+// The static archive is embedded into the cinterop klib, so it must be a declared input of the cinterop
+// task: otherwise a rebuilt engine leaves a stale archive inside an up-to-date klib.
 tasks.withType<CInteropProcess>().configureEach {
-    when (konanTarget) {
-        KonanTarget.IOS_ARM64 -> dependsOn(engineIosArm64)
-        KonanTarget.IOS_SIMULATOR_ARM64 -> dependsOn(engineIosSimulatorArm64)
-        else -> Unit
+    val engineTask = when (konanTarget) {
+        KonanTarget.IOS_ARM64 -> engineIosArm64
+        KonanTarget.IOS_SIMULATOR_ARM64 -> engineIosSimulatorArm64
+        else -> null
+    }
+    if (engineTask != null) {
+        dependsOn(engineTask)
+        inputs.files(engineTask.map { it.outputs.files })
     }
 }
