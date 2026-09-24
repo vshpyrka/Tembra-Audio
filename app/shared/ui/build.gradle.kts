@@ -8,6 +8,7 @@ kotlin {
         target.binaries.framework {
             baseName = "TembraShared"
             isStatic = true
+            binaryOption("bundleId", "audio.tembra.shared")
             // Size optimisation for shipped binaries only; Kotlin/Native ignores it for debug builds.
             if (buildType == org.jetbrains.kotlin.gradle.plugin.mpp.NativeBuildType.RELEASE) {
                 binaryOption("smallBinary", "true")
