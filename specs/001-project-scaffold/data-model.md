@@ -104,9 +104,10 @@ plus a zero-elevation Material default in the theme; not a data type.
 
 ### 1.7 Window size classes
 
-Source: `theme.json → layoutBreakpoints` and Constitution IV. The scaffold uses the Material
-`WindowSizeClass` width buckets: compact (< 600 dp), medium (600–839 dp), expanded (≥ 840 dp).
-The placeholder screen treats medium and expanded the same ("wide").
+Source: `theme.json → layoutBreakpoints` and Constitution IV. The scaffold defines its own
+`WindowWidth` enum with the Material width buckets: Compact (< 600 dp), Medium (600–839 dp),
+Expanded (≥ 840 dp), computed from the measured available width (`BoxWithConstraints`) so no
+extra library is needed. The placeholder screen treats Medium and Expanded the same ("wide").
 
 **Validation rules**
 - Every colour property equals the hex in `theme.json` (host-side test, exact match).

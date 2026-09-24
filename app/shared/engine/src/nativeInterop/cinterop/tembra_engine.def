@@ -1,0 +1,4 @@
+headers = tembra_engine.h
+headerFilter = tembra_engine.h
+package = audio.tembra.engine.cinterop
+staticLibraries = libtembra_engine.a
