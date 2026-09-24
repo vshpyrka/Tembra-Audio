@@ -16,4 +16,6 @@ data class TembraSpacing(
     val pageMargin: Dp = 16.dp,
     val touchTargetMin: Dp = 44.dp,
     val seam: Dp = 1.dp,
+    /** Reading-width cap for centred content on wide windows (plan: placeholder wide layout). */
+    val wideContentMaxWidth: Dp = 720.dp,
 )

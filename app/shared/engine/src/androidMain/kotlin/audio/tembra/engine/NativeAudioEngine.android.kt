@@ -2,7 +2,7 @@ package audio.tembra.engine
 
 actual class NativeAudioEngine actual constructor() : AudioEngine {
 
-    override fun describe(): EngineDescriptor = EngineDescriptorParser.parse(nativeDescribe())
+    actual override fun describe(): EngineDescriptor = EngineDescriptorParser.parse(nativeDescribe())
 
     private external fun nativeAbiVersion(): Int
     private external fun nativeName(): String
