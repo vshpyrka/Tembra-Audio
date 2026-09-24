@@ -31,7 +31,6 @@ kotlin {
         getByName("androidDeviceTest").dependencies {
             implementation(libs.androidx.compose.ui.test.junit4.android)
             implementation(libs.androidx.compose.ui.test.manifest)
-            implementation(libs.androidx.test.runner)
         }
     }
 }
@@ -45,3 +44,7 @@ compose.resources {
 tasks.withType<Test>().configureEach {
     systemProperty("tembra.repoRoot", rootDir.parentFile.absolutePath)
 }
+
+// Compose Multiplatform 1.12.1 registers this task for the device-test component but never sets its output
+// (that component has no assets source); the main variant's resources reach the test APK through the library.
+tasks.matching { it.name == "copyAndroidDeviceTestComposeResourcesToAndroidAssets" }.configureEach { enabled = false }

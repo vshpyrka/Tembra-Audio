@@ -13,9 +13,16 @@ option(TEMBRA_BUILD_TESTS "Build the Catch2 test target" OFF)
 # on Android the :engine:android module wraps it in a shared library of the same name.
 add_library(tembra_engine_core STATIC
     src/engine_info.cpp
+    src/third_party_check.cpp
 )
 set_target_properties(tembra_engine_core PROPERTIES OUTPUT_NAME tembra_engine)
 target_include_directories(tembra_engine_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(tembra_engine_core PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/miniaudio
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/dr_libs
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/signalsmith-stretch
+)
 
 # Oboe (Apache-2.0) is provided by Prefab from the :engine:android Gradle module on Android only.
 if(ANDROID)

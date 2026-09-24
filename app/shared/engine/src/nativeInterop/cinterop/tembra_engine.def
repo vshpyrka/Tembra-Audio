@@ -2,3 +2,5 @@ headers = tembra_engine.h
 headerFilter = tembra_engine.h
 package = audio.tembra.engine.cinterop
 staticLibraries = libtembra_engine.a
+# The engine core is C++ (std::string in the descriptor); link the C++ runtime into the Kotlin binary.
+linkerOpts = -lc++
