@@ -32,6 +32,9 @@ dropout. This rule is the reason the engine is C++ at all.
   `:shared:data` (persistence), `:shared:ui` (Compose, ViewModels, navigation, DI graph), plus
   thin `:androidApp` and `iosApp`. Dependencies MUST point inward toward `:shared:core`; the
   domain module MUST never depend on engine, data or UI.
+- Native build-helper modules (for example a `com.android.library` module that compiles the C++
+  engine) MAY sit below `:shared:engine`; they contain no Kotlin business logic and nothing
+  depends on them except `:shared:engine`.
 - Presentation MUST follow MVVM with unidirectional data flow: one `ViewModel` per destination
   exposing a single immutable `UiState` via `StateFlow`; intents are plain functions. Screens
   MUST NOT talk to the engine directly.
@@ -178,4 +181,4 @@ predictable for humans and agents.
 - `CLAUDE.md` is the runtime guidance file for agents working in this repository; it MUST point
   at this constitution and MUST NOT restate rules in a way that drifts from it.
 
-**Version**: 1.0.0 | **Ratified**: 2026-09-19 | **Last Amended**: 2026-09-19
+**Version**: 1.0.1 | **Ratified**: 2026-09-19 | **Last Amended**: 2026-09-24
