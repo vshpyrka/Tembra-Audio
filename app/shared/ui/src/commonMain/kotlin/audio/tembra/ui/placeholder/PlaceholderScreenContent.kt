@@ -27,12 +27,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.unit.dp
 import audio.tembra.ui.theme.DesignTokenPreview
 import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.ui.theme.WindowWidth
-
-private val WIDE_CONTENT_MAX_WIDTH = 720.dp
 
 /** Stateless placeholder screen (contracts/placeholder-screen.md). */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,7 +46,7 @@ fun PlaceholderScreenContent(
         Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.TopCenter) {
             Column(
                 modifier = Modifier
-                    .then(if (wide) Modifier.widthIn(max = WIDE_CONTENT_MAX_WIDTH) else Modifier.fillMaxWidth())
+                    .then(if (wide) Modifier.widthIn(max = spacing.wideContentMaxWidth) else Modifier.fillMaxWidth())
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = spacing.pageMargin, vertical = spacing.lg)
                     .testTag(if (wide) "placeholder.layout.wide" else "placeholder.layout.compact"),

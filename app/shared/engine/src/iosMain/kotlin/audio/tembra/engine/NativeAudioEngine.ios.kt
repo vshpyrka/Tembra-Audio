@@ -7,7 +7,7 @@ import kotlinx.cinterop.toKString
 @OptIn(ExperimentalForeignApi::class)
 actual class NativeAudioEngine actual constructor() : AudioEngine {
 
-    override fun describe(): EngineDescriptor {
+    actual override fun describe(): EngineDescriptor {
         val raw = tembra_engine_describe()?.toKString() ?: error("tembra_engine_describe() returned null")
         return EngineDescriptorParser.parse(raw)
     }
