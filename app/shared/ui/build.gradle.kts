@@ -31,6 +31,8 @@ kotlin {
         getByName("androidDeviceTest").dependencies {
             implementation(libs.androidx.compose.ui.test.junit4.android)
             implementation(libs.androidx.compose.ui.test.manifest)
+            // Compose UI tests idle through Espresso; older Espresso uses a hidden InputManager API removed in Android 17.
+            implementation(libs.androidx.test.espresso.core)
         }
     }
 }
