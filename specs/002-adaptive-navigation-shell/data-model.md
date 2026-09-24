@@ -115,6 +115,9 @@ From the Stitch HTML (research R8) and spec FR-019. All in dp.
 | `navBarIconSize` / `navRailIconSize` | 20 / 22 | `text-[20px]` / `text-[22px]` |
 | `navItemGap` | 4 | `gap-1` between icon and label |
 
+The 480 dp short-window rule is not a spacing token: `LayoutMode.from` reads window-core's
+`HEIGHT_DP_MEDIUM_LOWER_BOUND` directly (§3).
+
 Active-state treatment (spec FR-019): bar item is a `rounded-full` pill in `primaryContainer`
 with `onPrimaryContainer` content and the `clip_glow` shadow; rail item is a `rounded-lg`
 (16 dp) square in `secondaryContainer` with `onSecondaryContainer` content. Inactive items use

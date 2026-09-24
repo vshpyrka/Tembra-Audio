@@ -184,8 +184,9 @@ contains no literal colour, size or font values.
 ### Edge Cases
 
 - The window is resized continuously across 600 dp and 840 dp (desktop-mode window drag,
-  fold and unfold): the frame changes form at each threshold without flicker, and the selected
-  destination and its content state are kept.
+  fold and unfold): at each threshold the navigation control changes form in one step (no
+  frame shows both a bar and a rail), the destination content is not recreated, and the
+  selected destination and its content state are kept.
 - The window is wide but shorter than 480 dp (phone landscape): the rail is used and the side
   panel is hidden.
 - The user enables the largest system font size: labels stay readable and unclipped, the bottom

@@ -71,7 +71,7 @@ with `runComposeUiTest(effectContext = <MotionDurationScale with scaleFactor 0f>
 
 `TembraSpacing` gains: `topBarHeight = 56.dp`, `bottomBarHeight = 64.dp`, `railWidth = 64.dp`,
 `supportingPaneWidth = 320.dp`, `navItemMinWidth = 56.dp`, `railItemWidth = 48.dp`,
-`navBarIconSize = 20.dp`, `navRailIconSize = 22.dp`, `navItemGap = 4.dp`, `shortWindowMaxHeight = 480.dp`.
+`navBarIconSize = 20.dp`, `navRailIconSize = 22.dp`, `navItemGap = 4.dp`.
 Values and their design sources: data-model.md §6. `ThemeJsonParityTest` is unaffected (these
 are layout constants from the screens, not `theme.json` tokens); `ChromeMetricsTest`
 (`commonTest`) pins them so an accidental edit fails a test.
