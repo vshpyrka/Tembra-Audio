@@ -49,7 +49,7 @@ const char* tembra_engine_describe(void);
   `nativeVersion`, `nativeAbiVersion`) returning `jstring`/`jint`; the library is
   `libtembra_engine.so`.
 - iOS: `app/shared/engine/src/nativeInterop/cinterop/tembra_engine.def` with
-  `headers = tembra_engine.h`, `package = audio.tembra.engine.native`,
+  `headers = tembra_engine.h`, `package = audio.tembra.engine.cinterop`,
   `staticLibraries = libtembra_engine.a`; the Kotlin actual converts `CPointer<ByteVar>` with
   `toKString()`.
 

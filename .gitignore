@@ -16,3 +16,13 @@ app/.idea/
 
 # Claude Code per-machine settings (the spec-kit skills in .claude/skills/ are committed)
 .claude/settings.local.json
+
+# Native / iOS build output added by the project scaffold (001)
+app/engine/build/
+app/**/.cxx/
+app/build-logic/build/
+app/build-logic/.gradle/
+app/iosApp/build/
+app/iosApp/**/xcuserdata/
+app/iosApp/**/DerivedData/
+*.xcuserstate

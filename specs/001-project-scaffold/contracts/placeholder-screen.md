@@ -14,13 +14,17 @@ class PlaceholderViewModel(engine: AudioEngine) : ViewModel() {
 
 // PlaceholderScreen.kt — stateless composable + a stateful wrapper that obtains the ViewModel
 @Composable fun PlaceholderScreen(viewModel: PlaceholderViewModel = metroViewModel())
-// reads calculateWindowSizeClass().widthSizeClass and passes it down
+// measures the available width with BoxWithConstraints, maps it to WindowWidth and passes it down
 @Composable fun PlaceholderScreenContent(
     state: PlaceholderUiState,
     onButtonPressed: () -> Unit,
-    windowWidth: WindowWidthSizeClass,
+    windowWidth: WindowWidth,
     modifier: Modifier = Modifier,
 )
+
+// WindowWidth.kt (audio.tembra.ui.theme): enum class WindowWidth { Compact, Medium, Expanded } with
+// companion fun fromWidth(width: Dp): Compact below 600 dp, Medium below 840 dp, Expanded otherwise;
+// val isWide get() = this != Compact. No Material window-size-class dependency.
 ```
 
 **Layout**

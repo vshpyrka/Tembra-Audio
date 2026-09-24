@@ -51,7 +51,7 @@ and unsupported by the Android KMP library plugin; `buildSrc` — slower increme
 | Catch2 (test-only, BSL-1.0) | v3.16.0 | release 2026-08-25 |
 | Android NDK | 29.0.14206865 | newest non-rc NDK in the SDK manager |
 | CMake (from the Android SDK manager) | 3.31.6 | newest 3.x in the SDK manager; used for Android, iOS and host builds |
-| Android compileSdk / targetSdk | 36 | `platforms;android-36` is installed; `platforms;android-37.0` is offered by the SDK manager but not installed and adds nothing this feature needs |
+| Android compileSdk / targetSdk | 37 / 36 | Compose Multiplatform 1.12.1's Android artifacts (Jetpack Compose 1.12.1) refuse to compile against API 36 (`checkAndroidMainAarMetadata`), so compileSdk is 37 (`platforms;android-37.0`, installed 2026-09-24); targetSdk stays 36 |
 | Android minSdk | 26 | spec assumption (Android 8.0, AAudio available) |
 | iOS deployment target | 16.0 | spec assumption; Compose Multiplatform minimum is 14 |
 | JDK | 21 (Temurin, installed) | AGP 9 requires 17+ |

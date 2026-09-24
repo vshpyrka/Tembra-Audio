@@ -40,7 +40,7 @@ directories).
 `ui-test-junit4-android`), iOS simulator tests (`iosSimulatorArm64Test`); Catch2 via CTest for
 C++; kotlinx-serialization-json (test-only) for the theme parity test.
 
-**Target Platform**: Android 8.0+ (API 26, compile/target SDK 36, ABIs arm64-v8a and x86_64);
+**Target Platform**: Android 8.0+ (API 26, compileSdk 37, targetSdk 36, ABIs arm64-v8a and x86_64);
 iOS 16.0+ (iosArm64 devices, iosSimulatorArm64). Development host: macOS with Xcode 26.6 and
 JDK 21.
 
