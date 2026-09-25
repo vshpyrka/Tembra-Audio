@@ -24,6 +24,11 @@ xcrun simctl install "iPhone 17" "build/Build/Products/Debug-iphonesimulator/Tem
 xcrun simctl launch "iPhone 17" audio.tembra.app
 ```
 
+The simulator bundle identifier is `audio.tembra.app` followed by the `TEAM_ID` from
+`Configuration/Config.xcconfig` (empty in the repository, so plain `audio.tembra.app`; with a local team it is
+`audio.tembra.app<TEAM_ID>`). Read it from the built app before launching:
+`/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "build/Build/Products/Debug-iphonesimulator/Tembra Audio.app/Info.plist"`.
+
 Expected on both: the app opens on **Home** (top bar overline "TEMBRA AUDIO", title "Home",
 one sentence of placeholder text). On a phone the six items Home, Timeline, Tuner, Metronome,
 Projects, Profile sit in the bottom bar with Home marked active. Tap each item: the title
@@ -56,8 +61,10 @@ Windows are judged by width and height, not device. Use one device per band:
 | 840 dp and wider, at least 480 dp tall | rail + Library panel on Home | Pixel Tablet landscape, or a desktop-mode / freeform window | iPad Pro 13-inch landscape |
 | 840 dp and wider, under 480 dp tall | rail, panel hidden | phone in landscape | iPhone 17 in landscape |
 
-Create and boot emulators with the `android` CLI (`android emulator create`, `android emulator
-start`) or Android Studio's device manager; rotate with
+On a phone, the medium and expanded bands can be produced without an emulator by lowering the display density:
+`adb shell wm density 380` turns a 1440 px Pixel into a 606 dp window (rail in portrait, rail plus panel in
+landscape); `adb shell wm density reset` restores it. Create and boot emulators with the `android` CLI
+(`android emulator create`, `android emulator start`) or Android Studio's device manager; rotate with
 `adb shell settings put system accelerometer_rotation 0 && adb shell settings put system user_rotation 1`
 (restore with `user_rotation 0`). On the iOS simulator rotate with Device > Rotate (⌘←/⌘→).
 
@@ -118,7 +125,10 @@ framework binary; only the entry point is compiled out (plan, Complexity Trackin
 ## 9. Screenshots (FR-020, SC-003)
 
 Stored under `specs/002-adaptive-navigation-shell/screenshots/` as
-`<platform>-<compact|medium|expanded>-<destination>.png`.
+`<platform>-<compact|medium|expanded|short>-<destination>.png`, with the devices, OS versions and outcomes of the
+manual checks in `screenshots/NOTES.md`. Simulator screenshots need no rotation for the compact, medium (iPad mini)
+and expanded (iPad Pro portrait) bands; the short band (iPhone landscape) and any tap on the simulator need the
+Simulator app driven through AppleScript, which requires Accessibility permission for the terminal.
 
 ```bash
 android screen capture --output specs/002-adaptive-navigation-shell/screenshots/android-compact-home.png

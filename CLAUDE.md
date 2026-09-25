@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Tembra Audio is a free, open-source mobile DAW for Android and iOS: a Kotlin Multiplatform control plane and Compose Multiplatform UI on top of one shared C++ real-time audio engine (Oboe on Android, AVAudioEngine/RemoteIO on iOS).
 
-**Application code lives in `app/`** (Gradle root; scaffold landed with feature 001 on 2026-09-24). Modules: `:shared:core` (pure domain), `:shared:engine` (`AudioEngine` facade over the C++ engine: JNI on Android, cinterop on iOS), `:shared:data` (persistence), `:shared:ui` (Compose Multiplatform screens, ViewModels, theme, Metro graph; iOS framework `TembraShared`), `:androidApp`, `iosApp/` (Xcode), `engine/` (CMake C++ core, `include/tembra_engine.h` is the C ABI), `:engine:android` (CMake/NDK + Prefab Oboe build helper). Module map and "where does X go" table: `app/README.md`.
+**Application code lives in `app/`** (Gradle root; scaffold landed with feature 001 on 2026-09-24). Modules: `:shared:core` (pure domain), `:shared:engine` (`AudioEngine` facade over the C++ engine: JNI on Android, cinterop on iOS), `:shared:data` (persistence), `:shared:ui` (Compose Multiplatform screens, ViewModels, theme, Metro graph, navigation shell (Navigation 3), design-system chrome components, debug-only devtools; iOS framework `TembraShared`), `:androidApp`, `iosApp/` (Xcode), `engine/` (CMake C++ core, `include/tembra_engine.h` is the C ABI), `:engine:android` (CMake/NDK + Prefab Oboe build helper). Module map and "where does X go" table: `app/README.md`.
 
 Commands (run from `app/`, Gradle wrapper 9.7.0; prerequisites in `app/README.md`):
 
@@ -15,6 +15,7 @@ Commands (run from `app/`, Gradle wrapper 9.7.0; prerequisites in `app/README.md
 - Test lanes: `./gradlew checkAndroidHost` (JVM), `./gradlew checkIos` (simulator), `./gradlew checkAndroidDevice` (connected device), `./gradlew engineHostTest` (C++ Catch2). Compose UI tests live in the `uiTest` source set and run only on the simulator and the device.
 - Screenshots: `android screen capture --output <file>`; `xcrun simctl io "<device>" screenshot <file>`
 - Zero compiler warnings is a gate; run with `--warning-mode all`.
+- Add a Material Symbols glyph: `tools/fetch-material-symbols.sh <glyph> [<glyph> ...]` (pinned commit, normalised for the Compose resource loader), then add a `TembraIcon` value.
 
 ## Workflow: spec-kit drives all feature work
 
