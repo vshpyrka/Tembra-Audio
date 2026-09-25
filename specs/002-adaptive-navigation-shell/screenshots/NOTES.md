@@ -41,11 +41,13 @@ identifier was removed from both simulators before capturing.
   selected, as did the next rotation to landscape and back. Captures: `android-short-home.png` (landscape, rail, no
   panel), `android-medium-home.png` (606 dp, rail, no panel).
 - iOS: `ios-medium-home.png` on a temporary iPad mini (A17 Pro) simulator (744 pt wide, rail, no panel; the
-  simulator was deleted afterwards). Live iPad Split View / Stage Manager resizes, and the iPhone 17 landscape capture
-  (`ios-short-home.png`), need the Simulator app to be driven by AppleScript, which macOS refused ("osascript is not
-  allowed assistive access"): they remain to be done once the terminal has Accessibility permission (System Settings >
-  Privacy & Security > Accessibility). The width-to-mode mapping is covered on the simulator by `LayoutModeTest`
-  (both directions across 600, 840 and 480 dp) and the shell by `NavigationShellTest.layoutSwitchKeepsTheSelection`.
+  simulator was deleted afterwards). `ios-short-home.png`: iPhone 17 rotated to Landscape Left through the Simulator's
+  Device > Orientation menu driven by AppleScript (2026-09-25, after the terminal was granted Accessibility
+  permission): rail on the left clearing the Dynamic Island, all six items, no panel. Note that `simctl io screenshot`
+  writes the framebuffer in the device's native portrait orientation, so landscape captures are rotated upright with
+  `sips -r -90`. Live iPad Split View / Stage Manager resizes were not exercised. The width-to-mode mapping is
+  covered on the simulator by `LayoutModeTest` (both directions across 600, 840 and 480 dp) and the shell by
+  `NavigationShellTest.layoutSwitchKeepsTheSelection`.
 - No foldable emulator or desktop-mode window was available; the density override is the substitute for a live
   width change on Android.
 - Finding fixed on the way: six rail items at the design's 8 dp vertical padding and 6 dp gap need 374 dp, more than
@@ -54,14 +56,15 @@ identifier was removed from both simulators before capturing.
 
 ## T068: the Library panel (US3)
 
-- iOS: `ios-expanded-home.png` on the iPad Pro 13-inch (M5) simulator in portrait (1032 pt wide): rail on the left,
-  Home in the middle, the 320 dp "Library" panel on the right with only its empty-state sentence, no control.
+- iOS: `ios-expanded-home.png` on the iPad Pro 13-inch (M5) simulator in landscape (1376 x 1032 pt): rail on the
+  left, Home in the middle, the 320 dp "Library" panel on the right with only its empty-state sentence, no control.
   Compared with `design/stitch/screens/timeline-arranger/tablet/screenshot.jpg`: same placement, surface tone and
   corner radius for the panel; the rail matches `design/stitch/screens/export-mastering/tablet/screenshot.jpg` in
   width, item shape and active treatment.
-- `ios-expanded-tuner.png` (no panel on Tuner) needs a tap on the simulator, which `simctl` cannot inject; blocked by
-  the same Accessibility permission as above. The behaviour is covered on the simulator by
-  `NavigationShellTest.railWithPanelShowsThePaneOnHomeOnly` and `railWithPanelWithoutSupportingContentShowsNoPane`.
+- `ios-expanded-tuner.png`: Tuner selected on the iPad simulator with the Mac keyboard forwarded as a hardware
+  keyboard (three Tab presses moved focus to Tuner, Return activated it); the panel disappeared and the content
+  spanned the width. Synthetic clicks at window coordinates missed because the Simulator draws the device inside a
+  bezel; the keyboard route needs no geometry.
 - Android: `android-expanded-home.png` and `android-expanded-tuner.png` on the Pixel at density 380 in landscape
   (1313 x 606 dp): rail, Home and the Library panel; tapping Tuner removed the panel and the content spanned the
   width. The Pixel dropped off USB for part of the session (2026-09-25) and the Android captures were taken once it
@@ -76,11 +79,13 @@ identifier was removed from both simulators before capturing.
   `hoverFillsTheItem`).
 - The same cases ran green on the Pixel in the device lane (77 tests), including the hover and focus-ring captures
   through `performMouseInput` and `requestFocus`.
+- Hardware keyboard on iOS (iPad Pro simulator, Mac keyboard forwarded): Tab moved focus along the rail items and
+  Return selected the focused one (Tuner), as the spec's US4 scenario 2 describes.
 - Not done: a real mouse hover on the Pixel (`adb shell input mouse motionevent MOVE` injects no hover event, so
-  `android-expanded-home-hover.png` could not be captured without a physical mouse or desktop mode), hardware
-  keyboard traversal, and TalkBack / VoiceOver announcements (no way to read spoken output over adb or simctl;
-  VoiceOver on the simulator needs the Accessibility permission). The semantics those readers consume (role tab,
-  label description, selected state) are asserted by the automated tests on both platforms.
+  `android-expanded-home-hover.png` could not be captured without a physical mouse or desktop mode), keyboard
+  traversal on Android, and TalkBack / VoiceOver announcements (no way to read spoken output over adb or simctl).
+  The semantics those readers consume (role tab, label description, selected state) are asserted by the automated
+  tests on both platforms.
 
 ## T079: glyph parity (US5)
 
@@ -118,9 +123,14 @@ two minutes.
 ## Screenshot matrix (T096)
 
 Present: `android-compact-home`, `android-medium-home`, `android-short-home`, `android-expanded-home`,
-`android-expanded-tuner`, `android-compact-home-largefont`, `ios-compact-home`, `ios-medium-home`,
-`ios-expanded-home`, `ios-compact-home-largefont`. Missing, all blocked by simulator interaction (rotation and taps
-need the Simulator app driven through AppleScript, which macOS refused without Accessibility permission) or by the
-absence of a mouse on the Pixel: `ios-short-home`, `ios-expanded-tuner`, `android-expanded-home-hover`. The
-behaviours they would show are covered by `NavigationShellTest` (rail in a short window, no panel on Tuner) and the
-hover tests on both platforms.
+`android-expanded-tuner`, `android-compact-home-largefont`, `ios-compact-home`, `ios-medium-home`, `ios-short-home`,
+`ios-expanded-home`, `ios-expanded-tuner`, `ios-compact-home-largefont`. Missing: `android-expanded-home-hover`
+(no mouse on the Pixel and adb cannot inject a hover); the hover state is covered by the hover tests on both
+platforms.
+
+## Physical iPhone (2026-09-25)
+
+The Debug build signed with the developer's personal team was installed on "Victor's iPhone" (iPhone 14, iOS
+26.5.2) with `xcrun devicectl device install app` and launched with `devicectl device process launch`
+(bundle `audio.tembra.app<TEAM_ID>`); the process was still running ten seconds later. There is no CLI screenshot
+for a physical iPhone, so the on-device look was not captured.
