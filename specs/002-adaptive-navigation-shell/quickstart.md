@@ -126,9 +126,12 @@ framework binary; only the entry point is compiled out (plan, Complexity Trackin
 
 Stored under `specs/002-adaptive-navigation-shell/screenshots/` as
 `<platform>-<compact|medium|expanded|short>-<destination>.png`, with the devices, OS versions and outcomes of the
-manual checks in `screenshots/NOTES.md`. Simulator screenshots need no rotation for the compact, medium (iPad mini)
-and expanded (iPad Pro portrait) bands; the short band (iPhone landscape) and any tap on the simulator need the
-Simulator app driven through AppleScript, which requires Accessibility permission for the terminal.
+manual checks in `screenshots/NOTES.md`. Rotating a simulator or tapping in it from the command line goes through
+the Simulator app's menus and keyboard via AppleScript (System Events), which requires Accessibility permission for
+the terminal (System Settings > Privacy & Security > Accessibility). `simctl io screenshot` always writes the
+device's native portrait framebuffer, so rotate landscape captures upright with `sips -r -90`. The Mac keyboard is
+forwarded to the focused simulator as a hardware keyboard: Tab moves focus along the navigation items and Return
+selects, which is the easiest way to switch destinations without touch.
 
 ```bash
 android screen capture --output specs/002-adaptive-navigation-shell/screenshots/android-compact-home.png
