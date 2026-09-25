@@ -114,9 +114,16 @@ From the Stitch HTML (research R8) and spec FR-019. All in dp.
 | `railItemWidth` | 48 | rail `px-2` inside 64 |
 | `navBarIconSize` / `navRailIconSize` | 20 / 22 | `text-[20px]` / `text-[22px]` |
 | `navItemGap` | 4 | `gap-1` between icon and label |
+| `focusRingWidth` | 2 | keyboard focus ring in `primary` (Constitution IV; added during implementation) |
 
 The 480 dp short-window rule is not a spacing token: `LayoutMode.from` reads window-core's
 `HEIGHT_DP_MEDIUM_LOWER_BOUND` directly (§3).
+
+Implementation notes (2026-09-24): the bar's active capsule is drawn behind the content, 4 dp (`xs`) wider than
+the label on each side, and nothing is clipped, because six items at 360 dp leave "Metronome" (59.4 dp at 10 sp) no
+spare width in its 60 dp cell; the rail item hugs its label (48 dp minimum, 64 dp maximum) for the same reason, and
+the rail uses 4 dp (`xs`) vertical padding and gaps instead of the design's 8 dp and 6 dp so six items fit a phone
+in landscape (about 311 dp below the top bar); shorter windows scroll the rail.
 
 Active-state treatment (spec FR-019): bar item is a `rounded-full` pill in `primaryContainer`
 with `onPrimaryContainer` content and the `clip_glow` shadow; rail item is a `rounded-lg`

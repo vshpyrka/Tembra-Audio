@@ -15,6 +15,7 @@ fun TembraTheme(content: @Composable () -> Unit) {
         LocalDawColors provides DawColors.Default,
         LocalTembraSpacing provides TembraSpacing(),
         LocalTembraTypographyExtras provides TembraTypography.extras(),
+        LocalTembraMotion provides TembraMotion(reduceMotion = rememberReduceMotion()),
     ) {
         MaterialTheme(
             colorScheme = TembraColorScheme.dark,
@@ -39,4 +40,6 @@ object TembraTheme {
         @Composable @ReadOnlyComposable get() = MaterialTheme.shapes
     val spacing: TembraSpacing
         @Composable @ReadOnlyComposable get() = LocalTembraSpacing.current
+    val motion: TembraMotion
+        @Composable @ReadOnlyComposable get() = LocalTembraMotion.current
 }

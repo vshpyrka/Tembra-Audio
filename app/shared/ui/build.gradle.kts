@@ -24,6 +24,10 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodel.compose)
             implementation(libs.androidx.lifecycle.runtime.compose)
             implementation(libs.metrox.viewmodel.compose)
+            implementation(libs.androidx.navigation3.ui)
+            implementation(libs.androidx.lifecycle.viewmodel.navigation3)
+            implementation(libs.compose.material3.adaptive)
+            implementation(libs.compose.material3.adaptive.navigation.suite)
         }
         getByName("androidHostTest").dependencies {
             implementation(libs.kotlinx.serialization.json)
@@ -46,7 +50,3 @@ compose.resources {
 tasks.withType<Test>().configureEach {
     systemProperty("tembra.repoRoot", rootDir.parentFile.absolutePath)
 }
-
-// Compose Multiplatform 1.12.1 registers this task for the device-test component but never sets its output
-// (that component has no assets source); the main variant's resources reach the test APK through the library.
-tasks.matching { it.name == "copyAndroidDeviceTestComposeResourcesToAndroidAssets" }.configureEach { enabled = false }

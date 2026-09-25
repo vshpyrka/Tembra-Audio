@@ -276,10 +276,13 @@ the documented scoping without changes to the shell.
 
 All are in the stack decided in `docs/research/kmp-code-architecture.md` (Navigation 3,
 Material 3 adaptive, multiplatform lifecycle). `THIRD_PARTY_LICENSES.md` gains one row each.
-UNVERIFIED until the first build: that `navigation3-ui:1.1.2` and
-`material3-adaptive-navigation-suite:1.9.0` resolve without a duplicate-class or klib-name
-conflict alongside Metro's runtime (feature 001 already documents a benign KLIB name warning in
-the metadata compilation only).
+Verified 2026-09-24 (task T004): with the four catalog entries added to `:shared:ui` `commonMain`,
+`./gradlew :shared:ui:compileKotlinIosSimulatorArm64 :androidApp:assembleDebug --warning-mode all`
+succeeded in 33 s with zero warnings and no duplicate-class or klib-name conflict alongside Metro's
+runtime; no exclusion was needed. `androidx.window.core.layout.WindowSizeClass` is visible to
+`commonTest` on both the JVM and the iOS simulator (LayoutModeTest), and the six normalised glyphs
+generate `Res.drawable.ic_<glyph>_24` accessors (feature 001's benign KLIB name warning remains
+confined to the metadata compilation).
 
 ## R12. What is removed or kept from feature 001
 
