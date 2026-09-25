@@ -235,7 +235,7 @@ description: "Task list for feature 002: adaptive navigation shell and Home"
 - [ ] T096 Confirm the screenshot matrix is complete under `specs/002-adaptive-navigation-shell/screenshots/`: `{android,ios}-compact-home`, `{android,ios}-medium-home`, `{android,ios}-short-home`, `{android,ios}-expanded-home`, `{android,ios}-expanded-tuner`, `android-expanded-home-hover`, `{android,ios}-compact-home-largefont`, plus `NOTES.md`; review each against the Stitch references named in quickstart §9
 - [X] T097 Walk through `specs/002-adaptive-navigation-shell/quickstart.md` top to bottom; correct any command or expectation that no longer matches the implementation
 - [X] T098 Grep the new packages for literal visual values (`grep -rnE '\b[0-9]+\.(dp|sp)\b|Color\(0x' app/shared/ui/src/commonMain/kotlin/audio/tembra/ui/{navigation,designsystem,home,timeline,tuner,metronome,projects,profile,devtools}`), for `TODO` without an issue reference, and for wildcard imports; must all return nothing (FR-017, Constitution VII); and `grep -rn 'Res.drawable.ic_' app/shared/ui/src/commonMain/kotlin/audio/tembra/ui --include=*.kt | grep -v '/theme/TembraIcon.kt'` returns nothing (FR-016)
-- [ ] T099 Final commit through the hook: write a conventional commit message and run `.specify/extensions/git/scripts/bash/auto-commit.sh after_implement --message-file <path>`; then `git log -1` shows the commit with the Co-Authored-By trailer
+- [X] T099 Final commit through the hook: write a conventional commit message and run `.specify/extensions/git/scripts/bash/auto-commit.sh after_implement --message-file <path>`; then `git log -1` shows the commit with the Co-Authored-By trailer
 
 ---
 
