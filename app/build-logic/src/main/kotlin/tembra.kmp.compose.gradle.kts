@@ -10,6 +10,14 @@ val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
 fun lib(alias: String) = libs.findLibrary(alias).get()
 
 kotlin {
+    // Compose resources are packaged as Android assets. AGP's KMP library plugin (9.3.3) exposes an assets source to
+    // the Compose plugin only when Android resources are enabled; without this the module's fonts, drawables and files
+    // never reach the app or the device-test APK (found in feature 002; feature 001's fonts fell back silently).
+    android {
+        androidResources {
+            enable = true
+        }
+    }
     sourceSets {
         commonMain.dependencies {
             implementation(lib("compose-runtime"))

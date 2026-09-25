@@ -70,8 +70,9 @@ Where tests live:
 |---|---|---|
 | `commonTest` | JVM host, iOS simulator, Android device | pure logic, ViewModels with `FakeAudioEngine` |
 | `androidHostTest` | JVM host only | tests that read repository files (`ThemeJsonParityTest`) |
-| `uiTest` (`:shared:ui`) | iOS simulator, Android device | `runComposeUiTest` screen tests (they need a real UI platform) |
-| `iosTest`, `androidDeviceTest` | one platform | the real `NativeAudioEngine`, platform directories |
+| `uiTest` (`:shared:ui`) | iOS simulator, Android device | `runComposeUiTest` screen tests (they need a real UI platform): `NavigationShellTest`, `TembraNavigationBarTest`, `TembraNavigationRailTest`, `TembraTopBarTest`, `TembraSupportingPaneTest`, `EmptyStateTest`, `ReduceMotionTest`, `RememberLayoutModeTest`, `AppContentTest`, `DesignTokenPreviewTest` |
+| `iosTest`, `androidDeviceTest` | one platform | the real `NativeAudioEngine`, platform directories; `AndroidBackTest` (system back through the shell, Espresso) |
+| `androidHostTest` (`:shared:ui`) | JVM host only | `IconAssetsTest` (glyph files normalised, pinned commit, licence bundled) |
 | `engine/tests` | macOS host | Catch2, offline, no audio device |
 
 ## Screenshots
@@ -83,7 +84,11 @@ xcrun simctl io "iPad Pro 13-inch (M5)" screenshot specs/<feature>/screenshots/i
 ```
 
 Wide Android capture: rotate to landscape (`adb shell settings put system user_rotation 1` after
-`accelerometer_rotation 0`), capture, restore. Large fonts: `adb shell settings put system font_scale 2.0`
+`accelerometer_rotation 0`), capture, restore. Medium band (600 to 839 dp) on a phone: `adb shell wm density 380`
+turns a 1440 px Pixel into a 606 dp window (`wm density reset` afterwards). Name captures
+`<platform>-<compact|medium|expanded|short>-<destination>.png` and record devices, OS versions and outcomes of manual
+checks in `specs/<feature>/screenshots/NOTES.md`. The iOS simulator bundle identifier carries the local `TEAM_ID`
+(`audio.tembra.app<TEAM_ID>`); read it from the built `Info.plist` before `simctl launch`. Large fonts: `adb shell settings put system font_scale 2.0`
 and `xcrun simctl ui "iPhone 17" content_size accessibility-extra-extra-extra-large`; restore to `1.0` /
 `medium`. Compare against `design/stitch/theme.json` and `design/stitch/screens/*/screenshot.jpg`.
 
@@ -102,8 +107,14 @@ app/
 │   ├── engine/             :shared:engine — AudioEngine facade: NativeAudioEngine (JNI / cinterop), FakeAudioEngine, parser
 │   ├── data/               :shared:data   — persistence layer (AppDirectories for now)
 │   └── ui/                 :shared:ui     — Compose screens, ViewModels, theme, Metro graph; iOS framework "TembraShared"
+│       ├── theme/          design tokens from design/stitch/theme.json: colours, type, shapes, spacing and chrome metrics, motion, TembraIcon registry
+│       ├── designsystem/   chrome components: TembraTopBar, TembraNavigationBar, TembraNavigationRail, TembraSupportingPane, EmptyState, PlaceholderDestination
+│       ├── navigation/     the shell: Destination registry, ShellViewModel, LayoutMode, NavigationShell, Navigation 3 wiring (TembraNavDisplay), SupportingPaneSceneStrategy
+│       ├── home/ timeline/ tuner/ metronome/ projects/ profile/   one package per destination (HomeScreen, LibraryPane, ...); each independent of the shell
+│       └── devtools/       debug-only developer views (DesignTokenPreview behind a launch argument)
 ├── androidApp/             :androidApp — TembraApplication (Metro graph) + MainActivity
-└── iosApp/                 Xcode project; two Swift files host MainViewController()
+├── iosApp/                 Xcode project; two Swift files host MainViewController()
+└── tools/                  fetch-material-symbols.sh: downloads and normalises Material Symbols glyphs at a pinned commit
 ```
 
 Dependencies point inward: apps → `:shared:ui` → `:shared:engine` / `:shared:data` → `:shared:core`.
@@ -114,6 +125,10 @@ A dependency in the wrong direction fails configuration (`tembra.kmp.library`).
 | You are adding… | Put it in | Notes |
 |---|---|---|
 | a new screen | `:shared:ui`, package `audio.tembra.ui.<feature>` | one `ViewModel` per destination, `StateFlow<UiState>`; tests in `uiTest` (screen) and `commonTest` (ViewModel) |
+| a new navigation destination | `audio.tembra.ui.navigation.Destination` (enum value: id, label, title, `TembraIcon`, supporting pane, placeholder sentence) + a screen composable in its own package + the branch in `DestinationContent` | the exhaustive `when` fails to compile until mapped; labels use `labelSmall`, the bar and rail need nothing else |
+| an icon | `tools/fetch-material-symbols.sh <glyph>` then a `TembraIcon` value | Material Symbols Outlined only, bundled as normalised vector XML; screens use `TembraIcons.vector(TembraIcon.X)`, never `Res.drawable` |
+| a chrome component (bar, rail, panel, top bar, empty state) | `audio.tembra.ui.designsystem` | stateless, every value from `TembraTheme`, semantics and `testTag` on every control |
+| a developer-only view | `audio.tembra.ui.devtools` + a `DeveloperView` value | opened only through the debug launch argument (`tembra.developer.view` / `--tembra-developer-view=`), never from the UI |
 | a domain rule, model or pure calculation | `:shared:core` | no Compose, no platform code; test on JVM and iOS |
 | a persistence concern (files, database, preferences) | `:shared:data` | platform access behind an interface, wired in the platform Metro graphs |
 | an engine command or telemetry | `engine/include/tembra_engine.h` + `engine/src`, then `:shared:engine` (`AudioEngine`, actuals, `FakeAudioEngine`) | plain C ABI, no callbacks into Kotlin, nothing Kotlin on the audio thread |
@@ -136,6 +151,9 @@ A dependency in the wrong direction fails configuration (`tembra.kmp.library`).
 - Compose keeps clickables unfocusable in touch mode; the keyboard test switches input mode first.
 - Xcode prints one linker warning about `libicu.icudtl_dat.o` in the Kotlin/Native runtime being built
   for a newer simulator version; it comes from the Kotlin toolchain, not this code.
+- AGP's KMP library plugin exposes an Android assets source only when `androidResources.enable = true`; the Compose
+  convention plugin sets it, otherwise the module's compose resources (fonts, drawables, files) silently never reach
+  the app or the device-test APK (feature 002).
 - `./gradlew build` (the metadata-jar compilation used only for publishing libraries) prints Kotlin
   "KLIB loader: The same 'unique_name=…' found in more than one library" warnings. They come from
   Compose Multiplatform 1.12.1's own dependency graph, which still ships both `androidx.*` and

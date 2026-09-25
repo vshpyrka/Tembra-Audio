@@ -36,8 +36,9 @@ dropout. This rule is the reason the engine is C++ at all.
   engine) MAY sit below `:shared:engine`; they contain no Kotlin business logic and nothing
   depends on them except `:shared:engine`.
 - Presentation MUST follow MVVM with unidirectional data flow: one `ViewModel` per destination
-  exposing a single immutable `UiState` via `StateFlow`; intents are plain functions. Screens
-  MUST NOT talk to the engine directly.
+  that holds state, exposing a single immutable `UiState` via `StateFlow`; a destination whose
+  content is static (a placeholder) has none. Intents are plain functions. Screens MUST NOT
+  talk to the engine directly.
 - High-frequency telemetry (playhead, meters, at 60–120 Hz) MUST be read inside Compose draw or
   layout lambdas and MUST NOT flow through `StateFlow`, `mutableStateOf` at screen level, or any
   reducer.
@@ -143,9 +144,10 @@ predictable for humans and agents.
   Stretch for time-stretch, KissFFT or pffft for spectral work, hand-written DSP with STK and
   Maximilian as references. JUCE, Tracktion, Rubber Band, KFR, Superpowered and élastique are
   forbidden.
-- Design source of truth: `design/stitch/DESIGN.md` and `theme.json`. Primary destinations are
-  Timeline, Tuner, Effects, Pads, Projects; the transport bar is present on every DAW screen.
-  Fonts are Space Grotesk and Inter, bundled; live numbers use tabular figures.
+- Design source of truth: `design/stitch/DESIGN.md` and `theme.json`. Primary DAW destinations
+  are Timeline, Tuner, Effects, Pads and Projects; the navigation also carries Home (the start
+  destination), Metronome and Profile. The transport bar is present on every DAW screen. Fonts
+  are Space Grotesk and Inter, bundled; live numbers use tabular figures.
 - Product name is "Tembra Audio".
 
 ## Development Workflow & Quality Gates
@@ -154,9 +156,9 @@ predictable for humans and agents.
   `/speckit-plan` (how, technology), `/speckit-tasks`, `/speckit-implement`. Specifications
   MUST NOT contain technology choices; plans MUST cite this constitution's principles in their
   Constitution Check and justify any deviation.
-- Build order is fixed: project scaffold, audio spine, transport and timeline, mixer, metronome,
-  effects and automation, recording and loops and speed, tuner, collaboration. A plan MUST NOT
-  pull later work forward without amending this order here.
+- Build order is fixed: project scaffold, navigation shell, audio spine, transport and timeline,
+  mixer, metronome, effects and automation, recording and loops and speed, tuner, collaboration.
+  A plan MUST NOT pull later work forward without amending this order here.
 - Definition of done for any task: failing test written first; tests green on the JVM and, for
   shared code, on the iOS simulator; engine changes green in the C++ test target; UI changes
   screenshot-verified at compact and expanded widths on Android and on the iOS simulator; no
@@ -181,4 +183,4 @@ predictable for humans and agents.
 - `CLAUDE.md` is the runtime guidance file for agents working in this repository; it MUST point
   at this constitution and MUST NOT restate rules in a way that drifts from it.
 
-**Version**: 1.0.1 | **Ratified**: 2026-09-19 | **Last Amended**: 2026-09-24
+**Version**: 1.0.2 | **Ratified**: 2026-09-19 | **Last Amended**: 2026-09-24
