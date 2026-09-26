@@ -43,6 +43,14 @@ cepstrum (bin-limited at low strings).
 **Latency budget** (spec FR-012, SC-001): window 85 ms + hop 21 ms + median settling about
 3 hops (64 ms) + one display frame (17 ms) ≈ 190 ms at 48 kHz, 210 ms at 44.1 kHz.
 
+**Implemented 2026-09-26 (T086)**: `signalsmith::fft::RealFFT<double>` (not float: the parabolic peak
+interpolation needs the NSDF's tiny curvature at long lags, and a double 8192-point transform is still far
+under a millisecond); the vendored `fft(input, output)` / `ifft(input, output)` pair takes plain pointers and
+its inverse is unscaled, so the autocorrelation is normalised by r(0) = Σx² instead of assuming a scale. A
+window quieter than −80 dBFS RMS reads as silence, and the first key maximum below the shortest lag (a tone
+above `max_hz`) rests rather than reading as a sub-harmonic. The smoother reports a pitch after two consecutive
+accepted hops and rests after four rejected ones; it restarts its average when an octave jump repeats.
+
 ## R2. The seam for adjusting the implementation
 
 **Decision**: three layers, each replaceable on its own.
@@ -103,6 +111,22 @@ RemoteIO in C++ keeps the iOS shell inside the engine sources with no Objective-
 the Kotlin/Native `platform.AVFAudio` bindings cover session configuration and notifications.
 The cinterop definition gains `-framework AudioToolbox -framework CoreAudio` so the static
 engine archive links.
+
+**Verified 2026-09-26 (T093)**: both shells compile against the real SDKs. Oboe 1.11.0: the raw-pointer
+`setDataCallback` / `setErrorCallback` and the old `openStream(AudioStream**)` are deprecated, so the shell keeps its
+callbacks in a `std::shared_ptr` bridge and uses `openStream(std::shared_ptr<AudioStream>&)`; `InputPreset::Unprocessed`
+(9) and `InputPreset::VoiceRecognition` (6) exist as named; the output stream uses `Usage::Media` and
+`ContentType::Music` with `SharingMode::Shared`. RemoteIO: `kAudioOutputUnitProperty_EnableIO`,
+`kAudioUnitProperty_StreamFormat`, `kAudioUnitProperty_MaximumFramesPerSlice`,
+`kAudioOutputUnitProperty_SetInputCallback` and `kAudioUnitProperty_SetRenderCallback` are used as named; the client
+input format follows the hardware rate read from bus 1's input scope before initialisation (analysis L4), because
+RemoteIO does not resample input. Kotlin/Native: `AVAudioSession.setActive`, `setPreferredSampleRate` and
+`setPreferredIOBufferDuration` come from categories and need explicit `platform.AVFAudio.*` imports; `alloc<ObjCObjectVar>`
+needs `@OptIn(BetaInteropApi::class)`. One environment limit found: in the Kotlin/Native test binary that Gradle spawns on the
+simulator (`simctl spawn`, no app bundle) RemoteIO's output unit fails `AudioUnitInitialize` with -10851 whatever the
+format, IO enables or callback scope, so `NativeAudioEngineTest` on the simulator accepts `TEMBRA_ERR_DEVICE` for the
+tone round trip and the tone path is proven offline (`tone_generator_test`, `tuner_engine_state_test`) and in the
+simulator app (quickstart §5); the synthetic input path (`TunerSignalEndToEndTest`) passes on the simulator.
 
 **Alternatives considered**: miniaudio's device layer for both platforms (already vendored,
 public domain; rejected because the constitution names Oboe and RemoteIO and miniaudio is
@@ -364,9 +388,11 @@ Kotlin tests never link the engine (Constitution III); accuracy is proven offlin
 | (system) | AudioToolbox, CoreAudio, AVFAudio frameworks | iOS SDK | Apple SDK | R3 |
 | (already vendored) | Signalsmith `dsp/fft.h`, dr_wav | 1.1.0, 0.14.5 | MIT, MIT-0 | R1, R5 |
 
-No other library. UNVERIFIED until the first build task: that `datastore-preferences-core`
-1.2.1 resolves for `iosArm64`, `iosSimulatorArm64` and the Android KMP library target under
-Kotlin 2.4.20 without a klib conflict with the existing catalog.
+No other library. **Verified 2026-09-26 (T011)**: `datastore-preferences-core` 1.2.1 resolves for
+`iosSimulatorArm64` (`:shared:data` and `:shared:ui` `compileKotlinIosSimulatorArm64`) and for the Android
+KMP library target (`:androidApp:assembleDebug`) under Kotlin 2.4.20 with no exclusion and zero warnings
+(`--warning-mode all`); the transitive set is `datastore-core`, `datastore-core-okio`, `datastore-preferences`
+(the Android artifact) and Okio 3.x, all Apache-2.0 and recorded in `THIRD_PARTY_LICENSES.md`.
 
 ## R14. Icons and the two design glyphs
 

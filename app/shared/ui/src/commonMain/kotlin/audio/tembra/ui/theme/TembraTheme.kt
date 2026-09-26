@@ -16,6 +16,7 @@ fun TembraTheme(content: @Composable () -> Unit) {
         LocalTembraSpacing provides TembraSpacing(),
         LocalTembraTypographyExtras provides TembraTypography.extras(),
         LocalTembraMotion provides TembraMotion(reduceMotion = rememberReduceMotion()),
+        LocalTembraGradients provides TembraGradients.Default,
     ) {
         MaterialTheme(
             colorScheme = TembraColorScheme.dark,
@@ -42,4 +43,6 @@ object TembraTheme {
         @Composable @ReadOnlyComposable get() = LocalTembraSpacing.current
     val motion: TembraMotion
         @Composable @ReadOnlyComposable get() = LocalTembraMotion.current
+    val gradients: TembraGradients
+        @Composable @ReadOnlyComposable get() = LocalTembraGradients.current
 }

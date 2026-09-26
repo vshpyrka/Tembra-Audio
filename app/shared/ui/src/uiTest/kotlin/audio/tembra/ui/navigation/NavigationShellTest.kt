@@ -42,7 +42,10 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
-/** Drives the stateless shell through every layout (spec FR-004 to FR-009, FR-020). */
+/**
+ * Drives the stateless shell through every layout (spec FR-004 to FR-009, FR-020). The destination switched to is
+ * Metronome, a placeholder: the Tuner screen obtains a ViewModel from the Metro graph, which these tests do not provide.
+ */
 @OptIn(ExperimentalTestApi::class)
 class NavigationShellTest {
 
@@ -97,23 +100,23 @@ class NavigationShellTest {
 
     @Test
     fun railWithPanelWithoutSupportingContentShowsNoPane() = runComposeUiTest {
-        withShellLocals { NavigationShellContent(ShellUiState(Destination.Tuner), LayoutMode.RailWithPanel, onSelect = {}, onBack = {}) }
+        withShellLocals { NavigationShellContent(ShellUiState(Destination.Metronome), LayoutMode.RailWithPanel, onSelect = {}, onBack = {}) }
         onNodeWithTag("chrome.rail").assertExists()
         onNodeWithTag("chrome.bottomBar").assertDoesNotExist()
         onNodeWithTag("chrome.supportingPane").assertDoesNotExist()
-        onNodeWithTag("screen.tuner").assertIsDisplayed()
+        onNodeWithTag("screen.metronome").assertIsDisplayed()
     }
 
     @Test
     fun layoutSwitchKeepsTheSelection() = runComposeUiTest {
         var layoutMode by mutableStateOf(LayoutMode.BottomBar)
-        withShellLocals { NavigationShellContent(ShellUiState(Destination.Tuner), layoutMode, onSelect = {}, onBack = {}) }
+        withShellLocals { NavigationShellContent(ShellUiState(Destination.Metronome), layoutMode, onSelect = {}, onBack = {}) }
         for (mode in listOf(LayoutMode.Rail, LayoutMode.RailWithPanel, LayoutMode.BottomBar)) {
             layoutMode = mode
             waitForIdle()
-            onNodeWithTag("nav.item.tuner").assertIsSelected()
-            onNodeWithTag("screen.tuner").assertIsDisplayed()
-            onNodeWithTag("chrome.topBar.title").assertTextEquals("Tuner")
+            onNodeWithTag("nav.item.metronome").assertIsSelected()
+            onNodeWithTag("screen.metronome").assertIsDisplayed()
+            onNodeWithTag("chrome.topBar.title").assertTextEquals("Metronome")
         }
     }
 
@@ -127,10 +130,10 @@ class NavigationShellTest {
         onNode(hasText("Loops and sounds will appear here.") and hasAnyAncestor(hasTestTag("chrome.supportingPane"))).assertIsDisplayed()
         // On a phone-sized test window the forced panel leaves Home no width; its presence is what matters here.
         onNodeWithTag("screen.home").assertExists()
-        state = ShellUiState(Destination.Tuner)
+        state = ShellUiState(Destination.Metronome)
         waitForIdle()
         onNodeWithTag("chrome.supportingPane").assertDoesNotExist()
-        onNodeWithTag("screen.tuner").assertIsDisplayed()
+        onNodeWithTag("screen.metronome").assertIsDisplayed()
         state = ShellUiState()
         layoutMode = LayoutMode.Rail
         waitForIdle()
@@ -158,14 +161,14 @@ class NavigationShellTest {
         var state by mutableStateOf(ShellUiState())
         var selected: Destination? = null
         withShellLocals { NavigationShellContent(state, LayoutMode.BottomBar, onSelect = { selected = it }, onBack = {}) }
-        onNodeWithTag("nav.item.tuner").performClick()
-        assertEquals(Destination.Tuner, selected)
-        state = ShellUiState(Destination.Tuner)
+        onNodeWithTag("nav.item.metronome").performClick()
+        assertEquals(Destination.Metronome, selected)
+        state = ShellUiState(Destination.Metronome)
         waitForIdle()
-        onNodeWithTag("nav.item.tuner").assertIsSelected()
+        onNodeWithTag("nav.item.metronome").assertIsSelected()
         onNodeWithTag("nav.item.home").assertIsNotSelected()
-        onNodeWithTag("chrome.topBar.title").assertTextEquals("Tuner")
-        onNodeWithTag("screen.tuner").assertIsDisplayed()
+        onNodeWithTag("chrome.topBar.title").assertTextEquals("Metronome")
+        onNodeWithTag("screen.metronome").assertIsDisplayed()
     }
 
     @Test
@@ -181,14 +184,14 @@ class NavigationShellTest {
         var state by mutableStateOf(ShellUiState())
         withShellLocals { NavigationShellContent(state, LayoutMode.BottomBar, onSelect = {}, onBack = {}) }
         mainClock.autoAdvance = false
-        state = ShellUiState(Destination.Tuner)
+        state = ShellUiState(Destination.Metronome)
         repeat(SETTLE_FRAMES) { mainClock.advanceTimeByFrame() }
         // Mid-fade both destinations are on screen: no blank frame (spec SC-002).
-        onNodeWithTag("screen.tuner").assertIsDisplayed()
+        onNodeWithTag("screen.metronome").assertIsDisplayed()
         onNodeWithTag("screen.home").assertExists()
         mainClock.advanceTimeBy(300)
         repeat(SETTLE_FRAMES) { mainClock.advanceTimeByFrame() }
-        onNodeWithTag("screen.tuner").assertIsDisplayed()
+        onNodeWithTag("screen.metronome").assertIsDisplayed()
         onNodeWithTag("screen.home").assertDoesNotExist()
     }
 
@@ -197,10 +200,10 @@ class NavigationShellTest {
         var state by mutableStateOf(ShellUiState())
         withShellLocals { NavigationShellContent(state, LayoutMode.BottomBar, onSelect = {}, onBack = {}) }
         mainClock.autoAdvance = false
-        state = ShellUiState(Destination.Tuner)
+        state = ShellUiState(Destination.Metronome)
         repeat(SETTLE_FRAMES) { mainClock.advanceTimeByFrame() }
         // A few frames later (well under the 300 ms fade) the switch is complete: no outgoing screen remains.
-        onNodeWithTag("screen.tuner").assertIsDisplayed()
+        onNodeWithTag("screen.metronome").assertIsDisplayed()
         onNodeWithTag("screen.home").assertDoesNotExist()
     }
 

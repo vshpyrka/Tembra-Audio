@@ -1,7 +1,9 @@
 package audio.tembra.ui.di
 
 import audio.tembra.data.AppDirectories
+import audio.tembra.data.tuner.TunerPreferences
 import audio.tembra.engine.AudioEngine
+import audio.tembra.ui.platform.MicrophonePermission
 import dev.zacsweers.metrox.viewmodel.ViewModelGraph
 
 /**
@@ -11,4 +13,6 @@ import dev.zacsweers.metrox.viewmodel.ViewModelGraph
 interface AppGraph : ViewModelGraph {
     val appDirectories: AppDirectories
     val audioEngine: AudioEngine
+    val tunerPreferences: TunerPreferences
+    val microphonePermission: MicrophonePermission
 }

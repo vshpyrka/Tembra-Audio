@@ -70,10 +70,11 @@ Where tests live:
 |---|---|---|
 | `commonTest` | JVM host, iOS simulator, Android device | pure logic, ViewModels with `FakeAudioEngine` |
 | `androidHostTest` | JVM host only | tests that read repository files (`ThemeJsonParityTest`) |
-| `uiTest` (`:shared:ui`) | iOS simulator, Android device | `runComposeUiTest` screen tests (they need a real UI platform): `NavigationShellTest`, `TembraNavigationBarTest`, `TembraNavigationRailTest`, `TembraTopBarTest`, `TembraSupportingPaneTest`, `EmptyStateTest`, `ReduceMotionTest`, `RememberLayoutModeTest`, `AppContentTest`, `DesignTokenPreviewTest` |
-| `iosTest`, `androidDeviceTest` | one platform | the real `NativeAudioEngine`, platform directories; `AndroidBackTest` (system back through the shell, Espresso) |
+| `uiTest` (`:shared:ui`) | iOS simulator, Android device | `runComposeUiTest` screen tests (they need a real UI platform): `NavigationShellTest`, `TembraNavigationBarTest`, `TembraNavigationRailTest`, `TembraTopBarTest`, `TembraSupportingPaneTest`, `EmptyStateTest`, `ReduceMotionTest`, `RememberLayoutModeTest`, `AppContentTest`, `DesignTokenPreviewTest`; tuner: `TunerScreenTest`, `TunerScreenByEarTest`, `TunerScreenPlayingTest`, `TunerScreenDeniedTest`, `TunerScreenLayoutTest`, `TunerMeterTest`, `TunerMeterLayoutTest`, `TembraSegmentedControlTest`, `TembraToggleTest`, `TembraStatusPillTest`, `TembraGradientCardTest` |
+| `iosTest`, `androidDeviceTest` | one platform | the real `NativeAudioEngine` (descriptor, tone round trip, idle reading, `TunerSignalEndToEndTest`: every test signal through the real engine), `IosAudioSessionTest` / `AndroidAudioFocusTest`, `DataStoreTunerPreferencesTest`, platform directories; `IosMicrophonePermissionTest` (`:shared:ui`); `AndroidBackTest` (system back through the shell, Espresso) |
+| `androidTest` (`:androidApp`) | Android device | `AndroidMicrophonePermissionTest`: the activity-hosted permission implementation; run with `./gradlew :androidApp:connectedDebugAndroidTest` |
 | `androidHostTest` (`:shared:ui`) | JVM host only | `IconAssetsTest` (glyph files normalised, pinned commit, licence bundled) |
-| `engine/tests` | macOS host | Catch2, offline, no audio device |
+| `engine/tests` | macOS host | Catch2, offline, no audio device: `engine_info_test`, `seqlock_test`, `ring_buffer_test`, `band_pass_test`, `mpm_test` (accuracy and octave), `tuner_analyzer_test`, `tone_generator_test`, `sample_player_test`, `recordings_on_pitch_test`, `tuner_engine_state_test` (with `fake_audio_device.h`) |
 
 ## Screenshots
 
@@ -99,22 +100,26 @@ app/
 ├── build-logic/            convention plugins: tembra.kmp.library, tembra.kmp.compose, tembra.android.app, tembra.android.native
 ├── engine/                 C++ engine (CMake). include/tembra_engine.h is the only header Kotlin sees (plain C ABI)
 │   ├── src/                engine_info.cpp (descriptor), third_party_check.cpp (compiles vendored libs)
+│   │   ├── tuner/          TunerEngine state machine + C ABI forwarders, ring buffer, seqlock, band-pass, McLeod detector, smoother, analyzer, tone generator, sample player, WAV decoder
+│   │   └── platform/       AudioDevice seam: null (host), synthetic (test signals), android/oboe, apple/remote_io
 │   ├── third_party/        miniaudio, dr_wav, Signalsmith Stretch (+ licences)
 │   ├── tests/              Catch2 tests
 │   └── android/            :engine:android — com.android.library + CMake/NDK + Prefab Oboe → libtembra_engine.so + JNI shim
 ├── shared/
 │   ├── core/               :shared:core   — pure Kotlin domain (no Compose, no platform APIs, no project dependencies)
 │   ├── engine/             :shared:engine — AudioEngine facade: NativeAudioEngine (JNI / cinterop), FakeAudioEngine, parser
-│   ├── data/               :shared:data   — persistence layer (AppDirectories for now)
+│   ├── data/               :shared:data   — persistence: AppDirectories, tuner/ DataStore preferences (TunerPreferences, TembraDataStore)
 │   └── ui/                 :shared:ui     — Compose screens, ViewModels, theme, Metro graph; iOS framework "TembraShared"
 │       ├── theme/          design tokens from design/stitch/theme.json: colours, type, shapes, spacing and chrome metrics, motion, TembraIcon registry
-│       ├── designsystem/   chrome components: TembraTopBar, TembraNavigationBar, TembraNavigationRail, TembraSupportingPane, EmptyState, PlaceholderDestination
+│       ├── designsystem/   chrome components: TembraTopBar, TembraNavigationBar, TembraNavigationRail, TembraSupportingPane, EmptyState, PlaceholderDestination, TembraSegmentedControl, TembraToggle, TembraStatusPill, TembraGradientCard
+│       ├── platform/       MicrophonePermission interface (+ IosMicrophonePermission in iosMain; the Android one lives in :androidApp)
 │       ├── navigation/     the shell: Destination registry, ShellViewModel, LayoutMode, NavigationShell, Navigation 3 wiring (TembraNavDisplay), SupportingPaneSceneStrategy
-│       ├── home/ timeline/ tuner/ metronome/ projects/ profile/   one package per destination (HomeScreen, LibraryPane, ...); each independent of the shell
+│       ├── home/ timeline/ metronome/ projects/ profile/   one package per destination (HomeScreen, LibraryPane, ...); each independent of the shell
+│       ├── tuner/          TunerScreen + TunerViewModel, ListeningPolicy, TunerMeter (one Canvas), By Ear cards, ReferenceSoundRepository, test-signal request
 │       └── devtools/       debug-only developer views (DesignTokenPreview behind a launch argument)
-├── androidApp/             :androidApp — TembraApplication (Metro graph) + MainActivity
+├── androidApp/             :androidApp — TembraApplication (Metro graph), MainActivity, AndroidMicrophonePermission + MicrophonePermissionHost
 ├── iosApp/                 Xcode project; two Swift files host MainViewController()
-└── tools/                  fetch-material-symbols.sh: downloads and normalises Material Symbols glyphs at a pinned commit
+└── tools/                  fetch-material-symbols.sh (glyphs at a pinned commit); capture-tuner-states.sh (the tuner's test-signal screenshot matrix)
 ```
 
 Dependencies point inward: apps → `:shared:ui` → `:shared:engine` / `:shared:data` → `:shared:core`.
@@ -135,6 +140,11 @@ A dependency in the wrong direction fails configuration (`tembra.kmp.library`).
 | platform SDK access (paths, OS services) | `androidMain` / `iosMain` of the owning module | `expect`/`actual` only for SDK access; business logic uses interfaces |
 | a colour, size, font or shape | `:shared:ui` `audio.tembra.ui.theme` from `design/stitch/theme.json` | never a literal value in a screen; `ThemeJsonParityTest` guards drift |
 | a third-party dependency | `gradle/libs.versions.toml` + `THIRD_PARTY_LICENSES.md` | permissive licence only (Constitution VI) |
+| a platform permission | interface in `:shared:ui` `audio.tembra.ui.platform`; Android implementation in `:androidApp` (it needs the activity result registry), iOS implementation in `:shared:ui` `iosMain` | inject through Metro, `Fake…Permission` in `commonTest`; the OS prompt itself is a manual check |
+| a preference | `:shared:data`, package `tuner` (or the feature's): keys as constants, a snapshot data class with `decode`/`encode`, an interface with a `Flow` and `suspend fun update`, a `Fake…Preferences`, the DataStore implementation over `TembraDataStore.preferences` | one DataStore file per process (`tembra.preferences_pb`); unknown stored values decode to defaults |
+| a reference recording | `shared/ui/src/commonMain/composeResources/files/tuner/<instrument>-<note>.wav` (`guitar-E2.wav`, `guitar-Fsharp3.wav`, `cello-C2.wav`) | PCM or float WAV, mono or stereo, any rate, at least 1 s; `engineHostTest` fails if it is more than 1 cent off its note; none ships |
+| a design glyph that Material Symbols lacks | hand-written `ic_<name>_24.xml` under `composeResources/drawable/` with the header `<!-- Tembra design glyph "<name>" from <stitch screen>; hand-converted, do not edit -->`, then a `TembraIcon` value | 24 × 24 viewport, one path, `android:fillColor="#FFFFFFFF"`; `IconAssetsTest` checks it |
+| a tuner test signal | a row in `TestSignals` (`:shared:engine`) with its expected reading | debug launch argument `tembra.tuner.testSignal` (Android extra) / `--tembra-tuner-test-signal=` (iOS), catalogue id or `E2:-20`; `tools/capture-tuner-states.sh` captures every entry; `TunerSignalEndToEndTest` asserts it on both platforms |
 
 ## Conventions
 
