@@ -40,7 +40,7 @@ the glyph script.
 **Primary Dependencies** (research R13): added `androidx.datastore:datastore-preferences-core:1.2.1`
 (pulls `datastore-core-okio` and Okio 3.x). Already present and used: Oboe 1.11.0 (Prefab),
 Signalsmith `dsp/fft.h` and dr_wav (vendored), Compose Multiplatform 1.12.1, Material 3 1.9.0 and
-adaptive 1.2.0, lifecycle 2.11.0 (`LifecycleResumeEffect`), Navigation 3 1.1.2, Metro 1.4.4, compose
+adaptive 1.2.0, lifecycle 2.11.0 (`LifecycleStartEffect` for foreground, `LifecycleResumeEffect` for the permission refresh), Navigation 3 1.1.2, Metro 1.4.4, compose
 resources. iOS system frameworks AudioToolbox, CoreAudio (RemoteIO) and AVFAudio (session,
 permission). No pitch-detection, permission or audio-session library.
 
