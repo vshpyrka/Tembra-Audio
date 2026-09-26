@@ -20,14 +20,15 @@ sealed interface ReferenceSound {
     data class Synth(val frequencyHz: Double) : ReferenceSound
     data class Recording(val resourceName: String, val bytes: ByteArray) : ReferenceSound
 }
-fun interface ResourceReader { suspend fun readOrNull(path: String): ByteArray? }        // default: Res.readBytes wrapped in try/catch (MissingResourceException → null)
+fun interface ResourceReader { suspend fun readOrNull(path: String): ByteArray? }        // ResourceReader.kt
+object ComposeResourceReader : ResourceReader                                            // ComposeResourceReader.kt, its own file (Constitution VII): Res.readBytes in try/catch (MissingResourceException → null)
 class ReferenceSoundRepository(private val reader: ResourceReader) {
     suspend fun resolve(instrument: Instrument, note: Note): ReferenceSound              // path "files/tuner/${instrument.id}-${note.resourceName}.wav"; result cached per path (hit or miss)
 }
 ```
 
 **ViewModel mapping** (`TunerViewModel.audition(index)`): resolve → `Synth` → `startTone(hz, if (loopTone) 0 else 2000)`;
-`Recording` → `loadSample(bytes)` (handle cached per `resourceName` for the ViewModel's life,
+`Recording` → `loadSample(bytes)` under `withContext(Dispatchers.Default)` (the engine decodes synchronously; handle cached per `resourceName` for the ViewModel's life,
 unloaded in `onCleared` and when the instrument changes) → `playSample(handle, loopTone)`.
 A one-shot tone or recording ends by itself: the 10 Hz poll sees `audioState == Idle` and clears
 `audition` (card returns to "Audition", spec FR-019).

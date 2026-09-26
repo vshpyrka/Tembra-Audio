@@ -37,8 +37,18 @@ typedef struct tembra_pitch_reading {
     float    clarity;        /* NSDF peak height 0..1 */
     float    input_peak;     /* linear peak of the last hop, 0..1 */
     uint8_t  has_pitch;      /* 0 = resting (silence, noise, out of range, low clarity) */
+    uint8_t  synthetic;      /* 1 while a test signal feeds the analyzer */
 } tembra_pitch_reading;
 void    tembra_tuner_read(tembra_pitch_reading* out);   /* lock-free seqlock read; also the watchdog heartbeat */
+
+/* --- Test signal: a generated tone in place of the microphone (research R16; debug tooling, all builds) --- */
+typedef struct tembra_test_signal {
+    double   frequency_hz;      /* already includes the cents offset */
+    float    amplitude;         /* peak of the mix, 0..1 (0.5) */
+    uint32_t harmonics;         /* number of partials including the fundamental (5) */
+    float    fundamental_gain;  /* fundamental relative to the second harmonic (0.25 = -12 dB) */
+} tembra_test_signal;
+int32_t tembra_tuner_start_test_signal(const tembra_tuner_config* config, const tembra_test_signal* signal);  /* as tembra_tuner_start but with the synthetic device */
 
 /* --- Reference sounds (research R5) --- */
 int32_t tembra_tone_start(double frequency_hz, uint32_t duration_ms);  /* sine; duration 0 = loop until stopped */
@@ -58,12 +68,18 @@ void    tembra_tone_stop(void);                                        /* stops 
   `state = IDLE`.
 - A one-shot tone or sample returns the state to `IDLE` when it ends; `tembra_audio_state`
   reflects it within one callback block.
+- `tembra_tone_start` while a sine at the same frequency (within 0.01 Hz) is active does not restart
+  it: it re-arms `duration_ms` (0 = loop) from now and returns `TEMBRA_OK` (spec FR-019, analysis M2).
+  A different frequency, or a sample, stops the current sound with its 5 ms release and starts the
+  new one after it, so switching strings leaves at most 10 ms of near-silence (spec SC-005).
+- `tembra_tuner_start_test_signal` follows every rule of `tembra_tuner_start`; `TEMBRA_ERR_ARGUMENT`
+  for a null signal or a frequency outside 20 Hz to 20 kHz.
 
 **Internal C++ (engine/src, not part of the ABI, tested directly by Catch2)**
 
 | File | Type | Responsibility |
 |---|---|---|
-| `src/platform/audio_device.h` | `tembra::AudioDevice` (interface) | `openInput(rate, onFrames)`, `openOutput(rate, render)`, `close()`, `actualSampleRate()`; implementations `NullAudioDevice` (host), `OboeAudioDevice` (`if(ANDROID)`), `RemoteIoAudioDevice` (`if(IOS)`) |
+| `src/platform/audio_device.h` | `tembra::AudioDevice` (interface) | `openInput(rate, onFrames)`, `openOutput(rate, render)`, `close()`, `actualSampleRate()`; implementations `NullAudioDevice` (host), `OboeAudioDevice` (`if(ANDROID)`), `RemoteIoAudioDevice` (`if(IOS)`), `SyntheticAudioDevice` (every platform: generates the harmonic test tone on its own thread and delivers 256-frame blocks at 48 kHz to the input callback in real time; `src/platform/synthetic_audio_device.{h,cpp}`, research R16) |
 | `src/tuner/ring_buffer.h` | `tembra::SpscRingBuffer<float>` | single producer (callback), single consumer (analysis thread), power-of-two capacity ≥ 4 × window |
 | `src/tuner/seqlock.h` | `tembra::Seqlock<T>` | writer `store`, reader `load` (retry on odd or changed sequence) |
 | `src/tuner/pitch_detector.h` | `tembra::PitchDetector` (interface), `PitchEstimate{hz, clarity}` | the algorithm seam (research R2) |
@@ -86,14 +102,17 @@ the analysis thread sleeps 4 ms between checks.
   `nativeTunerStop()`, `nativeTunerRead(FloatArray out /* [state, sampleRate, frequencyHz, clarity, inputPeak, hasPitch] */): Long /* sequence */`,
   `nativeToneStart(double hz, int durationMs): Int`, `nativeSampleLoadWav(ByteArray): Int`,
   `nativeSamplePlay(int handle, boolean loop): Int`, `nativeSampleUnload(int)`, `nativeToneStop()`,
-  `nativeAudioState(): Int`. `nativeTunerRead` uses `SetFloatArrayRegion` on the caller's array;
-  no allocation per call.
+  `nativeAudioState(): Int`, `nativeTunerStartTestSignal(double hz, float amplitude, int harmonics, float fundamentalGain, int window, int hop, float minHz, float maxHz, float clarity, float peakRatio, int median, float watchdog): Int`. `nativeTunerRead` fills seven floats (the seventh is `synthetic`) with `SetFloatArrayRegion` on the caller's array; no allocation per call.
 - iOS cinterop: the struct and functions are generated from the header; the Kotlin actual keeps one
   `nativeHeap.alloc<tembra_pitch_reading>()` and one `tembra_tuner_config` for its lifetime.
   `tembra_engine.def` adds `linkerOpts = -lc++ -framework AudioToolbox -framework CoreAudio`.
 
-**Tests (Catch2, `engine/tests/`)**: `engine_info_test` (ABI 2, version 0.2.0, describe
-unchanged in shape); `mpm_test`; `tuner_analyzer_test`; `tone_generator_test`;
-`sample_player_test`; `recordings_on_pitch_test`; `seqlock_test`; `tuner_engine_state_test`
-(state rules above with `NullAudioDevice` replaced by a `FakeAudioDevice` that drives callbacks
-synchronously). Details in research R12.
+**Tests (Catch2, `engine/tests/`)**: `engine_info_test` (ABI 2, version 0.2.0, describe unchanged
+in shape); `seqlock_test`; `ring_buffer_test`; `band_pass_test`; `mpm_test` (every semitone A1 to E5,
+offsets, octave, silence, noise, a 2 kHz tone above the range, a hard-clipped E2); `tuner_analyzer_test`
+(hop assembly, response within 250 ms, resting within 500 ms, octave guard, consecutive readings on a
+steady tone within 1 cent, watchdog); `tone_generator_test` (pitch, ramps, loop seam, click-free stop,
+re-arm without restart, at most 10 ms of near-silence when switching frequency); `sample_player_test`;
+`recordings_on_pitch_test`; `tuner_engine_state_test` (state rules above with `NullAudioDevice` replaced
+by a `FakeAudioDevice` that drives callbacks synchronously, plus the synthetic device producing a reading
+within 1 cent with `synthetic == 1`). Details in research R12.

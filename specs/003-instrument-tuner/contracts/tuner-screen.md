@@ -14,7 +14,9 @@ class TunerViewModel(
     fun selectMode(mode: TunerMode); fun setLoopTone(on: Boolean)
     fun audition(stringIndex: Int); fun stopAudition()
     fun requestMicrophone()                              // NotDetermined / DeniedCanAsk → request(); DeniedOpenSettings → openSystemSettings()
-    fun screenVisible(visible: Boolean); fun foreground(resumed: Boolean)   // also permission.refresh() on foreground(true)
+    fun screenVisible(visible: Boolean); fun foreground(started: Boolean)   // ON_START / ON_STOP (research R7)
+    fun onResumed()                                      // permission.refresh() only
+    fun useTestSignal(signal: TestSignal?)               // debug builds only (research R16): listen through the synthetic device, no permission needed
     override fun onCleared()                             // stopListening(), stopTone(), unload samples
 }
 // ListeningPolicy.kt — pure (data-model.md §3)
@@ -23,7 +25,9 @@ object ListeningPolicy { fun desired(inputs: PolicyInputs): DesiredAudio }
 // TunerScreen.kt — stateful
 @Composable fun TunerScreen(viewModel: TunerViewModel = metroViewModel(), modifier: Modifier = Modifier)
 //   DisposableEffect(Unit) { viewModel.screenVisible(true); onDispose { viewModel.screenVisible(false) } }
-//   LifecycleResumeEffect(Unit) { viewModel.foreground(true); onPauseOrDispose { viewModel.foreground(false) } }
+//   LifecycleStartEffect(Unit) { viewModel.foreground(true); onStopOrDispose { viewModel.foreground(false) } }   // start/stop, not resume/pause (analysis M1)
+//   LifecycleResumeEffect(Unit) { viewModel.onResumed(); onPauseOrDispose { } }
+//   val testSignal = LocalTunerTestSignal.current; LaunchedEffect(testSignal) { viewModel.useTestSignal(testSignal) }
 //   windowWidth = WindowWidth.from(currentWindowAdaptiveInfo().windowSizeClass)
 
 // TunerScreenContent.kt — stateless; what UI tests drive
@@ -34,10 +38,10 @@ data class TunerCallbacks(onInstrument, onGuitarStrings, onPreset, onMode, onLoo
 ## Composition
 
 ```
-Column(testTag "tuner.screen", padding pageMargin, gap md)
+Column(testTag "screen.tuner" (the shell's `screen.<id>` convention; feature 002's tests keep working), padding pageMargin, gap md)
 ├── TunerSelectors(windowWidth)                                  compact/medium: two rows; expanded: one row
 │   ├── TembraSegmentedControl(items Guitar|Cello, icons, style Large)   "tuner.instrument", items "tuner.instrument.<id>"
-│   ├── AudioStatePill(state.pill)                                       "tuner.pill" (absent when null)
+│   ├── AudioStatePill(state.pill)                                       "tuner.pill" (absent when null; contentDescription = pill.label in sentence case, drawn in capitals; MicActive primary + Mic, ToneOut secondary + VolumeUp, TestSignal tertiary + GraphicEq)
 │   ├── TembraSegmentedControl(6-String|7-String, style Small)           "tuner.strings", only when instrument.hasStringCount
 │   └── TembraSegmentedControl(Auto Listen|By Ear, icons, style Small)  "tuner.mode"
 └── when (state.mode)
@@ -64,8 +68,7 @@ toggle `role = Switch, toggleable`; cards' buttons `role = Button` with `content
 "Audition E2" / "Stop E2"; card `stateDescription` "Playing" when sounding. Reduce motion: the
 pill dot does not pulse and the Playing level animation is static (spec FR-027); the needle still moves.
 
-**Copy** (data, asserted by tests): "Mic active", "Tone out", "In tune", "Listening", "Flat",
-"Sharp", "Tuning Preset", "Loop Tone", "Active", "Off", "Audition", "Playing", denied title
+**Copy** (`TunerCopy.kt`, created with the state types in Phase 3 and asserted by tests): "Mic active", "Tone out", "Test signal", "In tune", "Listening", "Reference" (the chip: "REFERENCE 82.4 HZ"), "Flat", "Sharp", "Tuning Preset", "Loop Tone", "Active", "Off", "Audition", "Playing", "Tuner meter", denied title
 "Microphone needed", denied text "Tembra Audio listens to your instrument to show its tuning.
 Allow the microphone to use Auto Listen.", denied button "Allow microphone".
 
@@ -81,7 +84,8 @@ Allow the microphone to use Auto Listen.", denied button "Allow microphone".
   change stops the tone and selects the default preset; preferences updated on every selector;
   `Interrupted` stops, `InterruptionEnded` resumes; watchdog `Idle` while wanted → restarted on the
   next poll; one-shot end clears `audition`; `readPitch` sampled into `reading` at 10 Hz and `null`
-  when `hasPitch == false`; `onCleared` stops everything. `MeterGeometryTest`, `TunerUiStateTest`.
+  when `hasPitch == false`; `onCleared` stops everything. `MeterGeometryTest`, `TunerUiStateTest`, `TunerTestSignalRequestTest` (catalogue id, `E2:-20`, `F#3:+5`, invalid → null); `TunerViewModelTest` also covers `useTestSignal` (records `startTestSignal`, never `request()`, pill `TestSignal`).
+- Existing feature-002 tests: `NavigationShellTest` (the five cases that render `ShellUiState(Destination.Tuner)` and assert `screen.tuner`) and `AndroidBackTest` (clicks `nav.item.tuner`) switch to `Destination.Metronome` / `nav.item.metronome` / `screen.metronome`, because `TunerScreen` now obtains a ViewModel through `metroViewModel()` and those tests provide no `LocalMetroViewModelFactory` (analysis H1).
 - `uiTest`: `TunerScreenTest` (compact and expanded: selector rows, string-count selector hidden for
   Cello, denied state and its button invoking the callback, cards for every preset with the right
   numerals, notes and Hz, Playing card state, preset dropdown selects, toggle toggles, hover, focus

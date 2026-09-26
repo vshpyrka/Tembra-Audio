@@ -32,7 +32,7 @@ enum class SegmentedStyle { Large, Small }        // Large: 32 dp segments on su
 //   32 × 16 dp track (secondary when on, surfaceContainerHighest when off), 12 dp knob, animated over motion.effectiveDuration; toggleable(role = Switch); 44 dp target
 
 @Composable fun TembraStatusPill(text: String, color: Color, icon: TembraIcon? = null, pulsing: Boolean = false, modifier: Modifier = Modifier, testTag: String)
-//   pill on surfaceContainerLow, tabularParam uppercase text, 6 dp dot (pulses 1 s unless reduce motion)
+//   pill on surfaceContainerLow, `text` drawn as text.uppercase() in tabularParam while the node's contentDescription is the sentence-case `text` (analysis L1), 6 dp dot (pulses 1 s unless reduce motion)
 
 @Composable fun TembraGradientCard(glow: RadialGlow, modifier: Modifier = Modifier, testTag: String, content: @Composable BoxScope.() -> Unit)
 //   rounded 16 dp, surfaceContainerLowest, 1 dp seam outlineVariant at 20 %, radial glow + the two corner discs drawn behind content
