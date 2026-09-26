@@ -156,9 +156,12 @@ predictable for humans and agents.
   `/speckit-plan` (how, technology), `/speckit-tasks`, `/speckit-implement`. Specifications
   MUST NOT contain technology choices; plans MUST cite this constitution's principles in their
   Constitution Check and justify any deviation.
-- Build order is fixed: project scaffold, navigation shell, audio spine, transport and timeline,
-  mixer, metronome, effects and automation, recording and loops and speed, tuner, collaboration.
-  A plan MUST NOT pull later work forward without amending this order here.
+- Build order is fixed: project scaffold, navigation shell, tuner, audio spine, transport and
+  timeline, mixer, metronome, effects and automation, recording and loops and speed,
+  collaboration. A plan MUST NOT pull later work forward without amending this order here. The
+  tuner precedes the audio spine (amended 2026-09-26): it is the first feature to capture audio
+  and produce sound, and its input and output paths MUST obey Principle I so the audio spine can
+  grow from them.
 - Definition of done for any task: failing test written first; tests green on the JVM and, for
   shared code, on the iOS simulator; engine changes green in the C++ test target; UI changes
   screenshot-verified at compact and expanded widths on Android and on the iOS simulator; no
@@ -183,4 +186,4 @@ predictable for humans and agents.
 - `CLAUDE.md` is the runtime guidance file for agents working in this repository; it MUST point
   at this constitution and MUST NOT restate rules in a way that drifts from it.
 
-**Version**: 1.0.2 | **Ratified**: 2026-09-19 | **Last Amended**: 2026-09-24
+**Version**: 1.0.3 | **Ratified**: 2026-09-19 | **Last Amended**: 2026-09-26
