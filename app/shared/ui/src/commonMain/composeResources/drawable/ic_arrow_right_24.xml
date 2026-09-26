@@ -1,0 +1,11 @@
+<!-- Material Symbols Outlined "arrow_right" from google/material-design-icons@27e9ef1dbeedc13d682fece4a58e1eda4cb0961a (Apache-2.0); fetched by tools/fetch-material-symbols.sh, do not edit -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="960"
+    android:viewportHeight="960"
+    android:autoMirrored="true">
+  <path
+      android:fillColor="#FFFFFFFF"
+      android:pathData="M400,680L400,280L600,480L400,680Z"/>
+</vector>

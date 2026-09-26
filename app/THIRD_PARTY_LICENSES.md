@@ -2,7 +2,7 @@
 
 Every dependency of the application, with its licence (Constitution VI: permissive licences only in the
 shipped binary). Versions are pinned in `gradle/libs.versions.toml` unless a path is given.
-Last reviewed: 2026-09-24 (feature 002, adaptive navigation shell).
+Last reviewed: 2026-09-26 (feature 003, instrument tuner).
 
 ## Shipped in the app binaries
 
@@ -21,6 +21,8 @@ Last reviewed: 2026-09-24 (feature 002, adaptive navigation shell).
 | AndroidX Window core (`androidx.window:window-core`, `org.jetbrains.androidx.window:window-core`, transitive) | 1.4.0 | Apache-2.0 | https://developer.android.com/jetpack/androidx/releases/window |
 | Material Symbols Outlined glyphs (`shared/ui/src/commonMain/composeResources/drawable/ic_*_24.xml`) | google/material-design-icons@27e9ef1dbeedc13d682fece4a58e1eda4cb0961a (master, 2026-09-18; no usable release tag) | Apache-2.0 (`composeResources/files/LICENSE-MaterialSymbols.txt`) | https://github.com/google/material-design-icons |
 | Metro (compiler plugin runtime, `metrox-viewmodel-compose`) | 1.4.4 | Apache-2.0 | https://github.com/ZacSweers/metro |
+| AndroidX DataStore Preferences (`androidx.datastore:datastore-preferences-core`, with `datastore-core-okio`) | 1.2.1 | Apache-2.0 | https://developer.android.com/jetpack/androidx/releases/datastore |
+| Okio (`com.squareup.okio:okio`, transitive through DataStore) | 3.x | Apache-2.0 | https://github.com/square/okio |
 | Oboe (Android only, via Prefab) | 1.11.0 | Apache-2.0 | https://github.com/google/oboe |
 | miniaudio (`engine/third_party/miniaudio`) | 0.11.25 | MIT-0 or public domain (dual) | https://github.com/mackron/miniaudio |
 | dr_wav from dr_libs (`engine/third_party/dr_libs`) | 0.14.5 | MIT-0 or public domain (dual) | https://github.com/mackron/dr_libs |

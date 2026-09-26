@@ -36,6 +36,8 @@ fun registerEngineBuild(target: String, sysroot: String): TaskProvider<Exec> {
         description = "Builds libtembra_engine.a for $target with CMake"
         inputs.dir("$source/include")
         inputs.dir("$source/src")
+        inputs.dir("$source/src/tuner")
+        inputs.dir("$source/src/platform")
         inputs.file("$source/CMakeLists.txt")
         outputs.file(outDir.map { it.file("libtembra_engine.a") })
         val out = outDir.get().asFile.absolutePath
@@ -64,14 +66,20 @@ tasks.register<Exec>("engineHostTest") {
     val ctest = ctestBin.absolutePath
     val source = engineSourceDir.absolutePath
     val out = layout.buildDirectory.dir("engine/host").get().asFile.absolutePath
+    // Drop-in reference recordings checked on pitch by recordings_on_pitch_test (feature 003, research R5).
+    val recordingsDir = rootDir.parentFile.resolve("app/shared/ui/src/commonMain/composeResources/files/tuner").absolutePath
     inputs.dir("$source/include")
     inputs.dir("$source/src")
+    inputs.dir("$source/src/tuner")
+    inputs.dir("$source/src/platform")
     inputs.dir("$source/tests")
     inputs.file("$source/CMakeLists.txt")
+    inputs.dir(recordingsDir)
     outputs.dir(out)
     commandLine(
         "sh", "-c",
         "\"$cmake\" -S \"$source\" -B \"$out\" -G Ninja -DCMAKE_MAKE_PROGRAM=\"$ninja\" -DTEMBRA_BUILD_TESTS=ON " +
+            "-DTEMBRA_TUNER_RECORDINGS_DIR=\"$recordingsDir\" " +
             "&& \"$cmake\" --build \"$out\" && \"$ctest\" --test-dir \"$out\" --output-on-failure"
     )
 }

@@ -1,4 +1,5 @@
-// Catch2 tests for the engine's C ABI descriptor functions (specs/001-project-scaffold/contracts/engine-c-abi.md).
+// Catch2 tests for the engine's C ABI descriptor functions (specs/001-project-scaffold/contracts/engine-c-abi.md;
+// revision 2 and version 0.2.0 from specs/003-instrument-tuner/contracts/engine-c-abi-v2.md).
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
@@ -13,22 +14,22 @@ using Catch::Matchers::StartsWith;
 
 TEST_CASE("abi version matches the header constant", "[abi]") {
     REQUIRE(tembra_engine_abi_version() == TEMBRA_ENGINE_ABI_VERSION);
-    REQUIRE(TEMBRA_ENGINE_ABI_VERSION == 1u);
+    REQUIRE(TEMBRA_ENGINE_ABI_VERSION == 2u);
 }
 
 TEST_CASE("name is Tembra Engine", "[descriptor]") {
     REQUIRE(std::string(tembra_engine_name()) == "Tembra Engine");
 }
 
-TEST_CASE("version is a semantic version and equals 0.1.0", "[descriptor]") {
+TEST_CASE("version is a semantic version and equals 0.2.0", "[descriptor]") {
     const std::string version = tembra_engine_version();
     REQUIRE(std::regex_match(version, std::regex(R"(\d+\.\d+\.\d+)")));
-    REQUIRE(version == "0.1.0");
+    REQUIRE(version == "0.2.0");
 }
 
 TEST_CASE("describe lists name, version and every compiled library", "[descriptor]") {
     const std::string describe = tembra_engine_describe();
-    REQUIRE_THAT(describe, StartsWith("Tembra Engine 0.1.0 ("));
+    REQUIRE_THAT(describe, StartsWith("Tembra Engine 0.2.0 ("));
     REQUIRE_THAT(describe, EndsWith(")"));
     REQUIRE_THAT(describe, ContainsSubstring("miniaudio 0.11.25"));
     REQUIRE_THAT(describe, ContainsSubstring("dr_wav 0.14.5"));

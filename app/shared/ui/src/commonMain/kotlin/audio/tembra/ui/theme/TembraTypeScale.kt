@@ -1,6 +1,9 @@
 package audio.tembra.ui.theme
 
-/** The twelve text styles of design/stitch/theme.json → typography (px → sp, em → em). */
+/**
+ * The twelve text styles of design/stitch/theme.json → typography (px → sp, em → em), plus the tuner's screen-derived
+ * styles (research R9 of feature 003), which have no theme.json entry and stay out of [byThemeName].
+ */
 object TembraTypeScale {
     val headlineLg = TembraTextStyleSpec(TembraFont.SpaceGrotesk, 32f, 40f, 600, -0.02f)
     val headlineLgMobile = TembraTextStyleSpec(TembraFont.SpaceGrotesk, 24f, 32f, 600, -0.01f)
@@ -14,6 +17,20 @@ object TembraTypeScale {
     val labelSm = TembraTextStyleSpec(TembraFont.SpaceGrotesk, 10f, 14f, 600, 0.04f)
     val tabularTimecode = TembraTextStyleSpec(TembraFont.SpaceGrotesk, 15f, 20f, 500, 0.05f, tabularFigures = true)
     val tabularParam = TembraTextStyleSpec(TembraFont.Inter, 11f, 14f, 500, 0.02f, tabularFigures = true)
+
+    // Tuner styles from the Stitch tuner screens (feature 003, data-model.md §8, research R9).
+    /** Heard note: `text-[64px] font-bold` (Space Grotesk). */
+    val tunerNote = TembraTextStyleSpec(TembraFont.SpaceGrotesk, 64f, 64f, 700, -0.02f)
+    /** Octave beside the note: `text-[32px] font-bold`. */
+    val tunerOctave = TembraTextStyleSpec(TembraFont.SpaceGrotesk, 32f, 32f, 700)
+    /** By Ear card note: `text-[32px] font-bold`. */
+    val tunerCardNote = TembraTextStyleSpec(TembraFont.SpaceGrotesk, 32f, 32f, 700)
+    /** By Ear card octave: `text-[20px]` bold. */
+    val tunerCardOctave = TembraTextStyleSpec(TembraFont.SpaceGrotesk, 20f, 20f, 700)
+    /** Live frequency readout: `font-tabular-timecode text-[18px] font-semibold tracking-wider`. */
+    val tunerReadout = TembraTextStyleSpec(TembraFont.SpaceGrotesk, 18f, 24f, 600, 0.05f, tabularFigures = true)
+    /** Chip and card overlines: `text-[11px] uppercase font-semibold tracking-wider`. */
+    val microLabel = TembraTextStyleSpec(TembraFont.SpaceGrotesk, 11f, 14f, 600, 0.04f)
 
     /** Keyed by the theme.json names, in the file's order. */
     val byThemeName: Map<String, TembraTextStyleSpec> = mapOf(
