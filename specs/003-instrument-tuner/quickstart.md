@@ -37,7 +37,8 @@ cd app
 ./gradlew engineHostTest          # Catch2: MPM accuracy and octave tests, analyzer, tone, sample player, recordings on pitch, ABI 2
 ./gradlew checkAndroidHost        # JVM: core domain, ListeningPolicy, TunerViewModel, preferences, tokens, icon assets, theme parity
 ./gradlew checkIos                # iOS simulator: the same commonTest classes + TunerScreenTest, TunerMeterTest, component tests, NativeAudioEngineTest, DataStore round trip
-./gradlew checkAndroidDevice      # connected device: uiTest classes + NativeAudioEngineTest + DataStore round trip + AndroidBackTest
+./gradlew checkAndroidDevice      # connected device: uiTest classes + NativeAudioEngineTest + TunerSignalEndToEndTest + AndroidAudioFocusTest + DataStore round trip + AndroidBackTest
+./gradlew :androidApp:connectedDebugAndroidTest   # AndroidMicrophonePermissionTest (the app module's instrumented test)
 ```
 
 Every lane ends green with zero warnings (`--warning-mode all`). What each test proves is listed in
@@ -61,6 +62,29 @@ inherits the Mac's microphone access.
 
 Offline proof of accuracy, response time and octave correctness is `engineHostTest` (SC-001 to SC-003);
 this section is the on-device confirmation with a real instrument (SC-004).
+
+### Test signals (debug builds, no instrument or microphone needed)
+
+A launch argument feeds a generated tone through the real engine in place of the microphone (spec
+FR-032, research R16). The app starts on Tuner in Auto Listen with the pill **TEST SIGNAL** and never
+asks for the microphone. Use a catalogue id or `NOTE:CENTS`:
+
+```bash
+# Android (debug build)
+adb shell am start -n audio.tembra.app/audio.tembra.android.MainActivity --es tembra.tuner.testSignal e2-flat-20
+adb shell am start -n audio.tembra.app/audio.tembra.android.MainActivity --es tembra.tuner.testSignal "E2:+20"
+# iOS simulator (BUNDLE from §1)
+xcrun simctl launch "iPhone 17" "$BUNDLE" --tembra-tuner-test-signal=e2-flat-20
+xcrun simctl launch "iPhone 17" "$BUNDLE" "--tembra-tuner-test-signal=E2:+20"
+```
+
+Catalogue ids and their expected readings are the table in [data-model.md](data-model.md) §9
+(`e2-in-tune`, `e2-flat-20`, `e2-sharp-20`, `e2-flat-45`, `a2-sharp-40`, `d3-flat-5`, `g3-in-tune`,
+`b3-in-tune`, `e4-in-tune`, `c2-in-tune`, `b1-in-tune`, `a1-in-tune`, `e5-in-tune`, `out-of-range-2khz`).
+Expected on screen: `e2-in-tune` → E2, needle centred, IN TUNE lit; `e2-flat-20` → needle 36° left,
+Flat lit; `e2-flat-45` → needle 81° left; `d3-flat-5` → Flat lit, pill unlit; `out-of-range-2khz` →
+"Listening". The automated form of this check is `TunerSignalEndToEndTest` (§2), which asserts every
+entry's frequency within 1 cent on the real engine of both platforms. Release builds ignore the argument.
 
 ## 4. Instrument, string count and tuning presets (User Story 2)
 
@@ -139,8 +163,15 @@ iOS: Settings → Accessibility → Larger Text), into `specs/003-instrument-tun
 `<platform>-<compact|expanded>-<autoListen|byEar|denied>[-largefont].png`; record devices and
 findings in `screenshots/NOTES.md`. Android: `android screen capture --output <file>`; iOS:
 `xcrun simctl io "<device>" screenshot <file>` (portrait captures need `sips -r -90` for landscape).
-Review against `design/stitch/screens/instrument-tuner/phone/index.html` (rendered) and the tablet
-screenshots: selectors, pill, gradient card, gauge geometry, note sizes, cards, picker, toggle. Nothing
+State matrix (spec FR-029, SC-012): `app/tools/capture-tuner-states.sh --android` and
+`app/tools/capture-tuner-states.sh --ios "iPhone 17"` launch the debug app once per catalogue id,
+wait two seconds and capture `<platform>-compact-autoListen-<id>.png` into the screenshots folder.
+Review each against the expected reading in [data-model.md](data-model.md) §9: needle angle
+(1.8° per cent), note name and octave, pill lit only for the in-tune entries, the highlighted end
+label on the offset entries, and the resting state for `out-of-range-2khz`. Record the table of
+expected versus seen in `screenshots/NOTES.md`.
+
+Review against `design/stitch/screens/instrument-tuner/phone/index.html` (rendered) and the tablet screenshots: selectors, pill, gradient card, gauge geometry, note sizes, cards, picker, toggle. Nothing
 clipped, overlapping or under the bottom bar at any size; every label whole at the large font.
 
 ## 9. Pointer, keyboard and screen reader
@@ -162,3 +193,5 @@ screen-reader voice itself.
 - The iOS simulator hears nothing: check the Mac's input device in System Settings → Sound.
 - Needle jitters on a real string: expected during the first 100 ms of a pluck; steady thereafter
   (SC-006 is measured on a steady tone).
+- A test signal shows nothing: the argument is read only by debug builds; check `BuildConfig.DEBUG`
+  (Android) or the Debug configuration (iOS) and the spelling of the id (`data-model.md` §9).

@@ -40,5 +40,13 @@ the button requests or opens settings; the label is the same in both cases.
 
 **Tests**: `FakeMicrophonePermission` (`commonTest`): scripted `request()` results, counts of
 `request`, `refresh` and `openSystemSettings`; `TunerViewModelTest` covers the flow; `TunerScreenTest`
-covers the denied panel. Platform implementations are verified manually (quickstart §6): reset,
-deny, re-request, permanently deny, grant in settings, revoke while listening.
+covers the denied panel. Platform implementations have automated tests (Constitution III, analysis C1): `AndroidMicrophonePermissionTest`
+in `app/androidApp/src/androidTest/kotlin/audio/tembra/android/` (the instrumentation runner grants
+`RECORD_AUDIO`, so `refresh()` yields `Granted` and `status.value` follows; `openSystemSettings()` is
+called with a `ContextWrapper` that records `startActivity` and the intent's action is
+`ACTION_APPLICATION_DETAILS_SETTINGS` with data `package:audio.tembra.app` and `FLAG_ACTIVITY_NEW_TASK`;
+`MicrophonePermissionHost.onResult(true)` completes a pending `request()` with `Granted`) and
+`IosMicrophonePermissionTest` in `app/shared/ui/src/iosTest/kotlin/audio/tembra/ui/platform/` (`refresh()`
+yields one of the four statuses and `status.value` equals it; `request()` resolves within 5 s on the
+simulator, where the prompt is auto-answered by `simctl privacy`). The prompts themselves are verified
+manually (quickstart §6): reset, deny, re-request, permanently deny, grant in settings, revoke while listening.

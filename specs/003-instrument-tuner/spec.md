@@ -60,6 +60,11 @@ screen and the screenshot for the tablet screen.
 - Q: Should the constitution's build order be amended so the tuner comes right after the
   navigation shell? → A: Yes. Amend the constitution to place the tuner immediately after the
   navigation shell; the audio spine, transport and timeline follow later. Simpler features first.
+- Q: (after `/speckit-analyze`) How can the tuner be tested with generated sounds at chosen
+  pitches, and can the resulting meter states be captured? → A: Debug builds accept a test signal
+  (a note and an offset in cents, or a catalogue id) that feeds a generated tone through the real
+  engine in place of the microphone (FR-032); an end-to-end test on both platforms asserts the
+  reading for every catalogue entry (FR-028) and a screenshot matrix captures each state (FR-029).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -340,13 +345,15 @@ platform screen reader.
 
 - **FR-004**: Changing the instrument or string count MUST select that instrument's default
   preset; changing any of instrument, string count or preset MUST replace the By Ear cards
-  immediately and MUST stop any sounding reference tone. Auto Listen MUST NOT depend on the
+  immediately (a sounding reference tone stops, FR-020). Auto Listen MUST NOT depend on the
   preset.
 - **FR-005**: The instrument, string count, preset, mode and loop-toggle choices MUST be
   remembered across app launches. On the first launch the defaults are Guitar, 6-String,
   Standard, Auto Listen, and Loop Tone on.
 - **FR-006**: The audio-state pill MUST read "Mic active" while the microphone is being
-  listened to and "Tone out" while a reference tone sounds, and MUST be hidden otherwise. The two
+  listened to and "Tone out" while a reference tone sounds, and MUST be hidden otherwise. The
+  pill MAY draw its text in capitals but MUST announce the sentence-case label to accessibility
+  services; in debug builds it reads "Test signal" while a test signal (FR-032) feeds the tuner. The two
   states are mutually exclusive: the microphone is never listened to while a tone sounds and no
   tone sounds while listening.
 
@@ -419,8 +426,9 @@ platform screen reader.
 - **FR-019**: With "Loop Tone" on, the tone MUST repeat seamlessly (no gap, no click) until the
   user stops it, auditions another string, or a stop condition in FR-020 occurs. With "Loop
   Tone" off, the built-in tone MUST sound once for about two seconds (a recording plays once in
-  full) and stop by itself, returning the card to "Audition". Switching the toggle off during a loop ends the tone after the current
-  repetition; switching it on during a single play keeps the tone repeating.
+  full) and stop by itself, returning the card to "Audition". Switching the toggle off during a loop lets the tone end within about two seconds without a
+  restart or a click; switching it on during a single play keeps the tone repeating without a
+  restart.
 - **FR-020**: A reference tone MUST stop, with the card returning to "Audition", when the user
   changes instrument, string count or preset, switches to Auto Listen, leaves the Tuner
   destination, or the app leaves the foreground. A tone MUST NOT restart by itself when the app
@@ -474,13 +482,15 @@ platform screen reader.
   fallback of FR-022 with a test recording; both modes' screens with a fake
   audio source, including the denied state, the resting state and the card states; and the
   accessibility semantics of FR-025. Behaviour that needs real hardware (the permission prompt,
-  interruptions, route changes) MUST be verified on a device and recorded in the feature's
-  verification notes.
+  interruptions, route changes) MUST be verified on a device and recorded in the feature's verification notes. An end-to-end
+  test on each platform MUST feed every test signal of FR-032 through the real engine and
+  assert the reading (note within 1 cent, or the resting state for the out-of-range signal).
 - **FR-029**: Screenshots of both modes at compact (360 dp) and expanded (1024 dp or wider)
   widths on Android and on the iOS simulator MUST be stored under the feature directory and
   reviewed against the Stitch references before acceptance, with the phone Auto Listen screen
-  compared to its HTML and the tablet Auto Listen screen to its screenshot (see the export
-  artefacts above).
+  compared to its HTML and the tablet Auto Listen screen to its screenshot (see the export artefacts above). The set MUST also include a state matrix: one Auto
+  Listen capture per test signal of FR-032 on each platform, reviewed for the needle position,
+  the note, the pill and the highlighted end label.
 - **FR-030**: Any dependency added for this feature MUST carry a permissive licence and MUST be
   recorded in the licence inventory with its version and source.
 - **FR-031**: The feature MUST NOT include: a string-locked mode that measures against the
@@ -488,6 +498,14 @@ platform screen reader.
   tuning, instruments other than guitar and cello, capo or transposition settings, haptic
   feedback, an input-device picker, a transport bar, top-bar icons, or the decorative
   illustration.
+- **FR-032**: Debug builds MUST accept a developer-only test signal given as a launch argument
+  (a catalogue id, or a note and an offset in cents such as `E2:-20`): the app starts on Tuner in
+  Auto Listen, feeds a generated tone at that pitch (a fundamental with overtones, as a plucked
+  string) through the same path the microphone uses, shows the pill "Test signal" and never asks
+  for microphone access; release builds MUST ignore the argument. The catalogue MUST contain at
+  least: E2 in tune, E2 20 cents flat, E2 20 cents sharp, E2 45 cents flat, A2 40 cents sharp,
+  D3 5 cents flat, G3, B3 and E4 in tune, cello C2, B1, A1 and E5 in tune, and an out-of-range
+  2 kHz tone that shows the resting state.
 
 ### Key Entities
 
@@ -540,6 +558,9 @@ platform screen reader.
   state to the screen reader, and measure at least 44 dp.
 - **SC-011**: A guitarist who has never used the app can tune all six strings of a
   standard-tuned guitar in Auto Listen within 2 minutes without instructions.
+- **SC-012**: For every test signal in the catalogue, the end-to-end test on both platforms reports
+  the expected note within 1 cent (or the resting state), and its screenshot shows the needle at
+  the expected angle, the expected note and the expected end label on visual review.
 
 ## Assumptions
 
@@ -606,6 +627,9 @@ platform screen reader.
   illustration is excluded. The expanded-width layout keeps the design's one-row selector bar,
   centred meter and three-column cards; the medium band (600 to 839 dp) follows the compact
   rules.
+- **Test signals are a developer tool.** They exist so the meter can be verified and captured
+  without an instrument or a microphone; they are reachable only through a debug launch argument,
+  never from the UI, and they never touch the microphone.
 - **Dark theme only, English only, left-to-right**, as in the scaffold and feature 002.
 - **Branch.** `003-instrument-tuner` was created from `main` by the spec-kit git extension on
   2026-09-26.

@@ -216,10 +216,13 @@ against the policy failing.
   both streams) and updates the pill.
 - Visibility comes from `TunerScreen`'s `DisposableEffect` (Navigation 3 disposes the entry's
   content on a destination switch, so leaving the tab is an immediate `screenVisible(false)`),
-  foreground from `LifecycleResumeEffect` (Compose Multiplatform maps `didBecomeActive` /
-  `willResignActive` to `ON_RESUME` / `ON_PAUSE` on iOS, and Android's activity lifecycle
-  does the same), and `ViewModel.onCleared` stops everything when the entry-scoped store is
-  cleared. The result is the immediate release the spec's SC-007 asks for.
+  foreground from `LifecycleStartEffect` (`ON_START` / `ON_STOP`: Compose Multiplatform maps
+  `willEnterForeground` / `didEnterBackground` to them on iOS and Android's activity lifecycle does
+  the same), and `ViewModel.onCleared` stops everything when the entry-scoped store is cleared.
+  `ON_PAUSE` is deliberately not used: iOS raises it for Control Centre, the app switcher and call
+  banners and Android for an unfocused multi-window pane, and it would drop the microphone or kill
+  a tone that spec FR-020 forbids restarting; `permission.refresh()` still runs on `ON_RESUME`
+  (analysis M1). The result is the immediate release the spec's SC-007 asks for.
 - Privacy backstop ("dead man's switch"): the analysis thread stops the input stream by itself
   when `tembra_tuner_read` has not been called for `watchdog_seconds` (default 5). The meter's
   draw-phase read is the heartbeat, so a microphone that nobody is looking at turns itself off
@@ -341,13 +344,14 @@ meter centred at 480 dp max width, three-column grid at 576 dp max width; no sup
 |---|---|
 | `engine/tests` (Catch2, host) | `mpm_test` (synthetic sines with strong overtones and a weak fundamental at every semitone A1 to E5, ±10/±20/±40 cent offsets, silence, white noise: SC-001 to SC-003 offline), `tuner_analyzer_test` (hop assembly, gate, smoothing, resting within 500 ms, watchdog), `tone_generator_test` (frequency within 1 cent, ramps, loop seam, stop ramp), `sample_player_test` (WAV decode, resample, loop crossfade), `recordings_on_pitch_test` (R5), `seqlock_test`, `engine_info_test` updated (ABI 2, version 0.2.0) |
 | `commonTest` `:shared:core` | `NoteTest`, `PitchMathTest` (halfway rule, sharp spelling, tolerance, every preset string), `TuningPresetsTest` (the table of spec FR-003, numerals, defaults) |
-| `commonTest` `:shared:engine` | `FakeAudioEngineTest` (scripted readings, call recording, state) |
+| `commonTest` `:shared:engine` | `FakeAudioEngineTest` (scripted readings, call recording, state, test signals), `TestSignalsTest` (catalogue and `NOTE:CENTS` parsing) |
 | `commonTest` `:shared:data` | `TunerPreferencesSnapshotTest` (defaults, invalid values), `FakeTunerPreferencesTest`; `DataStoreTunerPreferencesTest` in `androidDeviceTest` and `iosTest` (round trip on a real file) |
-| `commonTest` `:shared:ui` | `ListeningPolicyTest`, `TunerViewModelTest` (with `FakeAudioEngine`, `FakeMicrophonePermission`, `FakeTunerPreferences`, `FakeResourceReader`: permission flow, mode switches stop audio, audition/loop/stop rules, preferences round trip, 10 Hz reading, watchdog restart), `ReferenceSoundRepositoryTest`, `MeterGeometryTest`, `TunerUiStateTest` |
+| `commonTest` `:shared:ui` | `ListeningPolicyTest`, `TunerTestSignalRequestTest`, `MicrophonePermissionStatusTest`, `TunerViewModelTest` (with `FakeAudioEngine`, `FakeMicrophonePermission`, `FakeTunerPreferences`, `FakeResourceReader`: permission flow, mode switches stop audio, audition/loop/stop rules, preferences round trip, 10 Hz reading, watchdog restart), `ReferenceSoundRepositoryTest`, `MeterGeometryTest`, `TunerUiStateTest` |
 | `androidHostTest` `:shared:ui` | `IconAssetsTest` extended (ten new glyphs + the two design glyphs), `ThemeJsonParityTest` unchanged |
 | `uiTest` (iOS simulator + Android device) | `TunerScreenTest` (both modes at compact and expanded, selectors, denied state and its action, cards and Playing state, preset dropdown, toggle, hover, focus, 44 dp, semantics, no overlap at large font), `TunerMeterTest` (draws from a scripted snapshot: needle side, labels, pill states, resting), `TembraSegmentedControlTest`, `TembraToggleTest`, `TembraStatusPillTest` |
-| `androidDeviceTest` / `iosTest` `:shared:engine` | `NativeAudioEngineTest` extended: tone start/stop without a microphone, state transitions, `readPitch` idle snapshot; listening tests run only when the test process holds `RECORD_AUDIO` (granted by the instrumentation runner) |
-| manual (quickstart §3 to §9) | real guitar and cello, permission prompts, interruptions, route changes, OS microphone indicator, screenshots |
+| `androidDeviceTest` / `iosTest` `:shared:engine` | `NativeAudioEngineTest` extended: tone start/stop without a microphone, state transitions, `readPitch` idle snapshot; listening tests run only when the test process holds `RECORD_AUDIO` (granted by the instrumentation runner); `TunerSignalEndToEndTest`: every catalogue test signal through the real engine (R16); `AndroidAudioFocusTest` (request granted, abandon); `IosAudioSessionTest` (activate for listening and playback, deactivate) |
+| `androidTest` `:androidApp`, `iosTest` `:shared:ui` | `AndroidMicrophonePermissionTest` (`refresh()` under a runner-granted permission gives `Granted`; the settings intent carries the package URI), `IosMicrophonePermissionTest` (`refresh()` yields one of the four statuses; `request()` resolves on the simulator) — analysis C1 |
+| manual (quickstart §3 to §9) | real guitar and cello, permission prompts, interruptions, route changes, OS microphone indicator, screenshots including the scripted test-signal state matrix (R16) |
 
 Kotlin tests never link the engine (Constitution III); accuracy is proven offline in C++.
 
@@ -397,3 +401,36 @@ icons; Material Symbols has no guitar or cello glyph.
 - Android manifest: `RECORD_AUDIO`. iOS `Info.plist`: `NSMicrophoneUsageDescription`.
 - `THIRD_PARTY_LICENSES.md`: DataStore and Okio rows. `app/README.md`: "where does X go" rows
   for a platform permission, a preference, a reference recording and a design glyph.
+
+## R16. Test signals and the screenshot matrix
+
+**Decision**: a `SyntheticAudioDevice : AudioDevice` in the engine generates a plucked-string-like
+tone (fundamental at `fundamental_gain` 0.25 plus harmonics 2 to 5 at 1.0, 0.5, 0.3, 0.2, the same
+mix the Catch2 tests use) on its own real-time thread and delivers 256-frame blocks at 48 kHz to the
+input callback, exactly as Oboe or RemoteIO would. `tembra_tuner_start_test_signal(config, signal)`
+starts listening with that device instead of the platform device; the reading carries
+`synthetic = 1`; everything downstream (ring buffer, analyzer, seqlock, JNI/cinterop, ViewModel poll,
+meter) is the production path. Kotlin exposes `TunerAudio.startTestSignal(config, signal)` with
+`TestSignal(note, cents, amplitude, harmonics, fundamentalGain)` and a catalogue `TestSignals`
+(ids `e2-in-tune`, `e2-flat-20`, `e2-sharp-20`, `e2-flat-45`, `a2-sharp-40`, `d3-flat-5`,
+`g3-in-tune`, `b3-in-tune`, `e4-in-tune`, `c2-in-tune`, `b1-in-tune`, `a1-in-tune`, `e5-in-tune`,
+`out-of-range-2khz`). Debug builds read a launch argument (`tembra.tuner.testSignal` extra on
+Android inside `BuildConfig.DEBUG`; `--tembra-tuner-test-signal=` on iOS inside `#if DEBUG`, the
+mechanism feature 002 used for the developer view) accepting an id or `NOTE:CENTS`; when present the
+shell starts on Tuner, the ViewModel uses `startTestSignal` in place of `startListening`, needs no
+permission and shows the pill "Test signal". `tools/capture-tuner-states.sh --android|--ios` loops
+over the catalogue, launches the app with each id, waits two seconds and captures
+`<platform>-compact-autoListen-<id>.png`; `TunerSignalEndToEndTest` (device and simulator lanes of
+`:shared:engine`) starts each catalogue entry on the real engine, polls `readPitch` until ten hops
+have arrived and asserts the frequency within 1 cent (or `hasPitch == false` for the 2 kHz entry).
+
+**Rationale**: the user asked to feed generated sounds at different pitches into the tuner, test the
+values and capture screenshots; a synthetic input device proves the whole engine and UI path on real
+devices deterministically, which neither the Catch2 offline tests nor Kotlin scripted telemetry do,
+and a launch argument keeps it out of the UI and out of release builds (Constitution VI, Complexity
+Tracking #5).
+
+**Alternatives considered**: golden-image comparison (no infrastructure in the project; the
+constitution asks for reviewed screenshots, and the pixel assertions in `TunerMeterTest` already guard
+the drawing); playing WAV files into a loopback device (no such device on phones); a hidden UI panel
+(reachable from the UI, forbidden by the developer-view precedent).

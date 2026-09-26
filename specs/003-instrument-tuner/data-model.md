@@ -62,7 +62,8 @@ ViewModel through `TuningPresets`). `interface TunerPreferences { val snapshot: 
 |---|---|
 | `mode` | preferences / selector |
 | `screenVisible` | `TunerScreen` `DisposableEffect` (entry composition) |
-| `foreground` | `LifecycleResumeEffect` (`ON_RESUME` / `ON_PAUSE`) |
+| `foreground` | `LifecycleStartEffect` (`ON_START` / `ON_STOP`; not pause, research R7) |
+| `testSignal` | `TestSignal?` from the debug launch argument (§9); null in production |
 | `permission` | `MicrophonePermissionStatus` |
 | `audition` | `AuditionState?` |
 | `interrupted` | set by `AudioEvent.Interrupted`, cleared by `InterruptionEnded` or leaving/re-entering |
@@ -71,6 +72,7 @@ ViewModel through `TuningPresets`). `interface TunerPreferences { val snapshot: 
 |---|---|
 | `DesiredAudio.Tone(sound, loop)` | `mode == ByEar && audition != null && screenVisible && foreground && !interrupted` |
 | `DesiredAudio.Listening` | `mode == AutoListen && screenVisible && foreground && permission == Granted && !interrupted` |
+| `DesiredAudio.TestListening(signal)` | as above but `testSignal != null`, regardless of `permission` (uses `startTestSignal`) |
 | `DesiredAudio.Idle` | otherwise |
 
 Transitions applied by `TunerViewModel.applyAudio()`: any change first stops the current stream
@@ -85,13 +87,15 @@ tone never restarts by itself). Events: `DeviceLost` → re-apply; `OutputRouteL
 
 `class PitchSnapshot` (mutable, `:shared:engine`, one instance per reader, filled by
 `TunerAudio.readPitch(into)` without allocation): `sequence: Long`, `state: AudioState`,
-`sampleRate: Int`, `frequencyHz: Float`, `clarity: Float`, `inputPeak: Float`, `hasPitch: Boolean`.
+`sampleRate: Int`, `frequencyHz: Float`, `clarity: Float`, `inputPeak: Float`, `hasPitch: Boolean`,
+`synthetic: Boolean` (true while a test signal feeds the analyzer).
 `hasPitch == false` is the resting state (spec FR-010). Mirrors `tembra_pitch_reading`
 (contracts/engine-c-abi-v2.md).
 
 `data class MeterReading(note: Note, cents: Double, direction: PitchDirection, isInTune: Boolean, frequencyHz: Double, referenceHz: Double)`
 (`:shared:ui`): the 10 Hz sample of a snapshot through `PitchMath.nearest`, `null` when
-resting; `stateDescription` text: `"E2, 4 cents sharp"`, `"F#3, in tune"`, or `"Listening"`.
+resting; `stateDescription` text: `"E2, 4 cents sharp"`, `"F#3, in tune"`, or `"Listening"`; cents are
+rounded to the nearest integer.
 
 ## 5. Microphone permission status (`:shared:ui`)
 
@@ -131,17 +135,18 @@ data class TunerUiState(
     val interrupted: Boolean = false,
     val reading: MeterReading? = null,                   // 10 Hz sample; null = resting
     val audition: AuditionState? = null,
+    val testSignal: TestSignal? = null,                  // debug launch argument (§9)
 ) {
-    val pill: AudioStatePill?      // MicActive when audio == Listening, ToneOut when audio == Tone, else null (spec FR-006)
+    val pill: AudioStatePill?      // TestSignal when audio == Listening && testSignal != null, MicActive when audio == Listening, ToneOut when audio == Tone, else null (spec FR-006)
     val showDeniedState: Boolean   // mode == AutoListen && microphone is a denied state
     val strings: List<TargetString> get() = preset.strings
 }
-enum class AudioStatePill(val label: String) { MicActive("Mic active"), ToneOut("Tone out") }
+enum class AudioStatePill(val label: String) { MicActive("Mic active"), ToneOut("Tone out"), TestSignal("Test signal") }   // label = accessibility text; drawn in capitals
 ```
 
 Intents (plain functions on `TunerViewModel`): `selectInstrument`, `selectGuitarStrings`,
 `selectPreset`, `selectMode`, `setLoopTone`, `audition(stringIndex)`, `stopAudition()`,
-`requestMicrophone()`, `screenVisible(Boolean)`, `foreground(Boolean)`; every selector intent
+`requestMicrophone()`, `screenVisible(Boolean)`, `foreground(Boolean)`, `useTestSignal(TestSignal?)`; every selector intent
 persists through `TunerPreferences.update`. Instrument or string-count changes select the
 default preset, replace `presets` and stop any tone (spec FR-004).
 
@@ -178,3 +183,26 @@ Tokens added to the theme (data, tested for parity with research R9 in `TunerTok
 | `TembraGradients.playingGlow` | `#85145A` 40 %, 18 dp |
 
 `TembraIcon` gains `Mic, MicOff, Hearing, PlayArrow, Pause, VolumeUp, ExpandMore, ArrowLeft, ArrowRight, Settings, Guitar, Cello`.
+
+## 9. Test signal (`:shared:engine`, `:shared:ui`; research R16)
+
+`data class TestSignal(val note: Note, val cents: Double, val amplitude: Float = 0.5f, val harmonics: Int = 5, val fundamentalGain: Float = 0.25f)`
+with `frequencyHz = note.frequencyHz() * 2^(cents / 1200)`; `TestSignals.catalogue: List<TestSignalEntry(id, signal, expected)>` where
+`expected` is `Reading(note, cents)` or `Resting`:
+
+| id | signal | expected reading |
+|---|---|---|
+| `e2-in-tune` | E2, 0 | E2, 0 |
+| `e2-flat-20` | E2, −20 | E2, −20 |
+| `e2-sharp-20` | E2, +20 | E2, +20 |
+| `e2-flat-45` | E2, −45 | E2, −45 (needle near the flat end) |
+| `a2-sharp-40` | A2, +40 | A2, +40 |
+| `d3-flat-5` | D3, −5 | D3, −5 (just outside tolerance: "Flat" lit) |
+| `g3-in-tune`, `b3-in-tune`, `e4-in-tune` | G3 / B3 / E4, 0 | in tune |
+| `c2-in-tune`, `b1-in-tune`, `a1-in-tune` | C2 / B1 / A1, 0 | in tune (low strings, correct octave) |
+| `e5-in-tune` | E5, 0 | in tune (top of the range) |
+| `out-of-range-2khz` | frequency 2000 Hz (no note) | resting |
+
+`TunerTestSignalRequest.parse(argument: String?): TestSignal?` (`:shared:ui`): `null` → null; a catalogue id → its
+signal; `NOTE:CENTS` (`E2:-20`, `F#3:+5`, `A1:0`) → `TestSignal(Note.parse, cents)`; anything else → null with the
+argument ignored. Provided to the screen through `LocalTunerTestSignal`; `App(appGraph, developerView, tunerTestSignal)`.
