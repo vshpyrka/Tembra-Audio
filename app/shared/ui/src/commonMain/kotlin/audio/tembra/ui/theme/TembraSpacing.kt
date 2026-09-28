@@ -79,4 +79,12 @@ data class TembraSpacing(
     /** Large segment horizontal padding: `px-space-md`; small: `px-space-sm`. */
     val segmentPaddingLarge: Dp = 12.dp,
     val segmentPaddingSmall: Dp = 8.dp,
+    // Phone landscape (research R9, landscape table; data-model.md §8).
+    /** The least a landscape card row gets; rows grow to fill the card. */
+    val stringCardHeightLandscape: Dp = 128.dp,
+    /** The landscape settings column: 36 % of the content width within these, scaled by the font scale. */
+    val landscapeSettingsMinWidth: Dp = 224.dp,
+    val landscapeSettingsMaxWidth: Dp = 280.dp,
+    /** Below this the landscape meter scrolls instead of shrinking further. */
+    val meterMinWidth: Dp = 200.dp,
 )

@@ -1,8 +1,10 @@
 package audio.tembra.ui.designsystem
 
+import androidx.compose.foundation.interaction.FocusInteraction
+import androidx.compose.foundation.interaction.HoverInteraction
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.platform.LocalDensity
@@ -22,7 +24,6 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
-import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.test.v2.runComposeUiTest
@@ -41,7 +42,12 @@ class TembraNavigationRailTest {
     private var surfaceContainerHigh: Color = Color.Unspecified
     private var onSurface: Color = Color.Unspecified
 
-    private fun ComposeUiTest.setRail(fontScale: Float? = null, selectedId: String = "home", onSelect: (String) -> Unit = {}) {
+    private fun ComposeUiTest.setRail(
+        items: List<NavigationItemSpec> = sixNavigationItems,
+        fontScale: Float? = null,
+        selectedId: String = "home",
+        onSelect: (String) -> Unit = {},
+    ) {
         setContent {
             inputModeManager = LocalInputModeManager.current
             TembraTheme {
@@ -49,13 +55,17 @@ class TembraNavigationRailTest {
                 surfaceContainerHigh = TembraTheme.colors.surfaceContainerHigh
                 onSurface = TembraTheme.colors.onSurface
                 if (fontScale == null) {
-                    TembraNavigationRail(sixNavigationItems, selectedId, onSelect)
+                    TembraNavigationRail(items, selectedId, onSelect)
                 } else {
-                    CompositionLocalProvider(LocalDensity provides largeFonts(fontScale)) { TembraNavigationRail(sixNavigationItems, selectedId, onSelect) }
+                    CompositionLocalProvider(LocalDensity provides largeFonts(fontScale)) { TembraNavigationRail(items, selectedId, onSelect) }
                 }
             }
         }
     }
+
+    /** The six items with [id] driven by [source], so hover and focus are emitted rather than simulated. */
+    private fun itemsWith(id: String, source: MutableInteractionSource): List<NavigationItemSpec> =
+        sixNavigationItems.map { if (it.id == id) it.copy(interactionSource = source) else it }
 
     private fun ComposeUiTest.assertSixItemsFitWithinTheRail() {
         val rail = onNodeWithTag("chrome.rail").getUnclippedBoundsInRoot()
@@ -108,17 +118,11 @@ class TembraNavigationRailTest {
         }
     }
 
-    private fun ComposeUiTest.enterKeyboardMode(): Boolean {
-        val keyboard = runOnUiThread { inputModeManager!!.requestInputMode(InputMode.Keyboard) }
-        if (!keyboard) println("platform stays in touch mode, keyboard path covered on iOS")
-        return keyboard
-    }
-
     @Test
     fun keyboardActivatesAnItem() = runComposeUiTest {
         var selected: String? = null
         setRail(onSelect = { selected = it })
-        if (!enterKeyboardMode()) return@runComposeUiTest
+        if (!enterKeyboardMode(inputModeManager)) return@runComposeUiTest
         onNodeWithTag("nav.item.metronome").requestFocus()
         onNodeWithTag("nav.item.metronome").assertIsFocused()
         onNodeWithTag("nav.item.metronome").performKeyInput { pressKey(Key.Enter) }
@@ -128,10 +132,9 @@ class TembraNavigationRailTest {
 
     @Test
     fun focusedItemShowsAnIndicator() = runComposeUiTest {
-        setRail()
-        if (!enterKeyboardMode()) return@runComposeUiTest
-        onNodeWithTag("nav.item.metronome").requestFocus()
-        onNodeWithTag("nav.item.metronome").assertIsFocused()
+        val focus = MutableInteractionSource()
+        setRail(items = itemsWith("metronome", focus))
+        assertTrue(focus.tryEmit(FocusInteraction.Focus()))
         waitForIdle()
         val image = onNodeWithTag("nav.item.metronome").captureToImage()
         assertTrue(image.containsColor(primary), "no primary-coloured focus ring on the focused item")
@@ -139,8 +142,9 @@ class TembraNavigationRailTest {
 
     @Test
     fun hoverFillsTheItem() = runComposeUiTest {
-        setRail()
-        onNodeWithTag("nav.item.tuner").performMouseInput { enter(center); moveTo(center) }
+        val hover = MutableInteractionSource()
+        setRail(items = itemsWith("tuner", hover))
+        assertTrue(hover.tryEmit(HoverInteraction.Enter()))
         waitForIdle()
         val image = onNodeWithTag("nav.item.tuner").captureToImage()
         // Inside the rounded square, away from glyph and label: a few pixels in from the top-left corner.

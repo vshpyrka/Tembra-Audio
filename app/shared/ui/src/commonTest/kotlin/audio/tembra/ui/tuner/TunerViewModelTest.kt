@@ -15,8 +15,10 @@ import audio.tembra.engine.TestSignals
 import audio.tembra.ui.platform.FakeMicrophonePermission
 import androidx.lifecycle.ViewModelStore
 import audio.tembra.ui.platform.MicrophonePermissionStatus
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -25,6 +27,7 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlin.coroutines.CoroutineContext
 import kotlin.math.abs
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -61,14 +64,32 @@ class TunerViewModelTest {
 
     private var created: TunerViewModel? = null
 
-    /** Builds the ViewModel over the fakes as configured so far and lets its init coroutines run. */
-    private fun TestScope.viewModel(): TunerViewModel {
+    /** Builds the ViewModel over the fakes as configured so far; nothing runs until the screen shows it. */
+    private fun TestScope.viewModel(decodeDispatcher: CoroutineDispatcher = dispatcher): TunerViewModel {
         val repository = ReferenceSoundRepository { path -> recordings[path] }
-        val viewModel = TunerViewModel(audio, permission, preferences, repository)
-        viewModel.decodeDispatcher = dispatcher
+        val viewModel = TunerViewModel(audio, permission, preferences, repository, decodeDispatcher)
         created = viewModel
         runCurrent()
         return viewModel
+    }
+
+    /** The screen became visible (its wiring calls this from composition); the ViewModel loads and starts here. */
+    private fun TestScope.show(viewModel: TunerViewModel) {
+        viewModel.screenVisible(true)
+        runCurrent()
+    }
+
+    /** Holds every dispatched block until [release], so a recording's decode can be left in flight. */
+    private class HeldDispatcher : CoroutineDispatcher() {
+        private val held = ArrayDeque<Runnable>()
+
+        override fun dispatch(context: CoroutineContext, block: Runnable) {
+            held += block
+        }
+
+        fun release() {
+            while (held.isNotEmpty()) held.removeFirst().run()
+        }
     }
 
     /**
@@ -102,8 +123,17 @@ class TunerViewModelTest {
     // --- Listening (US1) --------------------------------------------------------------------------------------------
 
     @Test
+    fun nothingRunsUntilTheScreenFirstShows() = viewModelTest {
+        val viewModel = viewModel()
+        assertFalse(viewModel.uiState.value.loaded, "preferences were read before the screen showed")
+        show(viewModel)
+        assertTrue(viewModel.uiState.value.loaded)
+    }
+
+    @Test
     fun loadsThePreferenceDefaults() = viewModelTest {
         val viewModel = viewModel()
+        show(viewModel)
         val state = viewModel.uiState.value
         assertTrue(state.loaded)
         assertEquals(Instrument.Guitar, state.instrument)
@@ -308,6 +338,7 @@ class TunerViewModelTest {
     fun aStoredPresetOfAnotherInstrumentFallsBackToTheDefault() = viewModelTest {
         preferences = FakeTunerPreferences(TunerPreferencesSnapshot(instrument = Instrument.Cello, presetId = "guitar6-drop-d"))
         val viewModel = viewModel()
+        show(viewModel)
         assertEquals("cello-standard", viewModel.uiState.value.preset.id)
     }
 
@@ -402,6 +433,61 @@ class TunerViewModelTest {
         assertEquals(1, audio.calls.count { it == "loadSample" })
         viewModel.clear()
         assertEquals("unloadSample", audio.calls.last())
+    }
+
+    @Test
+    fun aRecordingThatCannotBeDecodedLeavesNoAudition() = viewModelTest {
+        // The fake engine decodes nothing from empty bytes, like the real one from bytes that are not a WAV.
+        recordings = mapOf("files/tuner/guitar-E2.wav" to byteArrayOf())
+        val viewModel = viewModel()
+        enterByEar(viewModel)
+        viewModel.audition(0)
+        runCurrent()
+        assertNull(viewModel.uiState.value.audition)
+        assertEquals(AudioState.Idle, viewModel.uiState.value.audio)
+        assertFalse(audio.calls.any { it.startsWith("playSample") }, audio.calls.toString())
+    }
+
+    @Test
+    fun aLaterAuditionWinsOverOneStillDecoding() = viewModelTest {
+        recordings = mapOf("files/tuner/guitar-E2.wav" to byteArrayOf(1, 2, 3))
+        val decode = HeldDispatcher()
+        val viewModel = viewModel(decodeDispatcher = decode)
+        enterByEar(viewModel)
+        viewModel.audition(0)
+        runCurrent()
+        assertNull(viewModel.uiState.value.audition, "the recording is still decoding")
+        viewModel.audition(1)
+        runCurrent()
+        assertEquals("startTone(110.0, 0)", audio.calls.last())
+        decode.release()
+        runCurrent()
+        assertEquals(1, viewModel.uiState.value.audition?.stringIndex, "the earlier audition overtook the later one")
+        assertFalse(audio.calls.any { it.startsWith("playSample") }, "the stale decode sounded its sample: ${audio.calls}")
+        // The decode itself is kept: the next audition of that string plays without loading again.
+        viewModel.audition(0)
+        runCurrent()
+        assertEquals("playSample(1, true)", audio.calls.last())
+        assertEquals(1, audio.calls.count { it == "loadSample" })
+    }
+
+    @Test
+    fun backgroundingWhileARecordingDecodesNeverSoundsItLater() = viewModelTest {
+        recordings = mapOf("files/tuner/guitar-E2.wav" to byteArrayOf(1, 2, 3))
+        val decode = HeldDispatcher()
+        val viewModel = viewModel(decodeDispatcher = decode)
+        enterByEar(viewModel)
+        viewModel.audition(0)
+        runCurrent()
+        viewModel.foreground(false)
+        runCurrent()
+        decode.release()
+        runCurrent()
+        assertNull(viewModel.uiState.value.audition, "a cleared audition came back once the decode finished")
+        viewModel.foreground(true)
+        runCurrent()
+        assertNull(viewModel.uiState.value.audition)
+        assertFalse(audio.calls.any { it.startsWith("playSample") || it.startsWith("startTone") }, "a tone started after backgrounding: ${audio.calls}")
     }
 
     @Test

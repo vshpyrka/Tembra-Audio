@@ -28,10 +28,10 @@ object ListeningPolicy { fun desired(inputs: PolicyInputs): DesiredAudio }
 //   LifecycleStartEffect(Unit) { viewModel.foreground(true); onStopOrDispose { viewModel.foreground(false) } }   // start/stop, not resume/pause (analysis M1)
 //   LifecycleResumeEffect(Unit) { viewModel.onResumed(); onPauseOrDispose { } }
 //   val testSignal = LocalTunerTestSignal.current; LaunchedEffect(testSignal) { viewModel.useTestSignal(testSignal) }
-//   windowWidth = WindowWidth.from(currentWindowAdaptiveInfo().windowSizeClass)
+//   layout = TunerLayout.from(currentWindowAdaptiveInfo().windowSizeClass)   // Stacked / Wide / Landscape (data-model.md §8)
 
 // TunerScreenContent.kt — stateless; what UI tests drive
-@Composable fun TunerScreenContent(state: TunerUiState, callbacks: TunerCallbacks, telemetry: PitchTelemetry, windowWidth: WindowWidth, modifier: Modifier = Modifier)
+@Composable fun TunerScreenContent(state: TunerUiState, callbacks: TunerCallbacks, telemetry: PitchTelemetry, layout: TunerLayout, modifier: Modifier = Modifier)
 data class TunerCallbacks(onInstrument, onGuitarStrings, onPreset, onMode, onLoopTone, onAudition, onStopAudition, onRequestMicrophone)
 ```
 
@@ -39,7 +39,7 @@ data class TunerCallbacks(onInstrument, onGuitarStrings, onPreset, onMode, onLoo
 
 ```
 Column(testTag "screen.tuner" (the shell's `screen.<id>` convention; feature 002's tests keep working), padding pageMargin, gap md)
-├── TunerSelectors(windowWidth)                                  compact/medium: two rows; expanded: one row
+├── TunerSelectors(layout)                                       Stacked: two rows; Wide: one row (Landscape: see below)
 │   ├── TembraSegmentedControl(items Guitar|Cello, icons, style Large)   "tuner.instrument", items "tuner.instrument.<id>"
 │   ├── AudioStatePill(state.pill)                                       "tuner.pill" (absent when null; contentDescription = pill.label in sentence case, drawn in capitals; MicActive primary + Mic, ToneOut secondary + VolumeUp, TestSignal tertiary + GraphicEq)
 │   ├── TembraSegmentedControl(6-String|7-String, style Small)           "tuner.strings", only when instrument.hasStringCount
@@ -47,12 +47,24 @@ Column(testTag "screen.tuner" (the shell's `screen.<id>` convention; feature 002
 └── when (state.mode)
     AutoListen → TembraGradientCard(gradient meterCompact, testTag "tuner.autoListen")
         ├── if state.showDeniedState: MicrophoneDeniedState(onRequestMicrophone)           "tuner.denied", button "tuner.denied.action"
-        └── else: TunerMeter(telemetry, reading = state.reading, maxWidth by windowWidth)  "tuner.meter" (one Canvas, research R8)
+        └── else: TunerMeter(telemetry, reading = state.reading, width capped by the caller)  "tuner.meter" (one Canvas, research R8)
     ByEar → TembraGradientCard(gradient byEarCompact / byEarWide, testTag "tuner.byEar")
         ├── Row: TuningPresetPicker(state.preset, state.presets, onPreset)  "tuner.preset.picker", menu items "tuner.preset.item.<id>"
         │        LoopToneToggle(state.loopTone, onLoopTone)                 "tuner.loop"
-        └── StringCardGrid(columns = if expanded 3 else 2)
+        └── StringCardGrid(columns = Stacked 2, Wide 3, Landscape ⌈n / 2⌉)
             └── StringCard(string, playing = audition?.stringIndex == index, onAudition, onStop)   "tuner.card.<numeral>", button "tuner.card.<numeral>.audition"
+
+Landscape (600 dp or wider, shorter than 480 dp; spec FR-023, research R9 landscape table):
+Row(testTag "screen.tuner", padding pageMargin × sm, gap md)
+├── TunerSettingsColumn                                          TembraGradientCard "tuner.settings", 36 % of the width within 224–280 dp, scrolls vertically
+│   ├── header: "TUNER CONTROLS" (labelSmall) + AudioStatePill   "tuner.pill", then a 1 dp seam
+│   ├── TembraSegmentedControl(equal widths)                     "tuner.instrument"
+│   ├── TembraSegmentedControl(equal widths)                     "tuner.strings", only when instrument.hasStringCount
+│   ├── TembraSegmentedControl(equal widths)                     "tuner.mode"
+│   └── when ByEar: TuningPresetPicker "tuner.preset.picker", LoopToneToggle "tuner.loop" (no overlines: research R9)
+└── the content card (weight 1)
+    AutoListen → "tuner.autoListen": TunerMeter(size = Compact) sized from the card height ((height − rows) × 1.8, 200–480 dp), centred; scrolls only under 200 dp
+    ByEar → "tuner.byEar": StringCardGrid in two rows that fill the card (rows at least 128 dp), no picker or toggle here
 ```
 
 **TunerMeter** draws everything from the snapshot each frame while listening (`PitchFrameLoop`),

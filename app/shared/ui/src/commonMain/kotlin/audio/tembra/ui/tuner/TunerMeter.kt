@@ -29,7 +29,6 @@ import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
-import androidx.compose.ui.unit.Dp
 import audio.tembra.core.tuner.PitchDirection
 import audio.tembra.engine.PitchSnapshot
 import audio.tembra.ui.theme.TembraIcon
@@ -40,17 +39,20 @@ import kotlin.math.roundToInt
 /**
  * The chromatic meter as one Canvas (research R8, spec FR-008 to FR-013): the status pill, the note and octave,
  * the arc gauge with its marks and needle, the live frequency, the reference chip and the Flat / Sharp row are all
- * drawn in the draw phase from the latest snapshot, every display frame while [listening]; nothing recomposes. The
- * node announces the heard note and offset (or the resting state) through [reading], the ViewModel's 10 Hz sample.
+ * drawn in the draw phase from the latest snapshot, every display frame while [listening]; the frame loop invalidates
+ * drawing alone. The composable itself recomposes only with [reading], the ViewModel's 10 Hz sample, which the node
+ * announces as the heard note and offset (or the resting state). It fills the width its caller allows and derives its
+ * height from it, so a width cap is the caller's `Modifier.widthIn`; [size] picks the regular or the compact rows
+ * (`MeterLayout.widthForHeight` gives the width that fits a height).
  */
 @Composable
 fun TunerMeter(
     telemetry: PitchTelemetry,
     reading: MeterReading?,
     listening: Boolean,
-    maxWidth: Dp,
     testTag: String,
     modifier: Modifier = Modifier,
+    size: MeterSize = MeterSize.Regular,
 ) {
     val colors = TembraTheme.colors
     val extras = TembraTheme.typographyExtras
@@ -65,29 +67,33 @@ fun TunerMeter(
     val needle = remember { NeedleSmoother() }
     val arrowLeft = rememberVectorPainter(TembraIcons.vector(TembraIcon.ArrowLeft))
     val arrowRight = rememberVectorPainter(TembraIcons.vector(TembraIcon.ArrowRight))
-    val palette = MeterPalette(
-        onSurface = colors.onSurface,
-        onSurfaceVariant = colors.onSurfaceVariant,
-        primary = colors.primary,
-        secondary = colors.secondary,
-        outline = colors.outline,
-        outlineVariant = colors.outlineVariant,
-        surfaceContainerHigh = colors.surfaceContainerHigh,
-        surfaceContainerHighest = colors.surfaceContainerHighest,
-        secondaryContainer = colors.secondaryContainer,
-        needleGlow = gradients.needleGlow.color,
-        needleGlowRadius = gradients.needleGlow.radius,
-    )
-    val styles = MeterStyles(
-        note = extras.tunerNote,
-        octave = extras.tunerOctave,
-        readout = extras.tunerReadout,
-        micro = extras.microLabel,
-        label = typography.labelMedium,
-        pill = typography.labelSmall,
-        resting = typography.headlineSmall,
-    )
-    val maxWidthPx = with(density) { maxWidth.toPx() }
+    val palette = remember(colors, gradients) {
+        MeterPalette(
+            onSurface = colors.onSurface,
+            onSurfaceVariant = colors.onSurfaceVariant,
+            primary = colors.primary,
+            secondary = colors.secondary,
+            outline = colors.outline,
+            outlineVariant = colors.outlineVariant,
+            surfaceContainerHigh = colors.surfaceContainerHigh,
+            surfaceContainerHighest = colors.surfaceContainerHighest,
+            secondaryContainer = colors.secondaryContainer,
+            needleGlow = gradients.needleGlow.color,
+            needleGlowRadius = gradients.needleGlow.radius,
+        )
+    }
+    val compact = size == MeterSize.Compact
+    val styles = remember(extras, typography, compact) {
+        MeterStyles(
+            note = if (compact) extras.tunerCardNote else extras.tunerNote,
+            octave = if (compact) extras.tunerCardOctave else extras.tunerOctave,
+            readout = extras.tunerReadout,
+            micro = extras.microLabel,
+            label = typography.labelMedium,
+            pill = typography.labelSmall,
+            resting = typography.headlineSmall,
+        )
+    }
     val fontScale = density.fontScale
     val pixelDensity = density.density
     val arrowSize = spacing.meterArrowSize
@@ -96,8 +102,8 @@ fun TunerMeter(
     Canvas(
         modifier = modifier
             .layout { measurable, constraints ->
-                val width = minOf(constraints.maxWidth.toFloat(), maxWidthPx).coerceAtLeast(0f)
-                val height = MeterLayout(width, pixelDensity, fontScale).height
+                val width = (if (constraints.hasBoundedWidth) constraints.maxWidth else constraints.minWidth).toFloat()
+                val height = MeterLayout(width, pixelDensity, fontScale, size).height
                 val placeable = measurable.measure(
                     constraints.copy(minWidth = width.roundToInt(), maxWidth = width.roundToInt(), minHeight = height.roundToInt(), maxHeight = height.roundToInt()),
                 )
@@ -117,7 +123,8 @@ fun TunerMeter(
         } else {
             reading
         }
-        val layout = MeterLayout(size.width, pixelDensity, fontScale)
+        // `size` is the meter size; the canvas size is the draw scope's.
+        val layout = MeterLayout(this.size.width, pixelDensity, fontScale, size)
         val targetAngle = layout.geometry.needleAngleDegrees(shown?.cents ?: 0.0)
         val angle = if (reduceMotion || !listening) targetAngle else needle.advance(targetAngle, frameNanos)
         drawMeter(layout, shown, angle, palette, styles, textMeasurer, arrowLeft, arrowRight, arrowSize.toPx(), listening && !reduceMotion, frameNanos)

@@ -27,7 +27,6 @@ import audio.tembra.ui.designsystem.assertDisplayedWithin
 import audio.tembra.ui.designsystem.largeFonts
 import audio.tembra.ui.platform.MicrophonePermissionStatus
 import audio.tembra.ui.theme.TembraTheme
-import audio.tembra.ui.theme.WindowWidth
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -46,12 +45,12 @@ class TunerScreenByEarTest {
         presets = TuningPresets.forInstrument(Instrument.Guitar, audio.tembra.core.tuner.GuitarStringCount.Seven),
     )
 
-    private fun ComposeUiTest.setScreen(initial: TunerUiState, windowWidth: WindowWidth = WindowWidth.Compact, fontScale: Float? = null): (TunerUiState) -> Unit {
+    private fun ComposeUiTest.setScreen(initial: TunerUiState, layout: TunerLayout = TunerLayout.Stacked, fontScale: Float? = null): (TunerUiState) -> Unit {
         var state by mutableStateOf(initial)
         setContent {
             TembraTheme {
                 val content: @androidx.compose.runtime.Composable () -> Unit = {
-                    TunerScreenContent(state = state, callbacks = callbacks, telemetry = telemetry, windowWidth = windowWidth)
+                    TunerScreenContent(state = state, callbacks = callbacks, telemetry = telemetry, layout = layout)
                 }
                 if (fontScale == null) content() else CompositionLocalProvider(LocalDensity provides largeFonts(fontScale)) { content() }
             }

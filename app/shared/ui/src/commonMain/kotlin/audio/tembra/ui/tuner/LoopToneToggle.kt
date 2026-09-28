@@ -26,10 +26,10 @@ internal fun LoopToneToggle(checked: Boolean, onCheckedChange: (Boolean) -> Unit
             .background(colors.surfaceContainerLow, shape)
             .border(spacing.seam, colors.outlineVariant.copy(alpha = BORDER_ALPHA), shape)
             .padding(horizontal = spacing.md, vertical = spacing.xs),
-        horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column {
+        Column(modifier = Modifier.padding(end = spacing.sm)) {
             Text(text = TunerCopy.loopTone.uppercase(), style = TembraTheme.typographyExtras.microLabel, color = colors.secondary, maxLines = 1)
             Text(text = if (checked) TunerCopy.active else TunerCopy.off, style = TembraTheme.typographyExtras.microLabel, color = colors.onSurface, maxLines = 1)
         }

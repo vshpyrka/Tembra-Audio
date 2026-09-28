@@ -23,7 +23,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import audio.tembra.ui.theme.TembraIcon
@@ -33,16 +32,17 @@ import audio.tembra.ui.theme.TembraTheme
 /**
  * The audio-state pill (research R9, spec FR-006, FR-027): `surfaceContainerLow`, a 6 dp dot in [color] that pulses
  * once a second unless the platform asks for reduced motion, an optional 14 dp glyph and the text drawn in capitals
- * in the tabular parameter style while the node announces the sentence-case [text].
+ * in the tabular parameter style while the node announces the sentence-case [text]. With a [testTag], the dot carries
+ * `<tag>.dot` and the glyph `<tag>.icon`.
  */
 @Composable
 fun TembraStatusPill(
     text: String,
     color: Color,
-    testTag: String,
+    modifier: Modifier = Modifier,
     icon: TembraIcon? = null,
     pulsing: Boolean = false,
-    modifier: Modifier = Modifier,
+    testTag: String? = null,
 ) {
     val spacing = TembraTheme.spacing
     val animate = pulsing && !TembraTheme.motion.reduceMotion
@@ -58,7 +58,7 @@ fun TembraStatusPill(
     }
     Row(
         modifier = modifier
-            .testTag(testTag)
+            .testTagIfSet(testTag)
             .semantics(mergeDescendants = true) { contentDescription = text }
             .background(TembraTheme.colors.surfaceContainerLow, CircleShape)
             .padding(horizontal = spacing.sm, vertical = spacing.xs),
@@ -67,7 +67,7 @@ fun TembraStatusPill(
     ) {
         Box(
             modifier = Modifier
-                .testTag("$testTag.dot")
+                .testTagIfSet(testTag?.let { "$it.dot" })
                 .size(spacing.statusDot)
                 .graphicsLayer { this.alpha = alpha.value }
                 .background(color, CircleShape),
@@ -77,7 +77,7 @@ fun TembraStatusPill(
                 imageVector = TembraIcons.vector(icon),
                 contentDescription = null,
                 tint = color,
-                modifier = Modifier.testTag("$testTag.icon").size(spacing.segmentIconSmall),
+                modifier = Modifier.testTagIfSet(testTag?.let { "$it.icon" }).size(spacing.segmentIconSmall),
             )
         }
         Text(

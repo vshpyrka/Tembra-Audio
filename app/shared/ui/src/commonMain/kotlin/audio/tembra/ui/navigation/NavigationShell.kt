@@ -11,9 +11,9 @@ import dev.zacsweers.metrox.viewmodel.metroViewModel
 /** Stateful wrapper: obtains the ViewModel from the Metro graph and the layout mode from the window. */
 @Composable
 fun NavigationShell(
+    modifier: Modifier = Modifier,
     viewModel: ShellViewModel = metroViewModel(),
     layoutMode: LayoutMode = rememberLayoutMode(),
-    modifier: Modifier = Modifier,
 ) {
     // A debug test signal opens the app on the Tuner so the meter can be captured without a tap (spec FR-032).
     val testSignal = LocalTunerTestSignal.current

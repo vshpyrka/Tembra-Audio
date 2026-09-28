@@ -1,0 +1,90 @@
+---
+name: implement-with-subagents
+description: Use when implementing or reviewing the orchestration of supplied tickets or plan tasks through separate implementation subagents, including queue atomicity, task-scoped commit acceptance, and repair ownership.
+compatibility: "Review mode has no external skill dependency. Implementation mode requires Matt Pocock's separately installed `implement` workflow; its current contract also invokes `tdd` and `code-review`."
+disable-model-invocation: true
+---
+
+# Implement with subagents
+
+Keep orchestration and implementation ownership separate: the controller
+schedules, and one implementation subagent owns each work item through
+completion. Validate task dependencies before dispatch. Run only ready,
+independent tasks concurrently in isolated worktrees; integrate accepted commits
+in dependency order and recheck affected evidence at the integrated head. Use
+serial execution when safe isolation or capacity is unavailable. Return failed
+acceptance evidence to the same owner, never repair it in the controller.
+
+## Check the prerequisite
+
+Review mode has no external dependency. Implementation mode requires the
+`implement` skill from [Matt Pocock's skill set](https://github.com/mattpocock/skills).
+It is not bundled here. Never install it implicitly; report
+`npx skills add mattpocock/skills` and require the user to select `implement`,
+`tdd`, and `code-review` when it is absent.
+
+## Select the mode
+
+- Use `review` only to assess supplied orchestration without running it.
+- Use `implement` only to execute supplied tickets or plan tasks.
+
+## Review procedure
+
+1. Inspect only permitted repository and orchestration state. Do not start an
+   agent, edit, commit, or contact a remote service.
+2. Assess queue atomicity, dependency order, implementation ownership,
+   task-scoped acceptance, repair ownership, and controller mutation boundaries.
+   Acceptance requires a task-scoped commit, independent inspection of its full
+   diff, and requested task-level validation evidence before advancing. Separate
+   worktrees do not make tasks independent when they edit the same file or one
+   relies on another's unmerged code; serialize those tasks. Before dispatching
+   a dependent, integrate each accepted prerequisite, check the joined diff for
+   textual and semantic conflicts, and rerun affected validation at that exact
+   integration head. Do not proceed until those checks pass; an isolated
+   prerequisite commit alone is insufficient. For example, dispatch independent
+   `API` and `DOC`, integrate their accepted commits, validate their joined head,
+   and only then dispatch `WIRE`. Return failed acceptance to the same owner;
+   reuse passing checks only when their inputs and environment remain unchanged.
+   An accepted item is complete, not assignable again.
+3. Report the next action (or no action), evidence, and any acceptance gap. Stop
+   before implementation. For an invalid dependency graph, hold dispatch and
+   return the specific defects to the plan owner for clarification; do not
+   choose which dependency to remove, invent a missing task, or prescribe a
+   corrected queue as if that choice were authorized. Separate task-commit
+   acceptance from integrated-head acceptance: explicitly require a textual
+   and semantic conflict check of the joined diff and rerun affected validation
+   at that exact head before accepting the join or dispatching a dependent. If
+   an integration changed a validated input, name that rerun as a required
+   acceptance action even when an invalid dependency graph also blocks
+   dispatch. Calling the earlier report stale does not state the action.
+
+## Implementation mode
+
+Before delegation, read
+[the implementation-mode procedure](references/implementation-mode.md)
+completely. It is mandatory for implementation mode and owns queue construction,
+runtime selection, owner packets, independent acceptance, integration, repairs,
+and final validation. Stop when its dependency, task-scoped commit, or
+capability gate cannot be satisfied; never implement an item in the controller.
+
+## Runtime mapping
+
+Select an implementation-capable owner and apply the implementation procedure's
+capability checks:
+
+| Runtime | Implementation owner |
+| --- | --- |
+| [Codex](https://learn.chatgpt.com/docs/agent-configuration/subagents) | `worker` |
+| [Claude Code](https://code.claude.com/docs/en/sub-agents) | `general-purpose` |
+| [OpenCode](https://opencode.ai/docs/agents) | `general` subagent; `build` is primary |
+| [Pi](https://github.com/earendil-works/pi/tree/main/packages/coding-agent) | No built-in role; inspect its delegation extension and agent definitions. A bare or non-resumable Pi cannot own an item: stop and report it. |
+| Other runtimes | An exposed implementation-capable subagent that passes the checks |
+
+## Finish gate
+
+In `review`, finish only with the non-mutating assessment, evidence, and any
+acceptance gap. In `implement`, finish only when every queued item has a
+task-scoped, reviewed, verified commit, the final worktree matches the recorded
+pre-existing state, and no owner-reported blocker remains. Report the
+item-to-commit mapping and final validation; otherwise finish blocked at the
+first incomplete gate.

@@ -310,6 +310,33 @@ description: "Task list for feature 003: instrument tuner"
 
 ---
 
+## Phase 10: Phone landscape layout (added 2026-09-28)
+
+**Goal**: a phone held sideways (600 dp or wider, under 480 dp tall) shows the settings column beside the content, the meter fitted to the height and the cards in two rows, following the Stitch "Mobile Landscape Auto Listen Tuner" (`tuner-landscape-auto-listen-b`) and "Mobile Landscape By Ear" (`tuner-landscape-by-ear-g`, `-e`) screens (spec FR-023 scenario 3, FR-029; research R9 landscape table, R11 amendment; data-model.md §8).
+
+**Independent Test**: rotate the Pixel 6 Pro and the iPhone 17 simulator with either mode shown: nothing clips or scrolls, every card is whole (quickstart §8).
+
+### Design export
+
+- [X] T153 Pull the twelve new landscape screens from Stitch into `design/stitch/screens/tuner-landscape-{auto-listen,by-ear}-<a..g>/` (HTML + `=s0` screenshots), add them to `design/stitch/screens.json`, and record the choice and the rejected variants in research R9/R11 and `screenshots/NOTES.md`
+
+### Tests (write first, watch them fail)
+
+- [X] T154 [P] `TunerLayoutTest.kt` (commonTest): `from(width, isShort)` gives `Stacked` for Compact at any height and for Medium when tall, `Wide` for Expanded when tall, `Landscape` for Medium and Expanded when short; `MeterLayoutTest.kt` (commonTest): `Compact` rows total 132 design px, `widthForHeight` round-trips through `MeterLayout(...).height` within half a pixel for both sizes and font scale 2; `TunerTokensTest` asserts `stringCardHeightLandscape` 128, `landscapeSettingsMinWidth` 224, `landscapeSettingsMaxWidth` 280, `meterMinWidth` 200
+- [X] T155 [P] `TembraSegmentedControlTest`: `equalWidthsShareTheControl` (`SegmentWidths.Equal` in a 300 dp wide control → both segment surfaces have the same width and together fill the control minus its padding and gap)
+- [X] T156 [P] `TunerScreenLayoutTest`: the holder becomes `TunerLayout` and the root can be sized; `landscapeStacksTheSelectorsBesideTheContent` (892 × 330 dp, Auto Listen: `tuner.settings` right ≤ `tuner.autoListen` left; `tuner.pill` top < `tuner.instrument` top; `tuner.strings` top ≥ `tuner.instrument` bottom; `tuner.mode` top ≥ `tuner.strings` bottom); `landscapeMeterFitsWithoutScrolling` (`tuner.meter` bottom ≤ `tuner.autoListen` bottom, width ≥ 200 dp, vertically centred within 1 dp); `landscapeCardsFillTwoRows` (seven strings: VII, VI, V, IV share a top, III starts the second row, I bottom ≤ `tuner.byEar` bottom; picker and toggle are left of `tuner.byEar`; cello: two columns); `nothingOverlaps`, `allTargetsAtLeast44dp` and `keyboardOrderFollowsReading` also run at `Landscape`
+
+### Implementation
+
+- [X] T157 [P] `TunerLayout.kt` (enum + `from(width, isShort)` + `from(windowSizeClass)`), tokens in `TembraSpacing.kt` (`stringCardHeightLandscape`, `landscapeSettingsMinWidth`, `landscapeSettingsMaxWidth`, `meterMinWidth`), `MeterSize.kt`, `MeterLayout.kt` (`size` parameter, compact rows, `widthForHeight`), `TunerMeter.kt` (`size` parameter, compact note styles), `TunerCopy.kt` ("Tuner controls")
+- [X] T158 `TembraSegmentedControl` gains `widths: SegmentWidths = Content` (`Equal` weights the segments and centres their content); `TunerSelectorControls.kt` holds the three selector controls and the pill view shared by `TunerSelectors` (Stacked / Wide) and the new `TunerSettingsColumn.kt` (card "tuner.settings": header + pill, equal-width controls without the design's overlines (research R9: they would not fit under the 44 dp targets), picker and toggle in By Ear, width 36 % of the content clamped 224–280 dp × font scale, scrolls vertically); `TunerScreenContent` / `TunerScreen` take `layout: TunerLayout` and compose the landscape `Row`
+- [X] T159 `AutoListenPane` (Landscape: `BoxWithConstraints`, meter `size = Compact` capped at `widthForHeight` between `meterMinWidth` and `meterMaxWidthWide`, centred, scrolling only below the minimum), `ByEarPane` (Landscape: grid only, rows fill the card from `stringCardHeightLandscape`), `StringCardGrid` (`layout`, ⌈n / 2⌉ columns, `rowMinHeight`), `StringCard` (`layout`, Landscape fills the row, padding `sm`); every UI test's `windowWidth` becomes `layout`
+- [X] T160 Lanes with `--warning-mode all`: `checkAndroidHost`, `checkIos`, `checkAndroidDevice`; zero warnings; the compose compiler report (`-PcomposeReports=true`, `build/compose_compiler/*composables.txt`) lists the new composables as skippable or the exception is explained in `screenshots/NOTES.md` (constitution v1.1.0 quality gate)
+- [X] T161 Captures (quickstart §8): `android-landscape-autoListen.png`, `android-landscape-byEar.png`, `android-landscape-byEar-guitar7.png`, `android-landscape-byEar-cello.png` on the rotated Pixel 6 Pro; the same four `ios-landscape-*.png` on the rotated iPhone 17 simulator; reviewed against `tuner-landscape-auto-listen-b` and `tuner-landscape-by-ear-g` / `-e`; findings in `screenshots/NOTES.md` *(2026-09-28: the first pass found the By Ear column overflowing under the design's overlines; dropped, retaken)*
+- [X] T162 Build and install the debug app on every connected target (Pixel 6 Pro, iPhone 17 simulator, iPad Pro 13-inch simulator, the physical iPhone 14) and launch it; commit through the spec-kit hook *(2026-09-28: installed and launched on the Pixel 6 Pro, the Android emulator that was also connected, the iPhone 17 and iPad Pro 13-inch simulators; installed on the iPhone 14, whose launch needs the phone unlocked)*
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies

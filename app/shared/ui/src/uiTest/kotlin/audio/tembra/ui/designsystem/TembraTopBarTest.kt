@@ -27,7 +27,7 @@ class TembraTopBarTest {
     fun showsTheProductNameAndTheTitle() = runComposeUiTest {
         setContent { TembraTheme { TembraTopBar(title = "Tuner") } }
         onNodeWithText("TEMBRA AUDIO").assertIsDisplayed()
-        onNodeWithTag("chrome.topBar.title").assertTextEquals("Tuner")
+        onNodeWithText("Tuner").assertIsDisplayed()
         onNodeWithTag("chrome.topBar").assertHeightIsAtLeast(56.dp)
     }
 

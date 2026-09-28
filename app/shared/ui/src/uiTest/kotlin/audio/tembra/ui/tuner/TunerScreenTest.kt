@@ -18,7 +18,6 @@ import audio.tembra.engine.AudioState
 import audio.tembra.engine.TestSignals
 import audio.tembra.ui.platform.MicrophonePermissionStatus
 import audio.tembra.ui.theme.TembraTheme
-import audio.tembra.ui.theme.WindowWidth
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -31,12 +30,12 @@ class TunerScreenTest {
 
     private val listening = TunerUiState(loaded = true, microphone = MicrophonePermissionStatus.Granted, audio = AudioState.Listening)
 
-    private fun ComposeUiTest.setScreen(initial: TunerUiState, windowWidth: WindowWidth = WindowWidth.Compact): (TunerUiState) -> Unit {
+    private fun ComposeUiTest.setScreen(initial: TunerUiState, layout: TunerLayout = TunerLayout.Stacked): (TunerUiState) -> Unit {
         var state by mutableStateOf(initial)
         mainClock.autoAdvance = false
         setContent {
             TembraTheme {
-                TunerScreenContent(state = state, callbacks = callbacks, telemetry = telemetry, windowWidth = windowWidth)
+                TunerScreenContent(state = state, callbacks = callbacks, telemetry = telemetry, layout = layout)
             }
         }
         settle()

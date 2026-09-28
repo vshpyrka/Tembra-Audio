@@ -319,6 +319,22 @@ its screenshot confirms the same components at one-row width) and `tuner-by-ear-
 | grids | phone `grid-cols-2 gap-space-sm max-w-sm`; tablet `grid-cols-3 gap-4 max-w-xl` | 2 columns, gap 8, max 384 dp; 3 columns, gap 16, max 576 dp |
 | By Ear card background | `radial-gradient(circle at 50% 30%, rgba(171,136,255,0.06) 0%, rgba(133,20,90,0.06) 40%, transparent 75%)`, tablet `circle at 60% 50%, rgba(167,139,250,0.1) 0%, rgba(133,20,90,0.08) 45%, transparent 75%` | compact and expanded gradient tokens (data-model.md §8) |
 
+Phone landscape (added 2026-09-28 from the Stitch screens `tuner-landscape-auto-listen-b`
+"Mobile Landscape Auto Listen Tuner" and `tuner-landscape-by-ear-g` / `-e` "Mobile Landscape By
+Ear", chosen over the ten other landscape variants because their settings column is the same in
+both modes, their gauge keeps the note above the arc with the Flat / Sharp row like the phone
+meter, their grids keep every card in two rows, and they add no control outside this spec):
+
+| Element | Markup | Value used |
+|---|---|---|
+| settings column | `w-72 p-3` (Auto Listen) / `w-[320px] p-3.5 rounded-2xl border` (By Ear) in a 1000 px frame; header `text-[10px] uppercase tracking-wider` "Tuner controls" with the "Mic active" pill; sections `space-y-1` with `text-[10px] uppercase font-bold` labels; controls `grid grid-cols-2 gap-1 p-1 rounded-lg` (equal halves); the preset `select` and the "Loop Tone Active" container below the mode control | a gradient card 36 % of the content width, clamped to 224–280 dp (scaled by the font scale, at most half the width), padding 12 × 8, gap 4; header `labelSmall` uppercase `onSurfaceVariant` + the pill, 1 dp seam; segments share the width equally (`SegmentWidths.Equal`); in By Ear the picker and the toggle follow the mode control. The design's overline above each control is dropped: with the constitution's 44 dp targets the By Ear column (header, three selectors, picker, toggle) is 271 dp tall and a phone's landscape content area under the shell's top bar is about 295 dp, so the 54 dp of overlines would push the picker and the toggle out of view; the controls name themselves, as in the portrait layout |
+| gauge pane | `p-3`; header row with the "In tune" pill; note `text-4xl` + octave `text-2xl`, Hz `text-sm`, cents chip `text-[10px]`; arc `h-36` (144 px ≈ 128 dp) with `FLAT (-50c)` / `PERFECT` / `SHARP (+50c)` `text-[11px]` along its bottom | the meter in `MeterSize.Compact`: rows pill 28, note 44 (`tunerCardNote` + `tunerCardOctave`), readout 32, labels 28 dp; its width is derived from the pane height, `(height − rows) × 1.8`, capped at 480 dp and never under `meterMinWidth` 200 dp (then the pane scrolls); centred when it fits |
+| cards pane | `p-3`; `grid grid-cols-3 grid-rows-2 gap-2 flex-1` (six strings) / `grid-cols-4` (seven); card `rounded-xl p-2 bg-[#191920] border`, numeral `text-[10px] font-bold`, Hz `text-[9px]`, note `text-2xl font-extrabold`, button `py-0.5 text-[9px]` | two rows of ⌈n / 2⌉ columns (two for the cello, three for six strings, four for seven), gap 8, no width cap; cards fill the row, at least `stringCardHeightLandscape` 128 dp, padding 8, `surfaceContainerLow`, `microLabel` numeral, `tabularParam` Hz, `tunerCardNote` / `tunerCardOctave`, the same Audition button |
+
+The pane headers of those screens ("Guitar: string 6 (low E)", "Select reference string / Active
+target") and the "Pitch reference A4 = 440 Hz" row are not reproduced: they would cost height the
+short window does not have and show nothing the meter or the cards do not.
+
 Two design details are corrected rather than copied: the 28 dp and 32 dp segments and the
 16 dp toggle get a 44 dp touch target through `Modifier.minimumInteractiveComponentSize()`
 while keeping the drawn size (Constitution IV), and the note's drop shadow is dropped
@@ -361,6 +377,21 @@ meter centred at 480 dp max width, three-column grid at 576 dp max width; no sup
 **Rationale**: Constitution IV (window size classes, hover, focus, 44 dp, semantics) and the
 002 precedent for custom chrome when Material's components cannot match the design geometry
 (Material's `SegmentedButton` is 40 dp outlined, `Switch` is 52 × 32 dp).
+
+**Amendment (2026-09-28, phone landscape)**: the window input becomes `TunerLayout`
+(`Stacked` under 600 dp or between 600 and 839 dp with a tall window; `Wide` from 840 dp when the
+window is at least 480 dp tall; `Landscape` from 600 dp when the window is shorter than 480 dp,
+window-core's medium height breakpoint, as `LayoutMode` already uses for the rail), computed by
+`TunerLayout.from(currentWindowAdaptiveInfo().windowSizeClass)`. `Landscape` places
+`TunerSettingsColumn` (header with the pill, the three selectors and, in By Ear, the preset picker
+and the loop toggle, scrolling vertically) beside the content card; the Auto Listen card sizes the
+compact meter from its height and the By Ear card lays the strings out in two rows that fill it
+(R9, landscape table). The rail's short-window rule and the tuner's are the same breakpoint, so a
+phone in landscape always shows the rail beside the settings column, as the chosen Stitch screens
+do. The evidence for the choice and the rejected variants (`tuner-landscape-auto-listen-d` and
+`tuner-landscape-by-ear-c` add noise-gate, calibration, timbre and octave controls outside the
+spec; `-a`/`-f` are crops of the same family; `-c`/`-e`/`-b`/`-d` By Ear and `-c`/`-e` Auto Listen
+are the icon-rail family with card titles that cost height) is in `screenshots/NOTES.md`.
 
 ## R12. Test strategy
 

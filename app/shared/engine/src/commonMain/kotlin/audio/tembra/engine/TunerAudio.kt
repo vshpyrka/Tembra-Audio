@@ -14,7 +14,11 @@ interface TunerAudio {
 
     fun stopListening()
 
-    /** Lock-free; safe to call every frame from the UI thread. Fills [into] without allocating. Also the watchdog heartbeat. */
+    /**
+     * Lock-free; safe to call every frame. Fills [into] without allocating and is also the watchdog heartbeat. Call
+     * it from the main thread only: the facades reuse one scratch buffer per engine, so two threads reading at once
+     * would tear a snapshot.
+     */
     fun readPitch(into: PitchSnapshot)
 
     /** Sine at [frequencyHz]; [durationMs] 0 loops until [stopTone]. The same frequency re-arms without a restart. */
@@ -32,6 +36,11 @@ interface TunerAudio {
     /** Idle, Listening or Tone, read from the engine. */
     val audioState: AudioState
 
-    /** Platform interruptions and route changes (research R7). */
+    /**
+     * Platform interruptions and route changes (research R7). One collector is expected (the tuner ViewModel) for as
+     * long as audio can be running. The flow has no replay and no `.value`: an event emitted while nothing collects
+     * is dropped, which is safe because a cleared ViewModel has already stopped every stream. A feature that must
+     * see every interruption should move this to a buffered `Channel` exposed as `receiveAsFlow()`.
+     */
     val events: Flow<AudioEvent>
 }

@@ -33,5 +33,8 @@ data class Note(val pitchClass: PitchClass, val octave: Int) {
             val pitchClass = PitchClass.entries.first { it.label == label }
             return Note(pitchClass, octave.toInt())
         }
+
+        /** [parse] for input that may not be a note name at all: null instead of an exception. */
+        fun parseOrNull(name: String): Note? = PATTERN.matchEntire(name)?.let { parse(name) }
     }
 }

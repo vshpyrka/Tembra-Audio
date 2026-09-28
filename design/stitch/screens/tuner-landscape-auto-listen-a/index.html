@@ -1,0 +1,324 @@
+<!DOCTYPE html><html class="dark" lang="en"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_dashboard" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "primary-fixed-dim": "#cebdff",
+          "on-secondary-container": "#ff93c8",
+          "on-tertiary-fixed": "#23005c",
+          "outline-variant": "#494552",
+          "surface-container-low": "#1b1b1e",
+          "surface": "#131316",
+          "outline": "#948e9d",
+          "on-primary-fixed": "#21005e",
+          "surface-container": "#1f1f22",
+          "error": "#ffb4ab",
+          "on-error-container": "#ffdad6",
+          "tertiary-fixed-dim": "#d0bcff",
+          "on-surface-variant": "#cac4d4",
+          "secondary-fixed": "#ffd8e7",
+          "tertiary": "#d0bcff",
+          "on-secondary-fixed-variant": "#85145a",
+          "on-primary-fixed-variant": "#4f319c",
+          "on-tertiary-container": "#40009b",
+          "inverse-on-surface": "#303033",
+          "surface-tint": "#cebdff",
+          "surface-container-lowest": "#0e0e11",
+          "primary": "#cebdff",
+          "primary-fixed": "#e8ddff",
+          "surface-container-high": "#2a2a2d",
+          "on-secondary": "#620040",
+          "inverse-surface": "#e4e1e6",
+          "tertiary-fixed": "#e9ddff",
+          "inverse-primary": "#674bb5",
+          "primary-container": "#a78bfa",
+          "error-container": "#93000a",
+          "on-error": "#690005",
+          "background": "#131316",
+          "secondary-container": "#85145a",
+          "surface-variant": "#353438",
+          "on-primary": "#381385",
+          "surface-dim": "#131316",
+          "on-secondary-fixed": "#3d0026",
+          "secondary-fixed-dim": "#ffafd3",
+          "on-tertiary-fixed-variant": "#5516be",
+          "on-primary-container": "#3c1989",
+          "surface-bright": "#39393c",
+          "surface-container-highest": "#353438",
+          "secondary": "#ffafd3",
+          "on-background": "#e4e1e6",
+          "on-tertiary": "#3c0091",
+          "on-surface": "#e4e1e6",
+          "tertiary-container": "#ab88ff"
+        },
+        "borderRadius": {
+          "DEFAULT": "0.25rem",
+          "lg": "0.5rem",
+          "xl": "0.75rem",
+          "full": "9999px"
+        },
+        "spacing": {
+          "space-lg": "1.25rem",
+          "space-xl": "1.75rem",
+          "space-sm": "0.5rem",
+          "space-md": "0.75rem",
+          "space-xs": "0.25rem",
+          "margin": "1rem",
+          "gutter": "0.75rem"
+        },
+        "fontFamily": {
+          "label-md": [
+            "Space Grotesk"
+          ],
+          "headline-sm": [
+            "Space Grotesk"
+          ],
+          "label-lg": [
+            "Space Grotesk"
+          ],
+          "headline-lg": [
+            "Space Grotesk"
+          ],
+          "headline-md": [
+            "Space Grotesk"
+          ],
+          "tabular-timecode": [
+            "Space Grotesk"
+          ],
+          "tabular-param": [
+            "Inter"
+          ],
+          "body-md": [
+            "Inter"
+          ],
+          "headline-lg-mobile": [
+            "Space Grotesk"
+          ],
+          "body-lg": [
+            "Inter"
+          ],
+          "body-sm": [
+            "Inter"
+          ],
+          "label-sm": [
+            "Space Grotesk"
+          ]
+        },
+        "fontSize": {
+          "label-md": [
+            "12px",
+            {
+              "lineHeight": "16px",
+              "letterSpacing": "0.02em",
+              "fontWeight": "500"
+            }
+          ],
+          "headline-sm": [
+            "18px",
+            {
+              "lineHeight": "24px",
+              "fontWeight": "600"
+            }
+          ],
+          "label-lg": [
+            "14px",
+            {
+              "lineHeight": "18px",
+              "letterSpacing": "0.01em",
+              "fontWeight": "500"
+            }
+          ],
+          "headline-lg": [
+            "32px",
+            {
+              "lineHeight": "40px",
+              "letterSpacing": "-0.02em",
+              "fontWeight": "600"
+            }
+          ],
+          "headline-md": [
+            "22px",
+            {
+              "lineHeight": "28px",
+              "letterSpacing": "-0.01em",
+              "fontWeight": "600"
+            }
+          ],
+          "tabular-timecode": [
+            "15px",
+            {
+              "lineHeight": "20px",
+              "letterSpacing": "0.05em",
+              "fontWeight": "500"
+            }
+          ],
+          "tabular-param": [
+            "11px",
+            {
+              "lineHeight": "14px",
+              "letterSpacing": "0.02em",
+              "fontWeight": "500"
+            }
+          ],
+          "body-md": [
+            "14px",
+            {
+              "lineHeight": "20px",
+              "fontWeight": "400"
+            }
+          ],
+          "headline-lg-mobile": [
+            "24px",
+            {
+              "lineHeight": "32px",
+              "letterSpacing": "-0.01em",
+              "fontWeight": "600"
+            }
+          ],
+          "body-lg": [
+            "16px",
+            {
+              "lineHeight": "24px",
+              "fontWeight": "400"
+            }
+          ],
+          "body-sm": [
+            "12px",
+            {
+              "lineHeight": "16px",
+              "fontWeight": "400"
+            }
+          ],
+          "label-sm": [
+            "10px",
+            {
+              "lineHeight": "14px",
+              "letterSpacing": "0.04em",
+              "fontWeight": "600"
+            }
+          ]
+        }
+      },
+    },
+  }</script></head><body class="bg-surface-container-lowest font-body-md text-on-surface antialiased min-h-screen flex items-center justify-center p-space-sm sm:p-space-lg select-none"><div class="w-full max-w-[915px] h-[412px] bg-surface rounded-xl overflow-hidden relative shadow-[0_20px_50px_rgba(0,0,0,0.85)] flex ring-1 ring-outline-variant/30"><aside class="w-14 h-full bg-surface-container-low flex flex-col items-center justify-between py-space-sm z-30 shrink-0 select-none"><div class="flex flex-col items-center gap-space-sm w-full"><div class="w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center text-primary"><span class="material-symbols-outlined text-[20px]">graphic_eq</span></div><nav class="flex flex-col items-center gap-space-xs w-full px-space-xs" data-active-classes="bg-secondary-container text-on-secondary-container shadow-[0_0_12px_rgba(133,20,90,0.6)] rounded-lg"><a class="w-10 h-10 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="timeline" href="#" title="Timeline"><span class="material-symbols-outlined text-[20px]">view_timeline</span></a><a aria-current="page" class="w-10 h-10 flex items-center justify-center transition-colors bg-secondary-container text-on-secondary-container shadow-[0_0_12px_rgba(133,20,90,0.6)] rounded-lg" data-path="tuner" href="#" title="Tuner"><span class="material-symbols-outlined text-[20px]">tune</span></a><a class="w-10 h-10 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="effects" href="#" title="Effects"><span class="material-symbols-outlined text-[20px]">auto_fix_high</span></a><a class="w-10 h-10 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="drum-pads" href="#" title="Drum Pads"><span class="material-symbols-outlined text-[20px]">grid_view</span></a><a class="w-10 h-10 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="projects" href="#" title="Projects"><span class="material-symbols-outlined text-[20px]">folder_open</span></a></nav></div><div class="flex flex-col items-center gap-space-xs w-full px-space-xs"><a class="w-10 h-10 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="settings" href="#" title="Settings"><span class="material-symbols-outlined text-[19px]">settings</span></a><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center cursor-pointer"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></aside><div class="flex-1 h-full flex flex-col overflow-hidden"><main class="flex-1 w-full overflow-hidden relative bg-surface-container-lowest h-full"><div class="flex flex-col w-full h-full p-2.5 gap-2 select-none overflow-hidden justify-between">
+<!-- Top Compact Header Toolbar -->
+
+<!-- Main 2-Column Split Area: Tuner Display & Controls -->
+<div class="grid grid-cols-12 gap-2 flex-1 min-h-0 overflow-hidden">
+<!-- Left Column: Precision Needle Gauge -->
+<section class="col-span-5 flex flex-col justify-between gap-1.5 h-full overflow-hidden"><div class="flex items-center justify-between px-1 shrink-0"><span class="font-label-sm text-[10px] uppercase tracking-widest text-outline font-semibold">Controls &amp; Mode</span><div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-surface-container-high shadow-sm"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#34d399]"></span><span class="font-label-sm text-[9px] uppercase tracking-wider text-on-surface font-semibold">Mic Active</span></div></div><div class="bg-surface-container-low rounded-xl p-2.5 flex flex-col gap-1.5 shadow-sm"><span class="font-label-sm text-[9px] uppercase tracking-wider text-outline font-semibold">Instrument</span><div class="grid grid-cols-2 gap-1.5 p-0.5 bg-surface-container rounded-lg"><button class="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md bg-secondary-container text-on-secondary-container shadow-sm font-label-md text-label-md transition-all font-medium"><span class="material-symbols-outlined text-[15px]" style="font-variation-settings: 'FILL' 1;">music_note</span><span class="">Guitar</span></button><button class="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-all font-medium"><span class="material-symbols-outlined text-[15px]">graphic_eq</span><span class="">Cello</span></button></div></div><div class="bg-surface-container-low rounded-xl p-2.5 flex flex-col gap-1.5 shadow-sm"><span class="font-label-sm text-[9px] uppercase tracking-wider text-outline font-semibold">Strings</span><div class="grid grid-cols-2 gap-1.5 p-0.5 bg-surface-container rounded-lg"><button class="py-1.5 px-2 rounded-md bg-surface-container-high text-primary font-label-md text-label-md font-medium text-center shadow-sm">6-String</button><button class="py-1.5 px-2 rounded-md text-outline font-label-md text-label-md hover:text-on-surface text-center transition-colors">7-String</button></div></div><div class="bg-surface-container-low rounded-xl p-2.5 flex flex-col gap-1.5 shadow-sm"><span class="font-label-sm text-[9px] uppercase tracking-wider text-outline font-semibold">Tuning Mode</span><div class="grid grid-cols-2 gap-1.5 p-0.5 bg-surface-container rounded-lg"><button class="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md bg-primary text-on-primary font-label-md text-label-md shadow-[0_0_12px_rgba(206,189,255,0.4)] font-medium"><span class="material-symbols-outlined text-[14px]">mic</span><span class="">Auto Listen</span></button><button class="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md text-on-surface-variant hover:text-on-surface font-label-md text-label-md font-medium transition-colors"><span class="material-symbols-outlined text-[14px]">hearing</span><span class="">By Ear</span></button></div></div></section><section class="col-span-7 bg-surface-container-low rounded-xl p-3 flex flex-col items-center justify-between relative shadow-md overflow-hidden py-4">
+<!-- Ambient Backlight Arc -->
+<div class="absolute -top-10 w-64 h-36 bg-gradient-to-b from-primary/10 via-secondary/5 to-transparent rounded-full blur-2xl pointer-events-none"></div>
+<!-- In Tune Status Badge -->
+<div class="w-full flex items-center justify-between z-10">
+<span class="font-label-sm text-label-sm text-outline tracking-wider uppercase flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px] text-primary">sensors</span> Realtime Pitch
+        </span>
+<div class="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-secondary-container/90 text-on-secondary-container shadow-[0_0_10px_rgba(133,20,90,0.5)]">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary animate-ping"></span>
+<span class="font-label-sm text-label-sm font-semibold tracking-wider uppercase">• IN TUNE</span>
+</div>
+<span class="font-tabular-param text-tabular-param text-outline">±0.4 ¢</span>
+</div>
+<!-- Main Gauge + Large Note Centered Display -->
+<div class="relative w-full max-w-[340px] flex-1 flex flex-col items-center justify-end z-10 -mt-1">
+<!-- Prominent Root Note Identification -->
+<div class="flex flex-col items-center -mb-2">
+<div class="flex items-baseline gap-1">
+<span class="font-headline-lg text-headline-lg font-bold text-on-surface tracking-tighter drop-shadow-[0_0_18px_rgba(206,189,255,0.35)]">E</span>
+<span class="font-headline-sm text-headline-sm font-semibold text-secondary">2</span>
+</div>
+<span class="font-label-sm text-label-sm text-outline-variant -mt-1 uppercase tracking-widest">6th String (Low E)</span>
+</div>
+<!-- Gauge Semicircle Vector with Ticks & Needle -->
+<div class="relative w-[300px] h-[120px] flex justify-center items-end">
+<svg class="w-full h-full overflow-visible" viewBox="0 0 300 125">
+<!-- Background Arc Track -->
+<path class="text-surface-variant" d="M 25 120 A 125 125 0 0 1 275 120" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="4"></path>
+<!-- Active Center Threshold Tolerance Band -->
+<path class="text-secondary" d="M 130 14 A 125 125 0 0 1 170 14" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="6"></path>
+<!-- Gauge Ticks -->
+<!-- -50ct -->
+<line class="text-outline" stroke="currentColor" stroke-width="2" x1="28" x2="38" y1="120" y2="120"></line>
+<!-- -30ct -->
+<line class="text-outline" stroke="currentColor" stroke-width="2" x1="56" x2="65" y1="74" y2="79"></line>
+<!-- -15ct -->
+<line class="text-outline" stroke="currentColor" stroke-width="2" x1="97" x2="103" y1="38" y2="46"></line>
+<!-- Center 0ct Marker -->
+<line class="text-secondary" stroke="currentColor" stroke-width="3" x1="150" x2="150" y1="8" y2="24"></line>
+<!-- +15ct -->
+<line class="text-outline" stroke="currentColor" stroke-width="2" x1="203" x2="197" y1="38" y2="46"></line>
+<!-- +30ct -->
+<line class="text-outline" stroke="currentColor" stroke-width="2" x1="244" x2="235" y1="74" y2="79"></line>
+<!-- +50ct -->
+<line class="text-outline" stroke="currentColor" stroke-width="2" x1="272" x2="262" y1="120" y2="120"></line>
+<!-- Interactive Tuner Needle (Default straight up at 0 cents, with micro dynamic swing) -->
+<g class="transition-transform duration-200 ease-out origin-[150px_120px]" id="tuner-needle" style="transform: rotate(-0.43287deg);">
+<!-- Vertical glowing indicator line -->
+<line class="text-secondary shadow-[0_0_12px_#ffafd3]" stroke="currentColor" stroke-linecap="round" stroke-width="3" x1="150" x2="150" y1="120" y2="16"></line>
+<line class="text-on-secondary-container" stroke="currentColor" stroke-linecap="round" stroke-width="1.5" x1="150" x2="150" y1="120" y2="16"></line>
+</g>
+<!-- Needle Pivot Base -->
+<circle class="fill-surface-container-high" cx="150" cy="120" r="10"></circle>
+<circle class="fill-secondary shadow-[0_0_8px_#ffafd3]" cx="150" cy="120" r="5"></circle>
+</svg>
+<!-- Deflection Labels -->
+<span class="absolute bottom-1 left-2 font-label-sm text-label-sm text-outline flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[12px]">arrow_left</span> Flat
+          </span>
+<span class="absolute bottom-1 right-2 font-label-sm text-label-sm text-outline flex items-center gap-0.5">
+            Sharp <span class="material-symbols-outlined text-[12px]">arrow_right</span>
+</span>
+</div>
+</div>
+<!-- Frequency Readout & Calibration Pill -->
+<div class="w-full flex items-center justify-between z-10 pt-1">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px] text-tertiary">file_download_done</span>
+<span class="font-tabular-timecode text-tabular-timecode font-semibold text-on-surface">82.4</span>
+<span class="font-label-sm text-label-sm text-outline">Hz</span>
+</div>
+<div class="flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container-high text-on-surface">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+<span class="font-tabular-param text-tabular-param text-primary font-medium tracking-wide">TARGET 82.4 HZ</span>
+</div>
+</div>
+</section>
+<!-- Right Column: Preset Details, Quick Strings, Reference & Gate -->
+
+</div>
+</div>
+<script>
+  // Subtle natural needle shimmer micro-interaction
+  (function() {
+    const needle = document.getElementById('tuner-needle');
+    if (!needle) return;
+    let angle = 0;
+    setInterval(() => {
+      // Gentle jitter around center (+/- 1.2 degrees) to simulate real-time DSP pitch detection
+      angle = (Math.random() - 0.48) * 2.2;
+      needle.style.transform = `rotate(${angle}deg)`;
+    }, 280);
+
+    // Instrument toggle button states
+    const btnGuitar = document.getElementById('btn-guitar');
+    const btnCello = document.getElementById('btn-cello');
+    if (btnGuitar && btnCello) {
+      btnGuitar.addEventListener('click', () => {
+        btnGuitar.className = "flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-container text-on-secondary-container shadow-sm font-label-md text-label-md transition-all";
+        btnCello.className = "flex items-center gap-1.5 px-3 py-1 rounded-full text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-all";
+      });
+      btnCello.addEventListener('click', () => {
+        btnCello.className = "flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-container text-on-secondary-container shadow-sm font-label-md text-label-md transition-all";
+        btnGuitar.className = "flex items-center gap-1.5 px-3 py-1 rounded-full text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-all";
+      });
+    }
+  })();
+</script></main></div></div>
+
+
+
+
+
+</body></html>

@@ -9,11 +9,12 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
@@ -28,7 +29,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -44,7 +44,8 @@ import audio.tembra.ui.theme.TembraTheme
  * height while their interactive box is at least 44 dp (`minimumInteractiveComponentSize`); the container pill is
  * drawn behind them at its design height. Each segment is a tab with its label as description; hover raises an
  * inactive label to `onSurface`, keyboard focus draws a `primary` ring, and the active fill fades over the motion
- * token. Selecting the selected segment calls nothing.
+ * token. Selecting the selected segment calls nothing. [widths] decides whether segments hug their labels or share the
+ * caller's width equally. With a [testTag], every segment carries `<tag>.<id>` and its drawn surface `<tag>.<id>.surface`.
  */
 @Composable
 fun TembraSegmentedControl(
@@ -52,9 +53,10 @@ fun TembraSegmentedControl(
     selectedId: String,
     onSelect: (String) -> Unit,
     style: SegmentedStyle,
-    testTag: String,
-    accent: SegmentAccent = SegmentAccent.Primary,
     modifier: Modifier = Modifier,
+    accent: SegmentAccent = SegmentAccent.Primary,
+    widths: SegmentWidths = SegmentWidths.Content,
+    testTag: String? = null,
 ) {
     val spacing = TembraTheme.spacing
     val colors = TembraTheme.colors
@@ -66,7 +68,7 @@ fun TembraSegmentedControl(
     val gap = if (large) spacing.xs else spacing.xs / 2
     Row(
         modifier = modifier
-            .testTag(testTag)
+            .testTagIfSet(testTag)
             .drawBehind {
                 val height = (segmentHeight + containerPadding * 2).toPx()
                 val top = (size.height - height) / 2
@@ -88,46 +90,49 @@ fun TembraSegmentedControl(
                 style = style,
                 accent = accent,
                 segmentHeight = segmentHeight,
+                equalWidth = widths == SegmentWidths.Equal,
                 onSelect = onSelect,
-                testTag = "$testTag.${item.id}",
+                testTag = testTag?.let { "$it.${item.id}" },
             )
         }
     }
 }
 
 @Composable
-private fun Segment(
+private fun RowScope.Segment(
     item: SegmentSpec,
     selected: Boolean,
     style: SegmentedStyle,
     accent: SegmentAccent,
     segmentHeight: Dp,
+    equalWidth: Boolean,
     onSelect: (String) -> Unit,
-    testTag: String,
+    testTag: String?,
 ) {
     val spacing = TembraTheme.spacing
     val colors = TembraTheme.colors
     val motion = TembraTheme.motion
     val large = style == SegmentedStyle.Large
-    val interactionSource = remember { MutableInteractionSource() }
+    val interactionSource = item.interactionSource ?: remember { MutableInteractionSource() }
     val hovered by interactionSource.collectIsHoveredAsState()
     val pressed by interactionSource.collectIsPressedAsState()
     val focused by interactionSource.collectIsFocusedAsState()
 
     val activeFill: Color
     val activeContent: Color
-    when {
-        large -> {
-            activeFill = colors.secondaryContainer
-            activeContent = colors.onSecondaryContainer
-        }
-        accent == SegmentAccent.Primary -> {
-            activeFill = colors.primaryContainer
-            activeContent = colors.onPrimaryContainer
-        }
-        else -> {
-            activeFill = colors.surfaceContainerHigh
-            activeContent = colors.primary
+    if (large) {
+        activeFill = colors.secondaryContainer
+        activeContent = colors.onSecondaryContainer
+    } else {
+        when (accent) {
+            SegmentAccent.Primary -> {
+                activeFill = colors.primaryContainer
+                activeContent = colors.onPrimaryContainer
+            }
+            SegmentAccent.Subtle -> {
+                activeFill = colors.surfaceContainerHigh
+                activeContent = colors.primary
+            }
         }
     }
     val restingContent = if (hovered || pressed) colors.onSurface else colors.onSurfaceVariant
@@ -146,7 +151,8 @@ private fun Segment(
 
     Box(
         modifier = Modifier
-            .testTag(testTag)
+            .then(if (equalWidth) Modifier.weight(1f) else Modifier)
+            .testTagIfSet(testTag)
             .selectable(
                 selected = selected,
                 interactionSource = interactionSource,
@@ -160,7 +166,8 @@ private fun Segment(
     ) {
         Row(
             modifier = Modifier
-                .testTag("$testTag.surface")
+                .testTagIfSet(testTag?.let { "$it.surface" })
+                .then(if (equalWidth) Modifier.fillMaxWidth() else Modifier)
                 .height(segmentHeight)
                 .drawBehind {
                     val radius = CornerRadius(shapeRadius.toPx())
@@ -177,7 +184,7 @@ private fun Segment(
                     }
                 }
                 .padding(horizontal = horizontalPadding),
-            horizontalArrangement = Arrangement.spacedBy(spacing.xs + spacing.xs / 2),
+            horizontalArrangement = Arrangement.spacedBy(spacing.xs + spacing.xs / 2, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (item.icon != null) {

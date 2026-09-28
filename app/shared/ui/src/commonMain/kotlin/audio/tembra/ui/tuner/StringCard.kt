@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -49,18 +50,19 @@ import audio.tembra.ui.theme.TembraIcon
 import audio.tembra.ui.theme.TembraIcons
 import audio.tembra.ui.theme.TembraShapes
 import audio.tembra.ui.theme.TembraTheme
-import audio.tembra.ui.theme.WindowWidth
 
 /**
  * One By Ear card (spec FR-017, FR-018, research R9): numeral, target frequency, note and octave and the Audition
  * button; while sounding the card is outlined in `secondary` with the design's glow, the button reads "Playing" and a
- * three-bar level indicator moves unless the platform asks for reduced motion (spec FR-027).
+ * three-bar level indicator moves unless the platform asks for reduced motion (spec FR-027). Stacked cards are square
+ * (or taller), wide cards at least 144 dp on `surfaceContainerLowest`, landscape cards fill their row with the
+ * design's tighter padding.
  */
 @Composable
 internal fun StringCard(
     string: TargetString,
     playing: Boolean,
-    windowWidth: WindowWidth,
+    layout: TunerLayout,
     onAudition: () -> Unit,
     onStop: () -> Unit,
     modifier: Modifier = Modifier,
@@ -69,12 +71,21 @@ internal fun StringCard(
     val colors = TembraTheme.colors
     val extras = TembraTheme.typographyExtras
     val gradients = TembraTheme.gradients
-    val expanded = windowWidth == WindowWidth.Expanded
+    val wide = layout == TunerLayout.Wide
     val shape = RoundedCornerShape(TembraShapes.medium)
-    val fill = if (expanded) colors.surfaceContainerLowest else colors.surfaceContainerLow
+    val fill = if (wide) colors.surfaceContainerLowest else colors.surfaceContainerLow
     val border = if (playing) colors.secondary else colors.outlineVariant.copy(alpha = BORDER_ALPHA)
     val glow = gradients.playingGlow
-    val sizeModifier = if (expanded) Modifier.heightIn(min = spacing.stringCardHeightWide) else Modifier.squareOrTaller()
+    val sizeModifier = when (layout) {
+        TunerLayout.Stacked -> Modifier.squareOrTaller()
+        TunerLayout.Wide -> Modifier.heightIn(min = spacing.stringCardHeightWide)
+        TunerLayout.Landscape -> Modifier.fillMaxHeight()
+    }
+    val padding = when (layout) {
+        TunerLayout.Stacked -> spacing.md
+        TunerLayout.Wide -> spacing.md + spacing.xs / 2
+        TunerLayout.Landscape -> spacing.sm
+    }
     Column(
         modifier = modifier
             .testTag("tuner.card.${string.numeral}")
@@ -97,21 +108,21 @@ internal fun StringCard(
             }
             .background(fill, shape)
             .border(spacing.seam, border, shape)
-            .padding(if (expanded) spacing.md + spacing.xs / 2 else spacing.md),
+            .padding(padding),
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = string.numeral,
-                style = if (expanded) TembraTheme.typography.labelMedium else extras.microLabel,
+                style = if (wide) TembraTheme.typography.labelMedium else extras.microLabel,
                 fontWeight = FontWeight.Bold,
                 color = colors.outline,
             )
             Text(text = "${formatHz(string.frequencyHz)} ${TunerCopy.hertz}", style = extras.tabularParam, color = colors.onSurfaceVariant)
         }
         Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(spacing.xs / 2)) {
-            Text(text = string.note.pitchClass.label, style = if (expanded) TembraTheme.typography.headlineLarge else extras.tunerCardNote, color = colors.onSurface)
-            Text(text = string.note.octave.toString(), style = if (expanded) TembraTheme.typography.headlineSmall else extras.tunerCardOctave, color = colors.primary)
+            Text(text = string.note.pitchClass.label, style = if (wide) TembraTheme.typography.headlineLarge else extras.tunerCardNote, color = colors.onSurface)
+            Text(text = string.note.octave.toString(), style = if (wide) TembraTheme.typography.headlineSmall else extras.tunerCardOctave, color = colors.primary)
             if (playing) {
                 Spacer(modifier = Modifier.weight(1f))
                 LevelBars()

@@ -156,8 +156,11 @@ xcrun simctl privacy "iPhone 17" revoke microphone "$BUNDLE"
 |---|---|---|
 | compact (under 600 dp) | Pixel 6 Pro portrait | iPhone 17 simulator |
 | expanded (840 dp and wider) | Pixel 6 Pro with `adb shell wm density 380` in landscape, or a tablet | iPad Pro 13-inch simulator landscape |
+| phone landscape (600 dp and wider, under 480 dp tall) | Pixel 6 Pro rotated (`adb shell settings put system accelerometer_rotation 0; adb shell settings put system user_rotation 1`; `user_rotation 0` afterwards) | iPhone 17 simulator rotated (Simulator menu Device › Rotate Left, or the AppleScript in `screenshots/NOTES.md`) |
 
-Capture both modes at both widths on both platforms, the denied state at compact, and both modes at
+Capture both modes at both widths on both platforms, both modes in phone landscape (six-string guitar
+and, for By Ear, also the seven-string guitar and the cello) as `<platform>-landscape-<autoListen|byEar>[-<preset>].png`,
+the denied state at compact, and both modes at
 the largest system font size on compact (Android: `adb shell settings put system font_scale 2.0`;
 iOS: Settings → Accessibility → Larger Text), into `specs/003-instrument-tuner/screenshots/` as
 `<platform>-<compact|expanded>-<autoListen|byEar|denied>[-largefont].png`; record devices and
@@ -173,6 +176,10 @@ expected versus seen in `screenshots/NOTES.md`.
 
 Review against `design/stitch/screens/instrument-tuner/phone/index.html` (rendered) and the tablet screenshots: selectors, pill, gradient card, gauge geometry, note sizes, cards, picker, toggle. Nothing
 clipped, overlapping or under the bottom bar at any size; every label whole at the large font.
+Review the phone-landscape captures against `design/stitch/screens/tuner-landscape-auto-listen-b/screenshot.jpg`
+and `tuner-landscape-by-ear-g/screenshot.jpg` (`-e` for seven strings): the settings column holds the
+header with the pill, the selectors and (By Ear) the picker and toggle; the meter fits its card
+without scrolling; every card is whole in two rows.
 
 ## 9. Pointer, keyboard and screen reader
 

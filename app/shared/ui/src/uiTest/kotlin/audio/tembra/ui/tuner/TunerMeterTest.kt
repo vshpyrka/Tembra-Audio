@@ -2,6 +2,7 @@ package audio.tembra.ui.tuner
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -86,7 +87,7 @@ class TunerMeterTest {
                     fontScale = LocalDensity.current.fontScale
                     pixelDensity = LocalDensity.current.density
                     Box(Modifier.width(width)) {
-                        TunerMeter(telemetry = telemetry, reading = reading, listening = listening, maxWidth = maxWidth, testTag = "tuner.meter")
+                        TunerMeter(telemetry = telemetry, reading = reading, listening = listening, testTag = "tuner.meter", modifier = Modifier.widthIn(max = maxWidth))
                     }
                 }
                 val f = fonts

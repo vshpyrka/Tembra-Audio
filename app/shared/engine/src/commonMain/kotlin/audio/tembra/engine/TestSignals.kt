@@ -6,7 +6,7 @@ import audio.tembra.core.tuner.Note
 object TestSignals {
 
     private fun note(id: String, name: String, cents: Double) =
-        TestSignalEntry(id, TestSignal(Note.parse(name), cents), ExpectedReading.Note(Note.parse(name), cents))
+        TestSignalEntry(id, TestSignal.Pitched(Note.parse(name), cents), ExpectedReading.Note(Note.parse(name), cents))
 
     val catalogue: List<TestSignalEntry> = listOf(
         note("e2-in-tune", "E2", 0.0),
@@ -22,7 +22,7 @@ object TestSignals {
         note("b1-in-tune", "B1", 0.0),
         note("a1-in-tune", "A1", 0.0),
         note("e5-in-tune", "E5", 0.0),
-        TestSignalEntry("out-of-range-2khz", TestSignal(note = null, cents = 0.0, rawFrequencyHz = 2000.0), ExpectedReading.Resting),
+        TestSignalEntry("out-of-range-2khz", TestSignal.Raw(2000.0), ExpectedReading.Resting),
     )
 
     fun byId(id: String): TestSignalEntry? = catalogue.firstOrNull { it.id == id }

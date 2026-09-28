@@ -4,11 +4,13 @@ import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHeightIsAtLeast
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.dp
@@ -16,7 +18,6 @@ import audio.tembra.core.tuner.TunerMode
 import audio.tembra.engine.TestSignals
 import audio.tembra.ui.platform.MicrophonePermissionStatus
 import audio.tembra.ui.theme.TembraTheme
-import audio.tembra.ui.theme.WindowWidth
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
@@ -30,7 +31,7 @@ class TunerScreenDeniedTest {
 
     private fun ComposeUiTest.setScreen(state: TunerUiState) {
         mainClock.autoAdvance = false
-        setContent { TembraTheme { TunerScreenContent(state = state, callbacks = callbacks, telemetry = telemetry, windowWidth = WindowWidth.Compact) } }
+        setContent { TembraTheme { TunerScreenContent(state = state, callbacks = callbacks, telemetry = telemetry, layout = TunerLayout.Stacked) } }
         repeat(3) { mainClock.advanceTimeByFrame() }
     }
 
@@ -45,10 +46,10 @@ class TunerScreenDeniedTest {
             hasText("Tembra Audio listens to your instrument to show its tuning. Allow the microphone to use Auto Listen.") and hasAnyAncestor(hasTestTag("tuner.denied")),
             useUnmergedTree = true,
         ).assertExists()
-        onNodeWithTag("tuner.denied.action").assert(hasText("Allow microphone"))
+        onNodeWithText("Allow microphone").assertIsDisplayed()
         onNodeWithTag("tuner.meter").assertDoesNotExist()
         onNodeWithTag("tuner.pill").assertDoesNotExist()
-        onNodeWithTag("tuner.denied.action").performClick()
+        onNodeWithText("Allow microphone").performClick()
         repeat(2) { mainClock.advanceTimeByFrame() }
         assertTrue(requested)
     }

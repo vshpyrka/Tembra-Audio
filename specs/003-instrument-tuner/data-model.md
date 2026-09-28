@@ -160,6 +160,17 @@ between ±68°, dashed inner arc between ±36°, needle length 0.43, pivot ring 
 `needleAngle(cents) = (cents.coerceIn(−50, 50)) × 1.8°`; a per-frame smoothing of the drawn
 angle with a time constant of 80 ms.
 
+`MeterLayout(width, density, fontScale, size)` places the meter's rows: `MeterSize.Regular` (pill
+36, note 76, readout 40, labels 36 design px) for the stacked and wide layouts, `MeterSize.Compact`
+(28, 44, 32, 28; the note in `tunerCardNote` / `tunerCardOctave`) for phone landscape.
+`MeterLayout.widthForHeight(height, density, fontScale, size)` inverts it, `(height − rows) × 1.8`,
+so a short pane can size the meter to fit (research R9, landscape table).
+
+`TunerLayout` (pure, unit-tested): `Stacked` (width under 600 dp, or under 840 dp when the window
+is 480 dp or taller), `Wide` (840 dp or wider and 480 dp or taller), `Landscape` (600 dp or wider
+and shorter than 480 dp); `from(windowSizeClass)` reads window-core's width and height
+breakpoints.
+
 Tokens added to the theme (data, tested for parity with research R9 in `TunerTokensTest`):
 
 | Token | Value |
@@ -173,6 +184,9 @@ Tokens added to the theme (data, tested for parity with research R9 in `TunerTok
 | `TembraSpacing.meterMaxWidth` / `meterMaxWidthWide` | 340 dp / 480 dp |
 | `TembraSpacing.byEarGridMaxWidth` / `byEarGridMaxWidthWide` | 384 dp / 576 dp |
 | `TembraSpacing.stringCardHeightWide` | 144 dp |
+| `TembraSpacing.stringCardHeightLandscape` | 128 dp (the least a landscape card row gets; rows grow to fill the card) |
+| `TembraSpacing.landscapeSettingsMinWidth` / `landscapeSettingsMaxWidth` | 224 dp / 280 dp (the settings column is 36 % of the content width within these, scaled by the font scale, at most half the width) |
+| `TembraSpacing.meterMinWidth` | 200 dp (below this the landscape meter scrolls instead of shrinking) |
 | `TembraSpacing.toggleWidth` / `toggleHeight` / `toggleKnob` | 32 / 16 / 12 dp |
 | `TembraSpacing.statusDot` | 6 dp |
 | `TembraGradients.meterCompact` | radial at (0.6, 0.45): `#A78BFA` 12 % → `#D946EF` 6 % at 35 % → transparent at 70 % |

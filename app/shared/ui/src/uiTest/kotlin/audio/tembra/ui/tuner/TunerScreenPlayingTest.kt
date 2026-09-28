@@ -22,7 +22,6 @@ import audio.tembra.ui.designsystem.averageColorAt
 import audio.tembra.ui.designsystem.isCloserTo
 import audio.tembra.ui.platform.MicrophonePermissionStatus
 import audio.tembra.ui.theme.TembraTheme
-import audio.tembra.ui.theme.WindowWidth
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -45,7 +44,7 @@ class TunerScreenPlayingTest {
             TembraTheme {
                 secondary = TembraTheme.colors.secondary
                 outlineVariant = TembraTheme.colors.outlineVariant
-                TunerScreenContent(state = state, callbacks = callbacks, telemetry = telemetry, windowWidth = WindowWidth.Compact)
+                TunerScreenContent(state = state, callbacks = callbacks, telemetry = telemetry, layout = TunerLayout.Stacked)
             }
         }
         repeat(3) { mainClock.advanceTimeByFrame() }

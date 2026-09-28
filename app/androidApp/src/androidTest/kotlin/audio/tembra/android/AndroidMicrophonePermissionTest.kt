@@ -66,4 +66,23 @@ class AndroidMicrophonePermissionTest {
         assertEquals(MicrophonePermissionStatus.Granted, withTimeout(2_000) { pending.await() })
         assertEquals(MicrophonePermissionStatus.Granted, permission.status.value)
     }
+
+    @Test
+    fun aSecondRequestWhileOneIsPendingSharesItsResult() = runBlocking {
+        var launches = 0
+        val host = MicrophonePermissionHost { launches++ }
+        val permission = AndroidMicrophonePermission(context, host)
+        val first = async { permission.request() }
+        withTimeout(2_000) {
+            while (launches == 0) yield()
+        }
+        val second = async { permission.request() }
+        yield()
+        assertTrue(first.isActive)
+        assertTrue(second.isActive)
+        host.onResult(true)
+        assertEquals(MicrophonePermissionStatus.Granted, withTimeout(2_000) { first.await() })
+        assertEquals(MicrophonePermissionStatus.Granted, withTimeout(2_000) { second.await() })
+        assertEquals("the prompt was launched again for the pending request", 1, launches)
+    }
 }

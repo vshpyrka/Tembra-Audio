@@ -37,3 +37,13 @@ kotlin {
         matching { it.name == "androidDeviceTest" }.configureEach { dependsOn(uiTest) }
     }
 }
+
+// Compose compiler reports on request (`-PcomposeReports=true`): the stability and skippability evidence a
+// recomposition review reads (`classes.txt`, `composables.txt`, `composables.csv` under build/compose_compiler).
+// Off by default so ordinary builds stay unchanged.
+if (providers.gradleProperty("composeReports").orNull == "true") {
+    composeCompiler {
+        reportsDestination = layout.buildDirectory.dir("compose_compiler")
+        metricsDestination = layout.buildDirectory.dir("compose_compiler")
+    }
+}

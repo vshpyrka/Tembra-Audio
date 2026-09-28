@@ -4,6 +4,7 @@ import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /** Note naming, MIDI numbering and equal-temperament frequencies (contracts/tuner-domain.md, spec FR-009). */
@@ -43,5 +44,14 @@ class NoteTest {
         assertFailsWith<IllegalArgumentException> { Note.parse("H2") }
         assertFailsWith<IllegalArgumentException> { Note.parse("E") }
         assertFailsWith<IllegalArgumentException> { Note.parse("") }
+    }
+
+    @Test
+    fun parseOrNullRejectsWithoutThrowing() {
+        assertEquals(Note(PitchClass.FSharp, 3), Note.parseOrNull("F#3"))
+        assertEquals(Note(PitchClass.E, 2), Note.parseOrNull("E2"))
+        assertNull(Note.parseOrNull("Eb2"))
+        assertNull(Note.parseOrNull("E"))
+        assertNull(Note.parseOrNull(""))
     }
 }

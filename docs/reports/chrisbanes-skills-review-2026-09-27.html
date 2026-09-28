@@ -1,0 +1,831 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tembra Skills Audit</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #131316;
+    --surface-low: #1B1B1E;
+    --surface: #1F1F22;
+    --surface-high: #2A2A2D;
+    --surface-highest: #353438;
+    --on-surface: #E4E1E6;
+    --on-surface-variant: #CAC4D4;
+    --outline: #948E9D;
+    --outline-variant: #494552;
+    --primary: #CEBDFF;
+    --primary-container: #A78BFA;
+    --on-primary-container: #3C1989;
+    --secondary: #FFAFD3;
+    --secondary-container: #85145A;
+    --sev-high: #FFB4AB;
+    --sev-high-bg: #3A1A1C;
+    --sev-medium: #FFD597;
+    --sev-medium-bg: #3A2C15;
+    --sev-low: #B8C2CC;
+    --sev-low-bg: #26292E;
+    --ok: #9EDBB3;
+    --code-bg: #0E0E11;
+    --display: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+    --body: "Inter", "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      color-scheme: light;
+      --bg: #F7F6FA;
+      --surface-low: #FFFFFF;
+      --surface: #F1EFF6;
+      --surface-high: #E8E5F0;
+      --surface-highest: #DEDAE8;
+      --on-surface: #1B1B1E;
+      --on-surface-variant: #494552;
+      --outline: #75707E;
+      --outline-variant: #CAC4D4;
+      --primary: #5B3DB8;
+      --primary-container: #E8DDFF;
+      --on-primary-container: #21005E;
+      --secondary: #A8004F;
+      --secondary-container: #FFD8E7;
+      --sev-high: #9A1B1B;
+      --sev-high-bg: #FCE4E2;
+      --sev-medium: #7A4A00;
+      --sev-medium-bg: #FFF0D6;
+      --sev-low: #3D4652;
+      --sev-low-bg: #E9EBEF;
+      --ok: #1E6B3A;
+      --code-bg: #ECEAF2;
+    }
+  }
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --bg: #F7F6FA;
+    --surface-low: #FFFFFF;
+    --surface: #F1EFF6;
+    --surface-high: #E8E5F0;
+    --surface-highest: #DEDAE8;
+    --on-surface: #1B1B1E;
+    --on-surface-variant: #494552;
+    --outline: #75707E;
+    --outline-variant: #CAC4D4;
+    --primary: #5B3DB8;
+    --primary-container: #E8DDFF;
+    --on-primary-container: #21005E;
+    --secondary: #A8004F;
+    --secondary-container: #FFD8E7;
+    --sev-high: #9A1B1B;
+    --sev-high-bg: #FCE4E2;
+    --sev-medium: #7A4A00;
+    --sev-medium-bg: #FFF0D6;
+    --sev-low: #3D4652;
+    --sev-low-bg: #E9EBEF;
+    --ok: #1E6B3A;
+    --code-bg: #ECEAF2;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--on-surface);
+    font-family: var(--body);
+    font-size: 15px;
+    line-height: 1.55;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding-block: 32px 64px; padding-inline: 20px; }
+  h1, h2, h3, h4 { font-family: var(--display); text-wrap: balance; margin: 0; }
+  h1 { font-size: 34px; line-height: 1.1; font-weight: 700; letter-spacing: -0.02em; }
+  h2 { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; margin-top: 8px; }
+  h3 { font-size: 17px; font-weight: 600; }
+  p { margin: 0; max-width: 72ch; }
+  a { color: var(--primary); }
+  code { font-family: var(--mono); font-size: 0.92em; background: var(--surface-high); padding: 1px 5px; border-radius: 4px; }
+  pre { margin: 0; font-family: var(--mono); font-size: 12.5px; line-height: 1.5; background: var(--code-bg); border: 1px solid var(--outline-variant); border-radius: 8px; padding: 10px 12px; overflow-x: auto; }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  .eyebrow { font-family: var(--display); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--primary); }
+  header { display: grid; gap: 14px; padding-bottom: 28px; border-bottom: 1px solid var(--outline-variant); }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px 22px; color: var(--on-surface-variant); font-size: 13.5px; }
+  .meta b { color: var(--on-surface); font-weight: 600; }
+  section { display: grid; gap: 16px; padding-block: 32px; border-bottom: 1px solid var(--outline-variant); }
+  section:last-of-type { border-bottom: 0; }
+  .lede { color: var(--on-surface-variant); }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  .tile { background: var(--surface-low); border: 1px solid var(--outline-variant); border-radius: 10px; padding: 14px 16px; display: grid; gap: 4px; }
+  .tile .n { font-family: var(--display); font-size: 30px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+  .tile .l { font-size: 12.5px; color: var(--on-surface-variant); }
+  .tile.high .n { color: var(--sev-high); }
+  .tile.medium .n { color: var(--sev-medium); }
+  .tile.low .n { color: var(--sev-low); }
+  .tile.ok .n { color: var(--ok); }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--outline-variant); vertical-align: top; }
+  th { font-family: var(--display); font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--on-surface-variant); font-weight: 600; }
+  .scroll { overflow-x: auto; }
+  .filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .filters span { font-size: 13px; color: var(--on-surface-variant); }
+  .filters button { font: inherit; font-size: 13px; font-family: var(--display); font-weight: 600; color: var(--on-surface); background: var(--surface-high); border: 1px solid var(--outline-variant); border-radius: 999px; padding: 5px 12px; cursor: pointer; }
+  .filters button[aria-pressed="true"] { background: var(--primary-container); color: var(--on-primary-container); border-color: transparent; }
+  .filters button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+  .cluster { display: grid; gap: 12px; }
+  .cluster-head { display: grid; gap: 4px; }
+  .cluster-head p { color: var(--on-surface-variant); font-size: 14px; }
+  .finding { display: grid; grid-template-columns: 6px 1fr; background: var(--surface-low); border: 1px solid var(--outline-variant); border-radius: 10px; overflow: hidden; }
+  .finding .stripe { background: var(--sev-low); }
+  .finding.high .stripe { background: var(--sev-high); }
+  .finding.medium .stripe { background: var(--sev-medium); }
+  .finding .body { display: grid; gap: 10px; padding: 14px 16px 16px; min-width: 0; }
+  .finding .top { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+  .chip { font-family: var(--display); font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; background: var(--sev-low-bg); color: var(--sev-low); }
+  .chip.high { background: var(--sev-high-bg); color: var(--sev-high); }
+  .chip.medium { background: var(--sev-medium-bg); color: var(--sev-medium); }
+  .chip.skill { background: var(--surface-high); color: var(--on-surface-variant); text-transform: none; letter-spacing: 0; font-family: var(--mono); font-weight: 500; }
+  .id { font-family: var(--mono); font-size: 12px; color: var(--on-surface-variant); }
+  .loc { font-family: var(--mono); font-size: 12.5px; color: var(--secondary); word-break: break-all; }
+  .kv { display: grid; grid-template-columns: 84px 1fr; gap: 6px 12px; font-size: 14px; }
+  .kv dt { font-family: var(--display); font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--on-surface-variant); padding-top: 2px; }
+  .kv dd { margin: 0; min-width: 0; }
+  .kv dd p + p { margin-top: 6px; }
+  .finding[hidden] { display: none; }
+  ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+  ul li::marker { color: var(--outline); }
+  .good li b { font-weight: 600; }
+  .note { background: var(--surface-low); border: 1px solid var(--outline-variant); border-left: 3px solid var(--primary-container); border-radius: 8px; padding: 12px 14px; font-size: 14px; }
+  @media (max-width: 560px) {
+    h1 { font-size: 28px; }
+    .kv { grid-template-columns: 1fr; gap: 2px 0; }
+    .kv dt { padding-top: 6px; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .filters button { transition: background-color 120ms ease; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Tembra Audio · code review</span>
+    <h1>The Kotlin and Compose code, read against Chris Banes' skills</h1>
+    <p class="lede">Every Kotlin source in <code>app/</code> was read against the twelve code-facing skills from <a href="https://github.com/chrisbanes/skills">chrisbanes/skills</a> (installed 2026-09-27 into <code>.claude/skills/</code>). Each finding quotes the line, names the skill rule it comes from, says why it matters here, and gives the smallest change that satisfies the rule. Findings were traced in source and re-checked with grep; none was reproduced at runtime.</p>
+    <div class="meta">
+      <span><b>Branch</b> 003-instrument-tuner @ bd37d79</span>
+      <span><b>Scope</b> shared/core, shared/engine, shared/data, shared/ui, androidApp (Kotlin only)</span>
+      <span><b>Out of scope</b> engine/ (C++), iosApp (Swift), workflow skills</span>
+      <span><b>Date</b> 2026-09-27</span>
+    </div>
+  </header>
+
+  <section id="summary">
+    <h2>Summary</h2>
+    <div class="tiles">
+      <div class="tile high"><span class="n" id="count-high">0</span><span class="l">High · a defect a user can hit</span></div>
+      <div class="tile medium"><span class="n" id="count-medium">0</span><span class="l">Medium · wrong owner or seam, works today</span></div>
+      <div class="tile low"><span class="n" id="count-low">0</span><span class="l">Low · shape, naming, documentation</span></div>
+      <div class="tile ok"><span class="n">9</span><span class="l">Areas already aligned with a skill</span></div>
+    </div>
+    <p>The code is in good shape against these skills. The tuner already has the three seams the state-and-effects skill asks for (wiring composable, plain content composable, state holder), the meter reads its frame clock only in the draw phase, and every theme accessor is correctly marked read-only. The one defect worth fixing first is an unowned coroutine in the tuner ViewModel that can leave a string card "playing" after the screen was hidden. The medium items are structural: an <code>expect class</code> nobody in common code calls, three collectors launched from a constructor, and a 10 Hz state update that recomposes the whole tuner tree instead of the meter alone.</p>
+    <div class="note"><b>Status, later on 2026-09-27.</b> 28 of the 29 findings were applied on the <code>003-instrument-tuner</code> working tree, test first: the two audition defects and the launch-site change each had a failing ViewModel test before the fix, the shared pending permission request has an instrumented test, and the rewritten UI tests failed to compile until the interaction-source seam existed. C1 was left unchanged because the constitution names the engine facade as an <code>expect class</code>; that wording needs a <code>/speckit-constitution</code> amendment first. Verification, all through the <code>gradle-run</code> wrapper with <code>--warning-mode all</code> and no warnings: the JVM host lane, the iOS simulator lane for all four modules, and the Android device lane for all four modules plus the app module. The compose compiler report now generated by <code>-PcomposeReports=true</code> lists <code>TunerSelectors</code>, <code>ByEarPane</code> and <code>AutoListenPane</code> as restartable and skippable with stable value parameters.</div>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Skill</th><th>Findings</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr><td><code>kotlin-concurrency-and-flow</code></td><td>A1–A6</td><td>One defect (A1); the rest are ownership and contract wording</td></tr>
+          <tr><td><code>kotlin-control-flow</code></td><td>B1–B4</td><td>Four subjectless <code>when</code>s over closed enums; guards would make them exhaustive</td></tr>
+          <tr><td><code>kotlin-api-design</code></td><td>C1–C4</td><td>The <code>expect class</code> is unused by common code; three small API seams</td></tr>
+          <tr><td><code>compose-state-and-effects</code></td><td>D1</td><td>Screen boundary is right; effect keys hide an identity</td></tr>
+          <tr><td><code>compose-performance</code></td><td>E1–E3</td><td>One provable 10 Hz recomposition path; no compiler reports configured</td></tr>
+          <tr><td><code>compose-animations</code></td><td>F1–F2</td><td>Two places read animated state in composition</td></tr>
+          <tr><td><code>compose-component-design</code></td><td>G1–G3</td><td>Parameter order and two placement decisions taken from callers</td></tr>
+          <tr><td><code>compose-ui-testing-patterns</code></td><td>H1–H6</td><td id="tests-verdict">Right seams and frozen clocks throughout; hover and focus visuals need an interaction-source seam</td></tr>
+          <tr><td><code>compose-focus-navigation</code></td><td>none</td><td>Focus comes from focusable components and interaction sources; nothing to add</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="filters" role="group" aria-label="Filter findings by severity">
+      <span>Show</span>
+      <button type="button" data-sev="all" aria-pressed="true" id="f-all">All</button>
+      <button type="button" data-sev="high" aria-pressed="false" id="f-high">High</button>
+      <button type="button" data-sev="medium" aria-pressed="false" id="f-medium">Medium</button>
+      <button type="button" data-sev="low" aria-pressed="false" id="f-low">Low</button>
+    </div>
+  </section>
+
+  <section id="concurrency">
+    <div class="cluster-head">
+      <span class="eyebrow">A · kotlin-concurrency-and-flow</span>
+      <h2>Coroutine ownership and event contracts</h2>
+      <p>The skill asks that every piece of asynchronous work has a visible owner, cancellation path and failure path, and that event primitives are chosen from their replay and fan-out contract rather than by default.</p>
+    </div>
+    <div class="cluster">
+
+      <article class="finding high" data-sev="high">
+        <div class="stripe"></div>
+        <div class="body">
+          <div class="top"><span class="chip high">High</span><span class="id">A1</span><h3>The audition job has no owner, so a late decode can revive a cleared audition</h3></div>
+          <span class="loc">shared/ui/src/commonMain/kotlin/audio/tembra/ui/tuner/TunerViewModel.kt:176–188, 314–316</span>
+<pre><code>fun audition(stringIndex: Int) {
+    val state = _uiState.value
+    val string = state.strings.getOrNull(stringIndex) ?: return
+    viewModelScope.launch {
+        val sound = sounds.resolve(state.instrument, string.note)
+        if (sound is ReferenceSound.Recording &amp;&amp; sampleHandles[sound.resourceName] == null) {
+            val handle = withContext(decodeDispatcher) { audio.loadSample(sound.bytes) }
+            ...
+        }
+        _uiState.update { it.copy(audition = AuditionState(stringIndex, it.loopTone, sound)) }
+        applyAudio()
+    }
+}</code></pre>
+          <dl class="kv">
+            <dt>Rule</dt><dd>"Identify each coroutine owner, cancellation boundary, producer, consumer" and "Finish when cancellation, restart, replay, and failure behavior are all observable from the public API and no caller must guess who owns the work." The launch is fire-and-forget: nothing holds its <code>Job</code>, so <code>stopAudition()</code>, <code>screenVisible(false)</code>, <code>foreground(false)</code> and a second tap cannot cancel it.</dd>
+            <dt>Why</dt><dd><p>Two orderings go wrong. Tap a string whose recording is still decoding, then tap a second string: the second audition is applied first and the first one overwrites it when its decode finishes, so the card the user tapped last is not the one sounding.</p><p>Tap a string, then background the app before the decode completes: <code>foreground(false)</code> calls <code>clearAudition()</code>, the job then completes and writes the audition back, <code>applyAudio()</code> computes <code>Idle</code> because the app is hidden, and the next <code>foreground(true)</code> starts the tone. Spec FR-020 says a tone stopped by backgrounding never restarts. The window is the length of one WAV decode, so it is narrow but real.</p></dd>
+            <dt>Change</dt><dd>Keep <code>private var auditionJob: Job?</code>. In <code>audition()</code> cancel the previous job before launching, store the new one, and check <code>isActive</code> (or use <code>ensureActive()</code>) before the state write. Cancel it in <code>clearAudition()</code> and <code>onCleared()</code>. Add a ViewModel test that taps two strings while the first recording decodes and asserts the second one wins, and one that backgrounds mid-decode and asserts no tone starts on return.</dd>
+          </dl>
+        </div>
+      </article>
+
+      <article class="finding medium" data-sev="medium">
+        <div class="stripe"></div>
+        <div class="body">
+          <div class="top"><span class="chip medium">Medium</span><span class="id">A2</span><h3>Three collectors are launched from the ViewModel constructor</h3></div>
+          <span class="loc">shared/ui/src/commonMain/kotlin/audio/tembra/ui/tuner/TunerViewModel.kt:72–97</span>
+<pre><code>init {
+    viewModelScope.launch { val stored = preferences.snapshot.first() ... applyAudio() }
+    viewModelScope.launch { permission.status.collect { status -&gt; ... applyAudio() } }
+    viewModelScope.launch { audio.events.collect(::onEvent) }
+}</code></pre>
+          <dl class="kv">
+            <dt>Rule</dt><dd>Structured concurrency, step 4: "Move construction-time and initializer launches to an explicit suspending bootstrap or named launch site. A constructor or <code>Initializer.initialize()</code> may register, but must not launch." The UI exception needs the caller to be "an actual UI event or lifecycle hook"; a constructor is neither.</dd>
+            <dt>Why</dt><dd>The practical risk is low here because the ViewModel is entry-scoped, so its lifetime already tracks the Tuner destination. The cost shows in the tests, which must call <code>runCurrent()</code> right after construction before anything is observable, and in ordering: <code>applyAudio()</code> can run from the permission collector before preferences are loaded and relies on the <code>loaded</code> guard to do nothing.</dd>
+            <dt>Change</dt><dd>Move the three launches into one named <code>start()</code> guarded by a <code>Job</code>, and call it from the existing lifecycle hook <code>screenVisible(true)</code> (or from <code>TunerScreen</code>'s <code>DisposableEffect</code>). The <code>loaded</code> guard can then become an ordering guarantee: load preferences first, then subscribe to permission and events.</dd>
+          </dl>
+        </div>
+      </article>
+
+      <article class="finding low" data-sev="low">
+        <div class="stripe"></div>
+        <div class="body">
+          <div class="top"><span class="chip">Low</span><span class="id">A3</span><h3>A second overlapping permission request silently orphans the first waiter</h3></div>
+          <span class="loc">androidApp/src/main/kotlin/audio/tembra/android/MicrophonePermissionHost.kt:45–51</span>
+<pre><code>suspend fun launch(): Boolean {
+    val launcher = launch ?: return false
+    val deferred = CompletableDeferred&lt;Boolean&gt;()
+    pending = deferred
+    launcher(Manifest.permission.RECORD_AUDIO)
+    return deferred.await()
+}</code></pre>
+          <dl class="kv">
+            <dt>Rule</dt><dd>Flow state and events: "Exactly-once handoff to one consumer" must be chosen deliberately, and "no caller must guess who owns the work." <code>pending</code> is overwritten, so a second call while one is in flight leaves the first coroutine suspended until <code>viewModelScope</code> dies.</dd>
+            <dt>Why</dt><dd>Today the ViewModel cannot reach this: the automatic request only fires while <code>NotDetermined</code>, and the button only appears once denied. The API still allows it, and the next caller will not know.</dd>
+            <dt>Change</dt><dd>If <code>pending</code> is non-null, either return <code>pending.await()</code> (share the result) or complete the old deferred with <code>false</code> before replacing it. One line either way, plus a test in <code>AndroidMicrophonePermissionTest</code>.</dd>
+          </dl>
+        </div>
+      </article>
+
+      <article class="finding low" data-sev="low">
+        <div class="stripe"></div>
+        <div class="body">
+          <div class="top"><span class="chip">Low</span><span class="id">A4</span><h3>The platform event flows are replay-zero broadcasts whose loss contract is not written down</h3></div>
+          <span class="loc">shared/engine/src/androidMain/kotlin/audio/tembra/engine/AndroidAudioFocus.kt:17 · shared/engine/src/iosMain/kotlin/audio/tembra/engine/IosAudioSession.kt:45 · shared/engine/src/commonMain/kotlin/audio/tembra/engine/TunerAudio.kt:35–36</span>
+<pre><code>private val _events = MutableSharedFlow&lt;AudioEvent&gt;(extraBufferCapacity = 16)
+val events: Flow&lt;AudioEvent&gt; = _events</code></pre>
+          <dl class="kv">
+            <dt>Rule</dt><dd>"Before choosing <code>SharedFlow</code>, ask whether an absent collector may lose an event and whether every observer must receive it." and "Finish by stating the consumer count, absent-collector behavior, replay, buffer, and <code>.value</code> requirements."</dd>
+            <dt>Why</dt><dd>The choice is defensible: there is one consumer (the tuner ViewModel), it collects for its whole life, and <code>onCleared()</code> stops audio, so an interruption arriving with no collector has nothing to interrupt. That reasoning lives only in this review.</dd>
+            <dt>Change</dt><dd>Say it in the <code>TunerAudio.events</code> KDoc: one collector expected, events emitted with no collector are dropped, replay is zero. If a later feature (the metronome, playback) needs every interruption delivered, move to a buffered <code>Channel</code> exposed as <code>receiveAsFlow()</code> at that point.</dd>
+          </dl>
+        </div>
+      </article>
+
+      <article class="finding low" data-sev="low">
+        <div class="stripe"></div>
+        <div class="body">
+          <div class="top"><span class="chip">Low</span><span class="id">A5</span><h3>DataStore runs on a scope that nothing owns</h3></div>
+          <span class="loc">shared/data/src/commonMain/kotlin/audio/tembra/data/tuner/TembraDataStore.kt:19–22</span>
+<pre><code>fun preferences(
+    directory: String,
+    scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
+): DataStore&lt;Preferences&gt; = ...</code></pre>
+          <dl class="kv">
+            <dt>Rule</dt><dd>"Replace a stored, injected, lazily created, or function-local <code>CoroutineScope</code> on a non-UI class with suspending APIs", with the exception that "lifecycle infrastructure explicitly owns cancellation, errors, and restart" and then "still exposes visible start/stop behavior."</dd>
+            <dt>Why</dt><dd>DataStore requires a scope by API, so the exception applies. The scope is still created as a default argument, so no reader can find who owns or cancels it; the tests already build their own scopes to close the store between runs.</dd>
+            <dt>Change</dt><dd>Provide one application-scoped <code>CoroutineScope</code> from the Metro graph (<code>@SingleIn(AppScope::class)</code>) and pass it into <code>tunerPreferences(directory, scope)</code>. The owner is then the graph, and a future app-shutdown or test harness can cancel it.</dd>
+          </dl>
+        </div>
+      </article>
+
+      <article class="finding low" data-sev="low">
+        <div class="stripe"></div>
+        <div class="body">
+          <div class="top"><span class="chip">Low</span><span class="id">A6</span><h3><code>readPitch</code> shares one scratch buffer, so it is single-thread only, but the contract says "UI thread" not "one thread"</h3></div>
+          <span class="loc">shared/engine/src/androidMain/kotlin/audio/tembra/engine/NativeAudioEngine.android.kt:15 · shared/engine/src/iosMain/kotlin/audio/tembra/engine/NativeAudioEngine.ios.kt:35 · shared/engine/src/commonMain/kotlin/audio/tembra/engine/TunerAudio.kt:17</span>
+<pre><code>/** Reused by every [readPitch]: [state, sampleRate, frequencyHz, clarity, inputPeak, hasPitch, synthetic]. */
+private val reading = FloatArray(READING_FIELDS)</code></pre>
+          <dl class="kv">
+            <dt>Rule</dt><dd>"Finish when a reader can locate the owner, start point, cancellation path, and failure behavior without guessing." The two callers today (the meter's draw lambda and the ViewModel's 10 Hz poll) both run on the main thread, so there is no race, but that is a coincidence of the call sites rather than a stated rule of the API.</dd>
+            <dt>Change</dt><dd>Either state "call only from the main thread" in the <code>TunerAudio.readPitch</code> KDoc, or allocate the scratch buffer per call (one small array) and drop the constraint. The KDoc is the smaller change.</dd>
+          </dl>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="control-flow">
+    <div class="cluster-head">
+      <span class="eyebrow">B · kotlin-control-flow</span>
+      <h2>Branching over closed domains</h2>
+      <p>The skill's rule: "For a closed enum, Boolean, sealed type, or nullable closed type, name every case and omit <code>else</code>", and use a guard when one case needs a branch-local predicate. Kotlin 2.4.20 has stable guard conditions, so each rewrite below compiles as shown.</p>
+    </div>
+    <div class="cluster">
+
+      <article class="finding low" data-sev="low">
+        <div class="stripe"></div>
+        <div class="body">
+          <div class="top"><span class="chip">Low</span><span class="id">B1</span><h3>The pill getter classifies <code>AudioState</code> without naming it as the subject</h3></div>
+          <span class="loc">shared/ui/src/commonMain/kotlin/audio/tembra/ui/tuner/TunerUiState.kt:34–40</span>
+<pre><code>val pill: AudioStatePill?
+    get() = when {
+        audio == AudioState.Listening &amp;&amp; testSignal != null -&gt; AudioStatePill.TestSignal
+        audio == AudioState.Listening -&gt; AudioStatePill.MicActive
+        audio == AudioState.Tone -&gt; AudioStatePill.ToneOut
+        else -&gt; null
+    }</code></pre>
+          <dl class="kv">
+            <dt>Rule</dt><dd>"Name the value being classified. If every branch tests it, use <code>when (subject)</code>" and "Primary case plus a branch-local predicate → Guard condition".</dd>
+            <dt>Change</dt><dd><pre><code>get() = when (audio) {
+    AudioState.Listening if testSignal != null -&gt; AudioStatePill.TestSignal
+    AudioState.Listening -&gt; AudioStatePill.MicActive
+    AudioState.Tone -&gt; AudioStatePill.ToneOut
+    AudioState.Idle -&gt; null
+}</code></pre>A fourth <code>AudioState</code> then fails to compile here instead of silently hiding the pill.</dd>
+          </dl>
+        </div>
+      </article>
+
+      <article class="finding low" data-sev="low">
+        <div class="stripe"></div>
+        <div class="body">
+          <div class="top"><span class="chip">Low</span><span class="id">B2</span><h3>The screen-reader sentence branches on booleans although <code>direction</code> is the closed value</h3></div>
+          <span class="loc">shared/ui/src/commonMain/kotlin/audio/tembra/ui/tuner/MeterReading.kt:20–28</span>
+<pre><code>return when {
+    isInTune -&gt; "${note.name}, ${TunerCopy.inTune.lowercase()}"
+    direction == PitchDirection.Flat -&gt; "${note.name}, $amount cents ${TunerCopy.flat.lowercase()}"
+    else -&gt; "${note.name}, $amount cents ${TunerCopy.sharp.lowercase()}"
+}</code></pre>
+          <dl class="kv">
+            <dt>Rule</dt><dd>Same rule as B1. <code>isInTune</code> and <code>direction == InTune</code> are the same fact (both come from <code>NoteReading</code>), so <code>when (direction)</code> with the three enum cases is exhaustive and drops the <code>else</code>.</dd>
+            <dt>Change</dt><dd><code>when (direction) { PitchDirection.InTune -&gt; …; PitchDirection.Flat -&gt; …; PitchDirection.Sharp -&gt; … }</code>.</dd>
+          </dl>
+        </div>
+      </article>
+
+      <article class="finding low" data-sev="low">
+        <div class="stripe"></div>
+        <div class="body">
+          <div class="top"><span class="chip">Low</span><span class="id">B3</span><h3>The segment colour <code>else</code> stands in for <code>SegmentAccent.Subtle</code></h3></div>
+          <span class="loc">shared/ui/src/commonMain/kotlin/audio/tembra/ui/designsystem/TembraSegmentedControl.kt:119–132</span>
+<pre><code>when {
+    large -&gt; { activeFill = colors.secondaryContainer; activeContent = colors.onSecondaryContainer }
+    accent == SegmentAccent.Primary -&gt; { ... }
+    else -&gt; { activeFill = colors.surfaceContainerHigh; activeContent = colors.primary }
+}</code></pre>
+          <dl class="kv">
+            <dt>Rule</dt><dd>"Open input or deliberate fallback → Explicit <code>else</code>"; otherwise name every case. <code>SegmentAccent</code> is a two-value enum, so a third accent would silently take the Subtle colours.</dd>
+            <dt>Change</dt><dd><code>if (large) { … } else when (accent) { SegmentAccent.Primary -&gt; …; SegmentAccent.Subtle -&gt; … }</code>. Two values are being classified (style, then accent), so nesting is the honest shape.</dd>
+          </dl>
+        </div>
+      </article>
+
+      <article class="finding low" data-sev="low">
+        <div class="stripe"></div>
+        <div class="body">
+          <div class="top"><span class="chip">Low</span><span class="id">B4</span><h3><code>TestSignal</code> needs a <code>!!</code> that an <code>init</code> check makes safe by convention</h3></div>
+          <span class="loc">shared/engine/src/commonMain/kotlin/audio/tembra/engine/TestSignal.kt:18–23</span>
+<pre><code>init { require(note != null || rawFrequencyHz != null) { ... } }
+
+val frequencyHz: Double
+    get() = rawFrequencyHz ?: (note!!.frequencyHz() * 2.0.pow(cents / 1200.0))</code></pre>
+          <dl class="kv">
+            <dt>Rule</dt><dd>"Verify smart casts still work without <code>as</code>, <code>!!</code>, mutable temporaries, or duplicate casts. If they do not, keep the original shape or take a smaller refactor." Here the smaller refactor is a type: the two constructor shapes are two cases.</dd>
+            <dt>Change</dt><dd>A sealed <code>TestSignal</code> with <code>Pitched(note, cents, …)</code> and <code>Raw(frequencyHz, …)</code> and a shared <code>frequencyHz</code> property removes both the <code>require</code> and the <code>!!</code>. The catalogue in <code>TestSignals</code> already builds the two cases separately, so the call sites barely change.</dd>
+          </dl>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="api-design">
+    <div class="cluster-head">
+      <span class="eyebrow">C · kotlin-api-design</span>
+      <h2>Function ownership, domain types, platform seams</h2>
+      <p>The skill prefers a common interface plus platform bindings whenever common code needs fakes, injected dependencies or lifecycle ownership, and wants parsing and construction owned by the target type.</p>
+    </div>
+    <div class="cluster">
+
+      <article class="finding medium" data-sev="medium">
+        <div class="stripe"></div>
+        <div class="body">
+          <div class="top"><span class="chip medium">Medium</span><span class="id">C1</span><h3><code>expect class NativeAudioEngine</code> has no caller in common code</h3></div>
+          <span class="loc">shared/engine/src/commonMain/kotlin/audio/tembra/engine/NativeAudioEngine.kt:9 · build-logic/src/main/kotlin/tembra.kmp.library.gradle.kts:19</span>
+<pre><code>expect class NativeAudioEngine : AudioEngine        // NativeAudioEngine.kt
+freeCompilerArgs.add("-Xexpect-actual-classes")      // tembra.kmp.library.gradle.kts</code></pre>
+          <dl class="kv">
+            <dt>Rule</dt><dd>Multiplatform boundaries: "Implementation needs injected dependencies, lifecycle ownership, runtime choice, or test fakes → Common interface plus platform binding" and "Use <code>expect</code>/<code>actual</code> for simple compile-time platform specialization."</dd>
+            <dt>Why</dt><dd>The interface already exists (<code>AudioEngine</code>), the fake already exists (<code>FakeAudioEngine</code>), and both platform graphs already bind it (<code>AndroidAppGraph.provideAudioEngine</code>, <code>IosAppGraph.provideAudioEngine</code>). Nothing in <code>commonMain</code> references <code>NativeAudioEngine</code> except its own file and a KDoc. The Android actual also needs a <code>Context</code> that the expect cannot express, which is why the declaration has no constructor and why the whole build opts into the beta <code>-Xexpect-actual-classes</code> flag.</dd>
+            <dt>Change</dt><dd>Delete the <code>expect</code> declaration, keep the two actuals as ordinary platform classes (<code>NativeAudioEngine</code> in <code>androidMain</code> and <code>iosMain</code>, or <code>AndroidAudioEngine</code> / <code>IosAudioEngine</code>), and remove the compiler flag. Note that <code>CLAUDE.md</code> rule 2 and the constitution describe the facade as "an <code>expect class AudioEngine</code>"; the code already deviates from that wording (interface plus expect subclass), so this change should go through <code>/speckit-constitution</code> as a wording amendment rather than being done silently.</dd>
+            <dt>Status</dt><dd>Not applied in the fix pass. The constitution (<code>.specify/memory/constitution.md</code>, lines 31 and 45) reserves <code>expect</code>/<code>actual</code> for the engine facade by name, so the code change waits for that amendment.</dd>
+          </dl>
+        </div>
+      </article>
+
+      <article class="finding low" data-sev="low">
+        <div class="stripe"></div>
+        <div class="body">
+          <div class="top"><span class="chip">Low</span><span class="id">C2</span><h3>The ViewModel invents an engine error code that the ABI does not define</h3></div>
+          <span class="loc">shared/ui/src/commonMain/kotlin/audio/tembra/ui/tuner/TunerViewModel.kt:257, 339 · shared/engine/src/commonMain/kotlin/audio/tembra/engine/AudioResult.kt:3–7 · engine/include/tembra_engine.h:38–43</span>
+<pre><code>if (handle == null) AudioResult.Error(NO_SAMPLE) else audio.playSample(handle, tone.loop)
+...
+const val NO_SAMPLE = -5
+// AudioResult.kt: "[Error.code] is the `tembra_error` value"
+// tembra_engine.h defines TEMBRA_ERR_STATE = -1 … TEMBRA_ERR_DECODE = -4</code></pre>
+          <dl class="kv">
+            <dt>Rule</dt><dd>"Represent a single-field domain concept with the smallest type that preserves its semantic and interop contract" and "Keep shared code semantic". <code>AudioResult.Error.code</code> is documented as an ABI value; <code>-5</code> is a UI-layer invention that a reader would go looking for in the C header.</dd>
+            <dt>Change</dt><dd>The value is only compared against <code>Ok</code>, so the simplest fix is to not construct an <code>Error</code> at all: make <code>startTone</code> return <code>AudioResult?</code> or a local sealed outcome, or add an explicit <code>AudioResult.NoSample</code> case in the engine module where the contract lives.</dd>
+          </dl>
+        </div>
+      </article>
+
+      <article class="finding low" data-sev="low">
+        <div class="stripe"></div>
+        <div class="body">
+          <div class="top"><span class="chip">Low</span><span class="id">C3</span><h3><code>Note.parse</code> throws, so a caller wraps it in <code>runCatching</code></h3></div>
+          <span class="loc">shared/ui/src/commonMain/kotlin/audio/tembra/ui/tuner/TunerTestSignalRequest.kt:16 · shared/core/src/commonMain/kotlin/audio/tembra/core/tuner/Note.kt:28–35 · shared/core/src/commonMain/kotlin/audio/tembra/core/version/SemanticVersion.kt:29</span>
+<pre><code>val note = runCatching { Note.parse(name) }.getOrNull() ?: return null</code></pre>
+          <dl class="kv">
+            <dt>Rule</dt><dd>Function ownership: "Construction or parsing → Target factory or named top-level function." <code>SemanticVersion</code> already offers <code>parseOrNull</code>; <code>Note</code> does not, so the caller pays with <code>runCatching</code>, which also swallows any non-parse <code>Throwable</code>.</dd>
+            <dt>Change</dt><dd>Add <code>Note.parseOrNull(name)</code> beside <code>parse</code> (same regex, returns null on no match) and call it here. <code>TunerTestSignalRequest</code> then has no try/catch at all.</dd>
+          </dl>
+        </div>
+      </article>
+
+      <article class="finding low" data-sev="low">
+        <div class="stripe"></div>
+        <div class="body">
+          <div class="top"><span class="chip">Low</span><span class="id">C4</span><h3>The decode dispatcher is a public mutable property used as a test seam</h3></div>
+          <span class="loc">shared/ui/src/commonMain/kotlin/audio/tembra/ui/tuner/TunerViewModel.kt:61–62 · shared/ui/src/commonTest/kotlin/audio/tembra/ui/tuner/TunerViewModelTest.kt:68</span>
+<pre><code>/** Recordings are decoded off the main thread (analysis M6); tests leave the default. */
+var decodeDispatcher: CoroutineDispatcher = Dispatchers.Default</code></pre>
+          <dl class="kv">
+            <dt>Rule</dt><dd>"Retained policy, state, I/O, clock, locale, or dependencies → Injected service/collaborator." A dispatcher is a dependency; a public <code>var</code> lets any caller change it after construction and after the first launch has captured the old value.</dd>
+            <dt>Change</dt><dd>Make it a constructor parameter with a default (<code>decodeDispatcher: CoroutineDispatcher = Dispatchers.Default</code>). Metro's <code>@Inject</code> constructor accepts defaulted parameters, and the test passes its <code>StandardTestDispatcher</code> explicitly.</dd>
+          </dl>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="state-effects">
+    <div class="cluster-head">
+      <span class="eyebrow">D · compose-state-and-effects</span>
+      <h2>State ownership and effect keys</h2>
+      <p>The screen boundary the skill describes is already there: <code>TunerScreen</code> owns wiring, <code>TunerScreenContent</code> takes immutable state and callbacks, <code>NavigationShell</code> and <code>NavigationShellContent</code> follow the same split. One effect-key point remains.</p>
+    </div>
+    <div class="cluster">
+      <article class="finding low" data-sev="low">
+        <div class="stripe"></div>
+        <div class="body">
+          <div class="top"><span class="chip">Low</span><span class="id">D1</span><h3>Effects keyed on <code>Unit</code> hide the ViewModel identity, and the test signal is handed over twice</h3></div>
+          <span class="loc">shared/ui/src/commonMain/kotlin/audio/tembra/ui/tuner/TunerScreen.kt:25–38</span>
+<pre><code>DisposableEffect(Unit) {
+    viewModel.useTestSignal(testSignal)
+    viewModel.screenVisible(true)
+    onDispose { viewModel.screenVisible(false) }
+}
+LifecycleStartEffect(Unit) { viewModel.foreground(true); onStopOrDispose { viewModel.foreground(false) } }
+LifecycleResumeEffect(Unit) { viewModel.onResumed(); onPauseOrDispose { } }
+LaunchedEffect(testSignal) { viewModel.useTestSignal(testSignal) }</code></pre>
+          <dl class="kv">
+            <dt>Rule</dt><dd>Side effects, step 2: "Key an effect by the semantic input that should restart or dispose it. Do not use <code>Unit</code> to hide a changing identity."</dd>
+            <dt>Why</dt><dd>All three effects call methods on <code>viewModel</code>. Today <code>metroViewModel()</code> returns the same entry-scoped instance for the composable's life, so the keys are correct by accident; keying on <code>viewModel</code> makes the dependency visible and costs nothing. Separately, <code>useTestSignal</code> runs in the <code>DisposableEffect</code> and again in the <code>LaunchedEffect</code> on first composition; <code>LocalTunerTestSignal</code> is a <code>staticCompositionLocalOf</code> set once at <code>App</code>, so the second effect never observes a change.</dd>
+            <dt>Change</dt><dd>Key the three lifecycle effects on <code>viewModel</code>. Drop the <code>LaunchedEffect</code> and keep the hand-over inside the <code>DisposableEffect</code>, where the comment already explains the ordering it needs.</dd>
+          </dl>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="performance">
+    <div class="cluster-head">
+      <span class="eyebrow">E · compose-performance</span>
+      <h2>What recomposes at 10 Hz</h2>
+      <p>The skill wants a provable path before a repair and a measurement after. Only source was available here, so E1 names the path and gives the repair conditionally; the meter's own draw loop is already built the way the skill asks.</p>
+    </div>
+    <div class="cluster">
+
+      <article class="finding medium" data-sev="medium">
+        <div class="stripe"></div>
+        <div class="body">
+          <div class="top"><span class="chip medium">Medium</span><span class="id">E1</span><h3>Every 10 Hz reading recomposes the whole tuner tree, and the selector bar rebuilds its lists each time</h3></div>
+          <span class="loc">shared/ui/src/commonMain/kotlin/audio/tembra/ui/tuner/TunerViewModel.kt:283 · TunerScreenContent.kt:35 · TunerSelectors.kt:33–35</span>
+<pre><code>// TunerViewModel.poll(), 10 Hz while listening
+_uiState.update { it.copy(audio = engineState, reading = reading) }
+
+// TunerSelectors, runs on every recomposition
+val instrumentItems = Instrument.entries.map { SegmentSpec(it.id, it.label, ...) }
+val stringItems = GuitarStringCount.entries.map { SegmentSpec(it.count.toString(), it.label) }
+val modeItems = TunerMode.entries.map { SegmentSpec(it.id, it.label, ...) }</code></pre>
+          <dl class="kv">
+            <dt>Path</dt><dd>While a pitch is heard, <code>poll()</code> writes a new <code>TunerUiState</code> ten times a second. <code>TunerUiState</code> holds a <code>List&lt;TuningPreset&gt;</code>, so the compiler treats it as unstable and compares it by identity; every emission is a new instance, so <code>TunerScreenContent</code>, <code>TunerSelectors</code> and <code>AutoListenPane</code> all recompose. <code>TunerSelectors</code> then allocates three new lists and passes them to three <code>TembraSegmentedControl</code>s, whose <code>List&lt;SegmentSpec&gt;</code> parameter is likewise identity-compared, so each segment recomposes too. None of this touches the meter's frame loop, which is correct.</dd>
+            <dt>Rule</dt><dd>Stability: "Lazy item gets a new lambda or derived object each parent recomposition → Hoist/remember it for the item's stable inputs" and "UI state exposes <code>List</code> … that must be immutable → convert once at the boundary." Diagnosis: "When only source code is available, separate the proven feedback path from its unmeasured runtime cost."</dd>
+            <dt>Change</dt><dd><p>Two cheap steps, then measure. First, hoist the three constant lists to file-level <code>private val</code>s; they depend only on enum entries. Second, give <code>TunerSelectors</code> and <code>ByEarPane</code> the fields they read (instrument, string count, mode, pill; preset, presets, loopTone, audition) instead of the whole state, so a reading-only change lets them skip. If you would rather keep the single-state signature, annotate <code>TunerUiState</code> with <code>@Immutable</code> (truthful: every property is a <code>val</code> and the list is never mutated) and accept that reading changes still recompose the bar.</p><p>The runtime cost is unmeasured. Ten recompositions a second of about twenty nodes is unlikely to show as jank on its own; the value is keeping the pattern clean before the timeline and mixer screens, which will carry far more nodes under far faster telemetry.</p></dd>
+          </dl>
+        </div>
+      </article>
+
+      <article class="finding low" data-sev="low">
+        <div class="stripe"></div>
+        <div class="body">
+          <div class="top"><span class="chip">Low</span><span class="id">E2</span><h3>The meter rebuilds its palette and text styles on each of those recompositions</h3></div>
+          <span class="loc">shared/ui/src/commonMain/kotlin/audio/tembra/ui/tuner/TunerMeter.kt:68–89</span>
+<pre><code>val palette = MeterPalette(onSurface = colors.onSurface, ... needleGlowRadius = gradients.needleGlow.radius)
+val styles = MeterStyles(note = extras.tunerNote, ... resting = typography.headlineSmall)</code></pre>
+          <dl class="kv">
+            <dt>Rule</dt><dd>Local state: "Use <code>remember(keys) { … }</code> for a read-only result." The KDoc says "nothing recomposes", which is true of the frame loop but not of the composable: its <code>reading</code> parameter changes at 10 Hz for the accessibility description, so the body runs at 10 Hz and allocates both objects each time.</dd>
+            <dt>Change</dt><dd><code>remember(colors, gradients) { MeterPalette(...) }</code> and <code>remember(extras, typography) { MeterStyles(...) }</code>. Both inputs are theme objects that change only with the theme. Reword the KDoc to "the draw phase runs every frame; the composable only recomposes with the 10 Hz reading".</dd>
+          </dl>
+        </div>
+      </article>
+
+      <article class="finding low" data-sev="low">
+        <div class="stripe"></div>
+        <div class="body">
+          <div class="top"><span class="chip">Low</span><span class="id">E3</span><h3>No compose compiler reports are configured, so stability claims cannot be checked</h3></div>
+          <span class="loc">build-logic/src/main/kotlin/tembra.kmp.compose.gradle.kts (absent)</span>
+          <dl class="kv">
+            <dt>Rule</dt><dd>Stability, step 3: "Generate reports for the shipped variant and inspect <code>classes.txt</code>, <code>composables.txt</code>, <code>composables.csv</code>." Nothing in <code>build-logic</code> or the module builds enables them, so E1 was argued from source rather than read from a report.</dd>
+            <dt>Change</dt><dd>Add the gated block from the skill to the Compose convention plugin:<pre><code>if (providers.gradleProperty("composeReports").orNull == "true") {
+    composeCompiler {
+        reportsDestination = layout.buildDirectory.dir("compose_compiler")
+        metricsDestination = layout.buildDirectory.dir("compose_compiler")
+    }
+}</code></pre>Off by default, so the zero-warning gate is untouched.</dd>
+          </dl>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="animations">
+    <div class="cluster-head">
+      <span class="eyebrow">F · compose-animations</span>
+      <h2>Where animated values are read</h2>
+      <p>The API choices are right throughout: <code>animate*AsState</code> for one value following state, <code>rememberInfiniteTransition</code> for the pulses, labels everywhere, and reduce-motion collapses every duration to zero. Two components read the animated value one phase too early.</p>
+    </div>
+    <div class="cluster">
+
+      <article class="finding low" data-sev="low">
+        <div class="stripe"></div>
+        <div class="body">
+          <div class="top"><span class="chip">Low</span><span class="id">F1</span><h3>The bar and rail items compute their animated fill in composition</h3></div>
+          <span class="loc">shared/ui/src/commonMain/kotlin/audio/tembra/ui/designsystem/TembraNavigationRail.kt:105–117 · TembraNavigationBar.kt:103–123</span>
+<pre><code>val active by animateFloatAsState(targetValue = if (selected) 1f else 0f, ...)
+val fill = lerp(restingFill, colors.secondaryContainer, active)
+...
+.background(fill, shape)</code></pre>
+          <dl class="kv">
+            <dt>Rule</dt><dd>"For animated fills, prefer <code>drawBehind { drawRect(color.value) }</code> over a value-form background when the color updates every frame" and "Keep animated <code>State</code> in layout or draw block modifiers when it changes at frame rate."</dd>
+            <dt>Why</dt><dd>During the 300 ms selection change every frame recomposes the item to recompute two <code>lerp</code>s. <code>TembraSegmentedControl</code> and <code>TembraToggle</code> already read their animated colour inside <code>drawBehind</code>, so the design system is inconsistent with itself here. The content tint feeds <code>Icon</code> and <code>Text</code> parameters and has no draw-phase form, so it can stay.</dd>
+            <dt>Change</dt><dd>Pass the <code>State&lt;Float&gt;</code> (not the read value) into <code>activePill</code> and the rail's background, and <code>lerp</code> inside the draw block. The bar's <code>activePill</code> already takes a <code>strength</code> float; change its type to <code>State&lt;Float&gt;</code> or a <code>() -&gt; Float</code> provider.</dd>
+          </dl>
+        </div>
+      </article>
+
+      <article class="finding low" data-sev="low">
+        <div class="stripe"></div>
+        <div class="body">
+          <div class="top"><span class="chip">Low</span><span class="id">F2</span><h3>The toggle animates two values from one boolean with two independent animations</h3></div>
+          <span class="loc">shared/ui/src/commonMain/kotlin/audio/tembra/ui/designsystem/TembraToggle.kt:48–58</span>
+<pre><code>val track by animateColorAsState(targetValue = if (checked) onTrack else offTrack, ...)
+val knobOffset by animateDpAsState(targetValue = if (checked) ... else knobInset, ...)</code></pre>
+          <dl class="kv">
+            <dt>Rule</dt><dd>"Several values follow one boolean, enum, or sealed state → <code>rememberTransition</code> plus child animations" and "For values that must remain synchronized, define them on one transition rather than several independent <code>animate*AsState</code> calls."</dd>
+            <dt>Why</dt><dd>They stay in step today because both use the same tween; the transition makes that a property of the code rather than of two matching literals, and gives tooling one named transition to scrub.</dd>
+            <dt>Change</dt><dd><code>val transition = updateTransition(checked, label = "toggle")</code>, then <code>transition.animateColor(label = "track") { … }</code> and <code>transition.animateDp(label = "knob") { … }</code> with the shared <code>transitionSpec</code>.</dd>
+          </dl>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="component-design">
+    <div class="cluster-head">
+      <span class="eyebrow">G · compose-component-design</span>
+      <h2>Modifiers, placement and parameter order</h2>
+      <p>Every public component applies its <code>modifier</code> to the root and pushes padding and size to callers, which is the skill's core rule. The remaining points are about where in the signature the modifier sits and two decisions taken away from callers.</p>
+    </div>
+    <div class="cluster">
+
+      <article class="finding low" data-sev="low">
+        <div class="stripe"></div>
+        <div class="body">
+          <div class="top"><span class="chip">Low</span><span class="id">G1</span><h3><code>modifier</code> is not the first optional parameter in four signatures</h3></div>
+          <span class="loc">designsystem/TembraSegmentedControl.kt:50–58 · designsystem/TembraStatusPill.kt:39–46 · tuner/TunerScreen.kt:22 · navigation/NavigationShell.kt:13–17</span>
+<pre><code>fun TembraSegmentedControl(items, selectedId, onSelect, style, testTag, accent: SegmentAccent = SegmentAccent.Primary, modifier: Modifier = Modifier)
+fun TembraStatusPill(text, color, testTag, icon: TembraIcon? = null, pulsing: Boolean = false, modifier: Modifier = Modifier)
+fun TunerScreen(viewModel: TunerViewModel = metroViewModel(), modifier: Modifier = Modifier)
+fun NavigationShell(viewModel: ShellViewModel = metroViewModel(), layoutMode: LayoutMode = rememberLayoutMode(), modifier: Modifier = Modifier)</code></pre>
+          <dl class="kv">
+            <dt>Rule</dt><dd>Modifier and layout, step 1: "declare <code>modifier: Modifier = Modifier</code> after required parameters". The Compose API guidelines the reference follows make it the first optional parameter so positional callers and IDE completion find it in the same place on every component.</dd>
+            <dt>Change</dt><dd>Move <code>modifier</code> directly after the last required parameter in each. All current call sites use named arguments, so nothing else changes.</dd>
+          </dl>
+        </div>
+      </article>
+
+      <article class="finding low" data-sev="low">
+        <div class="stripe"></div>
+        <div class="body">
+          <div class="top"><span class="chip">Low</span><span class="id">G2</span><h3>The meter takes its maximum width as a parameter instead of from the caller's modifier</h3></div>
+          <span class="loc">shared/ui/src/commonMain/kotlin/audio/tembra/ui/tuner/TunerMeter.kt:47–54, 98–99 · AutoListenPane.kt:38–45</span>
+<pre><code>fun TunerMeter(telemetry, reading, listening, maxWidth: Dp, testTag: String, modifier: Modifier = Modifier)
+...
+val width = minOf(constraints.maxWidth.toFloat(), maxWidthPx).coerceAtLeast(0f)</code></pre>
+          <dl class="kv">
+            <dt>Rule</dt><dd>"Push positioning, padding, and general size decisions to the caller." The meter's own invariant is its aspect ratio (height follows width); the cap on width is a screen layout decision.</dd>
+            <dt>Change</dt><dd>Drop <code>maxWidth</code>, let the custom layout use <code>constraints.maxWidth</code> as is, and have <code>AutoListenPane</code> pass <code>Modifier.widthIn(max = spacing.meterMaxWidth).fillMaxWidth()</code>. The meter test that sets an explicit width keeps working through the modifier.</dd>
+          </dl>
+        </div>
+      </article>
+
+      <article class="finding low" data-sev="low">
+        <div class="stripe"></div>
+        <div class="body">
+          <div class="top"><span class="chip">Low</span><span class="id">G3</span><h3>Four design-system components require a <code>testTag</code> from every caller</h3></div>
+          <span class="loc">designsystem/TembraSegmentedControl.kt:55 · TembraStatusPill.kt:42 · TembraToggle.kt:37 · TembraGradientCard.kt:28</span>
+<pre><code>fun TembraToggle(checked: Boolean, onCheckedChange: (Boolean) -&gt; Unit, testTag: String, modifier: Modifier = Modifier)</code></pre>
+          <dl class="kv">
+            <dt>Rule</dt><dd>"Keep semantic and design-system constraints as primitive parameters" and "The parent owns placement". A test tag is neither semantic content nor a design constraint; it is a modifier concern, and making it required means every production caller must invent one.</dd>
+            <dt>Why</dt><dd>The reason it exists is real: child tags (<code>"$testTag.track"</code>, <code>"$testTag.dot"</code>) are derived from it for pixel probes. That is a testing need leaking into the production signature.</dd>
+            <dt>Change</dt><dd>Make it <code>testTag: String? = null</code> and apply child tags only when non-null, or accept the tag through the caller's <code>Modifier.testTag</code> and give the inner nodes fixed relative tags via <code>Modifier.semantics { testTagsAsResourceId }</code>-style prefixes. The optional parameter is the smaller change and keeps every existing test intact.</dd>
+          </dl>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="ui-tests">
+    <div class="cluster-head">
+      <span class="eyebrow">H · compose-ui-testing-patterns</span>
+      <h2>The Compose UI tests</h2>
+      <p id="tests-intro">All 26 test files under <code>uiTest</code>, <code>androidDeviceTest</code> and <code>androidTest</code> were read in a second pass. The suite already does most of what the skill asks: every tuner test drives <code>TunerScreenContent</code> with a plain state and no-op callbacks, clocks are frozen wherever the meter's frame loop or a fade is composed, and semantics are asserted before any pixel is probed. The findings share one root cause: the design-system item composables create their own <code>MutableInteractionSource</code>, so hover and focus visuals can only be reached through platform input.</p>
+    </div>
+    <div class="cluster" id="tests-cluster">
+
+      <article class="finding medium" data-sev="medium">
+        <div class="stripe"></div>
+        <div class="body">
+          <div class="top"><span class="chip medium">Medium</span><span class="id">H1</span><h3>Hover on the bar, the rail and the segmented control is proven by simulated mouse input</h3></div>
+          <span class="loc">uiTest/…/designsystem/TembraNavigationBarTest.kt:158 · TembraNavigationRailTest.kt:143 · TembraSegmentedControlTest.kt:111</span>
+<pre><code>onNodeWithTag("nav.item.tuner").performMouseInput { enter(center); moveTo(center) }
+// production side, the seam that is missing:
+private fun NavigationBarItem(...) { val interactionSource = remember { MutableInteractionSource() } ... }   // TembraNavigationBar.kt:90, 99
+private fun NavigationRailItem(...) { val interactionSource = remember { MutableInteractionSource() } ... }  // TembraNavigationRail.kt:91, 101
+private fun Segment(...)           { val interactionSource = remember { MutableInteractionSource() } ... }  // TembraSegmentedControl.kt:99, 112</code></pre>
+          <dl class="kv">
+            <dt>Rule</dt><dd>Interaction state: "When a composable's appearance or behavior depends on hover, focus, press, or drag, inject a <code>MutableInteractionSource</code> and emit the desired state directly. Do not simulate pointer or mouse events: that is environment-dependent and flaky." and "Always inject <code>MutableInteractionSource</code>, never rely on its internal default."</dd>
+            <dt>Why</dt><dd>The hovered colour comes from <code>collectIsHoveredAsState()</code> on a source the test cannot reach, so the tests go through each platform's pointer pipeline. They are green on both lanes today; whether a synthetic move produces a <code>HoverInteraction.Enter</code> on the next Compose Multiplatform release is the dependency the skill names. The rail test also probes a single pixel for the hover fill, so it is doubly sensitive. The skill allows broadening production here because "that production boundary is itself under test".</dd>
+            <dt>Change</dt><dd>Add one seam and use it in all three tests: an optional <code>interactionSource: MutableInteractionSource? = null</code> on <code>NavigationItemSpec</code> and <code>SegmentSpec</code> (falling back to the remembered one), or an <code>interactionSourceFor: (id: String) -&gt; MutableInteractionSource?</code> parameter on each component. In the test, create the source, pass it for the item, <code>TestScope().launch { source.emit(HoverInteraction.Enter()) }</code>, <code>waitForIdle()</code>, and keep the existing colour assertions.</dd>
+          </dl>
+        </div>
+      </article>
+
+      <article class="finding medium" data-sev="medium">
+        <div class="stripe"></div>
+        <div class="body">
+          <div class="top"><span class="chip medium">Medium</span><span class="id">H2</span><h3>"Hover does nothing" on the meter is proven vacuously</h3></div>
+          <span class="loc">uiTest/kotlin/audio/tembra/ui/tuner/TunerMeterLayoutTest.kt:58–61</span>
+<pre><code>onNodeWithTag("tuner.meter").performMouseInput { enter(center); moveTo(center) }
+...   // then asserts the captured pixels did not change</code></pre>
+          <dl class="kv">
+            <dt>Rule</dt><dd>"If the inspected composable exposes no input surface that can change the state, name the missing host or parent interaction seam ... do not assume a selector or control exists in the supplied UI."</dd>
+            <dt>Why</dt><dd><code>TunerMeter</code> is a bare <code>Canvas</code> with no <code>clickable</code>, <code>hoverable</code>, <code>focusable</code> or <code>pointerInput</code>. There is nothing that could respond to hover, so the pixel-equality assertion passes for the wrong reason on any platform that does not deliver synthetic hover, and proves the negative only where it does.</dd>
+            <dt>Change</dt><dd>Assert the fact that holds: the meter has no click action and is not focusable (<code>assert(!hasClickAction())</code> and no <code>RequestFocus</code> semantics action), or let the existing semantics test carry FR-024 and delete this one.</dd>
+          </dl>
+        </div>
+      </article>
+
+      <article class="finding medium" data-sev="medium">
+        <div class="stripe"></div>
+        <div class="body">
+          <div class="top"><span class="chip medium">Medium</span><span class="id">H3</span><h3>Keyboard tests pass silently on a lane that never enters keyboard mode</h3></div>
+          <span class="loc">uiTest/…/designsystem/TembraNavigationBarTest.kt:134, 145 · TembraNavigationRailTest.kt:121, 132 · TembraSegmentedControlTest.kt:122 · navigation/NavigationShellTest.kt:215–217 · tuner/TunerScreenLayoutTest.kt:171–173</span>
+<pre><code>if (!enterKeyboardMode()) return@runComposeUiTest</code></pre>
+          <dl class="kv">
+            <dt>Rule</dt><dd>Focus navigation, step 6: "When the behavior under review is user-triggered, do not substitute direct state mutation or leave the input conditional." and the testing skill's "Keep UI tests deterministic."</dd>
+            <dt>Why</dt><dd><code>enterKeyboardMode()</code> prints "platform stays in touch mode, keyboard path covered on iOS" and returns, so on the Android device lane the focus ring, Enter activation and Tab order report green without asserting anything. Coverage exists on one lane and looks like it exists on both.</dd>
+            <dt>Change</dt><dd>Split the two concerns. Focus <em>appearance</em> needs no keyboard mode once H1's seam exists: emit <code>FocusInteraction.Focus()</code> on the injected source and probe the ring, on every platform. For behaviour that is genuinely key-driven (Enter activates, Tab order), keep <code>pressKey</code> and <code>assertIsFocused</code> but make the gate visible: an <code>expect val supportsKeyboardInputMode</code> that fails the test loudly, or excludes it from that lane, instead of returning green.</dd>
+          </dl>
+        </div>
+      </article>
+
+      <article class="finding low" data-sev="low">
+        <div class="stripe"></div>
+        <div class="body">
+          <div class="top"><span class="chip">Low</span><span class="id">H4</span><h3>Focus rings are reached through platform focus instead of an injected <code>FocusInteraction</code></h3></div>
+          <span class="loc">uiTest/…/designsystem/TembraNavigationBarTest.kt:146–150 · TembraNavigationRailTest.kt:137 · TembraSegmentedControlTest.kt:126</span>
+<pre><code>assertTrue(image.containsColor(primary), "no primary-coloured focus ring on the focused item")</code></pre>
+          <dl class="kv">
+            <dt>Rule</dt><dd>"The same pattern applies to … <code>FocusInteraction.Focus</code> / <code>Unfocus</code>: emit the entry interaction, wait for idle, then assert its result." and "For screenshots, emit the state before capture for deterministic hover/press/focus visuals."</dd>
+            <dt>Why</dt><dd>The ring is drawn from <code>collectIsFocusedAsState()</code>, not from the focus system directly, so the deterministic way to reach the drawing branch is the interaction source. Reaching it through <code>requestFocus()</code> is what ties these tests to H3's keyboard-mode gate. The <code>assertIsFocused()</code> half is correct and should stay.</dd>
+            <dt>Change</dt><dd>A consequence of H1: once the seam exists, emit <code>FocusInteraction.Focus()</code> for the ring probe and keep Enter activation as a separate key-input test.</dd>
+          </dl>
+        </div>
+      </article>
+
+      <article class="finding low" data-sev="low">
+        <div class="stripe"></div>
+        <div class="body">
+          <div class="top"><span class="chip">Low</span><span class="id">H5</span><h3>A pulsing dot is captured while the test clock is running</h3></div>
+          <span class="loc">uiTest/kotlin/audio/tembra/ui/designsystem/TembraStatusPillTest.kt:33–40</span>
+<pre><code>val dot = onNodeWithTag("pill.dot", useUnmergedTree = true).captureToImage()
+// composed with pulsing = true; mainClock.autoAdvance left at its default; tolerance = 0.1f</code></pre>
+          <dl class="kv">
+            <dt>Rule</dt><dd>Screenshot tests: "Keep screenshot state deterministic: … Freeze clocks or animation progress when possible."</dd>
+            <dt>Why</dt><dd>The dot's alpha is somewhere along the infinite transition at capture time and the widened tolerance absorbs the drift. The sibling test for reduce motion (line 50 onward) already freezes the clock and shows the right shape.</dd>
+            <dt>Change</dt><dd>Compose with <code>pulsing = false</code> for the colour check, or set <code>mainClock.autoAdvance = false</code> before the capture, and return the tolerance to the helper's default.</dd>
+          </dl>
+        </div>
+      </article>
+
+      <article class="finding low" data-sev="low">
+        <div class="stripe"></div>
+        <div class="body">
+          <div class="top"><span class="chip">Low</span><span class="id">H6</span><h3>Three lookups go by tag where the node has unique visible text</h3></div>
+          <span class="loc">uiTest/kotlin/audio/tembra/ui/designsystem/EmptyStateTest.kt:17 · TembraTopBarTest.kt:30 · tuner/TunerScreenDeniedTest.kt:48</span>
+<pre><code>onNodeWithTag("chrome.emptyState").assertIsDisplayed().assertTextEquals("Loops and sounds will appear here.")</code></pre>
+          <dl class="kv">
+            <dt>Rule</dt><dd>"Use test tags for nodes that have no stable user-visible text or where multiple nodes share text. Do not use tags as the first choice for all assertions; user-visible semantics are usually stronger."</dd>
+            <dt>Why</dt><dd>Each of these is the only text of its kind on screen, so <code>onNodeWithText(...)</code> proves the same thing with one fewer dependency. The many <code>nav.item.&lt;id&gt;</code> and <code>seg.&lt;id&gt;</code> lookups are justified: the tag is the contract there, or labels repeat between chrome and content.</dd>
+            <dt>Change</dt><dd>Prefer <code>onNodeWithText</code> for these three; leave the rest.</dd>
+          </dl>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="aligned">
+    <span class="eyebrow">What already matches the skills</span>
+    <h2>Nine places the code does what a skill asks for</h2>
+    <p>Restraint is part of every skill in this set: each one says to finish with no change when the existing owner or seam is already right. These are the places where that is the verdict.</p>
+    <ul class="good">
+      <li><b>Screen seams.</b> <code>TunerScreen</code> wires the ViewModel and lifecycle; <code>TunerScreenContent</code> takes <code>TunerUiState</code> plus <code>TunerCallbacks</code> and is what the UI tests drive. <code>NavigationShell</code> / <code>NavigationShellContent</code> follow the same split. This is exactly the three-seam boundary in <code>compose-state-and-effects</code>.</li>
+      <li><b>Frame-rate reads stay in draw.</b> <code>rememberFrameTick</code> writes a <code>LongState</code> from <code>withInfiniteAnimationFrameNanos</code> and only the <code>Canvas</code> lambda reads it (<code>TunerMeter.kt:113</code>); the needle smoother and the pitch snapshot are plain remembered objects mutated in draw. That is the deferred-reads pattern applied to a 60–120 Hz signal.</li>
+      <li><b>Animated state read in draw or graphicsLayer.</b> <code>TembraSegmentedControl</code>'s fill, <code>TembraToggle</code>'s track and knob, <code>TembraStatusPill</code>'s alpha and <code>StringCard</code>'s level bars all read their <code>State</code> inside <code>drawBehind</code> or <code>graphicsLayer {}</code>.</li>
+      <li><b>Read-only theme accessors.</b> Every <code>TembraTheme</code> getter reads a <code>CompositionLocal</code> or <code>MaterialTheme</code> value and nothing else, which is the precise contract <code>@ReadOnlyComposable</code> requires.</li>
+      <li><b>Lifecycle-aware collection.</b> Both screens use <code>collectAsStateWithLifecycle</code>, and <code>LifecycleStartEffect</code> / <code>LifecycleResumeEffect</code> pair every registration with its dispose.</li>
+      <li><b>Platform boundaries are semantic.</b> <code>MicrophonePermission</code>, <code>AppDirectories</code>, <code>TunerAudio</code> and <code>ResourceReader</code> expose no <code>Context</code>, <code>Activity</code>, <code>AVAudioSession</code> or resource ids in <code>commonMain</code>; the Android permission host binds to the Activity explicitly with <code>attach</code> / <code>detach</code> instead of hiding it behind a <code>Context</code>.</li>
+      <li><b>Value class where it earns it.</b> <code>SampleHandle</code> is a <code>@JvmInline value class</code>; the multi-field types (<code>Note</code>, <code>MeterReading</code>, <code>TuningPreset</code>) are data classes. <code>ReferenceSound.Recording</code> overrides equality for its <code>ByteArray</code>, which a value class could not do.</li>
+      <li><b>Exhaustive <code>when</code> over sealed results.</b> <code>DesiredAudio</code>, <code>AudioEvent</code>, <code>ReferenceSound</code>, <code>Destination</code> and <code>AudioStatePill</code> are all matched case by case with no <code>else</code>, so adding a case fails to compile at every site that must handle it.</li>
+      <li><b>Cancellation is preserved.</b> The only <code>catch</code> in production code catches <code>MissingResourceException</code>, not <code>Exception</code>, so <code>CancellationException</code> always propagates. The 10 Hz poll checks <code>isActive</code> and is cancelled by both <code>updatePolling()</code> and <code>onCleared()</code>.</li>
+    </ul>
+  </section>
+
+  <section id="install">
+    <span class="eyebrow">Installed skills</span>
+    <h2>What was installed and how to use it</h2>
+    <p>The install used the skills CLI at project level, so the skills are part of the repository rather than this machine:</p>
+<pre><code>npx skills add chrisbanes/skills --agent claude-code --skill '*' -y
+# 18 skills copied into .claude/skills/&lt;name&gt;/ ; skills-lock.json written at the repo root
+# update later with: npx skills update</code></pre>
+    <ul>
+      <li><b>Routing.</b> <code>using-chrisbanes-skills</code> is the router: it loads one cluster per concern and only adds a second when an independent decision needs it. Claude Code picks the skills up automatically from their descriptions; you can also name one directly, for example <code>/kotlin-concurrency-and-flow</code>.</li>
+      <li><b>Gradle.</b> <code>gradle-run</code> asks that every agent-initiated Gradle command go through <code>.claude/skills/gradle-run/scripts/gradle_run.py</code>, which keeps full build logs out of the model's context and returns a bounded summary. This review ran no Gradle command.</li>
+      <li><b>Not applied here.</b> <code>android-benchmark-comparison</code>, <code>release-kotlin-library</code>, <code>run-github-project</code>, <code>shepherd</code>, <code>to-plan</code> and <code>implement-with-subagents</code> are workflow skills rather than code-review skills. <code>grounded-writing</code> was used for this report's text. The C++ engine and the Swift shell are outside every skill's scope.</li>
+      <li><b>External providers.</b> <code>implement-with-subagents</code> and <code>run-github-project</code> expect Matt Pocock's <code>implement</code>, <code>tdd</code> and <code>code-review</code> skills, which are already installed in this environment as the <code>mattpocock-skills</code> plugin.</li>
+    </ul>
+    <div class="note">Suggested order of work: A1 first (a defect with a spec reference), then E1 and C1 together since both touch how the tuner screen and engine are wired, then the low items as a single tidy-up commit per cluster.</div>
+  </section>
+</div>
+
+<script>
+  (function () {
+    var findings = Array.prototype.slice.call(document.querySelectorAll('.finding'));
+    var counts = { high: 0, medium: 0, low: 0 };
+    findings.forEach(function (f) { counts[f.getAttribute('data-sev')]++; });
+    document.getElementById('count-high').textContent = counts.high;
+    document.getElementById('count-medium').textContent = counts.medium;
+    document.getElementById('count-low').textContent = counts.low;
+    var buttons = Array.prototype.slice.call(document.querySelectorAll('.filters button'));
+    buttons.forEach(function (b) {
+      b.addEventListener('click', function () {
+        var sev = b.getAttribute('data-sev');
+        buttons.forEach(function (o) { o.setAttribute('aria-pressed', String(o === b)); });
+        findings.forEach(function (f) { f.hidden = sev !== 'all' && f.getAttribute('data-sev') !== sev; });
+      });
+    });
+  })();
+</script>
+</body>
+</html>

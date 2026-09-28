@@ -41,8 +41,12 @@ class MicrophonePermissionHost internal constructor(
         pending = null
     }
 
-    /** Shows the prompt and suspends until [onResult]; false at once when no activity is attached. */
+    /**
+     * Shows the prompt and suspends until [onResult]; false at once when no activity is attached. A request made
+     * while one is already pending shares its result instead of launching the prompt again.
+     */
     suspend fun launch(): Boolean {
+        pending?.let { return it.await() }
         val launcher = launch ?: return false
         val deferred = CompletableDeferred<Boolean>()
         pending = deferred

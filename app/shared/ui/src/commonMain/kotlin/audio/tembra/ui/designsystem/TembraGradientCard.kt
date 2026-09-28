@@ -12,7 +12,6 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.testTag
 import audio.tembra.ui.theme.RadialGlow
 import audio.tembra.ui.theme.TembraShapes
 import audio.tembra.ui.theme.TembraTheme
@@ -25,8 +24,8 @@ import audio.tembra.ui.theme.TembraTheme
 @Composable
 fun TembraGradientCard(
     glow: RadialGlow,
-    testTag: String,
     modifier: Modifier = Modifier,
+    testTag: String? = null,
     content: @Composable BoxScope.() -> Unit,
 ) {
     val colors = TembraTheme.colors
@@ -34,7 +33,7 @@ fun TembraGradientCard(
     val shape = RoundedCornerShape(TembraShapes.large)
     Box(
         modifier = modifier
-            .testTag(testTag)
+            .testTagIfSet(testTag)
             .clip(shape)
             .background(colors.surfaceContainerLowest)
             .drawBehind {
