@@ -337,6 +337,17 @@ description: "Task list for feature 003: instrument tuner"
 
 ---
 
+## Phase 11: String count belongs to By Ear (clarified 2026-09-28)
+
+**Goal**: the 6-String / 7-String selector is shown only in By Ear, beside the tuning preset picker (stacked and wide) or between the mode selector and the picker (landscape), because Auto Listen is chromatic and does not use it (spec clarification 2026-09-28, FR-002, User Story 2 scenarios 1–3).
+
+- [X] T163 Spec, contract, research R11, quickstart §4 and this task list say where the string count lives; the clarification is recorded in the spec
+- [X] T164 `TunerSelectors` renders instrument, pill and mode only; `ByEarPane` takes `guitarStrings: GuitarStringCount?` (null for the cello) and leads its picker row with `StringCountControl`; `TunerSettingsColumn` shows the string count after the mode selector in By Ear only; `TunerScreenContent` wires both
+- [X] T165 Tests: `TunerScreenLayoutTest` (`stringCountBelongsToByEar` at every layout; the one-row, two-row, landscape, overlap and keyboard-order cases follow the new order instrument → mode → strings → picker → loop → cards), `TunerScreenByEarTest.selectorsReflectState`; the three Kotlin lanes green with zero warnings
+- [X] T166 Retake every capture the selector bar appears in (compact, expanded, landscape, large font and the state matrix on both platforms), review them, update `screenshots/NOTES.md`, and commit through the spec-kit hook *(2026-09-28: 57 captures retaken and reviewed; the app was also reinstalled on the Pixel 6 Pro, the emulator, both simulators and the iPhone 14, where it launched this time)*
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies

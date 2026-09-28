@@ -51,7 +51,6 @@ fun TunerScreenContent(
         TunerLayout.Stacked, TunerLayout.Wide -> Column(modifier = root, verticalArrangement = Arrangement.spacedBy(spacing.md)) {
             TunerSelectors(
                 instrument = state.instrument,
-                guitarStrings = state.guitarStrings,
                 mode = state.mode,
                 pill = state.pill,
                 callbacks = callbacks,
@@ -76,6 +75,7 @@ private fun ModePane(state: TunerUiState, callbacks: TunerCallbacks, telemetry: 
             modifier = modifier,
         )
         TunerMode.ByEar -> ByEarPane(
+            guitarStrings = state.guitarStrings.takeIf { state.instrument.hasStringCount },
             preset = state.preset,
             presets = state.presets,
             loopTone = state.loopTone,

@@ -130,14 +130,36 @@ class TunerScreenLayoutTest {
     @Test
     fun oneSelectorRowWhenWide() = runComposeUiTest {
         setScreen(autoListen, TunerLayout.Wide)
-        val tops = listOf("tuner.instrument", "tuner.pill", "tuner.strings", "tuner.mode").map { bounds(it) }
+        val tops = listOf("tuner.instrument", "tuner.pill", "tuner.mode").map { bounds(it) }
         for (b in tops) assertTrue(abs((b.top + b.bottom).value / 2 - (tops[0].top + tops[0].bottom).value / 2) < 1f, "selectors are not on one row: $tops")
+        setScreen(byEarSeven, TunerLayout.Wide)
+        val strings = bounds("tuner.strings")
+        val picker = bounds("tuner.preset.picker")
+        assertTrue(strings.right <= picker.left, "the string count $strings is not before the picker $picker")
+        assertTrue(abs((strings.top + strings.bottom).value / 2 - (picker.top + picker.bottom).value / 2) < 1f, "the string count and the picker are not on one row")
     }
 
     @Test
     fun twoRowsWhenStacked() = runComposeUiTest {
         setScreen(autoListen, TunerLayout.Stacked)
-        assertTrue(bounds("tuner.strings").top >= bounds("tuner.instrument").bottom, "strings are not below the instrument selector")
+        assertTrue(bounds("tuner.mode").top >= bounds("tuner.instrument").bottom, "the mode selector is not below the instrument selector")
+        setScreen(byEarSeven, TunerLayout.Stacked)
+        assertTrue(bounds("tuner.strings").top >= bounds("tuner.mode").bottom, "the string count is not below the mode selector")
+        assertTrue(bounds("tuner.preset.picker").top >= bounds("tuner.strings").top, "the picker is above the string count")
+    }
+
+    @Test
+    fun stringCountBelongsToByEar() = runComposeUiTest {
+        for ((layout, size) in listOf(TunerLayout.Stacked to null, TunerLayout.Wide to null, TunerLayout.Landscape to phoneLandscape)) {
+            setScreen(autoListen, layout, size = size)
+            onNodeWithTag("tuner.strings").assertDoesNotExist()
+            setScreen(byEarSeven, layout, size = size)
+            val strings = bounds("tuner.strings")
+            val home = bounds(if (layout == TunerLayout.Landscape) "tuner.settings" else "tuner.byEar")
+            assertTrue(strings.top >= home.top && strings.bottom <= home.bottom && strings.left >= home.left && strings.right <= home.right, "$layout: the string count $strings is outside $home")
+            setScreen(byEarCello, layout, size = size)
+            onNodeWithTag("tuner.strings").assertDoesNotExist()
+        }
     }
 
     @Test
@@ -170,11 +192,14 @@ class TunerScreenLayoutTest {
         assertTrue(settings.right <= card.left, "the settings column $settings is not left of the card $card")
         assertTrue(settings.width >= 224.dp - 0.5.dp && settings.width <= 280.dp + 0.5.dp, "settings width ${settings.width}")
         assertTrue(bounds("tuner.pill").top < bounds("tuner.instrument").top, "the pill is not in the column header")
-        assertTrue(bounds("tuner.strings").top >= bounds("tuner.instrument").bottom, "strings are not below the instrument selector")
-        assertTrue(bounds("tuner.mode").top >= bounds("tuner.strings").bottom, "mode is not below the string count")
-        for (tag in listOf("tuner.instrument", "tuner.strings", "tuner.mode")) {
+        assertTrue(bounds("tuner.mode").top >= bounds("tuner.instrument").bottom, "mode is not below the instrument selector")
+        for (tag in listOf("tuner.instrument", "tuner.mode")) {
             assertTrue(bounds(tag).right <= settings.right + 0.5.dp && bounds(tag).left >= settings.left - 0.5.dp, "$tag leaves the column")
         }
+        setScreen(byEarSeven, TunerLayout.Landscape, size = phoneLandscape)
+        assertTrue(bounds("tuner.strings").top >= bounds("tuner.mode").bottom, "the string count is not below the mode selector")
+        assertTrue(bounds("tuner.preset.picker").top >= bounds("tuner.strings").bottom, "the picker is not below the string count")
+        assertTrue(bounds("tuner.strings").right <= settings.right + 0.5.dp, "the string count leaves the column")
     }
 
     @Test
@@ -209,13 +234,13 @@ class TunerScreenLayoutTest {
         for ((layout, size) in listOf(TunerLayout.Stacked to null, TunerLayout.Wide to null, TunerLayout.Landscape to phoneLandscape)) {
             for (scale in listOf(null, 2f)) {
                 setScreen(autoListen, layout, scale, size)
-                val nodes = listOf("tuner.instrument", "tuner.pill", "tuner.strings", "tuner.mode", "tuner.meter").map { it to bounds(it) }
+                val nodes = listOf("tuner.instrument", "tuner.pill", "tuner.mode", "tuner.meter").map { it to bounds(it) }
                 for (i in nodes.indices) for (j in i + 1 until nodes.size) {
                     assertTrue(!nodes[i].second.intersects(nodes[j].second), "$layout/$scale: ${nodes[i].first} overlaps ${nodes[j].first}")
                 }
                 setScreen(byEarSeven, layout, scale, size)
                 val cards = byEarSeven.strings.map { "tuner.card.${it.numeral}" to bounds("tuner.card.${it.numeral}") } +
-                    listOf("tuner.preset.picker" to bounds("tuner.preset.picker"), "tuner.loop" to bounds("tuner.loop"), "tuner.mode" to bounds("tuner.mode"))
+                    listOf("tuner.strings", "tuner.preset.picker", "tuner.loop", "tuner.mode", "tuner.instrument").map { it to bounds(it) }
                 for (i in cards.indices) for (j in i + 1 until cards.size) {
                     assertTrue(!cards[i].second.intersects(cards[j].second), "$layout/$scale: ${cards[i].first} overlaps ${cards[j].first}")
                 }
@@ -228,7 +253,7 @@ class TunerScreenLayoutTest {
         setScreen(byEarSeven, TunerLayout.Stacked)
         if (!enterKeyboardMode(inputModeManager)) return@runComposeUiTest
         val expected = listOf(
-            "tuner.instrument.cello", "tuner.strings.6", "tuner.strings.7", "tuner.mode.autoListen", "tuner.mode.byEar",
+            "tuner.instrument.cello", "tuner.mode.autoListen", "tuner.mode.byEar", "tuner.strings.6", "tuner.strings.7",
             "tuner.preset.picker", "tuner.loop", "tuner.card.VII.audition", "tuner.card.VI.audition",
         )
         for ((layout, size) in listOf(TunerLayout.Stacked to null, TunerLayout.Landscape to phoneLandscape)) {

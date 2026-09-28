@@ -88,10 +88,11 @@ entry's frequency within 1 cent on the real engine of both platforms. Release bu
 
 ## 4. Instrument, string count and tuning presets (User Story 2)
 
-1. Tap **Cello**: the string-count selector disappears. Tap **By Ear**: four cards C2 G2 D3 A3 with
-   numerals IV to I and 65.4 / 98.0 / 146.8 / 220.0 Hz.
-2. Tap **Guitar**, then **7-String**, then the preset picker: "Standard 7-String" and "Drop A" are
-   listed; choose Drop A: the lowest card reads VII, A1, 55.0 Hz.
+1. Tap **By Ear**, then **Cello**: the string-count selector beside the preset picker disappears
+   and four cards C2 G2 D3 A3 show numerals IV to I and 65.4 / 98.0 / 146.8 / 220.0 Hz. Tap
+   **Auto Listen**: no string-count selector is shown for either instrument.
+2. Tap **Guitar**, **By Ear**, then **7-String** beside the picker, then the picker: "Standard
+   7-String" and "Drop A" are listed; choose Drop A: the lowest card reads VII, A1, 55.0 Hz.
 3. Choose 6-String and open the picker: seven presets from Standard to Open D; choose Drop D: card VI
    reads D2 73.4 Hz.
 4. Kill and relaunch the app, open Tuner: Guitar, 6-String, Drop D, By Ear and the loop toggle are

@@ -42,14 +42,14 @@ Column(testTag "screen.tuner" (the shell's `screen.<id>` convention; feature 002
 ├── TunerSelectors(layout)                                       Stacked: two rows; Wide: one row (Landscape: see below)
 │   ├── TembraSegmentedControl(items Guitar|Cello, icons, style Large)   "tuner.instrument", items "tuner.instrument.<id>"
 │   ├── AudioStatePill(state.pill)                                       "tuner.pill" (absent when null; contentDescription = pill.label in sentence case, drawn in capitals; MicActive primary + Mic, ToneOut secondary + VolumeUp, TestSignal tertiary + GraphicEq)
-│   ├── TembraSegmentedControl(6-String|7-String, style Small)           "tuner.strings", only when instrument.hasStringCount
 │   └── TembraSegmentedControl(Auto Listen|By Ear, icons, style Small)  "tuner.mode"
 └── when (state.mode)
     AutoListen → TembraGradientCard(gradient meterCompact, testTag "tuner.autoListen")
         ├── if state.showDeniedState: MicrophoneDeniedState(onRequestMicrophone)           "tuner.denied", button "tuner.denied.action"
         └── else: TunerMeter(telemetry, reading = state.reading, width capped by the caller)  "tuner.meter" (one Canvas, research R8)
     ByEar → TembraGradientCard(gradient byEarCompact / byEarWide, testTag "tuner.byEar")
-        ├── Row: TuningPresetPicker(state.preset, state.presets, onPreset)  "tuner.preset.picker", menu items "tuner.preset.item.<id>"
+        ├── Row: TembraSegmentedControl(6-String|7-String, style Small)    "tuner.strings", only when instrument.hasStringCount (clarified 2026-09-28: By Ear only)
+        │        TuningPresetPicker(state.preset, state.presets, onPreset)  "tuner.preset.picker", menu items "tuner.preset.item.<id>"
         │        LoopToneToggle(state.loopTone, onLoopTone)                 "tuner.loop"
         └── StringCardGrid(columns = Stacked 2, Wide 3, Landscape ⌈n / 2⌉)
             └── StringCard(string, playing = audition?.stringIndex == index, onAudition, onStop)   "tuner.card.<numeral>", button "tuner.card.<numeral>.audition"
@@ -59,9 +59,8 @@ Row(testTag "screen.tuner", padding pageMargin × sm, gap md)
 ├── TunerSettingsColumn                                          TembraGradientCard "tuner.settings", 36 % of the width within 224–280 dp, scrolls vertically
 │   ├── header: "TUNER CONTROLS" (labelSmall) + AudioStatePill   "tuner.pill", then a 1 dp seam
 │   ├── TembraSegmentedControl(equal widths)                     "tuner.instrument"
-│   ├── TembraSegmentedControl(equal widths)                     "tuner.strings", only when instrument.hasStringCount
 │   ├── TembraSegmentedControl(equal widths)                     "tuner.mode"
-│   └── when ByEar: TuningPresetPicker "tuner.preset.picker", LoopToneToggle "tuner.loop" (no overlines: research R9)
+│   └── when ByEar: TembraSegmentedControl "tuner.strings" (guitar only), TuningPresetPicker "tuner.preset.picker", LoopToneToggle "tuner.loop" (no overlines: research R9)
 └── the content card (weight 1)
     AutoListen → "tuner.autoListen": TunerMeter(size = Compact) sized from the card height ((height − rows) × 1.8, 200–480 dp), centred; scrolls only under 200 dp
     ByEar → "tuner.byEar": StringCardGrid in two rows that fill the card (rows at least 128 dp), no picker or toggle here

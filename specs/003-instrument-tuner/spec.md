@@ -22,7 +22,7 @@ time and pitch range used in the success criteria.
 | Element | Where it appears | Verdict |
 |---|---|---|
 | Instrument selector with two segments, "Guitar" and "Cello", each with an icon | All four screens | **Kept** |
-| String-count selector "6-String" / "7-String" | Both guitar screens | **Kept**, shown for Guitar only |
+| String-count selector "6-String" / "7-String" | Both guitar screens | **Kept**, shown for Guitar in By Ear only, beside the tuning preset (clarified 2026-09-28: Auto Listen is chromatic and does not use it) |
 | Second selector on the cello screen reading "4-String" / "Cello Std" | Cello phone screen only | **Excluded**: a cello always has four strings and "Cello Std" has no defined meaning; no selector is shown for Cello |
 | Mode selector "Auto Listen" (microphone icon) / "By Ear" (ear icon) | All four screens | **Kept** |
 | Audio-state pill: "MIC ACTIVE" in Auto Listen, "TONE OUT" in By Ear | Both phone screens (the tablet Auto Listen screen also shows "MIC ACTIVE") | **Kept** as one pill that reports what the audio is doing |
@@ -60,6 +60,14 @@ screen and the screenshot for the tablet screen.
 - Q: Should the constitution's build order be amended so the tuner comes right after the
   navigation shell? → A: Yes. Amend the constitution to place the tuner immediately after the
   navigation shell; the audio spine, transport and timeline follow later. Simpler features first.
+
+### Session 2026-09-28
+
+- Q: Does the 6-String / 7-String selector help while tuning in Auto Listen? → A: No. Auto
+  Listen is chromatic and its detection range already covers both guitars, so the string count
+  only decides By Ear's preset list and cards. The selector therefore belongs to By Ear, beside
+  the tuning preset, and is not shown in Auto Listen (the Stitch Auto Listen screens showed it in
+  the selector bar; the shortcut it gave to By Ear is kept by showing it as soon as By Ear opens).
 - Q: (after `/speckit-analyze`) How can the tuner be tested with generated sounds at chosen
   pitches, and can the resulting meter states be captured? → A: Debug builds accept a test signal
   (a note and an offset in cents, or a catalogue id) that feeds a generated tone through the real
@@ -121,10 +129,10 @@ meter rests in silence.
 
 ### User Story 2 - Choose the instrument, string count and tuning (Priority: P1)
 
-A user picks Guitar or Cello, for a guitar picks 6-String or 7-String, and in By Ear picks a
+A user picks Guitar or Cello and, in By Ear, for a guitar picks 6-String or 7-String and a
 tuning preset for that instrument: standard by default, or an alternate tuning. By Ear shows one
-card per string of that tuning; Auto Listen is chromatic and does not depend on the preset. The
-app remembers the choices for the next time.
+card per string of that tuning; Auto Listen is chromatic and depends on neither the string count
+nor the preset. The app remembers the choices for the next time.
 
 **Why this priority**: Without the right set of strings the reference tones are wrong; this story
 is what makes By Ear a guitar and cello tuner rather than a generic tone generator.
@@ -135,14 +143,15 @@ with the right notes and frequencies.
 
 **Acceptance Scenarios**:
 
-1. **Given** Tuner is opened for the first time, **When** it appears, **Then** Guitar, 6-String,
-   the "Standard" preset and Auto Listen are selected and the "Loop Tone" toggle is on.
-2. **Given** Guitar is selected, **When** the user selects 7-String, **Then** the preset list
-   changes to the 7-string presets, "Standard 7-String" is selected, and By Ear shows seven cards
-   from B1 to E4.
-3. **Given** Guitar is selected, **When** the user selects Cello, **Then** the string-count
-   selector disappears, the "Standard" cello preset is selected, and By Ear shows four cards from
-   C2 to A3.
+1. **Given** Tuner is opened for the first time, **When** it appears, **Then** Guitar and Auto
+   Listen are selected, and By Ear shows 6-String, the "Standard" preset and the "Loop Tone"
+   toggle on.
+2. **Given** Guitar and By Ear are selected, **When** the user selects 7-String beside the preset
+   picker, **Then** the preset list changes to the 7-string presets, "Standard 7-String" is
+   selected, and By Ear shows seven cards from B1 to E4.
+3. **Given** Guitar is selected, **When** the user selects Cello, **Then** By Ear shows no
+   string-count selector, the "Standard" cello preset is selected, and By Ear shows four cards
+   from C2 to A3.
 4. **Given** By Ear is shown, **When** the user opens the preset picker, **Then** it lists every
    preset for the current instrument and string count by name with its string notes, marks the
    current one, and selecting another replaces the cards immediately.
@@ -263,14 +272,14 @@ cards with the platform screen reader.
 **Acceptance Scenarios**:
 
 1. **Given** a window narrower than 600 dp, **When** either mode is shown, **Then** the
-   selectors stack in two rows above the content, the meter fills the width, By Ear cards form
-   two columns, and nothing is clipped or overlapping.
+   instrument and mode selectors stack in two rows above the content, the meter fills the width,
+   By Ear cards form two columns, and nothing is clipped or overlapping.
 2. **Given** a window 840 dp or wider and at least 480 dp tall, **When** either mode is shown,
    **Then** the selectors sit in one row, the meter is centred in its card, By Ear cards form
    three columns, and no right-hand panel is shown.
 3. **Given** a window at least 600 dp wide and shorter than 480 dp (a phone held sideways),
-   **When** either mode is shown, **Then** the instrument, string-count and mode selectors (and,
-   in By Ear, the tuning preset and the loop toggle) stand in a settings column on the left, the meter or the string cards fill the card beside it without scrolling, every card is
+   **When** either mode is shown, **Then** the instrument and mode selectors (and, in By Ear,
+   the string count, the tuning preset and the loop toggle) stand in a settings column on the left, the meter or the string cards fill the card beside it without scrolling, every card is
    whole in two rows, and nothing is clipped.
 4. **Given** a pointer, **When** it hovers over any selector, card button or toggle, **Then** the
    control shows a hover state; **When** focus is moved with a keyboard, **Then** every control
@@ -324,10 +333,11 @@ cards with the platform screen reader.
   screen. The top bar, navigation control and back behaviour from feature 002 MUST remain
   unchanged, and the Tuner MUST NOT show a transport bar or a right-hand panel at any width.
 - **FR-002**: The screen MUST offer, above the mode content: an instrument selector with exactly
-  two segments, "Guitar" and "Cello", each with its icon; for Guitar only, a string-count
-  selector with the segments "6-String" and "7-String"; a mode selector with the segments "Auto
-  Listen" (microphone icon) and "By Ear" (ear icon); and an audio-state pill. The tuning preset
-  picker belongs to By Ear (FR-017) and MUST NOT appear in Auto Listen. Exactly one segment of
+  two segments, "Guitar" and "Cello", each with its icon; a mode selector with the segments "Auto
+  Listen" (microphone icon) and "By Ear" (ear icon); and an audio-state pill. For Guitar only,
+  By Ear MUST offer a string-count selector with the segments "6-String" and "7-String" beside
+  the tuning preset picker; like the picker (FR-017) it MUST NOT appear in Auto Listen
+  (clarified 2026-09-28: Auto Listen is chromatic and does not use it). Exactly one segment of
   each selector MUST be selected at any time.
 - **FR-003**: The tuning presets MUST be the fixed lists below, in this order, with the first
   entry as the default for its instrument and string count. Each preset is shown by name with
@@ -453,13 +463,13 @@ cards with the platform screen reader.
 **Layout, input and accessibility**
 
 - **FR-023**: Both modes MUST adapt to the window: in windows narrower than 600 dp the selectors
-  occupy two rows (instrument and pill; string count and mode), the meter spans the content
-  width and the cards form two columns; in windows 840 dp or wider that are at least 480 dp tall
+  occupy two rows (instrument and pill; mode), the meter spans the content width and the cards
+  form two columns; in windows 840 dp or wider that are at least 480 dp tall
   the selectors share one row, the meter is centred in its card and the cards form three
   columns; between the two widths the layout follows the narrower rules. In windows at least
   600 dp wide but shorter than 480 dp (a phone held sideways) the selectors, the audio-state pill
-  and, in By Ear, the tuning preset and the loop toggle MUST stand in a settings column beside the
-  content without scrolling at the default font size; the meter MUST fit the remaining height without scrolling; and the cards
+  and, in By Ear, the string count, the tuning preset and the loop toggle MUST stand in a settings
+  column beside the content without scrolling at the default font size; the meter MUST fit the remaining height without scrolling; and the cards
   MUST form two rows (two, three or four columns for four, six or seven strings). Nothing MUST
   clip, overlap or scroll horizontally at any width, including at the largest system font size.
 - **FR-024**: Every selector segment, the preset picker, the loop toggle, the settings control of

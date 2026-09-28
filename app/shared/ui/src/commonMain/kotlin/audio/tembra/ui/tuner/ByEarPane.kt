@@ -15,20 +15,22 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import audio.tembra.core.tuner.GuitarStringCount
 import audio.tembra.core.tuner.TargetString
 import audio.tembra.core.tuner.TuningPreset
 import audio.tembra.ui.designsystem.TembraGradientCard
 import audio.tembra.ui.theme.TembraTheme
 
 /**
- * The By Ear card (spec FR-017, contracts/tuner-screen.md): in the stacked and wide layouts the preset picker and the
- * loop toggle sit above the string cards; in phone landscape those two live in the settings column and the cards fill
- * the card in two rows (research R9). It takes only the fields it renders, so a reading-only state change leaves it
- * untouched.
+ * The By Ear card (spec FR-017, contracts/tuner-screen.md): in the stacked and wide layouts the string count (guitar
+ * only, [guitarStrings] null hides it), the preset picker and the loop toggle sit above the string cards; in phone
+ * landscape those live in the settings column and the cards fill the card in two rows (research R9). It takes only
+ * the fields it renders, so a reading-only state change leaves it untouched.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun ByEarPane(
+    guitarStrings: GuitarStringCount?,
     preset: TuningPreset,
     presets: List<TuningPreset>,
     loopTone: Boolean,
@@ -55,13 +57,15 @@ internal fun ByEarPane(
                     verticalArrangement = Arrangement.spacedBy(spacing.md),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    // The toggle wraps below the picker when large fonts leave the picker no room (spec FR-023).
+                    // The string count leads the row; the picker and the toggle wrap onto further lines when the width
+                    // (compact) or large fonts leave them no room (spec FR-023).
                     FlowRow(
                         modifier = Modifier.widthIn(max = if (wide) spacing.byEarGridMaxWidthWide else spacing.byEarGridMaxWidth).fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(spacing.sm),
                         verticalArrangement = Arrangement.spacedBy(spacing.sm),
                         itemVerticalAlignment = Alignment.CenterVertically,
                     ) {
+                        if (guitarStrings != null) StringCountControl(guitarStrings = guitarStrings, onGuitarStrings = callbacks.onGuitarStrings)
                         TuningPresetPicker(
                             current = preset,
                             presets = presets,

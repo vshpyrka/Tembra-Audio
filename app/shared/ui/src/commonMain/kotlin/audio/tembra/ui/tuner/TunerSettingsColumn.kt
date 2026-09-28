@@ -30,9 +30,9 @@ import kotlin.math.roundToInt
 
 /**
  * The phone-landscape settings column (spec FR-023, research R9 landscape table, the Stitch "Mobile Landscape"
- * screens): a card with a "Tuner controls" header carrying the audio-state pill, then the instrument, string-count
- * (guitar only) and mode selectors sharing the column's width, and in By Ear the tuning preset picker and the loop
- * toggle. The design's overline above each control is left out: with 44 dp targets the By Ear column is 271 dp tall
+ * screens): a card with a "Tuner controls" header carrying the audio-state pill, then the instrument and mode
+ * selectors sharing the column's width, and in By Ear the string count (guitar only), the tuning preset picker and
+ * the loop toggle. The design's overline above each control is left out: with 44 dp targets the By Ear column is 271 dp tall
  * and a phone's landscape window under the top bar has about 295 dp, so the overlines would push the picker and the
  * toggle out of view (research R9). It is 36 % of the content width within the design's 224–280 dp, scaled by the
  * font scale up to half the width, and scrolls vertically when large fonts make it taller than the window. It takes
@@ -82,11 +82,11 @@ internal fun TunerSettingsColumn(
             }
             Box(modifier = Modifier.fillMaxWidth().height(spacing.seam).background(colors.outlineVariant.copy(alpha = SEAM_ALPHA)))
             InstrumentControl(instrument = instrument, onInstrument = callbacks.onInstrument, modifier = Modifier.fillMaxWidth(), widths = SegmentWidths.Equal)
-            if (instrument.hasStringCount) {
-                StringCountControl(guitarStrings = guitarStrings, onGuitarStrings = callbacks.onGuitarStrings, modifier = Modifier.fillMaxWidth(), widths = SegmentWidths.Equal)
-            }
             ModeControl(mode = mode, onMode = callbacks.onMode, modifier = Modifier.fillMaxWidth(), widths = SegmentWidths.Equal)
             if (mode == TunerMode.ByEar) {
+                if (instrument.hasStringCount) {
+                    StringCountControl(guitarStrings = guitarStrings, onGuitarStrings = callbacks.onGuitarStrings, modifier = Modifier.fillMaxWidth(), widths = SegmentWidths.Equal)
+                }
                 TuningPresetPicker(current = preset, presets = presets, onPreset = callbacks.onPreset, modifier = Modifier.fillMaxWidth())
                 LoopToneToggle(checked = loopTone, onCheckedChange = callbacks.onLoopTone, modifier = Modifier.fillMaxWidth())
             }

@@ -364,8 +364,9 @@ a JSON file with Okio (hand-written transactions).
 
 **Decision**: `TunerScreenContent(state, callbacks, telemetry, windowWidth)` with
 `windowWidth = WindowWidth.from(currentWindowAdaptiveInfo().windowSizeClass)` (as feature 002).
-Compact and medium: selectors in two rows (instrument + pill; string count + mode), content
-card fills the remaining height, By Ear grid of two columns. Expanded: selectors in one row,
+Compact and medium: selectors in two rows (instrument + pill; mode), content card fills the
+remaining height, By Ear grid of two columns (the string count sits beside the preset picker in
+the By Ear card since the 2026-09-28 clarification: Auto Listen does not use it). Expanded: selectors in one row,
 meter centred at 480 dp max width, three-column grid at 576 dp max width; no supporting pane
 (Destination.Tuner keeps `hasSupportingPane = false`). New reusable design-system components:
 `TembraSegmentedControl` (Tab semantics, hover, focus ring, 44 dp targets), `TembraToggle`
