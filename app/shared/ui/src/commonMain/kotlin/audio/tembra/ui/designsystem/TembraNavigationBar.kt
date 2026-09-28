@@ -23,6 +23,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -96,24 +97,24 @@ private fun NavigationBarItem(
     val spacing = TembraTheme.spacing
     val colors = TembraTheme.colors
     val motion = TembraTheme.motion
-    val interactionSource = remember { MutableInteractionSource() }
+    val interactionSource = item.interactionSource ?: remember { MutableInteractionSource() }
     val hovered by interactionSource.collectIsHoveredAsState()
     val pressed by interactionSource.collectIsPressedAsState()
     val focused by interactionSource.collectIsFocusedAsState()
-    val active by animateFloatAsState(
+    // Read in composition only for the content colour, which Icon and Text take as a value; the fill reads it in draw.
+    val active = animateFloatAsState(
         targetValue = if (selected) 1f else 0f,
         animationSpec = tween(motion.effectiveDuration, easing = motion.standardEasing),
         label = "navBarItemActive",
     )
-    val fill = lerp(Color.Transparent, colors.primaryContainer, active)
     val restingContent = if (hovered || pressed) colors.onSurface else colors.onSurfaceVariant
-    val content = lerp(restingContent, colors.onPrimaryContainer, active)
+    val content = lerp(restingContent, colors.onPrimaryContainer, active.value)
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
         Column(
             modifier = Modifier
                 .sizeIn(minWidth = spacing.navItemMinWidth, minHeight = spacing.touchTargetMin)
                 .activePill(
-                    fill = fill,
+                    fill = colors.primaryContainer,
                     glow = TembraTheme.daw.clipGlow,
                     glowBlur = TembraTheme.daw.clipGlowBlur,
                     strength = active,
@@ -151,14 +152,15 @@ private fun NavigationBarItem(
 
 /**
  * The active capsule and the design's `clip_glow` (0 0 12px), drawn behind the content and [horizontalOverhang] wider
- * than it on each side; the glow is layered capsules, never a shadow. The keyboard [focusRing] is stroked just inside
- * the capsule's edge. Nothing is clipped, so glyphs stay whole.
+ * than it on each side; the glow is layered capsules, never a shadow. [strength] is the selection animation, read in
+ * the draw phase so the fade invalidates only drawing. The keyboard [focusRing] is stroked just inside the capsule's
+ * edge. Nothing is clipped, so glyphs stay whole.
  */
 private fun Modifier.activePill(
     fill: Color,
     glow: Color,
     glowBlur: Dp,
-    strength: Float,
+    strength: State<Float>,
     horizontalOverhang: Dp,
     focusRing: Color?,
     focusRingWidth: Dp,
@@ -167,10 +169,11 @@ private fun Modifier.activePill(
     val pillTopLeft = Offset(-overhang, 0f)
     val pillSize = Size(size.width + overhang * 2, size.height)
     val radius = CornerRadius(pillSize.height / 2)
-    if (strength > 0f) {
+    val active = strength.value
+    if (active > 0f) {
         val layers = 8
         val blurPx = glowBlur.toPx()
-        val layerAlpha = glow.alpha * strength / layers
+        val layerAlpha = glow.alpha * active / layers
         for (layer in 1..layers) {
             val spread = blurPx * layer / layers
             drawRoundRect(
@@ -180,7 +183,7 @@ private fun Modifier.activePill(
                 cornerRadius = CornerRadius(radius.x + spread),
             )
         }
-        drawRoundRect(color = fill, topLeft = pillTopLeft, size = pillSize, cornerRadius = radius)
+        drawRoundRect(color = lerp(Color.Transparent, fill, active), topLeft = pillTopLeft, size = pillSize, cornerRadius = radius)
     }
     if (focusRing != null) {
         val ring = focusRingWidth.toPx()

@@ -22,4 +22,15 @@ class AppDirectoriesTest {
         assertTrue(File(directories.cache).isDirectory, directories.cache)
         assertNotEquals(directories.documents, directories.cache)
     }
+
+    @Test
+    fun preferencesIsAWritableDatastoreDirectory() {
+        assertTrue(directories.preferences.startsWith("/"), directories.preferences)
+        assertTrue(directories.preferences.endsWith("/datastore"), directories.preferences)
+        val directory = File(directories.preferences)
+        assertTrue(directory.isDirectory, directories.preferences)
+        assertTrue(directory.canWrite(), directories.preferences)
+        assertNotEquals(directories.documents, directories.preferences)
+        assertNotEquals(directories.cache, directories.preferences)
+    }
 }

@@ -39,4 +39,52 @@ data class TembraSpacing(
     val navItemGap: Dp = 4.dp,
     /** Keyboard focus ring drawn in `primary` around a focused control (Constitution IV, spec FR-014). */
     val focusRingWidth: Dp = 2.dp,
+    // Tuner metrics from the Stitch tuner screens (feature 003, data-model.md §8, research R9).
+    /** Instrument segment height: `h-8`. */
+    val segmentHeightLarge: Dp = 32.dp,
+    /** String-count and mode segment height: `h-7`. */
+    val segmentHeightSmall: Dp = 28.dp,
+    /** Meter width on compact and medium windows: `max-w-[340px]`. */
+    val meterMaxWidth: Dp = 340.dp,
+    /** Meter width on expanded windows (the tablet screen's centred gauge). */
+    val meterMaxWidthWide: Dp = 480.dp,
+    /** By Ear grid width on compact and medium windows: `max-w-sm`. */
+    val byEarGridMaxWidth: Dp = 384.dp,
+    /** By Ear grid width on expanded windows: `max-w-xl`. */
+    val byEarGridMaxWidthWide: Dp = 576.dp,
+    /** By Ear card height on expanded windows: `h-36` (compact cards are square). */
+    val stringCardHeightWide: Dp = 144.dp,
+    /** Loop toggle track: `w-8 h-4`, knob `w-3 h-3`. */
+    val toggleWidth: Dp = 32.dp,
+    val toggleHeight: Dp = 16.dp,
+    val toggleKnob: Dp = 12.dp,
+    /** Status dot of the audio-state and in-tune pills: `w-1.5 h-1.5`. */
+    val statusDot: Dp = 6.dp,
+    /** Large segment glyph: `w-4 h-4`. */
+    val segmentIconLarge: Dp = 16.dp,
+    /** Small segment, pill and card-button glyph: `text-[14px]`. */
+    val segmentIconSmall: Dp = 14.dp,
+    /** Preset picker glyphs: `text-[18px]`. */
+    val pickerIconSize: Dp = 18.dp,
+    /** Flat and Sharp arrows on the meter: `text-[20px]`. */
+    val meterArrowSize: Dp = 20.dp,
+    /** The denied state's microphone glyph. */
+    val deniedIconSize: Dp = 40.dp,
+    /** Reading-width cap of the denied state's text. */
+    val deniedTextMaxWidth: Dp = 360.dp,
+    /** Visual height of a By Ear card button: `py-1.5` around a 14 px glyph. */
+    val cardButtonHeight: Dp = 36.dp,
+    /** Narrowest useful preset picker: the overline plus a preset name before the toggle wraps below it. */
+    val presetPickerMinWidth: Dp = 200.dp,
+    /** Large segment horizontal padding: `px-space-md`; small: `px-space-sm`. */
+    val segmentPaddingLarge: Dp = 12.dp,
+    val segmentPaddingSmall: Dp = 8.dp,
+    // Phone landscape (research R9, landscape table; data-model.md §8).
+    /** The least a landscape card row gets; rows grow to fill the card. */
+    val stringCardHeightLandscape: Dp = 128.dp,
+    /** The landscape settings column: 36 % of the content width within these, scaled by the font scale. */
+    val landscapeSettingsMinWidth: Dp = 224.dp,
+    val landscapeSettingsMaxWidth: Dp = 280.dp,
+    /** Below this the landscape meter scrolls instead of shrinking further. */
+    val meterMinWidth: Dp = 200.dp,
 )

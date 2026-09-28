@@ -42,5 +42,11 @@ object TembraTypography {
         headlineLgMobile = style(TembraTypeScale.headlineLgMobile),
         tabularTimecode = style(TembraTypeScale.tabularTimecode),
         tabularParam = style(TembraTypeScale.tabularParam),
+        tunerNote = style(TembraTypeScale.tunerNote),
+        tunerOctave = style(TembraTypeScale.tunerOctave),
+        tunerCardNote = style(TembraTypeScale.tunerCardNote),
+        tunerCardOctave = style(TembraTypeScale.tunerCardOctave),
+        tunerReadout = style(TembraTypeScale.tunerReadout),
+        microLabel = style(TembraTypeScale.microLabel),
     )
 }
