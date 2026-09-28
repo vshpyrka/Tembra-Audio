@@ -1,0 +1,38 @@
+// The thin platform I/O seam of the engine (research R3): Oboe on Android, RemoteIO on iOS, a null device on the
+// macOS host, a synthetic device for test signals. Callbacks run on the platform's audio thread and must only copy.
+#ifndef TEMBRA_PLATFORM_AUDIO_DEVICE_H
+#define TEMBRA_PLATFORM_AUDIO_DEVICE_H
+
+#include <cstdint>
+
+namespace tembra {
+
+/** Mono float frames captured by the input stream; [frames] varies per callback (Constitution I). */
+using InputCallback = void (*)(void* context, const float* mono, uint32_t frames);
+
+/** Interleaved stereo float frames the output stream needs; the callee fills all 2 × [frames] samples. */
+using RenderCallback = void (*)(void* context, float* interleavedStereo, uint32_t frames);
+
+class AudioDevice {
+public:
+    virtual ~AudioDevice() = default;
+
+    /** Opens the input stream at [preferredRate] (the device may pick another; see sampleRate()). Returns a tembra_error. */
+    virtual int32_t openInput(uint32_t preferredRate, InputCallback callback, void* context) = 0;
+
+    /** Opens the output stream at [preferredRate]. Returns a tembra_error. */
+    virtual int32_t openOutput(uint32_t preferredRate, RenderCallback callback, void* context) = 0;
+
+    /** Stops and closes whichever stream is open; idempotent. */
+    virtual void close() = 0;
+
+    /** The actual rate of the open stream (the preferred rate before any stream opened). */
+    virtual uint32_t sampleRate() const = 0;
+
+    /** True after the platform closed the stream on its own (device disconnected); the host re-opens. */
+    virtual bool deviceLost() const = 0;
+};
+
+}  // namespace tembra
+
+#endif  // TEMBRA_PLATFORM_AUDIO_DEVICE_H

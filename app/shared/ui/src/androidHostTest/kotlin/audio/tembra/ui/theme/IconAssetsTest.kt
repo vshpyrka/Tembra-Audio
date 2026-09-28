@@ -6,34 +6,58 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
- * The six navigation glyphs are bundled, normalised for the Compose resource loader and licensed (spec FR-016,
- * research R6). Runs on the JVM host because it reads the repository files.
+ * Every bundled glyph is normalised for the Compose resource loader and licensed (spec FR-016 of feature 002,
+ * FR-026 of feature 003, research R6 / R14): the Material Symbols files name the pinned commit, the two design
+ * glyphs name the Stitch screen they were converted from. Runs on the JVM host because it reads repository files.
  */
 class IconAssetsTest {
 
     private val resources = File(System.getProperty("tembra.repoRoot"), "app/shared/ui/src/commonMain/composeResources")
     private val drawable = File(resources, "drawable")
-    private val glyphFiles = listOf(
+    private val materialGlyphs = listOf(
         "ic_home_24.xml", "ic_graphic_eq_24.xml", "ic_music_note_24.xml",
         "ic_av_timer_24.xml", "ic_folder_24.xml", "ic_person_24.xml",
+        "ic_mic_24.xml", "ic_mic_off_24.xml", "ic_hearing_24.xml", "ic_play_arrow_24.xml", "ic_pause_24.xml",
+        "ic_volume_up_24.xml", "ic_expand_more_24.xml", "ic_arrow_left_24.xml", "ic_arrow_right_24.xml", "ic_settings_24.xml",
     )
+    private val designGlyphs = listOf("ic_guitar_24.xml", "ic_cello_24.xml")
+    private val glyphFiles = materialGlyphs + designGlyphs
 
-    /** The header comment names the source commit; the vector body must not reference any platform resource. */
+    /** The header comment names the source; the vector body must not reference any platform resource. */
     private fun bodyWithoutHeader(text: String): String = text.lines().filterNot { it.trimStart().startsWith("<!--") }.joinToString("\n")
 
     @Test
-    fun everyNavigationGlyphIsBundled() {
+    fun everyGlyphIsBundled() {
         for (name in glyphFiles) {
             assertTrue(File(drawable, name).isFile, "$name is missing from composeResources/drawable")
         }
     }
 
     @Test
-    fun everyGlyphIsA24dpVectorFromThePinnedCommit() {
+    fun everyGlyphIsA24dpVector() {
         for (name in glyphFiles) {
             val text = File(drawable, name).readText()
             assertTrue(text.contains("android:width=\"24dp\""), "$name is not a 24 dp vector")
-            assertTrue(text.contains(PINNED_COMMIT), "$name header does not name commit $PINNED_COMMIT")
+            assertTrue(text.contains("android:height=\"24dp\""), "$name is not a 24 dp vector")
+        }
+    }
+
+    @Test
+    fun materialGlyphsNameThePinnedCommit() {
+        for (name in materialGlyphs) {
+            val header = File(drawable, name).readText().lineSequence().first { it.trimStart().startsWith("<!--") }
+            assertTrue(header.startsWith("<!-- Material Symbols Outlined"), "$name header is not the Material Symbols header")
+            assertTrue(header.contains(PINNED_COMMIT), "$name header does not name commit $PINNED_COMMIT")
+        }
+    }
+
+    @Test
+    fun designGlyphsNameTheStitchScreenAndUseALiteralFill() {
+        for (name in designGlyphs) {
+            val text = File(drawable, name).readText()
+            assertTrue(text.lineSequence().first().startsWith("<!-- Tembra design glyph"), "$name does not start with the design-glyph header")
+            assertTrue(text.contains("design/stitch/screens/instrument-tuner/phone/index.html"), "$name header does not name the Stitch screen")
+            assertTrue(text.contains("android:fillColor=\"#FFFFFFFF\""), "$name has no literal white fill")
         }
     }
 

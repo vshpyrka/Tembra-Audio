@@ -23,7 +23,13 @@ android {
 
 dependencies {
     implementation(project(":shared:ui"))
+    implementation(project(":shared:engine"))
     implementation(project(":shared:data"))
     implementation(libs.androidx.activity.compose)
     implementation(libs.metrox.viewmodel.compose)
+    // AndroidMicrophonePermission suspends on the activity result (feature 003, research R6).
+    implementation(libs.kotlinx.coroutines.core)
+    // AndroidMicrophonePermissionTest (feature 003): the app module hosts one instrumented test.
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.kotlinx.coroutines.core)
 }

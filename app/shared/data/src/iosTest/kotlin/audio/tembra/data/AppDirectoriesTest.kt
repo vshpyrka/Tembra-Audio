@@ -20,4 +20,14 @@ class AppDirectoriesTest {
         assertTrue(NSFileManager.defaultManager.fileExistsAtPath(directories.cache), directories.cache)
         assertNotEquals(directories.documents, directories.cache)
     }
+
+    @Test
+    fun preferencesIsAWritableDatastoreDirectory() {
+        assertTrue(directories.preferences.startsWith("/"), directories.preferences)
+        assertTrue(directories.preferences.endsWith("/datastore"), directories.preferences)
+        assertTrue(NSFileManager.defaultManager.fileExistsAtPath(directories.preferences), directories.preferences)
+        assertTrue(NSFileManager.defaultManager.isWritableFileAtPath(directories.preferences), directories.preferences)
+        assertNotEquals(directories.documents, directories.preferences)
+        assertNotEquals(directories.cache, directories.preferences)
+    }
 }
