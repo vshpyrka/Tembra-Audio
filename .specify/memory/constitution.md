@@ -130,6 +130,43 @@ licensing.
 Rationale: one type per file keeps diffs reviewable, tests discoverable and navigation
 predictable for humans and agents.
 
+### VIII. Skill-Guided Kotlin and Compose Implementation
+
+- Kotlin and Compose code MUST follow the Chris Banes skills installed under `.claude/skills/`
+  (`chrisbanes/skills`, installed 2026-09-27; refreshed with `npx skills update`). The rule
+  binds every phase that touches the codebase: a plan's technology choices, task preparation,
+  implementation and review. Specifications and clarifications MUST NOT mention the skills or
+  use their vocabulary; they stay technology-free (Development Workflow).
+- Before writing or reviewing Kotlin or Compose code, the agent MUST route the concern through
+  `using-chrisbanes-skills` and load the skill that owns it: one cluster per concern, a second
+  only when it owns an independent decision in the same change.
+- Reusable composables MUST follow `compose-component-design`: `modifier` is the first optional
+  parameter and is applied to the root layout; caller-controlled content arrives through slots,
+  never through Boolean shape flags; semantic and design-system constraints stay primitive
+  parameters.
+- Screens MUST follow the three seams of `compose-state-and-effects`: a small wiring composable
+  that owns the state holder and the lifecycle effects; a plain content composable that takes
+  immutable state and callbacks and is what tests and previews drive; effects keyed by the
+  semantic input that restarts or disposes them, never `Unit` to hide a changing identity.
+- Coroutine and Flow code MUST follow `kotlin-concurrency-and-flow`: every launch has a named
+  site and a visible owner; constructors and `init` blocks MUST NOT launch; state and event
+  primitives are chosen from their replay, fan-out and `.value` contract, and that contract is
+  written in the API's documentation.
+- Branching and API shape MUST follow `kotlin-control-flow` and `kotlin-api-design`: a subject
+  `when` with guards over closed types and no `else` that hides a case; parsing owned by the
+  target type; platform detail behind a common interface with a platform binding.
+- Compose UI tests MUST follow `compose-ui-testing-patterns`: drive the plain content composable
+  with controlled state; reach hover, press and focus through an injected
+  `MutableInteractionSource`, never by simulating pointer input; freeze the clock before any
+  visual assertion; assert semantics before pixels; declare per test lane whether keyboard-driven
+  tests can run, never skip them with a silent return.
+- Every agent-initiated Gradle command MUST run through the `gradle-run` wrapper.
+
+Rationale: the skills encode the contracts that keep composables caller-placeable, state
+ownership visible and coroutine lifetimes explicit, and they give a reviewer one named contract
+per component instead of taste. Binding them only to the phases that touch code keeps
+specifications technology-free and the test-first loop of Principle III intact.
+
 ## Technology & Architecture Constraints
 
 - Targets: Android (phones, tablets, desktop mode) and iOS (iPhone, iPad). Desktop and web are
@@ -168,6 +205,10 @@ predictable for humans and agents.
   new lint or compiler warnings; one type per file; no forbidden dependency.
 - Pull requests MUST state which principle each non-obvious decision serves and MUST include
   the screenshots used for UI verification.
+- A plan or pull request that adds a public composable or a class that owns a coroutine MUST
+  name the skill contract it follows (Principle VIII). A UI feature MUST include the compose
+  compiler report produced with `-PcomposeReports=true` and MUST explain any new composable that
+  is not skippable, or whose value parameters are unstable when an immutable type was available.
 - Continuous integration MUST run: JVM unit tests and Compose UI tests on every push; iOS
   simulator tests and C++ tests on every pull request; a device smoke test (launch, open the
   demo project, press play, playhead moves) on release branches.
@@ -181,9 +222,9 @@ predictable for humans and agents.
   principle or materially expanding guidance, PATCH for clarifications. An amendment that
   changes an existing rule MUST name the specs and plans it invalidates.
 - Every plan's Constitution Check and every pull request review MUST verify compliance with
-  Principles I–VII. Violations are blocking, not advisory; complexity MUST be justified in the
+  Principles I–VIII. Violations are blocking, not advisory; complexity MUST be justified in the
   plan's Complexity Tracking table or removed.
 - `CLAUDE.md` is the runtime guidance file for agents working in this repository; it MUST point
   at this constitution and MUST NOT restate rules in a way that drifts from it.
 
-**Version**: 1.0.3 | **Ratified**: 2026-09-19 | **Last Amended**: 2026-09-26
+**Version**: 1.1.0 | **Ratified**: 2026-09-19 | **Last Amended**: 2026-09-28
