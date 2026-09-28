@@ -82,11 +82,16 @@ fun TunerMeter(
             needleGlowRadius = gradients.needleGlow.radius,
         )
     }
-    val compact = size == MeterSize.Compact
-    val styles = remember(extras, typography, compact) {
+    val styles = remember(extras, typography, size) {
         MeterStyles(
-            note = if (compact) extras.tunerCardNote else extras.tunerNote,
-            octave = if (compact) extras.tunerCardOctave else extras.tunerOctave,
+            note = when (size) {
+                MeterSize.Regular -> extras.tunerNote
+                MeterSize.Compact -> extras.tunerCardNote
+            },
+            octave = when (size) {
+                MeterSize.Regular -> extras.tunerOctave
+                MeterSize.Compact -> extras.tunerCardOctave
+            },
             readout = extras.tunerReadout,
             micro = extras.microLabel,
             label = typography.labelMedium,

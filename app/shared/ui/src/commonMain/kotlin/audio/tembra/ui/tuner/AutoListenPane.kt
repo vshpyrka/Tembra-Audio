@@ -85,10 +85,11 @@ private fun FittedMeter(
         val fits = fit >= spacing.meterMinWidth
         val cap = fit.coerceIn(spacing.meterMinWidth, spacing.meterMaxWidthWide)
         val scrolls = showDeniedState || !fits
+        val scrollState = rememberScrollState()
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .then(if (scrolls) Modifier.verticalScroll(rememberScrollState()) else Modifier)
+                .then(if (scrolls) Modifier.verticalScroll(scrollState) else Modifier)
                 .padding(spacing.md),
             contentAlignment = Alignment.Center,
         ) {
