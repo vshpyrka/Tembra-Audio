@@ -55,8 +55,9 @@ Filled in per user story below as the checks are run.
 
 ### User Story 2 — instrument, strings, presets (quickstart §4)
 
-- `android-compact-byEar.png`, `ios-compact-byEar.png`: six cards VI…I with E2 82.4 Hz … E4 329.6 Hz, the preset picker
-  "Standard (E2 A2 D3 G3 B3 E4)" and the Loop Tone toggle "Active". Relaunching after switching to By Ear reopened the Tuner in
+- `android-compact-byEar.png`, `ios-compact-byEar.png`: six cards VI…I with E2 82.4 Hz … E4 329.6 Hz, the string-count
+  selector, the preset picker "Standard (E2 A2 D3 G3 B3 E4)" and the Loop Tone toggle "Active" (since 2026-09-28 the string count
+  sits in the By Ear card beside the picker and Auto Listen shows none of it; see Phase 11 below). Relaunching after switching to By Ear reopened the Tuner in
   By Ear on both platforms (the DataStore round trip; `DataStoreTunerPreferencesTest` covers the file). The 7-string and cello
   card sets, Drop A and Drop D are asserted by `TunerScreenByEarTest` and `TunerViewModelTest`.
 
@@ -162,6 +163,31 @@ data class of lambdas, stable in the classes report), `presets: List<TuningPrese
 and the picker. No immutable collection type is on the classpath (kotlinx-collections-immutable was not added, Constitution VI), so the
 lists stay `List`; the column recomposes only on a selector, preset or toggle change, never on the 10 Hz reading, which is what the
 split of `TunerUiState` into per-child fields was for.
+
+### String count belongs to By Ear (Phase 11, 2026-09-28; spec clarification 2026-09-28, FR-002)
+
+The 6-String / 7-String selector left the selector bar: Auto Listen is chromatic and its 50–1400 Hz range covers both guitars,
+so the count only decides By Ear's preset list and cards. It now leads the picker row of the By Ear card (stacked and wide) and
+follows the mode selector in the landscape settings column; the cello shows none, and Auto Listen shows none for either
+instrument. Order everywhere is instrument → mode → strings → preset → loop → cards; `TunerScreenLayoutTest.stringCountBelongsToByEar`
+proves it at all three layouts and `keyboardOrderFollowsReading` the focus order. Every capture the selector bar appears in was
+retaken on the same devices as before (Pixel 6 Pro; iPhone 17 and iPad Pro 13-inch simulators):
+
+| Capture | Seen |
+|---|---|
+| `android-compact-autoListen.png`, `ios-compact-autoListen.png` | instrument + pill row, mode alone on the second row (right-aligned), meter; no string count |
+| `android-compact-byEar.png`, `ios-compact-byEar.png` | card: "6-String / 7-String" beside the picker on the first line, the loop toggle wrapped to the second, then the six cards |
+| `android-compact-*-largefont.png`, `ios-compact-*-largefont.png` | at font scale 2 the By Ear card stacks strings, picker and toggle on three lines, all whole; Auto Listen unchanged |
+| `android-expanded-*.png`, `ios-expanded-*.png` (the iPad set now also has `-byEar-guitar7` and `-byEar-cello`) | one selector row (instrument, pill, mode at the end); the By Ear card's first row holds strings, picker and toggle together, centred at 576 dp; the `-e2-flat-20` test-signal captures retaken too |
+| `android-landscape-*.png`, `ios-landscape-*.png` | column: header + pill, instrument, mode, and in By Ear strings, picker, toggle; all fit without scrolling |
+| `<platform>-compact-autoListen-<id>.png` (28) | the state matrix, retaken with the new bar; readings unchanged from the 2026-09-26 table above |
+
+Pre-existing, not changed here: at font scale 2 the Auto Listen readout row ("82.4 Hz • Reference 82.4 Hz") is wider than the
+340 dp meter and its ends are cut on the phone (`android-compact-autoListen-largefont.png`); the meter draws that row as one
+line in the Canvas. Worth a follow-up (wrap or shrink the row at large font scales).
+
+`app/tools/capture-tuner-states.sh` now captures through `adb exec-out screencap` so it honours `ANDROID_SERIAL` when several
+Android devices are attached (the `android screen capture` tool refused with two devices online).
 
 ### Left for a person (needs an instrument, ears, a call or a headset)
 

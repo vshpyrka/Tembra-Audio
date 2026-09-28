@@ -60,10 +60,14 @@ class TunerScreenByEarTest {
 
     @Test
     fun selectorsReflectState() = runComposeUiTest {
-        setScreen(byEar.copy(mode = TunerMode.AutoListen, audio = audio.tembra.engine.AudioState.Idle))
+        val update = setScreen(byEar.copy(mode = TunerMode.AutoListen, audio = audio.tembra.engine.AudioState.Idle))
         onNodeWithTag("tuner.instrument.guitar").assertIsSelected()
-        onNodeWithTag("tuner.strings.6").assertIsSelected()
         onNodeWithTag("tuner.mode.autoListen").assertIsSelected()
+        // The string count only matters to By Ear, so Auto Listen does not show it (clarified 2026-09-28).
+        onNodeWithTag("tuner.strings").assertDoesNotExist()
+        update(byEar)
+        onNodeWithTag("tuner.strings.6").assertIsSelected()
+        onNodeWithTag("tuner.mode.byEar").assertIsSelected()
     }
 
     @Test

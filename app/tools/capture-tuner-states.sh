@@ -60,7 +60,7 @@ capture_android() {
   adb shell input keyevent KEYCODE_WAKEUP >/dev/null
   adb shell am start -n audio.tembra.app/audio.tembra.android.MainActivity --es tembra.tuner.testSignal "$id" >/dev/null
   sleep "$SETTLE_SECONDS"
-  android screen capture --output "$file"
+  adb exec-out screencap -p > "$file"   # honours ANDROID_SERIAL when several devices are attached
 }
 
 IOS_BUNDLE=""
