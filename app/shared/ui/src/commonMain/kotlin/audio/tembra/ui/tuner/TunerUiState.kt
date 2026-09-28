@@ -32,11 +32,11 @@ data class TunerUiState(
 ) {
     /** What the audio-state pill reads; null hides it (spec FR-006). */
     val pill: AudioStatePill?
-        get() = when {
-            audio == AudioState.Listening && testSignal != null -> AudioStatePill.TestSignal
-            audio == AudioState.Listening -> AudioStatePill.MicActive
-            audio == AudioState.Tone -> AudioStatePill.ToneOut
-            else -> null
+        get() = when (audio) {
+            AudioState.Listening if testSignal != null -> AudioStatePill.TestSignal
+            AudioState.Listening -> AudioStatePill.MicActive
+            AudioState.Tone -> AudioStatePill.ToneOut
+            AudioState.Idle -> null
         }
 
     /** The meter is replaced by the denied panel (spec FR-015); a test signal never needs the microphone. */

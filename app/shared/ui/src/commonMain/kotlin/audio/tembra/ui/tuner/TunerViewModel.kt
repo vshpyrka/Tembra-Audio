@@ -24,7 +24,9 @@ import dev.zacsweers.metrox.viewmodel.ViewModelKey
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -40,7 +42,7 @@ import kotlinx.coroutines.withContext
  * current stream, then start the desired one). A 10 Hz poll mirrors the engine's state and reading for semantics
  * and notices when the engine stopped by itself (watchdog, one-shot tone); frame-rate telemetry goes through
  * [telemetry] straight into the meter's draw phase (Constitution II). Selector choices persist through
- * [TunerPreferences].
+ * [TunerPreferences]. Nothing is launched from the constructor: the first [screenVisible] call is the launch site.
  */
 @Inject
 @ContributesIntoMap(AppScope::class)
@@ -50,6 +52,8 @@ class TunerViewModel(
     private val permission: MicrophonePermission,
     private val preferences: TunerPreferences,
     private val sounds: ReferenceSoundRepository,
+    /** Where recordings are decoded (analysis M6); an optional binding, so the graph provides nothing for it. */
+    private val decodeDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TunerUiState())
@@ -58,49 +62,24 @@ class TunerViewModel(
     /** Stable handle for draw-phase reads: fills a snapshot without allocating. */
     val telemetry: PitchTelemetry = PitchTelemetry { audio.readPitch(it) }
 
-    /** Recordings are decoded off the main thread (analysis M6); tests leave the default. */
-    var decodeDispatcher: CoroutineDispatcher = Dispatchers.Default
-
     private var screenVisible = false
     private var foreground = false
     private var requestedThisVisibility = false
     private var current: DesiredAudio = DesiredAudio.Idle
+    private var startJob: Job? = null
     private var pollJob: Job? = null
+    private var auditionJob: Job? = null
     private val snapshot = PitchSnapshot()
     private val sampleHandles = mutableMapOf<String, SampleHandle>()
 
-    init {
-        viewModelScope.launch {
-            val stored = preferences.snapshot.first()
-            val presets = TuningPresets.forInstrument(stored.instrument, stored.guitarStrings)
-            val preset = presets.firstOrNull { it.id == stored.presetId } ?: presets.first()
-            _uiState.update {
-                it.copy(
-                    loaded = true,
-                    instrument = stored.instrument,
-                    guitarStrings = stored.guitarStrings,
-                    preset = preset,
-                    presets = presets,
-                    mode = stored.mode,
-                    loopTone = stored.loopTone,
-                )
-            }
-            applyAudio()
-        }
-        viewModelScope.launch {
-            permission.status.collect { status ->
-                _uiState.update { it.copy(microphone = status) }
-                applyAudio()
-            }
-        }
-        viewModelScope.launch { audio.events.collect(::onEvent) }
-    }
-
     // --- Lifecycle intents ---------------------------------------------------------------------------------------
 
+    /** Visibility of the Tuner entry; the first time it shows, the ViewModel loads its preferences and starts. */
     fun screenVisible(visible: Boolean) {
         screenVisible = visible
-        if (!visible) {
+        if (visible) {
+            start()
+        } else {
             requestedThisVisibility = false
             clearAudition()
         }
@@ -124,6 +103,43 @@ class TunerViewModel(
         applyAudio()
     }
 
+    /**
+     * The one launch site: the stored preferences and the current permission first, then the permission and the
+     * platform events for the rest of the ViewModel's life. [applyAudio] does nothing before [TunerUiState.loaded],
+     * so intents that arrive earlier only change state, and the first policy decision never sees the placeholder
+     * permission of an empty state.
+     */
+    private fun start() {
+        if (startJob != null) return
+        startJob = viewModelScope.launch {
+            val stored = preferences.snapshot.first()
+            val presets = TuningPresets.forInstrument(stored.instrument, stored.guitarStrings)
+            val preset = presets.firstOrNull { it.id == stored.presetId } ?: presets.first()
+            _uiState.update {
+                it.copy(
+                    loaded = true,
+                    instrument = stored.instrument,
+                    guitarStrings = stored.guitarStrings,
+                    preset = preset,
+                    presets = presets,
+                    mode = stored.mode,
+                    loopTone = stored.loopTone,
+                    microphone = permission.status.value,
+                )
+            }
+            applyAudio()
+            launch {
+                permission.status.collect { status ->
+                    // The seeded value is replayed first; only a change is a new input for the policy.
+                    if (_uiState.value.microphone == status) return@collect
+                    _uiState.update { it.copy(microphone = status) }
+                    applyAudio()
+                }
+            }
+            launch { audio.events.collect(::onEvent) }
+        }
+    }
+
     // --- Selector intents (spec FR-004, FR-005) --------------------------------------------------------------------
 
     fun selectInstrument(instrument: Instrument) {
@@ -131,6 +147,7 @@ class TunerViewModel(
         if (state.instrument == instrument) return
         val presets = TuningPresets.forInstrument(instrument, state.guitarStrings)
         val preset = presets.first()
+        cancelPendingAudition()
         unloadSamples()
         _uiState.update { it.copy(instrument = instrument, presets = presets, preset = preset, audition = null) }
         persist { it.copy(instrument = instrument, presetId = preset.id) }
@@ -142,6 +159,7 @@ class TunerViewModel(
         if (state.guitarStrings == count) return
         val presets = TuningPresets.forInstrument(state.instrument, count)
         val preset = presets.first()
+        cancelPendingAudition()
         _uiState.update { it.copy(guitarStrings = count, presets = presets, preset = preset, audition = null) }
         persist { it.copy(guitarStrings = count, presetId = preset.id) }
         applyAudio()
@@ -151,6 +169,7 @@ class TunerViewModel(
         val state = _uiState.value
         val preset = state.presets.firstOrNull { it.id == id } ?: return
         if (state.preset == preset) return
+        cancelPendingAudition()
         _uiState.update { it.copy(preset = preset, audition = null) }
         persist { it.copy(presetId = preset.id) }
         applyAudio()
@@ -158,6 +177,7 @@ class TunerViewModel(
 
     fun selectMode(mode: TunerMode) {
         if (_uiState.value.mode == mode) return
+        cancelPendingAudition()
         _uiState.update { it.copy(mode = mode, audition = null) }
         persist { it.copy(mode = mode) }
         applyAudio()
@@ -173,15 +193,25 @@ class TunerViewModel(
 
     // --- Audition intents (spec FR-018 to FR-020) ------------------------------------------------------------------
 
+    /**
+     * Sounds the string at [stringIndex]. Resolving and decoding its sound is owned by [auditionJob]: a newer
+     * audition, a stop, a selector change or leaving the screen cancels it, so a slow decode can never sound a
+     * string the user no longer asked for.
+     */
     fun audition(stringIndex: Int) {
         val state = _uiState.value
         val string = state.strings.getOrNull(stringIndex) ?: return
-        viewModelScope.launch {
+        cancelPendingAudition()
+        auditionJob = viewModelScope.launch {
             val sound = sounds.resolve(state.instrument, string.note)
             if (sound is ReferenceSound.Recording && sampleHandles[sound.resourceName] == null) {
-                val handle = withContext(decodeDispatcher) { audio.loadSample(sound.bytes) }
-                if (handle != null) sampleHandles[sound.resourceName] = handle
+                // The decode finishes and is cached even if this audition is cancelled meanwhile, so no handle is lost.
+                withContext(NonCancellable) {
+                    val handle = withContext(decodeDispatcher) { audio.loadSample(sound.bytes) }
+                    if (handle != null) sampleHandles[sound.resourceName] = handle
+                }
             }
+            ensureActive()
             _uiState.update { it.copy(audition = AuditionState(stringIndex, it.loopTone, sound)) }
             applyAudio()
         }
@@ -216,10 +246,10 @@ class TunerViewModel(
             val previous = current
             if (previous is DesiredAudio.Tone && desired is DesiredAudio.Tone && previous.sound == desired.sound && desired.sound is ReferenceSound.Synth) {
                 // Same tone, other loop setting: the engine re-arms without a restart (spec FR-019).
-                current = if (startTone(desired) == AudioResult.Ok) desired else DesiredAudio.Idle
+                current = if (startTone(desired)) desired else DesiredAudio.Idle
             } else {
-                stop(previous)
-                current = start(desired)
+                stopAudio(previous)
+                current = startAudio(desired)
             }
             if (current == DesiredAudio.Idle && desired is DesiredAudio.Tone) _uiState.update { it.copy(audition = null) }
         }
@@ -235,7 +265,7 @@ class TunerViewModel(
         }
     }
 
-    private fun stop(running: DesiredAudio) {
+    private fun stopAudio(running: DesiredAudio) {
         when (running) {
             DesiredAudio.Idle -> Unit
             DesiredAudio.Listening, is DesiredAudio.TestListening -> audio.stopListening()
@@ -243,18 +273,19 @@ class TunerViewModel(
         }
     }
 
-    private fun start(desired: DesiredAudio): DesiredAudio = when (desired) {
+    private fun startAudio(desired: DesiredAudio): DesiredAudio = when (desired) {
         DesiredAudio.Idle -> DesiredAudio.Idle
         DesiredAudio.Listening -> if (audio.startListening() == AudioResult.Ok) desired else DesiredAudio.Idle
         is DesiredAudio.TestListening -> if (audio.startTestSignal(desired.signal) == AudioResult.Ok) desired else DesiredAudio.Idle
-        is DesiredAudio.Tone -> if (startTone(desired) == AudioResult.Ok) desired else DesiredAudio.Idle
+        is DesiredAudio.Tone -> if (startTone(desired)) desired else DesiredAudio.Idle
     }
 
-    private fun startTone(tone: DesiredAudio.Tone): AudioResult = when (val sound = tone.sound) {
-        is ReferenceSound.Synth -> audio.startTone(sound.frequencyHz, if (tone.loop) 0 else ONE_SHOT_MILLIS)
+    /** True when the engine sounds [tone]; a recording whose decode failed has no sample to play. */
+    private fun startTone(tone: DesiredAudio.Tone): Boolean = when (val sound = tone.sound) {
+        is ReferenceSound.Synth -> audio.startTone(sound.frequencyHz, if (tone.loop) 0 else ONE_SHOT_MILLIS) == AudioResult.Ok
         is ReferenceSound.Recording -> {
             val handle = sampleHandles[sound.resourceName]
-            if (handle == null) AudioResult.Error(NO_SAMPLE) else audio.playSample(handle, tone.loop)
+            handle != null && audio.playSample(handle, tone.loop) == AudioResult.Ok
         }
     }
 
@@ -292,6 +323,7 @@ class TunerViewModel(
     private fun onEvent(event: AudioEvent) {
         when (event) {
             AudioEvent.Interrupted -> {
+                cancelPendingAudition()
                 _uiState.update { it.copy(interrupted = true, audition = null) }
                 applyAudio()
             }
@@ -300,18 +332,26 @@ class TunerViewModel(
                 applyAudio()
             }
             AudioEvent.DeviceLost -> {
-                stop(current)
+                stopAudio(current)
                 current = DesiredAudio.Idle
                 applyAudio()
             }
             AudioEvent.OutputRouteLost -> {
+                cancelPendingAudition()
                 _uiState.update { it.copy(audition = null) }
                 applyAudio()
             }
         }
     }
 
+    /** Drops an audition that is still resolving or decoding; a sounding one is untouched. */
+    private fun cancelPendingAudition() {
+        auditionJob?.cancel()
+        auditionJob = null
+    }
+
     private fun clearAudition() {
+        cancelPendingAudition()
         if (_uiState.value.audition != null) _uiState.update { it.copy(audition = null) }
     }
 
@@ -325,9 +365,10 @@ class TunerViewModel(
     }
 
     override fun onCleared() {
+        cancelPendingAudition()
         pollJob?.cancel()
         pollJob = null
-        stop(current)
+        stopAudio(current)
         current = DesiredAudio.Idle
         unloadSamples()
         super.onCleared()
@@ -336,6 +377,5 @@ class TunerViewModel(
     private companion object {
         const val ONE_SHOT_MILLIS = 2000
         const val POLL_MILLIS = 100L
-        const val NO_SAMPLE = -5
     }
 }

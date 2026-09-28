@@ -19,10 +19,10 @@ class TunerTestSignalRequestTest {
 
     @Test
     fun noteAndCentsAreParsed() {
-        assertEquals(TestSignal(Note.parse("E2"), -20.0), TunerTestSignalRequest.parse("E2:-20"))
-        assertEquals(TestSignal(Note.parse("F#3"), 5.0), TunerTestSignalRequest.parse("F#3:+5"))
-        assertEquals(TestSignal(Note.parse("A1"), 0.0), TunerTestSignalRequest.parse("A1:0"))
-        assertEquals(TestSignal(Note.parse("D3"), -5.5), TunerTestSignalRequest.parse("D3:-5.5"))
+        assertEquals(TestSignal.Pitched(Note.parse("E2"), -20.0), TunerTestSignalRequest.parse("E2:-20"))
+        assertEquals(TestSignal.Pitched(Note.parse("F#3"), 5.0), TunerTestSignalRequest.parse("F#3:+5"))
+        assertEquals(TestSignal.Pitched(Note.parse("A1"), 0.0), TunerTestSignalRequest.parse("A1:0"))
+        assertEquals(TestSignal.Pitched(Note.parse("D3"), -5.5), TunerTestSignalRequest.parse("D3:-5.5"))
     }
 
     @Test

@@ -20,10 +20,10 @@ data class MeterReading(
     val stateDescription: String
         get() {
             val amount = abs(cents).roundToInt()
-            return when {
-                isInTune -> "${note.name}, ${TunerCopy.inTune.lowercase()}"
-                direction == PitchDirection.Flat -> "${note.name}, $amount cents ${TunerCopy.flat.lowercase()}"
-                else -> "${note.name}, $amount cents ${TunerCopy.sharp.lowercase()}"
+            return when (direction) {
+                PitchDirection.InTune -> "${note.name}, ${TunerCopy.inTune.lowercase()}"
+                PitchDirection.Flat -> "${note.name}, $amount cents ${TunerCopy.flat.lowercase()}"
+                PitchDirection.Sharp -> "${note.name}, $amount cents ${TunerCopy.sharp.lowercase()}"
             }
         }
 

@@ -102,6 +102,67 @@ Filled in per user story below as the checks are run.
 the four `Java_audio_tembra_engine_NativeAudioEngine_nativeTuner*` symbols (release is not minified, so the JNI entry points
 stay). The test-signal extra is read only inside `if (BuildConfig.DEBUG)`; the unsigned release APK was not installed.
 
+### Phone landscape (Phase 10, 2026-09-28; spec FR-023 scenario 3, quickstart §8)
+
+Before this phase a phone held sideways got the wide layout in a window too short for it: `android-landscape-autoListen-before.png`
+(Pixel 6 Pro, 892 × 411 dp) shows the one-row selectors and the meter card cut through the gauge, scrolling.
+
+**Design choice.** Twelve Stitch variants were pulled into `design/stitch/screens/tuner-landscape-*` (five Auto Listen, seven By
+Ear) and compared on one question: do the settings, the preset, the string grid and the gauge all fit a 892 × ~330 dp content
+area without clipping. The app follows `tuner-landscape-auto-listen-b` ("Mobile Landscape Auto Listen Tuner") and
+`tuner-landscape-by-ear-g` / `-e` ("Mobile Landscape By Ear", six and seven strings), because:
+
+1. the settings column is the same in both modes (instrument, strings, mode, then preset and loop toggle in By Ear), so switching
+   modes swaps only the right-hand card;
+2. the gauge keeps the note above the arc and the Flat / Sharp row under it, which is the phone meter's own geometry, so the one
+   Canvas is reused in a compact size instead of a second meter;
+3. the string grid keeps every card whole in two rows (three columns for six strings, four for seven) with no scrolling;
+4. nothing in them lies outside the spec (the labelled rail is feature 002's rail).
+
+Rejected: `tuner-landscape-auto-listen-d` and `tuner-landscape-by-ear-c` add a noise gate, A4 calibration, timbre and octave-shift
+controls and a "Stop tone" bar that the spec does not have; `-a` and `by-ear-f` are crops of the same layout; the icon-only rail
+family (`auto-listen-c`, `-e`; `by-ear-a`, `-b`, `-d`) titles each card ("Controls & mode", "Tuning gauge", "Reference strings"),
+which costs the height a short window lacks, and its rail has no labels. The pane headers of the chosen screens ("Guitar: string 6
+(low E)", "Select reference string / Active target") and the "Pitch reference A4 = 440 Hz" row are not reproduced for the same
+reason (research R9, landscape table).
+
+**Rule.** `TunerLayout.Landscape` = window at least 600 dp wide and under 480 dp tall (the rail's own short-window breakpoint):
+settings column 36 % of the content width within 224–280 dp (× font scale, at most half the width, scrolling; the design's overlines
+above each control are dropped because with 44 dp targets they would push the picker and toggle out of a 295 dp window), content
+card beside it; the Auto Listen meter is `MeterSize.Compact` sized from the card height (`(height − 132 dp × scale) × 1.8`, 200–480 dp wide,
+centred, scrolling only under 200 dp); By Ear cards fill two rows of ⌈n / 2⌉ columns (rows at least 128 dp). Proven by
+`TunerLayoutTest`, `MeterLayoutTest`, `TembraSegmentedControlTest.equalWidthsShareTheControl` and the three `landscape*` cases plus
+the landscape runs of `nothingOverlaps` (font scale 1 and 2), `allTargetsAtLeast44dp` and `keyboardOrderFollowsReading` in
+`TunerScreenLayoutTest`.
+
+**Captures (Pixel 6 Pro rotated with `user_rotation 1`, 892 × 411 dp, test signal `e2-in-tune`; iPhone 17 simulator rotated
+Landscape Left, 874 × 402 pt, driven by the Mac keyboard):**
+
+| Capture | Seen |
+|---|---|
+| `android-landscape-autoListen.png` | settings column (header + "Test signal" pill, Guitar / Cello, 6- / 7-String, Auto Listen / By Ear) beside the meter card; the compact meter (pill, E2, arc with the needle at 0, "82.4 Hz • Reference 82.4 Hz", Flat / Sharp) is centred and whole |
+| `android-landscape-byEar.png` | column adds the preset picker and the loop toggle, all six controls visible without scrolling; six cards in two rows of three, every card whole |
+| `android-landscape-byEar-guitar7.png` | seven cards in two rows of four; "Standard 7-String (B1 E2 A…" ellipsised in the picker (the full list is in the menu) |
+| `android-landscape-byEar-cello.png` | no string-count control; four cards in two rows of two |
+| `ios-landscape-autoListen.png`, `ios-landscape-byEar.png`, `ios-landscape-byEar-guitar7.png`, `ios-landscape-byEar-cello.png` | the same four states on the iPhone 17 simulator (no status bar in landscape, the rail inset by the Dynamic Island's 59 pt safe area): the column, meter and cards fit exactly as on the Pixel; the focus ring on the last keyboard-activated segment is the hardware-keyboard route used to drive the captures. `ios-landscape-byEar-before.png` is the previous build in the same orientation (one selector row, second card row cut off) |
+
+The first Pixel pass kept the design's overline above each control; in By Ear the column then overflowed (the picker was cut
+and the toggle below the fold), so the overlines were dropped and the column spacing tightened (research R9, landscape table).
+The shell's 56 dp top bar is what makes a landscape phone short; the Stitch landscape screens keep only a status strip, which is a
+feature-002 decision this feature does not change.
+
+**Compose compiler report (constitution v1.1.0 gate; `./gradlew :shared:ui:compileAndroidMain --rerun -PcomposeReports=true`,
+`app/shared/ui/build/compose_compiler/tembra_shared:ui-composables.txt`, 2026-09-28).** Every composable added or changed in this phase is
+`restartable skippable`: `TunerScreenContent`, `ModePane`, `TunerSelectors`, `TunerSettingsColumn`, `InstrumentControl`, `StringCountControl`,
+`ModeControl`, `AudioStatePillView`, `AutoListenPane`, `FittedMeter`, `ByEarPane`, `FilledStringCards`, `StringCardGrid`, `StringCard`,
+`TunerMeter` (`size: MeterSize` stable) and `TembraSegmentedControl` / `Segment` (`widths: SegmentWidths` stable). The parameters the
+report does not mark stable are the pre-existing ones: `TunerUiState` and `MeterReading` (data classes carrying `List<TuningPreset>` /
+`TuningPreset`, which `:shared:core` does not annotate; strong skipping compares them by `equals`), `callbacks: TunerCallbacks` (a
+data class of lambdas, stable in the classes report), `presets: List<TuningPreset>` and `preset: TuningPreset` on `TunerSettingsColumn`
+and the picker. No immutable collection type is on the classpath (kotlinx-collections-immutable was not added, Constitution VI), so the
+lists stay `List`; the column recomposes only on a selector, preset or toggle change, never on the 10 Hz reading, which is what the
+split of `TunerUiState` into per-child fields was for.
+
 ### Left for a person (needs an instrument, ears, a call or a headset)
 
 1. quickstart §3 items 1–5 with a real guitar and cello (SC-004); the meter's accuracy is proven by `engineHostTest` and the

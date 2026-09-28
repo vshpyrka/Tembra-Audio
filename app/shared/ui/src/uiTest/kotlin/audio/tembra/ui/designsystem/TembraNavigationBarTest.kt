@@ -1,11 +1,13 @@
 package audio.tembra.ui.designsystem
 
+import androidx.compose.foundation.interaction.FocusInteraction
+import androidx.compose.foundation.interaction.HoverInteraction
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.platform.LocalDensity
@@ -24,7 +26,6 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
-import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.test.v2.runComposeUiTest
@@ -44,7 +45,13 @@ class TembraNavigationBarTest {
     private var onSurfaceVariant: Color = Color.Unspecified
     private var onSurface: Color = Color.Unspecified
 
-    private fun ComposeUiTest.setBar(width: Dp? = null, fontScale: Float? = null, selectedId: String = "home", onSelect: (String) -> Unit = {}) {
+    private fun ComposeUiTest.setBar(
+        items: List<NavigationItemSpec> = sixNavigationItems,
+        width: Dp? = null,
+        fontScale: Float? = null,
+        selectedId: String = "home",
+        onSelect: (String) -> Unit = {},
+    ) {
         setContent {
             inputModeManager = LocalInputModeManager.current
             TembraTheme {
@@ -52,13 +59,17 @@ class TembraNavigationBarTest {
                 onSurfaceVariant = TembraTheme.colors.onSurfaceVariant
                 onSurface = TembraTheme.colors.onSurface
                 val bar: @androidx.compose.runtime.Composable () -> Unit = {
-                    if (width == null) TembraNavigationBar(sixNavigationItems, selectedId, onSelect)
-                    else Box(Modifier.width(width)) { TembraNavigationBar(sixNavigationItems, selectedId, onSelect) }
+                    if (width == null) TembraNavigationBar(items, selectedId, onSelect)
+                    else Box(Modifier.width(width)) { TembraNavigationBar(items, selectedId, onSelect) }
                 }
                 if (fontScale == null) bar() else CompositionLocalProvider(LocalDensity provides largeFonts(fontScale)) { bar() }
             }
         }
     }
+
+    /** The six items with [id] driven by [source], so hover and focus are emitted rather than simulated. */
+    private fun itemsWith(id: String, source: MutableInteractionSource): List<NavigationItemSpec> =
+        sixNavigationItems.map { if (it.id == id) it.copy(interactionSource = source) else it }
 
     private fun ComposeUiTest.assertSixItemsFitWithin(containerTag: String) {
         val container = onNodeWithTag(containerTag).getUnclippedBoundsInRoot()
@@ -120,18 +131,11 @@ class TembraNavigationBarTest {
         }
     }
 
-    /** Compose keeps clickables unfocusable while a device is in touch mode; a keyboard or mouse switches it. */
-    private fun ComposeUiTest.enterKeyboardMode(): Boolean {
-        val keyboard = runOnUiThread { inputModeManager!!.requestInputMode(InputMode.Keyboard) }
-        if (!keyboard) println("platform stays in touch mode, keyboard path covered on iOS")
-        return keyboard
-    }
-
     @Test
     fun keyboardActivatesAnItem() = runComposeUiTest {
         var selected: String? = null
         setBar(onSelect = { selected = it })
-        if (!enterKeyboardMode()) return@runComposeUiTest
+        if (!enterKeyboardMode(inputModeManager)) return@runComposeUiTest
         onNodeWithTag("nav.item.metronome").requestFocus()
         onNodeWithTag("nav.item.metronome").assertIsFocused()
         onNodeWithTag("nav.item.metronome").performKeyInput { pressKey(Key.Enter) }
@@ -141,10 +145,9 @@ class TembraNavigationBarTest {
 
     @Test
     fun focusedItemShowsAnIndicator() = runComposeUiTest {
-        setBar()
-        if (!enterKeyboardMode()) return@runComposeUiTest
-        onNodeWithTag("nav.item.metronome").requestFocus()
-        onNodeWithTag("nav.item.metronome").assertIsFocused()
+        val focus = MutableInteractionSource()
+        setBar(items = itemsWith("metronome", focus))
+        assertTrue(focus.tryEmit(FocusInteraction.Focus()))
         waitForIdle()
         val image = onNodeWithTag("nav.item.metronome").captureToImage()
         assertTrue(image.containsColor(primary), "no primary-coloured focus ring on the focused item")
@@ -152,10 +155,11 @@ class TembraNavigationBarTest {
 
     @Test
     fun hoverRaisesTheLabelColour() = runComposeUiTest {
-        setBar()
+        val hover = MutableInteractionSource()
+        setBar(items = itemsWith("tuner", hover))
         val before = onNodeWithTag("nav.item.tuner").captureToImage()
         assertTrue(before.containsColor(onSurfaceVariant), "inactive label is not onSurfaceVariant before hover")
-        onNodeWithTag("nav.item.tuner").performMouseInput { enter(center); moveTo(center) }
+        assertTrue(hover.tryEmit(HoverInteraction.Enter()))
         waitForIdle()
         val after = onNodeWithTag("nav.item.tuner").captureToImage()
         assertTrue(after.containsColor(onSurface), "hovered label is not onSurface")

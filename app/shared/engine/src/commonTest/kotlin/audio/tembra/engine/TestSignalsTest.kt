@@ -5,6 +5,7 @@ import kotlin.math.abs
 import kotlin.math.pow
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -25,7 +26,7 @@ class TestSignalsTest {
 
     @Test
     fun offsetsAreAppliedInCents() {
-        val flat = TestSignals.byId("e2-flat-20")!!.signal
+        val flat = assertIs<TestSignal.Pitched>(TestSignals.byId("e2-flat-20")!!.signal)
         assertTrue(abs(flat.frequencyHz - 82.41 * 2.0.pow(-20.0 / 1200)) < 0.01)
         assertEquals(Note.parse("E2"), flat.note)
         assertEquals(-20.0, flat.cents)
@@ -35,7 +36,7 @@ class TestSignalsTest {
     @Test
     fun theOutOfRangeEntryHasARawFrequencyAndRests() {
         val entry = TestSignals.byId("out-of-range-2khz")!!
-        assertNull(entry.signal.note)
+        assertIs<TestSignal.Raw>(entry.signal)
         assertEquals(2000.0, entry.signal.frequencyHz)
         assertEquals(ExpectedReading.Resting, entry.expected)
     }

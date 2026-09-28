@@ -3,9 +3,12 @@ package audio.tembra.ui.designsystem
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.input.InputMode
+import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
@@ -37,6 +40,22 @@ internal val sixNavigationItems = listOf(
 /** The platform density with the system font scale replaced, as the largest accessibility text size would set it. */
 @Composable
 internal fun largeFonts(fontScale: Float): Density = Density(density = LocalDensity.current.density, fontScale = fontScale)
+
+/** Whether this lane's platform can enter keyboard input mode: declared per platform, never probed silently. */
+internal expect val supportsKeyboardInputMode: Boolean
+
+/**
+ * Switches Compose to keyboard input mode for a key-driven test (clickables stay unfocusable in touch mode). A lane
+ * declared without keyboard mode skips by that declaration and returns false; a lane that declares it must enter it,
+ * or the test fails.
+ */
+@OptIn(ExperimentalTestApi::class)
+internal fun ComposeUiTest.enterKeyboardMode(manager: InputModeManager?): Boolean {
+    if (!supportsKeyboardInputMode) return false
+    val keyboard = runOnUiThread { checkNotNull(manager) { "no InputModeManager was captured from the content" }.requestInputMode(InputMode.Keyboard) }
+    assertTrue(keyboard, "this lane declares keyboard input mode but the platform stayed in touch mode")
+    return true
+}
 
 /** Asserts the node is displayed and its unclipped bounds sit inside [container] (half a dp of rounding tolerance). */
 @OptIn(ExperimentalTestApi::class)

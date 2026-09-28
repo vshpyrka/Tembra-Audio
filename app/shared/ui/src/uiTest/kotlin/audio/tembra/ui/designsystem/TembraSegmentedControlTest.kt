@@ -1,10 +1,14 @@
 package audio.tembra.ui.designsystem
 
+import androidx.compose.foundation.interaction.FocusInteraction
+import androidx.compose.foundation.interaction.HoverInteraction
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.platform.LocalInputModeManager
@@ -21,17 +25,19 @@ import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
-import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.test.v2.runComposeUiTest
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.width
 import audio.tembra.ui.theme.TembraIcon
 import audio.tembra.ui.theme.TembraTheme
 import kotlin.test.Test
@@ -56,6 +62,8 @@ class TembraSegmentedControlTest {
         selectedId: String = items.first().id,
         style: SegmentedStyle = SegmentedStyle.Large,
         accent: SegmentAccent = SegmentAccent.Primary,
+        widths: SegmentWidths = SegmentWidths.Content,
+        width: Dp? = null,
         onSelect: (String) -> Unit = {},
     ) {
         setContent {
@@ -64,16 +72,42 @@ class TembraSegmentedControlTest {
                 onSurface = TembraTheme.colors.onSurface
                 onSurfaceVariant = TembraTheme.colors.onSurfaceVariant
                 primary = TembraTheme.colors.primary
-                TembraSegmentedControl(items = items, selectedId = selectedId, onSelect = onSelect, style = style, accent = accent, testTag = "seg")
+                TembraSegmentedControl(
+                    items = items,
+                    selectedId = selectedId,
+                    onSelect = onSelect,
+                    style = style,
+                    modifier = if (width != null) Modifier.width(width) else Modifier,
+                    accent = accent,
+                    widths = widths,
+                    testTag = "seg",
+                )
             }
         }
     }
 
-    private fun ComposeUiTest.enterKeyboardMode(): Boolean {
-        val keyboard = runOnUiThread { inputModeManager!!.requestInputMode(InputMode.Keyboard) }
-        if (!keyboard) println("platform stays in touch mode, keyboard path covered on iOS")
-        return keyboard
+    @Test
+    fun equalWidthsShareTheControl() = runComposeUiTest {
+        setControl(items = stringCounts, style = SegmentedStyle.Small, widths = SegmentWidths.Equal, width = 300.dp)
+        val six = onNodeWithTag("seg.6.surface", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val seven = onNodeWithTag("seg.7.surface", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        assertTrue(kotlin.math.abs((six.width - seven.width).value) < 1f, "segments differ: ${six.width} vs ${seven.width}")
+        // The container's 2 dp padding on each side and the 2 dp gap are the only width the segments do not share.
+        assertTrue(six.width + seven.width >= 300.dp - 8.dp, "segments do not fill the control: ${six.width} + ${seven.width}")
+        onNodeWithTag("seg.6").assertHeightIsAtLeast(44.dp)
     }
+
+    @Test
+    fun contentWidthsHugTheLabels() = runComposeUiTest {
+        setControl(items = stringCounts, style = SegmentedStyle.Small, width = 300.dp)
+        val six = onNodeWithTag("seg.6.surface", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val seven = onNodeWithTag("seg.7.surface", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        assertTrue(six.width + seven.width < 240.dp, "segments were stretched: ${six.width} + ${seven.width}")
+    }
+
+    /** The instruments with the [id] segment driven by [source], so hover and focus are emitted rather than simulated. */
+    private fun instrumentsWith(id: String, source: MutableInteractionSource): List<SegmentSpec> =
+        instruments.map { if (it.id == id) it.copy(interactionSource = source) else it }
 
     @Test
     fun rendersLabelledTabsAndMarksTheSelection() = runComposeUiTest {
@@ -105,10 +139,11 @@ class TembraSegmentedControlTest {
 
     @Test
     fun hoverRaisesTheLabelColour() = runComposeUiTest {
-        setControl()
+        val hover = MutableInteractionSource()
+        setControl(items = instrumentsWith("cello", hover))
         val label = onNode(hasText("Cello") and hasAnyAncestor(hasTestTag("seg.cello")), useUnmergedTree = true)
         val before = label.captureToImage().averageColor()
-        onNodeWithTag("seg.cello").performMouseInput { enter(center); moveTo(center) }
+        assertTrue(hover.tryEmit(HoverInteraction.Enter()))
         waitForIdle()
         val after = label.captureToImage().averageColor()
         assertTrue(after.luminance() > before.luminance(), "hover did not brighten the label: $before -> $after")
@@ -116,14 +151,21 @@ class TembraSegmentedControlTest {
     }
 
     @Test
-    fun keyboardFocusShowsARingAndEnterSelects() = runComposeUiTest {
-        var selected: String? = null
-        setControl(onSelect = { selected = it })
-        if (!enterKeyboardMode()) return@runComposeUiTest
-        onNodeWithTag("seg.cello").requestFocus()
-        onNodeWithTag("seg.cello").assertIsFocused()
+    fun focusShowsARing() = runComposeUiTest {
+        val focus = MutableInteractionSource()
+        setControl(items = instrumentsWith("cello", focus))
+        assertTrue(focus.tryEmit(FocusInteraction.Focus()))
         waitForIdle()
         assertTrue(onNodeWithTag("seg.cello").captureToImage().containsColor(primary), "no primary focus ring")
+    }
+
+    @Test
+    fun keyboardEnterSelectsTheFocusedSegment() = runComposeUiTest {
+        var selected: String? = null
+        setControl(onSelect = { selected = it })
+        if (!enterKeyboardMode(inputModeManager)) return@runComposeUiTest
+        onNodeWithTag("seg.cello").requestFocus()
+        onNodeWithTag("seg.cello").assertIsFocused()
         onNodeWithTag("seg.cello").performKeyInput { pressKey(Key.Enter) }
         waitForIdle()
         assertEquals("cello", selected)

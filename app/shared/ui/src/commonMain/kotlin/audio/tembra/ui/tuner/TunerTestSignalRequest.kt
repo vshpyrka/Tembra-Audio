@@ -13,7 +13,7 @@ object TunerTestSignalRequest {
         TestSignals.byId(argument)?.let { return it.signal }
         val match = NOTE_CENTS.matchEntire(argument) ?: return null
         val (name, cents) = match.destructured
-        val note = runCatching { Note.parse(name) }.getOrNull() ?: return null
-        return TestSignal(note, cents.toDouble())
+        val note = Note.parseOrNull(name) ?: return null
+        return TestSignal.Pitched(note, cents.toDouble())
     }
 }

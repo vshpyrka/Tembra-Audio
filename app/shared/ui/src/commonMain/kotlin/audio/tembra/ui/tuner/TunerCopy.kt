@@ -22,4 +22,5 @@ internal object TunerCopy {
     const val deniedText = "Tembra Audio listens to your instrument to show its tuning. Allow the microphone to use Auto Listen."
     const val deniedButton = "Allow microphone"
     const val hertz = "Hz"
+    const val tunerControls = "Tuner controls"
 }

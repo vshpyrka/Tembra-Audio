@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
+import audio.tembra.ui.designsystem.enterKeyboardMode
 import audio.tembra.ui.theme.TembraTheme
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -211,11 +212,7 @@ class NavigationShellTest {
     fun keyboardActivatesAnItemThroughTheShell() = runComposeUiTest {
         var selected: Destination? = null
         withShellLocals { NavigationShellContent(ShellUiState(), LayoutMode.BottomBar, onSelect = { selected = it }, onBack = {}) }
-        val keyboard = runOnUiThread { inputModeManager!!.requestInputMode(InputMode.Keyboard) }
-        if (!keyboard) {
-            println("keyboardActivatesAnItemThroughTheShell: platform stays in touch mode, keyboard path covered on iOS")
-            return@runComposeUiTest
-        }
+        if (!enterKeyboardMode(inputModeManager)) return@runComposeUiTest
         onNodeWithTag("nav.item.projects").requestFocus()
         onNodeWithTag("nav.item.projects").assertIsFocused()
         onNodeWithTag("nav.item.projects").performKeyInput { pressKey(Key.Enter) }

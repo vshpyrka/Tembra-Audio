@@ -27,17 +27,18 @@ class TembraStatusPillTest {
 
     @Test
     fun drawsCapitalsAndAnnouncesSentenceCase() = runComposeUiTest {
+        // A still dot: the pulse is not what this test proves, and a frozen state keeps the colour probe exact.
         setContent {
             TembraTheme {
                 primary = TembraTheme.colors.primary
-                TembraStatusPill(text = "Mic active", color = TembraTheme.colors.primary, pulsing = true, testTag = "pill")
+                TembraStatusPill(text = "Mic active", color = TembraTheme.colors.primary, pulsing = false, testTag = "pill")
             }
         }
         onNodeWithTag("pill").assertContentDescriptionEquals("Mic active")
         onNode(hasText("MIC ACTIVE") and hasAnyAncestor(hasTestTag("pill")), useUnmergedTree = true).assertExists()
         onNodeWithTag("pill.dot", useUnmergedTree = true).assertExists()
         val dot = onNodeWithTag("pill.dot", useUnmergedTree = true).captureToImage()
-        assertTrue(dot.containsColor(primary, tolerance = 0.1f), "the dot is not drawn in the pill colour")
+        assertTrue(dot.containsColor(primary), "the dot is not drawn in the pill colour")
     }
 
     @Test

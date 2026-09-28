@@ -2,19 +2,20 @@ package audio.tembra.ui.tuner
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
-import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.width
 import androidx.compose.ui.unit.height
-import audio.tembra.ui.designsystem.averageColor
 import audio.tembra.ui.theme.TembraTheme
 import kotlin.math.abs
 import kotlin.test.Test
@@ -31,7 +32,7 @@ class TunerMeterLayoutTest {
         setContent {
             TembraTheme {
                 Box(Modifier.width(600.dp)) {
-                    TunerMeter(telemetry = telemetry, reading = null, listening = false, maxWidth = 480.dp, testTag = "tuner.meter")
+                    TunerMeter(telemetry = telemetry, reading = null, listening = false, testTag = "tuner.meter", modifier = Modifier.widthIn(max = 480.dp))
                 }
             }
         }
@@ -45,19 +46,19 @@ class TunerMeterLayoutTest {
         assertTrue(bounds.height.value < arc + 320f, "height ${bounds.height} is far more than the arc plus the text rows")
     }
 
+    /** The meter has no input surface at all, so no pointer or focus event can change it (spec FR-024). */
     @Test
-    fun hoverDoesNothing() = runComposeUiTest {
+    fun theMeterIsInert() = runComposeUiTest {
         setContent {
             TembraTheme {
                 Box(Modifier.width(340.dp)) {
-                    TunerMeter(telemetry = telemetry, reading = null, listening = false, maxWidth = 340.dp, testTag = "tuner.meter")
+                    TunerMeter(telemetry = telemetry, reading = null, listening = false, testTag = "tuner.meter")
                 }
             }
         }
-        val before: Color = onNodeWithTag("tuner.meter").captureToImage().averageColor()
-        onNodeWithTag("tuner.meter").performMouseInput { enter(center); moveTo(center) }
-        waitForIdle()
-        val after: Color = onNodeWithTag("tuner.meter").captureToImage().averageColor()
-        assertTrue(abs(before.red - after.red) < 0.005f && abs(before.green - after.green) < 0.005f && abs(before.blue - after.blue) < 0.005f, "hover changed the meter: $before -> $after")
+        onNodeWithTag("tuner.meter")
+            .assert(SemanticsMatcher.keyNotDefined(SemanticsActions.OnClick))
+            .assert(SemanticsMatcher.keyNotDefined(SemanticsActions.RequestFocus))
+            .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Focused))
     }
 }

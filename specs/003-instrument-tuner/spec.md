@@ -256,22 +256,26 @@ control, and a screen-reader user hears the note, the direction and the amount o
 **Why this priority**: Required by the constitution for every screen; it does not change what
 the tuner does.
 
-**Independent Test**: Render both modes at compact and expanded widths on both platforms and
-compare with the design; tab through every control; read the meter and the cards with the
-platform screen reader.
+**Independent Test**: Render both modes at compact and expanded widths and in phone landscape on
+both platforms and compare with the design; tab through every control; read the meter and the
+cards with the platform screen reader.
 
 **Acceptance Scenarios**:
 
 1. **Given** a window narrower than 600 dp, **When** either mode is shown, **Then** the
    selectors stack in two rows above the content, the meter fills the width, By Ear cards form
    two columns, and nothing is clipped or overlapping.
-2. **Given** a window 840 dp or wider, **When** either mode is shown, **Then** the selectors sit
-   in one row, the meter is centred in its card, By Ear cards form three columns, and no
-   right-hand panel is shown.
-3. **Given** a pointer, **When** it hovers over any selector, card button or toggle, **Then** the
+2. **Given** a window 840 dp or wider and at least 480 dp tall, **When** either mode is shown,
+   **Then** the selectors sit in one row, the meter is centred in its card, By Ear cards form
+   three columns, and no right-hand panel is shown.
+3. **Given** a window at least 600 dp wide and shorter than 480 dp (a phone held sideways),
+   **When** either mode is shown, **Then** the instrument, string-count and mode selectors (and,
+   in By Ear, the tuning preset and the loop toggle) stand in a settings column on the left, the meter or the string cards fill the card beside it without scrolling, every card is
+   whole in two rows, and nothing is clipped.
+4. **Given** a pointer, **When** it hovers over any selector, card button or toggle, **Then** the
    control shows a hover state; **When** focus is moved with a keyboard, **Then** every control
    receives a visible focus indicator in reading order and can be activated.
-4. **Given** a screen reader, **When** it reaches the meter, **Then** it announces the heard
+5. **Given** a screen reader, **When** it reaches the meter, **Then** it announces the heard
    note and the offset in cents with its direction, or the resting state;
    **When** it reaches a card, **Then** it announces the string numeral, note and whether it is
    playing.
@@ -450,10 +454,14 @@ platform screen reader.
 
 - **FR-023**: Both modes MUST adapt to the window: in windows narrower than 600 dp the selectors
   occupy two rows (instrument and pill; string count and mode), the meter spans the content
-  width and the cards form two columns; in windows 840 dp or wider the selectors share one row,
-  the meter is centred in its card and the cards form three columns; between the two widths the
-  layout follows the narrower rules. Nothing MUST clip, overlap or scroll horizontally at any
-  width, including at the largest system font size.
+  width and the cards form two columns; in windows 840 dp or wider that are at least 480 dp tall
+  the selectors share one row, the meter is centred in its card and the cards form three
+  columns; between the two widths the layout follows the narrower rules. In windows at least
+  600 dp wide but shorter than 480 dp (a phone held sideways) the selectors, the audio-state pill
+  and, in By Ear, the tuning preset and the loop toggle MUST stand in a settings column beside the
+  content without scrolling at the default font size; the meter MUST fit the remaining height without scrolling; and the cards
+  MUST form two rows (two, three or four columns for four, six or seven strings). Nothing MUST
+  clip, overlap or scroll horizontally at any width, including at the largest system font size.
 - **FR-024**: Every selector segment, the preset picker, the loop toggle, the settings control of
   the denied state and every card button MUST show a hover state under a pointer, a visible
   focus indicator, MUST be operable from the keyboard, and MUST measure at least 44 dp in both
@@ -486,9 +494,11 @@ platform screen reader.
   test on each platform MUST feed every test signal of FR-032 through the real engine and
   assert the reading (note within 1 cent, or the resting state for the out-of-range signal).
 - **FR-029**: Screenshots of both modes at compact (360 dp) and expanded (1024 dp or wider)
-  widths on Android and on the iOS simulator MUST be stored under the feature directory and
-  reviewed against the Stitch references before acceptance, with the phone Auto Listen screen
-  compared to its HTML and the tablet Auto Listen screen to its screenshot (see the export artefacts above). The set MUST also include a state matrix: one Auto
+  widths and in phone landscape (a phone rotated) on Android and on the iOS simulator MUST be
+  stored under the feature directory and reviewed against the Stitch references before
+  acceptance, with the phone Auto Listen screen compared to its HTML, the tablet Auto Listen
+  screen to its screenshot and the landscape screens to the "Mobile Landscape" screenshots (see
+  the export artefacts above). The set MUST also include a state matrix: one Auto
   Listen capture per test signal of FR-032 on each platform, reviewed for the needle position,
   the note, the pill and the highlighted end label.
 - **FR-030**: Any dependency added for this feature MUST carry a permissive licence and MUST be
@@ -626,7 +636,9 @@ platform screen reader.
   transport bar (none of the tuner screens shows one). The tablet design's decorative guitar
   illustration is excluded. The expanded-width layout keeps the design's one-row selector bar,
   centred meter and three-column cards; the medium band (600 to 839 dp) follows the compact
-  rules.
+  rules. The phone-landscape layout (added 2026-09-28) follows the Stitch "Mobile Landscape Auto
+  Listen Tuner" and "Mobile Landscape By Ear" screens: a settings column beside the content; the
+  pane headers and the "Pitch reference" row of those screens are not reproduced.
 - **Test signals are a developer tool.** They exist so the meter can be verified and captured
   without an instrument or a microphone; they are reachable only through a debug launch argument,
   never from the UI, and they never touch the microphone.
