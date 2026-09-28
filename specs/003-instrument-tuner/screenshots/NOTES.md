@@ -189,6 +189,21 @@ line in the Canvas. Worth a follow-up (wrap or shrink the row at large font scal
 `app/tools/capture-tuner-states.sh` now captures through `adb exec-out screencap` so it honours `ANDROID_SERIAL` when several
 Android devices are attached (the `android screen capture` tool refused with two devices online).
 
+### Skill review of Phases 10 and 11 (constitution v1.1.0, Principle VIII; 2026-09-28)
+
+The 2026-09-27 review (`docs/reports/chrisbanes-skills-review-2026-09-27.html`) covered the tuner before the landscape work; the
+code added since was read again against the skills it was written under, with these contracts named for the gate:
+
+| Contract | Where it applies | Outcome |
+|---|---|---|
+| `compose-component-design` | `TunerScreenContent(layout)`, `TunerSettingsColumn`, `TunerSelectorControls`, `AutoListenPane` / `ByEarPane` / `StringCardGrid(rowMinHeight)` / `StringCard(layout)`, `TunerMeter(size: MeterSize)`, `TembraSegmentedControl(widths: SegmentWidths)` | `modifier` is the first optional parameter and reaches the root; the two new variations are enums, not Boolean shape flags; `rowMinHeight` and the tokens stay primitives; no change |
+| `compose-state-and-effects` | `TunerScreen` (wiring, effects keyed on the ViewModel) → `TunerScreenContent` (plain content the tests drive); the landscape panes' scroll states | one fix: `FittedMeter` created its scroll state inside the conditional modifier; it is now one `rememberScrollState()` applied conditionally |
+| `compose-performance` | compiler report (`-PcomposeReports=true`): every composable of both phases is `restartable skippable`; the 10 Hz reading reaches only `TunerMeter`; `BoxWithConstraints` is confined to the two landscape panes whose content depends on the measured height | no measured regression, no change |
+| `kotlin-control-flow` | `when (layout)` in the content, selectors, panes, grid and card; `TunerLayout.from(width, isShort)` | one fix: `MeterLayout`'s row helpers and `TunerMeter`'s styles branched on the closed `MeterSize` with `if`/`else`; now exhaustive `when (size)` |
+| `kotlin-api-design` | `TunerLayout` and `MeterLayout.widthForHeight` as companion factories on their domain types, `SegmentWidths` / `MeterSize` as the smallest public shape | no change |
+| `compose-ui-testing-patterns` | `TunerScreenLayoutTest` (state-driven content, sized root, bounds and semantics, unmerged surfaces), `TembraSegmentedControlTest`, `MeterLayoutTest`, `TunerLayoutTest` | no change |
+| `gradle-run` | every lane of both phases ran through the wrapper | — |
+
 ### Left for a person (needs an instrument, ears, a call or a headset)
 
 1. quickstart §3 items 1–5 with a real guitar and cello (SC-004); the meter's accuracy is proven by `engineHostTest` and the

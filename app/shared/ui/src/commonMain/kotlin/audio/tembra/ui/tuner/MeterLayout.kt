@@ -74,11 +74,30 @@ class MeterLayout(val width: Float, val density: Float = 1f, val fontScale: Floa
         private const val LABEL_PROBE_HALF_WIDTH = 34f
         private const val LABEL_PROBE_HALF_HEIGHT = 9f
 
-        private fun pillRow(size: MeterSize): Float = if (size == MeterSize.Compact) PILL_ROW_COMPACT else PILL_ROW
-        private fun noteRow(size: MeterSize): Float = if (size == MeterSize.Compact) NOTE_ROW_COMPACT else NOTE_ROW
-        private fun readoutRow(size: MeterSize): Float = if (size == MeterSize.Compact) READOUT_ROW_COMPACT else READOUT_ROW
-        private fun labelRow(size: MeterSize): Float = if (size == MeterSize.Compact) LABEL_ROW_COMPACT else LABEL_ROW
-        private fun noteDescent(size: MeterSize): Float = if (size == MeterSize.Compact) NOTE_DESCENT_COMPACT else NOTE_DESCENT
+        private fun pillRow(size: MeterSize): Float = when (size) {
+            MeterSize.Regular -> PILL_ROW
+            MeterSize.Compact -> PILL_ROW_COMPACT
+        }
+
+        private fun noteRow(size: MeterSize): Float = when (size) {
+            MeterSize.Regular -> NOTE_ROW
+            MeterSize.Compact -> NOTE_ROW_COMPACT
+        }
+
+        private fun readoutRow(size: MeterSize): Float = when (size) {
+            MeterSize.Regular -> READOUT_ROW
+            MeterSize.Compact -> READOUT_ROW_COMPACT
+        }
+
+        private fun labelRow(size: MeterSize): Float = when (size) {
+            MeterSize.Regular -> LABEL_ROW
+            MeterSize.Compact -> LABEL_ROW_COMPACT
+        }
+
+        private fun noteDescent(size: MeterSize): Float = when (size) {
+            MeterSize.Regular -> NOTE_DESCENT
+            MeterSize.Compact -> NOTE_DESCENT_COMPACT
+        }
 
         /** The height of the four text rows in screen pixels; it does not depend on the width. */
         fun textRowsHeight(density: Float = 1f, fontScale: Float = 1f, size: MeterSize = MeterSize.Regular): Float =
