@@ -55,7 +55,8 @@ is skippable (the report is attached to the pull request).
 4. Timing: `MetronomeTimingEndToEndTest` measures five seconds on a device; the ten-minute
    drift proof is `metronome_renderer_test` (offline, exact to one sample). For a listening
    check record ten minutes at 240 BPM with the phone next to a DAW click at 240 BPM: no
-   audible phase slip at the end (spec SC-001).
+   audible phase slip at the end (spec SC-001). The same device test asserts the start latency,
+   play to the first click, at 100 ms or less (spec SC-007).
 
 ## 4. Bar shape, styles and sounds (User Stories 2, 4)
 
@@ -142,6 +143,11 @@ and `metronome/phone-landscape/screenshot.jpg`: chips, cells and bar heights, st
 sound pill or tiles, the dial ring and gradient, the number and marking, the slider, the tap
 card and the play button. Nothing clipped, overlapping or under the bottom bar at any size;
 every label whole at the large font; 7/8 cells whole (wrapping where needed).
+
+Beat-light timing (spec SC-006): on a wired route at 120 BPM, record the screen and the audio
+together (Android: `adb shell screenrecord` while a DAW records the phone's line-out, or one phone
+filming another; iOS: QuickTime screen and audio capture of the device), measure the offset between
+the cell lighting and the click on five beats and log the values in `NOTES.md`; 30 ms is the limit.
 
 ## 9. Pointer, keyboard and screen reader
 

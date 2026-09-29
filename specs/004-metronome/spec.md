@@ -386,7 +386,7 @@ and the picker with the platform screen reader.
 - A custom sound longer than the longest tick interval (1.5 seconds at 40 BPM): only its first
   two seconds are kept at import, and it is faded before the next tick whenever it would
   overlap.
-- A custom file that is very large, very long, 8-bit, 32-bit float, or at 8 kHz or 192 kHz: it
+- A custom file that is large (up to 64 MB), very long, 8-bit, 32-bit float, or at 8 kHz or 192 kHz: it
   is accepted if it is a PCM WAV, and only the first two seconds of sound are kept.
 - A custom file whose sound is a single sharp transient a few milliseconds long: it is accepted
   and clicks cleanly.
@@ -525,8 +525,8 @@ and the picker with the platform screen reader.
   where the Accent is clearly stronger than the Click and the Sub clearly softer (at least 6 dB
   apart in loudness). Every built-in sound MUST be produced by the app or bundled under a
   permissive licence recorded in the licence inventory.
-- **FR-019**: Clicks MUST start and stop without pops, MUST play at a comfortable level that
-  follows the device's media volume on the current output route, and every tick MUST start
+- **FR-019**: Clicks MUST start and stop without pops, MUST play at a comfortable level (every sound's Click
+  level-matched to the built-in set) that follows the device's media volume on the current output route, and every tick MUST start
   exactly on its time even when the previous sound is still sounding: a sound that is still
   sounding when the next tick arrives MUST be faded out over a few milliseconds before that tick
   so clicks never pile up or smear; a sound shorter than the interval plays in full, and at a
@@ -558,8 +558,8 @@ and the picker with the platform screen reader.
 - **FR-024**: The prepared sound MUST be stored as the app's own copy so it works after the
   original file is moved or deleted and across app launches. If the copy is missing or damaged
   when it is needed, the app MUST fall back to Classic Wood and tell the user once.
-- **FR-025**: A file that is not a WAV, that uses an unsupported encoding, or whose content has
-  no sound MUST be refused with one short message naming the reason, and the previously selected
+- **FR-025**: A file that is not a WAV, that uses an unsupported encoding, whose content has no
+  sound, that is larger than 64 MB, or that cannot be read from the device MUST be refused with one short message naming the reason, and the previously selected
   sound MUST remain selected.
 
 **Remembered settings and lifecycle**
@@ -639,13 +639,14 @@ and the picker with the platform screen reader.
   more than one custom sound, separate custom files per level, haptic or flash-on-beat
   feedback, saving or naming presets, a transport bar, top-bar icons, or changes to the
   navigation and its glyphs.
-- **FR-037**: Debug builds MUST offer, in the app's developer tools only, a switch that selects
+- **FR-037**: Debug builds MUST offer, through a developer-only launch argument (the app's
+  developer tooling, never a control on the screen), a setting that selects
   how the Syncopated style is rendered, so the user can audition the readings by ear: "Even
   beats" (the FR-010 definition, the default), "Off-beat ticks" (every subdivision tick between
   beats sounds at Accent and every beat at Sub; with one tick per beat it behaves as "Even
-  beats") and "All but one" (every beat except beat 1 at Accent, beat 1 at Sub). The switch
+  beats") and "All but one" (every beat except beat 1 at Accent, beat 1 at Sub). The setting
   changes only how the Syncopated style sounds; the cells keep one entry per beat and show the
-  "Even beats" pattern. Release builds MUST NOT contain the switch and always use "Even beats".
+  "Even beats" pattern. Release builds MUST ignore the argument and always use "Even beats".
 
 ### Key Entities
 

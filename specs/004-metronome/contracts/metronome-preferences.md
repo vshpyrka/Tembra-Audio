@@ -32,8 +32,10 @@ unchanged); `provideMetronomePreferences(dataStore) = DataStoreMetronomePreferen
 **Decoding rules**: an absent or unknown `signature`, `subdivision`, `style` or `sound` id yields
 the default; `tempo` that is not an integer in 40–240 yields 120; `levels` is decoded against the
 decoded signature (bad char → the style's pattern or Standard; wrong length → `resizedTo`);
-`sound == "custom"` with an absent `customPath` yields Classic Wood and keeps `customName` so the
-Custom entry still shows the name as unavailable.
+`sound == "custom"` with an absent `customPath` yields Classic Wood; `customSound` is
+`CustomSoundRef(customName, customPath)` only when both keys are present, else null (the Custom
+entry then reads empty; a present pair whose file is missing is shown as unavailable by the
+ViewModel when the load fails).
 
 **Tests**: `MetronomePreferencesSnapshotTest` (defaults, round trip, every decoding rule),
 `FakeMetronomePreferencesTest`, `OkioCustomClickSoundStoreTest` (`commonTest` with

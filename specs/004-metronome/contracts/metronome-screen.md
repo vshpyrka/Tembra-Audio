@@ -33,7 +33,7 @@ layers (`preferences.update`, `store.commit`, `picker.pickWav`) are `suspend`. B
 re-throw `CancellationException`.
 
 `togglePlayback()`: `Stopped` → `Starting` → `host.keepAlive()` → `audio.startMetronome()` →
-`Running` (or `Stopped` + `PlaybackRefused`); `Running` → `audio.stopMetronome()` →
+`Running` (or `Stopped` + `FocusDenied` / `DeviceUnavailable`); `Running` → `audio.stopMetronome()` →
 `host.release()` → `Stopped`. Settings intents while `Running` send `audio.setGrid` /
 `audio.selectSound` after updating the state; while `Stopped`, `selectSound` also calls
 `audio.previewClick()` (not for the already selected sound). `tap(atNanos)` folds into
