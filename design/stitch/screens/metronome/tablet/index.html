@@ -1,0 +1,497 @@
+<!DOCTYPE html><html class="dark" lang="en" style=""><head></head><body class="bg-surface font-body-md text-on-surface select-none overflow-hidden h-screen flex flex-col"><svg class="inline-defs-container" aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden"></svg>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>TEMBRA - Instrument Tuner</title>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<style>
+    @layer base {
+      html, body { margin: 0; padding: 0; }
+      body { overscroll-behavior: none; }
+      main > :first-child { margin-top: 0 !important; }
+      main > :last-child { margin-bottom: 0 !important; }
+    }
+    ::-webkit-scrollbar { display: none; }
+  </style>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "on-tertiary": "#3c0091",
+            "surface-container-high": "#2a2a2d",
+            "tertiary-container": "#ab88ff",
+            "surface-dim": "#131316",
+            "secondary": "#ffafd3",
+            "on-background": "#e4e1e6",
+            "surface-container-highest": "#353438",
+            "on-primary-fixed": "#21005e",
+            "tertiary": "#d0bcff",
+            "surface-tint": "#cebdff",
+            "secondary-fixed-dim": "#ffafd3",
+            "on-secondary": "#620040",
+            "primary": "#cebdff",
+            "background": "#131316",
+            "surface-container-low": "#1b1b1e",
+            "outline-variant": "#494552",
+            "on-secondary-fixed": "#3d0026",
+            "on-surface": "#e4e1e6",
+            "surface-variant": "#353438",
+            "on-error": "#690005",
+            "error": "#ffb4ab",
+            "on-tertiary-fixed-variant": "#5516be",
+            "on-tertiary-fixed": "#23005c",
+            "primary-container": "#a78bfa",
+            "secondary-fixed": "#ffd8e7",
+            "inverse-primary": "#674bb5",
+            "inverse-on-surface": "#303033",
+            "on-tertiary-container": "#40009b",
+            "on-secondary-container": "#ff93c8",
+            "on-error-container": "#ffdad6",
+            "secondary-container": "#85145a",
+            "surface": "#131316",
+            "on-primary-fixed-variant": "#4f319c",
+            "on-primary-container": "#3c1989",
+            "tertiary-fixed": "#e9ddff",
+            "surface-container": "#1f1f22",
+            "on-primary": "#381385",
+            "tertiary-fixed-dim": "#d0bcff",
+            "surface-bright": "#39393c",
+            "outline": "#948e9d",
+            "primary-fixed": "#e8ddff",
+            "on-surface-variant": "#cac4d4",
+            "surface-container-lowest": "#0e0e11",
+            "error-container": "#93000a",
+            "primary-fixed-dim": "#cebdff",
+            "inverse-surface": "#e4e1e6",
+            "on-secondary-fixed-variant": "#85145a"
+          },
+          borderRadius: {
+            DEFAULT: "0.25rem",
+            lg: "0.5rem",
+            xl: "0.75rem",
+            full: "9999px"
+          },
+          spacing: {
+            "space-md": "0.75rem",
+            "space-lg": "1.25rem",
+            "gutter": "0.75rem",
+            "space-xs": "0.25rem",
+            "space-sm": "0.5rem",
+            "margin": "1rem",
+            "space-xl": "1.75rem"
+          },
+          fontFamily: {
+            "body-lg": ["Inter"],
+            "headline-sm": ["Space Grotesk"],
+            "headline-lg": ["Space Grotesk"],
+            "headline-lg-mobile": ["Space Grotesk"],
+            "tabular-param": ["Inter"],
+            "body-md": ["Inter"],
+            "headline-md": ["Space Grotesk"],
+            "label-lg": ["Space Grotesk"],
+            "label-md": ["Space Grotesk"],
+            "tabular-timecode": ["Space Grotesk"],
+            "body-sm": ["Inter"],
+            "label-sm": ["Space Grotesk"]
+          },
+          fontSize: {
+            "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+            "headline-sm": ["18px", { lineHeight: "24px", fontWeight: "600" }],
+            "headline-lg": ["32px", { lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "600" }],
+            "headline-lg-mobile": ["24px", { lineHeight: "32px", letterSpacing: "-0.01em", fontWeight: "600" }],
+            "tabular-param": ["11px", { lineHeight: "14px", letterSpacing: "0.02em", fontWeight: "500" }],
+            "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+            "headline-md": ["22px", { lineHeight: "28px", letterSpacing: "-0.01em", fontWeight: "600" }],
+            "label-lg": ["14px", { lineHeight: "18px", letterSpacing: "0.01em", fontWeight: "500" }],
+            "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "500" }],
+            "tabular-timecode": ["15px", { lineHeight: "20px", letterSpacing: "0.05em", fontWeight: "500" }],
+            "body-sm": ["12px", { lineHeight: "16px", fontWeight: "400" }],
+            "label-sm": ["10px", { lineHeight: "14px", letterSpacing: "0.04em", fontWeight: "600" }]
+          }
+        }
+      }
+    };
+  </script>
+<meta content="web_dashboard" name="shell-type">
+
+<!-- TOP APPLICATION HEADER RIBBON -->
+<header class="fixed top-0 left-0 right-0 h-14 bg-surface-container-low/95 backdrop-blur-xl z-50 flex items-center justify-between px-3 border-b border-outline-variant/30 shadow-[0_1px_8px_rgba(0,0,0,0.35)]">
+<div class="flex items-center gap-space-sm">
+<button class="w-9 h-9 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" title="Menu">
+<span class="material-symbols-outlined text-[20px]">menu</span>
+</button>
+<div class="flex items-center gap-2 pl-1">
+<div class="w-6 h-6 rounded bg-primary-container flex items-center justify-center text-on-primary-container">
+<span class="material-symbols-outlined text-[16px]">graphic_eq</span>
+</div>
+<span class="font-headline-sm text-headline-sm tracking-tight text-on-surface font-bold">TEMBRA</span>
+</div>
+<div class="h-4 w-px bg-outline-variant mx-1"></div>
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container-lowest text-on-surface-variant border border-outline-variant/20">
+<span class="font-label-md text-label-md text-on-surface font-medium">Music project - 001</span>
+<span class="material-symbols-outlined text-primary text-[15px]">cloud_done</span>
+</div>
+</div>
+<!-- Center Menu Items -->
+<!-- Right Utility & Profile -->
+<div class="flex items-center gap-2">
+<button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" title="Help">
+<span class="material-symbols-outlined text-[18px]">help_outline</span>
+</button>
+<button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" title="Cloud Sync">
+<span class="material-symbols-outlined text-[18px]">cloud_sync</span>
+</button>
+<button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" title="Share">
+<span class="material-symbols-outlined text-[18px]">share</span>
+</button>
+<div class="relative p-0.5 rounded-full bg-secondary-container flex items-center justify-center">
+<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary text-[18px]">person</span>
+</div>
+</div>
+</div>
+</header>
+<!-- LEFT NAVIGATION RAIL -->
+<aside class="fixed left-0 top-14 w-16 bg-surface-container-lowest z-40 flex flex-col items-center py-2.5 border-r border-outline-variant/30 shadow-[1px_0_12px_rgba(0,0,0,0.4)] bottom-0">
+<nav class="w-full px-2 flex flex-col gap-2">
+<a class="flex flex-col items-center justify-center py-2 px-1 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="timeline" href="#">
+<span class="material-symbols-outlined text-[22px] mb-0.5">waves</span>
+<span class="font-label-sm text-label-sm">Timeline</span>
+</a>
+<a class="flex flex-col items-center justify-center py-2 px-1 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="tuner" href="#">
+<span class="material-symbols-outlined text-[22px] mb-0.5">graphic_eq</span>
+<span class="font-label-sm text-label-sm">Tuner</span>
+</a>
+<a class="flex flex-col items-center justify-center py-2 px-1 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="effects" href="#">
+<span class="material-symbols-outlined text-[22px] mb-0.5">tune</span>
+<span class="font-label-sm text-label-sm">Effects</span>
+</a>
+<a class="flex flex-col items-center justify-center py-2 px-1 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="pads" href="#">
+<span class="material-symbols-outlined text-[22px] mb-0.5">grid_view</span>
+<span class="font-label-sm text-label-sm">Pads</span>
+</a>
+<a class="flex flex-col items-center justify-center py-2 px-1 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="remote" href="#">
+<span class="material-symbols-outlined text-[22px] mb-0.5">sensors</span>
+<span class="font-label-sm text-label-sm">Remote</span>
+</a>
+<a class="flex flex-col items-center justify-center py-2 px-1 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="projects" href="#">
+<span class="material-symbols-outlined text-[22px] mb-0.5">folder_open</span>
+<span class="font-label-sm text-label-sm">Projects</span>
+</a>
+</nav>
+</aside>
+<!-- MAIN TUNER WORKSPACE -->
+<div class="pl-16 flex-1 flex flex-col pt-14 h-screen overflow-hidden justify-between p-4">
+<main class="relative bg-surface w-full p-2 lg:p-3 flex-1 flex flex-col gap-3 max-w-7xl mx-auto overflow-hidden justify-between h-full"><div class="flex flex-col w-full h-full max-h-[calc(100vh-4.5rem)] justify-between gap-3 select-none">
+<!-- TOP WORKSPACE HUD STRIP -->
+
+<!-- CENTER TWO-COLUMN EXPANDED SUITE -->
+<div class="grid grid-cols-12 gap-3 flex-1 min-h-0">
+<!-- LEFT PANEL: BEAT ACCENT MATRIX & SOUND ENGINE SPEC (Col 1-4) -->
+<div class="col-span-4 flex flex-col gap-3 h-full"><!-- 1. TIME SIGNATURE block -->
+<div class="bg-surface-container-low rounded-xl p-3 flex flex-col space-y-1.5 shadow-md">
+  <div class="flex items-center justify-between px-1">
+    <span class="font-label-sm text-label-sm text-outline tracking-wider uppercase font-semibold">TIME SIGNATURE</span>
+    <span class="font-tabular-param text-[10px] text-outline font-medium">Common &amp; Complex</span>
+  </div>
+  <div class="grid grid-cols-6 gap-1.5">
+    <button class="sig-btn py-1.5 rounded-lg bg-secondary-container text-on-secondary-container font-label-md text-label-md font-semibold transition-all active:scale-95 shadow-sm text-center">4/4</button>
+    <button class="sig-btn py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant font-label-md text-label-md font-medium transition-all active:scale-95 hover:text-on-surface text-center">3/4</button>
+    <button class="sig-btn py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant font-label-md text-label-md font-medium transition-all active:scale-95 hover:text-on-surface text-center">6/8</button>
+    <button class="sig-btn py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant font-label-md text-label-md font-medium transition-all active:scale-95 hover:text-on-surface text-center">2/4</button>
+    <button class="sig-btn py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant font-label-md text-label-md font-medium transition-all active:scale-95 hover:text-on-surface text-center">5/4</button>
+    <button class="sig-btn py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant font-label-md text-label-md font-medium transition-all active:scale-95 hover:text-on-surface text-center">7/8</button>
+  </div>
+</div>
+
+<!-- 2. RHYTHM SUBDIVISION block -->
+<div class="bg-surface-container-low rounded-xl p-3 flex flex-col space-y-1.5 shadow-md">
+  <div class="flex items-center justify-between px-1">
+    <span class="font-label-sm text-label-sm text-outline tracking-wider uppercase font-semibold">RHYTHM SUBDIVISION</span>
+  </div>
+  <div class="grid grid-cols-4 gap-1.5">
+    <button class="subdiv-btn flex items-center justify-center gap-1 py-1.5 rounded-lg bg-primary-container text-on-primary-container font-label-md text-label-md font-semibold shadow-sm transition-all active:scale-95">
+      <span class="material-symbols-outlined text-[16px]">music_note</span>
+      <span class="">1/4</span>
+    </button>
+    <button class="subdiv-btn flex items-center justify-center gap-1 py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant font-label-md text-label-md font-medium hover:text-on-surface transition-all active:scale-95">
+      <span class="material-symbols-outlined text-[16px]">music_note</span>
+      <span class="">1/8</span>
+    </button>
+    <button class="subdiv-btn flex items-center justify-center gap-1 py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant font-label-md text-label-md font-medium hover:text-on-surface transition-all active:scale-95">
+      <span class="material-symbols-outlined text-[16px]">music_note</span>
+      <span class="">1/16</span>
+    </button>
+    <button class="subdiv-btn flex items-center justify-center gap-1 py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant font-label-md text-label-md font-medium hover:text-on-surface transition-all active:scale-95">
+      <span class="material-symbols-outlined text-[16px]">music_note</span>
+      <span class="">3let</span>
+    </button>
+  </div>
+</div>
+
+<!-- 3. ACCENT BLOCK (Beat Pulse Matrix) -->
+<div class="bg-surface-container-low rounded-xl p-3 flex flex-col shadow-md gap-3">
+  <div class="grid grid-cols-4 gap-2">
+    <!-- Beat 1 (Accent) -->
+    <div class="beat-col flex flex-col items-center gap-1.5 p-2 rounded-lg bg-surface-container-lowest relative group cursor-pointer transition-all" data-beat="1">
+      <div class="w-full h-24 bg-surface-container rounded-md relative flex items-end p-1 overflow-hidden">
+        <div class="w-full bg-secondary rounded-sm transition-all duration-75 shadow-[0_0_12px_rgba(255,175,211,0.5)] h-[95%]" id="meter-bar-1"></div>
+      </div>
+      <span class="font-label-sm text-label-sm text-secondary font-bold tracking-wide">ACCENT</span>
+    </div>
+    <!-- Beat 2 (Click) -->
+    <div class="beat-col flex flex-col items-center gap-1.5 p-2 rounded-lg bg-surface-container-lowest relative group cursor-pointer transition-all" data-beat="2">
+      <div class="w-full h-24 bg-surface-container rounded-md relative flex items-end p-1 overflow-hidden">
+        <div class="w-full bg-primary rounded-sm transition-all duration-75 h-[62%]" id="meter-bar-2"></div>
+      </div>
+      <span class="font-label-sm text-label-sm text-on-surface font-medium tracking-wide">CLICK</span>
+    </div>
+    <!-- Beat 3 (Sub) -->
+    <div class="beat-col flex flex-col items-center gap-1.5 p-2 rounded-lg bg-surface-container-lowest relative group cursor-pointer transition-all" data-beat="3">
+      <div class="w-full h-24 bg-surface-container rounded-md relative flex items-end p-1 overflow-hidden">
+        <div class="w-full bg-primary/70 rounded-sm transition-all duration-75 h-[42%]" id="meter-bar-3"></div>
+      </div>
+      <span class="font-label-sm text-label-sm text-on-surface-variant font-medium tracking-wide">SUB</span>
+    </div>
+    <!-- Beat 4 (Click) -->
+    <div class="beat-col flex flex-col items-center gap-1.5 p-2 rounded-lg bg-surface-container-lowest relative group cursor-pointer transition-all" data-beat="4">
+      <div class="w-full h-24 bg-surface-container rounded-md relative flex items-end p-1 overflow-hidden">
+        <div class="w-full bg-primary rounded-sm transition-all duration-75 h-[62%]" id="meter-bar-4"></div>
+      </div>
+      <span class="font-label-sm text-label-sm text-on-surface font-medium tracking-wide">CLICK</span>
+    </div>
+  </div>
+  <!-- Compact Style presets row -->
+  <div class="flex items-center justify-between pt-0.5">
+    <span class="font-label-sm text-label-sm text-outline uppercase font-semibold">STYLE</span>
+    <div class="flex items-center gap-1.5">
+      <button class="px-2 py-0.5 rounded bg-secondary-container text-secondary font-label-sm text-label-sm font-semibold">Standard</button>
+      <button class="px-2 py-0.5 rounded bg-surface-container text-on-surface-variant font-label-sm text-label-sm hover:text-on-surface">Downbeat</button>
+      <button class="px-2 py-0.5 rounded bg-surface-container text-on-surface-variant font-label-sm text-label-sm hover:text-on-surface">Syncopated</button>
+    </div>
+  </div>
+</div>
+
+<!-- 4. COMPACT SOUND SELECTOR DROPDOWN -->
+<div class="bg-surface-container-low rounded-xl p-3 flex flex-col gap-2 shadow-md">
+  <div class="flex items-center justify-between px-1">
+    <span class="font-label-sm text-label-sm text-outline tracking-wider uppercase font-semibold">CLICK TIMBRE</span>
+    
+  </div>
+  <div class="grid grid-cols-2 gap-1.5"><button class="flex items-center justify-center gap-2 p-2.5 rounded-lg bg-secondary-container/20 border border-secondary transition-all active:scale-95 group"><div class="w-7 h-7 rounded bg-secondary-container text-secondary flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-[16px]">graphic_eq</span></div><span class="font-label-md text-label-md font-semibold text-secondary leading-tight truncate">Classic Wood</span></button><button class="flex items-center justify-center gap-2 p-2.5 rounded-lg bg-surface-container-high border border-outline-variant/20 hover:border-outline transition-all active:scale-95 group"><div class="w-7 h-7 rounded bg-surface-container-highest text-on-surface-variant group-hover:text-primary flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-[16px]">radio_button_checked</span></div><span class="font-label-md text-label-md font-medium text-on-surface group-hover:text-primary transition-colors leading-tight truncate">808 Rim</span></button><button class="flex items-center justify-center gap-2 p-2.5 rounded-lg bg-surface-container-high border border-outline-variant/20 hover:border-outline transition-all active:scale-95 group"><div class="w-7 h-7 rounded bg-surface-container-highest text-on-surface-variant group-hover:text-primary flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-[16px]">notifications</span></div><span class="font-label-md text-label-md font-medium text-on-surface group-hover:text-primary transition-colors leading-tight truncate">Digital Beep</span></button><button class="flex items-center justify-center gap-2 p-2.5 rounded-lg bg-surface-container-high border border-outline-variant/20 hover:border-outline transition-all active:scale-95 group"><div class="w-7 h-7 rounded bg-surface-container-highest text-on-surface-variant group-hover:text-primary flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-[16px]">sensors</span></div><span class="font-label-md text-label-md font-medium text-on-surface group-hover:text-primary transition-colors leading-tight truncate">Cowbell</span></button><button class="flex items-center justify-center gap-2 p-2.5 rounded-lg bg-surface-container-high border border-outline-variant/20 hover:border-outline transition-all active:scale-95 group"><div class="w-7 h-7 rounded bg-surface-container-highest text-on-surface-variant group-hover:text-primary flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-[16px]">tune</span></div><span class="font-label-md text-label-md font-medium text-on-surface group-hover:text-primary transition-colors leading-tight truncate">Mechanical</span></button><button class="flex items-center justify-center gap-2 p-2.5 rounded-lg bg-surface-container-high border border-dashed border-outline-variant/30 hover:border-primary transition-all active:scale-95 group"><div class="w-7 h-7 rounded bg-primary-container/20 text-primary flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-[16px]">add</span></div><span class="font-label-md text-label-md font-medium text-primary leading-tight truncate">Custom</span></button></div>
+</div></div>
+<!-- RIGHT/CENTER MAIN PANEL: RADIAL TEMPO WHEEL & HERO CONTROLS (Col 5-12) -->
+<div class="col-span-8 flex flex-col gap-3 h-full min-h-0"><div class="flex-1 bg-surface-container-low rounded-xl p-5 flex flex-col justify-between shadow-md relative overflow-hidden"><div class="absolute -top-24 -right-24 w-80 h-80 rounded-full bg-secondary-container/20 blur-3xl pointer-events-none"></div><div class="absolute -bottom-24 -left-24 w-80 h-80 rounded-full bg-primary-container/20 blur-3xl pointer-events-none"></div><div class="flex items-center justify-center my-auto py-2 relative z-10"><div class="relative w-full max-w-[420px] aspect-square flex items-center justify-center"><svg class="absolute inset-0 w-full h-full -rotate-90 pointer-events-none" viewBox="0 0 240 240"><defs><linearGradient id="tempoGaugeGrad" x1="0%" x2="100%" y1="0%" y2="100%"><stop offset="0%" stop-color="#cebdff"></stop><stop offset="50%" stop-color="#a78bfa"></stop><stop offset="100%" stop-color="#ffafd3"></stop></linearGradient><filter id="arcGlow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur in="SourceGraphic" stdDeviation="3"></feGaussianBlur></filter></defs><circle cx="120" cy="120" fill="none" r="96" stroke="#2a2a2d" stroke-dasharray="460 140" stroke-linecap="round" stroke-width="6"></circle><circle cx="120" cy="120" fill="none" filter="url(#arcGlow)" opacity="0.5" r="96" stroke="url(#tempoGaugeGrad)" stroke-dasharray="240 600" stroke-linecap="round" stroke-width="8"></circle><circle class="transition-all duration-200" cx="120" cy="120" fill="none" id="radial-progress-arc" r="96" stroke="url(#tempoGaugeGrad)" stroke-dasharray="228 600" stroke-linecap="round" stroke-width="6" style="stroke-dashoffset: 375;"></circle><g opacity="0.5" stroke="#494552" stroke-width="1.5"><line x1="120" x2="120" y1="14" y2="22"></line><line x1="195" x2="189" y1="45" y2="51"></line><line x1="226" x2="218" y1="120" y2="120"></line><line x1="195" x2="189" y1="195" y2="189"></line><line x1="120" x2="120" y1="226" y2="218"></line><line x1="45" x2="51" y1="195" y2="189"></line><line x1="14" x2="22" y1="120" y2="120"></line><line x1="45" x2="51" y1="45" y2="51"></line></g></svg><div class="flex items-center justify-between w-full px-4 z-10"><button class="w-14 h-14 rounded-full bg-surface-container-high hover:bg-surface-container-highest text-on-surface flex items-center justify-center shadow-md active:scale-90 transition-all" onclick="const s=document.getElementById('step-minus-1'); if(s) s.click();"><span class="material-symbols-outlined text-[28px]">remove</span></button><div class="flex flex-col items-center justify-center text-center px-2"><div class="flex items-baseline justify-center"><span class="font-headline-lg text-[88px] font-bold text-on-surface tracking-tighter leading-none" id="bpm-display">120</span><span class="font-label-lg text-label-lg font-semibold text-secondary ml-1 tracking-wide">BPM</span></div><div class="font-body-md text-body-md text-tertiary mt-1 font-medium tracking-wide" id="tempo-descriptor-inner">Moderato (108-120)</div></div><button class="w-14 h-14 rounded-full bg-surface-container-high hover:bg-surface-container-highest text-on-surface flex items-center justify-center shadow-md active:scale-90 transition-all" onclick="const s=document.getElementById('step-plus-1'); if(s) s.click();"><span class="material-symbols-outlined text-[28px]">add</span></button></div></div></div><div class="w-full max-w-md mx-auto flex flex-col gap-2 z-10 px-4"><div class="relative flex items-center"><input id="tempo-slider-range" type="range" min="40" max="240" value="120" class="w-full accent-primary h-2 bg-surface-container rounded-full cursor-pointer appearance-none" oninput="const b=parseInt(this.value); const disp=document.getElementById('bpm-display'); if(disp) disp.textContent=b; const arc=document.getElementById('radial-progress-arc'); if(arc){const ratio=(b-30)/(300-30); arc.style.strokeDashoffset=500-ratio*375;} const needle=document.getElementById('dial-needle'); if(needle){const ratio=(b-30)/(300-30); needle.style.transform='rotate('+(-120+ratio*240)+'deg);'}"></div><div class="flex items-center justify-between text-outline text-label-sm font-tabular-param px-1 opacity-60"><span class="">40</span><span class="">240</span></div></div></div><div class="bg-surface-container-low rounded-xl p-4 border border-outline-variant/20 shadow-md flex items-center justify-center"><div class="w-full max-w-md mx-auto flex items-center gap-space-md"><button class="flex-1 h-16 rounded-xl bg-surface-container-high hover:bg-surface-container-highest active:bg-surface-container-highest flex flex-col items-center justify-center relative overflow-hidden shadow-md active:scale-[0.98] transition-all group" id="tap-tempo-btn"><div class="absolute inset-0 bg-primary/20 opacity-0 pointer-events-none transition-opacity" id="tapRipple"></div><div class="flex items-center gap-1.5 text-primary"><span class="material-symbols-outlined text-[20px]">touch_app</span><span class="font-headline-sm text-headline-sm font-bold tracking-wider">TAP TEMPO</span></div><span class="font-label-sm text-label-sm text-outline mt-0.5" id="tapHelperText">Sync Finger Rhythm</span></button><button class="w-16 h-16 rounded-full bg-secondary-container hover:bg-secondary text-on-secondary-container flex items-center justify-center shadow-[0_0_24px_rgba(255,175,211,0.35)] active:scale-90 transition-all flex-shrink-0" id="master-metronome-toggle"><span class="material-symbols-outlined text-[34px] leading-none" id="play-icon" style="font-variation-settings: &quot;FILL&quot; 1;">play_arrow</span></button></div></div></div>
+</div>
+<!-- BOTTOM CONTROL & RHYTHMIC CONFIGURATION BAR -->
+
+</div>
+<script>
+  (function () {
+    let bpm = 120;
+    let isPlaying = false;
+    let currentBeat = 1;
+    let timerId = null;
+    let tapTimes = [];
+
+    const bpmDisplay = document.getElementById("bpm-display");
+    const descriptorDisplay = document.getElementById("tempo-descriptor");
+    const arc = document.getElementById("radial-progress-arc");
+    const needle = document.getElementById("dial-needle");
+    const toggleBtn = document.getElementById("master-metronome-toggle");
+    const playIcon = document.getElementById("play-icon");
+    const playLabel = document.getElementById("play-label");
+    const tapBtn = document.getElementById("tap-tempo-btn");
+
+    function getDescriptor(val) {
+      if (val < 60) return "Largo (40 - 60 BPM)";
+      if (val < 76) return "Adagio (66 - 76 BPM)";
+      if (val < 108) return "Andante (76 - 108 BPM)";
+      if (val <= 120) return "Moderato (108 - 120 BPM)";
+      if (val <= 168) return "Allegro (120 - 168 BPM)";
+      if (val <= 200) return "Presto (168 - 200 BPM)";
+      return "Prestissimo (200+ BPM)";
+    }
+
+    function updateTempoUI() {
+      bpm = Math.max(30, Math.min(300, bpm));
+      bpmDisplay.textContent = bpm;
+      descriptorDisplay.textContent = getDescriptor(bpm);
+
+      // SVG arc update: dashoffset ranges from 500 (low) to 125 (full)
+      const ratio = (bpm - 30) / (300 - 30);
+      const dash = 500 - ratio * 375;
+      arc.style.strokeDashoffset = dash;
+
+      // Needle angle from -120deg to 120deg
+      const angle = -120 + ratio * 240;
+      needle.style.transform = `rotate(${angle}deg)`;
+
+      if (isPlaying) {
+        clearInterval(timerId);
+        startLoop();
+      }
+    }
+
+    function triggerBeatPulse() {
+      // Flash dots
+      for (let i = 1; i <= 4; i++) {
+        const dot = document.getElementById(`dot-${i}`);
+        const meter = document.getElementById(`meter-bar-${i}`);
+        if (dot && meter) {
+          if (i === currentBeat) {
+            dot.className =
+              i === 1
+                ? "w-2.5 h-2.5 rounded-full bg-secondary shadow-[0_0_12px_#ffafd3] scale-125 transition-all"
+                : "w-2.5 h-2.5 rounded-full bg-primary shadow-[0_0_10px_#cebdff] scale-125 transition-all";
+            meter.classList.add("brightness-150");
+          } else {
+            dot.className = "w-2 h-2 rounded-full bg-surface-container-highest transition-all";
+            meter.classList.remove("brightness-150");
+          }
+        }
+      }
+
+      currentBeat = currentBeat >= 4 ? 1 : currentBeat + 1;
+    }
+
+    function startLoop() {
+      const intervalMs = (60 / bpm) * 1000;
+      timerId = setInterval(triggerBeatPulse, intervalMs);
+    }
+
+    toggleBtn.addEventListener("click", () => {
+      isPlaying = !isPlaying;
+      if (isPlaying) {
+        currentBeat = 1;
+        triggerBeatPulse();
+        startLoop();
+        toggleBtn.className =
+          "flex items-center justify-center gap-2 px-8 py-3 rounded-full bg-secondary text-on-secondary font-headline-sm text-headline-sm font-bold shadow-[0_0_28px_rgba(255,175,211,0.8)] transition-all active:scale-95";
+        playIcon.textContent = "pause";
+        playLabel.textContent = "STOP ENGINE";
+      } else {
+        clearInterval(timerId);
+        toggleBtn.className =
+          "flex items-center justify-center gap-2 px-8 py-3 rounded-full bg-secondary-container text-secondary font-headline-sm text-headline-sm font-bold shadow-[0_0_24px_rgba(184,42,103,0.55)] transition-all active:scale-95 hover:brightness-110";
+        playIcon.textContent = "play_arrow";
+        playLabel.textContent = "START METRONOME";
+      }
+    });
+
+    // Step Buttons
+    document.getElementById("step-minus-10").addEventListener("click", () => {
+      bpm -= 10;
+      updateTempoUI();
+    });
+    document.getElementById("step-minus-1").addEventListener("click", () => {
+      bpm -= 1;
+      updateTempoUI();
+    });
+    document.getElementById("step-plus-1").addEventListener("click", () => {
+      bpm += 1;
+      updateTempoUI();
+    });
+    document.getElementById("step-plus-10").addEventListener("click", () => {
+      bpm += 10;
+      updateTempoUI();
+    });
+
+    // Tap Tempo Engine
+    tapBtn.addEventListener("click", () => {
+      const now = performance.now();
+      tapTimes.push(now);
+      if (tapTimes.length > 4) tapTimes.shift();
+
+      if (tapTimes.length > 1) {
+        let intervals = [];
+        for (let i = 1; i < tapTimes.length; i++) {
+          intervals.push(tapTimes[i] - tapTimes[i - 1]);
+        }
+        const avg = intervals.reduce((a, b) => a + b) / intervals.length;
+        if (avg > 150 && avg < 3000) {
+          bpm = Math.round(60000 / avg);
+          updateTempoUI();
+        }
+      }
+
+      tapBtn.classList.add("bg-primary-container", "text-on-primary-container");
+      setTimeout(() => {
+        tapBtn.classList.remove("bg-primary-container", "text-on-primary-container");
+      }, 120);
+    });
+
+    // Sound chips toggle
+    const soundChips = document.querySelectorAll(".sound-chip");
+    soundChips.forEach((chip) => {
+      chip.addEventListener("click", () => {
+        soundChips.forEach((c) => {
+          c.classList.remove("text-secondary", "bg-secondary-container/30");
+          c.classList.add("text-on-surface-variant");
+        });
+        chip.classList.add("text-secondary", "bg-secondary-container/30");
+        chip.classList.remove("text-on-surface-variant");
+      });
+    });
+
+    // Signatures buttons toggle
+    const sigBtns = document.querySelectorAll(".sig-btn");
+    sigBtns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        sigBtns.forEach((b) => {
+          b.className =
+            "sig-btn px-3 py-1.5 rounded-md font-tabular-timecode text-tabular-timecode font-semibold text-on-surface-variant hover:text-on-surface transition-all";
+        });
+        btn.className =
+          "sig-btn px-3 py-1.5 rounded-md font-tabular-timecode text-tabular-timecode font-bold bg-secondary-container text-secondary transition-all";
+      });
+    });
+
+    // Subdivision buttons toggle
+    const subdivBtns = document.querySelectorAll(".subdiv-btn");
+    subdivBtns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        subdivBtns.forEach((b) => {
+          b.className =
+            "subdiv-btn px-2.5 py-1.5 rounded-md font-label-md text-label-md font-medium text-on-surface-variant hover:text-on-surface transition-all flex items-center gap-1";
+        });
+        btn.className =
+          "subdiv-btn px-2.5 py-1.5 rounded-md font-label-md text-label-md font-bold bg-primary text-on-primary transition-all flex items-center gap-1";
+      });
+    });
+
+    // Initial render
+    updateTempoUI();
+  })();
+</script></main>
+</div>
+<!-- PERSISTENT GLOBAL PLAYBACK TRANSPORT BAR -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</body></html>

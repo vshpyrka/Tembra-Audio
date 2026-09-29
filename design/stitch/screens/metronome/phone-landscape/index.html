@@ -1,0 +1,437 @@
+<!DOCTYPE html><html lang="en" style=""><head></head><body class="flex items-center justify-center min-h-screen p-4 text-zinc-100 overflow-hidden font-sans"><svg class="inline-defs-container" aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden"></svg>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Tembra Audio - Metronome (Mobile Landscape)</title>
+<!-- Google Fonts: Space Grotesk -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS v3 with forms & container queries -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Space Grotesk"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              magenta: '#b82a67',
+              magentalight: '#c93375',
+              purple: '#9d72f9',
+              dark: '#0c0c0f',
+              panel: '#15151a',
+              card: '#1b1b22',
+              border: '#272730',
+            }
+          }
+        }
+      }
+    }
+  </script>
+<!-- Styles for custom gauge and layout constraints -->
+<style data-purpose="custom-styling">
+    body {
+      background-color: #050507;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+    }
+    /* Fixed phone landscape canvas */
+    .phone-canvas {
+      width: 915px;
+      height: 412px;
+      max-width: 915px;
+      max-height: 412px;
+    }
+    /* Gauge arc styling */
+    .gauge-needle-glow {
+      filter: drop-shadow(0 0 8px rgba(184, 42, 103, 0.75));
+    }
+    .indicator-crosshair {
+      filter: drop-shadow(0 0 6px rgba(157, 114, 249, 0.45));
+    }
+  </style>
+<meta content="web_standard" name="shell-type">
+
+<!-- BEGIN: PhoneDeviceContainer -->
+<!-- Encapsulates the entire ~20:9 landscape viewport -->
+<div class="phone-canvas relative flex flex-col bg-[#0e0e12] rounded-3xl border border-zinc-800 shadow-2xl overflow-hidden" data-purpose="landscape-phone-device">
+<!-- BEGIN: StatusBar -->
+<!-- Top compact mobile landscape status bar -->
+<header class="h-6 w-full px-5 flex items-center justify-between text-[11px] text-zinc-400 font-medium select-none z-20 shrink-0 border-b border-zinc-900/60" data-purpose="status-bar">
+<div class="flex items-center space-x-2">
+<span class="text-zinc-200 font-semibold tracking-wide">11:58</span>
+<!-- Small icon / spiral indicator -->
+<svg class="w-3 h-3 text-zinc-400 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M12 4v1m0 14v1m8-8h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<div class="flex items-center space-x-2">
+
+</div>
+<div class="flex items-center space-x-2 text-zinc-400">
+<!-- Wi-Fi Icon -->
+<svg class="w-3.5 h-3.5 text-zinc-300" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24">
+<path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
+<path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
+<path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+<line x1="12" x2="12.01" y1="20" y2="20"></line>
+</svg>
+<!-- Battery Icon with charge -->
+<div class="flex items-center space-x-0.5">
+<div class="w-5 h-2.5 rounded-sm border border-zinc-400 p-[1px] flex items-center">
+<div class="bg-emerald-400 h-full w-4/5 rounded-2xs"></div>
+</div>
+<div class="w-0.5 h-1 bg-zinc-400 rounded-r-xs"></div>
+</div>
+</div>
+</header>
+<!-- END: StatusBar -->
+<!-- BEGIN: MainContentWrapper -->
+<!-- Contains the left navigation rail, the control panel, and the tuner gauge widget -->
+<div class="flex-1 flex overflow-hidden w-full relative" data-purpose="main-layout-area">
+<!-- BEGIN: LeftmostNavRail -->
+<!-- Matches https://lh3.googleusercontent.com/aida-public/AB6AXuB-L7LGmPHvUVQZUXV97PBVcVyxA42MgaXWnyPeN0VE8N-Fxm2bi8F0ZQq2N9P5kLP9YMODnocSGdSIc3P1RPL3c-CwZLgKE-qb-7y6JmzuyYIgnzn5YiRr8fG2OO39UHZZjvJm5wFtNX7orpBpPW3aQScdvxWYHGh7AxRE_IgjB4rCKKOBy8DjC50JLdMUbUsAdwric5aX_Gm1h3wuhgW0eSCSPu2PtHNNobjPXkt_8wnD314iyJVf2gJlLwuN8FgWgL4 Navigation Rail -->
+<nav class="w-16 bg-[#0c0c0f] border-r border-[#1e1e24] flex flex-col items-center justify-between py-2 shrink-0 z-10 select-none" data-purpose="left-navigation-rail">
+<div class="flex flex-col items-center space-y-2.5 w-full"><!-- Home -->
+<button class="flex flex-col items-center justify-center w-full py-1 text-zinc-400 hover:text-zinc-200 transition-colors" title="Home">
+<svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+<path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="text-[9px] font-medium tracking-tight">Home</span>
+</button>
+<!-- Timeline -->
+<button class="flex flex-col items-center justify-center w-full py-1 text-zinc-400 hover:text-zinc-200 transition-colors" title="Timeline">
+<svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+<path d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="text-[9px] font-medium tracking-tight">Timeline</span>
+</button>
+<!-- Tuner (Inactive) -->
+<button class="flex flex-col items-center justify-center w-full py-1 text-zinc-400 hover:text-zinc-200 transition-colors" title="Tuner">
+<svg class="w-5 h-5 mb-0.5" fill="currentColor" viewBox="0 0 24 24">
+<path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"></path>
+</svg>
+<span class="text-[8.5px] font-medium tracking-tight">Tuner</span>
+</button>
+<!-- Metronome (Active) -->
+<div class="flex flex-col items-center justify-center w-full px-1" title="Metronome">
+<div class="w-12 h-10 bg-brand-magenta rounded-xl flex flex-col items-center justify-center text-white shadow-md shadow-pink-950/40">
+<svg class="w-4 h-4 mb-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="text-[8.5px] font-bold tracking-tight">Metronome</span>
+</div>
+</div>
+<!-- Projects -->
+<button class="flex flex-col items-center justify-center w-full py-1 text-zinc-400 hover:text-zinc-200 transition-colors" title="Projects">
+<svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+<path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="text-[8.5px] font-medium tracking-tight">Projects</span>
+</button></div>
+<!-- Profile (bottom) -->
+<button class="flex flex-col items-center justify-center w-full py-1 text-zinc-400 hover:text-zinc-200 transition-colors" title="Profile">
+<svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+<path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="text-[8.5px] font-medium tracking-tight">Profile</span>
+</button>
+</nav>
+<!-- END: LeftmostNavRail -->
+<!-- BEGIN: ControlsPanel -->
+<!-- Compact sidebar containing all settings reorganized from Image 32 toolbar -->
+<section class="w-72 bg-[#121217] border-r border-[#202027] p-3 flex flex-col justify-between shrink-0 select-none z-10 overflow-y-auto" data-purpose="metronome-controls-panel"><!-- Section 1: Time Signature (label inside the card, as on the tablet screen) -->
+  <div class="bg-[#1a1a22] p-1.5 rounded-lg border border-zinc-800 flex flex-col gap-1">
+    <div class="flex items-center justify-between px-0.5">
+      <label class="text-[10px] uppercase font-bold tracking-wider text-zinc-400">Time Signature</label>
+      <span class="text-[9px] text-zinc-500 font-medium">Common &amp; Complex</span>
+    </div>
+    <div class="grid grid-cols-3 gap-1">
+      <button type="button" class="py-1 px-2 rounded-lg bg-[#b82a67] text-white font-bold text-xs shadow-sm text-center transition-all">4/4</button>
+      <button type="button" class="py-1 px-2 rounded-lg bg-[#202024] text-[#c9c5d0] hover:text-white text-xs font-medium text-center border border-zinc-800/80 transition-colors">3/4</button>
+      <button type="button" class="py-1 px-2 rounded-lg bg-[#202024] text-[#c9c5d0] hover:text-white text-xs font-medium text-center border border-zinc-800/80 transition-colors">6/8</button>
+      <button type="button" class="py-1 px-2 rounded-lg bg-[#202024] text-[#c9c5d0] hover:text-white text-xs font-medium text-center border border-zinc-800/80 transition-colors">2/4</button>
+      <button type="button" class="py-1 px-2 rounded-lg bg-[#202024] text-[#c9c5d0] hover:text-white text-xs font-medium text-center border border-zinc-800/80 transition-colors">5/4</button>
+      <button type="button" class="py-1 px-2 rounded-lg bg-[#202024] text-[#c9c5d0] hover:text-white text-xs font-medium text-center border border-zinc-800/80 transition-colors">7/8</button>
+    </div>
+  </div>
+
+  <!-- Section 2: Rhythm Subdivision (label inside the card, as on the tablet screen) -->
+  <div class="bg-[#1a1a22] p-1.5 rounded-lg border border-zinc-800 flex flex-col gap-1">
+    <div class="flex items-center justify-between px-0.5">
+      <label class="text-[10px] uppercase font-bold tracking-wider text-zinc-400">Rhythm Subdivision</label>
+    </div>
+    <div class="grid grid-cols-4 gap-1">
+      <button type="button" class="py-1 px-1 rounded-md bg-[#cebdff] text-[#21005e] font-bold text-xs flex flex-col items-center justify-center shadow-sm">
+        <span class="material-symbols-outlined text-sm leading-none">music_note</span>
+        <span class="text-[9px] leading-tight font-mono mt-0.5">1/4</span>
+      </button>
+      <button type="button" class="py-1 px-1 rounded-md bg-[#202024] text-[#c9c5d0] hover:text-white text-xs flex flex-col items-center justify-center border border-zinc-800/80 transition-colors">
+        <span class="material-symbols-outlined text-sm leading-none text-zinc-400">music_note</span>
+        <span class="text-[9px] leading-tight font-mono mt-0.5">1/8</span>
+      </button>
+      <button type="button" class="py-1 px-1 rounded-md bg-[#202024] text-[#c9c5d0] hover:text-white text-xs flex flex-col items-center justify-center border border-zinc-800/80 transition-colors">
+        <span class="material-symbols-outlined text-sm leading-none text-zinc-400">music_note</span>
+        <span class="text-[9px] leading-tight font-mono mt-0.5">1/16</span>
+      </button>
+      <button type="button" class="py-1 px-1 rounded-md bg-[#202024] text-[#c9c5d0] hover:text-white text-xs flex flex-col items-center justify-center border border-zinc-800/80 transition-colors">
+        <span class="material-symbols-outlined text-sm leading-none text-zinc-400">music_note</span>
+        <span class="text-[9px] leading-tight font-mono mt-0.5">3let</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Section 3: Accent Bars & Style -->
+  
+
+  <!-- Section 4: Timbre Sound Selector Dropdown -->
+  <div class="rounded-xl bg-[#1b1b1e] p-2 shadow-sm flex flex-col gap-2"><div class="grid grid-cols-4 gap-2"><div class="beat-col flex flex-col items-center gap-1.5 p-1.5 rounded-lg bg-[#0e0e11] cursor-pointer"><div class="w-full h-16 bg-[#1f1f22] rounded-md p-1 flex items-end overflow-hidden"><div class="w-full bg-[#ffafd3] rounded-sm h-[95%]" style="box-shadow: 0 0 12px rgba(255,175,211,0.5);"></div></div><span class="text-[10px] font-bold tracking-wider text-[#ffafd3] leading-none">ACCENT</span></div><div class="beat-col flex flex-col items-center gap-1.5 p-1.5 rounded-lg bg-[#0e0e11] cursor-pointer"><div class="w-full h-16 bg-[#1f1f22] rounded-md p-1 flex items-end overflow-hidden"><div class="w-full bg-[#cebdff] rounded-sm h-[62%]"></div></div><span class="text-[10px] font-medium tracking-wider text-[#e4e1e6] leading-none">CLICK</span></div><div class="beat-col flex flex-col items-center gap-1.5 p-1.5 rounded-lg bg-[#0e0e11] cursor-pointer"><div class="w-full h-16 bg-[#1f1f22] rounded-md p-1 flex items-end overflow-hidden"><div class="w-full bg-[#cebdff]/70 rounded-sm h-[42%]"></div></div><span class="text-[10px] font-medium tracking-wider text-[#cac4d4] leading-none">SUB</span></div><div class="beat-col flex flex-col items-center gap-1.5 p-1.5 rounded-lg bg-[#0e0e11] cursor-pointer"><div class="w-full h-16 bg-[#1f1f22] rounded-md p-1 flex items-end overflow-hidden"><div class="w-full bg-[#cebdff] rounded-sm h-[62%]"></div></div><span class="text-[10px] font-medium tracking-wider text-[#e4e1e6] leading-none">CLICK</span></div></div><div class="pt-1.5 border-t border-[#1f1f22] flex items-center justify-between gap-1"><span class="text-[10px] font-semibold uppercase tracking-wider text-[#948e9d]">STYLE</span><div class="flex items-center gap-1 flex-wrap justify-end"><button type="button" class="rounded-full px-2 py-1 text-[10px] font-medium bg-[#85145a] text-[#ff93c8] leading-none">Standard</button><button type="button" class="rounded-full px-2 py-1 text-[10px] font-medium bg-[#2a2a2d] text-[#cac4d4] hover:text-white leading-none transition-colors">Downbeat</button><button type="button" class="rounded-full px-2 py-1 text-[10px] font-medium bg-[#2a2a2d] text-[#cac4d4] hover:text-white leading-none transition-colors">Syncopated</button></div></div></div><div class="bg-[#181820] py-1.5 px-2.5 rounded-lg border border-zinc-800/80 flex items-center justify-between cursor-pointer hover:border-zinc-700 transition-colors shadow-sm">
+    <div class="flex items-center space-x-2">
+      <span class="material-symbols-outlined text-secondary text-base">graphic_eq</span>
+      <div class="flex flex-col text-left">
+        <span class="text-[8px] uppercase tracking-wider text-zinc-400 font-bold leading-tight">Sound Engine</span>
+        <span class="text-xs font-bold text-zinc-200 leading-tight">Classic Wood</span>
+      </div>
+    </div>
+    <span class="material-symbols-outlined text-zinc-400 text-base">expand_more</span>
+  </div></section>
+<!-- END: ControlsPanel -->
+<!-- BEGIN: TunerGaugeWidget -->
+<!-- Centerpiece widget: frequency arc, needle, note display and status -->
+<main class="flex-1 bg-[#141419] p-3 flex flex-col justify-between relative overflow-hidden" data-purpose="tuner-needle-gauge-widget"><div class="flex flex-col w-full h-full select-none overflow-hidden justify-between p-1">
+  <!-- Top bar with active pulse indicator and mute/preset quick bar -->
+  
+
+  <!-- Center Section: BPM Circular Gauge Dial & Horizontal Slider -->
+  <div class="flex-1 flex flex-col items-center justify-center min-h-0 relative"><div class="w-[220px] h-[220px] relative mx-auto rounded-xl overflow-hidden flex items-center justify-center shadow-lg" style="background-color: #1b1b1e; background-image: radial-gradient(circle, rgba(167,139,250,0.08) 0%, rgba(30,27,46,0.4) 40%, rgba(19,19,22,0.95) 100%);"><div class="absolute inset-0 pointer-events-none z-0" style="background: linear-gradient(180deg, rgba(206,189,255,0.10) 0%, transparent 50%, rgba(255,175,211,0.10) 100%);"></div><svg class="w-full h-full -rotate-90 transform relative z-10" viewBox="0 0 240 240"><defs><filter id="portraitBlurGlow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3"></feGaussianBlur></filter><linearGradient id="portraitArcGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#cebdff"></stop><stop offset="50%" stop-color="#a78bfa"></stop><stop offset="100%" stop-color="#ffafd3"></stop></linearGradient></defs><circle cx="120" cy="120" r="96" fill="none" stroke="#2a2a2d" stroke-width="6" stroke-dasharray="460 140" stroke-linecap="round"></circle><circle cx="120" cy="120" r="96" fill="none" stroke="url(#portraitArcGrad)" stroke-width="8" stroke-dasharray="240 600" stroke-linecap="round" opacity="0.5" filter="url(#portraitBlurGlow)"></circle><circle cx="120" cy="120" r="96" fill="none" stroke="url(#portraitArcGrad)" stroke-width="6" stroke-dasharray="228 600" stroke-linecap="round"></circle><line x1="218" y1="120" x2="226" y2="120" stroke="#494552" stroke-width="1.5" opacity="0.5"></line><line x1="189.29" y1="189.29" x2="194.95" y2="194.95" stroke="#494552" stroke-width="1.5" opacity="0.5"></line><line x1="120" y1="218" x2="120" y2="226" stroke="#494552" stroke-width="1.5" opacity="0.5"></line><line x1="50.71" y1="189.29" x2="45.05" y2="194.95" stroke="#494552" stroke-width="1.5" opacity="0.5"></line><line x1="22" y1="120" x2="14" y2="120" stroke="#494552" stroke-width="1.5" opacity="0.5"></line><line x1="50.71" y1="50.71" x2="45.05" y2="45.05" stroke="#494552" stroke-width="1.5" opacity="0.5"></line><line x1="120" y1="22" x2="120" y2="14" stroke="#494552" stroke-width="1.5" opacity="0.5"></line><line x1="189.29" y1="50.71" x2="194.95" y2="45.05" stroke="#494552" stroke-width="1.5" opacity="0.5"></line></svg><div class="absolute inset-0 flex items-center justify-between px-3 z-20"><button type="button" class="bpm-step-btn w-11 h-11 rounded-full bg-[#2a2a2d] hover:bg-[#353438] active:scale-95 text-[#e4e1e6] flex items-center justify-center shadow transition-all shrink-0 cursor-pointer" data-delta="-1" title="Decrease Tempo"><span class="material-symbols-outlined text-[22px] leading-none">remove</span></button><div class="flex flex-col items-center justify-center text-center select-none pointer-events-none"><div class="flex items-baseline space-x-1 leading-none"><span id="bpmValue" class="text-[48px] font-bold leading-none tracking-tight text-[#e4e1e6]">120</span><span class="text-[11px] font-semibold tracking-wider uppercase text-[#ffafd3]">BPM</span></div><span id="tempoSubText" class="text-[11px] font-medium text-[#d0bcff] tracking-wide mt-1" style="white-space: nowrap;">Moderato (108-120)</span></div><button type="button" class="bpm-step-btn w-11 h-11 rounded-full bg-[#2a2a2d] hover:bg-[#353438] active:scale-95 text-[#e4e1e6] flex items-center justify-center shadow transition-all shrink-0 cursor-pointer" data-delta="1" title="Increase Tempo"><span class="material-symbols-outlined text-[22px] leading-none">add</span></button></div></div><div class="w-[220px] max-w-full flex items-center gap-2.5 mt-2"><span class="text-[11px] font-medium text-[#948e9d] font-mono leading-none">40</span><input type="range" min="40" max="240" value="120" class="flex-1 h-1.5 bg-[#353438] rounded-full appearance-none cursor-pointer accent-[#cebdff]" id="tempoSlider"><span class="text-[11px] font-medium text-[#948e9d] font-mono leading-none">240</span></div></div>
+
+  <!-- Bottom Controls: Tap Tempo Card and Circular Glowing Play Button -->
+  <div class="flex items-center gap-4 shrink-0 mt-1.5 w-full"><button id="tapTempoBtn" type="button" class="flex-1 h-16 rounded-xl bg-[#2a2a2d] hover:bg-[#353438] active:scale-[0.99] flex flex-col items-center justify-center shadow-md transition-all cursor-pointer"><div class="flex items-center gap-1.5 text-[#cebdff]"><span class="material-symbols-outlined text-[20px]">touch_app</span><span class="font-bold text-sm tracking-wider uppercase leading-none">TAP TEMPO</span></div><span class="text-[11px] text-[#948e9d] mt-1 leading-none" id="tapHelperText">Sync Finger Rhythm</span></button><button id="playToggleBtn" type="button" class="w-16 h-16 rounded-full bg-[#85145a] hover:bg-[#a0186c] text-[#ff93c8] flex items-center justify-center active:scale-90 transition-all shrink-0 cursor-pointer" style="box-shadow: 0 0 24px rgba(255,175,211,0.35);" title="Start Metronome"><span id="playIcon" class="material-symbols-outlined text-[34px] leading-none fill-1">play_arrow</span></button></div>
+</div>
+
+<script class="">
+  (function () {
+    let bpm = 120;
+    let isPlaying = false;
+    let currentBeat = 0;
+    let totalBeats = 4;
+    let intervalId = null;
+    let tapTimes = [];
+    let isMuted = false;
+
+    const tempoMarkings = [
+      { max: 45, text: "Grave (< 45)" },
+      { max: 60, text: "Largo (45 - 60)" },
+      { max: 76, text: "Adagio (66 - 76)" },
+      { max: 108, text: "Andante (76 - 108)" },
+      { max: 120, text: "Moderato (108 - 120)" },
+      { max: 168, text: "Allegro (120 - 168)" },
+      { max: 200, text: "Presto (168 - 200)" },
+      { max: 999, text: "Prestissimo (> 200)" }
+    ];
+
+    const bpmEl = document.getElementById('bpmValue');
+    const tempoMarkingEl = document.getElementById('tempoMarking');
+    const playToggleBtn = document.getElementById('playToggleBtn');
+    const playIcon = document.getElementById('playIcon');
+    const syncPulse = document.getElementById('syncPulse');
+    const tapFeedback = document.getElementById('tapFeedback');
+    const currentBeatNum = document.getElementById('currentBeatNum');
+    const muteBtn = document.getElementById('muteBtn');
+    const muteIcon = document.getElementById('muteIcon');
+    const podsContainer = document.getElementById('beatPodsContainer');
+
+    function updateTempoText() {
+      const entry = tempoMarkings.find(m => bpm <= m.max) || tempoMarkings[tempoMarkings.length - 1];
+      tempoMarkingEl.textContent = entry.text;
+    }
+
+    function setBpm(val) {
+      bpm = Math.min(260, Math.max(30, val));
+      bpmEl.textContent = bpm;
+      updateTempoText();
+      if (isPlaying) {
+        restartTimer();
+      }
+    }
+
+    document.querySelectorAll('.bpm-step-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const delta = parseInt(btn.getAttribute('data-delta'), 10);
+        setBpm(bpm + delta);
+      });
+    });
+
+    let audioCtx = null;
+    function playClick(isAccent) {
+      if (isMuted) return;
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        if (isAccent) {
+          osc.frequency.setValueAtTime(1400, audioCtx.currentTime);
+          gain.gain.setValueAtTime(0.85, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+          osc.start(audioCtx.currentTime);
+          osc.stop(audioCtx.currentTime + 0.08);
+        } else {
+          osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+          gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+          osc.start(audioCtx.currentTime);
+          osc.stop(audioCtx.currentTime + 0.05);
+        }
+      } catch (e) {}
+    }
+
+    function triggerBeatVisuals() {
+      currentBeat = (currentBeat % totalBeats) + 1;
+      if (currentBeatNum) currentBeatNum.textContent = currentBeat;
+
+      const isAccent = (currentBeat === 1);
+      playClick(isAccent);
+
+      if (syncPulse) {
+        syncPulse.style.transform = 'scale(1.5)';
+        syncPulse.style.backgroundColor = isAccent ? '#ffd8e7' : '#cebdff';
+        setTimeout(() => {
+          syncPulse.style.transform = 'scale(1)';
+          syncPulse.style.backgroundColor = '';
+        }, 100);
+      }
+
+      if (podsContainer) {
+        const pods = podsContainer.querySelectorAll('.beat-pod');
+        pods.forEach((pod) => {
+          const b = parseInt(pod.getAttribute('data-beat'), 10);
+          if (b === currentBeat) {
+            pod.className = 'beat-pod w-7 h-7 rounded-lg bg-secondary text-[#21005e] font-bold text-xs flex items-center justify-center font-mono shadow-[0_0_8px_#ffafd3] scale-105 transition-transform';
+          } else {
+            pod.className = 'beat-pod w-7 h-7 rounded-lg bg-[#1e1e26] text-zinc-400 font-bold text-xs flex items-center justify-center font-mono border border-zinc-800 scale-100 transition-transform';
+          }
+        });
+      }
+    }
+
+    function startTimer() {
+      const intervalMs = (60 / bpm) * 1000;
+      currentBeat = 0;
+      triggerBeatVisuals();
+      intervalId = setInterval(triggerBeatVisuals, intervalMs);
+    }
+
+    function stopTimer() {
+      clearInterval(intervalId);
+      intervalId = null;
+      currentBeat = 0;
+      if (currentBeatNum) currentBeatNum.textContent = '1';
+      if (podsContainer) {
+        const pods = podsContainer.querySelectorAll('.beat-pod');
+        pods.forEach((pod, idx) => {
+          if (idx === 0) {
+            pod.className = 'beat-pod w-7 h-7 rounded-lg bg-secondary text-[#21005e] font-bold text-xs flex items-center justify-center font-mono shadow-[0_0_6px_#ffafd3]';
+          } else {
+            pod.className = 'beat-pod w-7 h-7 rounded-lg bg-[#1e1e26] text-zinc-400 font-bold text-xs flex items-center justify-center font-mono border border-zinc-800';
+          }
+        });
+      }
+    }
+
+    function restartTimer() {
+      clearInterval(intervalId);
+      const intervalMs = (60 / bpm) * 1000;
+      intervalId = setInterval(triggerBeatVisuals, intervalMs);
+    }
+
+    if (playToggleBtn) {
+      playToggleBtn.addEventListener('click', () => {
+        isPlaying = !isPlaying;
+        if (isPlaying) {
+          playIcon.textContent = 'pause';
+          playToggleBtn.classList.remove('from-[#b82a67]', 'to-[#e44d8b]');
+          playToggleBtn.classList.add('from-[#85145a]', 'to-[#b82a67]');
+          startTimer();
+        } else {
+          playIcon.textContent = 'play_arrow';
+          playToggleBtn.classList.remove('from-[#85145a]', 'to-[#b82a67]');
+          playToggleBtn.classList.add('from-[#b82a67]', 'to-[#e44d8b]');
+          stopTimer();
+        }
+      });
+    }
+
+    const tapTempoBtn = document.getElementById('tapTempoBtn');
+    if (tapTempoBtn) {
+      tapTempoBtn.addEventListener('click', () => {
+        const now = performance.now();
+        tapTimes.push(now);
+        if (tapTimes.length > 5) tapTimes.shift();
+
+        if (tapTimes.length > 1) {
+          let diffs = [];
+          for (let i = 1; i < tapTimes.length; i++) {
+            diffs.push(tapTimes[i] - tapTimes[i - 1]);
+          }
+          const avgDiff = diffs.reduce((a, b) => a + b, 0) / diffs.length;
+          const calculatedBpm = Math.round(60000 / avgDiff);
+          if (calculatedBpm >= 30 && calculatedBpm <= 260) {
+            setBpm(calculatedBpm);
+            if (tapFeedback) tapFeedback.textContent = calculatedBpm + ' BPM';
+          }
+        } else {
+          if (tapFeedback) tapFeedback.textContent = 'TAP...';
+        }
+
+        clearTimeout(window.tapResetTimer);
+        window.tapResetTimer = setTimeout(() => {
+          tapTimes = [];
+          if (tapFeedback) tapFeedback.textContent = 'READY';
+        }, 2500);
+      });
+    }
+
+    if (muteBtn) {
+      muteBtn.addEventListener('click', () => {
+        isMuted = !isMuted;
+        muteIcon.textContent = isMuted ? 'volume_off' : 'volume_up';
+        muteBtn.classList.toggle('text-rose-400', isMuted);
+      });
+    }
+  })();
+</script></main>
+<!-- END: TunerGaugeWidget -->
+</div>
+<!-- END: MainContentWrapper -->
+<!-- BEGIN: AndroidGestureBar -->
+<!-- Android bottom gesture navigation pill -->
+<div class="w-full h-3 flex items-center justify-center bg-[#0c0c0f] shrink-0" data-purpose="bottom-gesture-bar">
+<div class="w-36 h-1 bg-zinc-600/80 rounded-full"></div>
+</div>
+<!-- END: AndroidGestureBar -->
+</div>
+<!-- END: PhoneDeviceContainer -->
+
+
+
+
+
+
+
+
+
+
+</body></html>
