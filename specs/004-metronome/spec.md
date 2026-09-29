@@ -653,21 +653,23 @@ and the picker with the platform screen reader.
 
 ## Assumptions
 
-- **Build order and the constitution.** The constitution (v1.1.0) fixes the build order as
-  scaffold, navigation shell, tuner, audio spine, transport and timeline, mixer, metronome,
-  effects and automation, recording and loops and speed, collaboration, and says a plan must
-  not pull later work forward without amending that order. The user asked for the metronome
-  now, directly after the tuner. As with the tuner on 2026-09-26, the constitution should be
-  amended with `/speckit-constitution` before `/speckit-plan` so the metronome follows the
-  tuner; the research report (§6) valued the metronome as the feature that proves
-  sample-accurate scheduling and swappable click sounds, and both proofs are as useful before
-  the audio spine as after it. The tuner already produces sound on both platforms, so the
-  output path the metronome needs exists.
-- **A standalone metronome.** There is no transport, timeline or project tempo yet, so the
-  metronome runs on its own and its settings live with the app's preferences, not in a project.
-  Locking the click to the timeline, following the project tempo and time signature, and the
-  transport bar's metronome toggle belong to the transport and timeline feature; the tempo and
-  bar shape defined here are what that feature will take over.
+- **Build order and the constitution.** The user asked for the metronome directly after the
+  tuner, and the constitution was amended to v1.2.0 on 2026-09-29 to fix that order (scaffold,
+  navigation shell, tuner, metronome, audio spine, transport and timeline, mixer, effects and
+  automation, recording and loops and speed, collaboration). The research report (§6) valued
+  the metronome as the feature that proves sample-accurate scheduling and swappable click
+  sounds, and both proofs are as useful before the audio spine as after it. The tuner already
+  produces sound on both platforms, so the output path the metronome needs exists.
+- **A global, standalone metronome.** The constitution (v1.2.0, 2026-09-29) defines the
+  Metronome destination as a global metronome for playing along: it runs on its own tempo and
+  settings, kept with the app's preferences, and is not part of any recording session, project
+  or timeline session. The same amendment names the parts the transport and timeline feature
+  reuses rather than rebuilds: the click sound set and its configuration (the built-in sounds,
+  the custom sound import and preparation, the Accent, Click and Sub levels), the tempo and
+  tempo-name model, the bar-shape model (time signature, subdivision, accent pattern) and the
+  click scheduler. Locking the click to the timeline, following the project tempo and time
+  signature, and the transport bar's metronome toggle belong to that feature, which takes over
+  the tempo and time signature from the project when it lands.
 - **How the rhythm controls relate** is decided in "How the rhythm controls fit together": the
   four controls are layers, style is a preset for the cells, subdivision ticks always sound at
   Sub, and the design's cells (Accent, Click, Sub, Click) illustrate the three levels rather than
