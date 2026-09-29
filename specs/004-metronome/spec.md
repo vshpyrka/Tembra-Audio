@@ -74,6 +74,35 @@ Worked examples (A = Accent, C = Click, s = Sub; subdivision ticks in lower case
 | 7/8 | 1/8 | Syncopated | C A C A C A C |
 | 3/4 | 3let | Standard | A s s C s s C s s |
 
+## Clarifications
+
+### Session 2026-09-29
+
+- Q: When the click is running and the phone's screen locks or the user switches to another
+  app, should the metronome keep playing? → A: Yes. It keeps running while the screen is locked
+  and while another app is in front, until the user stops it, a call or another app takes the
+  audio, or the user leaves the Metronome destination inside the app (FR-027).
+- Q: Should the Syncopated style move the accents onto the off-beats between the main beats, or
+  onto the even-numbered main beats such as 2 and 4? → A: The even-numbered main beats, by
+  default (recommended); the two other readings (off-beat ticks accented with the beats soft;
+  every beat except beat 1 accented) are built as well and reachable only through a
+  developer-only switch in debug builds, so the user can audition them before one is fixed
+  (FR-010, FR-037).
+- Q: In 6/8 and 7/8, should the metronome count every eighth note as a beat with one cell each,
+  or count compound beats such as the two dotted-quarters of 6/8? → A: One cell per eighth
+  note: 6/8 shows six cells and 7/8 seven, the tempo counts eighth notes, and Standard accents
+  beat 1 (and 4 in 6/8); no grouping control (FR-002, FR-006).
+- Q: When a custom sound is longer than the gap between ticks at a fast tempo, what should
+  happen to the part still ringing when the next tick arrives? → A: Play the sound itself
+  unchanged at every tempo, as the Soundbrenner app does: no pitch or speed change, the tempo
+  only sets the spacing, so at a slow tempo there is silence between ticks and at a fast tempo
+  the ticks simply come faster. When the next tick arrives before the sound has ended, the
+  ringing sound is faded out in the few milliseconds before that tick so every tick starts
+  clean and only one sound plays at a time (option A) (FR-013, FR-019).
+- Q: Should the accent cells light up in time with each audible click while the metronome runs,
+  or stay static? → A: Light the cell of the beat being sounded, timed to the audible click
+  with the output delay of the current route compensated (FR-014).
+
 ## User Scenarios & Testing *(mandatory)*
 
 The users of this feature are musicians who open Tembra Audio to practise or warm up to a steady
@@ -422,7 +451,9 @@ and the picker with the platform screen reader.
 
 - **FR-006**: The time signature MUST be chosen from exactly these six, in this order, with 4/4
   the default: 4/4, 3/4, 6/8, 2/4, 5/4, 7/8. The upper number is the number of beats in a bar
-  and the number of accent cells; the lower number names the beat (FR-002).
+  and the number of accent cells; the lower number names the beat (FR-002). In x/8 signatures
+  every eighth note is a beat with its own cell and the tempo counts eighth notes (clarified
+  2026-09-29); there is no beat-grouping control.
 - **FR-007**: The subdivision MUST be one of four choices meaning one, two, four or three ticks
   per beat, in this order, with one tick the default. The chips MUST be labelled as note values
   for the current beat: "1/4", "1/8", "1/16", "3let" for x/4 signatures and "1/8", "1/16",
@@ -447,6 +478,9 @@ and the picker with the platform screen reader.
   | Downbeat | Beat 1 Accent, every other beat Sub |
   | Syncopated | Every even-numbered beat Accent, every odd-numbered beat (including beat 1) Click |
 
+  The Syncopated row is the shipped definition (clarified 2026-09-29); FR-037 gives debug builds
+  two alternative readings for auditioning. The cells always stay one per beat.
+
 **Playback and timing**
 
 - **FR-011**: One button MUST start and stop the click: it shows play when stopped and pause
@@ -462,7 +496,7 @@ and the picker with the platform screen reader.
   tempo change MUST change only the spacing of the ticks; the sound's pitch and length never
   change with the tempo.
 - **FR-014**: While running, the cell of the beat being sounded MUST light as its click is heard
-  and dim before the next beat. The lighting MUST be timed to the audible click, allowing for
+  and dim before the next beat (confirmed 2026-09-29). The lighting MUST be timed to the audible click, allowing for
   the output delay of the current route (including wireless headphones), and MUST NOT lag the
   sound perceptibly. The rest of the screen MUST stay steady and responsive.
 
@@ -491,7 +525,9 @@ and the picker with the platform screen reader.
   follows the device's media volume on the current output route, and every tick MUST start
   exactly on its time even when the previous sound is still sounding: a sound that is still
   sounding when the next tick arrives MUST be faded out over a few milliseconds before that tick
-  so clicks never pile up or smear; a sound shorter than the interval plays in full.
+  so clicks never pile up or smear; a sound shorter than the interval plays in full, and at a
+  slow tempo there is silence between ticks. The sound itself is never sped up, slowed down or
+  pitch-shifted by the tempo (clarified 2026-09-29, the behaviour of the Soundbrenner app).
 - **FR-020**: Selecting a sound while stopped MUST play one preview click of it at the Click
   level; selecting one while running MUST switch on the next tick (FR-013). Selecting the
   already selected sound does nothing.
@@ -528,7 +564,7 @@ and the picker with the platform screen reader.
   selected sound and the custom sound MUST be remembered across app launches. The metronome
   MUST always launch stopped.
 - **FR-027**: A running click MUST keep running, without a gap, while the screen is locked or
-  another app is in front, until the user stops it. It MUST stop when the user navigates to
+  another app is in front, until the user stops it (clarified 2026-09-29). It MUST stop when the user navigates to
   another destination in the app, when a call or another app takes the audio, or when the app is
   closed, and it MUST NOT restart by itself afterwards; the button then reads play. When the
   output route changes the click MUST continue on the new route, or stop and show play if it
@@ -571,7 +607,8 @@ and the picker with the platform screen reader.
 - **FR-033**: Automated tests MUST cover: the tempo-name table at every tempo from 40 to 240
   including every boundary; the tap-tempo arithmetic (single tap, averaging window, rounding,
   two-second cut-off, clamping); the cell pattern produced by every style at every signature
-  and the re-application rules of FR-010; the subdivision labels for every signature; the
+  and the re-application rules of FR-010; the three Syncopated readings of FR-037 rendered over
+  one bar; the subdivision labels for every signature; the
   sequence of levels rendered for one bar of every worked example above; the tick timing of
   FR-012 and the change rules of FR-013 measured on audio rendered offline without a device
   (at 40, 120 and 240 BPM with every subdivision, over at least ten minutes at one tempo); the
@@ -596,6 +633,13 @@ and the picker with the platform screen reader.
   more than one custom sound, separate custom files per level, haptic or flash-on-beat
   feedback, saving or naming presets, a transport bar, top-bar icons, or changes to the
   navigation and its glyphs.
+- **FR-037**: Debug builds MUST offer, in the app's developer tools only, a switch that selects
+  how the Syncopated style is rendered, so the user can audition the readings by ear: "Even
+  beats" (the FR-010 definition, the default), "Off-beat ticks" (every subdivision tick between
+  beats sounds at Accent and every beat at Sub; with one tick per beat it behaves as "Even
+  beats") and "All but one" (every beat except beat 1 at Accent, beat 1 at Sub). The switch
+  changes only how the Syncopated style sounds; the cells keep one entry per beat and show the
+  "Even beats" pattern. Release builds MUST NOT contain the switch and always use "Even beats".
 
 ### Key Entities
 
@@ -675,10 +719,13 @@ and the picker with the platform screen reader.
   Sub, and the design's cells (Accent, Click, Sub, Click) illustrate the three levels rather than
   define Standard. Standard is the plain metronome pattern every musician expects (accent on 1),
   with 6/8 also accenting beat 4 as compound time requires; Downbeat softens every other beat;
-  Syncopated moves the accent to the even beats. Syncopation of subdivision ticks is excluded.
+  Syncopated moves the accent to the even beats (confirmed 2026-09-29 as the default). Because
+  the user wants to hear the alternatives before fixing one, debug builds also render Syncopated
+  as accented off-beat ticks or as every beat but the first (FR-037); the shipped definition can
+  be changed later through `/speckit-clarify` without touching the cells.
 - **Beats, not groupings.** The tempo counts the beat named by the signature's lower number, so
-  6/8 has six cells and 7/8 seven; grouping (6/8 felt in two, 7/8 as 2+2+3) is expressed with
-  the cells by hand, not by a grouping control.
+  6/8 has six cells and 7/8 seven (confirmed 2026-09-29); grouping (6/8 felt in two, 7/8 as
+  2+2+3) is expressed with the cells by hand, not by a grouping control.
 - **Subdivision labels follow the beat.** The design shows "1/4, 1/8, 1/16, 3let" with 4/4
   selected; for x/8 signatures those labels would be wrong, so the chips read "1/8, 1/16, 1/32,
   3let" there while meaning the same one, two, four and three ticks per beat.
@@ -691,8 +738,10 @@ and the picker with the platform screen reader.
   chosen behaviour: the file's onset is found and aligned to the beat, up to two seconds of sound
   are kept, its loudness is matched to the built-in click, its pitch and length never change with
   the tempo, and a sound still ringing when the next tick arrives is faded out just before that
-  tick. One custom slot exists because the design shows one "Custom" tile; the app keeps its own
-  prepared copy so the original file is not needed again. WAV only, as requested.
+  tick (confirmed 2026-09-29 against the Soundbrenner app's behaviour: the sound plays
+  unchanged, only the spacing follows the tempo). One custom slot exists because the design
+  shows one "Custom" tile; the app keeps its own prepared copy so the original file is not
+  needed again. WAV only, as requested.
 - **Levels for the custom sound** are derived from the one file (stronger for Accent, softer for
   Sub); separate files per level are excluded.
 - **Runs with the screen off.** A practice metronome must survive the screen timing out, so the
