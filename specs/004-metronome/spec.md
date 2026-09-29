@@ -102,6 +102,10 @@ Worked examples (A = Accent, C = Click, s = Sub; subdivision ticks in lower case
 - Q: Should the accent cells light up in time with each audible click while the metronome runs,
   or stay static? → A: Light the cell of the beat being sounded, timed to the audible click
   with the output delay of the current route compensated (FR-014).
+- Q (planning, following the official platform guidance the user asked for): What happens when
+  headphones are unplugged while the click runs? → A: The click stops and shows play, as Apple's
+  route-change guidance and Android's becoming-noisy convention require; connecting a new output
+  still continues the click on it (FR-027, User Story 6).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -305,8 +309,8 @@ this is handling around the core rather than the core.
 
 **Independent Test**: Start the click, lock the screen for ten minutes and confirm it keeps
 going without a gap; return and confirm the button reads pause. Receive a call while running and
-confirm it stops and shows play afterwards; connect and disconnect headphones and confirm the
-click continues on the new route.
+confirm it stops and shows play afterwards; connect headphones and confirm the click continues on
+them, then disconnect them and confirm it stops.
 
 **Acceptance Scenarios**:
 
@@ -317,9 +321,9 @@ click continues on the new route.
    app, **Then** the click stops; returning to Metronome shows it stopped.
 3. **Given** the click is running, **When** a call or another app takes the audio, **Then** the
    click stops and does not restart by itself when the interruption ends; the button reads play.
-4. **Given** the click is running, **When** headphones are connected or disconnected, **Then**
-   the click continues on the new route at the same tempo, or stops and shows play if it cannot
-   continue.
+4. **Given** the click is running, **When** headphones are connected, **Then** the click
+   continues on the new route at the same tempo; **When** headphones are disconnected, **Then**
+   the click stops and the button reads play.
 5. **Given** the click is running, **When** the window is rotated or resized, **Then** the click
    continues without a hiccup and every setting is preserved.
 
@@ -566,9 +570,11 @@ and the picker with the platform screen reader.
 - **FR-027**: A running click MUST keep running, without a gap, while the screen is locked or
   another app is in front, until the user stops it (clarified 2026-09-29). It MUST stop when the user navigates to
   another destination in the app, when a call or another app takes the audio, or when the app is
-  closed, and it MUST NOT restart by itself afterwards; the button then reads play. When the
-  output route changes the click MUST continue on the new route, or stop and show play if it
-  cannot.
+  closed, and it MUST NOT restart by itself afterwards; the button then reads play. When
+  headphones or another output are connected the click MUST continue on the new route; when
+  headphones are disconnected the click MUST stop and show play, as both platforms' official
+  guidance requires so nothing is played aloud unexpectedly (revised 2026-09-29 during
+  planning, replacing "continue on the new route").
 
 **Layout, input and accessibility**
 
