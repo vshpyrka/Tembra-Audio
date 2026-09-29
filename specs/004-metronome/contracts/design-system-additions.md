@@ -52,7 +52,7 @@ enum class ClickSoundPickerLayout { Dropdown, Tiles }
 //   Dropdown: pill (graphic_eq 18 dp primary, name labelMedium, expand_more 16 dp outline) + DropdownMenu 160 dp on surfaceContainerHighest, items with a trailing Check, the Custom item with a Replace trailing button when filled
 //   Tiles: two-column grid of ClickSoundTile (44 dp, glyph box 28 dp); Custom tile dashed when empty ("+"), name when filled, Replace as a small trailing icon button
 @Composable fun ClickSoundTile(label: String, icon: TembraIcon, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, dashed: Boolean = false, trailing: (@Composable () -> Unit)? = null, interactionSource: MutableInteractionSource? = null, testTag: String? = null)
-//   `dashed` is the design-system state of the empty Custom tile (a constrained value, not a shape flag); `trailing` is the slot for the Replace action
+//   `dashed` is the design-system state of the empty Custom tile (a constrained value, not a shape flag); `trailing` is the slot for the Replace action (an icon-only button whose contentDescription and tooltip read "Replace custom sound", spec FR-029)
 
 @Composable fun TempoDial(tempo: Tempo, marking: TempoMarking, canStepDown: Boolean, canStepUp: Boolean, onTempo: (Tempo) -> Unit, onStep: (Int) -> Unit, modifier: Modifier = Modifier, center: @Composable () -> Unit = { TempoReadout(tempo, marking) }, testTag: String = "metronome.dial")
 //   square Box: Canvas ring (TempoDialGeometry, tempoArc brush, glow stroke, ticks), pointer drag on the ring band, scrollable wheel, key handler; steppers (TempoStepper) at the left and right inside the ring; `center` slot defaults to the readout so the transport can put its own readout there
@@ -68,7 +68,7 @@ enum class ClickSoundPickerLayout { Dropdown, Tiles }
 //   64 dp round secondaryContainer, hover secondary, PlayArrow / Pause 34 dp filled, playGlow; contentDescription follows `running`
 
 @Composable fun MetronomeSettingsPanel(state: MetronomeUiState, callbacks: MetronomeCallbacks, telemetry: BeatTelemetry, pickerLayout: ClickSoundPickerLayout, signatureColumns: Int, modifier: Modifier = Modifier)
-//   stacks the section cards in the design order; used by all three layouts
+//   stacks the section cards in the design order; used by all three layouts; lives in `audio.tembra.ui.metronome` (screen-level), not in `components`
 object MetronomeDefaults { /* bar heights, glyph sizes, repeat delays, section label style */ }
 ```
 

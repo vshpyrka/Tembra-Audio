@@ -163,7 +163,7 @@ app/
 │   ├── src/platform/android/oboe_audio_device.{h,cpp}   reopen the output in onErrorAfterClose; outputLatencyNanos from calculateLatencyMillis on the control thread
 │   ├── src/platform/apple/remote_io_audio_device.{h,cpp} outputLatencyNanos from the value reported through the ABI
 │   ├── android/src/main/cpp/tembra_jni.cpp          + nativeMetronome* forwarders
-│   └── tests/                                       + triple_buffer_test, click_synth_test, click_sample_builder_test, custom_sound_loader_test (generated WAV fixtures via wav_fixtures.h), metronome_renderer_test, engine_core_metronome_test; tuner_engine_state_test → engine_core_state_test; engine_info_test updated
+│   └── tests/                                       + triple_buffer_test, click_synth_test, click_sample_builder_test, custom_sound_loader_test (generated WAV fixtures via wav_fixtures.h), metronome_renderer_test; tuner_engine_state_test → engine_core_state_test (+ the metronome state rules); engine_info_test updated
 ├── shared/core/src/commonMain/kotlin/audio/tembra/core/metronome/
 │   │   Tempo.kt, TempoMarking.kt, TimeSignature.kt, Subdivision.kt, BeatLevel.kt, AccentPattern.kt, MetronomeStyle.kt,
 │   │   SyncopationReading.kt, TickGrid.kt, TapTempoSequence.kt, ClickSound.kt, BuiltInClickSound.kt, MetronomeSettings.kt
@@ -190,13 +190,13 @@ app/
 │   │   ├── di/AppBindings.kt (+ single DataStore<Preferences>, MetronomePreferences, CustomClickSoundStore, MetronomeAudio), di/AppGraph.kt (+ metronomePreferences, backgroundPlaybackHost, soundFilePicker)
 │   │   ├── theme/ TembraTypeScale.kt (+ tempoNumber, sectionLabel), TembraTypographyExtras.kt, TembraSpacing.kt (+ tokens), TembraGradients.kt (+ tempoArc, tempoDialCard, tempoDialOverlay, accentGlow, playGlow), LinearGlow.kt, TembraIcon.kt (+ 10)
 │   │   ├── designsystem/ TembraPill.kt, TembraChipRow.kt, ChipSpec.kt, CardDiscs.kt, TembraGradientCard.kt (+ discs)
-│   │   ├── platform/ BackgroundPlaybackHost.kt, SoundFilePicker.kt, SoundPickResult.kt
+│   │   ├── platform/ BackgroundPlaybackHost.kt, SoundFilePicker.kt, SoundPickResult.kt, SoundPickFailure.kt
 │   │   └── metronome/ MetronomeScreen.kt (replaces the placeholder), MetronomeScreenContent.kt, MetronomeViewModel.kt, MetronomeUiState.kt, MetronomeCallbacks.kt, MetronomeLayout.kt,
 │   │              MetronomeMessage.kt, BeatTelemetry.kt, TapCaption.kt, MetronomeCopy.kt, MetronomeDebugRequest.kt, LocalMetronomeDebug.kt, MetronomeSettingsPanel.kt,
 │   │              components/ TimeSignatureChips.kt, SubdivisionChips.kt, AccentCells.kt, AccentCell.kt, StyleRow.kt, ClickSoundPicker.kt, ClickSoundPickerLayout.kt, ClickSoundTile.kt, ClickSoundGlyphs.kt,
 │   │                          TempoDial.kt, TempoDialGeometry.kt, TempoReadout.kt, TempoStepper.kt, TempoSlider.kt, TapTempoButton.kt, PlayPauseButton.kt, MetronomeDefaults.kt
 │   ├── src/iosMain/kotlin/audio/tembra/ui/ IosAppGraph.kt (+ IosBackgroundPlaybackHost, IosSoundFilePicker), MainViewController.kt (+ metronomeDebug), platform/IosBackgroundPlaybackHost.kt, platform/IosSoundFilePicker.kt
-│   ├── src/iosTest/kotlin/audio/tembra/ui/platform/IosBackgroundPlaybackHostTest.kt
+│   ├── src/iosTest/kotlin/audio/tembra/ui/platform/IosBackgroundPlaybackHostTest.kt, IosSoundFilePickerTest.kt
 │   ├── src/commonTest/…/ platform/FakeBackgroundPlaybackHost.kt, FakeSoundFilePicker.kt, metronome/{MetronomeViewModelTest,MetronomeUiStateTest,MetronomeLayoutTest,TempoDialGeometryTest,MetronomeDebugRequestTest}.kt, theme/MetronomeTokensTest.kt
 │   ├── src/androidHostTest/…/theme/IconAssetsTest.kt (extended)
 │   └── src/uiTest/…/ metronome/{MetronomeScreenTest,TempoDialTest,AccentCellsTest,ClickSoundPickerTest,ScriptedBeatTelemetry}.kt, designsystem/{TembraPillTest,TembraChipRowTest}.kt

@@ -33,7 +33,7 @@ interface SoundFilePicker {
     suspend fun pickWav(destinationPath: String): SoundPickResult
 }
 sealed interface SoundPickResult { data class Picked(val displayName: String) : SoundPickResult; data object Cancelled; data class Failed(val reason: SoundPickFailure) }
-enum class SoundPickFailure { TooLarge /* > 64 MB */, Unreadable }
+enum class SoundPickFailure { TooLarge /* > 64 MB */, Unreadable }   // its own file, SoundPickFailure.kt (Constitution VII)
 class FakeSoundFilePicker(var next: SoundPickResult = Cancelled) : SoundFilePicker   // commonTest; records destinations
 ```
 
@@ -44,14 +44,15 @@ class FakeSoundFilePicker(var next: SoundPickResult = Cancelled) : SoundFilePick
 
 The ViewModel's `importCustomSound()` (contracts/metronome-screen.md) calls
 `picker.pickWav(store.stagingPath)` → `store.commit()` → `audio.loadCustomSound(store.path)` on
-`prepareDispatcher` → on `Loaded` persists `sound = Custom(name)`, `customSoundPath`; on a refusal
+`prepareDispatcher` → on `Loaded` persists `sound = Custom(name)` and `customSound = CustomSoundRef(name, store.path)`; on a refusal
 keeps the previous sound, shows the message and deletes the staging file. `replaceCustomSound()`
 is the same flow from the filled Custom entry.
 
 **Copy** (`MetronomeCopy`): `NotWav` "That file isn't a WAV file Tembra can read.", `Silent` "That
 file has no sound in it.", `TooLarge` "That file is too large (64 MB at most).", `ImportFailed`
 "The file couldn't be read.", `CustomSoundMissing` "Your custom sound is missing, so Classic Wood
-is playing.", `PlaybackRefused` "Another app is using the audio right now."
+is playing.", `FocusDenied` "Another app is using the audio right now.", `DeviceUnavailable` "The audio output isn't
+available right now."
 
 **Tests**: engine tests in contracts/engine-c-abi-v3.md; `FakeSoundFilePicker` in
 `MetronomeViewModelTest`; the Android picker is exercised by `AndroidBackgroundPlaybackHostTest`'s

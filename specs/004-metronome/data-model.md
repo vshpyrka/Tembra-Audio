@@ -124,8 +124,9 @@ data class MetronomeSettings(                                            // the 
     val pattern: AccentPattern = MetronomeStyle.Standard.pattern(TimeSignature.Default),
     val style: MetronomeStyle? = MetronomeStyle.Standard,
     val sound: ClickSound = ClickSound.BuiltIn(BuiltInClickSound.ClassicWood),
-    val customSoundPath: String? = null,                                  // the app's copy; null = no custom sound imported
+    val customSound: CustomSoundRef? = null,                              // the imported file's name and the app's copy; null = none imported
 )
+data class CustomSoundRef(val displayName: String, val path: String)   // spec FR-022: the name shows on the Custom entry even while a built-in sound is selected
 // :shared:data, audio.tembra.data.metronome
 data class MetronomePreferencesSnapshot(val settings: MetronomeSettings = MetronomeSettings()) {
     fun encode(): Map<String, String>                                     // keys of MetronomePreferenceKeys
@@ -143,8 +144,8 @@ interface CustomClickSoundStore {
 }
 ```
 
-Decoding rules: `tempo` outside 40–240 or not an integer → 120; `sound == "custom"` without a
-`customPath` → Classic Wood; `style` absent and the pattern matching a style → that style is
+Decoding rules: `tempo` outside 40–240 or not an integer → 120; `sound == "custom"` without both
+`customName` and `customPath` → Classic Wood and `customSound = null`; `style` absent and the pattern matching a style → that style is
 shown selected (derived, not stored).
 
 ## 6. Engine-side grid, sound and tick snapshot (`:shared:engine`, `engine/`)
@@ -188,13 +189,14 @@ object PlaybackPolicy {                                         // pure, unit-te
     // PlaybackEvent: PlayPressed, PausePressed, ScreenHidden, AudioInterrupted, OutputRouteLost, DeviceLost, StopRequested, StartFailed(reason)
     // PlaybackTransition: Start, Stop(message: MetronomeMessage?), Ignore
     //   Running + {ScreenHidden, AudioInterrupted, OutputRouteLost, DeviceLost, StopRequested, PausePressed} → Stop
+    //   Starting + StartFailed(HostRefused) → Stop(FocusDenied); Starting + StartFailed(EngineError) → Stop(DeviceUnavailable)
     //   Stopped + PlayPressed → Start; anything else → Ignore; nothing ever restarts by itself (spec FR-027)
 }
 ```
 
 Start sequence (ViewModel): `host.keepAlive()` (Android: focus + service; iOS: true) → on
-false: `Stop(message = PlaybackRefused)`; else `audio.startMetronome()` → on `Error`: release the
-host, `Stop(message = PlaybackRefused)`; else `Running`. Stop sequence: `audio.stopMetronome()`
+false: `Stop(message = FocusDenied)`; else `audio.startMetronome()` → on `Error`: release the
+host, `Stop(message = DeviceUnavailable)`; else `Running`. Stop sequence: `audio.stopMetronome()`
 then `host.release()`. The order guarantees the process is foreground-privileged before the
 stream opens and that focus is abandoned after the stream closes.
 
@@ -217,7 +219,7 @@ data class MetronomeUiState(
     val running: Boolean get() = playback == PlaybackState.Running
     val canStepDown: Boolean; val canStepUp: Boolean
 }
-sealed interface MetronomeMessage { NotWav, Silent, TooLarge, ImportFailed, CustomSoundMissing, PlaybackRefused }   // one-shot snackbar copy in MetronomeCopy
+sealed interface MetronomeMessage { NotWav, Silent, TooLarge, ImportFailed, CustomSoundMissing, FocusDenied, DeviceUnavailable }   // one-shot snackbar copy in MetronomeCopy
 ```
 
 Intents (plain functions on `MetronomeViewModel`): `setTempo(Tempo)`, `stepTempo(delta: Int)`,
