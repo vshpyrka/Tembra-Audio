@@ -225,3 +225,23 @@ Differences and notes:
   pill and the entry's content description carry the full name.
 - The dashed empty tile, the greyed unavailable tile and the Replace tooltip are in the expanded layout's Tiles, which
   these compact captures do not show. `ClickSoundPickerTest` covers them.
+
+### Fix round 1: a refused Replace keeps the previous sound (Pixel, 2026-09-30)
+
+The import now prepares the staged file first and commits it only when the engine accepts it; a refusal removes the
+staged file only. Re-checked on the Pixel 6 Pro (fix build installed over the B11 one, app data kept) with `float32`
+as the selected custom sound (`files/metronome/custom.wav`, 15416 bytes, md5 `d8f11a6c…`):
+
+- **Replace with `notes.wav`**: the snackbar read "That file isn't a WAV file Tembra can read." once; the pill still read
+  "float32"; `custom.wav` kept its size, timestamp and md5, and no `custom.wav.tmp` was left
+  (`run-as ls` / `md5sum`). Capture: `android-compact-replace-refused.png`.
+- **Force-stop and relaunch**: the pill read "float32" and no "missing" message appeared (checked twice, 3 s apart).
+- **Replace with `silent.wav`**: "That file has no sound in it." once, "float32" kept, the copy untouched.
+- **Replace with `8bit-8k.wav`** (accepted): the pill took "8bit-8k" and `custom.wav` became the 844-byte file, so the
+  new order still commits an accepted file.
+- Whether the previous sound is what plays after a refused Replace (the engine reload) is an ear check left for the
+  user; `MetronomeViewModelTest` asserts the reload and reselect calls.
+
+| File | What it shows |
+|---|---|
+| `android-compact-replace-refused.png` | `float32` still selected after replacing it with `notes.wav`; the snackbar reads "That file isn't a WAV file Tembra can read." |
