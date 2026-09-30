@@ -28,6 +28,12 @@ interface MetronomeAudio : AudioStatus {
     /** One click of the selected sound; Idle only. */
     fun previewClick(level: ClickLevel = ClickLevel.Click): AudioResult
 
+    /**
+     * Ends a preview click that is still sounding (the engine's tone stop, shared with [TunerAudio]); a start made
+     * while it sounds would be refused. Does nothing while the metronome runs.
+     */
+    fun stopTone()
+
     /** iOS reports the session's output latency; Android passes 0, which asks the device again. */
     fun reportOutputLatencyNanos(nanos: Long)
 
