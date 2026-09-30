@@ -12,7 +12,8 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -39,6 +40,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import audio.tembra.ui.designsystem.drawFocusRing
 import audio.tembra.ui.metronome.MetronomeCopy
 import audio.tembra.ui.theme.TembraIcon
@@ -52,14 +54,16 @@ import kotlinx.coroutines.launch
  * `touch_app` glyph and "TAP TEMPO" in `primary` over [caption]. Each tap reports the frame time of the frame it lands
  * in, from a user-event coroutine (`compose-state-and-effects`). Each tap also flashes the card with `primary` at 20 %
  * fading out over 120 ms: an [Animatable] restarted per tap (a new tap interrupts the fade) and read in the draw phase
- * only; under reduce motion the card stays still and the caption acknowledges the tap. The caption is the button's
- * state description, announced politely as it changes.
+ * only; under reduce motion the card stays still and the caption acknowledges the tap. [stateDescription] (the caption
+ * by default; the screen adds the tempo the taps set) is announced politely as it changes. The card is at least 64 dp
+ * tall and grows when large fonts wrap its title or caption.
  */
 @Composable
 internal fun TapTempoButton(
     caption: String,
     onTap: (frameNanos: Long) -> Unit,
     modifier: Modifier = Modifier,
+    stateDescription: String = caption,
     interactionSource: MutableInteractionSource? = null,
     testTag: String = "metronome.tap",
 ) {
@@ -86,7 +90,7 @@ internal fun TapTempoButton(
     Column(
         modifier = modifier
             .testTag(testTag)
-            .height(spacing.tapTempoHeight)
+            .heightIn(min = spacing.tapTempoHeight)
             .clip(RoundedCornerShape(TembraShapes.medium))
             .background(if (pressed || hovered) colors.surfaceContainerHighest else colors.surfaceContainerHigh)
             .drawWithContent {
@@ -101,12 +105,14 @@ internal fun TapTempoButton(
             }
             .semantics {
                 contentDescription = MetronomeCopy.tapTempo
-                stateDescription = caption
+                this.stateDescription = stateDescription
                 liveRegion = LiveRegionMode.Polite
-            },
+            }
+            .padding(horizontal = spacing.sm, vertical = spacing.xs),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
+        // The title and caption wrap rather than clip at the largest font sizes; the card grows with them.
         Row(horizontalArrangement = Arrangement.spacedBy(spacing.xs), verticalAlignment = Alignment.CenterVertically) {
             Icon(
                 imageVector = TembraIcons.vector(TembraIcon.TouchApp),
@@ -119,9 +125,17 @@ internal fun TapTempoButton(
                 style = TembraTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 color = colors.primary,
-                maxLines = 1,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                modifier = Modifier.weight(1f, fill = false),
             )
         }
-        Text(text = caption, style = TembraTheme.typography.labelSmall, color = colors.outline, maxLines = 1)
+        Text(
+            text = caption,
+            style = TembraTheme.typography.labelSmall,
+            color = colors.outline,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+        )
     }
 }

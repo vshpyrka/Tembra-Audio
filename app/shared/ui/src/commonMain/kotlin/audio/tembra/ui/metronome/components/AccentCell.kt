@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -157,13 +158,17 @@ internal fun AccentCell(
                     },
             )
         }
+        // The row sizes cells from the label's measured width; should the drawn face still come out wider (a font that
+        // loaded after that measure), the label steps its size down rather than losing letters.
+        val labelStyle = TembraTheme.typographyExtras.microLabel
         Text(
             text = MetronomeCopy.levelLabel(level),
-            style = TembraTheme.typographyExtras.microLabel,
+            style = labelStyle,
             fontWeight = labelWeight,
             color = labelColor,
             maxLines = 1,
             overflow = TextOverflow.Clip,
+            autoSize = TextAutoSize.StepBased(minFontSize = MetronomeDefaults.CellLabelMinSize, maxFontSize = labelStyle.fontSize),
         )
     }
 }

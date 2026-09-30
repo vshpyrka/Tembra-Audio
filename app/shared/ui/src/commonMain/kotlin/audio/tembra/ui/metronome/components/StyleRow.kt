@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -19,8 +20,8 @@ import audio.tembra.ui.theme.TembraTheme
 
 /**
  * The style presets under the beat cells (spec FR-010, research R10): a `surfaceContainer` seam, the "STYLE" label and
- * one [TembraPill] per [MetronomeStyle]. The [selected] style's pill is selected; with null (cells edited by hand) none
- * is. A click on the selected pill is ignored. Each pill is tagged `<testTag>.<id>` (`metronome.style.standard`).
+ * one [TembraPill] per [MetronomeStyle], wrapping to further rows when they do not fit. The [selected] style's pill
+ * is selected; with null (cells edited by hand) none is. A click on the selected pill is ignored. Each pill is tagged `<testTag>.<id>` (`metronome.style.standard`).
  */
 @Composable
 internal fun StyleRow(
@@ -43,9 +44,11 @@ internal fun StyleRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             SectionLabel(text = MetronomeCopy.style, modifier = Modifier.padding(end = spacing.sm))
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(MetronomeDefaults.PillGap),
-                verticalAlignment = Alignment.CenterVertically,
+            // The pills wrap under one another rather than overlap when large fonts widen them (spec FR-028).
+            FlowRow(
+                modifier = Modifier.weight(1f, fill = false),
+                horizontalArrangement = Arrangement.spacedBy(MetronomeDefaults.PillGap, Alignment.End),
+                itemVerticalAlignment = Alignment.CenterVertically,
             ) {
                 for (style in MetronomeStyle.entries) {
                     val isSelected = style == selected

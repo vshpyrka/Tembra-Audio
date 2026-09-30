@@ -51,8 +51,20 @@ internal object MetronomeCopy {
         is TapCaption.Counting -> taps(caption.taps)
     }
 
+    /** "124 beats per minute". */
+    fun beatsPerMinute(tempo: Tempo): String = "${tempo.bpm} beats per minute"
+
+    /**
+     * The tap button's state, announced as it changes: the caption, and once taps have set the tempo (two or more)
+     * the tempo they set: "3 taps, 124 beats per minute" (spec FR-030).
+     */
+    fun tapState(tapCaption: TapCaption, tempo: Tempo): String = when (tapCaption) {
+        TapCaption.Rest, TapCaption.Again -> caption(tapCaption)
+        is TapCaption.Counting -> "${caption(tapCaption)}, ${beatsPerMinute(tempo)}"
+    }
+
     /** The dial's state: "120 beats per minute, Moderato". */
-    fun dialState(tempo: Tempo, marking: TempoMarking): String = "${tempo.bpm} beats per minute, ${marking.label}"
+    fun dialState(tempo: Tempo, marking: TempoMarking): String = "${beatsPerMinute(tempo)}, ${marking.label}"
 
     /** A cell's name: "Beat 3" for the 0-based index 2. */
     fun beat(index: Int): String = "Beat ${index + 1}"
