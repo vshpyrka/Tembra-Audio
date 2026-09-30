@@ -24,10 +24,14 @@ import audio.tembra.engine.FakeAudioEngine
 import audio.tembra.ui.platform.BackgroundPlaybackHost
 import audio.tembra.ui.platform.FakeBackgroundPlaybackHost
 import audio.tembra.ui.platform.FakeSoundFilePicker
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -36,6 +40,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlin.coroutines.CoroutineContext
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -702,5 +707,69 @@ class MetronomeViewModelTest {
         assertEquals(ClickSound.BuiltIn(BuiltInClickSound.DigitalBeep), viewModel.uiState.value.settings.sound)
         assertEquals(PlaybackState.Stopped, viewModel.uiState.value.playback)
         assertEquals(emptyList(), messages)
+    }
+
+    // --- Fix round 1 -------------------------------------------------------------------------------------------------
+
+    @Test
+    fun leavingTheScreenEndsTheTapSequence() = viewModelTest {
+        val viewModel = viewModel()
+        show(viewModel)
+        val captions = mutableListOf<TapCaption>()
+        backgroundScope.launch { viewModel.uiState.map { it.tapCaption }.distinctUntilChanged().collect { captions += it } }
+        runCurrent()
+        viewModel.tap(0)
+        viewModel.tap(500 * millis)
+        runCurrent()
+        viewModel.screenVisible(false)
+        runCurrent()
+        assertEquals(TapCaption.Rest, viewModel.uiState.value.tapCaption)
+        assertEquals(0, viewModel.uiState.value.tap.count)
+        advanceTimeBy(2_001)
+        runCurrent()
+        show(viewModel)
+        assertEquals(TapCaption.Rest, viewModel.uiState.value.tapCaption)
+        assertEquals(listOf(TapCaption.Rest, TapCaption.Counting(2), TapCaption.Rest), captions)
+    }
+
+    /** Holds dispatched work until [release], so a test can leave the screen while a custom sound is being prepared. */
+    private class HeldDispatcher : CoroutineDispatcher() {
+        private val held = mutableListOf<Runnable>()
+        override fun dispatch(context: CoroutineContext, block: Runnable) {
+            held += block
+        }
+        fun release() {
+            val blocks = held.toList()
+            held.clear()
+            blocks.forEach { it.run() }
+        }
+    }
+
+    @Test
+    fun aCustomSoundPreparationCutShortIsRedoneOnTheNextShow() = viewModelTest {
+        preferences = CountingPreferences(
+            FakeMetronomePreferences(
+                MetronomePreferencesSnapshot(
+                    MetronomeSettings(sound = ClickSound.Custom("Kick"), customSound = CustomSoundRef("Kick", store.path)),
+                ),
+            ),
+        )
+        val prepare = HeldDispatcher()
+        val viewModel = MetronomeViewModel(audio, host, preferences, store, picker, prepare)
+        created = viewModel
+        show(viewModel)
+        // Loaded, with Classic Wood standing in while the custom sound is prepared.
+        assertTrue(viewModel.uiState.value.loaded)
+        assertEquals(listOf("setGrid(bpm=120, ticks=1, levels=ACCC)", "selectSound(ClassicWood)"), audio.calls)
+        viewModel.screenVisible(false)
+        runCurrent()
+        prepare.release()
+        runCurrent()
+        assertEquals(CustomSoundState.None, viewModel.uiState.value.customSound)
+        show(viewModel)
+        prepare.release()
+        runCurrent()
+        assertEquals(CustomSoundState.Available("Kick"), viewModel.uiState.value.customSound)
+        assertEquals("selectSound(Custom)", audio.calls.last())
     }
 }
