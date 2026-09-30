@@ -3,6 +3,9 @@ package audio.tembra.ui.metronome
 import androidx.lifecycle.ViewModelStore
 import audio.tembra.core.metronome.AccentPattern
 import audio.tembra.core.metronome.BeatLevel
+import audio.tembra.core.metronome.BuiltInClickSound
+import audio.tembra.core.metronome.ClickSound
+import audio.tembra.core.metronome.CustomSoundRef
 import audio.tembra.core.metronome.MetronomeSettings
 import audio.tembra.core.metronome.MetronomeStyle
 import audio.tembra.core.metronome.Subdivision
@@ -13,6 +16,7 @@ import audio.tembra.data.metronome.FakeCustomClickSoundStore
 import audio.tembra.data.metronome.FakeMetronomePreferences
 import audio.tembra.data.metronome.MetronomePreferences
 import audio.tembra.data.metronome.MetronomePreferencesSnapshot
+import audio.tembra.data.metronome.MetronomePreferenceKeys
 import audio.tembra.engine.AudioEvent
 import audio.tembra.engine.AudioResult
 import audio.tembra.engine.AudioState
@@ -44,7 +48,8 @@ import kotlin.test.assertTrue
  * The ViewModel against the fakes (contracts/metronome-screen.md). User Story 1: loading, tempo intents and
  * persistence, the start and stop sequences, refused starts, the 10 Hz poll and the draw-phase telemetry. User Story 2:
  * the signature, subdivision, cell and style intents with their re-application rules (spec FR-006 to FR-010) and the
- * debug Syncopated reading (spec FR-037).
+ * debug Syncopated reading (spec FR-037). User Story 3: tap tempo and its caption timer (spec FR-015 to FR-017). User
+ * Story 4: the sound selection with its preview, swap and import rules (spec FR-020, FR-022).
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class MetronomeViewModelTest {
@@ -518,5 +523,184 @@ class MetronomeViewModelTest {
         assertEquals(emptyList(), audio.calls)
         show(viewModel)
         assertEquals("setGrid(bpm=120, ticks=1, levels=SAAA)", audio.calls.first())
+    }
+
+    // --- User Story 3: tap tempo ---------------------------------------------------------------------------------------
+
+    private val millis = 1_000_000L
+
+    @Test
+    fun aSingleTapKeepsTheTempoAndAsksForAnother() = viewModelTest {
+        val viewModel = viewModel()
+        show(viewModel)
+        val callsBefore = audio.calls.size
+        viewModel.tap(0)
+        runCurrent()
+        assertEquals(Tempo(120), viewModel.uiState.value.settings.tempo)
+        assertEquals(TapCaption.Again, viewModel.uiState.value.tapCaption)
+        assertEquals(callsBefore, audio.calls.size)
+        assertEquals(0, preferences.updates)
+    }
+
+    @Test
+    fun aSecondTapSetsTheTempoThroughTheSettingsPath() = viewModelTest {
+        val viewModel = running(MetronomeSettings(tempo = Tempo(90)))
+        val startsBefore = startMetronomeCount()
+        viewModel.tap(0)
+        viewModel.tap(500 * millis)
+        runCurrent()
+        assertEquals(Tempo(120), viewModel.uiState.value.settings.tempo)
+        assertEquals(TapCaption.Counting(2), viewModel.uiState.value.tapCaption)
+        assertEquals(Tempo(120), preferences.snapshot.first().settings.tempo)
+        assertEquals("setGrid(bpm=120, ticks=1, levels=ACCC)", audio.calls.last())
+        // A tapped tempo never restarts the click (spec FR-017).
+        assertEquals(startsBefore, startMetronomeCount())
+        assertEquals(PlaybackState.Running, viewModel.uiState.value.playback)
+    }
+
+    @Test
+    fun tapsFasterThanTheRangeClampTo240() = viewModelTest {
+        val viewModel = viewModel()
+        show(viewModel)
+        // 300 BPM: a tap every 200 ms.
+        for (n in 0 until 4) viewModel.tap(n * 200 * millis)
+        runCurrent()
+        assertEquals(Tempo(240), viewModel.uiState.value.settings.tempo)
+        assertEquals(TapCaption.Counting(4), viewModel.uiState.value.tapCaption)
+    }
+
+    /** Found on the Pixel: ten taps read "9 taps" because the sequence keeps only the last nine for the average. */
+    @Test
+    fun theCaptionCountsEveryTapOfALongRun() = viewModelTest {
+        val viewModel = viewModel()
+        show(viewModel)
+        for (n in 0 until 12) viewModel.tap(n * 600 * millis)
+        runCurrent()
+        assertEquals(TapCaption.Counting(12), viewModel.uiState.value.tapCaption)
+        assertEquals(Tempo(100), viewModel.uiState.value.settings.tempo)
+    }
+
+    @Test
+    fun theCaptionRestsTwoSecondsAfterTheLastTapAndTheNextTapStartsAgain() = viewModelTest {
+        val viewModel = viewModel()
+        show(viewModel)
+        viewModel.tap(0)
+        viewModel.tap(500 * millis)
+        runCurrent()
+        advanceTimeBy(2_001)
+        runCurrent()
+        assertEquals(TapCaption.Rest, viewModel.uiState.value.tapCaption)
+        viewModel.tap(3_000 * millis)
+        runCurrent()
+        assertEquals(TapCaption.Again, viewModel.uiState.value.tapCaption)
+        assertEquals(Tempo(120), viewModel.uiState.value.settings.tempo)
+    }
+
+    @Test
+    fun theCaptionTimerIsReplacedByEachTap() = viewModelTest {
+        preferences = CountingPreferences(FakeMetronomePreferences(MetronomePreferencesSnapshot(MetronomeSettings(tempo = Tempo(90)))))
+        val viewModel = viewModel()
+        show(viewModel)
+        val captions = mutableListOf<TapCaption>()
+        backgroundScope.launch { viewModel.uiState.collect { captions += it.tapCaption } }
+        runCurrent()
+        viewModel.tap(0)
+        runCurrent()
+        advanceTimeBy(1_500)
+        runCurrent()
+        viewModel.tap(1_500 * millis)
+        runCurrent()
+        // A stacked timer from the first tap would end the sequence here, at 2 s.
+        advanceTimeBy(1_000)
+        runCurrent()
+        assertEquals(TapCaption.Counting(2), viewModel.uiState.value.tapCaption)
+        advanceTimeBy(1_001)
+        runCurrent()
+        assertEquals(TapCaption.Rest, viewModel.uiState.value.tapCaption)
+        val afterTheFirstTap = captions.dropWhile { it == TapCaption.Rest }
+        assertEquals(1, afterTheFirstTap.count { it == TapCaption.Rest }, "the caption rested more than once: $captions")
+        assertEquals(TapCaption.Rest, captions.last())
+    }
+
+    // --- User Story 4: click sounds --------------------------------------------------------------------------------------
+
+    private val rim = ClickSound.BuiltIn(BuiltInClickSound.Rim808)
+
+    @Test
+    fun aSoundSelectedWhileStoppedIsPreviewedAndPersisted() = viewModelTest {
+        val viewModel = viewModel()
+        show(viewModel)
+        viewModel.selectSound(rim)
+        runCurrent()
+        assertEquals(listOf("selectSound(Rim808)", "previewClick(Click)"), audio.calls.takeLast(2))
+        assertEquals(rim, viewModel.uiState.value.settings.sound)
+        val stored = preferences.snapshot.first()
+        assertEquals(rim, stored.settings.sound)
+        assertEquals("808-rim", stored.encode()[MetronomePreferenceKeys.SOUND])
+    }
+
+    @Test
+    fun aSoundSelectedWhileRunningSwapsWithoutAPreview() = viewModelTest {
+        val viewModel = running()
+        viewModel.selectSound(rim)
+        runCurrent()
+        assertEquals("selectSound(Rim808)", audio.calls.last())
+        assertFalse(audio.calls.any { it.startsWith("previewClick") })
+        assertEquals(rim, preferences.snapshot.first().settings.sound)
+    }
+
+    @Test
+    fun selectingTheSelectedSoundDoesNothing() = viewModelTest {
+        val viewModel = viewModel()
+        show(viewModel)
+        val callsBefore = audio.calls.size
+        viewModel.selectSound(ClickSound.BuiltIn(BuiltInClickSound.ClassicWood))
+        runCurrent()
+        assertEquals(callsBefore, audio.calls.size)
+        assertEquals(0, preferences.updates)
+    }
+
+    @Test
+    fun anAvailableCustomSoundIsSelected() = viewModelTest {
+        preferences = CountingPreferences(
+            FakeMetronomePreferences(MetronomePreferencesSnapshot(MetronomeSettings(customSound = CustomSoundRef("Kick", store.path)))),
+        )
+        val viewModel = viewModel()
+        show(viewModel)
+        assertEquals(CustomSoundState.Available("Kick"), viewModel.uiState.value.customSound)
+        viewModel.selectSound(ClickSound.Custom("Kick"))
+        runCurrent()
+        assertEquals(listOf("selectSound(Custom)", "previewClick(Click)"), audio.calls.takeLast(2))
+        assertEquals(ClickSound.Custom("Kick"), preferences.snapshot.first().settings.sound)
+        assertEquals(emptyList(), picker.destinations)
+    }
+
+    @Test
+    fun anEmptyCustomEntryOpensThePickerInstead() = viewModelTest {
+        val viewModel = viewModel()
+        show(viewModel)
+        val callsBefore = audio.calls.size
+        viewModel.selectSound(ClickSound.Custom("Custom"))
+        runCurrent()
+        assertEquals(listOf(store.stagingPath), picker.destinations)
+        assertEquals(callsBefore, audio.calls.size)
+        assertEquals(ClickSound.BuiltIn(BuiltInClickSound.ClassicWood), viewModel.uiState.value.settings.sound)
+        assertEquals(0, preferences.updates)
+    }
+
+    @Test
+    fun aRefusedPreviewIsIgnoredWithoutAMessage() = viewModelTest {
+        val viewModel = viewModel()
+        val messages = collectMessages(viewModel)
+        show(viewModel)
+        viewModel.selectSound(rim)
+        // The first preview still sounds: the engine refuses the second.
+        audio.failNextStart = AudioResult.Error(-1)
+        viewModel.selectSound(ClickSound.BuiltIn(BuiltInClickSound.DigitalBeep))
+        runCurrent()
+        assertEquals(listOf("selectSound(DigitalBeep)", "previewClick(Click)"), audio.calls.takeLast(2))
+        assertEquals(ClickSound.BuiltIn(BuiltInClickSound.DigitalBeep), viewModel.uiState.value.settings.sound)
+        assertEquals(PlaybackState.Stopped, viewModel.uiState.value.playback)
+        assertEquals(emptyList(), messages)
     }
 }

@@ -8,6 +8,7 @@ import audio.tembra.core.metronome.MetronomeSettings
 import audio.tembra.core.metronome.MetronomeStyle
 import audio.tembra.core.metronome.Subdivision
 import audio.tembra.core.metronome.SyncopationReading
+import audio.tembra.core.metronome.TapTempoSequence
 import audio.tembra.core.metronome.Tempo
 import audio.tembra.core.metronome.TimeSignature
 import audio.tembra.data.metronome.CustomClickSoundStore
@@ -15,7 +16,9 @@ import audio.tembra.data.metronome.MetronomePreferences
 import audio.tembra.engine.AudioEvent
 import audio.tembra.engine.AudioResult
 import audio.tembra.engine.AudioState
+import audio.tembra.engine.ClickLevel
 import audio.tembra.engine.ClickSoundId
+import audio.tembra.engine.CustomSoundResult
 import audio.tembra.engine.MetronomeAudio
 import audio.tembra.engine.MetronomeGrid
 import audio.tembra.engine.TickSnapshot
@@ -38,6 +41,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.math.min
 
 /**
@@ -52,6 +56,9 @@ import kotlin.math.min
  * `viewModelScope` launch over the suspending [MetronomePreferences.update]. The engine and host calls are
  * non-blocking and made on the main thread, in the contract's order: `keepAlive` before `startMetronome`,
  * `stopMetronome` before `release`.
+ *
+ * Tap tempo (User Story 3) owns one more job, the caption timer: each tap cancels the previous one and launches its
+ * replacement, so the sequence ends two seconds after the last tap only.
  *
  * [store], [picker] and [prepareDispatcher] serve the custom-sound import (User Story 5).
  */
@@ -89,6 +96,7 @@ class MetronomeViewModel(
     private var audioEventsJob: Job? = null
     private var stopRequestsJob: Job? = null
     private var pollJob: Job? = null
+    private var tapCaptionJob: Job? = null
 
     // --- Visibility --------------------------------------------------------------------------------------------------
 
@@ -114,6 +122,16 @@ class MetronomeViewModel(
         val stored = preferences.snapshot.first().settings
         _uiState.update { it.copy(loaded = true, settings = stored) }
         sendGrid()
+        val custom = stored.customSound
+        if (custom != null) {
+            // The Missing fallback and its message come with User Story 5 (contracts/click-sounds.md).
+            val result = withContext(prepareDispatcher) { audio.loadCustomSound(custom.path) }
+            val state = when (result) {
+                is CustomSoundResult.Loaded -> CustomSoundState.Available(custom.displayName)
+                CustomSoundResult.NotWav, CustomSoundResult.Silent, CustomSoundResult.Missing -> CustomSoundState.Unavailable(custom.displayName)
+            }
+            _uiState.update { it.copy(customSound = state) }
+        }
         audio.selectSound(soundIdOf(stored.sound))
     }
 
@@ -172,6 +190,35 @@ class MetronomeViewModel(
     /** Moves the tempo by [delta], held inside 40–240; at an end nothing changes and nothing is written. */
     fun stepTempo(delta: Int) {
         setTempo(_uiState.value.settings.tempo.plus(delta))
+    }
+
+    // --- Tap tempo (spec FR-015 to FR-017) -----------------------------------------------------------------------------
+
+    /**
+     * A tap at [atNanos] (the frame time of the tap). From the second tap of a sequence the tempo follows the taps
+     * through [setTempo], so it is persisted and reaches a running engine without a restart. The caption timer is
+     * replaced, so the sequence ends [TapTempoSequence.WINDOW_NANOS] after the last tap.
+     */
+    fun tap(atNanos: Long) {
+        val state = _uiState.value
+        if (!state.loaded) return
+        val sequence = state.tap.tap(atNanos)
+        // The sequence keeps the last nine taps for the average; the caption counts every tap of the run.
+        val counted = when (val previous = state.tapCaption) {
+            TapCaption.Rest -> 0
+            TapCaption.Again -> 1
+            is TapCaption.Counting -> previous.taps
+        }
+        val caption = if (sequence.count < 2) TapCaption.Again else TapCaption.Counting(counted + 1)
+        _uiState.update { it.copy(tap = sequence, tapCaption = caption) }
+        sequence.tempo?.let(::setTempo)
+        tapCaptionJob?.cancel()
+        tapCaptionJob = viewModelScope.launch { endTapSequenceAfterTheWindow() }
+    }
+
+    private suspend fun endTapSequenceAfterTheWindow() {
+        delay(TAP_WINDOW_MILLIS)
+        _uiState.update { it.copy(tap = TapTempoSequence(), tapCaption = TapCaption.Rest) }
     }
 
     // --- Bar shape and styles (spec FR-006 to FR-010) ------------------------------------------------------------------
@@ -233,6 +280,42 @@ class MetronomeViewModel(
         _uiState.update { it.copy(settings = next) }
         sendGrid()
         persist { it.copy(signature = next.signature, subdivision = next.subdivision, pattern = next.pattern, style = next.style) }
+    }
+
+    // --- Click sounds (spec FR-020 to FR-022) --------------------------------------------------------------------------
+
+    /**
+     * Selects [sound]: the engine swaps it from its next tick, and while stopped one Click-level preview sounds. A
+     * preview the engine refuses (a previous one still sounding) is ignored. The Custom entry selects the imported sound
+     * when it is available and opens the picker otherwise; the selected sound selects nothing.
+     */
+    fun selectSound(sound: ClickSound) {
+        val state = _uiState.value
+        if (!state.loaded || state.settings.sound == sound) return
+        if (sound is ClickSound.Custom) {
+            when (state.customSound) {
+                is CustomSoundState.Available -> Unit
+                CustomSoundState.None, is CustomSoundState.Unavailable -> {
+                    importCustomSound()
+                    return
+                }
+                CustomSoundState.Importing -> return
+            }
+        }
+        _uiState.update { it.copy(settings = it.settings.copy(sound = sound)) }
+        audio.selectSound(soundIdOf(sound))
+        if (state.playback == PlaybackState.Stopped) audio.previewClick(ClickLevel.Click)
+        persist { it.copy(sound = sound) }
+    }
+
+    /** Opens the platform's WAV picker for the Custom entry; preparing and selecting the picked file is User Story 5. */
+    fun importCustomSound() {
+        if (!_uiState.value.loaded) return
+        viewModelScope.launch { pickCustomSound() }
+    }
+
+    private suspend fun pickCustomSound() {
+        picker.pickWav(store.stagingPath)
     }
 
     // --- Playback (spec FR-001, FR-027) -------------------------------------------------------------------------------
@@ -345,6 +428,7 @@ class MetronomeViewModel(
     private companion object {
         const val NO_BEAT = -1
         const val POLL_MILLIS = 100L
+        const val TAP_WINDOW_MILLIS = TapTempoSequence.WINDOW_NANOS / 1_000_000L
 
         /** The polls after a start at which the output latency is measured again: about 100 ms, 300 ms and 1 s. */
         val LATENCY_REFRESH_POLLS = setOf(1, 3, 10)

@@ -15,6 +15,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import audio.tembra.ui.metronome.components.AccentCells
+import audio.tembra.ui.metronome.components.ClickSoundPicker
+import audio.tembra.ui.metronome.components.ClickSoundPickerLayout
 import audio.tembra.ui.metronome.components.MetronomeDefaults
 import audio.tembra.ui.metronome.components.SectionLabel
 import audio.tembra.ui.metronome.components.StyleRow
@@ -25,15 +27,17 @@ import audio.tembra.ui.theme.TembraTheme
 
 /**
  * The metronome's settings as section cards in the design's order (contracts/metronome-screen.md, research R10): the
- * time signature with its "Common & Complex" caption, the subdivision, and the beat cells with the style row. Every
- * layout stacks the same panel; [signatureColumns] is six on a phone and three in the landscape column. The click
- * sound picker joins it with User Story 4.
+ * time signature with its "Common & Complex" caption, the subdivision, the beat cells with the style row, and the click
+ * sound picker. Every layout stacks the same panel; [signatureColumns] is six on a phone and three in the landscape
+ * column, and [pickerLayout] is the centred pill ([ClickSoundPickerLayout.Dropdown]) everywhere but the expanded
+ * layout's tiles.
  */
 @Composable
 internal fun MetronomeSettingsPanel(
     state: MetronomeUiState,
     callbacks: MetronomeCallbacks,
     telemetry: BeatTelemetry,
+    pickerLayout: ClickSoundPickerLayout,
     signatureColumns: Int,
     modifier: Modifier = Modifier,
 ) {
@@ -67,6 +71,15 @@ internal fun MetronomeSettingsPanel(
             )
             StyleRow(selected = settings.style, onSelect = callbacks.onStyle, modifier = Modifier.fillMaxWidth())
         }
+        ClickSoundPicker(
+            sound = settings.sound,
+            customSound = state.customSound,
+            layout = pickerLayout,
+            onSelect = callbacks.onSound,
+            onImportCustom = callbacks.onImportCustom,
+            onReplaceCustom = callbacks.onReplaceCustom,
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+        )
     }
 }
 

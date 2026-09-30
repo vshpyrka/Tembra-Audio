@@ -9,6 +9,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.MotionDurationScale
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
@@ -21,6 +24,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
@@ -29,23 +33,31 @@ import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.dp
+import audio.tembra.core.metronome.BuiltInClickSound
+import audio.tembra.core.metronome.ClickSound
 import audio.tembra.core.metronome.MetronomeSettings
 import audio.tembra.core.metronome.MetronomeStyle
 import audio.tembra.core.metronome.Subdivision
 import audio.tembra.core.metronome.Tempo
 import audio.tembra.core.metronome.TimeSignature
+import audio.tembra.ui.designsystem.approximately
+import audio.tembra.ui.designsystem.averageColorAt
+import audio.tembra.ui.designsystem.distanceTo
 import audio.tembra.ui.theme.TembraTheme
 import kotlin.math.abs
+import kotlin.math.roundToInt
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
  * The stateless metronome screen driven by state (contracts/metronome-screen.md) in the Stacked layout at 360 dp:
- * User Story 1 (tempo, play, cells) and User Story 2 (signature and subdivision chips, cells, style pills, section labels).
+ * User Story 1 (tempo, play, cells), User Story 2 (signature and subdivision chips, cells, style pills, section labels),
+ * User Story 3 (the tap card, its caption and flash) and User Story 4 (the sound pill and its menu).
  */
 @OptIn(ExperimentalTestApi::class)
 class MetronomeScreenTest {
@@ -57,6 +69,13 @@ class MetronomeScreenTest {
     private val subdivisions = mutableListOf<Subdivision>()
     private val cycled = mutableListOf<Int>()
     private val styles = mutableListOf<MetronomeStyle>()
+    private val taps = mutableListOf<Long>()
+    private val sounds = mutableListOf<ClickSound>()
+    private var primary = Color.Unspecified
+    private var pixelDensity = 1f
+    private val zeroScale = object : MotionDurationScale {
+        override val scaleFactor: Float get() = 0f
+    }
     private val callbacks = MetronomeCallbacks.None.copy(
         onTogglePlayback = { toggles++ },
         onTempo = { tempos += it },
@@ -64,6 +83,8 @@ class MetronomeScreenTest {
         onSubdivision = { subdivisions += it },
         onCycleBeat = { cycled += it },
         onStyle = { styles += it },
+        onTap = { taps += it },
+        onSound = { sounds += it },
     )
 
     private val loaded = MetronomeUiState(loaded = true)
@@ -73,6 +94,8 @@ class MetronomeScreenTest {
         mainClock.autoAdvance = false
         setContent {
             TembraTheme {
+                primary = TembraTheme.colors.primary
+                pixelDensity = LocalDensity.current.density
                 Box(Modifier.width(360.dp).fillMaxHeight()) {
                     MetronomeScreenContent(
                         state = state,
@@ -237,5 +260,83 @@ class MetronomeScreenTest {
             onNode(hasText(exposed), useUnmergedTree = true).assertDoesNotExist()
         }
         onNode(hasText("Common & Complex") and hasAnyAncestor(hasTestTag("screen.metronome")), useUnmergedTree = true).assertExists()
+    }
+
+    // --- User Story 3 ------------------------------------------------------------------------------------------------
+
+    @Test
+    fun theTapCardReadsTapTempoWithItsRestCaption() = runComposeUiTest {
+        setScreen()
+        onNodeWithTag("metronome.tap")
+            .assertContentDescriptionEquals("Tap tempo")
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Sync finger rhythm"))
+        onNode(hasText("TAP TEMPO") and hasAnyAncestor(hasTestTag("metronome.tap")), useUnmergedTree = true).assertExists()
+        onNode(hasText("Sync finger rhythm") and hasAnyAncestor(hasTestTag("metronome.tap")), useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun aTapReportsItsFrameTime() = runComposeUiTest {
+        setScreen()
+        onNodeWithTag("metronome.tap").performClick()
+        settle()
+        assertEquals(1, taps.size)
+        assertTrue(taps.single() > 0L, "the tap carried no frame time")
+    }
+
+    @Test
+    fun theCaptionCountsTheTaps() = runComposeUiTest {
+        setScreen(loaded.copy(tapCaption = TapCaption.Counting(3)))
+        onNode(hasText("3 taps") and hasAnyAncestor(hasTestTag("metronome.tap")), useUnmergedTree = true).assertExists()
+        onNodeWithTag("metronome.tap").assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "3 taps"))
+    }
+
+    /** Beside the title, clear of the text: the card's own fill with the flash drawn over it. */
+    private fun ComposeUiTest.tapFill(): Color {
+        val image = onNodeWithTag("metronome.tap").captureToImage()
+        return image.averageColorAt((12 * pixelDensity).roundToInt(), image.height / 2)
+    }
+
+    @Test
+    fun aTapFlashesTheCardFor120Milliseconds() = runComposeUiTest {
+        setScreen()
+        val rest = tapFill()
+        onNodeWithTag("metronome.tap").performClick()
+        repeat(2) { mainClock.advanceTimeByFrame() }
+        val flashed = tapFill()
+        assertTrue(flashed.distanceTo(primary) < rest.distanceTo(primary) - 0.02f, "the tap did not flash: $rest -> $flashed")
+        mainClock.advanceTimeBy(150)
+        settle()
+        val after = tapFill()
+        assertTrue(after.approximately(rest), "the flash did not fade: $rest -> $after")
+    }
+
+    @Test
+    fun theFlashIsStaticUnderReduceMotion() = runComposeUiTest(effectContext = zeroScale) {
+        setScreen()
+        val rest = tapFill()
+        onNodeWithTag("metronome.tap").performClick()
+        repeat(4) {
+            mainClock.advanceTimeByFrame()
+            val now = tapFill()
+            assertTrue(now.approximately(rest), "the card flashed under reduce motion: $rest -> $now")
+        }
+        assertEquals(1, taps.size)
+    }
+
+    // --- User Story 4 ------------------------------------------------------------------------------------------------
+
+    @Test
+    fun theSoundPickerIsAPillUnderTheStyleRow() = runComposeUiTest {
+        setScreen()
+        onNodeWithTag("metronome.sound").performScrollTo().assertContentDescriptionEquals("Click sound, Classic Wood")
+        onNodeWithTag("metronome.sound.classic-wood").assertDoesNotExist()
+        val style = onNodeWithTag("metronome.style").getUnclippedBoundsInRoot()
+        val sound = onNodeWithTag("metronome.sound").getUnclippedBoundsInRoot()
+        assertTrue(sound.top >= style.bottom, "the sound pill (top ${sound.top}) is not under the style row (bottom ${style.bottom})")
+        onNodeWithTag("metronome.sound").performClick()
+        settle()
+        onNodeWithTag("metronome.sound.digital-beep").performClick()
+        settle()
+        assertEquals(listOf<ClickSound>(ClickSound.BuiltIn(BuiltInClickSound.DigitalBeep)), sounds)
     }
 }

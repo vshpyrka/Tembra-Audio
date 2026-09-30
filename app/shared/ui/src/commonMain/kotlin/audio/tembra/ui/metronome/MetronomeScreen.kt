@@ -34,7 +34,7 @@ fun MetronomeScreen(modifier: Modifier = Modifier, viewModel: MetronomeViewModel
     }
     val layout = MetronomeLayout.from(currentWindowAdaptiveInfo().windowSizeClass)
     val callbacks = remember(viewModel) {
-        // The sound and tap intents are bound as their stories land (User Stories 3 to 5).
+        // Replacing the custom sound is bound with User Story 5.
         MetronomeCallbacks.None.copy(
             onTempo = viewModel::setTempo,
             onStep = viewModel::stepTempo,
@@ -42,6 +42,9 @@ fun MetronomeScreen(modifier: Modifier = Modifier, viewModel: MetronomeViewModel
             onSubdivision = viewModel::selectSubdivision,
             onCycleBeat = viewModel::cycleBeat,
             onStyle = viewModel::selectStyle,
+            onSound = viewModel::selectSound,
+            onImportCustom = viewModel::importCustomSound,
+            onTap = viewModel::tap,
             onTogglePlayback = viewModel::togglePlayback,
         )
     }

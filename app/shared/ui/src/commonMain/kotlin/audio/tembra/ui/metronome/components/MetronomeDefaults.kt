@@ -83,6 +83,30 @@ internal object MetronomeDefaults {
     /** Tap tempo glyph: `text-[20px]`. */
     val TapIconSize: Dp = 20.dp
 
+    /** The per-tap flash: `bg-primary/20` over the card, fading out over [TAP_FLASH_MILLIS]. */
+    const val TAP_FLASH_ALPHA = 0.2f
+    const val TAP_FLASH_MILLIS = 120
+
+    // Click sound picker (research R10).
+    /** The pill's waveform glyph `text-[18px]`, its chevron `text-[16px]` and its padding `px-3 py-1.5`. */
+    val SoundPillIconSize: Dp = 18.dp
+    val SoundPillChevronSize: Dp = 16.dp
+    val SoundPillVerticalPadding: Dp = 6.dp
+
+    /** The menu's check and a tile's glyph: `text-[16px]`. */
+    val SoundGlyphSize: Dp = 16.dp
+
+    /** The tiles' grid gap `gap-1.5` and a tile's padding `p-2.5`. */
+    val SoundTileGap: Dp = 6.dp
+    val SoundTilePadding: Dp = 10.dp
+
+    /** Tints at 20 % (`/20`): the selected tile's fill, the empty Custom glyph box and an unselected tile's border. */
+    const val SOUND_TINT_ALPHA = 0.2f
+
+    /** The empty Custom tile's dashed border: `border-outline-variant/30`, dashes of 4 on 4. */
+    const val DASHED_BORDER_ALPHA = 0.3f
+    val DashLength: Dp = 4.dp
+
     // Slider (research R10): the 6 dp track and the 16 dp thumb.
     val SliderTrackHeight: Dp = 6.dp
     val SliderThumbSize: Dp = 16.dp
