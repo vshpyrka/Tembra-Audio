@@ -18,7 +18,7 @@ class IconAssetsTest {
     private val metronomeGlyphs = listOf(
         "ic_remove_24.xml", "ic_add_24.xml", "ic_touch_app_24.xml", "ic_music_note_24.xml", "ic_graphic_eq_24.xml",
         "ic_radio_button_checked_24.xml", "ic_notifications_24.xml", "ic_sensors_24.xml", "ic_tune_24.xml", "ic_check_24.xml",
-        "ic_play_arrow_fill_24.xml", "ic_pause_fill_24.xml",
+        "ic_play_arrow_fill_24.xml", "ic_pause_fill_24.xml", "ic_swap_horiz_24.xml",
     )
 
     /** The filled variants (FILL 1) the play button uses, fetched with `--fill`. */

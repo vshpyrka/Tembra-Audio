@@ -15,6 +15,8 @@ import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertHeightIsAtLeast
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextEquals
@@ -26,6 +28,7 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.dp
 import audio.tembra.core.metronome.BuiltInClickSound
@@ -43,36 +46,45 @@ import kotlin.test.assertTrue
 
 /**
  * The click sound picker (contracts/design-system-additions.md, spec FR-021, FR-022): the Dropdown pill and its menu,
- * the Tiles grid, and the empty Custom entry. The filled, unavailable and importing Custom states arrive with User
- * Story 5.
+ * the Tiles grid, and the Custom entry: empty (User Story 4), and filled, unavailable and importing with the Replace
+ * action (User Story 5, spec FR-022).
  */
 @OptIn(ExperimentalTestApi::class)
 class ClickSoundPickerTest {
 
     private val selected = mutableListOf<ClickSound>()
     private var imports = 0
+    private var replaces = 0
     private var secondary = Color.Unspecified
     private var primary = Color.Unspecified
+    private var onSurface = Color.Unspecified
+    private var onSurfaceVariant = Color.Unspecified
     private var pixelDensity = 1f
 
     private val ids = listOf("classic-wood", "808-rim", "digital-beep", "cowbell", "mechanical", "custom")
 
-    private fun ComposeUiTest.setPicker(layout: ClickSoundPickerLayout, sound: ClickSound = ClickSound.BuiltIn(BuiltInClickSound.ClassicWood)) {
+    private fun ComposeUiTest.setPicker(
+        layout: ClickSoundPickerLayout,
+        sound: ClickSound = ClickSound.BuiltIn(BuiltInClickSound.ClassicWood),
+        customSound: CustomSoundState = CustomSoundState.None,
+    ) {
         mainClock.autoAdvance = false
         setContent {
             TembraTheme {
                 secondary = TembraTheme.colors.secondary
                 primary = TembraTheme.colors.primary
+                onSurface = TembraTheme.colors.onSurface
+                onSurfaceVariant = TembraTheme.colors.onSurfaceVariant
                 pixelDensity = LocalDensity.current.density
                 // An opaque surface: Android captures a transparent node over the activity's white window.
                 Box(Modifier.width(320.dp).background(TembraTheme.colors.surface)) {
                     ClickSoundPicker(
                         sound = sound,
-                        customSound = CustomSoundState.None,
+                        customSound = customSound,
                         layout = layout,
                         onSelect = { selected += it },
                         onImportCustom = { imports++ },
-                        onReplaceCustom = {},
+                        onReplaceCustom = { replaces++ },
                         testTag = "sound",
                     )
                 }
@@ -220,5 +232,153 @@ class ClickSoundPickerTest {
         emit(source, HoverInteraction.Enter())
         val hovered = onNodeWithTag("tile").captureToImage()
         assertTrue(changedTowardsPrimary(rest, hovered) > 20, "hover did not turn the tile's text and glyph primary")
+    }
+
+    // --- User Story 5: the filled, unavailable and importing Custom entry -------------------------------------------------
+
+    private val kick = CustomSoundState.Available("Kick")
+
+    @Test
+    fun theFilledCustomEntryNamesItsSoundAndOffersReplaceInTheMenu() = runComposeUiTest {
+        setPicker(ClickSoundPickerLayout.Dropdown, customSound = kick)
+        onNodeWithTag("sound").performClick()
+        settle()
+        onNodeWithTag("sound.custom").assertTextEquals("Kick").assertContentDescriptionEquals("Custom, Kick").assertIsEnabled()
+        onNodeWithTag("sound.replace").assertContentDescriptionEquals("Replace custom sound").assertHeightIsAtLeast(44.dp)
+        onNodeWithTag("sound.replace").performClick()
+        settle()
+        assertEquals(1, replaces)
+        assertEquals(0, imports)
+        assertEquals(emptyList(), selected)
+    }
+
+    @Test
+    fun choosingTheFilledCustomEntrySelectsIt() = runComposeUiTest {
+        setPicker(ClickSoundPickerLayout.Dropdown, customSound = kick)
+        onNodeWithTag("sound").performClick()
+        settle()
+        onNodeWithTag("sound.custom").performClick()
+        settle()
+        assertEquals(listOf<ClickSound>(ClickSound.Custom("Kick")), selected)
+        assertEquals(0, imports)
+    }
+
+    @Test
+    fun theSelectedCustomSoundIsCheckedAndStillReplaceable() = runComposeUiTest {
+        setPicker(ClickSoundPickerLayout.Dropdown, sound = ClickSound.Custom("Kick"), customSound = kick)
+        onNodeWithTag("sound").assertContentDescriptionEquals("Click sound, Kick")
+        onNodeWithTag("sound").performClick()
+        settle()
+        onNodeWithTag("sound.custom").assertIsSelected()
+        onNodeWithTag("sound.custom.check", useUnmergedTree = true).assertExists()
+        onNodeWithTag("sound.replace").performClick()
+        settle()
+        assertEquals(1, replaces)
+    }
+
+    @Test
+    fun theFilledCustomTileNamesItsSoundWithAReplaceButtonAndTooltip() = runComposeUiTest {
+        setPicker(ClickSoundPickerLayout.Tiles, customSound = kick)
+        onNodeWithTag("sound.custom").assertTextEquals("Kick").assertContentDescriptionEquals("Custom, Kick")
+        onNodeWithTag("sound.replace").assertContentDescriptionEquals("Replace custom sound").assertHeightIsAtLeast(44.dp)
+        onNodeWithTag("sound.custom").performClick()
+        settle()
+        assertEquals(listOf<ClickSound>(ClickSound.Custom("Kick")), selected)
+        onNodeWithTag("sound.replace").performClick()
+        settle()
+        assertEquals(1, replaces)
+        assertEquals(0, imports)
+        mainClock.autoAdvance = true
+        onNodeWithTag("sound.replace").performMouseInput { moveTo(center) }
+        waitForIdle()
+        onNode(hasText("Replace custom sound")).assertExists()
+    }
+
+    /** The label pixel that stands out most from the tile behind it: the text's own colour. */
+    private fun ComposeUiTest.labelInk(label: String): Color {
+        val image = onNode(hasText(label) and hasAnyAncestor(hasTestTag("sound.custom")), useUnmergedTree = true).captureToImage()
+        val pixels = image.toPixelMap()
+        val background = pixels[0, 0]
+        var ink = background
+        for (y in 0 until pixels.height) for (x in 0 until pixels.width) {
+            if (pixels[x, y].distanceTo(background) > ink.distanceTo(background)) ink = pixels[x, y]
+        }
+        return ink
+    }
+
+    @Test
+    fun anUnavailableCustomTileReadsItsNameGreyedAndImportsAgain() = runComposeUiTest {
+        setPicker(ClickSoundPickerLayout.Tiles, customSound = CustomSoundState.Unavailable("Kick"))
+        onNodeWithTag("sound.custom").assertTextEquals("Kick").assertContentDescriptionEquals("Custom, Kick").assertIsNotSelected()
+        onNodeWithTag("sound.replace").assertDoesNotExist()
+        val ink = labelInk("Kick")
+        assertTrue(ink.distanceTo(onSurfaceVariant) < ink.distanceTo(onSurface), "the unavailable name is not greyed: $ink")
+        assertTrue(ink.distanceTo(onSurfaceVariant) < 0.1f, "the unavailable name is not onSurfaceVariant: $ink")
+        onNodeWithTag("sound.custom").performClick()
+        settle()
+        assertEquals(1, imports)
+        assertEquals(emptyList(), selected)
+    }
+
+    @Test
+    fun anAvailableCustomTileReadsItsNameInOnSurface() = runComposeUiTest {
+        setPicker(ClickSoundPickerLayout.Tiles, customSound = kick)
+        val ink = labelInk("Kick")
+        assertTrue(ink.distanceTo(onSurface) < ink.distanceTo(onSurfaceVariant), "the available name is greyed: $ink")
+    }
+
+    @Test
+    fun anUnavailableCustomEntryImportsFromTheMenu() = runComposeUiTest {
+        setPicker(ClickSoundPickerLayout.Dropdown, customSound = CustomSoundState.Unavailable("Kick"))
+        onNodeWithTag("sound").performClick()
+        settle()
+        onNodeWithTag("sound.custom").assertTextEquals("Kick").assertContentDescriptionEquals("Custom, Kick")
+        onNodeWithTag("sound.replace").assertDoesNotExist()
+        onNodeWithTag("sound.custom").performClick()
+        settle()
+        assertEquals(1, imports)
+        assertEquals(emptyList(), selected)
+    }
+
+    @Test
+    fun anImportingCustomEntryIsDisabled() = runComposeUiTest {
+        setPicker(ClickSoundPickerLayout.Tiles, customSound = CustomSoundState.Importing)
+        onNodeWithTag("sound.custom").assertIsNotEnabled()
+        onNodeWithTag("sound.replace").assertDoesNotExist()
+        onNodeWithTag("sound.custom").performClick()
+        settle()
+        assertEquals(0, imports)
+        assertEquals(0, replaces)
+    }
+
+    @Test
+    fun anImportingCustomMenuEntryIsDisabled() = runComposeUiTest {
+        setPicker(ClickSoundPickerLayout.Dropdown, customSound = CustomSoundState.Importing)
+        onNodeWithTag("sound").performClick()
+        settle()
+        onNodeWithTag("sound.custom").assertIsNotEnabled()
+        onNodeWithTag("sound.replace").assertDoesNotExist()
+    }
+
+    @Test
+    fun theEmptyCustomTileHasADashedBorder() = runComposeUiTest {
+        setPicker(ClickSoundPickerLayout.Tiles)
+        // Border runs along the top edge, between the rounded corners: dashes alternate with the tile's fill.
+        fun edgeRuns(id: String): Int {
+            val image = onNodeWithTag("sound.$id").captureToImage()
+            val pixels = image.toPixelMap()
+            val y = (pixelDensity / 2).toInt()
+            val inside = pixels[image.width / 2, (pixelDensity * 3).toInt()]
+            val from = (pixelDensity * 12).toInt()
+            val to = image.width - from
+            val distances = (from until to).map { pixels[it, y].distanceTo(inside) }
+            val threshold = distances.max() / 2
+            val marks = distances.map { it > threshold }
+            return 1 + marks.zipWithNext().count { (a, b) -> a != b }
+        }
+        val dashed = edgeRuns("custom")
+        assertTrue(dashed >= 6, "the empty Custom tile's border is not dashed: $dashed runs")
+        val solid = edgeRuns("808-rim")
+        assertTrue(solid <= 2, "a built-in tile's border is dashed: $solid runs")
     }
 }

@@ -27,6 +27,7 @@ import audio.tembra.ui.resources.ic_remove_24
 import audio.tembra.ui.resources.ic_sensors_24
 import audio.tembra.ui.resources.ic_settings_24
 import audio.tembra.ui.resources.ic_touch_app_24
+import audio.tembra.ui.resources.ic_swap_horiz_24
 import audio.tembra.ui.resources.ic_tune_24
 import audio.tembra.ui.resources.ic_volume_up_24
 import org.jetbrains.compose.resources.DrawableResource
@@ -68,6 +69,8 @@ enum class TembraIcon(internal val resource: DrawableResource) {
     Sensors(Res.drawable.ic_sensors_24),
     Tune(Res.drawable.ic_tune_24),
     Check(Res.drawable.ic_check_24),
+    // The filled Custom sound's Replace action (feature 004, User Story 5).
+    SwapHoriz(Res.drawable.ic_swap_horiz_24),
     // Filled variants (FILL 1) for the metronome's play button, as the design draws them (`tools/fetch-material-symbols.sh --fill`).
     PlayArrowFilled(Res.drawable.ic_play_arrow_fill_24),
     PauseFilled(Res.drawable.ic_pause_fill_24),

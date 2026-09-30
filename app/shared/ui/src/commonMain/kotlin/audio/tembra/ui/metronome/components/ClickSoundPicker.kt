@@ -18,10 +18,16 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
+import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Text
+import androidx.compose.material3.TooltipAnchorPosition
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.minimumInteractiveComponentSize
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -55,9 +61,12 @@ import audio.tembra.ui.theme.TembraTheme
  * current entry; [ClickSoundPickerLayout.Tiles] is the two-column grid of [ClickSoundTile]s. Entries are tagged
  * `<testTag>.<id>` (`metronome.sound.808-rim`, `metronome.sound.custom`).
  *
- * The current entry selects nothing again. While nothing is imported the Custom entry reads "Custom" with a "+" and
- * calls [onImportCustom]; an imported one is selected through [onSelect]. [onReplaceCustom] serves the filled Custom
- * entry's Replace action (User Story 5).
+ * The current entry selects nothing again. The Custom entry follows [customSound] (spec FR-022):
+ * - [CustomSoundState.None]: "Custom" with a "+" (the dashed tile), calling [onImportCustom];
+ * - [CustomSoundState.Available]: the file's name, selected through [onSelect], with a Replace icon button (tagged
+ *   `<testTag>.replace`, announced and tooltipped "Replace custom sound") calling [onReplaceCustom];
+ * - [CustomSoundState.Unavailable]: the name greyed (`onSurfaceVariant`) with a "+", calling [onImportCustom];
+ * - [CustomSoundState.Importing]: disabled while a file is picked and prepared.
  */
 @Composable
 internal fun ClickSoundPicker(
@@ -76,6 +85,7 @@ internal fun ClickSoundPicker(
         CustomSoundState.None, CustomSoundState.Importing -> null
     }
     val customSelected = sound is ClickSound.Custom && customSound is CustomSoundState.Available
+    val onReplace = if (customSound is CustomSoundState.Available) onReplaceCustom else null
     val onCustom: () -> Unit = {
         when (customSound) {
             is CustomSoundState.Available -> if (!customSelected) onSelect(ClickSound.Custom(customSound.displayName))
@@ -86,19 +96,23 @@ internal fun ClickSoundPicker(
     when (layout) {
         ClickSoundPickerLayout.Dropdown -> SoundDropdown(
             sound = sound,
+            customSound = customSound,
             customName = customName,
             customSelected = customSelected,
             onSelect = onSelect,
             onCustom = onCustom,
+            onReplace = onReplace,
             testTag = testTag,
             modifier = modifier,
         )
         ClickSoundPickerLayout.Tiles -> SoundTiles(
             sound = sound,
+            customSound = customSound,
             customName = customName,
             customSelected = customSelected,
             onSelect = onSelect,
             onCustom = onCustom,
+            onReplace = onReplace,
             testTag = testTag,
             modifier = modifier,
         )
@@ -109,10 +123,12 @@ internal fun ClickSoundPicker(
 @Composable
 private fun SoundDropdown(
     sound: ClickSound,
+    customSound: CustomSoundState,
     customName: String?,
     customSelected: Boolean,
     onSelect: (ClickSound) -> Unit,
     onCustom: () -> Unit,
+    onReplace: (() -> Unit)?,
     testTag: String,
     modifier: Modifier,
 ) {
@@ -192,14 +208,26 @@ private fun SoundDropdown(
             SoundMenuItem(
                 label = customName ?: MetronomeCopy.custom,
                 selected = customSelected,
-                trailing = when {
-                    customSelected -> TembraIcon.Check
-                    customName == null -> ClickSoundGlyphs.custom(filled = false)
-                    else -> null
+                trailing = when (customSound) {
+                    is CustomSoundState.Available -> if (customSelected) TembraIcon.Check else null
+                    CustomSoundState.None, is CustomSoundState.Unavailable -> ClickSoundGlyphs.custom(filled = false)
+                    CustomSoundState.Importing -> null
                 },
                 trailingTag = if (customSelected) "$testTag.$CUSTOM_ID.check" else "$testTag.$CUSTOM_ID.add",
                 testTag = "$testTag.$CUSTOM_ID",
                 contentDescription = MetronomeCopy.customEntry(customName),
+                enabled = customSound != CustomSoundState.Importing,
+                action = onReplace?.let { replace ->
+                    {
+                        ReplaceCustomButton(
+                            onReplace = {
+                                open = false
+                                replace()
+                            },
+                            testTag = "$testTag.$REPLACE_ID",
+                        )
+                    }
+                },
                 onClick = {
                     open = false
                     onCustom()
@@ -209,7 +237,10 @@ private fun SoundDropdown(
     }
 }
 
-/** One menu entry: `labelMedium`, `primary` when current and `onSurfaceVariant` otherwise, with an optional 16 dp trailing glyph. */
+/**
+ * One menu entry: `labelMedium`, `primary` when current and `onSurfaceVariant` otherwise (at the disabled alpha when not
+ * [enabled]), with an optional 16 dp trailing glyph and an [action] after it (the Custom entry's Replace button).
+ */
 @Composable
 private fun SoundMenuItem(
     label: String,
@@ -219,9 +250,15 @@ private fun SoundMenuItem(
     testTag: String,
     onClick: () -> Unit,
     contentDescription: String? = null,
+    enabled: Boolean = true,
+    action: (@Composable () -> Unit)? = null,
 ) {
     val colors = TembraTheme.colors
-    val tint = if (selected) colors.primary else colors.onSurfaceVariant
+    val tint = when {
+        !enabled -> colors.onSurface.copy(alpha = MetronomeDefaults.DISABLED_ALPHA)
+        selected -> colors.primary
+        else -> colors.onSurfaceVariant
+    }
     DropdownMenuItem(
         text = { Text(text = label, style = TembraTheme.typography.labelMedium, color = tint, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         onClick = onClick,
@@ -231,16 +268,24 @@ private fun SoundMenuItem(
                 this.selected = selected
                 if (contentDescription != null) this.contentDescription = contentDescription
             },
-        trailingIcon = trailing?.let { icon ->
+        trailingIcon = if (trailing == null && action == null) {
+            null
+        } else {
             {
-                Icon(
-                    imageVector = TembraIcons.vector(icon),
-                    contentDescription = null,
-                    tint = colors.primary,
-                    modifier = Modifier.size(MetronomeDefaults.SoundGlyphSize).testTag(trailingTag),
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (trailing != null) {
+                        Icon(
+                            imageVector = TembraIcons.vector(trailing),
+                            contentDescription = null,
+                            tint = colors.primary,
+                            modifier = Modifier.size(MetronomeDefaults.SoundGlyphSize).testTag(trailingTag),
+                        )
+                    }
+                    if (action != null) action()
+                }
             }
         },
+        enabled = enabled,
         contentPadding = PaddingValues(horizontal = TembraTheme.spacing.md),
     )
 }
@@ -249,10 +294,12 @@ private fun SoundMenuItem(
 @Composable
 private fun SoundTiles(
     sound: ClickSound,
+    customSound: CustomSoundState,
     customName: String?,
     customSelected: Boolean,
     onSelect: (ClickSound) -> Unit,
     onCustom: () -> Unit,
+    onReplace: (() -> Unit)?,
     testTag: String,
     modifier: Modifier,
 ) {
@@ -279,15 +326,63 @@ private fun SoundTiles(
                         }
                         index == count - 1 -> ClickSoundTile(
                             label = customName ?: MetronomeCopy.custom,
-                            icon = ClickSoundGlyphs.custom(filled = customName != null),
+                            icon = ClickSoundGlyphs.custom(filled = customSound is CustomSoundState.Available),
                             selected = customSelected,
                             onClick = onCustom,
                             modifier = cell.semantics { contentDescription = MetronomeCopy.customEntry(customName) },
                             dashed = customName == null,
+                            enabled = customSound != CustomSoundState.Importing,
+                            muted = customSound is CustomSoundState.Unavailable,
+                            trailing = onReplace?.let { replace ->
+                                { ReplaceCustomButton(onReplace = replace, testTag = "$testTag.$REPLACE_ID") }
+                            },
                             testTag = "$testTag.$CUSTOM_ID",
                         )
                         else -> Spacer(cell)
                     }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * The filled Custom entry's Replace action (spec FR-022, FR-029): an icon-only `swap_horiz` button in a 44 dp target,
+ * `onSurfaceVariant` (hover `primary`), announced and tooltipped "Replace custom sound" (hover or long press). Keyboard
+ * focus draws a `primary` ring.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ReplaceCustomButton(onReplace: () -> Unit, testTag: String, modifier: Modifier = Modifier) {
+    val colors = TembraTheme.colors
+    val spacing = TembraTheme.spacing
+    val source = remember { MutableInteractionSource() }
+    val hovered by source.collectIsHoveredAsState()
+    val focused by source.collectIsFocusedAsState()
+    val ring = spacing.focusRingWidth
+    val ringColor = colors.primary
+    Box(modifier = modifier) {
+        TooltipBox(
+            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
+            tooltip = { PlainTooltip { Text(MetronomeCopy.replaceCustomSound) } },
+            state = rememberTooltipState(),
+        ) {
+            CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides spacing.touchTargetMin) {
+                Box(
+                    modifier = Modifier
+                        .testTag(testTag)
+                        .clickable(interactionSource = source, indication = null, role = Role.Button, onClick = onReplace)
+                        .semantics { contentDescription = MetronomeCopy.replaceCustomSound }
+                        .minimumInteractiveComponentSize()
+                        .drawBehind { if (focused) drawFocusRing(ringColor, ring.toPx(), CornerRadius(size.minDimension / 2)) },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = TembraIcons.vector(TembraIcon.SwapHoriz),
+                        contentDescription = null,
+                        tint = if (hovered) colors.primary else colors.onSurfaceVariant,
+                        modifier = Modifier.size(MetronomeDefaults.SoundGlyphSize),
+                    )
                 }
             }
         }
@@ -300,3 +395,4 @@ private fun nameOf(sound: ClickSound): String = when (sound) {
 }
 
 private const val CUSTOM_ID = "custom"
+private const val REPLACE_ID = "replace"

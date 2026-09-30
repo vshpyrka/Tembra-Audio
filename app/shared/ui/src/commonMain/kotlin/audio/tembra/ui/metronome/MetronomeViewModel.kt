@@ -25,10 +25,13 @@ import audio.tembra.engine.MetronomeGrid
 import audio.tembra.engine.TickSnapshot
 import audio.tembra.ui.platform.BackgroundPlaybackHost
 import audio.tembra.ui.platform.SoundFilePicker
+import audio.tembra.ui.platform.SoundPickFailure
+import audio.tembra.ui.platform.SoundPickResult
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metrox.viewmodel.ViewModelKey
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -62,7 +65,9 @@ import kotlin.math.min
  * replacement, so the sequence ends two seconds after the last tap only; leaving the screen cancels it and ends the
  * sequence at once.
  *
- * [store], [picker] and [prepareDispatcher] serve the custom-sound import (User Story 5).
+ * [store], [picker] and [prepareDispatcher] serve the custom-sound import (User Story 5): each import is one
+ * `viewModelScope` launch that suspends on the picker, the store and the engine's preparation (on [prepareDispatcher]);
+ * it outlives the screen's visibility, so a file picked while the app was in the picker is still prepared.
  */
 @Inject
 @ContributesIntoMap(AppScope::class)
@@ -99,6 +104,9 @@ class MetronomeViewModel(
     private var stopRequestsJob: Job? = null
     private var pollJob: Job? = null
     private var tapCaptionJob: Job? = null
+
+    /** What the Custom entry read when the running import began; a cancelled or refused import restores it. */
+    private var customBeforeImport: CustomSoundState = CustomSoundState.None
 
     // --- Visibility --------------------------------------------------------------------------------------------------
 
@@ -138,7 +146,16 @@ class MetronomeViewModel(
         if (custom != null && state.customSound == CustomSoundState.None) prepareStoredCustomSound(custom)
     }
 
-    /** Loads the imported sound named in the preferences; the Missing fallback and its message come with User Story 5. */
+    /**
+     * Loads the imported sound named in the preferences. When the app's copy cannot be loaded the entry reads the name
+     * greyed ([CustomSoundState.Unavailable]); if the custom sound was the selected one, Classic Wood (already in the
+     * engine) takes its place, is persisted and the user is told once (spec FR-024). The next launch finds Classic Wood
+     * selected, so the message is not repeated.
+     *
+     * An import started meanwhile owns the Custom entry: while it runs, the result is kept for it to restore on a
+     * cancellation or refusal instead of overwriting [CustomSoundState.Importing]; once it has finished, the result is
+     * dropped.
+     */
     private suspend fun prepareStoredCustomSound(custom: CustomSoundRef) {
         val result = withContext(prepareDispatcher) { audio.loadCustomSound(custom.path) }
         val loaded = when (result) {
@@ -146,8 +163,21 @@ class MetronomeViewModel(
             CustomSoundResult.NotWav, CustomSoundResult.Silent, CustomSoundResult.Missing -> false
         }
         val customState = if (loaded) CustomSoundState.Available(custom.displayName) else CustomSoundState.Unavailable(custom.displayName)
-        _uiState.update { it.copy(customSound = customState) }
-        if (loaded && _uiState.value.settings.sound is ClickSound.Custom) audio.selectSound(ClickSoundId.Custom)
+        when (_uiState.value.customSound) {
+            CustomSoundState.None -> _uiState.update { it.copy(customSound = customState) }
+            CustomSoundState.Importing -> customBeforeImport = customState
+            // An import finished first: the store's file and the entry are its own now.
+            is CustomSoundState.Available, is CustomSoundState.Unavailable -> return
+        }
+        if (_uiState.value.settings.sound !is ClickSound.Custom) return
+        if (loaded) {
+            audio.selectSound(ClickSoundId.Custom)
+        } else {
+            val fallback = ClickSound.BuiltIn(BuiltInClickSound.ClassicWood)
+            _uiState.update { it.copy(settings = it.settings.copy(sound = fallback)) }
+            persist { it.copy(sound = fallback) }
+            _messages.trySend(MetronomeMessage.CustomSoundMissing)
+        }
     }
 
     private suspend fun observeAudioEvents() {
@@ -323,14 +353,82 @@ class MetronomeViewModel(
         persist { it.copy(sound = sound) }
     }
 
-    /** Opens the platform's WAV picker for the Custom entry; preparing and selecting the picked file is User Story 5. */
+    /**
+     * Imports a WAV for the Custom entry (spec FR-022 to FR-025, contracts/click-sounds.md): the platform picker copies
+     * the file to the store's staging path, the store commits it as the app's copy, and the engine prepares it off the
+     * main thread. A loaded sound is selected, previewed while stopped and persisted with its name and path; a refusal
+     * keeps the previous sound, removes the refused copy and sends its message once. The entry reads
+     * [CustomSoundState.Importing] throughout, and a second import meanwhile is ignored.
+     */
     fun importCustomSound() {
-        if (!_uiState.value.loaded) return
-        viewModelScope.launch { pickCustomSound() }
+        val state = _uiState.value
+        if (!state.loaded || state.customSound == CustomSoundState.Importing) return
+        customBeforeImport = state.customSound
+        _uiState.update { it.copy(customSound = CustomSoundState.Importing) }
+        viewModelScope.launch { runImport() }
     }
 
-    private suspend fun pickCustomSound() {
-        picker.pickWav(store.stagingPath)
+    /** The filled Custom entry's Replace action: the same flow, the new file replacing the previous one (spec FR-022). */
+    fun replaceCustomSound() = importCustomSound()
+
+    /** One import, start to end; whatever did not end in a loaded sound restores the entry it found. */
+    private suspend fun runImport() {
+        var imported: String? = null
+        try {
+            imported = pickAndPrepareCustomSound()
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (failure: Exception) {
+            // The store's file system or the platform picker failed in a way the picker could not report.
+            _messages.trySend(MetronomeMessage.ImportFailed)
+        } finally {
+            if (imported == null) _uiState.update { it.copy(customSound = customBeforeImport) }
+        }
+        if (imported != null) useImportedSound(imported)
+    }
+
+    /** The picked name once the engine holds the sound, or null after a cancellation or a refusal (its message sent). */
+    private suspend fun pickAndPrepareCustomSound(): String? {
+        val name = when (val picked = picker.pickWav(store.stagingPath)) {
+            is SoundPickResult.Picked -> picked.displayName
+            SoundPickResult.Cancelled -> return null
+            // The picker removes a partial copy itself (contracts/click-sounds.md), so nothing was staged.
+            is SoundPickResult.Failed -> return refuse(messageOf(picked.reason))
+        }
+        if (!store.commit()) return refuse(MetronomeMessage.ImportFailed)
+        val refusal = when (withContext(prepareDispatcher) { audio.loadCustomSound(store.path) }) {
+            is CustomSoundResult.Loaded -> return name
+            CustomSoundResult.NotWav -> MetronomeMessage.NotWav
+            CustomSoundResult.Silent -> MetronomeMessage.Silent
+            CustomSoundResult.Missing -> MetronomeMessage.ImportFailed
+        }
+        // The engine keeps whatever it had loaded; the refused copy is not kept. The commit already replaced the app's
+        // previous copy (the contract's order), so a refused replace leaves the previous sound in the engine for this
+        // launch only.
+        store.delete()
+        return refuse(refusal)
+    }
+
+    private fun refuse(message: MetronomeMessage): String? {
+        _messages.trySend(message)
+        return null
+    }
+
+    private fun messageOf(failure: SoundPickFailure): MetronomeMessage = when (failure) {
+        SoundPickFailure.TooLarge -> MetronomeMessage.TooLarge
+        SoundPickFailure.Unreadable -> MetronomeMessage.ImportFailed
+    }
+
+    /** Selects the sound the engine just loaded: from its next tick while running, with one preview while stopped. */
+    private fun useImportedSound(name: String) {
+        val sound = ClickSound.Custom(name)
+        val ref = CustomSoundRef(name, store.path)
+        _uiState.update {
+            it.copy(customSound = CustomSoundState.Available(name), settings = it.settings.copy(sound = sound, customSound = ref))
+        }
+        audio.selectSound(ClickSoundId.Custom)
+        if (_uiState.value.playback == PlaybackState.Stopped) audio.previewClick(ClickLevel.Click)
+        persist { it.copy(sound = sound, customSound = ref) }
     }
 
     // --- Playback (spec FR-001, FR-027) -------------------------------------------------------------------------------
