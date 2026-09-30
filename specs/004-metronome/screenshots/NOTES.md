@@ -277,10 +277,13 @@ return.
 | Headphones out | Pixel 6 Pro | **Needs the user** | The shell cannot send `android.media.AUDIO_BECOMING_NOISY` (`SecurityException: Permission Denial: not allowed to send broadcast ... uid=2000`). The mapping is covered by the device tests (`BecomingNoisyReceiverTest`, `NativeAudioEngineTest`: delivery → `OutputRouteLost`) and `MetronomeViewModelTest.anOutputRouteLossStops` |
 | Bluetooth speaker | Pixel 6 Pro, iPhone 14 | **Needs the user** | No speaker to pair |
 | Leave the destination | Pixel 6 Pro | **Pass** | Click running, tap Tuner: 2 s later no service, no focus, no player; back on Metronome "Start metronome". (The Tuner raised the microphone prompt; answered "Only this time".) |
-| Leave the destination | iPhone 17 simulator | **Pass** | Click running, tap Tuner (the microphone prompt was answered "Don't Allow"), back on Metronome: "Start metronome" |
+| Leave the destination | iPhone 17 simulator | **Pass (simulator)** | Click running, tap Tuner (the microphone prompt was answered "Don't Allow"), back on Metronome: "Start metronome" |
 | Force quit | Pixel 6 Pro | **Pass** | Tempo raised to 121, click running (`piid:1511 state:started`), `am force-stop`: no pid, no player, no service, no focus. Relaunch: 121 BPM kept, "Start metronome". Tempo set back to 120 |
-| Force quit | iPhone 17 simulator | **Pass** | Click running, `simctl terminate`: the process and its `coreaudiod` assertion gone; relaunch "Start metronome" (settings persistence is shown on the Pixel row) |
+| Force quit | iPhone 17 simulator | **Pass (simulator)** | Click running, `simctl terminate`: the process and its `coreaudiod` assertion gone; relaunch "Start metronome" (settings persistence is shown on the Pixel row) |
 | Every row | iPhone 14 | **Needs the user** | The B12 Debug build is installed on the phone (bundle `audio.tembra.appP5QJJ5Y5V7`), but `devicectl device process launch` refused: "the device was not, or could not be, unlocked". Steps below |
+
+The Pixel screen-lock run happened before the notification permission was granted (the Notification Stop row, later
+in the same session), so it shows the click and the foreground service surviving the lock without the notification.
 
 Simulator note: pressing play takes runningboard `AudioRecording` and `MediaPlayback` assertions for the app
 (`9097-64356-20023`, `-20024` in a fresh process) and a stop does not release them (checked 8 s after the stop; in the
@@ -323,3 +326,96 @@ YouTube plays alone), a message sound (the click continues), headphones in (cont
 speaker (runs, light matches), leave the destination (stops), force quit (silence; relaunch keeps the settings, stopped).
 After a stop, check that no orange microphone dot is shown and that the app is suspended in the background (the
 simulator note above).
+
+## User Story 7 (batch B13, T134), 2026-09-30: layouts, input, semantics, the full capture set
+
+**Devices**: Pixel 6 Pro (Android 17, CP3A.260905.009, serial 19021FDEE001AH, debug APK from `:androidApp:assembleDebug`);
+iPhone 17 simulator and iPad Pro 13-inch (M5) simulator (both iOS 26.5, Debug build from `xcodebuild -scheme iosApp`,
+installed with `simctl install`). The Mac was unlocked throughout. The Pixel was driven with `adb shell input` on
+`uiautomator dump` bounds; the simulators with real mouse events (a small `CGEvent` tool) at the positions of the app's
+elements in the Simulator's accessibility tree (after a rotation that tree keeps its portrait frames, so the positions
+were turned by 90°), and the Files picker by screenshot position.
+
+**Bands**: compact is the Pixel in portrait (412 dp wide) and the iPhone 17 in portrait (402 pt). Landscape is the
+Pixel with `user_rotation 1` (891 × 411 dp window) and the iPhone 17 rotated with Device › Orientation › Landscape
+Left (874 × 402 pt). Expanded is the Pixel in landscape with `wm density 380` (1313 × 606 dp) and the iPad Pro in
+landscape (1376 × 1032 pt). iOS landscape files were turned upright with `sips -r -90`. Afterwards the Pixel's density,
+rotation (`user_rotation 0`, auto-rotate off as before) and font scale (1.0) were restored, the iPhone's text size set
+back to `medium` and both simulators turned back to portrait.
+
+### The set
+
+Each state was captured in each band on each platform as `<platform>-<band>-<state>.png`:
+
+| State | What it shows |
+|---|---|
+| `stopped`, `standard` | Launch state: 4/4, 1/4, Standard (A C C C), Classic Wood, 120 "Moderato (108-120)", play |
+| `downbeat`, `syncopated` | The style pill selected and the cells rewritten (A S S S; C A C A) |
+| `7-8` | Seven cells, 1/8 selected with the x/8 labels; they wrap (4 + 3 on the phones, 3 + 3 + 1 in the iPhone's landscape column, 4 + 3 on the iPad and the Pixel's expanded band) |
+| `6-8-labels` | 6/8: the subdivision labels read 1/8, 1/16, 1/32, 3let; A C C A C C |
+| `picker-open` | Compact and landscape: the sound menu open, Classic Wood checked. Expanded: the "Click timbre" tile grid (there is no menu there) |
+| `import-refused` | `notes.wav` picked: "That file isn't a WAV file Tembra can read." in the snackbar, the previous sound kept |
+| `custom-filled` | `silence-then-click.wav` imported and selected: the menu's Custom entry (compact, landscape) or the Custom tile (expanded) names it, with the check and the Replace button |
+| `tempo-40`, `tempo-240` | The ends: "Largo (40-60)" with "−" greyed and the empty ring; "Prestissimo (200-240)", "+" greyed, the full ring |
+| `running-beat1` | Running at 120 BPM with beat 1 lit (the `secondary` outline on the Accent cell's bar box) and the pause glyph. The capture loop checked the pixel at that outline and kept the first frame where it was lit |
+| `stopped-largefont` (compact only) | Android `font_scale 2.0`; iOS `content_size accessibility-extra-extra-extra-large` (the app relaunched to read it). `…-largefont-scrolled` shows the rest of the column |
+
+Counts: Android 12 states × 3 bands + 2 large-font = 38; iOS the same, 38. The compact files from User Stories 1 to 5
+were retaken in this set; that includes the two iOS User Story 1 captures noted as stale above, now taken with the Mac
+unlocked (rotated gradient, filled glyphs). B11's missing expanded Custom tile is `ios-expanded-custom-filled.png`
+and `android-expanded-custom-filled.png`.
+
+### Found and fixed while capturing
+
+- **Phone landscape shrank the dial until the readout broke.** On the Pixel the landscape pane is about 290 dp tall;
+  the contract's order (dial card, then the tap and play row) left the dial under 160 dp, so the pane scrolled the tap
+  and play row half out of view and the number shrank to "1". The pane now sizes the dial both ways and takes the
+  larger: the stacked order, or the dial card beside a 176 dp column holding tap over play (what both phones use).
+  Covered by `MetronomeScreenTest.aPhoneHeldSidewaysKeepsTheTransportInViewWithAReadableDial` (892 × 330 dp).
+- **"TIME SIGNAT…" at the largest font.** The section header kept the caption on the same line and cut the label.
+  It now wraps the caption under the label (Pixel, `font_scale 2.0`); the large-font test reads the section labels too.
+- **"ACCEN" in the iPhone's landscape column (7/8).** The cells wrapped into two rows of four even where only three
+  fit. They now wrap into as many balanced rows as the labels need, and a label steps its size down rather than lose
+  letters. Covered by `AccentCellsTest.aNarrowColumnWrapsIntoAsManyRowsAsTheLabelsNeed`.
+
+### Against the Stitch screens
+
+- **Tablet** (`metronome/tablet/screenshot.jpg` against `ios-expanded-*` and `android-expanded-*`): the settings
+  column a third of the width with the four cards in the design's order and the sound picker as the two-column "Click
+  timbre" grid (selected tile tinted with the `secondary` border, the Custom tile with a "+"); the dial card fills the
+  right column with its discs, the 420 dp-capped dial centred and the slider at its foot; the tap and play card under
+  it with the row centred. No right-hand panel. Matches.
+- **Phone landscape** (`metronome/phone-landscape/screenshot.jpg`): the rail, the narrow settings column with the
+  signatures in two rows of three and the sound pill last. Differs on purpose: the design puts the tap and play row
+  under a small dial card; on a real phone that leaves no room for the readout, so tap and play stand beside the dial
+  (see above).
+- **Phone** (`metronome/phone/`): unchanged from the earlier stories; the retaken compact set matches the notes above.
+
+### Quickstart §9 (pointer, keyboard, screen reader)
+
+- **Keyboard** (iPhone 17 simulator, Mac keyboard): Tab moves a visible `primary` ring through the screen and the
+  navigation bar. The reading order (signatures, subdivisions, cells, style pills, sound, "−", dial, "+", slider, tap,
+  play), the arrows ±1 and Page Up/Down ±10 on the dial and the slider, and Enter on a chip are asserted on the
+  simulator lane by `MetronomeScreenTest.tabFollowsTheReadingOrder`, `theFocusedSliderTakesTheArrowAndPageKeys`,
+  `enterSelectsTheFocusedChip` and `TempoDialTest.theFocusedDialTakesTheArrowAndPageKeys` /
+  `tabVisitsTheSteppersAroundTheDial`. The Pixel lane declares no keyboard mode, so these skip there.
+- **Pointer: needs the user.** Neither the Pixel (no pointer; `input mouse` does not hover) nor the simulators
+  (no hover) can show hover. Hover is asserted through injected interaction sources for the cell, pill, play button,
+  dial track, tap card, slider thumb, steppers and tiles, and the play button's tooltip ("Start metronome") in
+  `MetronomeScreenTest.thePlayButtonsTooltipIsItsDescription`. By hand: with a mouse (Android desktop mode or a
+  Bluetooth mouse on the Pixel), hover every chip, cell, pill, tile, stepper, the slider, the dial ring, tap and play;
+  the "−", "+" and play tooltips should appear; the wheel over the dial moves the tempo by one per notch.
+- **Screen readers: needs the user.** TalkBack and VoiceOver were not driven. The accessibility tree the Simulator
+  exposes reads "Beat 1, ACCENT", "Click sound, Classic Wood, Classic Wood", "Tap tempo, TAP TEMPO, Sync finger
+  rhythm", "Start metronome", "Decrease tempo" / "Increase tempo" and the dial as a slider. The drawn labels are read
+  after the descriptions (see B13 report, deferral). By hand: TalkBack on the Pixel and VoiceOver on the iPhone 14:
+  the dial should say "120 beats per minute, Moderato" and adjust by swipe up/down; a cell "Beat 3, Click"; play
+  "Start metronome" / "Stop metronome"; after two taps on Tap tempo the button announces "2 taps, … beats per minute".
+
+### Beat-light timing (spec SC-006): needs the user
+
+Not measured. It needs the audio and the screen recorded together on a wired route (a DAW on the phone's line-out
+with `adb shell screenrecord`, or one phone filming the other), which cannot be set up remotely. Steps: open
+Metronome at 120 BPM, press play, record 10 s of screen and audio together, then in the recording find five beats
+and measure from the frame where the cell's outline appears to the start of the click; each offset must be at most
+30 ms. Log the five values here.
