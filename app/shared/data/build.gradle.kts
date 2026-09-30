@@ -9,6 +9,10 @@ kotlin {
             implementation(project(":shared:core"))
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.androidx.datastore.preferences.core)
+            implementation(libs.okio)
+        }
+        commonTest.dependencies {
+            implementation(libs.okio.fakefilesystem)
         }
     }
 }
