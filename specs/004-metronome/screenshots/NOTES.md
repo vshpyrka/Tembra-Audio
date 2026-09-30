@@ -388,7 +388,11 @@ and `android-expanded-custom-filled.png`.
 - **Phone landscape** (`metronome/phone-landscape/screenshot.jpg`): the rail, the narrow settings column with the
   signatures in two rows of three and the sound pill last. Differs on purpose: the design puts the tap and play row
   under a small dial card; on a real phone that leaves no room for the readout, so tap and play stand beside the dial
-  (see above).
+  (see above). The marking under the number wraps onto two lines in landscape on both phones ("Moderato" /
+  "(108-120)", in every `android-landscape-*.png` and `ios-landscape-*.png`, e.g. `android-landscape-stopped.png`);
+  the design shows it on one line. It is whole, not clipped: the readout is kept between the steppers on the smaller
+  landscape dial, and the marking wraps rather than cuts (the same wrap shows on the phones at the largest font,
+  `android-compact-stopped-largefont-scrolled.png`).
 - **Phone** (`metronome/phone/`): unchanged from the earlier stories; the retaken compact set matches the notes above.
 
 ### Quickstart §9 (pointer, keyboard, screen reader)
@@ -405,17 +409,31 @@ and `android-expanded-custom-filled.png`.
   `MetronomeScreenTest.thePlayButtonsTooltipIsItsDescription`. By hand: with a mouse (Android desktop mode or a
   Bluetooth mouse on the Pixel), hover every chip, cell, pill, tile, stepper, the slider, the dial ring, tap and play;
   the "−", "+" and play tooltips should appear; the wheel over the dial moves the tempo by one per notch.
-- **Screen readers: needs the user.** TalkBack and VoiceOver were not driven. The accessibility tree the Simulator
-  exposes reads "Beat 1, ACCENT", "Click sound, Classic Wood, Classic Wood", "Tap tempo, TAP TEMPO, Sync finger
-  rhythm", "Start metronome", "Decrease tempo" / "Increase tempo" and the dial as a slider. The drawn labels are read
-  after the descriptions (see B13 report, deferral). By hand: TalkBack on the Pixel and VoiceOver on the iPhone 14:
+- **Screen readers: needs the user.** TalkBack and VoiceOver were not driven. The first build's accessibility tree
+  (the Simulator's, which VoiceOver reads) repeated the drawn labels: "Beat 1, ACCENT", "Click sound, Classic Wood,
+  Classic Wood", "Tap tempo, TAP TEMPO, Sync finger rhythm". Fixed in B13 fix round 1: the drawn labels are kept out
+  of the merged nodes, and the tree now reads "Beat 1" … "Beat 4" (the level is the state), "Click sound, Classic
+  Wood", "Tap tempo" (the caption is the state), "Start metronome", "Decrease tempo" / "Increase tempo", and the dial
+  and the slider as sliders; both announce "120 beats per minute, Moderato" (asserted in `MetronomeScreenTest`). By
+  hand: TalkBack on the Pixel and VoiceOver on the iPhone 14:
   the dial should say "120 beats per minute, Moderato" and adjust by swipe up/down; a cell "Beat 3, Click"; play
   "Start metronome" / "Stop metronome"; after two taps on Tap tempo the button announces "2 taps, … beats per minute".
 
 ### Beat-light timing (spec SC-006): needs the user
 
-Not measured. It needs the audio and the screen recorded together on a wired route (a DAW on the phone's line-out
-with `adb shell screenrecord`, or one phone filming the other), which cannot be set up remotely. Steps: open
-Metronome at 120 BPM, press play, record 10 s of screen and audio together, then in the recording find five beats
-and measure from the frame where the cell's outline appears to the start of the click; each offset must be at most
-30 ms. Log the five values here.
+Not measured. It needs the screen and the audio recorded against one clock on a wired route, which cannot be set up
+remotely.
+
+Setup (Pixel 6 Pro; repeat on the iPhone 14 with a Lightning to 3.5 mm adapter): a USB-C to 3.5 mm adapter from the
+Pixel into a line input of an audio interface or a laptop's line-in; a second phone filming the Pixel's screen in
+240 fps slow motion with its microphone next to a small speaker fed from the same line-out (or the Pixel's own
+speaker muted and the interface's monitor output), so the film carries both the picture and the click. At 240 fps one
+frame is 4.2 ms, well under the 30 ms limit; `adb shell screenrecord` is not used because it records at the display's
+variable rate without the audio.
+
+Steps: open Metronome, 4/4, Classic Wood, 120 BPM, and press play. Film 10 s. Open the film in Audacity (File ›
+Import › Audio for the waveform) and in a frame-stepping player (QuickTime Player with the arrow keys, or `ffmpeg -i
+film.mov -vf showinfo` for frame times). For five beats, note the time of the first frame in which the cell's
+`secondary` outline appears and the time of the click's onset in the waveform, and log each offset (light minus
+click) here. Each must be within ±30 ms (spec SC-006). A constant offset in one direction points at the output
+latency compensation (research R7); a spread points at the frame loop.
