@@ -19,6 +19,8 @@ public:
     bool lost = false;
     bool inputOpen = false;
     bool outputOpen = false;
+    int64_t latencyNanos = 0;
+    int reopenCount = 0;
 
     int32_t openInput(uint32_t preferredRate, InputCallback callback, void* context) override {
         requestedRate = preferredRate;
@@ -50,6 +52,12 @@ public:
 
     uint32_t sampleRate() const override { return reportedRate; }
     bool deviceLost() const override { return lost; }
+    int64_t outputLatencyNanos() const override { return latencyNanos; }
+
+    /** Simulates the platform reopening the output after a route change: same callback, same rate (research R1). */
+    void reopenOutput() {
+        if (renderCallback_ != nullptr) ++reopenCount;
+    }
 
     /** Delivers [frames] mono frames to the input callback, as a platform callback would. */
     void feedInput(const float* mono, uint32_t frames) {
