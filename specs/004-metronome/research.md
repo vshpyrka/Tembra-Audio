@@ -498,8 +498,9 @@ changing and no stability annotation was added.
 (`compose-performance`, stability reference; Kotlin 2.4.20, strong skipping, intrinsic remember and pausable composition on).
 Reports: `app/shared/ui/build/compose_compiler/tembra_shared:ui-{composables.txt,composables.csv,classes.txt}` and
 `android/main/tembra_shared:ui-module.json`. Every named restartable composable of the module is `restartable skippable`
-(84 of 84), including all 34 metronome and design-system composables of this feature (`MetronomeScreen`,
-`MetronomeScreenContent`, the three layouts, `LandscapePane`, `DialCard`, `TempoDialFor`, `TransportRow`,
+(85 of 85, measured again on the final tree after the final review's fix wave), including all 35 metronome and
+design-system composables of this feature (`MetronomeScreen`, `MetronomeScreenContent`, the three layouts,
+`LandscapePane`, `DialCard`, `TempoDialFor`, `TapTempoFor`, `TransportRow`,
 `MetronomeSettingsPanel`, `SoundPicker`, `SectionCard`, `SectionHeader` and every component in
 `metronome.components` and `designsystem`). The three non-restartable entries, `rememberFrameTick`, `rememberWidestChip`
 and `rememberGlowPulse`, return values and are not restart scopes by design. No metronome parameter is reported
