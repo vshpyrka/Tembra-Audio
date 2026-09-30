@@ -233,7 +233,7 @@ class MetronomeViewModelTest {
     }
 
     @Test
-    fun aRefusingHostStopsWithFocusDenied() = viewModelTest {
+    fun aRefusingHostStopsWithDeviceUnavailable() = viewModelTest {
         fakeHost.allow = false
         val viewModel = viewModel()
         val messages = collectMessages(viewModel)
@@ -242,6 +242,21 @@ class MetronomeViewModelTest {
         runCurrent()
         assertEquals(PlaybackState.Stopped, viewModel.uiState.value.playback)
         assertEquals(0, startMetronomeCount())
+        assertEquals(listOf(MetronomeMessage.DeviceUnavailable), messages)
+    }
+
+    /** Android requests focus inside `startMetronome()`: a denial there is another app holding the audio (review I3). */
+    @Test
+    fun aFocusDenialReleasesTheHostAndStopsWithFocusDenied() = viewModelTest {
+        val viewModel = viewModel()
+        val messages = collectMessages(viewModel)
+        show(viewModel)
+        audio.failNextStart = AudioResult.Error(AudioResult.FOCUS_DENIED)
+        viewModel.togglePlayback()
+        runCurrent()
+        assertEquals(PlaybackState.Stopped, viewModel.uiState.value.playback)
+        assertEquals(1, fakeHost.releaseCount)
+        assertFalse(fakeHost.alive)
         assertEquals(listOf(MetronomeMessage.FocusDenied), messages)
     }
 
