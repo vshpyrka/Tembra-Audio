@@ -8,39 +8,60 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 
 /**
- * Transient, duckable audio focus for reference tones (research R7): other apps lower their volume while a tone
- * sounds and get it back on [abandon]. Focus loss is reported as [AudioEvent.Interrupted], a regain as
- * [AudioEvent.InterruptionEnded]. Listening never requests focus.
+ * Audio focus around the engine's output (research R7; feature 004 R6): transient, duckable focus for reference tones
+ * and the preview click, full focus for the running metronome. A permanent or transient loss is reported as
+ * [AudioEvent.Interrupted] and a regain as [AudioEvent.InterruptionEnded]; a duckable loss is left to the system, which
+ * lowers the volume itself because neither request pauses when ducked. Listening never requests focus.
  */
 class AndroidAudioFocus(context: Context) {
     private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     private val _events = MutableSharedFlow<AudioEvent>(extraBufferCapacity = 16)
     val events: Flow<AudioEvent> = _events
 
-    private val listener = AudioManager.OnAudioFocusChangeListener { change ->
-        when (change) {
-            AudioManager.AUDIOFOCUS_LOSS,
-            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT,
-            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK,
-            -> _events.tryEmit(AudioEvent.Interrupted)
-            AudioManager.AUDIOFOCUS_GAIN -> _events.tryEmit(AudioEvent.InterruptionEnded)
-        }
-    }
+    private val listener = AudioManager.OnAudioFocusChangeListener { change -> onFocusChange(change) }
 
-    private val request: AudioFocusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
+    private val transientMayDuck = buildRequest(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
+    private val gain = buildRequest(AudioManager.AUDIOFOCUS_GAIN)
+
+    /** The request [abandon] releases: the last one asked for. */
+    @Volatile
+    private var current: AudioFocusRequest = transientMayDuck
+
+    private fun buildRequest(focusGain: Int): AudioFocusRequest = AudioFocusRequest.Builder(focusGain)
         .setAudioAttributes(
             AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_MEDIA)
                 .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                 .build(),
         )
+        .setWillPauseWhenDucked(false)
+        .setAcceptsDelayedFocusGain(false)
         .setOnAudioFocusChangeListener(listener)
         .build()
 
+    /** The focus listener's mapping; internal so device tests can inject a change without another app. */
+    internal fun onFocusChange(change: Int) {
+        when (change) {
+            AudioManager.AUDIOFOCUS_LOSS,
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT,
+            -> _events.tryEmit(AudioEvent.Interrupted)
+            AudioManager.AUDIOFOCUS_GAIN -> _events.tryEmit(AudioEvent.InterruptionEnded)
+            // AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK and any other value: the system ducks; nothing to report.
+            else -> Unit
+        }
+    }
+
     /** True when focus was granted. */
-    fun request(): Boolean = audioManager.requestAudioFocus(request) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+    fun request(type: FocusType = FocusType.TransientMayDuck): Boolean {
+        val request = when (type) {
+            FocusType.TransientMayDuck -> transientMayDuck
+            FocusType.Gain -> gain
+        }
+        current = request
+        return audioManager.requestAudioFocus(request) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+    }
 
     fun abandon() {
-        audioManager.abandonAudioFocusRequest(request)
+        audioManager.abandonAudioFocusRequest(current)
     }
 }
