@@ -30,12 +30,14 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.width
 import audio.tembra.core.metronome.AccentPattern
 import audio.tembra.core.metronome.BeatLevel
 import audio.tembra.ui.designsystem.approximately
 import audio.tembra.ui.designsystem.averageColorAt
 import audio.tembra.ui.designsystem.isCloserTo
 import audio.tembra.ui.designsystem.luminance
+import audio.tembra.ui.designsystem.textLayoutResult
 import audio.tembra.ui.metronome.components.AccentCell
 import audio.tembra.ui.metronome.components.AccentCells
 import audio.tembra.ui.metronome.components.MetronomeDefaults
@@ -217,6 +219,30 @@ class AccentCellsTest {
             val tops = (1..count).map { onNodeWithTag("metronome.cell.$it").getUnclippedBoundsInRoot().top }
             assertEquals(rows, tops.distinct().size, "$count cells at 363 dp: rows at $tops")
         }
+    }
+
+    /**
+     * A phone's landscape settings column (about 200 dp inside its card) fits three cells with a whole "ACCENT" label but
+     * not four: 7/8 takes three rows (3 + 3 + 1) rather than clipping its labels in rows of four.
+     */
+    @Test
+    fun aNarrowColumnWrapsIntoAsManyRowsAsTheLabelsNeed() = runComposeUiTest {
+        mainClock.autoAdvance = false
+        setContent {
+            TembraTheme {
+                Box(Modifier.width(200.dp)) {
+                    val pattern = AccentPattern(List(7) { if (it == 0) BeatLevel.Accent else BeatLevel.Click })
+                    AccentCells(pattern = pattern, running = false, currentBeat = -1, telemetry = ScriptedBeatTelemetry(), onCycle = {})
+                }
+            }
+        }
+        repeat(2) { mainClock.advanceTimeByFrame() }
+        val label = onNode(hasText("ACCENT") and hasAnyAncestor(hasTestTag("metronome.cell.1")), useUnmergedTree = true)
+        val layout = label.textLayoutResult()
+        assertTrue(!layout.multiParagraph.didExceedMaxLines && layout.size.width.toFloat() >= layout.multiParagraph.maxIntrinsicWidth - 0.5f, "ACCENT is clipped in a ${onNodeWithTag("metronome.cell.1").getUnclippedBoundsInRoot().width} cell")
+        val cell = onNodeWithTag("metronome.cell.1").getUnclippedBoundsInRoot()
+        val text = label.getUnclippedBoundsInRoot()
+        assertTrue(text.left >= cell.left && text.right <= cell.right, "ACCENT ($text) leaves its cell ($cell)")
     }
 
     @Test
