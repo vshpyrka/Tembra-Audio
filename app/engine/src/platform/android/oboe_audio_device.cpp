@@ -35,6 +35,7 @@ void OboeAudioDevice::onStreamClosedByPlatform(oboe::AudioStream* stream) {
         return;
     }
     sampleRate_.store(static_cast<uint32_t>(stream_->getSampleRate()));
+    measureLatencyLocked();  // the new route (e.g. Bluetooth) has its own latency (research R7)
 }
 
 oboe::Result OboeAudioDevice::openInputWithPreset(uint32_t preferredRate, oboe::InputPreset preset) {
@@ -131,13 +132,21 @@ void OboeAudioDevice::close() {
     render_ = nullptr;
 }
 
-int64_t OboeAudioDevice::outputLatencyNanos() const {
-    // Control thread only: calculateLatencyMillis() is not safe on the data callback before Android R (research R7).
+int64_t OboeAudioDevice::outputLatencyNanos() const { return latencyNanos_.load(std::memory_order_acquire); }
+
+void OboeAudioDevice::refreshOutputLatency() {
     std::lock_guard<std::mutex> lock(streamLock_);
-    if (!stream_ || stream_->getDirection() != oboe::Direction::Output) return 0;
+    measureLatencyLocked();
+}
+
+void OboeAudioDevice::measureLatencyLocked() {
+    // calculateLatencyMillis() is not safe on the data callback before Android R (research R7); never called there.
+    if (!stream_ || stream_->getDirection() != oboe::Direction::Output) {
+        latencyNanos_.store(0, std::memory_order_release);
+        return;
+    }
     const auto latency = stream_->calculateLatencyMillis();
-    if (!latency) return 0;
-    return static_cast<int64_t>(latency.value() * 1'000'000.0);
+    latencyNanos_.store(latency ? static_cast<int64_t>(latency.value() * 1'000'000.0) : 0, std::memory_order_release);
 }
 
 uint32_t OboeAudioDevice::sampleRate() const { return sampleRate_.load(); }

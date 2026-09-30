@@ -103,6 +103,12 @@ private:
         uint32_t releaseLength = 1;
     };
 
+    /** The click sets the two voices were playing at the end of a block (read as one record, never torn). */
+    struct VoiceSets {
+        const ClickSet* voice = nullptr;
+        const ClickSet* releasing = nullptr;
+    };
+
     struct AnchorRequest {
         uint64_t sequence = 0;
         int64_t frame = 0;
@@ -140,7 +146,7 @@ private:
     std::atomic<bool> active_{false};
     std::atomic<bool> running_{false};
     std::atomic<uint64_t> blocks_{0};
-    std::atomic<const ClickSet*> voiceSets_[2] = {{nullptr}, {nullptr}};
+    Seqlock<VoiceSets> voiceSets_;
     Seqlock<MetronomeTick> tick_;
 
     // Callback-owned scheduler state (data-model.md §6).

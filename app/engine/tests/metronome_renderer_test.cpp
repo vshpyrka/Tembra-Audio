@@ -144,7 +144,8 @@ TEST_CASE("ten minutes of ticks land on round(i × framesPerTick) without drift"
         uint32_t rate;
         double bpm;
     };
-    for (const Case c : {Case{44100, 40.0}, Case{44100, 120.0}, Case{44100, 240.0}, Case{48000, 97.3}}) {
+    for (const Case c : {Case{48000, 40.0}, Case{48000, 120.0}, Case{48000, 240.0}, Case{44100, 40.0}, Case{44100, 120.0},
+                         Case{44100, 240.0}, Case{48000, 97.3}}) {
         for (uint32_t ticksPerBeat : {1u, 2u, 3u, 4u}) {
             INFO("rate " << c.rate << " bpm " << c.bpm << " ticks per beat " << ticksPerBeat);
             const tembra::ClickSet set = impulseSet(c.rate);
@@ -212,6 +213,86 @@ TEST_CASE("a tempo change spaces the next tick and never moves the one already r
     REQUIRE(driver.onsetsBetween(24001, 72000).empty());
     REQUIRE(driver.onsetAt(72000) != nullptr);
     REQUIRE(driver.onsetAt(120000) != nullptr);
+}
+
+TEST_CASE("a large tempo increase emits one tick at the block start, not a burst", "[metronome][renderer]") {
+    const tembra::ClickSet set = impulseSet(48000);
+    tembra::MetronomeRenderer renderer(48000);
+    renderer.setGrid(patternGrid(40.0, 4, 4));  // 18 000 frames per tick
+    renderer.setSet(&set);
+    renderer.start();
+    Driver driver(renderer);
+    driver.renderFixed(256, 76800);  // ticks 0, 18 000, 36 000, 54 000, 72 000 (indices 0–4); 4 800 frames later
+    REQUIRE(driver.onsets().size() == 5u);
+    REQUIRE(renderer.lastTick().tickIndex == 5u);
+    renderer.setGrid(patternGrid(240.0, 4, 4));  // 3 000 frames per tick: the next tick "was due" at 75 000
+    driver.render(256);
+    REQUIRE(driver.onsets().size() == 6u);  // exactly one tick in this block
+    REQUIRE(driver.onsetAt(76800) != nullptr);
+    const tembra::MetronomeTick tick = renderer.lastTick();
+    REQUIRE(tick.tickIndex == 6u);  // advanced by one, not by the ticks the gap could hold
+    REQUIRE(tick.beatIndex == 1u);  // index 5: beat 2's first subdivision
+    REQUIRE(tick.tickFrame == 76800);
+    driver.renderFixed(256, 90000);
+    REQUIRE(driver.onsetsBetween(76801, 79800).empty());
+    REQUIRE(driver.onsetAt(79800) != nullptr);
+    REQUIRE(driver.onsetAt(82800) != nullptr);
+    REQUIRE(driver.onsetAt(85800) != nullptr);
+    REQUIRE(driver.onsetAt(85800)->amp == kClickAmp);  // index 8: beat 3, so the bar stayed in step
+}
+
+TEST_CASE("a ticks-per-beat change whose boundary has passed lands on the block start", "[metronome][renderer]") {
+    const tembra::ClickSet set = impulseSet(48000);
+    tembra::MetronomeRenderer renderer(48000);
+    renderer.setGrid(patternGrid(40.0, 1, 4));  // 72 000 frames per beat
+    renderer.setSet(&set);
+    renderer.start();
+    Driver driver(renderer);
+    driver.renderFixed(1024, 30720);
+    renderer.setGrid(patternGrid(240.0, 2, 4));  // the next beat boundary at the new tempo was at 12 000
+    driver.render(1024);
+    REQUIRE(driver.onsets().size() == 2u);
+    REQUIRE(driver.onsetAt(30720) != nullptr);
+    REQUIRE(driver.onsetAt(30720)->amp == kClickAmp);  // beat 2 kept
+    REQUIRE(renderer.lastTick().tickIndex == 2u);
+}
+
+TEST_CASE("an anchor in the past moves the next tick to the block start without a burst", "[metronome][renderer]") {
+    const tembra::ClickSet set = impulseSet(48000);
+    tembra::MetronomeRenderer renderer(48000);
+    renderer.setGrid(patternGrid(240.0, 4, 4));
+    renderer.setSet(&set);
+    renderer.start();
+    Driver driver(renderer);
+    driver.render(1024);
+    renderer.anchor(-10'000'000, 0.0);  // far in the past: a naive catch-up would emit thousands of ticks
+    driver.render(1024);
+    REQUIRE(driver.onsets().size() == 2u);
+    REQUIRE(driver.onsetAt(1024) != nullptr);
+    REQUIRE(renderer.lastTick().tickIndex == 2u);
+}
+
+TEST_CASE("a set left releasing on a reload stays referenced until its release ends", "[metronome][renderer]") {
+    const tembra::ClickSet first = constantSet(48000, 2.0, 0.5f);
+    const tembra::ClickSet second = constantSet(48000, 2.0, 0.25f);
+    tembra::MetronomeRenderer renderer(48000);
+    renderer.setGrid(patternGrid(40.0, 1, 4));
+    renderer.setSet(&first);
+    renderer.start();
+    std::vector<float> buffer(2 * 256);
+    for (int i = 0; i < 80; ++i) renderer.render(buffer.data(), 256);  // 20 480 frames into the first voice
+    REQUIRE(renderer.references(&first));
+    // Reload and speed up in one step: the next tick lands at once, so the first voice cannot ramp on schedule and
+    // is handed to the releasing voice while the new set starts.
+    renderer.setSet(&second);
+    renderer.setGrid(patternGrid(240.0, 1, 4));
+    renderer.render(buffer.data(), 64);
+    REQUIRE(renderer.references(&second));
+    REQUIRE(renderer.references(&first));  // still sounding in the releasing voice: must not be freed
+    REQUIRE(buffer[0] > 0.25f);             // both voices at frame 0
+    for (int i = 0; i < 4; ++i) renderer.render(buffer.data(), 64);  // past the 3 ms release
+    REQUIRE_FALSE(renderer.references(&first));
+    REQUIRE(renderer.references(&second));
 }
 
 TEST_CASE("more beats per bar restart the bar at the next beat boundary", "[metronome][renderer]") {
