@@ -1,5 +1,8 @@
 package audio.tembra.engine
 
+import audio.tembra.core.metronome.BeatLevel
+import audio.tembra.core.metronome.Tempo
+import audio.tembra.core.metronome.TickGrid
 import audio.tembra.core.version.SemanticVersion
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -12,7 +15,10 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-/** The test double every Kotlin tuner test programs against (contracts/tuner-audio-kotlin.md). */
+/**
+ * The test double every Kotlin tuner and metronome test programs against (contracts/tuner-audio-kotlin.md,
+ * contracts/metronome-audio-kotlin.md).
+ */
 @OptIn(ExperimentalCoroutinesApi::class)
 class FakeAudioEngineTest {
 
@@ -142,5 +148,109 @@ class FakeAudioEngineTest {
         runCurrent()
         engine.emit(AudioEvent.Interrupted)
         assertEquals(AudioEvent.Interrupted, received.await())
+    }
+
+    @Test
+    fun setGridAndSelectSoundAreRecorded() {
+        val engine = FakeAudioEngine()
+        val levels = listOf(ClickLevel.Accent, ClickLevel.Click, ClickLevel.Click, ClickLevel.Click, ClickLevel.Sub)
+        assertEquals(AudioResult.Ok, engine.setGrid(MetronomeGrid(Tempo(120), 4, levels)))
+        assertEquals(AudioResult.Ok, engine.selectSound(ClickSoundId.Rim808))
+        assertEquals(listOf("setGrid(bpm=120, ticks=4, levels=ACCCS)", "selectSound(Rim808)"), engine.calls)
+    }
+
+    @Test
+    fun loadCustomSoundReturnsTheScriptedResultAndRecordsThePath() {
+        val engine = FakeAudioEngine()
+        assertTrue(engine.loadCustomSound("/x.wav") is CustomSoundResult.Loaded)
+        engine.customSoundResult = CustomSoundResult.Silent
+        assertEquals(CustomSoundResult.Silent, engine.loadCustomSound("/y.wav"))
+        engine.unloadCustomSound()
+        assertEquals(listOf("loadCustomSound(/x.wav)", "loadCustomSound(/y.wav)", "unloadCustomSound"), engine.calls)
+    }
+
+    @Test
+    fun theMetronomeFollowsTheCalls() {
+        val engine = FakeAudioEngine()
+        assertEquals(AudioResult.Ok, engine.startMetronome())
+        assertEquals(AudioState.Metronome, engine.audioState)
+        engine.stopMetronome()
+        assertEquals(AudioState.Idle, engine.audioState)
+        assertEquals(listOf("startMetronome", "stopMetronome"), engine.calls)
+    }
+
+    @Test
+    fun aScriptedFailureAppliesToTheMetronomeStart() {
+        val engine = FakeAudioEngine()
+        engine.failNextStart = AudioResult.Error(-2)
+        assertEquals(AudioResult.Error(-2), engine.startMetronome())
+        assertEquals(AudioState.Idle, engine.audioState)
+        assertNull(engine.failNextStart)
+        assertEquals(AudioResult.Ok, engine.startMetronome())
+        assertEquals(AudioState.Metronome, engine.audioState)
+    }
+
+    @Test
+    fun previewClickIsRecordedAndSoundsAsATone() {
+        val engine = FakeAudioEngine()
+        assertEquals(AudioResult.Ok, engine.previewClick())
+        assertEquals(listOf("previewClick(Click)"), engine.calls)
+        assertEquals(AudioState.Tone, engine.audioState)
+    }
+
+    @Test
+    fun readTickCopiesTheScriptedTick() {
+        val engine = FakeAudioEngine()
+        engine.nextTick.apply {
+            tickIndex = 7L
+            beatIndex = 2
+            level = ClickLevel.Accent
+            audibleInNanos = -3_000_000L
+            beatPeriodNanos = 500_000_000L
+            running = true
+            sampleRate = 48000
+        }
+        val snapshot = TickSnapshot()
+        engine.readTick(snapshot)
+        assertEquals(7L, snapshot.tickIndex)
+        assertEquals(2, snapshot.beatIndex)
+        assertEquals(ClickLevel.Accent, snapshot.level)
+        assertEquals(-3_000_000L, snapshot.audibleInNanos)
+        assertEquals(500_000_000L, snapshot.beatPeriodNanos)
+        assertTrue(snapshot.running)
+        assertEquals(48000, snapshot.sampleRate)
+    }
+
+    @Test
+    fun reportedOutputLatencyIsRecorded() {
+        val engine = FakeAudioEngine()
+        engine.reportOutputLatencyNanos(5_000_000)
+        assertEquals(listOf("reportOutputLatencyNanos(5000000)"), engine.calls)
+    }
+
+    @Test
+    fun anOutputRouteLossReachesASubscriber() = runTest {
+        val engine = FakeAudioEngine()
+        val received = async { engine.events.first() }
+        runCurrent()
+        engine.emit(AudioEvent.OutputRouteLost)
+        assertEquals(AudioEvent.OutputRouteLost, received.await())
+    }
+
+    @Test
+    fun aGridMapsTheDomainLevels() {
+        val grid = MetronomeGrid.from(
+            TickGrid(
+                2,
+                listOf(
+                    BeatLevel.Accent,
+                    BeatLevel.Sub,
+                    BeatLevel.Click,
+                    BeatLevel.Sub,
+                ),
+            ),
+            Tempo(96),
+        )
+        assertEquals(MetronomeGrid(Tempo(96), 2, listOf(ClickLevel.Accent, ClickLevel.Sub, ClickLevel.Click, ClickLevel.Sub)), grid)
     }
 }

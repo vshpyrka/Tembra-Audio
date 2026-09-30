@@ -1,12 +1,10 @@
 package audio.tembra.engine
 
-import kotlinx.coroutines.flow.Flow
-
 /**
  * The seam the tuner feature programs against (research R2, contracts/tuner-audio-kotlin.md). Every call runs off
  * the audio thread; the engine enforces that listening and a tone never overlap (spec FR-006).
  */
-interface TunerAudio {
+interface TunerAudio : AudioStatus {
     fun startListening(config: TunerAnalysisConfig = TunerAnalysisConfig()): AudioResult
 
     /** Debug tooling (research R16): a generated tone in place of the microphone; same rules and state as [startListening]. */
@@ -32,15 +30,4 @@ interface TunerAudio {
     fun unloadSample(handle: SampleHandle)
 
     fun stopTone()
-
-    /** Idle, Listening or Tone, read from the engine. */
-    val audioState: AudioState
-
-    /**
-     * Platform interruptions and route changes (research R7). One collector is expected (the tuner ViewModel) for as
-     * long as audio can be running. The flow has no replay and no `.value`: an event emitted while nothing collects
-     * is dropped, which is safe because a cleared ViewModel has already stopped every stream. A feature that must
-     * see every interruption should move this to a buffered `Channel` exposed as `receiveAsFlow()`.
-     */
-    val events: Flow<AudioEvent>
 }
