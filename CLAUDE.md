@@ -15,7 +15,7 @@ Commands (run from `app/`, Gradle wrapper 9.7.0; prerequisites in `app/README.md
 - Test lanes: `./gradlew checkAndroidHost` (JVM), `./gradlew checkIos` (simulator), `./gradlew checkAndroidDevice` (connected device), `./gradlew engineHostTest` (C++ Catch2). Compose UI tests live in the `uiTest` source set and run only on the simulator and the device.
 - Screenshots: `android screen capture --output <file>`; `xcrun simctl io "<device>" screenshot <file>`
 - Zero compiler warnings is a gate; run with `--warning-mode all`.
-- Add a Material Symbols glyph: `tools/fetch-material-symbols.sh <glyph> [<glyph> ...]` (pinned commit, normalised for the Compose resource loader), then add a `TembraIcon` value.
+- Add a Material Symbols glyph: `tools/fetch-material-symbols.sh [--fill] <glyph> [<glyph> ...]` (pinned commit, normalised for the Compose resource loader; `--fill` fetches the filled variant as `ic_<glyph>_fill_24.xml`), then add a `TembraIcon` value.
 
 ## Workflow: spec-kit drives all feature work
 
