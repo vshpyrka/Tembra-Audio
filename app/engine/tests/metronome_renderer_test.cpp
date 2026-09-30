@@ -487,3 +487,29 @@ TEST_CASE("preview plays one voice at the requested level without ticking", "[me
     REQUIRE(driver.onsets().size() == 1);
     REQUIRE(renderer.lastTick().tickIndex == 0u);
 }
+
+// Pins the assumption behind startVoice (final review M3): a voice moved into the releasing slot while the previous
+// releasing voice still sounds cuts that older voice at once. The shipped grids never reach that, because the shortest
+// tick spacing they allow (240 BPM × 4 ticks per beat = 62.5 ms) exceeds the 3 ms pre-tick ramp plus the 5 ms stop
+// release. A feature that widens the grid (transport, anchor bursts) must keep this true or chain the releasing voices.
+TEST_CASE("the shortest shipped tick spacing exceeds the pre-tick ramp plus the stop release", "[metronome][renderer]") {
+    tembra_metronome_grid fastest{};
+    fastest.bpm = 240.0;
+    fastest.ticks_per_beat = 4;
+    fastest.ticks_per_bar = 4;
+    REQUIRE(tembra::MetronomeGrid::validate(fastest));
+    tembra_metronome_grid faster = fastest;
+    faster.bpm = 240.5;
+    REQUIRE_FALSE(tembra::MetronomeGrid::validate(faster));
+    faster = fastest;
+    faster.ticks_per_beat = 5;
+    faster.ticks_per_bar = 5;
+    REQUIRE_FALSE(tembra::MetronomeGrid::validate(faster));
+
+    const tembra::MetronomeGrid grid = tembra::MetronomeGrid::from(fastest);
+    for (const uint32_t rate : {44100u, 48000u}) {
+        const double spacingSeconds = grid.framesPerTick(rate) / static_cast<double>(rate);
+        CHECK(std::abs(spacingSeconds - 0.0625) < 1e-12);
+        REQUIRE_FALSE(spacingSeconds <= tembra::MetronomeRenderer::kPreTickRampSeconds + tembra::MetronomeRenderer::kStopReleaseSeconds);
+    }
+}
