@@ -704,3 +704,43 @@ simulator, all on the B14 build.
 - §8: Pixel landscape shows the settings column beside the dial card with tap over play (the "beside" arrangement);
   the iPad shows the Wide form in portrait too, so the quickstart now says "portrait or landscape".
 - §9: keyboard order proven by the three Tab-order tests; hover and the screen-reader runs remain with the user.
+
+## Follow-ups after the final review, 2026-09-30
+
+The final whole-branch review found four Important issues, fixed in 98d3233..3350e61 (iOS latency kept on a refresh,
+a preview's stream closed on both platforms, a focus denial shown as the focus message, iOS route loss for any output
+that is not the built-in speaker or receiver). It left these as follow-ups:
+
+- Debounce persistence: every tap and every dial or slider value writes DataStore at once (`MetronomeViewModel.persist`);
+  conflate or delay the write so only the settled value reaches disk.
+- A custom copy that vanishes before a rate change makes the engine fall back to Classic Wood silently (`engine_core.cpp`,
+  reopening at a new rate) while Kotlin still shows Custom until the next `screenVisible(true)`; surface it through
+  `selectSound` returning `ERR_STATE` or a small ABI read of the selected sound.
+- `MetronomeRenderer::startVoice` overwrites a still-releasing second voice; unreachable with the shipped grids (pinned by
+  the Catch2 check from 8045ab9); chain voices if transport adds faster grids or tick bursts.
+- The iOS timing and preview device tests never execute their measurement in the bare simulator process (no output
+  unit): run `checkIos` against the iPhone 14, or an XCTest host with an output unit, before a release and record the
+  numbers beside the Pixel's.
+- `PlaybackState.Starting` is set and cleared inside one synchronous call, so its policy rows guard re-entrancy only;
+  document that or keep the state policy-internal.
+- `MetronomeAudio.readTick` is main-thread-only because each actual reuses one scratch buffer; pass a per-caller scratch
+  before the transport feature adds a second reader.
+- Decoding a 64 MB 8-bit multichannel WAV can transiently need several times the file size (float conversion before
+  the downmix): lower the cap or decode in a streaming pass.
+- `loadCustomSound` decodes under the engine's command lock, so a slider drag or the poll's latency refresh can block
+  for about a second during an import: decode outside the lock.
+- `IosAudioSession.activateForPlayback()`'s result is ignored by the metronome start (the engine reports its own error
+  when the unit cannot open).
+- Pre-existing and outside this feature: Oboe `openInput` closes the device without clearing `EngineCore::outputOpen_`
+  (feature 003); the navigation bar labels break mid-word at the largest font scale (feature 002);
+  `:androidApp:lintDebug` fails on `themes.xml:7` NewApi from feature 001.
+
+### Still needs the user
+
+- iPhone 14 (the final build is installed; the phone was locked when the launch was attempted): every User Story 6 row,
+  the preview release path (no orange microphone dot after a stop; another app's audio resumes after auditioning a
+  click), and the iOS device-lane measurements above.
+- An incoming call (a real call, or the emulator's console: the emulator attached over adb alone exposes no console, so
+  `emu gsm call` does nothing there), wired and USB-C headphones, Bluetooth, TalkBack and VoiceOver (including whether
+  VoiceOver still speaks "120", "BPM" and the marking as separate stops), hover with a pointer, the SC-006 beat-light
+  timing recording, and the listening checks (click quality and levels, onset alignment of an imported WAV).
