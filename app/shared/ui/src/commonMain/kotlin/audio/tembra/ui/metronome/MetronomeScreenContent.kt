@@ -74,7 +74,13 @@ private fun StackedMetronome(state: MetronomeUiState, callbacks: MetronomeCallba
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(spacing.md),
         ) {
-            BeatCellsCard(pattern = state.settings.pattern, running = state.running, telemetry = telemetry, onCycle = callbacks.onCycleBeat)
+            BeatCellsCard(
+                pattern = state.settings.pattern,
+                running = state.running,
+                currentBeat = state.currentBeat,
+                telemetry = telemetry,
+                onCycle = callbacks.onCycleBeat,
+            )
             DialCard(
                 tempo = state.settings.tempo,
                 marking = state.marking,
@@ -97,7 +103,7 @@ private fun StackedMetronome(state: MetronomeUiState, callbacks: MetronomeCallba
 
 /** The section card of the beat cells: `surfaceContainerLow`, 12 dp corners, 8 dp padding. */
 @Composable
-private fun BeatCellsCard(pattern: AccentPattern, running: Boolean, telemetry: BeatTelemetry, onCycle: (Int) -> Unit) {
+private fun BeatCellsCard(pattern: AccentPattern, running: Boolean, currentBeat: Int, telemetry: BeatTelemetry, onCycle: (Int) -> Unit) {
     val spacing = TembraTheme.spacing
     Box(
         modifier = Modifier
@@ -105,7 +111,7 @@ private fun BeatCellsCard(pattern: AccentPattern, running: Boolean, telemetry: B
             .background(TembraTheme.colors.surfaceContainerLow, RoundedCornerShape(TembraShapes.medium))
             .padding(spacing.sm),
     ) {
-        AccentCells(pattern = pattern, running = running, telemetry = telemetry, onCycle = onCycle)
+        AccentCells(pattern = pattern, running = running, currentBeat = currentBeat, telemetry = telemetry, onCycle = onCycle)
     }
 }
 

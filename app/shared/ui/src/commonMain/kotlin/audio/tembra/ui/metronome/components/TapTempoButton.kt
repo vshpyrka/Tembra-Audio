@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -39,7 +40,7 @@ import audio.tembra.ui.theme.TembraTheme
 import kotlinx.coroutines.launch
 
 /**
- * The tap-tempo card (research R9, R10): 64 dp tall, `surfaceContainerHigh` (pressed `surfaceContainerHighest`), the
+ * The tap-tempo card (research R9, R10): 64 dp tall, `surfaceContainerHigh` (hovered or pressed `surfaceContainerHighest`, focus ring in `primary`), the
  * `touch_app` glyph and "TAP TEMPO" in `primary` over [caption]. Each tap reports the frame time of the frame it lands
  * in, from a user-event coroutine (`compose-state-and-effects`). The per-tap flash arrives with User Story 3.
  */
@@ -55,6 +56,7 @@ internal fun TapTempoButton(
     val spacing = TembraTheme.spacing
     val source = interactionSource ?: remember { MutableInteractionSource() }
     val pressed by source.collectIsPressedAsState()
+    val hovered by source.collectIsHoveredAsState()
     val focused by source.collectIsFocusedAsState()
     val scope = rememberCoroutineScope()
     val currentOnTap by rememberUpdatedState(onTap)
@@ -66,7 +68,7 @@ internal fun TapTempoButton(
             .testTag(testTag)
             .height(spacing.tapTempoHeight)
             .clip(RoundedCornerShape(TembraShapes.medium))
-            .background(if (pressed) colors.surfaceContainerHighest else colors.surfaceContainerHigh)
+            .background(if (pressed || hovered) colors.surfaceContainerHighest else colors.surfaceContainerHigh)
             .drawWithContent {
                 drawContent()
                 if (focused) drawFocusRing(ringColor, ring.toPx(), CornerRadius(TembraShapes.medium.toPx()))

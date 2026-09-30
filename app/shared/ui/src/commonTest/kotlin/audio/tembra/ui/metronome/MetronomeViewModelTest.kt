@@ -7,6 +7,7 @@ import audio.tembra.data.metronome.FakeCustomClickSoundStore
 import audio.tembra.data.metronome.FakeMetronomePreferences
 import audio.tembra.data.metronome.MetronomePreferences
 import audio.tembra.data.metronome.MetronomePreferencesSnapshot
+import audio.tembra.engine.AudioEvent
 import audio.tembra.engine.AudioResult
 import audio.tembra.engine.AudioState
 import audio.tembra.engine.FakeAudioEngine
@@ -323,5 +324,51 @@ class MetronomeViewModelTest {
         assertEquals("stopMetronome", audio.calls.last())
         assertEquals(1, fakeHost.releaseCount)
         assertFalse(fakeHost.alive)
+    }
+
+    @Test
+    fun aStreamTheEngineLostStopsThePlayback() = viewModelTest {
+        val viewModel = viewModel()
+        show(viewModel)
+        audio.nextTick.running = true
+        viewModel.togglePlayback()
+        // The engine can stay in the Metronome state after a failed reopen: the tick's own flag reports the loss.
+        audio.nextTick.running = false
+        advanceTimeBy(150)
+        runCurrent()
+        assertEquals(PlaybackState.Stopped, viewModel.uiState.value.playback)
+        assertEquals("stopMetronome", audio.calls.last())
+        assertEquals(1, fakeHost.releaseCount)
+        assertEquals(1, startMetronomeCount())
+    }
+
+    @Test
+    fun anInterruptionStopsAndItsEndDoesNotRestart() = viewModelTest {
+        val viewModel = viewModel()
+        show(viewModel)
+        audio.nextTick.running = true
+        viewModel.togglePlayback()
+        audio.emit(AudioEvent.Interrupted)
+        runCurrent()
+        assertEquals(PlaybackState.Stopped, viewModel.uiState.value.playback)
+        assertEquals("stopMetronome", audio.calls.last())
+        assertEquals(1, fakeHost.releaseCount)
+        audio.emit(AudioEvent.InterruptionEnded)
+        runCurrent()
+        assertEquals(PlaybackState.Stopped, viewModel.uiState.value.playback)
+        assertEquals(1, startMetronomeCount())
+    }
+
+    @Test
+    fun aStopRequestFromTheHostStops() = viewModelTest {
+        val viewModel = viewModel()
+        show(viewModel)
+        audio.nextTick.running = true
+        viewModel.togglePlayback()
+        fakeHost.requestStop()
+        runCurrent()
+        assertEquals(PlaybackState.Stopped, viewModel.uiState.value.playback)
+        assertEquals("stopMetronome", audio.calls.last())
+        assertEquals(1, fakeHost.releaseCount)
     }
 }

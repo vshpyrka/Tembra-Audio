@@ -18,7 +18,11 @@ class IconAssetsTest {
     private val metronomeGlyphs = listOf(
         "ic_remove_24.xml", "ic_add_24.xml", "ic_touch_app_24.xml", "ic_music_note_24.xml", "ic_graphic_eq_24.xml",
         "ic_radio_button_checked_24.xml", "ic_notifications_24.xml", "ic_sensors_24.xml", "ic_tune_24.xml", "ic_check_24.xml",
+        "ic_play_arrow_fill_24.xml", "ic_pause_fill_24.xml",
     )
+
+    /** The filled variants (FILL 1) the play button uses, fetched with `--fill`. */
+    private val filledGlyphs = listOf("ic_play_arrow_fill_24.xml", "ic_pause_fill_24.xml")
     private val materialGlyphs = (
         listOf(
             "ic_home_24.xml", "ic_graphic_eq_24.xml", "ic_music_note_24.xml",
@@ -55,6 +59,16 @@ class IconAssetsTest {
             val header = File(drawable, name).readText().lineSequence().first { it.trimStart().startsWith("<!--") }
             assertTrue(header.startsWith("<!-- Material Symbols Outlined"), "$name header is not the Material Symbols header")
             assertTrue(header.contains(PINNED_COMMIT), "$name header does not name commit $PINNED_COMMIT")
+        }
+    }
+
+    @Test
+    fun filledGlyphsSayFilledAndDifferFromTheOutlinedOnes() {
+        for (name in filledGlyphs) {
+            val text = File(drawable, name).readText()
+            assertTrue(text.lineSequence().first().contains("(filled)"), "$name header does not say it is the filled variant")
+            val outlined = File(drawable, name.replace("_fill_24", "_24")).readText()
+            assertFalse(bodyWithoutHeader(text) == bodyWithoutHeader(outlined), "$name has the outlined glyph's path")
         }
     }
 

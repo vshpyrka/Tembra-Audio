@@ -18,8 +18,10 @@ import audio.tembra.ui.resources.ic_mic_off_24
 import audio.tembra.ui.resources.ic_music_note_24
 import audio.tembra.ui.resources.ic_notifications_24
 import audio.tembra.ui.resources.ic_pause_24
+import audio.tembra.ui.resources.ic_pause_fill_24
 import audio.tembra.ui.resources.ic_person_24
 import audio.tembra.ui.resources.ic_play_arrow_24
+import audio.tembra.ui.resources.ic_play_arrow_fill_24
 import audio.tembra.ui.resources.ic_radio_button_checked_24
 import audio.tembra.ui.resources.ic_remove_24
 import audio.tembra.ui.resources.ic_sensors_24
@@ -66,4 +68,7 @@ enum class TembraIcon(internal val resource: DrawableResource) {
     Sensors(Res.drawable.ic_sensors_24),
     Tune(Res.drawable.ic_tune_24),
     Check(Res.drawable.ic_check_24),
+    // Filled variants (FILL 1) for the metronome's play button, as the design draws them (`tools/fetch-material-symbols.sh --fill`).
+    PlayArrowFilled(Res.drawable.ic_play_arrow_fill_24),
+    PauseFilled(Res.drawable.ic_pause_fill_24),
 }

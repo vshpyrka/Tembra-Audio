@@ -1,18 +1,29 @@
 #!/usr/bin/env bash
-# Downloads Material Symbols Outlined glyphs (24 dp, weight 400, unfilled) from google/material-design-icons at a
+# Downloads Material Symbols Outlined glyphs (24 dp, weight 400, unfilled unless --fill) from google/material-design-icons at a
 # pinned commit and normalises them for the Compose Multiplatform resource loader, which accepts only literal
 # colours (specs/002-adaptive-navigation-shell/research.md R6). The only sanctioned way to add a glyph.
 #
-# Usage: tools/fetch-material-symbols.sh <glyph> [<glyph> ...]
-# Output: shared/ui/src/commonMain/composeResources/drawable/ic_<glyph>_24.xml (idempotent: re-running overwrites identically)
+# Usage: tools/fetch-material-symbols.sh [--fill] <glyph> [<glyph> ...]
+# Output: shared/ui/src/commonMain/composeResources/drawable/ic_<glyph>_24.xml (idempotent: re-running overwrites identically);
+# with --fill, the filled variant (FILL 1, the upstream `<glyph>_fill1_24px.xml`) as ic_<glyph>_fill_24.xml.
 set -euo pipefail
 
 COMMIT=27e9ef1dbeedc13d682fece4a58e1eda4cb0961a
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OUT_DIR="$SCRIPT_DIR/../shared/ui/src/commonMain/composeResources/drawable"
 
+variant=""
+suffix=""
+style=""
+if [ "${1:-}" = "--fill" ]; then
+  variant="_fill1"
+  suffix="_fill"
+  style=" (filled)"
+  shift
+fi
+
 if [ "$#" -lt 1 ]; then
-  echo "usage: $(basename "$0") <glyph> [<glyph> ...]" >&2
+  echo "usage: $(basename "$0") [--fill] <glyph> [<glyph> ...]" >&2
   exit 2
 fi
 
@@ -23,15 +34,15 @@ for glyph in "$@"; do
     echo "error: glyph name '$glyph' must match [a-z0-9_]+" >&2
     exit 1
   fi
-  url="https://raw.githubusercontent.com/google/material-design-icons/$COMMIT/symbols/android/$glyph/materialsymbolsoutlined/${glyph}_24px.xml"
-  out="$OUT_DIR/ic_${glyph}_24.xml"
+  url="https://raw.githubusercontent.com/google/material-design-icons/$COMMIT/symbols/android/$glyph/materialsymbolsoutlined/${glyph}${variant}_24px.xml"
+  out="$OUT_DIR/ic_${glyph}${suffix}_24.xml"
   tmp="$(mktemp)"
   if ! curl --fail --silent --show-error --location "$url" -o "$tmp"; then
     echo "error: could not download $url" >&2
     rm -f "$tmp"
     exit 1
   fi
-  header="<!-- Material Symbols Outlined \"$glyph\" from google/material-design-icons@$COMMIT (Apache-2.0); fetched by tools/fetch-material-symbols.sh, do not edit -->"
+  header="<!-- Material Symbols Outlined \"$glyph\"$style from google/material-design-icons@$COMMIT (Apache-2.0); fetched by tools/fetch-material-symbols.sh, do not edit -->"
   normalised="$(
     perl -0pe 's/\s*android:tint="[^"]*"//g; s/android:fillColor="\@android:color\/white"/android:fillColor="#FFFFFFFF"/g' "$tmp"
   )"

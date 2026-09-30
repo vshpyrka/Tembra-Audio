@@ -76,4 +76,8 @@ internal object MetronomeDefaults {
     // Slider (research R10): the 6 dp track and the 16 dp thumb.
     val SliderTrackHeight: Dp = 6.dp
     val SliderThumbSize: Dp = 16.dp
+
+    /** The thumb's state layer on hover, press, drag and focus: `primary` at 16 %, twice the thumb's diameter. */
+    const val THUMB_HALO_ALPHA = 0.16f
+    const val THUMB_HALO_SCALE = 2f
 }

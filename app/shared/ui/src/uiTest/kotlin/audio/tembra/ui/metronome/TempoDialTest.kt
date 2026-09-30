@@ -1,5 +1,7 @@
 package audio.tembra.ui.metronome
 
+import androidx.compose.foundation.interaction.FocusInteraction
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.getValue
@@ -49,12 +51,22 @@ class TempoDialTest {
     private val tempos = mutableListOf<Tempo>()
     private val steps = mutableListOf<Int>()
     private var track: Color = Color.Unspecified
+    private var primary: Color = Color.Unspecified
+    private var secondary: Color = Color.Unspecified
 
-    private fun ComposeUiTest.setDial(tempo: Tempo = Tempo(120), canStepUp: Boolean = true, canStepDown: Boolean = true, freezeClock: Boolean = true) {
+    private fun ComposeUiTest.setDial(
+        tempo: Tempo = Tempo(120),
+        canStepUp: Boolean = true,
+        canStepDown: Boolean = true,
+        freezeClock: Boolean = true,
+        interactionSource: MutableInteractionSource? = null,
+    ) {
         if (freezeClock) mainClock.autoAdvance = false
         setContent {
             TembraTheme {
                 track = TembraTheme.colors.surfaceContainerHigh
+                primary = TembraTheme.colors.primary
+                secondary = TembraTheme.colors.secondary
                 Box(Modifier.width(270.dp)) {
                     TempoDial(
                         tempo = tempo,
@@ -63,6 +75,7 @@ class TempoDialTest {
                         canStepUp = canStepUp,
                         onTempo = { tempos += it },
                         onStep = { steps += it },
+                        interactionSource = interactionSource,
                         testTag = "dial",
                     )
                 }
@@ -140,6 +153,23 @@ class TempoDialTest {
         assertEquals(emptyList(), tempos)
     }
 
+    /** The steppers sit on the ring band: a press that moves past the touch slop on one must not turn the dial. */
+    @Test
+    fun aSmallDragOnAStepperNeverTurnsTheDial() = runComposeUiTest {
+        setDial()
+        for (stepper in listOf("dial.down", "dial.up")) {
+            onNodeWithTag(stepper).performTouchInput {
+                val slop = viewConfiguration.touchSlop * 1.5f
+                down(center)
+                moveBy(Offset(slop, slop / 2))
+                moveBy(Offset(slop / 2, slop / 2))
+                up()
+            }
+            mainClock.advanceTimeByFrame()
+        }
+        assertEquals(emptyList(), tempos)
+    }
+
     @Test
     fun theWheelStepsByOne() = runComposeUiTest {
         setDial()
@@ -169,6 +199,50 @@ class TempoDialTest {
         val beyond = ringPoint(image.width.toFloat(), image.height.toFloat(), 200f)
         val empty = image.averageColorAt(beyond.x.roundToInt(), beyond.y.roundToInt())
         assertTrue(empty.distanceTo(track) < fill.distanceTo(track), "the ring at 200° ($empty) is filled like the tempo's arc")
+    }
+
+    /**
+     * The design's SVG gradient runs from its top-left to its bottom-right and the SVG is turned −90°, so on screen it
+     * runs from bottom-left (`primary`) to top-right (`secondary`): a full ring starts warm at 12 o'clock and ends cool
+     * near 9 o'clock.
+     */
+    @Test
+    fun theRingGradientRunsFromBottomLeftToTopRight() = runComposeUiTest {
+        setDial(tempo = Tempo(240), canStepUp = false)
+        val image = onNodeWithTag("dial").captureToImage()
+        fun at(degrees: Float): Color {
+            val point = ringPoint(image.width.toFloat(), image.height.toFloat(), degrees)
+            return image.averageColorAt(point.x.roundToInt(), point.y.roundToInt())
+        }
+        val start = at(4f)
+        val end = at(250f) // clear of the "−" stepper at 9 o'clock
+        assertTrue(start.red - start.blue > end.red - end.blue + 0.05f, "the fill is not warmer at its start ($start) than at its end ($end)")
+        assertTrue(start.distanceTo(secondary) < end.distanceTo(secondary), "the start ($start) is not nearer secondary than the end ($end)")
+        assertTrue(end.distanceTo(primary) < start.distanceTo(primary), "the end ($end) is not nearer primary than the start ($start)")
+    }
+
+    /** Keyboard focus draws a `primary` ring around the dial (injected interaction source). */
+    @Test
+    fun focusDrawsARing() = runComposeUiTest {
+        val source = MutableInteractionSource()
+        setDial(interactionSource = source)
+        fun ringPixels(): Int {
+            val image = onNodeWithTag("dial").captureToImage()
+            val side = minOf(image.width, image.height).toFloat()
+            // Sample the circle at the focus ring's radius, outside the tempo ring and its ticks.
+            return (0 until 72).count { i ->
+                val radians = i * 5.0 * PI / 180.0
+                val radius = TempoDialGeometry.FOCUS_RING_RADIUS * side
+                val x = (image.width / 2f + radius * sin(radians).toFloat()).roundToInt()
+                val y = (image.height / 2f - radius * cos(radians).toFloat()).roundToInt()
+                image.averageColorAt(x, y, radius = 0).distanceTo(primary) < 0.25f
+            }
+        }
+        val before = ringPixels()
+        runOnIdle { source.tryEmit(FocusInteraction.Focus()) }
+        repeat(2) { mainClock.advanceTimeByFrame() }
+        val after = ringPixels()
+        assertTrue(before < 10 && after > 55, "no focus ring: $before primary samples before focus, $after after")
     }
 
     @Test

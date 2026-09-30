@@ -131,7 +131,7 @@ A dependency in the wrong direction fails configuration (`tembra.kmp.library`).
 |---|---|---|
 | a new screen | `:shared:ui`, package `audio.tembra.ui.<feature>` | one `ViewModel` per destination, `StateFlow<UiState>`; tests in `uiTest` (screen) and `commonTest` (ViewModel) |
 | a new navigation destination | `audio.tembra.ui.navigation.Destination` (enum value: id, label, title, `TembraIcon`, supporting pane, placeholder sentence) + a screen composable in its own package + the branch in `DestinationContent` | the exhaustive `when` fails to compile until mapped; labels use `labelSmall`, the bar and rail need nothing else |
-| an icon | `tools/fetch-material-symbols.sh <glyph>` then a `TembraIcon` value | Material Symbols Outlined only, bundled as normalised vector XML; screens use `TembraIcons.vector(TembraIcon.X)`, never `Res.drawable` |
+| an icon | `tools/fetch-material-symbols.sh [--fill] <glyph>` then a `TembraIcon` value (`--fill` for the filled variant) | Material Symbols Outlined only, bundled as normalised vector XML; screens use `TembraIcons.vector(TembraIcon.X)`, never `Res.drawable` |
 | a chrome component (bar, rail, panel, top bar, empty state) | `audio.tembra.ui.designsystem` | stateless, every value from `TembraTheme`, semantics and `testTag` on every control |
 | a developer-only view | `audio.tembra.ui.devtools` + a `DeveloperView` value | opened only through the debug launch argument (`tembra.developer.view` / `--tembra-developer-view=`), never from the UI |
 | a domain rule, model or pure calculation | `:shared:core` | no Compose, no platform code; test on JVM and iOS |

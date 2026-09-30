@@ -1,6 +1,8 @@
 package audio.tembra.ui.metronome.components
 
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.awaitTouchSlopOrCancellation
@@ -10,6 +12,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,6 +42,7 @@ import androidx.compose.ui.unit.IntSize
 import audio.tembra.core.metronome.Tempo
 import audio.tembra.core.metronome.TempoMarking
 import audio.tembra.ui.metronome.MetronomeCopy
+import audio.tembra.ui.theme.LinearGlow
 import audio.tembra.ui.theme.TembraIcon
 import audio.tembra.ui.theme.TembraTheme
 import kotlin.math.PI
@@ -54,7 +58,10 @@ import kotlin.math.sin
  * copy at 50 %, eight tick marks), with the steppers inside the ring at its sides and [center] in the middle (the
  * readout by default, so the transport can put its own there).
  *
- * Input: a drag that starts on the ring maps the pointer's angle onto the track (a drag that starts elsewhere is left
+ * The gradient runs from bottom-left to top-right, as the design's SVG (drawn turned −90°) does, so the fill starts warm
+ * at 12 o'clock. Keyboard focus draws a `primary` ring outside the ticks.
+ *
+ * Input: a drag that starts on the ring (not on a stepper) maps the pointer's angle onto the track (a drag that starts elsewhere is left
  * to the parent, so the column still scrolls); a wheel notch or an arrow key moves the tempo by one and the page keys
  * by ten. The box is one slider node for accessibility (range, state and the progress action). It fills the width its caller allows; a width cap is the
  * caller's `Modifier.widthIn`. The composable recomposes only when its parameters change: the ring reads nothing else.
@@ -69,10 +76,19 @@ internal fun TempoDial(
     onStep: (Int) -> Unit,
     modifier: Modifier = Modifier,
     center: @Composable () -> Unit = { TempoReadout(tempo, marking) },
+    interactionSource: MutableInteractionSource? = null,
     testTag: String = "metronome.dial",
 ) {
     val colors = TembraTheme.colors
-    val arc = TembraTheme.gradients.tempoArc
+    val spacing = TembraTheme.spacing
+    // The design's SVG is turned −90°, so its top-left → bottom-right gradient runs bottom-left → top-right on screen.
+    val arc = TembraTheme.gradients.tempoArc.turnedCounterClockwise()
+    val source = interactionSource ?: remember { MutableInteractionSource() }
+    val focused by source.collectIsFocusedAsState()
+    val ringColor = colors.primary
+    val ring = spacing.focusRingWidth
+    val stepperSize = spacing.tempoStepper
+    val stepperInset = MetronomeDefaults.StepperInset
     val trackColor = colors.surfaceContainerHigh
     val tickColor = colors.outlineVariant.copy(alpha = MetronomeDefaults.TICK_ALPHA)
     val currentTempo by rememberUpdatedState(tempo)
@@ -100,11 +116,13 @@ internal fun TempoDial(
                 }
             }
             .onKeyEvent { event -> handleKey(event, currentTempo)?.let(::offer) != null }
-            .focusable()
+            .focusable(interactionSource = source)
             .pointerInput(Unit) {
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false)
-                    if (!isOnRing(down.position, size)) return@awaitEachGesture
+                    // The steppers straddle the ring band: a press on one belongs to the stepper, even when it moves.
+                    val onStepper = isOnStepper(down.position, size, stepperSize.toPx(), stepperInset.toPx())
+                    if (onStepper || !isOnRing(down.position, size)) return@awaitEachGesture
                     val start = awaitTouchSlopOrCancellation(down.id) { change, _ -> change.consume() } ?: return@awaitEachGesture
                     offer(tempoAtPointer(start.position, size))
                     drag(start.id) { change ->
@@ -126,7 +144,16 @@ internal fun TempoDial(
                     }
                 }
             }
-            .drawBehind { drawRing(sweep, trackColor, tickColor, arc.brush(size)) },
+            .drawBehind {
+                drawRing(sweep, trackColor, tickColor, arc.brush(size))
+                if (focused) {
+                    drawCircle(
+                        color = ringColor,
+                        radius = size.minDimension * TempoDialGeometry.FOCUS_RING_RADIUS,
+                        style = Stroke(width = ring.toPx()),
+                    )
+                }
+            },
         contentAlignment = Alignment.Center,
     ) {
         center()
@@ -163,6 +190,19 @@ private fun handleKey(event: KeyEvent, tempo: Tempo): Tempo? {
     }
     return tempo.plus(delta)
 }
+
+/** True when [position] lies on one of the steppers, which sit [inset] inside the left and right edges, vertically centred. */
+private fun isOnStepper(position: Offset, size: IntSize, stepper: Float, inset: Float): Boolean {
+    val top = (size.height - stepper) / 2
+    if (position.y < top || position.y > top + stepper) return false
+    val onLeft = position.x >= inset && position.x <= inset + stepper
+    val onRight = position.x <= size.width - inset && position.x >= size.width - inset - stepper
+    return onLeft || onRight
+}
+
+/** The gradient turned 90° counter-clockwise inside its box: a fraction (x, y) moves to (y, 1 − x). */
+private fun LinearGlow.turnedCounterClockwise(): LinearGlow =
+    copy(start = Offset(start.y, 1f - start.x), end = Offset(end.y, 1f - end.x))
 
 /** True when [position] lies within the ring band, so a drag there turns the dial. */
 private fun isOnRing(position: Offset, size: IntSize): Boolean {

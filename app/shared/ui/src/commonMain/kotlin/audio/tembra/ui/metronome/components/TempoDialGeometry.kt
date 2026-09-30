@@ -23,6 +23,9 @@ internal object TempoDialGeometry {
     const val TICK_INNER = 0.408f
     const val TICK_OUTER = 0.442f
 
+    /** The keyboard focus ring, outside the tick marks. */
+    const val FOCUS_RING_RADIUS = 0.46f
+
     /** A touch counts as on the ring within this distance of it, in fractions of the box. */
     const val RING_BAND = 0.1f
 

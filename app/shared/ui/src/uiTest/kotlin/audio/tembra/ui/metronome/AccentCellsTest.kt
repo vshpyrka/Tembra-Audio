@@ -1,5 +1,8 @@
 package audio.tembra.ui.metronome
 
+import androidx.compose.foundation.interaction.FocusInteraction
+import androidx.compose.foundation.interaction.HoverInteraction
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.getValue
@@ -32,6 +35,8 @@ import audio.tembra.core.metronome.BeatLevel
 import audio.tembra.ui.designsystem.approximately
 import audio.tembra.ui.designsystem.averageColorAt
 import audio.tembra.ui.designsystem.isCloserTo
+import audio.tembra.ui.designsystem.luminance
+import audio.tembra.ui.metronome.components.AccentCell
 import audio.tembra.ui.metronome.components.AccentCells
 import audio.tembra.ui.metronome.components.MetronomeDefaults
 import audio.tembra.ui.theme.TembraTheme
@@ -56,7 +61,7 @@ class AccentCellsTest {
     private var surfaceContainer = Color.Unspecified
     private var pixelDensity = 1f
 
-    private fun ComposeUiTest.setCells(telemetry: BeatTelemetry, running: Boolean = true, pattern: AccentPattern = acccPattern) {
+    private fun ComposeUiTest.setCells(telemetry: BeatTelemetry, running: Boolean = true, pattern: AccentPattern = acccPattern, currentBeat: Int = -1) {
         mainClock.autoAdvance = false
         setContent {
             TembraTheme {
@@ -64,14 +69,14 @@ class AccentCellsTest {
                 surfaceContainer = TembraTheme.colors.surfaceContainer
                 pixelDensity = LocalDensity.current.density
                 Box(Modifier.width(320.dp)) {
-                    AccentCells(pattern = pattern, running = running, telemetry = telemetry, onCycle = { cycled += it }, testTag = "cells")
+                    AccentCells(pattern = pattern, running = running, currentBeat = currentBeat, telemetry = telemetry, onCycle = { cycled += it })
                 }
             }
         }
         repeat(2) { mainClock.advanceTimeByFrame() }
     }
 
-    private fun ComposeUiTest.barBox(beat: Int): ImageBitmap = onNodeWithTag("cells.$beat.bar", useUnmergedTree = true).captureToImage()
+    private fun ComposeUiTest.barBox(beat: Int): ImageBitmap = onNodeWithTag("metronome.cell.$beat.bar", useUnmergedTree = true).captureToImage()
 
     /** The 3 × 3 block at the middle of the bar box's top edge, where the lit outline is drawn. */
     private fun ComposeUiTest.topEdge(beat: Int): Color {
@@ -94,14 +99,60 @@ class AccentCellsTest {
         val labels = listOf("ACCENT", "CLICK", "CLICK", "CLICK")
         val levels = listOf("Accent", "Click", "Click", "Click")
         for (beat in 1..4) {
-            onNodeWithTag("cells.$beat")
+            onNodeWithTag("metronome.cell.$beat")
                 .assertContentDescriptionEquals("Beat $beat")
                 .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, levels[beat - 1]))
                 .assertWidthIsAtLeast(44.dp)
                 .assertHeightIsAtLeast(44.dp)
-            onNode(hasText(labels[beat - 1]) and hasAnyAncestor(hasTestTag("cells.$beat")), useUnmergedTree = true).assertExists()
+            onNode(hasText(labels[beat - 1]) and hasAnyAncestor(hasTestTag("metronome.cell.$beat")), useUnmergedTree = true).assertExists()
         }
-        onNodeWithTag("cells.5").assertDoesNotExist()
+        onNodeWithTag("metronome.cell.5").assertDoesNotExist()
+    }
+
+    /** The 10 Hz sample names the playing cell to accessibility; the light itself stays in the draw phase. */
+    @Test
+    fun theCurrentBeatIsAnnouncedAsPlaying() = runComposeUiTest {
+        setCells(ScriptedBeatTelemetry(), currentBeat = 2)
+        onNodeWithTag("metronome.cell.3").assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Click, playing"))
+        onNodeWithTag("metronome.cell.1").assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Accent"))
+        onNodeWithTag("metronome.cell.2").assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Click"))
+    }
+
+    /** Hover raises the cell's card and keyboard focus draws the `primary` ring (injected interaction source). */
+    @Test
+    fun hoverAndFocusShowOnACell() = runComposeUiTest {
+        val source = MutableInteractionSource()
+        var primary = Color.Unspecified
+        mainClock.autoAdvance = false
+        setContent {
+            TembraTheme {
+                primary = TembraTheme.colors.primary
+                pixelDensity = LocalDensity.current.density
+                Box(Modifier.width(80.dp)) {
+                    AccentCell(index = 1, level = BeatLevel.Click, lit = { false }, playing = false, onClick = {}, interactionSource = source, testTag = "cell")
+                }
+            }
+        }
+        repeat(2) { mainClock.advanceTimeByFrame() }
+        // Inside the cell's padding, clear of the bar box: the card's own fill.
+        fun card(): Color {
+            val image = onNodeWithTag("cell").captureToImage()
+            return image.averageColorAt((MetronomeDefaults.CellPadding.value * pixelDensity / 2).roundToInt(), image.height - (MetronomeDefaults.CellPadding.value * pixelDensity / 2).roundToInt() - 2 * pixelDensity.roundToInt(), radius = 0)
+        }
+        fun edge(): Color {
+            val image = onNodeWithTag("cell").captureToImage()
+            return image.averageColorAt(image.width / 2, pixelDensity.roundToInt() / 2, radius = 0)
+        }
+        val restCard = card()
+        val restEdge = edge()
+        runOnIdle { source.tryEmit(HoverInteraction.Enter()) }
+        repeat(2) { mainClock.advanceTimeByFrame() }
+        val hoverCard = card()
+        assertTrue(hoverCard.luminance() > restCard.luminance() + 0.005f, "hover did not raise the card: $restCard -> $hoverCard")
+        runOnIdle { source.tryEmit(FocusInteraction.Focus()) }
+        repeat(2) { mainClock.advanceTimeByFrame() }
+        val focusEdge = edge()
+        assertTrue(focusEdge.isCloserTo(primary, restEdge), "focus drew no primary ring: $restEdge -> $focusEdge")
     }
 
     @Test
@@ -132,14 +183,14 @@ class AccentCellsTest {
         setContent {
             TembraTheme {
                 Box(Modifier.width(width)) {
-                    AccentCells(pattern = acccPattern, running = false, telemetry = ScriptedBeatTelemetry(), onCycle = {}, testTag = "cells")
+                    AccentCells(pattern = acccPattern, running = false, currentBeat = -1, telemetry = ScriptedBeatTelemetry(), onCycle = {})
                 }
             }
         }
         for (candidate in listOf(331.dp, 337.3.dp, 346.dp, 353.7.dp, 354.dp, 369.dp, 402.dp)) {
             width = candidate
             repeat(2) { mainClock.advanceTimeByFrame() }
-            val tops = (1..4).map { onNodeWithTag("cells.$it").getUnclippedBoundsInRoot().top }
+            val tops = (1..4).map { onNodeWithTag("metronome.cell.$it").getUnclippedBoundsInRoot().top }
             assertTrue(tops.all { it == tops.first() }, "at $candidate the cells are not in one row: $tops")
         }
     }
@@ -147,7 +198,7 @@ class AccentCellsTest {
     @Test
     fun clickingACellCyclesIt() = runComposeUiTest {
         setCells(ScriptedBeatTelemetry())
-        onNodeWithTag("cells.3").performClick()
+        onNodeWithTag("metronome.cell.3").performClick()
         mainClock.advanceTimeByFrame()
         assertEquals(listOf(2), cycled)
     }
@@ -173,8 +224,8 @@ class AccentCellsTest {
     fun barHeightsFollowTheLevel() = runComposeUiTest {
         setCells(ScriptedBeatTelemetry(), pattern = AccentPattern(listOf(BeatLevel.Accent, BeatLevel.Click, BeatLevel.Sub, BeatLevel.Click)))
         fun ratio(beat: Int): Float {
-            val box = onNodeWithTag("cells.$beat.bar", useUnmergedTree = true).getUnclippedBoundsInRoot()
-            val bar = onNodeWithTag("cells.$beat.level", useUnmergedTree = true).getUnclippedBoundsInRoot()
+            val box = onNodeWithTag("metronome.cell.$beat.bar", useUnmergedTree = true).getUnclippedBoundsInRoot()
+            val bar = onNodeWithTag("metronome.cell.$beat.level", useUnmergedTree = true).getUnclippedBoundsInRoot()
             val inner = (box.bottom - box.top) - MetronomeDefaults.BarBoxPadding * 2
             return (bar.bottom - bar.top) / inner
         }
