@@ -39,7 +39,8 @@ enum class CardDiscs { TopStartBottomEnd, TopEndBottomStart, None }
 @Composable fun SubdivisionChips(selected: Subdivision, unit: BeatUnit, onSelect: (Subdivision) -> Unit, modifier: Modifier = Modifier, testTag: String = "metronome.subdivision")
 //   both are thin wrappers over TembraChipRow; the subdivision chip's note glyph is the row's `icon`
 
-@Composable fun AccentCells(pattern: AccentPattern, running: Boolean, telemetry: BeatTelemetry, onCycle: (Int) -> Unit, modifier: Modifier = Modifier, testTag: String = "metronome.cells")
+@Composable fun AccentCells(pattern: AccentPattern, running: Boolean, currentBeat: Int, telemetry: BeatTelemetry, onCycle: (Int) -> Unit, modifier: Modifier = Modifier, testTag: String = "metronome.cells")
+//   `currentBeat` is the ViewModel's 10 Hz sample (-1 when stopped) and feeds each cell's stateDescription (", playing"); the light itself comes from `telemetry` in the draw phase; cells are tagged `metronome.cell.<n>`
 //   one AccentCell per beat, gap 8, wraps to two rows when a cell would be under 44 dp; each cell reads `tick.longValue` (rememberFrameTick(running)) and telemetry.litBeat(frame) inside drawBehind
 @Composable fun AccentCell(index: Int, level: BeatLevel, lit: () -> Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, interactionSource: MutableInteractionSource? = null, testTag: String? = null)
 //   surfaceContainerLowest card; bar box 64 dp; bar height by level (95/62/42 %), colours secondary / primary / primary 70 %; accentGlow on Accent; label microLabel; `lit` is a provider read in the draw phase only
@@ -55,7 +56,7 @@ enum class ClickSoundPickerLayout { Dropdown, Tiles }
 //   `dashed` is the design-system state of the empty Custom tile (a constrained value, not a shape flag); `trailing` is the slot for the Replace action (an icon-only button whose contentDescription and tooltip read "Replace custom sound", spec FR-029)
 
 @Composable fun TempoDial(tempo: Tempo, marking: TempoMarking, canStepDown: Boolean, canStepUp: Boolean, onTempo: (Tempo) -> Unit, onStep: (Int) -> Unit, modifier: Modifier = Modifier, center: @Composable () -> Unit = { TempoReadout(tempo, marking) }, testTag: String = "metronome.dial")
-//   square Box: Canvas ring (TempoDialGeometry, tempoArc brush, glow stroke, ticks), pointer drag on the ring band, scrollable wheel, key handler; steppers (TempoStepper) at the left and right inside the ring; `center` slot defaults to the readout so the transport can put its own readout there
+//   square Box: Canvas ring (TempoDialGeometry, tempoArc brush drawn so the gradient runs bottom-left → top-right as the design's rotated SVG does, glow stroke, ticks), pointer drag on the ring band only (never on a stepper), wheel via a pointer-scroll handler, key handler; semantics: progressBarRangeInfo + setProgress + stateDescription (Compose 1.12 has no Role.Slider); steppers (TempoStepper) at the left and right inside the ring; `center` slot defaults to the readout so the transport can put its own readout there
 @Composable fun TempoReadout(tempo: Tempo, marking: TempoMarking, modifier: Modifier = Modifier)   // "120" tempoNumber + "BPM" labelMedium secondary; marking.display labelMedium tertiary
 @Composable fun TempoStepper(icon: TembraIcon, enabled: Boolean, contentDescription: String, onStep: () -> Unit, modifier: Modifier = Modifier, interactionSource: MutableInteractionSource? = null, testTag: String? = null)
 //   44 dp round surfaceContainerHigh; press-and-hold repeat (400 ms, then every 80 ms) through rememberCoroutineScope, cancelled on release; tooltip = contentDescription
