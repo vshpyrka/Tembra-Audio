@@ -49,13 +49,17 @@ sealed interface CustomSoundResult { data class Loaded(val info: CustomSoundInfo
 |---|---|---|
 | `startMetronome` | `AndroidAudioFocus.request(FocusType.Gain)` (`AUDIOFOCUS_GAIN`, `USAGE_MEDIA`, `CONTENT_TYPE_MUSIC`, `setWillPauseWhenDucked(false)`); denied → `AudioResult.Error(FOCUS_DENIED = -100)` without touching the engine; register `BecomingNoisyReceiver`; then `nativeMetronomeStart()`; on engine error abandon focus and unregister | `IosAudioSession.activateForPlayback()` (`.playback`, `.default`, no options; `setActive(true)`); `reportOutputLatencyNanos(session.outputLatency + ioBufferDuration)`; then `tembra_metronome_start`; on error deactivate |
 | `stopMetronome` | `nativeMetronomeStop()`; unregister the receiver; `abandonAudioFocusRequest` | `tembra_metronome_stop`; `setActive(false, notifyOthersOnDeactivation)` |
-| `previewClick` | transient focus as for tones (`AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK`), then `nativeMetronomePreview` | `activateForPlayback`, then `tembra_metronome_preview`; the existing one-shot end path deactivates |
+| `previewClick` | only when `audioState == Idle`: transient focus as for tones (`AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK`), then `nativeMetronomePreview`; the actual then checks `nativeAudioState()` on the main thread every 100 ms (at most 1 s) and abandons the transient focus once the state is back to `Idle` | only when `audioState == Idle`: `activateForPlayback`, then `tembra_metronome_preview`; the actual then checks `tembra_audio_state()` on the main queue every 100 ms (at most 1 s) and deactivates (`notifyOthersOnDeactivation`) once the state is back to `Idle` |
 | `events` | focus listener: `AUDIOFOCUS_LOSS` and `AUDIOFOCUS_LOSS_TRANSIENT` → `Interrupted` (focus abandoned by the ViewModel's stop); `…_CAN_DUCK` ignored (system ducks); `AUDIOFOCUS_GAIN` after a transient loss → `InterruptionEnded` (the ViewModel ignores it for the metronome); `BecomingNoisyReceiver` → `OutputRouteLost` | interruption `.began` → `Interrupted`; `.ended` → `InterruptionEnded` (ignored by the metronome); route change `.oldDeviceUnavailable` whose previous route has an output of type `headphones`, `bluetoothA2DP`, `bluetoothLE` or `bluetoothHFP` → `OutputRouteLost`; `.newDeviceAvailable` → nothing (the click continues); `outputLatency` re-reported on every route change while running |
 | `readTick` | `nativeMetronomeRead(longArray)` into a per-engine `LongArray(7)` then copied into the snapshot | `tembra_metronome_read(tick.ptr)` then copied |
 | `loadCustomSound` | `nativeMetronomeLoadCustomSound(path, intArray, floatArray)`; `-4` → `NotWav`, `-5` → `Silent`, `-3` → `Missing` | `tembra_metronome_load_custom_sound(path, info.ptr)` with the same mapping |
 
 `AndroidAudioFocus` gains `enum class FocusType { TransientMayDuck, Gain }`; the tuner keeps
-`TransientMayDuck`. `BecomingNoisyReceiver` (androidMain) is a `BroadcastReceiver` for
+`TransientMayDuck`. Platform resources are acquired only by the call that moves the engine out
+of `Idle` and released only by the call that returns it there: a refused start, tone or preview
+(the engine answers `TEMBRA_ERR_STATE`) MUST NOT abandon focus, unregister the receiver or
+deactivate the session of the stream that is running. The receiver is registered with
+`RECEIVER_NOT_EXPORTED` on API 33+ and without a flag below (no androidx.core dependency). `BecomingNoisyReceiver` (androidMain) is a `BroadcastReceiver` for
 `AudioManager.ACTION_AUDIO_BECOMING_NOISY` registered with `ContextCompat.registerReceiver`
 (`RECEIVER_NOT_EXPORTED`) only while the metronome runs.
 
