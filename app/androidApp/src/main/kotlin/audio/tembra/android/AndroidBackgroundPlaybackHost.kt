@@ -89,5 +89,17 @@ class AndroidBackgroundPlaybackHost(private val context: Context) : BackgroundPl
         internal fun stopped() {
             synchronized(lock) { state = ForegroundState.Idle }
         }
+
+        /**
+         * Called from the service's `onDestroy`, which also covers a stop the host did not ask for (the system, or a
+         * direct `stopService`): a [ForegroundState.Foreground] state becomes [ForegroundState.Idle] so the next
+         * [keepAlive] starts a new service. [ForegroundState.Starting] and [ForegroundState.ReleaseRequested] belong to
+         * a start that is already queued behind this destroy, so they are kept.
+         */
+        internal fun serviceDestroyed() {
+            synchronized(lock) {
+                if (state == ForegroundState.Foreground) state = ForegroundState.Idle
+            }
+        }
     }
 }

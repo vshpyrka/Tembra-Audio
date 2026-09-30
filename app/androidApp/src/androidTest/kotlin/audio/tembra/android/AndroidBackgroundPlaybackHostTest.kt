@@ -78,6 +78,27 @@ class AndroidBackgroundPlaybackHostTest {
         assertTrue(!isRunning())
     }
 
+    /** A service the system stops while the process lives must not leave the host believing it is still foreground. */
+    @Test
+    fun keepAliveStartsAgainAfterTheServiceWasStoppedBehindTheHostsBack() {
+        assertTrue(host.keepAlive())
+        val first = (serviceRule.bindService(serviceIntent) as MetronomeServiceBinder).service
+        assertTrue("not in the foreground within 2 s", waitUntil { isForeground(first) })
+        serviceRule.unbindService()
+        context.stopService(serviceIntent)
+        assertTrue("the service still runs 2 s after stopService", waitUntil { !isRunning() })
+
+        assertTrue(host.keepAlive())
+
+        val second = (serviceRule.bindService(serviceIntent) as MetronomeServiceBinder).service
+        assertTrue("the second keepAlive() did not start a foreground service within 2 s", waitUntil { isForeground(second) })
+    }
+
+    /** In the foreground as media playback on API 29+; below it, running is all that can be read. */
+    private fun isForeground(service: MetronomeForegroundService): Boolean =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.Q ||
+            service.foregroundServiceType == ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
+
     @Test
     fun theStopActionEmitsOneStopRequest() = runBlocking {
         assertTrue(host.keepAlive())
