@@ -21,6 +21,7 @@ import audio.tembra.core.metronome.TempoMarking
 import audio.tembra.core.metronome.TimeSignature
 import audio.tembra.ui.designsystem.CardDiscs
 import audio.tembra.ui.designsystem.TembraGradientCard
+import audio.tembra.ui.metronome.components.ClickSoundPickerLayout
 import audio.tembra.ui.metronome.components.PlayPauseButton
 import audio.tembra.ui.metronome.components.TapTempoButton
 import audio.tembra.ui.metronome.components.TempoDial
@@ -30,8 +31,8 @@ import audio.tembra.ui.theme.TembraTheme
 /**
  * The stateless metronome screen the UI tests drive (contracts/metronome-screen.md). The Stacked composition: a
  * scrolling column with the [MetronomeSettingsPanel] (signature, subdivision, beat cells and style) and the dial card,
- * and the tap and play row pinned below it so the transport stays reachable. The sound picker joins the panel with
- * User Story 4; [MetronomeLayout.Wide] and [MetronomeLayout.Landscape] get their own forms with User Story 7
+ * and the tap and play row pinned below it so the transport stays reachable; the panel ends with the sound picker's
+ * pill. [MetronomeLayout.Wide] and [MetronomeLayout.Landscape] get their own forms with User Story 7
  * and use this one until then. Root tag `screen.metronome` keeps the shell's convention; snackbars show over it.
  */
 @Composable
@@ -74,6 +75,7 @@ private fun StackedMetronome(state: MetronomeUiState, callbacks: MetronomeCallba
                 state = state,
                 callbacks = callbacks,
                 telemetry = telemetry,
+                pickerLayout = ClickSoundPickerLayout.Dropdown,
                 signatureColumns = TimeSignature.entries.size,
             )
             DialCard(
