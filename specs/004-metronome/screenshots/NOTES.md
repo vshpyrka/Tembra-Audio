@@ -245,3 +245,81 @@ as the selected custom sound (`files/metronome/custom.wav`, 15416 bytes, md5 `d8
 | File | What it shows |
 |---|---|
 | `android-compact-replace-refused.png` | `float32` still selected after replacing it with `notes.wav`; the snackbar reads "That file isn't a WAV file Tembra can read." |
+
+## User Story 6 (batch B12, T126), 2026-09-30: background, calls, other apps, headphones
+
+**Devices**: Pixel 6 Pro (Android 17, build CP3A.260905.009, serial 19021FDEE001AH, debug APK from
+`:androidApp:assembleDebug`); Android emulator `Pixel_9_Pro_Fold` (`sdk_gphone64_arm64`, Android 16 / API 36, adb
+`127.0.0.1:5556` through an ssh tunnel); iPhone 17 simulator (iOS 26.5, Debug build from `xcodebuild -scheme iosApp`);
+iPhone 14 "Victor's iPhone" (iOS 26.5.2, Debug device build, installed with `xcrun devicectl device install app`).
+
+**Probes.** Pixel: `dumpsys activity services audio.tembra.app` (the `MetronomeForegroundService` record,
+`isForeground=true`, `types=0x00000002` = media playback), the top of `dumpsys audio`'s focus stack, the app uid's
+`AudioPlaybackConfiguration` (`state:started`), `pidof`, and the button's content description ("Stop metronome" while
+running, "Start metronome" when stopped) from the layout tree. Simulator: the button through the accessibility tree,
+the process's CPU time (`ps -o stat,time`) and `runningboardd`'s assertions for the app (`MediaPlayback`). On the
+simulator neither the host `coreaudiod` assertion nor the runningboard assertions end when the click stops (see the note
+below the table), so they show only that the process is not suspended; the running state comes from the button on
+return.
+
+| Row | Device | Outcome | Evidence |
+|---|---|---|---|
+| Screen lock, ten minutes | Pixel 6 Pro | **Pass** | `KEYCODE_SLEEP` at 16:55:49; at +5 s (`mWakefulness=Dozing`), +5 min and +10 min the same player (`piid:1439 state:started`), the same pid, focus on top and the service in the foreground; after `KEYCODE_WAKEUP` the button read "Stop metronome". The +10 min read showed `mWakefulness=Awake` (something lit the screen near the end); the +5 s and +5 min reads were taken dozing |
+| Screen lock, ten minutes | iPhone 17 simulator | **Pass (simulator)** | Device › Lock at 17:01; probed every minute to 17:11; after Device › Home the button read "Stop metronome" (same process, pid 52665). The simulator does not model lock-screen suspension faithfully: repeat on the iPhone 14 |
+| App switch | Pixel 6 Pro | **Pass** | Home, then Settings for 60 s (`topResumedActivity` = Settings): service foreground, player `state:started`, focus on top; back in the app "Stop metronome" |
+| App switch | iPhone 17 simulator | **Pass (simulator)** | Settings for 30 s, and again for 40 s: on return "Stop metronome"; in the background the process kept running (CPU time 1:53.96 → 1:54.02 in 5 s, never stopped) with runningboard's `MediaPlayback` assertion |
+| Notification Stop | Pixel 6 Pro | **Failed, fixed in this batch, then Pass** | Failed first: the app did not declare `POST_NOTIFICATIONS`, so on Android 13+ the service's notification was never posted (no record in `dumpsys notification`; `pm grant` did nothing, appops `allow` did nothing). Fix: the manifest declares the permission (never requested at runtime). With it granted (`pm grant audio.tembra.app android.permission.POST_NOTIFICATIONS`, standing in for the user's Settings toggle) the "Metronome · Running" notification shows the Stop action (`android-notification-stop.png`). Tapping Stop over the app and, again, from Home: service gone, focus abandoned, no player, notification removed; the app then read "Start metronome" |
+| Incoming call | Android emulator | **Needs the user** | Not exercised. The emulator's console is not reachable from this Mac (only adb is tunnelled; `adb emu avd name` exits 1, `adb emu gsm call` silently does nothing, `mCallState=0`), and placing a call inside the AVD was refused by the session's permission policy. Steps below |
+| Incoming call | Pixel 6 Pro, iPhone 14 | **Needs the user** | Real calls are not placed by the agent. Steps below |
+| Another app plays (YouTube) | Pixel 6 Pro | **Pass** | Click running, then a YouTube video (`am start -a VIEW -d https://www.youtube.com/watch?v=jNQXAC9IVRw com.google.android.youtube`): YouTube requested `GAIN` at 17:15:06.992, the app abandoned its focus at 17:15:07.142; the service and the app's player were gone, YouTube's player `state:started` alone on top of the focus stack. Back in the app after 10 s "Start metronome"; nothing restarted |
+| Notification sound | Pixel 6 Pro | **Pass (ear check open)** | Ringer switched from VIBRATE to NORMAL for the check and back afterwards. `cmd notification post` on the `shell_cmd` channel (importance 3, default sound): the notification player (uid 10242) reached `state:started`; the click's player (`piid:1439`) stayed `state:started`, focus unchanged, "Stop metronome" after. Whether the click ducked audibly is an ear check |
+| Headphones in | Pixel 6 Pro, iPhone 14 | **Needs the user** | No headphones can be plugged in remotely |
+| Headphones out | Pixel 6 Pro | **Needs the user** | The shell cannot send `android.media.AUDIO_BECOMING_NOISY` (`SecurityException: Permission Denial: not allowed to send broadcast ... uid=2000`). The mapping is covered by the device tests (`BecomingNoisyReceiverTest`, `NativeAudioEngineTest`: delivery → `OutputRouteLost`) and `MetronomeViewModelTest.anOutputRouteLossStops` |
+| Bluetooth speaker | Pixel 6 Pro, iPhone 14 | **Needs the user** | No speaker to pair |
+| Leave the destination | Pixel 6 Pro | **Pass** | Click running, tap Tuner: 2 s later no service, no focus, no player; back on Metronome "Start metronome". (The Tuner raised the microphone prompt; answered "Only this time".) |
+| Leave the destination | iPhone 17 simulator | **Pass** | Click running, tap Tuner (the microphone prompt was answered "Don't Allow"), back on Metronome: "Start metronome" |
+| Force quit | Pixel 6 Pro | **Pass** | Tempo raised to 121, click running (`piid:1511 state:started`), `am force-stop`: no pid, no player, no service, no focus. Relaunch: 121 BPM kept, "Start metronome". Tempo set back to 120 |
+| Force quit | iPhone 17 simulator | **Pass** | Click running, `simctl terminate`: the process and its `coreaudiod` assertion gone; relaunch "Start metronome" (settings persistence is shown on the Pixel row) |
+| Every row | iPhone 14 | **Needs the user** | The B12 Debug build is installed on the phone (bundle `audio.tembra.appP5QJJ5Y5V7`), but `devicectl device process launch` refused: "the device was not, or could not be, unlocked". Steps below |
+
+Simulator note: pressing play takes runningboard `AudioRecording` and `MediaPlayback` assertions for the app
+(`9097-64356-20023`, `-20024` in a fresh process) and a stop does not release them (checked 8 s after the stop; in the
+first process they were still held 25 minutes and two stops later). The engine's output path is output-only RemoteIO
+disposed on close and the session is deactivated on stop, so this is most likely the simulator's host audio device
+staying open per process. On the iPhone 14 check after a stop that no orange microphone dot shows and that the app
+suspends in the background (below).
+
+### Rows that need the user
+
+Android, on the Pixel 6 Pro with the B12 build (installed):
+
+1. **Notifications**: Settings › Apps › Tembra Audio › Notifications › allow (the app never asks).
+2. **Incoming call**: Metronome › play; call the Pixel from another phone. Expected: the click stops when it rings and
+   the app reads play; after hanging up it stays stopped.
+3. **Incoming call on the emulator** (where its console is reachable, i.e. the emulator runs on this Mac):
+   `adb -s <emulator> install -r app/androidApp/build/outputs/apk/debug/androidApp-debug.apk`; open Metronome and
+   press play; `adb -s <emulator> emu gsm call 5551234`; check the button reads "Start metronome" and
+   `adb -s <emulator> shell dumpsys activity services audio.tembra.app` lists no `MetronomeForegroundService`;
+   `adb -s <emulator> emu gsm cancel 5551234`; wait ten seconds; the click is still stopped.
+4. **Headphones in**: play on the speaker, plug in wired or USB-C headphones. Expected: the click continues in the
+   headphones at the same tempo, the button still reads pause.
+5. **Headphones out**: unplug them while it plays. Expected: it stops and the app reads play.
+6. **Bluetooth**: pair a speaker, play at 120 BPM. Expected: it runs, and the beat light matches the audible click.
+7. Notification sound by ear: with the ringer on, have a message arrive while it plays. Expected: the click dips briefly
+   and continues.
+
+iOS, on the iPhone 14 (unlock the phone, then from the repository root):
+
+```sh
+xcrun devicectl device process launch --device 48CD2B09-42B3-5156-9DD4-658E30BD0C1C audio.tembra.appP5QJJ5Y5V7
+```
+
+(To rebuild first: `cd app/iosApp && xcodebuild -project iosApp.xcodeproj -scheme iosApp -configuration Debug
+-destination 'generic/platform=iOS' -derivedDataPath build-device -allowProvisioningUpdates build`, then
+`xcrun devicectl device install app --device 48CD2B09-42B3-5156-9DD4-658E30BD0C1C "build-device/Build/Products/Debug-iphoneos/Tembra Audio.app"`,
+and delete `build-device/`.) Open Metronome and run each row of quickstart §7: screen lock ten minutes (the click never
+stops, pause on unlock), app switch, an incoming call (stops when it rings, stays stopped after), YouTube (stops,
+YouTube plays alone), a message sound (the click continues), headphones in (continues) and out (stops), a Bluetooth
+speaker (runs, light matches), leave the destination (stops), force quit (silence; relaunch keeps the settings, stopped).
+After a stop, check that no orange microphone dot is shown and that the app is suspended in the background (the
+simulator note above).
