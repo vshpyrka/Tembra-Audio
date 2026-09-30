@@ -46,11 +46,24 @@ bar in `secondary` with its pink glow, Click bars in `primary`, labels under the
 round `secondaryContainer` play button with its pink glow.
 
 Differences, to settle later:
-- The play and pause glyphs are the outlined Material Symbols (`FILL 0`, as every bundled glyph); the design uses
-  the filled play arrow. A filled variant needs `tools/fetch-material-symbols.sh` to fetch `FILL 1` glyphs.
-- The ring's gradient runs corner to corner across the dial box as in the SVG, so at 120 BPM the fill ends in the
-  violet middle; the design screenshot's arc is drawn with a longer dash (`228` of 603 ≈ 136°) and reaches further
-  into the pink. The fill here follows the spec's `(bpm − 40) / 200 × 275°` = 110°.
 - The time-signature, subdivision, style and sound sections are not there yet (User Stories 2 and 4), so the
   column has empty space above the pinned tap and play row.
 - The play button's glow is clipped by the bottom navigation bar at its lower edge (as in the design screenshot).
+
+### Fix round 1 (2026-09-30)
+
+- **Ring gradient.** The first captures drew `tempoArc` from the dial box's top-left to its bottom-right, unrotated.
+  The design's SVG carries the same top-left → bottom-right gradient but is drawn turned −90°, so on screen it runs
+  from bottom-left (`primary`) to top-right (`secondary`): the fill starts warm, pink-lavender, at 12 o'clock and
+  cools to violet towards its end, as in `design/stitch/screens/metronome/phone/screenshot.jpg`. The earlier note
+  blamed the sweep length; that was wrong (110° at 120 BPM is the spec's formula and the design's dash is only the
+  mock's value). The dial now turns the brush with the SVG; `android-compact-stopped.png` and
+  `android-compact-running-beat1.png` were retaken and match the design's colouring.
+- **Glyphs.** The play and pause glyphs are now the filled Material Symbols (`PlayArrowFilled`, `PauseFilled`,
+  fetched with `tools/fetch-material-symbols.sh --fill`), as the design draws them; checked on the Pixel captures.
+- **iOS retake.** The iOS captures could not be retaken: the Mac's screen locked during the run, so the Simulator
+  window could not be driven (no window in the accessibility tree) to reach the Metronome destination.
+  `ios-compact-stopped.png` and `ios-compact-running-beat1.png` still show the first build (outlined glyph, unrotated
+  gradient). The rotated gradient and the filled glyph are covered on the simulator by `TempoDialTest.
+  theRingGradientRunsFromBottomLeftToTopRight` and `MetronomeControlsTest.thePlayButtonUsesTheFilledGlyphs`; the two
+  iOS captures are to be retaken when the Mac is unlocked.
