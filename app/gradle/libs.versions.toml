@@ -21,6 +21,8 @@ androidx-test-espresso = "3.7.0"
 oboe = "1.11.0"
 # DataStore Preferences multiplatform for the tuner's remembered choices (feature 003, research R13).
 androidx-datastore = "1.2.1"
+# Okio at the version DataStore 1.2.1 resolves (3.9.1), now a direct dependency of :shared:data (feature 004, research R16).
+okio = "3.9.1"
 android-compileSdk = "37"
 android-targetSdk = "36"
 android-minSdk = "26"
@@ -57,6 +59,9 @@ androidx-test-espresso-core = { module = "androidx.test.espresso:espresso-core",
 oboe = { module = "com.google.oboe:oboe", version.ref = "oboe" }
 # DataStore Preferences core (multiplatform; pulls datastore-core-okio and Okio 3.x): feature 003, research R13.
 androidx-datastore-preferences-core = { module = "androidx.datastore:datastore-preferences-core", version.ref = "androidx-datastore" }
+# Okio: the metronome's custom-click file store (feature 004, research R16); FakeFileSystem in tests only.
+okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
+okio-fakefilesystem = { module = "com.squareup.okio:okio-fakefilesystem", version.ref = "okio" }
 
 # Gradle plugin artifacts consumed by build-logic (convention plugins)
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }

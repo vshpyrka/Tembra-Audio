@@ -595,3 +595,10 @@ Kotlin tests never link the engine (Constitution III); timing is proven offline 
 
 No new library. Licence inventory rows: Okio's row loses "transitive" and gains its pinned
 version; miniaudio's row is unchanged; the README's module table gains the metronome rows.
+
+**Resolution proof (T001-T009, 2026-09-30)**: `dependencyInsight` on `:shared:data` `androidRuntimeClasspath`
+showed DataStore 1.2.1 resolving `com.squareup.okio:okio:3.9.1`, pinned in the catalog as `okio = "3.9.1"`.
+`:shared:data:compileKotlinIosSimulatorArm64 :shared:ui:compileKotlinIosSimulatorArm64 :androidApp:assembleDebug
+--warning-mode all` succeeds with zero warnings. The engine's own `MA_NO_DEVICE_IO` define in
+`third_party_check.cpp` was removed because the CMake compile definition now supplies it (it raised
+`-Wmacro-redefined`); `src/core` and `src/metronome` carry a `.gitkeep` so the Gradle `inputs.dir` declarations exist.

@@ -28,6 +28,10 @@ add_library(tembra_engine_core STATIC
     src/platform/null_audio_device.cpp
     src/platform/synthetic_audio_device.cpp
 )
+# Core and metronome sources are globbed (feature 004, research R16); CONFIGURE_DEPENDS re-runs CMake when files appear.
+file(GLOB TEMBRA_CORE_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/core/*.cpp)
+file(GLOB TEMBRA_METRONOME_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/metronome/*.cpp)
+target_sources(tembra_engine_core PRIVATE ${TEMBRA_CORE_SOURCES} ${TEMBRA_METRONOME_SOURCES})
 set_target_properties(tembra_engine_core PROPERTIES OUTPUT_NAME tembra_engine)
 target_include_directories(tembra_engine_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_include_directories(tembra_engine_core PRIVATE
@@ -38,6 +42,8 @@ target_include_directories(tembra_engine_core PRIVATE
 )
 # The test hook that swaps the platform device exists only in test builds.
 target_compile_definitions(tembra_engine_core PRIVATE $<$<BOOL:${TEMBRA_BUILD_TESTS}>:TEMBRA_BUILD_TESTS>)
+# miniaudio contributes only its resampler to the engine: no device, decoding, encoding or generation (research R16).
+target_compile_definitions(tembra_engine_core PRIVATE MA_NO_DEVICE_IO MA_NO_DECODING MA_NO_ENCODING MA_NO_GENERATION)
 # The analysis thread and the synthetic device use std::thread.
 find_package(Threads REQUIRED)
 target_link_libraries(tembra_engine_core PUBLIC Threads::Threads)

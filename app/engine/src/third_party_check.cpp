@@ -1,10 +1,9 @@
 // Compiles the vendored, permissively licensed audio libraries into the engine and exposes their versions.
 // This is the single translation unit that carries their implementations (research R5).
-// No audio device is touched: miniaudio is built without device I/O and without its bundled decoders
+// No audio device is touched: miniaudio is built without device I/O (MA_NO_DEVICE_IO comes from CMakeLists.txt) and without its bundled decoders
 // (dr_wav is vendored separately at the version we pin).
 #include "third_party_versions.h"
 
-#define MA_NO_DEVICE_IO
 #define MA_NO_WAV
 #define MA_NO_FLAC
 #define MA_NO_MP3
