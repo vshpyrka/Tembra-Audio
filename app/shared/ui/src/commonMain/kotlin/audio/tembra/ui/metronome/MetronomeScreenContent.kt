@@ -219,12 +219,7 @@ private fun LandscapePane(state: MetronomeUiState, callbacks: MetronomeCallbacks
                     verticalArrangement = Arrangement.spacedBy(spacing.md, Alignment.CenterVertically),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    TapTempoButton(
-                        caption = MetronomeCopy.caption(state.tapCaption),
-                        onTap = callbacks.onTap,
-                        modifier = Modifier.fillMaxWidth(),
-                        stateDescription = MetronomeCopy.tapState(state.tapCaption, state.settings.tempo),
-                    )
+                    TapTempoFor(state, callbacks, Modifier.fillMaxWidth())
                     PlayPauseButton(running = state.running, onToggle = callbacks.onTogglePlayback)
                 }
             }
@@ -286,14 +281,20 @@ private fun TransportRow(state: MetronomeUiState, callbacks: MetronomeCallbacks,
         horizontalArrangement = Arrangement.spacedBy(TembraTheme.spacing.md),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        TapTempoButton(
-            caption = MetronomeCopy.caption(state.tapCaption),
-            onTap = callbacks.onTap,
-            modifier = Modifier.weight(1f),
-            stateDescription = MetronomeCopy.tapState(state.tapCaption, state.settings.tempo),
-        )
+        TapTempoFor(state, callbacks, Modifier.weight(1f))
         PlayPauseButton(running = state.running, onToggle = callbacks.onTogglePlayback)
     }
+}
+
+/** The tap tempo button bound to the screen state: its caption and the tempo it announces (the row and the landscape column). */
+@Composable
+private fun TapTempoFor(state: MetronomeUiState, callbacks: MetronomeCallbacks, modifier: Modifier) {
+    TapTempoButton(
+        caption = MetronomeCopy.caption(state.tapCaption),
+        onTap = callbacks.onTap,
+        modifier = modifier,
+        stateDescription = MetronomeCopy.tapState(state.tapCaption, state.settings.tempo),
+    )
 }
 
 /**

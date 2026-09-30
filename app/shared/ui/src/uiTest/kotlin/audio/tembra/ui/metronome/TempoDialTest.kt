@@ -112,6 +112,16 @@ class TempoDialTest {
         onNodeWithText("Moderato (108-120)").assertExists()
     }
 
+    /** The dial's own node announces the tempo and marking, so the readout's three texts are not further stops (spec FR-030). */
+    @Test
+    fun theReadoutIsNotASeparateScreenReaderStop() = runComposeUiTest {
+        setDial()
+        val hidden = SemanticsMatcher.keyIsDefined(SemanticsProperties.HideFromAccessibility)
+        onNodeWithText("120").assert(hidden)
+        onNodeWithText("BPM").assert(hidden)
+        onNodeWithText("Moderato (108-120)").assert(hidden)
+    }
+
     @Test
     fun isOneSliderNode() = runComposeUiTest {
         setDial()

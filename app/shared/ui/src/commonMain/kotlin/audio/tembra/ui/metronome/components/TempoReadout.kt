@@ -9,6 +9,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.hideFromAccessibility
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import audio.tembra.core.metronome.Tempo
@@ -20,6 +22,9 @@ import audio.tembra.ui.theme.TembraTheme
  * The dial's centre (research R8): "120" in `tempoNumber` with "BPM" in `secondary`, the marking in `tertiary` below.
  * The number steps its size down to fit its width and the marking wraps to a second line, so a small landscape dial
  * or the largest font size never clips them.
+ *
+ * The three texts are hidden from screen readers: the dial's own node already announces "120 beats per minute,
+ * Moderato" (spec FR-030), so they would only add three stops after it. They stay in the semantics tree for tests.
  */
 @Composable
 internal fun TempoReadout(tempo: Tempo, marking: TempoMarking, modifier: Modifier = Modifier) {
@@ -36,7 +41,7 @@ internal fun TempoReadout(tempo: Tempo, marking: TempoMarking, modifier: Modifie
                 color = colors.onSurface,
                 maxLines = 1,
                 autoSize = TextAutoSize.StepBased(maxFontSize = number.fontSize),
-                modifier = Modifier.alignByBaseline().weight(1f, fill = false),
+                modifier = Modifier.alignByBaseline().weight(1f, fill = false).semantics { hideFromAccessibility() },
             )
             Text(
                 text = MetronomeCopy.bpm,
@@ -44,9 +49,16 @@ internal fun TempoReadout(tempo: Tempo, marking: TempoMarking, modifier: Modifie
                 fontWeight = FontWeight.SemiBold,
                 color = colors.secondary,
                 maxLines = 1,
-                modifier = Modifier.alignByBaseline().padding(start = spacing.xs),
+                modifier = Modifier.alignByBaseline().padding(start = spacing.xs).semantics { hideFromAccessibility() },
             )
         }
-        Text(text = marking.display, style = typography.labelMedium, color = colors.tertiary, textAlign = TextAlign.Center, maxLines = 2)
+        Text(
+            text = marking.display,
+            style = typography.labelMedium,
+            color = colors.tertiary,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            modifier = Modifier.semantics { hideFromAccessibility() },
+        )
     }
 }

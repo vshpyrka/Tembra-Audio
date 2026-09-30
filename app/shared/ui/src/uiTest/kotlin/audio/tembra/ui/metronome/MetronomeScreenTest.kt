@@ -574,12 +574,27 @@ class MetronomeScreenTest {
     @Test
     fun tabFollowsTheReadingOrder() = runComposeUiTest {
         setScreen()
-        if (!enterKeyboardMode(inputModeManager)) return@runComposeUiTest
-        val expected = listOf("3-4", "6-8", "2-4", "5-4", "7-8").map { "metronome.signature.$it" } +
-            listOf("1", "2", "4", "3").map { "metronome.subdivision.$it" } +
-            (1..4).map { "metronome.cell.$it" } +
-            listOf("standard", "downbeat", "syncopated").map { "metronome.style.$it" } +
-            listOf("metronome.sound", "metronome.dial.down", "metronome.dial", "metronome.dial.up", "metronome.slider", "metronome.tap", "metronome.play")
+        assertTabOrder(settingsTabOrder + "metronome.sound" + transportTabOrder)
+    }
+
+    /** The expanded form: the settings column (with the sound tiles row by row), then the dial card and the transport card. */
+    @Test
+    fun tabFollowsTheReadingOrderInTheWideLayout() = runComposeUiTest {
+        setScreen(layout = MetronomeLayout.Wide, size = wideWindow)
+        val tiles = listOf("classic-wood", "808-rim", "digital-beep", "cowbell", "mechanical", "custom").map { "metronome.sound.$it" }
+        assertTabOrder(settingsTabOrder + tiles + transportTabOrder)
+    }
+
+    /** A phone held sideways, tap over play beside the dial: the column first, then the dial, the slider, tap and play. */
+    @Test
+    fun tabFollowsTheReadingOrderInTheLandscapeLayout() = runComposeUiTest {
+        setScreen(layout = MetronomeLayout.Landscape, size = DpSize(892.dp, 330.dp))
+        assertTabOrder(settingsTabOrder + "metronome.sound" + transportTabOrder)
+    }
+
+    /** From the 4/4 chip, each Tab moves keyboard focus to the next of [expected]. */
+    private fun ComposeUiTest.assertTabOrder(expected: List<String>) {
+        if (!enterKeyboardMode(inputModeManager)) return
         onNodeWithTag("metronome.signature.4-4").requestFocus()
         settle()
         onNodeWithTag("metronome.signature.4-4").assertIsFocused()
@@ -589,6 +604,16 @@ class MetronomeScreenTest {
             onNodeWithTag(tag).assertIsFocused()
         }
     }
+
+    /** The settings after the 4/4 chip, up to the sound picker, in every layout. */
+    private val settingsTabOrder = listOf("3-4", "6-8", "2-4", "5-4", "7-8").map { "metronome.signature.$it" } +
+        listOf("1", "2", "4", "3").map { "metronome.subdivision.$it" } +
+        (1..4).map { "metronome.cell.$it" } +
+        listOf("standard", "downbeat", "syncopated").map { "metronome.style.$it" }
+
+    /** The dial card and the transport, in every layout. */
+    private val transportTabOrder =
+        listOf("metronome.dial.down", "metronome.dial", "metronome.dial.up", "metronome.slider", "metronome.tap", "metronome.play")
 
     @Test
     fun theFocusedSliderTakesTheArrowAndPageKeys() = runComposeUiTest {
