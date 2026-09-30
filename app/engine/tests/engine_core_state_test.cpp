@@ -1,12 +1,12 @@
-// The engine state machine behind the C ABI (contracts/engine-c-abi-v2.md "State rules"), driven through a
-// FakeAudioDevice so no audio hardware is needed.
+// The engine state machine behind the C ABI (contracts/engine-c-abi-v2.md and engine-c-abi-v3.md "State rules",
+// data-model.md §6), driven through a FakeAudioDevice so no audio hardware is needed.
 #include <catch2/catch_test_macros.hpp>
 
 #include <memory>
 
 #include "fake_audio_device.h"
 #include "tembra_engine.h"
-#include "tuner/tuner_engine.h"
+#include "core/engine_core.h"
 
 namespace {
 
@@ -14,9 +14,11 @@ namespace {
 tembra::FakeAudioDevice* installFake() {
     tembra_tuner_stop();
     tembra_tone_stop();
+    tembra_metronome_stop();
+    tembra_metronome_unload_custom_sound();
     auto fake = std::make_unique<tembra::FakeAudioDevice>();
     tembra::FakeAudioDevice* view = fake.get();
-    tembra::TunerEngine::instance().setDevice(std::move(fake));
+    tembra::EngineCore::instance().setDevice(std::move(fake));
     return view;
 }
 
@@ -283,4 +285,203 @@ TEST_CASE("a one-shot tone returns the engine to idle by itself", "[engine][tone
     REQUIRE(tembra_audio_state() == TEMBRA_AUDIO_IDLE);
     tembra_tone_stop();  // closes the lazily kept stream
     REQUIRE(fake->closed);
+}
+
+// --- The metronome (feature 004, contracts/engine-c-abi-v3.md, data-model.md §6) ---
+
+namespace {
+
+tembra_metronome_grid validGrid() {
+    tembra_metronome_grid grid{};
+    grid.bpm = 120.0;
+    grid.ticks_per_beat = 1;
+    grid.ticks_per_bar = 4;
+    grid.levels[0] = TEMBRA_CLICK_ACCENT;
+    grid.levels[1] = TEMBRA_CLICK_CLICK;
+    grid.levels[2] = TEMBRA_CLICK_CLICK;
+    grid.levels[3] = TEMBRA_CLICK_CLICK;
+    return grid;
+}
+
+double dbfs(float linear) { return 20.0 * std::log10(static_cast<double>(linear)); }
+
+}  // namespace
+
+TEST_CASE("metronome grids are validated in any state", "[engine][metronome]") {
+    installFake();
+    tembra_metronome_grid grid = validGrid();
+    REQUIRE(tembra_metronome_set_grid(&grid) == TEMBRA_OK);
+    REQUIRE(tembra_audio_state() == TEMBRA_AUDIO_IDLE);
+    REQUIRE(tembra_metronome_set_grid(nullptr) == TEMBRA_ERR_ARGUMENT);
+
+    tembra_metronome_grid bad = validGrid();
+    bad.bpm = 39.0;
+    REQUIRE(tembra_metronome_set_grid(&bad) == TEMBRA_ERR_ARGUMENT);
+    bad = validGrid();
+    bad.bpm = 240.5;
+    REQUIRE(tembra_metronome_set_grid(&bad) == TEMBRA_ERR_ARGUMENT);
+    bad = validGrid();
+    bad.ticks_per_beat = 5;
+    bad.ticks_per_bar = 10;
+    REQUIRE(tembra_metronome_set_grid(&bad) == TEMBRA_ERR_ARGUMENT);
+    bad = validGrid();
+    bad.ticks_per_bar = 33;
+    REQUIRE(tembra_metronome_set_grid(&bad) == TEMBRA_ERR_ARGUMENT);
+    bad = validGrid();
+    bad.levels[2] = 3;
+    REQUIRE(tembra_metronome_set_grid(&bad) == TEMBRA_ERR_ARGUMENT);
+    bad = validGrid();
+    bad.ticks_per_beat = 3;
+    bad.ticks_per_bar = 4;  // not a whole number of beats
+    REQUIRE(tembra_metronome_set_grid(&bad) == TEMBRA_ERR_ARGUMENT);
+    bad = validGrid();
+    bad.ticks_per_bar = 0;
+    REQUIRE(tembra_metronome_set_grid(&bad) == TEMBRA_ERR_ARGUMENT);
+    REQUIRE(tembra_audio_state() == TEMBRA_AUDIO_IDLE);
+}
+
+TEST_CASE("the metronome starts on beat 1 at frame 0 and refuses the other sources", "[engine][metronome]") {
+    tembra::FakeAudioDevice* fake = installFake();
+    tembra_metronome_grid grid = validGrid();
+    REQUIRE(tembra_metronome_set_grid(&grid) == TEMBRA_OK);
+    REQUIRE(tembra_metronome_select_sound(TEMBRA_SOUND_DIGITAL_BEEP) == TEMBRA_OK);
+    REQUIRE(tembra_metronome_start() == TEMBRA_OK);
+    REQUIRE(tembra_audio_state() == TEMBRA_AUDIO_METRONOME);
+    REQUIRE(fake->outputOpen);
+
+    // The first block starts with the level-index-0 click (Accent, −3 dBFS): its raised-cosine attack starts at
+    // exactly 0 on frame 0 and the sound is under way from frame 1.
+    const auto first = pullMono(fake, 256);
+    REQUIRE(first[0] == 0.0f);
+    REQUIRE(first[1] != 0.0f);
+    REQUIRE(std::abs(dbfs(peakOf(first)) - -3.0) <= 1.0);
+
+    tembra_tuner_config config{};
+    tembra_tuner_default_config(&config);
+    REQUIRE(tembra_tuner_start(&config) == TEMBRA_ERR_STATE);
+    REQUIRE(tembra_tone_start(440.0, 0) == TEMBRA_ERR_STATE);
+    REQUIRE(tembra_sample_play(0, 0) == TEMBRA_ERR_STATE);
+    REQUIRE(tembra_metronome_preview(TEMBRA_CLICK_CLICK) == TEMBRA_ERR_STATE);
+    tembra_tone_stop();  // a stray tone stop leaves the metronome running
+    REQUIRE(tembra_audio_state() == TEMBRA_AUDIO_METRONOME);
+    REQUIRE(fake->outputOpen);
+
+    tembra_metronome_tick tick{};
+    tembra_metronome_read(&tick);
+    REQUIRE(tick.running == 1u);
+    REQUIRE(tick.tick_index == 1u);
+    REQUIRE(tick.sample_rate == 48000u);
+    REQUIRE(tick.beat_period_ns == 500'000'000);
+
+    tembra_metronome_stop();
+    REQUIRE(tembra_audio_state() == TEMBRA_AUDIO_IDLE);
+    REQUIRE(fake->closed);
+    REQUIRE_FALSE(fake->outputOpen);
+    tembra_metronome_stop();  // idempotent
+    REQUIRE(tembra_audio_state() == TEMBRA_AUDIO_IDLE);
+    tembra_metronome_read(&tick);
+    REQUIRE(tick.running == 0u);
+}
+
+TEST_CASE("the metronome refuses to start while listening or playing a tone", "[engine][metronome]") {
+    installFake();
+    tembra_tuner_config config{};
+    tembra_tuner_default_config(&config);
+    REQUIRE(tembra_tuner_start(&config) == TEMBRA_OK);
+    REQUIRE(tembra_metronome_start() == TEMBRA_ERR_STATE);
+    REQUIRE(tembra_audio_state() == TEMBRA_AUDIO_LISTENING);
+    tembra_tuner_stop();
+
+    REQUIRE(tembra_tone_start(440.0, 0) == TEMBRA_OK);
+    REQUIRE(tembra_metronome_start() == TEMBRA_ERR_STATE);
+    REQUIRE(tembra_audio_state() == TEMBRA_AUDIO_TONE);
+    tembra_tone_stop();
+    REQUIRE(tembra_audio_state() == TEMBRA_AUDIO_IDLE);
+}
+
+TEST_CASE("a metronome whose device cannot open stays idle", "[engine][metronome]") {
+    tembra::FakeAudioDevice* fake = installFake();
+    fake->failOpen = true;
+    REQUIRE(tembra_metronome_start() == TEMBRA_ERR_DEVICE);
+    REQUIRE(tembra_audio_state() == TEMBRA_AUDIO_IDLE);
+    REQUIRE(tembra_metronome_preview(TEMBRA_CLICK_CLICK) == TEMBRA_ERR_DEVICE);
+    REQUIRE(tembra_audio_state() == TEMBRA_AUDIO_IDLE);
+}
+
+TEST_CASE("sound selection checks the custom sound and the range", "[engine][metronome]") {
+    installFake();
+    REQUIRE(tembra_metronome_select_sound(TEMBRA_SOUND_CUSTOM) == TEMBRA_ERR_STATE);
+    REQUIRE(tembra_metronome_select_sound(6) == TEMBRA_ERR_ARGUMENT);
+    REQUIRE(tembra_metronome_select_sound(TEMBRA_SOUND_COWBELL) == TEMBRA_OK);
+    tembra_custom_sound_info info{};
+    REQUIRE(tembra_metronome_load_custom_sound(nullptr, &info) == TEMBRA_ERR_ARGUMENT);
+    const std::string path = tembra::fixtures::tempPath("tembra-engine-custom-click.wav");
+    REQUIRE(tembra::fixtures::writeTempWav(path, 44100, 1, 16, tembra::fixtures::sine(1000.0, 44100.0, 0.1, 0.5)));
+    REQUIRE(tembra_metronome_load_custom_sound(path.c_str(), nullptr) == TEMBRA_ERR_ARGUMENT);
+    REQUIRE(tembra_metronome_load_custom_sound(path.c_str(), &info) == TEMBRA_OK);
+    REQUIRE(info.source_rate == 44100u);
+    REQUIRE(info.source_channels == 1u);
+    REQUIRE(info.source_bits == 16u);
+    REQUIRE(tembra_metronome_select_sound(TEMBRA_SOUND_CUSTOM) == TEMBRA_OK);
+    tembra_metronome_unload_custom_sound();
+    REQUIRE(tembra_metronome_select_sound(TEMBRA_SOUND_CUSTOM) == TEMBRA_ERR_STATE);
+}
+
+TEST_CASE("a preview plays one click in the tone state and returns to idle", "[engine][metronome]") {
+    tembra::FakeAudioDevice* fake = installFake();
+    REQUIRE(tembra_metronome_preview(3) == TEMBRA_ERR_ARGUMENT);
+    REQUIRE(tembra_metronome_preview(TEMBRA_CLICK_CLICK) == TEMBRA_OK);
+    REQUIRE(tembra_audio_state() == TEMBRA_AUDIO_TONE);
+    const auto first = pullMono(fake, 480);
+    REQUIRE(std::abs(dbfs(peakOf(first)) - -9.0) <= 1.0);
+    for (int block = 0; block < 15; ++block) pullMono(fake, 480);  // 160 ms: longer than any built-in click
+    REQUIRE(tembra_audio_state() == TEMBRA_AUDIO_IDLE);
+    REQUIRE(tembra_metronome_start() == TEMBRA_OK);  // idle again, so the metronome may start
+    REQUIRE(tembra_audio_state() == TEMBRA_AUDIO_METRONOME);
+    tembra_metronome_stop();
+    REQUIRE(tembra_audio_state() == TEMBRA_AUDIO_IDLE);
+}
+
+TEST_CASE("reading the metronome before any start is at rest", "[engine][metronome]") {
+    installFake();
+    tembra_metronome_tick tick{};
+    tick.tick_index = 99;
+    tick.running = 1;
+    tembra_metronome_read(&tick);
+    REQUIRE(tick.running == 0u);
+    REQUIRE(tick.tick_index == 0u);
+    tembra_metronome_read(nullptr);  // tolerated
+}
+
+TEST_CASE("a device reopen keeps the tick position", "[engine][metronome]") {
+    tembra::FakeAudioDevice* fake = installFake();
+    tembra_metronome_grid grid = validGrid();
+    grid.bpm = 240.0;  // 12 000 frames per tick
+    REQUIRE(tembra_metronome_set_grid(&grid) == TEMBRA_OK);
+    REQUIRE(tembra_metronome_select_sound(TEMBRA_SOUND_CLASSIC_WOOD) == TEMBRA_OK);
+    REQUIRE(tembra_metronome_start() == TEMBRA_OK);
+    for (int block = 0; block < 60; ++block) pullMono(fake, 480);  // 28 800 frames: ticks 0, 1 and 2
+    tembra_metronome_tick tick{};
+    tembra_metronome_read(&tick);
+    REQUIRE(tick.tick_index == 3u);
+    fake->reopenOutput();  // the platform reopened the stream after a route change (research R1)
+    REQUIRE(tembra_audio_state() == TEMBRA_AUDIO_METRONOME);
+    for (int block = 0; block < 20; ++block) pullMono(fake, 480);  // to 38 400: tick 3 at 36 000
+    tembra_metronome_read(&tick);
+    REQUIRE(tick.tick_index == 4u);
+    REQUIRE(tick.beat_index == 3u);
+    // Latency: 0 asks the device (7 ms here); a reported value (iOS) replaces it.
+    fake->latencyNanos = 7'000'000;
+    tembra_metronome_set_output_latency_ns(0);
+    tembra_metronome_tick fromDevice{};
+    tembra_metronome_read(&fromDevice);
+    tembra_metronome_set_output_latency_ns(20'000'000);
+    tembra_metronome_tick reported{};
+    tembra_metronome_read(&reported);
+    const int64_t difference = reported.audible_in_ns - fromDevice.audible_in_ns;
+    REQUIRE(difference > 13'000'000 - 5'000'000);
+    REQUIRE(difference <= 13'000'000);
+    tembra_metronome_set_output_latency_ns(0);
+    tembra_metronome_stop();
+    REQUIRE(tembra_audio_state() == TEMBRA_AUDIO_IDLE);
 }
