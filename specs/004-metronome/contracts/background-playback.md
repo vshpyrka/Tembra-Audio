@@ -28,8 +28,11 @@ class FakeBackgroundPlaybackHost(var allow: Boolean = true) : BackgroundPlayback
 - Manifest: `<uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>`,
   `<uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>`,
   `<service android:name=".MetronomeForegroundService" android:foregroundServiceType="mediaPlayback" android:exported="false"/>`.
-  No `POST_NOTIFICATIONS` request: on Android 13+ the notification appears only when the user
-  has already allowed notifications; the service and the system's active-app chip work regardless.
+  `<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>` is declared but never
+  requested at runtime (B12 ruling, 2026-09-30): on Android 13+ the notification and its Stop action
+  appear only once the user allows notifications for the app in system settings (without the
+  declaration the system could never grant it); the service, the in-app button and the system's
+  active-app chip work regardless. Device checks grant it with `adb shell pm grant`.
 - `AndroidBackgroundPlaybackHost(context)`: `keepAlive()` = `ContextCompat.startForegroundService(context, Intent(ACTION_START))`
   wrapped in a `try` returning false on `ForegroundServiceStartNotAllowedException` (API 31+,
   the app is not visible); `release()` = `context.stopService(Intent(context, MetronomeForegroundService::class.java))` (not `startService(ACTION_STOP)`: starting a service from the background throws on API 26+, and an ACTION_STOP would emit a stop request the ViewModel did not ask for).
