@@ -110,6 +110,55 @@ class NativeAudioEngineTest {
     fun aPreviewClickPlaysWhileIdle() {
         assertEquals(AudioResult.Ok, engine.previewClick())
     }
+
+    /** A refused start, preview or tone never releases what the running metronome holds (contract ruling). */
+    @Test
+    fun aStartWhileTheMetronomeRunsKeepsItsFocusAndReceiver() {
+        val first = engine.startMetronome()
+        if (first == AudioResult.Error(AudioResult.FOCUS_DENIED)) {
+            println("NativeAudioEngineTest: Gain focus denied (another app holds focus); assertion skipped")
+            return
+        }
+        assertEquals(AudioResult.Ok, first)
+        assertEquals(FocusType.Gain, engine.focus.held)
+        assertTrue(engine.becomingNoisy.registered)
+
+        assertEquals(AudioResult.Error(-1), engine.startMetronome())
+        assertEquals(AudioResult.Error(-1), engine.previewClick())
+        assertEquals(AudioResult.Error(-1), engine.startTone(440.0, 0))
+        engine.stopTone()
+        engine.stopListening()
+        assertEquals(AudioState.Metronome, engine.audioState)
+        assertEquals(FocusType.Gain, engine.focus.held)
+        assertTrue(engine.becomingNoisy.registered)
+
+        engine.stopMetronome()
+        assertEquals(AudioState.Idle, engine.audioState)
+        assertNull(engine.focus.held)
+        assertFalse(engine.becomingNoisy.registered)
+    }
+
+    /** A metronome stop never releases a sounding tone's focus; the tone's own stop does. */
+    @Test
+    fun aMetronomeStopLeavesAToneItsFocus() {
+        assertEquals(AudioResult.Ok, engine.startTone(440.0, 0))
+        engine.stopMetronome()
+        assertEquals(AudioState.Tone, engine.audioState)
+        assertEquals(FocusType.TransientMayDuck, engine.focus.held)
+        engine.stopTone()
+        assertNull(engine.focus.held)
+    }
+
+    /** The preview ends on its own; the actual abandons its transient focus once the engine is back to Idle. */
+    @Test
+    fun aPreviewReleasesItsFocusOnceTheClickEnds() {
+        assertEquals(AudioResult.Ok, engine.previewClick())
+        assertEquals(FocusType.TransientMayDuck, engine.focus.held)
+        val deadline = System.nanoTime() + 1_500_000_000L
+        while (engine.focus.held != null && System.nanoTime() < deadline) Thread.sleep(20)
+        assertNull(engine.focus.held, "the preview's focus was not released within 1.5 s")
+        assertEquals(AudioState.Idle, engine.audioState)
+    }
 }
 
 private const val EXPECT_OBOE = true

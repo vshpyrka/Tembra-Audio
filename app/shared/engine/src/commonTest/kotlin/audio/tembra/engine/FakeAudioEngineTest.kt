@@ -199,6 +199,27 @@ class FakeAudioEngineTest {
     }
 
     @Test
+    fun aPreviewEndsOnItsOwnOrWithTheMetronomeStop() {
+        val engine = FakeAudioEngine()
+        engine.previewClick()
+        engine.endPreview()
+        assertEquals(AudioState.Idle, engine.audioState)
+        engine.previewClick(ClickLevel.Accent)
+        engine.stopMetronome()
+        assertEquals(AudioState.Idle, engine.audioState)
+        assertEquals(listOf("previewClick(Click)", "previewClick(Accent)", "stopMetronome"), engine.calls)
+    }
+
+    @Test
+    fun endPreviewLeavesAToneSounding() {
+        val engine = FakeAudioEngine()
+        engine.startTone(82.41, 0)
+        engine.endPreview()
+        engine.stopMetronome()
+        assertEquals(AudioState.Tone, engine.audioState)
+    }
+
+    @Test
     fun readTickCopiesTheScriptedTick() {
         val engine = FakeAudioEngine()
         engine.nextTick.apply {

@@ -38,6 +38,11 @@ import kotlinx.cinterop.set
 import kotlinx.cinterop.toKString
 import kotlinx.cinterop.usePinned
 import kotlinx.coroutines.flow.Flow
+import platform.Foundation.NSLock
+import platform.darwin.DISPATCH_TIME_NOW
+import platform.darwin.dispatch_after
+import platform.darwin.dispatch_get_main_queue
+import platform.darwin.dispatch_time
 
 /**
  * Cinterop facade over the static engine archive. The `AVAudioSession` is configured around every stream
@@ -45,6 +50,11 @@ import kotlinx.coroutines.flow.Flow
  * `notifyOthersOnDeactivation` when idle. The metronome also plays in `playback` and reports the session's output
  * latency at the start and on every route change while it runs (feature 004 R7). The six native structs live as long
  * as the engine object.
+ *
+ * The session is activated only by the call that moves the engine out of Idle and deactivated only when it returns
+ * there (contracts/metronome-audio-kotlin.md): a refused start never deactivates under a running stream, and a stop
+ * leaves the session alone while another stream runs. A preview click ends on its own, so the actual deactivates the
+ * session itself once the engine is back to Idle.
  */
 @OptIn(ExperimentalForeignApi::class)
 actual class NativeAudioEngine : AudioEngine {
@@ -55,6 +65,15 @@ actual class NativeAudioEngine : AudioEngine {
     private val grid = nativeHeap.alloc<tembra_metronome_grid>()
     private val tick = nativeHeap.alloc<tembra_metronome_tick>()
     private val customInfo = nativeHeap.alloc<tembra_custom_sound_info>()
+
+    /** Guards [previewGeneration] against a start or stop racing the main-queue check. */
+    private val previewLock = NSLock()
+
+    /** Bumped by every start and releasing stop; a scheduled preview check only acts while its generation is current. */
+    private var previewGeneration = 0
+
+    /** True while a preview check is scheduled for [previewGeneration]. */
+    private var previewPending = false
 
     /** The C ABI revision this library was built with; tests check it. */
     internal fun abiVersion(): Int = tembra_engine_abi_version().toInt()
@@ -76,6 +95,8 @@ actual class NativeAudioEngine : AudioEngine {
     }
 
     override fun startListening(config: TunerAnalysisConfig): AudioResult {
+        if (audioState != AudioState.Idle) return STATE_REFUSED
+        cancelPreviewRelease()
         fill(config)
         IosAudioSession.activateForListening()
         val result = AudioResult.fromNative(tembra_tuner_start(this.config.ptr))
@@ -94,6 +115,16 @@ actual class NativeAudioEngine : AudioEngine {
 
     override fun stopListening() {
         tembra_tuner_stop()
+        releaseSessionUnlessOwnedBy(AudioState.Tone, AudioState.Metronome)
+    }
+
+    /**
+     * Deactivates the session unless the engine is (still) in one of [owners], whose own stop releases it. Also cancels
+     * a pending preview check, so the session is never deactivated twice.
+     */
+    private fun releaseSessionUnlessOwnedBy(vararg owners: AudioState) {
+        if (audioState in owners) return
+        cancelPreviewRelease()
         IosAudioSession.deactivate()
     }
 
@@ -109,9 +140,22 @@ actual class NativeAudioEngine : AudioEngine {
         into.synthetic = reading.synthetic.toInt() != 0
     }
 
-    override fun startTone(frequencyHz: Double, durationMs: Int): AudioResult {
+    override fun startTone(frequencyHz: Double, durationMs: Int): AudioResult =
+        sound { tembra_tone_start(frequencyHz, durationMs.toUInt()) }
+
+    /**
+     * Tones and samples: from Idle they activate `playback`; over a sounding tone the engine re-arms it in the session
+     * already active; while listening or the metronome runs the engine refuses, and the session is not touched.
+     */
+    private inline fun sound(start: () -> Int): AudioResult {
+        when (audioState) {
+            AudioState.Listening, AudioState.Metronome -> return STATE_REFUSED
+            AudioState.Tone -> return AudioResult.fromNative(start())
+            AudioState.Idle -> Unit
+        }
+        cancelPreviewRelease()
         IosAudioSession.activateForPlayback()
-        val result = AudioResult.fromNative(tembra_tone_start(frequencyHz, durationMs.toUInt()))
+        val result = AudioResult.fromNative(start())
         if (result != AudioResult.Ok) IosAudioSession.deactivate()
         return result
     }
@@ -124,12 +168,8 @@ actual class NativeAudioEngine : AudioEngine {
         return if (handle < 0) null else SampleHandle(handle)
     }
 
-    override fun playSample(handle: SampleHandle, loop: Boolean): AudioResult {
-        IosAudioSession.activateForPlayback()
-        val result = AudioResult.fromNative(tembra_sample_play(handle.id, if (loop) 1u else 0u))
-        if (result != AudioResult.Ok) IosAudioSession.deactivate()
-        return result
-    }
+    override fun playSample(handle: SampleHandle, loop: Boolean): AudioResult =
+        sound { tembra_sample_play(handle.id, if (loop) 1u else 0u) }
 
     override fun unloadSample(handle: SampleHandle) {
         tembra_sample_unload(handle.id)
@@ -137,7 +177,7 @@ actual class NativeAudioEngine : AudioEngine {
 
     override fun stopTone() {
         tembra_tone_stop()
-        IosAudioSession.deactivate()
+        releaseSessionUnlessOwnedBy(AudioState.Listening, AudioState.Metronome)
     }
 
     override fun setGrid(grid: MetronomeGrid): AudioResult {
@@ -173,6 +213,8 @@ actual class NativeAudioEngine : AudioEngine {
     }
 
     override fun startMetronome(): AudioResult {
+        if (audioState != AudioState.Idle) return STATE_REFUSED
+        cancelPreviewRelease()
         IosAudioSession.activateForPlayback()
         reportOutputLatencyNanos(IosAudioSession.outputLatencyNanos())
         val result = AudioResult.fromNative(tembra_metronome_start())
@@ -185,16 +227,59 @@ actual class NativeAudioEngine : AudioEngine {
     }
 
     override fun stopMetronome() {
-        IosAudioSession.routeChangeListener = null
         tembra_metronome_stop()
-        IosAudioSession.deactivate()
+        if (audioState == AudioState.Idle) IosAudioSession.routeChangeListener = null
+        releaseSessionUnlessOwnedBy(AudioState.Listening, AudioState.Tone)
     }
 
     override fun previewClick(level: ClickLevel): AudioResult {
+        if (audioState != AudioState.Idle) return STATE_REFUSED
+        cancelPreviewRelease()
         IosAudioSession.activateForPlayback()
         val result = AudioResult.fromNative(tembra_metronome_preview(level.native.toUInt()))
-        if (result != AudioResult.Ok) IosAudioSession.deactivate()
+        if (result == AudioResult.Ok) schedulePreviewRelease() else IosAudioSession.deactivate()
         return result
+    }
+
+    /**
+     * Checks the engine state on the main queue every [PREVIEW_CHECK_INTERVAL_NANOS] and deactivates the session
+     * (`notifyOthersOnDeactivation`) once the click has ended. Gives up (leaving the session to the next stop) after
+     * [PREVIEW_CHECKS] checks.
+     */
+    private fun schedulePreviewRelease() {
+        previewLock.lock()
+        val generation = ++previewGeneration
+        previewPending = true
+        previewLock.unlock()
+        checkPreviewLater(generation, PREVIEW_CHECKS)
+    }
+
+    private fun checkPreviewLater(generation: Int, remaining: Int) {
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, PREVIEW_CHECK_INTERVAL_NANOS), dispatch_get_main_queue()) {
+            previewLock.lock()
+            try {
+                if (generation != previewGeneration || !previewPending) return@dispatch_after
+                when (audioState) {
+                    AudioState.Idle -> {
+                        previewPending = false
+                        IosAudioSession.deactivate()
+                    }
+                    AudioState.Tone ->
+                        if (remaining > 1) checkPreviewLater(generation, remaining - 1) else previewPending = false
+                    // Another stream took over; every start cancels this check first, so this is only a safeguard.
+                    AudioState.Listening, AudioState.Metronome -> previewPending = false
+                }
+            } finally {
+                previewLock.unlock()
+            }
+        }
+    }
+
+    private fun cancelPreviewRelease() {
+        previewLock.lock()
+        previewGeneration++
+        previewPending = false
+        previewLock.unlock()
     }
 
     override fun reportOutputLatencyNanos(nanos: Long) {
@@ -216,6 +301,15 @@ actual class NativeAudioEngine : AudioEngine {
         get() = AudioState.fromNative(tembra_audio_state().toInt())
 
     override val events: Flow<AudioEvent> = IosAudioSession.events
+
+    private companion object {
+        /** `TEMBRA_ERR_STATE`: what the engine answers when it is not in a state that allows the call. */
+        val STATE_REFUSED = AudioResult.Error(-1)
+        const val PREVIEW_CHECK_INTERVAL_NANOS = 100_000_000L
+
+        /** 3 s: a custom sound is kept up to 2 s (research R4), so a 1 s bound would leave its session active. */
+        const val PREVIEW_CHECKS = 30
+    }
 }
 
 private const val GRID_LEVELS = 32

@@ -2,7 +2,11 @@ package audio.tembra.engine
 
 import audio.tembra.core.metronome.Tempo
 import audio.tembra.core.version.SemanticVersion
+import platform.Foundation.NSDate
+import platform.Foundation.NSRunLoop
 import platform.Foundation.NSThread
+import platform.Foundation.dateWithTimeIntervalSinceNow
+import platform.Foundation.runUntilDate
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -136,6 +140,50 @@ class NativeAudioEngineTest {
             is AudioResult.Error -> {
                 assertEquals(AudioResult.Error(-2), result, "only the device error is acceptable")
                 println("NativeAudioEngineTest: no output unit in this simulator process; preview skipped")
+            }
+        }
+    }
+
+    /**
+     * A refused start, preview or tone never deactivates the session of the running stream (contract ruling). The
+     * synthetic test signal runs without an output unit, so this holds in the simulator process too.
+     */
+    @Test
+    fun aRefusedStartKeepsTheRunningStreamsSession() {
+        assertTrue(IosAudioSession.activateForPlayback(), "activateForPlayback")
+        assertEquals(AudioResult.Ok, engine.startTestSignal(TestSignals.byId("e2-flat-20")!!.signal))
+        assertEquals(AudioState.Listening, engine.audioState)
+
+        assertEquals(AudioResult.Error(-1), engine.startMetronome())
+        assertEquals(AudioResult.Error(-1), engine.previewClick())
+        assertEquals(AudioResult.Error(-1), engine.startTone(440.0, 0))
+        engine.stopMetronome()
+        engine.stopTone()
+        assertEquals(AudioState.Listening, engine.audioState)
+        assertTrue(IosAudioSession.isActive, "a refused call deactivated the running stream's session")
+
+        engine.stopListening()
+        assertFalse(IosAudioSession.isActive, "stopListening leaves the session active")
+    }
+
+    /** The preview ends on its own; the actual deactivates the session once the engine is back to Idle. */
+    @Test
+    fun aPreviewDeactivatesTheSessionOnceTheClickEnds() {
+        when (val result = engine.previewClick()) {
+            AudioResult.Ok -> {
+                assertTrue(IosAudioSession.isActive)
+                val started = TimeSource.Monotonic.markNow()
+                while (IosAudioSession.isActive && started.elapsedNow() < 1_500.milliseconds) {
+                    // The check runs on the main queue: let this (main) thread's run loop serve it.
+                    NSRunLoop.currentRunLoop.runUntilDate(NSDate.dateWithTimeIntervalSinceNow(0.02))
+                }
+                assertFalse(IosAudioSession.isActive, "the preview's session was not deactivated within 1.5 s")
+                assertEquals(AudioState.Idle, engine.audioState)
+            }
+            is AudioResult.Error -> {
+                assertEquals(AudioResult.Error(-2), result, "only the device error is acceptable")
+                assertFalse(IosAudioSession.isActive, "a failed preview leaves the session active")
+                println("NativeAudioEngineTest: no output unit in this simulator process; preview release skipped")
             }
         }
     }
