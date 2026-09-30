@@ -20,6 +20,7 @@ interface MetronomeAudio : AudioStatus {
     fun startMetronome(): AudioResult                                 // platform focus / session inside the actuals; beat 1 at once
     fun stopMetronome()                                               // idempotent; abandons focus / deactivates the session
     fun previewClick(level: ClickLevel = ClickLevel.Click): AudioResult   // Idle only
+    fun stopTone()                                                    // ends a sounding preview click (same member as TunerAudio.stopTone); idempotent
     /** iOS reports the session's output latency; Android passes nothing (the device answers). */
     fun reportOutputLatencyNanos(nanos: Long)
     /** Lock-free; safe to call every frame from the UI thread. Fills [into] without allocating. */
