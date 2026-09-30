@@ -42,10 +42,13 @@ class FakeAudioEngine(
     /** What [readTick] copies; tests script it. */
     var nextTick: TickSnapshot = TickSnapshot()
 
-    /** What [loadCustomSound] returns. */
+    /** What [loadCustomSound] returns for a path not in [customSoundResults]. */
     var customSoundResult: CustomSoundResult = CustomSoundResult.Loaded(
         CustomSoundInfo(sourceRate = 48000, sourceChannels = 1, sourceBits = 16, keptFrames = 4800, trimmedMs = 0f, keptMs = 100f),
     )
+
+    /** Per-path answers of [loadCustomSound], so a test can refuse a staged file yet reload the previous copy. */
+    val customSoundResults: MutableMap<String, CustomSoundResult> = mutableMapOf()
 
     /**
      * When set, the next start command (listening, test signal, tone, sample, metronome, preview) returns it, leaves
@@ -139,7 +142,7 @@ class FakeAudioEngine(
 
     override fun loadCustomSound(path: String): CustomSoundResult {
         _calls += "loadCustomSound($path)"
-        return customSoundResult
+        return customSoundResults[path] ?: customSoundResult
     }
 
     override fun unloadCustomSound() {

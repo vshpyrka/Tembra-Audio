@@ -6,7 +6,7 @@ import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-/** The picker double records destinations and writes its bytes only for a pick. */
+/** The picker double records destinations, writes its bytes for a pick and, when asked, a partial copy for a failure. */
 class FakeSoundFilePickerTest {
 
     @Test
@@ -25,5 +25,12 @@ class FakeSoundFilePickerTest {
         assertEquals(SoundPickResult.Failed(SoundPickFailure.TooLarge), picker.pickWav("/b.wav"))
         assertEquals(listOf("/a.wav", "/b.wav"), picker.destinations)
         assertTrue(picker.files.isEmpty())
+    }
+
+    @Test
+    fun aFailedPickCanLeaveAPartialCopy() = runTest {
+        val picker = FakeSoundFilePicker(next = SoundPickResult.Failed(SoundPickFailure.TooLarge), partialOnFailure = byteArrayOf(5, 5))
+        picker.pickWav("/c.wav")
+        assertContentEquals(byteArrayOf(5, 5), picker.files["/c.wav"])
     }
 }

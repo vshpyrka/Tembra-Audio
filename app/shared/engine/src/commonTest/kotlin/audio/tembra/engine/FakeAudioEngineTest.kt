@@ -170,6 +170,14 @@ class FakeAudioEngineTest {
     }
 
     @Test
+    fun aPerPathResultOverridesTheScriptedOne() {
+        val engine = FakeAudioEngine()
+        engine.customSoundResults["/staged.wav"] = CustomSoundResult.NotWav
+        assertEquals(CustomSoundResult.NotWav, engine.loadCustomSound("/staged.wav"))
+        assertTrue(engine.loadCustomSound("/kept.wav") is CustomSoundResult.Loaded)
+    }
+
+    @Test
     fun theMetronomeFollowsTheCalls() {
         val engine = FakeAudioEngine()
         assertEquals(AudioResult.Ok, engine.startMetronome())

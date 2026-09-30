@@ -355,9 +355,10 @@ class MetronomeViewModel(
 
     /**
      * Imports a WAV for the Custom entry (spec FR-022 to FR-025, contracts/click-sounds.md): the platform picker copies
-     * the file to the store's staging path, the store commits it as the app's copy, and the engine prepares it off the
-     * main thread. A loaded sound is selected, previewed while stopped and persisted with its name and path; a refusal
-     * keeps the previous sound, removes the refused copy and sends its message once. The entry reads
+     * the file to the store's staging path, the engine validates and prepares the staged file off the main thread, and
+     * only then does the store commit it as the app's copy. A loaded sound is selected, previewed while stopped and
+     * persisted with its name and path; a refusal removes the staged file only, keeps the previous sound and copy
+     * (reloading a selected custom sound into the engine) and sends its message once. The entry reads
      * [CustomSoundState.Importing] throughout, and a second import meanwhile is ignored.
      */
     fun importCustomSound() {
@@ -371,47 +372,81 @@ class MetronomeViewModel(
     /** The filled Custom entry's Replace action: the same flow, the new file replacing the previous one (spec FR-022). */
     fun replaceCustomSound() = importCustomSound()
 
+    /** How one import ended. */
+    private sealed interface ImportOutcome {
+        data class Imported(val name: String) : ImportOutcome
+        data object Cancelled : ImportOutcome
+        data class Refused(val message: MetronomeMessage) : ImportOutcome
+    }
+
     /** One import, start to end; whatever did not end in a loaded sound restores the entry it found. */
     private suspend fun runImport() {
-        var imported: String? = null
+        var imported = false
         try {
-            imported = pickAndPrepareCustomSound()
+            val outcome = try {
+                pickAndPrepareCustomSound()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (failure: Exception) {
+                // The store's file system, the picker or the engine failed in a way none of them could report.
+                ImportOutcome.Refused(MetronomeMessage.ImportFailed)
+            }
+            when (outcome) {
+                is ImportOutcome.Imported -> {
+                    imported = true
+                    useImportedSound(outcome.name)
+                }
+                ImportOutcome.Cancelled -> Unit
+                is ImportOutcome.Refused -> refuse(outcome.message)
+            }
+        } finally {
+            if (!imported) _uiState.update { it.copy(customSound = customBeforeImport) }
+        }
+    }
+
+    /**
+     * Picks into staging and has the engine prepare the staged file; the store commits it only once the engine has
+     * accepted it, so a refused file never replaces the previous copy (spec FR-025).
+     */
+    private suspend fun pickAndPrepareCustomSound(): ImportOutcome {
+        val name = when (val picked = picker.pickWav(store.stagingPath)) {
+            is SoundPickResult.Picked -> picked.displayName
+            SoundPickResult.Cancelled -> return ImportOutcome.Cancelled
+            is SoundPickResult.Failed -> return ImportOutcome.Refused(messageOf(picked.reason))
+        }
+        return when (withContext(prepareDispatcher) { audio.loadCustomSound(store.stagingPath) }) {
+            // The engine accepted the staged file; a commit that finds nothing staged is a failed import.
+            is CustomSoundResult.Loaded ->
+                if (store.commit()) ImportOutcome.Imported(name) else ImportOutcome.Refused(MetronomeMessage.ImportFailed)
+            CustomSoundResult.NotWav -> ImportOutcome.Refused(MetronomeMessage.NotWav)
+            CustomSoundResult.Silent -> ImportOutcome.Refused(MetronomeMessage.Silent)
+            CustomSoundResult.Missing -> ImportOutcome.Refused(MetronomeMessage.ImportFailed)
+        }
+    }
+
+    /**
+     * Discards a refused import: the staged file (or a partial copy a picker left) goes, the previous copy stays. The
+     * engine may have prepared the staged file in place of the previous sound, so a selected custom sound is loaded
+     * again from its copy. The message is sent once, whether or not the staged file could be removed.
+     */
+    private suspend fun refuse(message: MetronomeMessage) {
+        try {
+            store.deleteStaging()
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (failure: Exception) {
-            // The store's file system or the platform picker failed in a way the picker could not report.
-            _messages.trySend(MetronomeMessage.ImportFailed)
-        } finally {
-            if (imported == null) _uiState.update { it.copy(customSound = customBeforeImport) }
+            // A staged file that could not be removed is overwritten by the next pick and never committed.
         }
-        if (imported != null) useImportedSound(imported)
-    }
-
-    /** The picked name once the engine holds the sound, or null after a cancellation or a refusal (its message sent). */
-    private suspend fun pickAndPrepareCustomSound(): String? {
-        val name = when (val picked = picker.pickWav(store.stagingPath)) {
-            is SoundPickResult.Picked -> picked.displayName
-            SoundPickResult.Cancelled -> return null
-            // The picker removes a partial copy itself (contracts/click-sounds.md), so nothing was staged.
-            is SoundPickResult.Failed -> return refuse(messageOf(picked.reason))
-        }
-        if (!store.commit()) return refuse(MetronomeMessage.ImportFailed)
-        val refusal = when (withContext(prepareDispatcher) { audio.loadCustomSound(store.path) }) {
-            is CustomSoundResult.Loaded -> return name
-            CustomSoundResult.NotWav -> MetronomeMessage.NotWav
-            CustomSoundResult.Silent -> MetronomeMessage.Silent
-            CustomSoundResult.Missing -> MetronomeMessage.ImportFailed
-        }
-        // The engine keeps whatever it had loaded; the refused copy is not kept. The commit already replaced the app's
-        // previous copy (the contract's order), so a refused replace leaves the previous sound in the engine for this
-        // launch only.
-        store.delete()
-        return refuse(refusal)
-    }
-
-    private fun refuse(message: MetronomeMessage): String? {
+        if (_uiState.value.settings.sound is ClickSound.Custom) reloadPreviousCustomSound()
         _messages.trySend(message)
-        return null
+    }
+
+    private suspend fun reloadPreviousCustomSound() {
+        when (withContext(prepareDispatcher) { audio.loadCustomSound(store.path) }) {
+            is CustomSoundResult.Loaded -> audio.selectSound(ClickSoundId.Custom)
+            // The previous copy is gone too; the next launch's fallback (spec FR-025) handles it.
+            CustomSoundResult.NotWav, CustomSoundResult.Silent, CustomSoundResult.Missing -> Unit
+        }
     }
 
     private fun messageOf(failure: SoundPickFailure): MetronomeMessage = when (failure) {

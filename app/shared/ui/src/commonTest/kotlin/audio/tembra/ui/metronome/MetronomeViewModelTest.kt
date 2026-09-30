@@ -807,7 +807,7 @@ class MetronomeViewModelTest {
     }
 
     @Test
-    fun aPickedWavIsCommittedPreparedSelectedAndPersisted() = viewModelTest {
+    fun aPickedWavIsPreparedFromStagingThenCommittedSelectedAndPersisted() = viewModelTest {
         val prepare = HeldDispatcher()
         val viewModel = viewModelPreparingOn(prepare)
         show(viewModel)
@@ -817,14 +817,18 @@ class MetronomeViewModelTest {
         assertEquals(CustomSoundState.Importing, viewModel.uiState.value.customSound)
         runCurrent()
         assertEquals(listOf(store.stagingPath), picker.destinations)
-        assertTrue("commit" in store.calls)
-        assertEquals(listOf<Byte>(1, 2, 3), store.files[store.path]?.toList())
+        // Nothing is committed before the engine has accepted the staged file.
+        assertFalse("commit" in store.calls)
+        assertEquals(listOf<Byte>(1, 2, 3), store.files[store.stagingPath]?.toList())
         // The preparation waits on the prepare dispatcher, never the main one.
         assertFalse(audio.calls.any { it.startsWith("loadCustomSound") })
         assertEquals(CustomSoundState.Importing, viewModel.uiState.value.customSound)
         prepare.release()
         runCurrent()
-        assertEquals(listOf("loadCustomSound(${store.path})", "selectSound(Custom)", "previewClick(Click)"), audio.calls.takeLast(3))
+        assertEquals(listOf("loadCustomSound(${store.stagingPath})", "selectSound(Custom)", "previewClick(Click)"), audio.calls.takeLast(3))
+        assertEquals(listOf("commit"), store.calls)
+        assertEquals(listOf<Byte>(1, 2, 3), store.files[store.path]?.toList())
+        assertFalse(store.stagingPath in store.files)
         val state = viewModel.uiState.value
         assertEquals(CustomSoundState.Available("Kick"), state.customSound)
         assertEquals(kick, state.settings.sound)
@@ -870,12 +874,14 @@ class MetronomeViewModelTest {
         runCurrent()
         val updatesBefore = preferences.updates
         picker.next = SoundPickResult.Failed(SoundPickFailure.TooLarge)
+        // A platform picker can leave a partial copy behind; the ViewModel removes it.
+        picker.partialOnFailure = byteArrayOf(9, 9)
         viewModel.importCustomSound()
         runCurrent()
         assertEquals(listOf<MetronomeMessage>(MetronomeMessage.TooLarge), messages)
         assertEquals(rim, viewModel.uiState.value.settings.sound)
         assertEquals(CustomSoundState.None, viewModel.uiState.value.customSound)
-        assertFalse("commit" in store.calls)
+        assertEquals(listOf("deleteStaging"), store.calls)
         assertFalse(store.stagingPath in store.files, "the staging file was left behind")
         assertEquals(updatesBefore, preferences.updates)
     }
@@ -892,27 +898,65 @@ class MetronomeViewModelTest {
         assertEquals(CustomSoundState.None, viewModel.uiState.value.customSound)
     }
 
-    private fun refusedByTheEngine(result: CustomSoundResult, message: MetronomeMessage) = viewModelTest {
+    private val previousBytes = byteArrayOf(4, 2)
+
+    /**
+     * An import or a replace the engine refuses. [previous] is the sound selected before it; [previousCopy] says whether
+     * the app already held a custom sound ("Kick", its bytes at `store.path`). The refused file is staged only: the
+     * previous copy, the entry, the selection and the preferences stay, and a selected custom sound is reloaded.
+     */
+    private fun refusedByTheEngine(
+        result: CustomSoundResult,
+        message: MetronomeMessage,
+        previous: ClickSound = rim,
+        previousCopy: Boolean = false,
+    ) = viewModelTest {
+        if (previousCopy) {
+            preferences = storedCustom(previous)
+            store.files[store.path] = previousBytes.copyOf()
+            store.present = true
+        }
         val viewModel = viewModel()
         val messages = collectMessages(viewModel)
         show(viewModel)
-        viewModel.selectSound(rim)
-        runCurrent()
+        if (!previousCopy) {
+            viewModel.selectSound(previous)
+            runCurrent()
+        }
+        val entryBefore = viewModel.uiState.value.customSound
+        val refBefore = viewModel.uiState.value.settings.customSound
         val updatesBefore = preferences.updates
-        audio.customSoundResult = result
+        val callsBefore = audio.calls.size
+        audio.customSoundResults[store.stagingPath] = result
         picker.next = SoundPickResult.Picked("Notes")
-        viewModel.importCustomSound()
+        picker.bytesToWrite = byteArrayOf(7, 7, 7)
+        if (previousCopy) viewModel.replaceCustomSound() else viewModel.importCustomSound()
         runCurrent()
         assertEquals(listOf(message), messages)
         val state = viewModel.uiState.value
-        assertEquals(rim, state.settings.sound)
-        assertEquals(CustomSoundState.None, state.customSound)
-        assertNull(state.settings.customSound)
-        assertFalse(audio.calls.any { it == "selectSound(Custom)" })
-        // The refused copy is not kept: neither staged nor in place.
-        assertFalse(store.stagingPath in store.files)
-        assertFalse(store.path in store.files)
+        assertEquals(previous, state.settings.sound)
+        assertEquals(entryBefore, state.customSound)
+        assertEquals(refBefore, state.settings.customSound)
         assertEquals(updatesBefore, preferences.updates)
+        // Only the staged file is removed; the previous copy is never committed over nor deleted.
+        assertFalse(store.stagingPath in store.files, "the refused staging file was left behind")
+        assertFalse("commit" in store.calls)
+        assertFalse("delete" in store.calls)
+        if (previousCopy) {
+            assertEquals(previousBytes.toList(), store.files[store.path]?.toList(), "the previous copy was touched")
+        } else {
+            assertFalse(store.path in store.files)
+        }
+        val importCalls = audio.calls.drop(callsBefore)
+        if (previous is ClickSound.Custom) {
+            // The engine gets the previous sound back: reloaded from its copy, then selected.
+            assertEquals(
+                listOf("loadCustomSound(${store.stagingPath})", "loadCustomSound(${store.path})", "selectSound(Custom)"),
+                importCalls,
+            )
+        } else {
+            assertEquals(listOf("loadCustomSound(${store.stagingPath})"), importCalls)
+        }
     }
 
     @Test
@@ -920,6 +964,43 @@ class MetronomeViewModelTest {
 
     @Test
     fun aSilentFileIsRefusedAndThePreviousSoundKept() = refusedByTheEngine(CustomSoundResult.Silent, MetronomeMessage.Silent)
+
+    @Test
+    fun aRefusedReplaceKeepsTheSelectedCustomSoundItsCopyAndReloadsIt() =
+        refusedByTheEngine(CustomSoundResult.NotWav, MetronomeMessage.NotWav, previous = kick, previousCopy = true)
+
+    @Test
+    fun aRefusedReplaceWithABuiltInSelectedLeavesThePreviousCopyUntouched() =
+        refusedByTheEngine(CustomSoundResult.Silent, MetronomeMessage.Silent, previous = rim, previousCopy = true)
+
+    @Test
+    fun aStagedFileTheEngineCannotFindIsRefusedAsImportFailed() =
+        refusedByTheEngine(CustomSoundResult.Missing, MetronomeMessage.ImportFailed, previous = kick, previousCopy = true)
+
+    @Test
+    fun aRefusedReplaceSurvivesARelaunch() = viewModelTest {
+        preferences = storedCustom(kick)
+        store.files[store.path] = previousBytes.copyOf()
+        store.present = true
+        val first = viewModel()
+        show(first)
+        audio.customSoundResults[store.stagingPath] = CustomSoundResult.NotWav
+        picker.next = SoundPickResult.Picked("Notes")
+        first.replaceCustomSound()
+        runCurrent()
+        first.clear()
+        runCurrent()
+        // The engine's loader finds only what is on disk.
+        if (store.path !in store.files) audio.customSoundResults[store.path] = CustomSoundResult.Missing
+        // The next launch finds the previous sound where the preferences point.
+        val next = viewModel()
+        val messages = collectMessages(next)
+        show(next)
+        assertEquals(kick, next.uiState.value.settings.sound)
+        assertEquals(CustomSoundState.Available("Kick"), next.uiState.value.customSound)
+        assertEquals(emptyList(), messages)
+        assertEquals("selectSound(Custom)", audio.calls.last())
+    }
 
     @Test
     fun aMissingStoredCustomSoundFallsBackToClassicWoodOnce() = viewModelTest {

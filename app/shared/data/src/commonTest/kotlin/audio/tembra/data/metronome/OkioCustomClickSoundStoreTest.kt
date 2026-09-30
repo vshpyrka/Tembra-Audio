@@ -68,4 +68,18 @@ class OkioCustomClickSoundStoreTest {
         store.delete()
         assertFalse(store.exists())
     }
+
+    @Test
+    fun deleteStagingRemovesOnlyTheStagedFileAndIsIdempotent() = runTest {
+        store.deleteStaging()
+        stage(byteArrayOf(4, 4))
+        assertTrue(store.commit())
+        stage(byteArrayOf(7))
+        store.deleteStaging()
+        assertFalse(fileSystem.exists(store.stagingPath.toPath()))
+        assertContentEquals(byteArrayOf(4, 4), fileSystem.read(store.path.toPath()) { readByteArray() })
+        store.deleteStaging()
+        assertTrue(store.exists())
+        assertFalse(store.commit())
+    }
 }

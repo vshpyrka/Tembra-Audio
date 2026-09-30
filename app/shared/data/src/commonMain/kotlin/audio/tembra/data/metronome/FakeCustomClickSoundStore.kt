@@ -26,4 +26,9 @@ class FakeCustomClickSoundStore(var present: Boolean = false) : CustomClickSound
         files.remove(path)
         present = false
     }
+
+    override suspend fun deleteStaging() {
+        calls += "deleteStaging"
+        files.remove(stagingPath)
+    }
 }
