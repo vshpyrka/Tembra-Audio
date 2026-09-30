@@ -41,7 +41,7 @@ enum class CardDiscs { TopStartBottomEnd, TopEndBottomStart, None }
 
 @Composable fun AccentCells(pattern: AccentPattern, running: Boolean, currentBeat: Int, telemetry: BeatTelemetry, onCycle: (Int) -> Unit, modifier: Modifier = Modifier, testTag: String = "metronome.cells")
 //   `currentBeat` is the ViewModel's 10 Hz sample (-1 when stopped) and feeds each cell's stateDescription (", playing"); the light itself comes from `telemetry` in the draw phase; cells are tagged `metronome.cell.<n>`
-//   one AccentCell per beat, gap 8, wraps to two rows when a cell would be under 44 dp; each cell reads `tick.longValue` (rememberFrameTick(running)) and telemetry.litBeat(frame) inside drawBehind
+//   one AccentCell per beat, gap 8, wraps to two rows when a cell would be under 44 dp or narrower than its widest level label ("ACCENT" in microLabel bold plus the cell padding; 6/8 and 7/8 on a phone); each cell reads `tick.longValue` (rememberFrameTick(running)) and telemetry.litBeat(frame) inside drawBehind
 @Composable fun AccentCell(index: Int, level: BeatLevel, lit: () -> Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, playing: Boolean = false, interactionSource: MutableInteractionSource? = null, testTag: String? = null)
 //   surfaceContainerLowest card; bar box 64 dp; bar height by level (95/62/42 %), colours secondary / primary / primary 70 %; accentGlow on Accent; label microLabel; `lit` is a provider read in the draw phase only
 
