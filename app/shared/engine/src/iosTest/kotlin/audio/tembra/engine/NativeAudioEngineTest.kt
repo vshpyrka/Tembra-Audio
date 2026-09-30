@@ -166,6 +166,26 @@ class NativeAudioEngineTest {
         assertFalse(IosAudioSession.isActive, "stopListening leaves the session active")
     }
 
+    /**
+     * 0 means "measure the current route again" on both actuals: iOS forwards the session's latency, never a 0 that
+     * would wipe the beat light's compensation (final review I1); a measured value passes through.
+     */
+    @Test
+    fun aZeroLatencyReportForwardsTheSessionsLatency() {
+        val forwarded = mutableListOf<Long>()
+        val recording = NativeAudioEngine { forwarded += it }
+        assertTrue(IosAudioSession.activateForPlayback(), "activateForPlayback")
+        try {
+            recording.reportOutputLatencyNanos(0)
+            recording.reportOutputLatencyNanos(7_000_000)
+            val session = IosAudioSession.outputLatencyNanos()
+            assertTrue(session > 0L, "session latency $session ns")
+            assertEquals(listOf(session, 7_000_000L), forwarded)
+        } finally {
+            IosAudioSession.deactivate()
+        }
+    }
+
     /** The preview ends on its own; the actual deactivates the session once the engine is back to Idle. */
     @Test
     fun aPreviewDeactivatesTheSessionOnceTheClickEnds() {

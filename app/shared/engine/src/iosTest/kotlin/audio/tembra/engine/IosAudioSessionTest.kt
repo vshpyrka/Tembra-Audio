@@ -6,8 +6,11 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withTimeoutOrNull
 import platform.AVFAudio.AVAudioSessionInterruptionTypeBegan
+import platform.AVFAudio.AVAudioSessionPortAirPlay
+import platform.AVFAudio.AVAudioSessionPortBuiltInReceiver
 import platform.AVFAudio.AVAudioSessionPortBuiltInSpeaker
 import platform.AVFAudio.AVAudioSessionPortHeadphones
+import platform.AVFAudio.AVAudioSessionPortUSBAudio
 import platform.AVFAudio.AVAudioSessionRouteChangeReasonNewDeviceAvailable
 import platform.AVFAudio.AVAudioSessionRouteChangeReasonOldDeviceUnavailable
 import kotlin.test.Test
@@ -41,12 +44,27 @@ class IosAudioSessionTest {
         assertEquals(listOf<AudioEvent>(AudioEvent.Interrupted), collected)
     }
 
+    /** Wired, USB-C and AirPlay outputs alike: any lost output but the phone's own is reported (final review I4). */
     @Test
     fun losingHeadphonesLosesTheOutputRoute() = runTest {
         val collected = collectWhile {
             IosAudioSession.handleRouteChange(AVAudioSessionRouteChangeReasonOldDeviceUnavailable, listOfNotNull(AVAudioSessionPortHeadphones))
+            IosAudioSession.handleRouteChange(AVAudioSessionRouteChangeReasonOldDeviceUnavailable, listOfNotNull(AVAudioSessionPortUSBAudio))
+            IosAudioSession.handleRouteChange(AVAudioSessionRouteChangeReasonOldDeviceUnavailable, listOfNotNull(AVAudioSessionPortAirPlay))
         }
-        assertEquals(listOf<AudioEvent>(AudioEvent.OutputRouteLost), collected)
+        assertEquals(List<AudioEvent>(3) { AudioEvent.OutputRouteLost }, collected)
+    }
+
+    @Test
+    fun losingOnlyTheBuiltInSpeakerOrReceiverEmitsNothing() = runTest {
+        val collected = collectWhile {
+            IosAudioSession.handleRouteChange(AVAudioSessionRouteChangeReasonOldDeviceUnavailable, listOfNotNull(AVAudioSessionPortBuiltInReceiver))
+            IosAudioSession.handleRouteChange(
+                AVAudioSessionRouteChangeReasonOldDeviceUnavailable,
+                listOfNotNull(AVAudioSessionPortBuiltInSpeaker, AVAudioSessionPortBuiltInReceiver),
+            )
+        }
+        assertEquals(emptyList(), collected)
     }
 
     @Test

@@ -167,6 +167,13 @@ Compose accessibility elements (the Mac was unlocked).
 - Not listened to (driven over adb and AppleScript): the preview click, the swap on the next tick, and the three levels
   of each sound (Accent clearly louder, Sub clearly softer) are left for the user's ear check.
 - Custom with nothing imported opens the platform WAV picker; preparing and selecting the picked file is User Story 5.
+- **Preview release, required on the iPhone 14 before release** (final review I2, fixed 2026-09-30): once a preview
+  click ends, the actual closes the output the preview opened (`tembra_tone_stop()` / `nativeToneStop()`) and then
+  deactivates the session (iOS) or abandons focus (Android). The Pixel proves the close
+  (`NativeAudioEngineTest.aPreviewReleasesItsFocusOnceTheClickEnds`: no started media player remains); the simulator
+  test process has no output unit, so the iOS path has never run. On the iPhone 14: play music in another app, open
+  the Metronome, pick a sound (a preview click, the music ducks or pauses), do not press play, and check that the
+  music resumes within about a second and that the Control Centre shows no audio owned by Tembra.
 
 ### Against the Stitch phone screen
 
