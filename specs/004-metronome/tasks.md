@@ -314,7 +314,7 @@ description: "Task list for feature 004: metronome"
 - [X] T139 Final skill review of every Kotlin and Compose file of this feature through `using-chrisbanes-skills` (one cluster per concern), listing findings and fixes in `specs/004-metronome/screenshots/NOTES.md` under "Skill review"
 - [X] T140 Run every lane through `gradle-run` with `--warning-mode all`: `engineHostTest`, `checkAndroidHost`, `checkIos`, `checkAndroidDevice`, `:androidApp:connectedDebugAndroidTest`; all green, zero warnings; record the counts in `NOTES.md`
 - [X] T141 Walk `specs/004-metronome/quickstart.md` end to end on both platforms and fix anything that does not match; update the quickstart where the product taught otherwise
-- [ ] T142 Final commit of the `app/` and `specs/004-metronome/` changes through the spec-kit hook (`/speckit-git-commit`, conventional message `feat(metronome): global metronome with tempo controls, bar shape, click sounds, custom WAV and background playback (feature 004)`), then mark this task done
+- [X] T142 Final commit of the `app/` and `specs/004-metronome/` changes through the spec-kit hook (`/speckit-git-commit`, conventional message `feat(metronome): global metronome with tempo controls, bar shape, click sounds, custom WAV and background playback (feature 004)`), then mark this task done
 
 ---
 
