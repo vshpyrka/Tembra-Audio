@@ -483,6 +483,17 @@ packages) while staying reachable from the transport package in the same module.
 splits modules only on build-time or team pressure); public visibility (nothing outside
 `:shared:ui` composes).
 
+**Stability outcome (T077, 2026-09-30)**: `./gradlew :shared:ui:compileAndroidMain -PcomposeReports=true`
+(`compose-performance`, stability reference; strong skipping is on with Kotlin 2.4.20). In
+`build/compose_compiler/tembra_shared:ui-composables.txt`, `TembraChipRow`, its private `Chip`,
+`TembraPill` and `TembraGradientCard` are all `restartable skippable`; no parameter of the three
+is reported `unstable`. `TembraPill` and `TembraGradientCard` are stable in every parameter
+(`RadialGlow`, `CardDiscs`, `LinearGlow`, the content lambda and `MutableInteractionSource`
+included). `TembraChipRow.items: List<ChipSpec>` and `Chip.item: ChipSpec` carry no marker (their
+stability is settled at runtime, as for `TembraNavigationBar` and `TembraSegmentedControl` since
+feature 002); `classes.txt` reports `ChipSpec` as `stable` in every field. No type needed
+changing and no stability annotation was added.
+
 ## R12. Screen ownership, effects and coroutines
 
 **Decision** (`compose-state-and-effects`, `kotlin-concurrency-and-flow`):
