@@ -1,6 +1,7 @@
 package audio.tembra.ui.metronome
 
 import androidx.compose.foundation.interaction.FocusInteraction
+import androidx.compose.foundation.interaction.HoverInteraction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
@@ -10,6 +11,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.InputModeManager
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -18,20 +22,27 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isFocused
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.pressKey
+import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.dp
 import audio.tembra.core.metronome.Tempo
 import audio.tembra.core.metronome.TempoMarking
 import audio.tembra.ui.designsystem.averageColorAt
 import audio.tembra.ui.designsystem.distanceTo
+import audio.tembra.ui.designsystem.luminance
+import audio.tembra.ui.designsystem.enterKeyboardMode
 import audio.tembra.ui.metronome.components.TempoDial
 import audio.tembra.ui.metronome.components.TempoDialGeometry
 import audio.tembra.ui.theme.TembraTheme
@@ -53,6 +64,7 @@ class TempoDialTest {
     private var track: Color = Color.Unspecified
     private var primary: Color = Color.Unspecified
     private var secondary: Color = Color.Unspecified
+    private var inputModeManager: InputModeManager? = null
 
     private fun ComposeUiTest.setDial(
         tempo: Tempo = Tempo(120),
@@ -63,6 +75,7 @@ class TempoDialTest {
     ) {
         if (freezeClock) mainClock.autoAdvance = false
         setContent {
+            inputModeManager = LocalInputModeManager.current
             TembraTheme {
                 track = TembraTheme.colors.surfaceContainerHigh
                 primary = TembraTheme.colors.primary
@@ -255,5 +268,53 @@ class TempoDialTest {
         onNodeWithTag("dial.down").performMouseInput { moveTo(center) }
         waitForIdle()
         onNode(hasText("Decrease tempo")).assertExists()
+    }
+
+    /** Keyboard (spec FR-029): the focused dial moves by one on the arrows and by ten on the page keys. */
+    @Test
+    fun theFocusedDialTakesTheArrowAndPageKeys() = runComposeUiTest {
+        setDial()
+        if (!enterKeyboardMode(inputModeManager)) return@runComposeUiTest
+        onNodeWithTag("dial").requestFocus()
+        repeat(2) { mainClock.advanceTimeByFrame() }
+        onNodeWithTag("dial").assertIsFocused()
+        onNodeWithTag("dial").performKeyInput { pressKey(Key.DirectionUp) }
+        mainClock.advanceTimeByFrame()
+        assertEquals(listOf(Tempo(121)), tempos)
+        onNodeWithTag("dial").performKeyInput { pressKey(Key.PageDown) }
+        mainClock.advanceTimeByFrame()
+        assertEquals(listOf(Tempo(121), Tempo(110)), tempos)
+    }
+
+    /** Reading order inside the dial: the "−" stepper, the dial itself, then the "+" stepper. */
+    @Test
+    fun tabVisitsTheSteppersAroundTheDial() = runComposeUiTest {
+        setDial()
+        if (!enterKeyboardMode(inputModeManager)) return@runComposeUiTest
+        onNodeWithTag("dial.down").requestFocus()
+        repeat(2) { mainClock.advanceTimeByFrame() }
+        onNodeWithTag("dial.down").assertIsFocused()
+        for (tag in listOf("dial", "dial.up")) {
+            onNode(isFocused()).performKeyInput { pressKey(Key.Tab) }
+            repeat(2) { mainClock.advanceTimeByFrame() }
+            onNodeWithTag(tag).assertIsFocused()
+        }
+    }
+
+    /** Pointer hover (spec FR-029) raises the ring's empty track to `surfaceContainerHighest` (injected interaction source). */
+    @Test
+    fun hoverRaisesTheTrack() = runComposeUiTest {
+        val source = MutableInteractionSource()
+        setDial(interactionSource = source)
+        fun emptyTrack(): Color {
+            val image = onNodeWithTag("dial").captureToImage()
+            val point = ringPoint(image.width.toFloat(), image.height.toFloat(), 200f)
+            return image.averageColorAt(point.x.roundToInt(), point.y.roundToInt())
+        }
+        val rest = emptyTrack()
+        runOnIdle { source.tryEmit(HoverInteraction.Enter()) }
+        repeat(2) { mainClock.advanceTimeByFrame() }
+        val hovered = emptyTrack()
+        assertTrue(hovered.luminance() > rest.luminance() + 0.005f, "hover did not raise the track: $rest -> $hovered")
     }
 }
