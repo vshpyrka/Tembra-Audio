@@ -25,7 +25,7 @@ data class ChipSpec(val id: String, val label: String, val icon: TembraIcon? = n
 enum class ChipAccent { Secondary /* secondaryContainer */, Primary /* primaryContainer */ }
 
 @Composable fun TembraPill(text: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, interactionSource: MutableInteractionSource? = null, testTag: String? = null)
-//   28 dp visual / 44 dp target, radius full, labelSmall 11 sp; selected secondaryContainer / onSecondaryContainer, else surfaceContainerHigh / onSurfaceVariant; role = Tab
+//   28 dp visual / 44 dp target, radius full, microLabel (the existing 11 sp token; labelSmall is 10 sp); selected secondaryContainer / onSecondaryContainer, else surfaceContainerHigh / onSurfaceVariant; role = Tab
 
 enum class CardDiscs { TopStartBottomEnd, TopEndBottomStart, None }
 @Composable fun TembraGradientCard(glow: RadialGlow, modifier: Modifier = Modifier, discs: CardDiscs = CardDiscs.TopStartBottomEnd, overlay: LinearGlow? = null, testTag: String? = null, content: @Composable BoxScope.() -> Unit)
