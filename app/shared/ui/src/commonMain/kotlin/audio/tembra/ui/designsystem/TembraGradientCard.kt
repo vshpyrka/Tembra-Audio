@@ -12,19 +12,24 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import audio.tembra.ui.theme.LinearGlow
 import audio.tembra.ui.theme.RadialGlow
 import audio.tembra.ui.theme.TembraShapes
 import audio.tembra.ui.theme.TembraTheme
 
 /**
- * The tuner's content card (research R9): 16 dp corners on `surfaceContainerLowest` with a 1 dp seam in
- * `outlineVariant` at 20 %, the screen's radial [glow] and the two blurred corner discs drawn as radial brushes
- * behind the content.
+ * The tuner's and the metronome's content card (research R9 of feature 003, R10 of feature 004): 16 dp corners on
+ * `surfaceContainerLowest` with a 1 dp seam in `outlineVariant` at 20 %, the screen's radial [glow], the two blurred
+ * corner discs placed by [discs] and an optional [overlay] (the dial card's vertical tint), all drawn as brushes behind
+ * the content in that order.
  */
 @Composable
 fun TembraGradientCard(
     glow: RadialGlow,
     modifier: Modifier = Modifier,
+    discs: CardDiscs = CardDiscs.TopStartBottomEnd,
+    overlay: LinearGlow? = null,
     testTag: String? = null,
     content: @Composable BoxScope.() -> Unit,
 ) {
@@ -40,21 +45,34 @@ fun TembraGradientCard(
                 drawRect(brush = glow.brush(size))
                 val radius = gradients.discRadius.toPx()
                 val offset = gradients.discOffset.toPx()
-                val topStart = Offset(-offset, -offset)
-                drawCircle(
-                    brush = Brush.radialGradient(listOf(gradients.discTopStart, Color.Transparent), center = topStart, radius = radius),
-                    radius = radius,
-                    center = topStart,
-                )
-                val bottomEnd = Offset(size.width + offset, size.height + offset)
-                drawCircle(
-                    brush = Brush.radialGradient(listOf(gradients.discBottomEnd, Color.Transparent), center = bottomEnd, radius = radius),
-                    radius = radius,
-                    center = bottomEnd,
-                )
+                val start = -offset
+                val top = -offset
+                val end = size.width + offset
+                val bottom = size.height + offset
+                when (discs) {
+                    CardDiscs.TopStartBottomEnd -> {
+                        drawDisc(gradients.discTopStart, Offset(start, top), radius)
+                        drawDisc(gradients.discBottomEnd, Offset(end, bottom), radius)
+                    }
+                    CardDiscs.TopEndBottomStart -> {
+                        drawDisc(gradients.discBottomEnd, Offset(end, top), radius)
+                        drawDisc(gradients.discTopStart, Offset(start, bottom), radius)
+                    }
+                    CardDiscs.None -> Unit
+                }
+                if (overlay != null) drawRect(brush = overlay.brush(size))
             }
             .border(TembraTheme.spacing.seam, colors.outlineVariant.copy(alpha = SEAM_ALPHA), shape),
         content = content,
+    )
+}
+
+/** One blurred disc: [color] fading to transparent over [radius] around [center]. */
+private fun DrawScope.drawDisc(color: Color, center: Offset, radius: Float) {
+    drawCircle(
+        brush = Brush.radialGradient(listOf(color, Color.Transparent), center = center, radius = radius),
+        radius = radius,
+        center = center,
     )
 }
 
