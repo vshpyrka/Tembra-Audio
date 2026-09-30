@@ -176,3 +176,52 @@ on `surfaceContainerHighest` with 12 dp corners, the current entry in `primary` 
 `onSurfaceVariant`. Differences: the menu's rows are Material's 48 dp (the design's `py-1.5` rows are about 32 dp), so
 the menu is taller; it opens above the pill on both phones (Material positions it);
 the design's list ("808 Click", "Studio Rim", no Custom) is replaced by the spec's (FR-021).
+
+## User Story 5 (batch B11, T123), 2026-09-30
+
+**Devices**: Pixel 6 Pro (Android 17, serial 19021FDEE001AH, debug APK from `:androidApp:assembleDebug`, app data
+cleared first); iPhone 17 simulator (iOS 26.5, Debug build from `xcodebuild -scheme iosApp`, reinstalled). Both were
+launched with the debug argument that opens the Metronome. The Pixel was driven with `adb shell input tap` on
+`uiautomator dump` bounds. On the simulator the Compose elements were clicked through System Events, and the document
+picker (a remote view that System Events cannot press) with real mouse events posted by a small `CGEvent` tool. The
+Mac was unlocked.
+
+**Fixtures**: `specs/004-metronome/fixtures/` (written by `make_fixtures.py` there, standard library only; the engine
+test has no `--write` flag): `silence-then-click.wav` (48 kHz 16-bit mono, 100 ms silence then a 20 ms decaying
+1.8 kHz sine), `long-tail.wav` (22.05 kHz, a 3 s 440 Hz ring), `stereo-24bit-96k.wav`, `float32.wav` (IEEE float,
+48 kHz), `8bit-8k.wav`, `silent.wav` (0.5 s of zeros) and `notes.wav` (a text file). Pushed to the Pixel with
+`adb push … /sdcard/Download/` (DocumentsUI › Downloads lists them straight away), and copied on the simulator into the
+Files app's local storage (`…/data/Containers/Shared/AppGroup/<group.com.apple.FileProvider.LocalStorage>/File Provider
+Storage/`), which the picker shows as Browse › On My iPhone.
+
+| File | What it shows |
+|---|---|
+| `<platform>-compact-import-refused.png` | Classic Wood still selected after picking `notes.wav`; the snackbar reads "That file isn't a WAV file Tembra can read." |
+| `<platform>-compact-custom-filled.png` | `silence-then-click` imported and selected: the pill names it; in the menu the Custom entry reads the name (ellipsised in the 160 dp menu), `primary` with a check, and the `swap_horiz` Replace button |
+
+### Quickstart §5, by observation (both platforms unless noted)
+
+- **Step 1**: "Custom" with nothing imported opened the platform picker (DocumentsUI on the Pixel, the Files sheet on
+  the simulator). Picking `silence-then-click.wav` named the pill and the Custom entry "silence-then-click" within the
+  1.5 s the driver waited; the app's copy appeared at `files/metronome/custom.wav` (Pixel) and
+  `Documents/metronome/custom.wav` (simulator).
+- **Step 2**: `8bit-8k`, `float32`, `stereo-24bit-96k` and `long-tail` were each accepted (the pill took each name;
+  Pixel all four, simulator the first three). `silent.wav` showed "That file has no sound in it." and `notes.wav` "That file
+  isn't a WAV file Tembra can read.", each once, with Classic Wood kept and no `custom.wav` left behind (Pixel,
+  `run-as ls`). Whether the click lands on the beat, the 240 BPM × 1/16 tail fade and the full ring at 40 BPM are ear
+  checks left for the user (the engine's `metronome_renderer_test.cpp` and `custom_sound_loader_test.cpp` cover them).
+- **Step 3**: after deleting the original from Downloads / On My iPhone, a force-stop and relaunch still showed the
+  custom sound selected, and the menu's Custom entry was filled with Replace. After deleting the app's copy
+  (`adb shell run-as audio.tembra.app rm files/metronome/custom.wav`; `rm` in the simulator's data container) and
+  relaunching: the pill read "Classic Wood", the snackbar "Your custom sound is missing, so Classic Wood is playing."
+  showed once, and the menu's Custom entry read the old name with a "+". A second relaunch showed no message.
+  Choosing that entry opened the picker again, and `long-tail.wav` was imported through it (Pixel).
+- **Step 4**: "Replace" on the filled entry opened the picker and each new file replaced the name and the app's copy
+  (the copy's size followed the file). On the Pixel a replace while running kept the click running ("Stop metronome"),
+  and the pill took the new name.
+
+Differences and notes:
+- The 160 dp menu ellipsises long names ("silence-t…") because the check and the Replace button share the row. The
+  pill and the entry's content description carry the full name.
+- The dashed empty tile, the greyed unavailable tile and the Replace tooltip are in the expanded layout's Tiles, which
+  these compact captures do not show. `ClickSoundPickerTest` covers them.
