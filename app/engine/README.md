@@ -13,11 +13,12 @@ The shared real-time audio engine. One CMake project built three ways:
 - `include/tembra_engine.h` is the only interface Kotlin sees: plain C (`extern "C"`), no C++ types, no
   callbacks into the host, returned pointers have static storage and are never freed by the caller. The
   header carries `TEMBRA_ENGINE_ABI_VERSION`; every added, removed or changed function bumps it (revision 1:
-  descriptor functions, feature 001; revision 2: the tuner's capture, tone and sample functions, feature 003).
+  descriptor functions, feature 001; revision 2: the tuner's capture, tone and sample functions, feature 003;
+  revision 3: the metronome's `tembra_metronome_*` functions, feature 004).
 - Nothing Kotlin runs on the audio thread; Kotlin pushes commands and reads telemetry from ordinary
   threads (Constitution I). The audio callbacks in `src/platform/` only copy frames; no allocation, lock,
-  logging or blocking call is allowed there, in `TunerAnalyzer::push`, `ToneGenerator::render` or
-  `SamplePlayer::render`.
+  logging or blocking call is allowed there, in `TunerAnalyzer::push`, `ToneGenerator::render`,
+  `SamplePlayer::render` or `MetronomeRenderer::render`.
 - The core is a static library named `tembra_engine_core` (archive `libtembra_engine.a`). Oboe is linked
   only under `if(ANDROID)`, AudioToolbox and CoreAudio only under `if(IOS)`.
 - Third-party code is vendored under `third_party/` with its licence; see `third_party/README.md`.
@@ -33,13 +34,27 @@ platform input callback ─copy─▶ SpscRingBuffer ─hop─▶ analysis threa
   `RemoteIoAudioDevice` (iOS, `platform/apple/`, Core Audio C API), `NullAudioDevice` (macOS host) and
   `SyntheticAudioDevice` (all platforms: renders the harmonic test tone of `tembra_tuner_start_test_signal`
   on its own thread in 256-frame blocks so the whole capture path can be verified without a microphone).
-- `TunerEngine` (`src/tuner/tuner_engine.cpp`) is the state machine behind the C ABI: at most one stream
+- `EngineCore` (`src/core/engine_core.cpp`, moved from `src/tuner/tuner_engine` in feature 004) is the state machine behind
+  the C ABI and the owner of the device and every renderer: at most one stream
   open, `LISTENING` and `TONE` never overlap, a privacy watchdog on the analysis thread stops capture when
   `tembra_tuner_read` is not called for `watchdog_seconds` (5 by default), a lost device drops to `IDLE`.
 - The output side (`ToneGenerator`, `SamplePlayer`, `WavDecoder`) renders reference tones and drop-in
   recordings; commands are atomics, the callback applies the 5 ms ramps itself.
 
-## Host build and tests
+## The metronome (feature 004)
+
+```
+host: tembra_metronome_set_grid / select_sound / load_custom_sound ─TripleBuffer─▶ MetronomeRenderer::render (output callback)
+                                                                                   ├─ framePos, lastTickFrame (double), one voice + one releasing voice
+tembra_metronome_read (UI thread, every frame) ◀─Seqlock<MetronomeTick>─────────────┘
+```
+
+- `src/metronome/`: `ClickSynth` renders the five built-in sounds at the stream rate when the output opens;
+  `CustomSoundLoader` (dr_wav, first 30 s) and `ClickSampleBuilder` (onset, 2 s cap, fades, levels) prepare a custom WAV,
+  `SoundResampler` (miniaudio's `ma_resampler`, whose one implementation unit is `src/core/miniaudio_impl.cpp`) brings it to
+  the stream rate. `MetronomeRenderer` schedules ticks per research R1/R5 and publishes telemetry per R7.
+- `EngineCore` adds the `METRONOME` state (it refuses listening, tones, samples and previews); the metronome ignores
+  `deviceLost()` because `OboeAudioDevice` reopens a disconnected output itself.
 
 ## Host build and tests
 
@@ -53,7 +68,7 @@ CM="$HOME/Library/Android/sdk/cmake/3.31.6/bin"
 `./gradlew engineHostTest` runs the same three commands (build dir `app/shared/engine/build/engine/host`) and passes
 `-DTEMBRA_TUNER_RECORDINGS_DIR=<repo>/app/shared/ui/src/commonMain/composeResources/files/tuner` so
 `recordings_on_pitch_test` checks every drop-in recording within 1 cent of its note (it passes vacuously, and says so,
-when the folder is empty). Tests run with `TEMBRA_BUILD_TESTS`, which compiles the `TunerEngine::setDevice` hook that
+when the folder is empty). Tests run with `TEMBRA_BUILD_TESTS`, which compiles the `EngineCore::setDevice` hook that
 swaps the platform device for `tests/fake_audio_device.h`.
 
 ## Adding a function

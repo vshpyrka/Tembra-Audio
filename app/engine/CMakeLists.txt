@@ -23,7 +23,6 @@ add_library(tembra_engine_core STATIC
     src/tuner/tone_generator.cpp
     src/tuner/wav_decoder.cpp
     src/tuner/sample_player.cpp
-    src/tuner/tuner_engine.cpp
     src/tuner/tuner_abi.cpp
     src/platform/null_audio_device.cpp
     src/platform/synthetic_audio_device.cpp
