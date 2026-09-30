@@ -2,9 +2,17 @@ package audio.tembra.ui.di
 
 import androidx.lifecycle.ViewModel
 import audio.tembra.data.AppDirectories
+import audio.tembra.data.metronome.CustomClickSoundStore
+import audio.tembra.data.metronome.DataStoreMetronomePreferences
+import audio.tembra.data.metronome.MetronomePreferences
+import audio.tembra.data.metronome.OkioCustomClickSoundStore
+import audio.tembra.data.tuner.DataStoreTunerPreferences
 import audio.tembra.data.tuner.TembraDataStore
 import audio.tembra.data.tuner.TunerPreferences
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
 import audio.tembra.engine.AudioEngine
+import audio.tembra.engine.MetronomeAudio
 import audio.tembra.engine.TunerAudio
 import audio.tembra.ui.tuner.ComposeResourceReader
 import audio.tembra.ui.tuner.ReferenceSoundRepository
@@ -41,11 +49,30 @@ object AppBindings {
     @Named("app")
     fun provideAppCoroutineScope(): CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
+    /** The app's one preferences file; DataStore allows a single instance per file, so every feature builds on this one (research R10). */
+    @Provides
+    @SingleIn(AppScope::class)
+    fun providePreferencesDataStore(directories: AppDirectories, @Named("app") scope: CoroutineScope): DataStore<Preferences> =
+        TembraDataStore.preferences(directories.preferences, scope)
+
     /** The tuner's remembered choices in the app's one DataStore file (research R10). */
     @Provides
     @SingleIn(AppScope::class)
-    fun provideTunerPreferences(directories: AppDirectories, @Named("app") scope: CoroutineScope): TunerPreferences =
-        TembraDataStore.tunerPreferences(directories.preferences, scope)
+    fun provideTunerPreferences(dataStore: DataStore<Preferences>): TunerPreferences = DataStoreTunerPreferences(dataStore)
+
+    /** The metronome's remembered state in the same file. */
+    @Provides
+    @SingleIn(AppScope::class)
+    fun provideMetronomePreferences(dataStore: DataStore<Preferences>): MetronomePreferences = DataStoreMetronomePreferences(dataStore)
+
+    /** The app's copy of the imported click sound. */
+    @Provides
+    @SingleIn(AppScope::class)
+    fun provideCustomClickSoundStore(directories: AppDirectories): CustomClickSoundStore = OkioCustomClickSoundStore(directories)
+
+    /** The metronome programs against the [MetronomeAudio] seam; the engine is that seam. */
+    @Provides
+    fun provideMetronomeAudio(engine: AudioEngine): MetronomeAudio = engine
 
     /** Drop-in recordings or the synthesized tone (research R5). */
     @Provides
