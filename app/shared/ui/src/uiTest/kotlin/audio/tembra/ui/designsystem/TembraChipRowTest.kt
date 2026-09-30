@@ -8,13 +8,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
-import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
@@ -30,6 +30,7 @@ import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.dp
 import audio.tembra.ui.theme.TembraIcon
 import audio.tembra.ui.theme.TembraTheme
+import kotlin.math.roundToInt
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -50,10 +51,14 @@ class TembraChipRowTest {
     private var onSurface: Color = Color.Unspecified
     private var onSurfaceVariant: Color = Color.Unspecified
     private var primary: Color = Color.Unspecified
+    private var primaryContainer: Color = Color.Unspecified
+    private var surfaceContainerHigh: Color = Color.Unspecified
+    private var pixelDensity = 1f
 
     private fun ComposeUiTest.setChips(
         items: List<ChipSpec> = signatures,
         columns: Int = items.size,
+        accent: ChipAccent = ChipAccent.Secondary,
         onSelect: (String) -> Unit = {},
     ) {
         setContent {
@@ -61,11 +66,14 @@ class TembraChipRowTest {
                 onSurface = TembraTheme.colors.onSurface
                 onSurfaceVariant = TembraTheme.colors.onSurfaceVariant
                 primary = TembraTheme.colors.primary
+                primaryContainer = TembraTheme.colors.primaryContainer
+                surfaceContainerHigh = TembraTheme.colors.surfaceContainerHigh
+                pixelDensity = LocalDensity.current.density
                 TembraChipRow(
                     items = items,
                     selectedId = "4-4",
                     onSelect = onSelect,
-                    accent = ChipAccent.Secondary,
+                    accent = accent,
                     modifier = Modifier.width(360.dp),
                     columns = columns,
                     testTag = "chips",
@@ -102,8 +110,22 @@ class TembraChipRowTest {
         setChips()
         onNodeWithTag("chips.4-4.surface", useUnmergedTree = true).assertHeightIsEqualTo(32.dp)
         for (id in ids) {
-            onNodeWithTag("chips.$id").assertHeightIsAtLeast(44.dp).assertWidthIsAtLeast(44.dp)
+            // The target is the project's touchTargetMin (44 dp), not Material's 48 dp default.
+            onNodeWithTag("chips.$id").assertHeightIsEqualTo(44.dp).assertWidthIsAtLeast(44.dp)
         }
+    }
+
+    @Test
+    fun thePrimaryAccentFillsTheSelectedChipWithPrimaryContainer() = runComposeUiTest {
+        setChips(accent = ChipAccent.Primary)
+        mainClock.autoAdvance = false
+        val selected = onNodeWithTag("chips.4-4.surface", useUnmergedTree = true).captureToImage()
+        val unselected = onNodeWithTag("chips.3-4.surface", useUnmergedTree = true).captureToImage()
+        val inset = (FILL_PROBE_DP * pixelDensity).roundToInt()
+        val selectedFill = selected.averageColorAt(inset, selected.height / 2)
+        val unselectedFill = unselected.averageColorAt(inset, unselected.height / 2)
+        assertTrue(selectedFill.approximately(primaryContainer), "selected fill $selectedFill is not primaryContainer $primaryContainer")
+        assertTrue(unselectedFill.approximately(surfaceContainerHigh), "unselected fill $unselectedFill is not surfaceContainerHigh")
     }
 
     @Test
@@ -184,5 +206,7 @@ class TembraChipRowTest {
     private companion object {
         /** Enough frames for the interaction collector to run and the chip to redraw with the clock frozen. */
         const val FRAMES_MS = 100L
+        /** Fill probe 3 dp in from the start edge on the vertical centre: inside the 8 dp rounding, clear of the label. */
+        const val FILL_PROBE_DP = 3
     }
 }

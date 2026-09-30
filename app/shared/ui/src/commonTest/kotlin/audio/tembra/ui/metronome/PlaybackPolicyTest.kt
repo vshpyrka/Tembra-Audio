@@ -31,6 +31,18 @@ class PlaybackPolicyTest {
     }
 
     @Test
+    fun everyStopEventCancelsAStartWithoutAMessage() {
+        for (event in stopEvents) {
+            assertEquals(PlaybackTransition.Stop(message = null), PlaybackPolicy.onEvent(PlaybackState.Starting, event), "Starting + $event")
+        }
+    }
+
+    @Test
+    fun playWhileStartingIsIgnored() {
+        assertEquals(PlaybackTransition.Ignore, PlaybackPolicy.onEvent(PlaybackState.Starting, PlaybackEvent.PlayPressed))
+    }
+
+    @Test
     fun aRefusedHostStopsTheStartWithFocusDenied() {
         assertEquals(
             PlaybackTransition.Stop(MetronomeMessage.FocusDenied),
