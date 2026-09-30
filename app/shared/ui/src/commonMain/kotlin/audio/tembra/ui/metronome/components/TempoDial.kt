@@ -1,8 +1,10 @@
 package audio.tembra.ui.metronome.components
 
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.awaitTouchSlopOrCancellation
@@ -17,6 +19,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -59,12 +62,15 @@ import kotlin.math.sin
  * readout by default, so the transport can put its own there).
  *
  * The gradient runs from bottom-left to top-right, as the design's SVG (drawn turned −90°) does, so the fill starts warm
- * at 12 o'clock. Keyboard focus draws a `primary` ring outside the ticks.
+ * at 12 o'clock. Keyboard focus draws a `primary` ring outside the ticks; a hovering pointer raises the empty track to
+ * `surfaceContainerHighest`.
  *
- * Input: a drag that starts on the ring (not on a stepper) maps the pointer's angle onto the track (a drag that starts elsewhere is left
- * to the parent, so the column still scrolls); a wheel notch or an arrow key moves the tempo by one and the page keys
- * by ten. The box is one slider node for accessibility (range, state and the progress action). It fills the width its caller allows; a width cap is the
- * caller's `Modifier.widthIn`. The composable recomposes only when its parameters change: the ring reads nothing else.
+ * Input: a drag that starts on the ring (not on a stepper) maps the pointer's angle onto the track (a drag that starts
+ * elsewhere is left to the parent, so the column still scrolls); a wheel notch or an arrow key moves the tempo by one
+ * and the page keys by ten. The dial is one focusable slider node for accessibility (range, state and the progress
+ * action), tagged [testTag], between its steppers in focus order. The box is square and as large as its caller
+ * allows; a cap is the caller's `Modifier.widthIn` or `sizeIn`. The composable recomposes only when its parameters
+ * change: the ring reads nothing else.
  */
 @Composable
 internal fun TempoDial(
@@ -85,11 +91,13 @@ internal fun TempoDial(
     val arc = TembraTheme.gradients.tempoArc.turnedCounterClockwise()
     val source = interactionSource ?: remember { MutableInteractionSource() }
     val focused by source.collectIsFocusedAsState()
+    val hovered by source.collectIsHoveredAsState()
     val ringColor = colors.primary
     val ring = spacing.focusRingWidth
     val stepperSize = spacing.tempoStepper
     val stepperInset = MetronomeDefaults.StepperInset
-    val trackColor = colors.surfaceContainerHigh
+    // A pointer over the dial raises the empty track, as a hovered stepper raises its fill.
+    val trackColor = if (hovered) colors.surfaceContainerHighest else colors.surfaceContainerHigh
     val tickColor = colors.outlineVariant.copy(alpha = MetronomeDefaults.TICK_ALPHA)
     val currentTempo by rememberUpdatedState(tempo)
     val currentOnTempo by rememberUpdatedState(onTempo)
@@ -104,19 +112,7 @@ internal fun TempoDial(
     Box(
         modifier = modifier
             .aspectRatio(1f)
-            .testTag(testTag)
-            .semantics {
-                // Compose has no slider role: the range and the progress action make the node a slider (a SeekBar
-                // to TalkBack, an adjustable element to VoiceOver), as Material's own Slider does.
-                stateDescription = state
-                progressBarRangeInfo = ProgressBarRangeInfo(tempo.bpm.toFloat(), Tempo.MIN.toFloat()..Tempo.MAX.toFloat(), steps = STEPS)
-                setProgress { value ->
-                    offer(Tempo.clamped(value.roundToInt()))
-                    true
-                }
-            }
-            .onKeyEvent { event -> handleKey(event, currentTempo)?.let(::offer) != null }
-            .focusable(interactionSource = source)
+            .hoverable(source)
             .pointerInput(Unit) {
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false)
@@ -156,21 +152,45 @@ internal fun TempoDial(
             },
         contentAlignment = Alignment.Center,
     ) {
-        center()
         TempoStepper(
             icon = TembraIcon.Remove,
             enabled = canStepDown,
             contentDescription = MetronomeCopy.decreaseTempo,
             onStep = { onStep(-1) },
-            modifier = Modifier.align(Alignment.CenterStart).padding(start = MetronomeDefaults.StepperInset),
+            modifier = Modifier.align(Alignment.CenterStart).padding(start = stepperInset),
             testTag = "$testTag.down",
         )
+        // The dial's own node: composed between the steppers so keyboard focus reads "−", the dial, "+" (spec FR-029),
+        // and drawn under them (zIndex) so a screen reader's touch exploration still finds each stepper on top. It covers
+        // the whole box and keeps [center] clear of the steppers.
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .zIndex(-1f)
+                .testTag(testTag)
+                .semantics {
+                    // Compose has no slider role: the range and the progress action make the node a slider (a SeekBar
+                    // to TalkBack, an adjustable element to VoiceOver), as Material's own Slider does.
+                    stateDescription = state
+                    progressBarRangeInfo = ProgressBarRangeInfo(tempo.bpm.toFloat(), Tempo.MIN.toFloat()..Tempo.MAX.toFloat(), steps = STEPS)
+                    setProgress { value ->
+                        offer(Tempo.clamped(value.roundToInt()))
+                        true
+                    }
+                }
+                .onKeyEvent { event -> handleKey(event, currentTempo)?.let(::offer) != null }
+                .focusable(interactionSource = source)
+                .padding(horizontal = stepperSize + stepperInset * 2),
+            contentAlignment = Alignment.Center,
+        ) {
+            center()
+        }
         TempoStepper(
             icon = TembraIcon.Add,
             enabled = canStepUp,
             contentDescription = MetronomeCopy.increaseTempo,
             onStep = { onStep(1) },
-            modifier = Modifier.align(Alignment.CenterEnd).padding(end = MetronomeDefaults.StepperInset),
+            modifier = Modifier.align(Alignment.CenterEnd).padding(end = stepperInset),
             testTag = "$testTag.up",
         )
     }

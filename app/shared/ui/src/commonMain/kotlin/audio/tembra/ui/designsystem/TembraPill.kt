@@ -7,7 +7,7 @@ import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
@@ -26,7 +26,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import audio.tembra.ui.theme.TembraTheme
 
 /**
- * The style row's fully rounded pill (research R10, contracts/design-system-additions.md): drawn 28 dp tall inside a
+ * The style row's fully rounded pill (research R10, contracts/design-system-additions.md): drawn 28 dp tall (taller only
+ * when large fonts need it) inside a
  * 44 dp target (the project's `touchTargetMin`, not Material's 48 dp), a tab with `selected` semantics. Selected: `secondaryContainer` with
  * `onSecondaryContainer` text; otherwise `surfaceContainerHigh` with `onSurfaceVariant` text that hover raises to
  * `onSurface`; keyboard focus draws a `primary` ring. [onClick] is called on every click; whether reselecting means
@@ -78,7 +79,7 @@ fun TembraPill(
             Box(
                 modifier = Modifier
                     .testTagIfSet(testTag?.let { "$it.surface" })
-                    .height(spacing.pillHeight)
+                    .heightIn(min = spacing.pillHeight)
                     .drawBehind {
                         val radius = CornerRadius(size.height / 2)
                         drawRoundRect(color = fill, cornerRadius = radius)

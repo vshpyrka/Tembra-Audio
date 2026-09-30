@@ -37,7 +37,7 @@ import kotlin.math.roundToInt
 /**
  * The tempo slider under the dial (research R8, R10): a Material [Slider] over 40–240 in whole numbers, restyled with
  * the design's 6 dp `surfaceContainerHighest` track and a 16 dp `primary` thumb, between the end labels "40" and
- * "240". The arrows come from Material; the page keys move the tempo by ten, as on the dial. The custom thumb keeps
+ * "240"; the thumb's box is 44 dp tall, so the slider is a whole touch target. The arrows come from Material; the page keys move the tempo by ten, as on the dial. The custom thumb keeps
  * Material's feedback: a `primary` state layer on hover, press, drag and focus, and the focus ring.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -93,11 +93,12 @@ internal fun TempoSlider(
             steps = Tempo.MAX - Tempo.MIN - 1,
             interactionSource = source,
             thumb = {
+                // The drawn thumb is 16 dp; its box is a touch target tall, which makes the slider (and its node) 44 dp.
                 Box(
                     Modifier
-                        .size(MetronomeDefaults.SliderThumbSize)
+                        .size(width = MetronomeDefaults.SliderThumbSize, height = spacing.touchTargetMin)
                         .drawBehind {
-                            val radius = size.minDimension / 2
+                            val radius = size.width / 2
                             // Hover, press, drag and focus show a state layer around the thumb; focus adds the ring.
                             if (halo) drawCircle(thumbColor.copy(alpha = MetronomeDefaults.THUMB_HALO_ALPHA), radius * MetronomeDefaults.THUMB_HALO_SCALE)
                             if (focused) {

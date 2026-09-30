@@ -1,7 +1,9 @@
 package audio.tembra.ui.metronome.components
 
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 /**
  * The metronome components' fixed metrics that are not theme tokens (research R8, R10, contracts/design-system-
@@ -35,6 +37,9 @@ internal object MetronomeDefaults {
     const val PAGE_STEP = 10
 
     // Accent cells (research R10).
+    /** The smallest a cell's level label shrinks to rather than clip. */
+    val CellLabelMinSize: TextUnit = 7.sp
+
     /** Gap between cells: `gap-2`. */
     val CellGap: Dp = 8.dp
 
@@ -114,4 +119,24 @@ internal object MetronomeDefaults {
     /** The thumb's state layer on hover, press, drag and focus: `primary` at 16 %, twice the thumb's diameter. */
     const val THUMB_HALO_ALPHA = 0.16f
     const val THUMB_HALO_SCALE = 2f
+
+    // Wide and landscape layouts (contracts/metronome-screen.md, research R10).
+    /** The expanded layout's tap and play row: `max-w-md` centred in its card. */
+    val TransportMaxWidth: Dp = 448.dp
+
+    /** The expanded layout's settings column: a third of the width (at least `TembraSpacing.wideSettingsMinWidth`). */
+    const val WIDE_SETTINGS_FRACTION = 1f / 3f
+
+    /**
+     * The landscape settings column: 36 % of the width within feature 003's landscape column tokens, those bounds
+     * scaled by the font scale, and never over half the width, as the tuner's column.
+     */
+    const val LANDSCAPE_SETTINGS_FRACTION = 0.36f
+    const val LANDSCAPE_SETTINGS_MAX_FRACTION = 0.5f
+
+    /** The landscape dial grows with the pane's height down to this; below it the pane scrolls instead. */
+    val LandscapeDialMin: Dp = 160.dp
+
+    /** The landscape pane's tap and play column, when it stands beside the dial: wide enough for "TAP TEMPO". */
+    val LandscapeTransportWidth: Dp = 176.dp
 }

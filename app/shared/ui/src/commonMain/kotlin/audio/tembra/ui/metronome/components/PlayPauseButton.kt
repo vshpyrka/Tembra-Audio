@@ -11,8 +11,16 @@ import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.PlainTooltip
+import androidx.compose.material3.Text
+import androidx.compose.material3.TooltipAnchorPosition
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -34,9 +42,12 @@ import audio.tembra.ui.theme.TembraTheme
 
 /**
  * Play and pause (research R10): a 64 dp round `secondaryContainer` button (hover `secondary`) with the play or pause
- * glyph (filled, as the design) and the `playGlow` drawn around it as a radial brush, never a shadow. While [running] the glow breathes; it is
- * static under reduce motion. The glyph node carries `<testTag>.icon.<glyph>` so tests can tell the two apart.
+ * glyph (filled, as the design) and the `playGlow` drawn around it as a radial brush, never a shadow. While [running]
+ * the glow breathes; it is static under reduce motion. Keyboard focus draws the `primary` ring, and hovering shows
+ * the button's description ("Start metronome" / "Stop metronome") as a tooltip, as the icon-only steppers do. The glyph
+ * node carries `<testTag>.icon.<glyph>` so tests can tell the two apart.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun PlayPauseButton(
     running: Boolean,
@@ -58,37 +69,53 @@ internal fun PlayPauseButton(
     val ring = spacing.focusRingWidth
     val icon = if (running) TembraIcon.PauseFilled else TembraIcon.PlayArrowFilled
 
-    Box(
-        modifier = modifier
-            .testTag(testTag)
-            .size(spacing.playButton)
-            .drawBehind {
-                val radius = size.minDimension / 2
-                val reach = radius + glow.radius.toPx()
-                val strength = pulse?.value ?: 1f
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        0f to glow.color.copy(alpha = glow.color.alpha * strength),
-                        radius / reach to glow.color.copy(alpha = glow.color.alpha * strength),
-                        1f to Color.Transparent,
-                        center = center,
-                        radius = reach,
-                    ),
-                    radius = reach,
+    val description = if (running) MetronomeCopy.stopMetronome else MetronomeCopy.startMetronome
+    val tooltip = rememberTooltipState(isPersistent = true)
+    LaunchedEffect(hovered, tooltip) {
+        if (hovered) tooltip.show() else tooltip.dismiss()
+    }
+
+    // The caller's modifier sits on this component's own root: the tooltip box places its modifier on an inner anchor.
+    Box(modifier = modifier) {
+        TooltipBox(
+            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
+            tooltip = { PlainTooltip { Text(description) } },
+            state = tooltip,
+            enableUserInput = false,
+        ) {
+            Box(
+                modifier = Modifier
+                    .testTag(testTag)
+                    .size(spacing.playButton)
+                    .drawBehind {
+                        val radius = size.minDimension / 2
+                        val reach = radius + glow.radius.toPx()
+                        val strength = pulse?.value ?: 1f
+                        drawCircle(
+                            brush = Brush.radialGradient(
+                                0f to glow.color.copy(alpha = glow.color.alpha * strength),
+                                radius / reach to glow.color.copy(alpha = glow.color.alpha * strength),
+                                1f to Color.Transparent,
+                                center = center,
+                                radius = reach,
+                            ),
+                            radius = reach,
+                        )
+                        drawCircle(color = fill, radius = radius)
+                        if (focused) drawFocusRing(ringColor, ring.toPx(), CornerRadius(radius))
+                    }
+                    .clickable(interactionSource = source, indication = null, role = Role.Button, onClick = onToggle)
+                    .semantics { contentDescription = description },
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = TembraIcons.vector(icon),
+                    contentDescription = null,
+                    tint = content,
+                    modifier = Modifier.size(MetronomeDefaults.PlayIconSize).testTag("$testTag.icon.${icon.name}"),
                 )
-                drawCircle(color = fill, radius = radius)
-                if (focused) drawFocusRing(ringColor, ring.toPx(), CornerRadius(radius))
             }
-            .clickable(interactionSource = source, indication = null, role = Role.Button, onClick = onToggle)
-            .semantics { contentDescription = if (running) MetronomeCopy.stopMetronome else MetronomeCopy.startMetronome },
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            imageVector = TembraIcons.vector(icon),
-            contentDescription = null,
-            tint = content,
-            modifier = Modifier.size(MetronomeDefaults.PlayIconSize).testTag("$testTag.icon.${icon.name}"),
-        )
+        }
     }
 }
 

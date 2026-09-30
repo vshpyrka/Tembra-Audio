@@ -23,7 +23,7 @@ import audio.tembra.ui.theme.TembraTheme
 
 /**
  * The bar's beats as cells (research R7, R10): one [AccentCell] per beat of [pattern], 8 dp apart, in one row, or in
- * two rows when a cell would drop under the 44 dp target or under its widest level label (6/8 and 7/8 on a phone). While [running] a frame tick
+ * more rows when a cell would drop under the 44 dp target or under its widest level label (6/8 and 7/8 on a phone). While [running] a frame tick
  * drives the light: each cell's draw phase reads the tick and asks [telemetry] which beat is audible, so only drawing
  * is invalidated and nothing is written back to composition (`compose-performance`). Stopped, the telemetry is never
  * read. [currentBeat] is the ViewModel's 10 Hz sample (-1 when stopped): the cell it names is announced as playing.
@@ -82,6 +82,12 @@ internal fun AccentCells(
 /** The cells' tag prefix: the row tag without its plural `s`. */
 private fun cellTagPrefix(rowTag: String): String = rowTag.removeSuffix("s")
 
-/** Every beat in one row when each cell keeps [minCell]; otherwise two rows. */
-private fun cellsPerRow(beats: Int, width: Dp, minCell: Dp, gap: Dp): Int =
-    if (minCell * beats + gap * (beats - 1) <= width) beats else (beats + 1) / 2
+/**
+ * Every beat in one row when each cell keeps [minCell]; otherwise as few rows as fit, holding as equal a number of
+ * cells as they can (7/8 is 4 + 3 on a phone, 3 + 3 + 1 in the narrow landscape column).
+ */
+private fun cellsPerRow(beats: Int, width: Dp, minCell: Dp, gap: Dp): Int {
+    val fit = ((width + gap) / (minCell + gap)).toInt().coerceIn(1, beats)
+    val rows = (beats + fit - 1) / fit
+    return (beats + rows - 1) / rows
+}
