@@ -7,7 +7,7 @@ interface BackgroundPlaybackHost {
     /** Makes the process eligible to keep playing after the screen locks or the app is backgrounded. Returns false when the platform refuses. */
     fun keepAlive(): Boolean
     fun release()
-    /** The user asked to stop from outside the app (the Android notification's Stop action). Cold; one collector. */
+    /** The user asked to stop from outside the app (the Android notification's Stop action). Hot, one collector (the ViewModel); a request with no collector is dropped. */
     val stopRequests: Flow<Unit>
 }
 class FakeBackgroundPlaybackHost(var allow: Boolean = true) : BackgroundPlaybackHost   // commonTest; `alive` flag, `requestStop()` emits
@@ -32,7 +32,7 @@ class FakeBackgroundPlaybackHost(var allow: Boolean = true) : BackgroundPlayback
   has already allowed notifications; the service and the system's active-app chip work regardless.
 - `AndroidBackgroundPlaybackHost(context)`: `keepAlive()` = `ContextCompat.startForegroundService(context, Intent(ACTION_START))`
   wrapped in a `try` returning false on `ForegroundServiceStartNotAllowedException` (API 31+,
-  the app is not visible); `release()` = `context.startService(Intent(ACTION_STOP))`.
+  the app is not visible); `release()` = `context.stopService(Intent(context, MetronomeForegroundService::class.java))` (not `startService(ACTION_STOP)`: starting a service from the background throws on API 26+, and an ACTION_STOP would emit a stop request the ViewModel did not ask for).
 - Focus (`AUDIOFOCUS_GAIN`), the becoming-noisy receiver and the resulting `AudioEvent`s live in
   the engine actual (contracts/metronome-audio-kotlin.md). Order in the ViewModel: `keepAlive()`
   before `startMetronome()` (so the Android 15+ focus rule "top app or running a foreground

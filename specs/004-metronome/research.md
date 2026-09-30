@@ -524,8 +524,10 @@ changing and no stability annotation was added.
   `CancellationException`, and reports the outcome into the state and the message channel.
 - Events: `MetronomeAudio.events` is feature 003's `TunerAudio.events` contract (no replay, one
   collector; an interruption that happens while nobody collects has no click to stop), extended
-  with the Android becoming-noisy source; `BackgroundPlaybackHost.stopRequests` is a cold
-  `callbackFlow`. The one-shot user messages ("Not a WAV file", the fallback notice) are a
+  with the Android becoming-noisy source; `BackgroundPlaybackHost.stopRequests` is a hot
+  process-wide `MutableSharedFlow(extraBufferCapacity = 1)` fed by the service's Stop action
+  (one collector, the ViewModel; a request with no collector is dropped, which is right because
+  there is then no click to stop). The one-shot user messages ("Not a WAV file", the fallback notice) are a
   `Channel(BUFFERED).receiveAsFlow()` consumed by a `LaunchedEffect` in the wiring composable
   that shows a snackbar (exactly-once handoff to one consumer, `flow-state-events`).
 - Stepper hold repeat and the tap-caption reset are user-event coroutines: the former in
