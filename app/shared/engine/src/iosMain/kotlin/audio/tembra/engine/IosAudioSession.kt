@@ -67,15 +67,15 @@ object IosAudioSession {
 
     private val session: AVAudioSession get() = AVAudioSession.sharedInstance()
 
-    /**
-     * Called on every route change, on the notification's thread; the engine sets it while the metronome runs to
-     * re-report the output latency of the new route (feature 004 R7) and clears it on stop.
-     */
     /** True between a successful activation and a successful deactivation; internal so tests can observe it. */
     @Volatile
     internal var isActive: Boolean = false
         private set
 
+    /**
+     * Called on every route change, on the notification's thread; the engine sets it while the metronome runs to
+     * re-report the output latency of the new route (feature 004 R7) and clears it on stop.
+     */
     @Volatile
     internal var routeChangeListener: (() -> Unit)? = null
 
