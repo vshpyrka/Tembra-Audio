@@ -40,7 +40,7 @@ class TickGridTest {
             grid(TimeSignature.FourFour, Subdivision.Two, MetronomeStyle.Syncopated, SyncopationReading.OffBeatTicks).text(),
         )
         assertEquals(
-            "sCACACAC",
+            "ssAsAsAs",
             grid(TimeSignature.FourFour, Subdivision.Two, MetronomeStyle.Syncopated, SyncopationReading.AllButOne).text(),
         )
     }
