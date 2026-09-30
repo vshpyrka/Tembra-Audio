@@ -1,6 +1,11 @@
 package audio.tembra.ui.metronome.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -13,9 +18,12 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -29,13 +37,28 @@ import kotlin.math.roundToInt
 /**
  * The tempo slider under the dial (research R8, R10): a Material [Slider] over 40–240 in whole numbers, restyled with
  * the design's 6 dp `surfaceContainerHighest` track and a 16 dp `primary` thumb, between the end labels "40" and
- * "240". The arrows come from Material; the page keys move the tempo by ten, as on the dial.
+ * "240". The arrows come from Material; the page keys move the tempo by ten, as on the dial. The custom thumb keeps
+ * Material's feedback: a `primary` state layer on hover, press, drag and focus, and the focus ring.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun TempoSlider(tempo: Tempo, onTempo: (Tempo) -> Unit, modifier: Modifier = Modifier, testTag: String = "metronome.slider") {
+internal fun TempoSlider(
+    tempo: Tempo,
+    onTempo: (Tempo) -> Unit,
+    modifier: Modifier = Modifier,
+    interactionSource: MutableInteractionSource? = null,
+    testTag: String = "metronome.slider",
+) {
     val colors = TembraTheme.colors
     val spacing = TembraTheme.spacing
+    val source = interactionSource ?: remember { MutableInteractionSource() }
+    val hovered by source.collectIsHoveredAsState()
+    val pressed by source.collectIsPressedAsState()
+    val dragged by source.collectIsDraggedAsState()
+    val focused by source.collectIsFocusedAsState()
+    val halo = hovered || pressed || dragged || focused
+    val thumbColor = colors.primary
+    val ring = spacing.focusRingWidth
     val labelStyle = TembraTheme.typographyExtras.tabularParam
     val currentTempo by rememberUpdatedState(tempo)
     val currentOnTempo by rememberUpdatedState(onTempo)
@@ -68,8 +91,21 @@ internal fun TempoSlider(tempo: Tempo, onTempo: (Tempo) -> Unit, modifier: Modif
                 },
             valueRange = Tempo.MIN.toFloat()..Tempo.MAX.toFloat(),
             steps = Tempo.MAX - Tempo.MIN - 1,
+            interactionSource = source,
             thumb = {
-                Box(Modifier.size(MetronomeDefaults.SliderThumbSize).background(colors.primary, CircleShape))
+                Box(
+                    Modifier
+                        .size(MetronomeDefaults.SliderThumbSize)
+                        .drawBehind {
+                            val radius = size.minDimension / 2
+                            // Hover, press, drag and focus show a state layer around the thumb; focus adds the ring.
+                            if (halo) drawCircle(thumbColor.copy(alpha = MetronomeDefaults.THUMB_HALO_ALPHA), radius * MetronomeDefaults.THUMB_HALO_SCALE)
+                            if (focused) {
+                                drawCircle(thumbColor, radius + ring.toPx() * 2, style = Stroke(width = ring.toPx()))
+                            }
+                            drawCircle(thumbColor, radius)
+                        },
+                )
             },
             track = {
                 Box(

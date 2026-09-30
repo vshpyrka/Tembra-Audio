@@ -25,7 +25,7 @@ internal object MetronomeCopy {
     const val startMetronome = "Start metronome"
     const val stopMetronome = "Stop metronome"
 
-    // Beat cells.
+    // Beat cells: "Click, playing".
     const val playing = "playing"
 
     // Sound picker.

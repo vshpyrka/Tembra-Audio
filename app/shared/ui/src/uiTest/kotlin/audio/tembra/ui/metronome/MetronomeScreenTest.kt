@@ -10,6 +10,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertContentDescriptionEquals
@@ -93,14 +96,23 @@ class MetronomeScreenTest {
     fun playTogglesAndFollowsThePlaybackState() = runComposeUiTest {
         val update = setScreen()
         onNodeWithTag("metronome.play").assertContentDescriptionEquals("Start metronome")
-        onNodeWithTag("metronome.play.icon.PlayArrow", useUnmergedTree = true).assertExists()
+        onNodeWithTag("metronome.play.icon.PlayArrowFilled", useUnmergedTree = true).assertExists()
         onNodeWithTag("metronome.play").performClick()
         settle()
         assertEquals(1, toggles)
         update(loaded.copy(playback = PlaybackState.Running))
         onNodeWithTag("metronome.play").assertContentDescriptionEquals("Stop metronome")
-        onNodeWithTag("metronome.play.icon.Pause", useUnmergedTree = true).assertExists()
-        onNodeWithTag("metronome.play.icon.PlayArrow", useUnmergedTree = true).assertDoesNotExist()
+        onNodeWithTag("metronome.play.icon.PauseFilled", useUnmergedTree = true).assertExists()
+        onNodeWithTag("metronome.play.icon.PlayArrowFilled", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun theSampledBeatReachesTheCells() = runComposeUiTest {
+        val update = setScreen()
+        onNodeWithTag("metronome.cell.2").assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Click"))
+        update(loaded.copy(playback = PlaybackState.Running, currentBeat = 1))
+        onNodeWithTag("metronome.cell.2").assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Click, playing"))
+        onNodeWithTag("metronome.cell.1").assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Accent"))
     }
 
     @Test

@@ -20,12 +20,15 @@ import audio.tembra.ui.theme.TembraTheme
  * two rows when a cell would drop under the 44 dp target (5/4 and 7/8 on a phone). While [running] a frame tick
  * drives the light: each cell's draw phase reads the tick and asks [telemetry] which beat is audible, so only drawing
  * is invalidated and nothing is written back to composition (`compose-performance`). Stopped, the telemetry is never
- * read. Clicking a cell reports its 0-based index to [onCycle]. The cells carry `<testTag>.<n>`, n from 1.
+ * read. [currentBeat] is the ViewModel's 10 Hz sample (-1 when stopped): the cell it names is announced as playing.
+ * Clicking a cell reports its 0-based index to [onCycle]. The row carries [testTag] and each cell the singular of it
+ * with its number from 1: `metronome.cells` → `metronome.cell.1`.
  */
 @Composable
 internal fun AccentCells(
     pattern: AccentPattern,
     running: Boolean,
+    currentBeat: Int,
     telemetry: BeatTelemetry,
     onCycle: (Int) -> Unit,
     modifier: Modifier = Modifier,
@@ -53,14 +56,18 @@ internal fun AccentCells(
                     index = index,
                     level = level,
                     lit = { running && telemetry.litBeat(tick.longValue) == index },
+                    playing = index == currentBeat,
                     onClick = { onCycle(index) },
                     modifier = Modifier.width(cellWidth),
-                    testTag = "$testTag.${index + 1}",
+                    testTag = "${cellTagPrefix(testTag)}.${index + 1}",
                 )
             }
         }
     }
 }
+
+/** The cells' tag prefix: the row tag without its plural `s`. */
+private fun cellTagPrefix(rowTag: String): String = rowTag.removeSuffix("s")
 
 /** Every beat in one row when each cell keeps [minCell]; otherwise two rows. */
 private fun cellsPerRow(beats: Int, width: Dp, minCell: Dp, gap: Dp): Int =

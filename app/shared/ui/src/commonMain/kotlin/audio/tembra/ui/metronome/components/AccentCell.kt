@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -47,13 +49,16 @@ import kotlin.math.max
  * colour follow [level] (Accent `secondary` 95 % with the `accentGlow`, Click `primary` 62 %, Sub `primary` at 70 %
  * 42 %) and the level's name below. [lit] is a provider read only in the draw phase: while it answers true the bar box
  * is outlined in `secondary`, the bar is drawn at full alpha and the Accent glow brightens (not under reduce motion).
- * With a [testTag], the bar box carries `<tag>.bar` and the bar `<tag>.level`.
+ * [playing] (the 10 Hz sample) adds ", playing" to the cell's state for accessibility. Hover and press raise the card to
+ * `surfaceContainerLow`; keyboard focus draws the `primary` ring. With a [testTag], the bar box carries `<tag>.bar` and
+ * the bar `<tag>.level`.
  */
 @Composable
 internal fun AccentCell(
     index: Int,
     level: BeatLevel,
     lit: () -> Boolean,
+    playing: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource? = null,
@@ -65,6 +70,9 @@ internal fun AccentCell(
     val flashGlow = !TembraTheme.motion.reduceMotion
     val source = interactionSource ?: remember { MutableInteractionSource() }
     val focused by source.collectIsFocusedAsState()
+    val hovered by source.collectIsHoveredAsState()
+    val pressed by source.collectIsPressedAsState()
+    val cardColor = if (hovered || pressed) colors.surfaceContainerLow else colors.surfaceContainerLowest
     val barColor = when (level) {
         BeatLevel.Accent -> colors.secondary
         BeatLevel.Click -> colors.primary
@@ -94,11 +102,11 @@ internal fun AccentCell(
         modifier = modifier
             .testTagIfSet(testTag)
             .clip(cellShape)
-            .background(colors.surfaceContainerLowest)
+            .background(cardColor)
             .clickable(interactionSource = source, indication = null, role = Role.Button, onClick = onClick)
             .semantics {
                 contentDescription = MetronomeCopy.beat(index)
-                stateDescription = level.label
+                stateDescription = if (playing) "${level.label}, ${MetronomeCopy.playing}" else level.label
             }
             .drawWithContent {
                 drawContent()

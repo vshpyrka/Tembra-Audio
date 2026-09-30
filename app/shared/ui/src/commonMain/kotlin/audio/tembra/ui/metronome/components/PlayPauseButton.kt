@@ -34,7 +34,7 @@ import audio.tembra.ui.theme.TembraTheme
 
 /**
  * Play and pause (research R10): a 64 dp round `secondaryContainer` button (hover `secondary`) with the play or pause
- * glyph and the `playGlow` drawn around it as a radial brush, never a shadow. While [running] the glow breathes; it is
+ * glyph (filled, as the design) and the `playGlow` drawn around it as a radial brush, never a shadow. While [running] the glow breathes; it is
  * static under reduce motion. The glyph node carries `<testTag>.icon.<glyph>` so tests can tell the two apart.
  */
 @Composable
@@ -56,7 +56,7 @@ internal fun PlayPauseButton(
     val content = if (hovered) colors.onSecondary else colors.onSecondaryContainer
     val ringColor = colors.primary
     val ring = spacing.focusRingWidth
-    val icon = if (running) TembraIcon.Pause else TembraIcon.PlayArrow
+    val icon = if (running) TembraIcon.PauseFilled else TembraIcon.PlayArrowFilled
 
     Box(
         modifier = modifier

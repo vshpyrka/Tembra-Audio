@@ -1,0 +1,10 @@
+<!-- Material Symbols Outlined "pause" (filled) from google/material-design-icons@27e9ef1dbeedc13d682fece4a58e1eda4cb0961a (Apache-2.0); fetched by tools/fetch-material-symbols.sh, do not edit -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="960"
+    android:viewportHeight="960">
+  <path
+      android:fillColor="#FFFFFFFF"
+      android:pathData="M560,760L560,200L720,200L720,760L560,760ZM240,760L240,200L400,200L400,760L240,760Z"/>
+</vector>
