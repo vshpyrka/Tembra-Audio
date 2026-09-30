@@ -9,7 +9,7 @@ import okio.Path.Companion.toPath
 
 /**
  * [CustomClickSoundStore] over Okio. The `metronome` directory is created when the store is built, so the staging
- * path can be written to straight away; the commit runs on [Dispatchers.IO].
+ * path can be written to straight away; the file operations run on [Dispatchers.IO].
  */
 class OkioCustomClickSoundStore(
     directories: AppDirectories,
@@ -38,4 +38,6 @@ class OkioCustomClickSoundStore(
     override suspend fun exists(): Boolean = withContext(Dispatchers.IO) { fileSystem.exists(file) }
 
     override suspend fun delete() = withContext(Dispatchers.IO) { fileSystem.delete(file) }
+
+    override suspend fun deleteStaging() = withContext(Dispatchers.IO) { fileSystem.delete(staging) }
 }
