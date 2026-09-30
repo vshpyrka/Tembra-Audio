@@ -23,9 +23,10 @@ class AndroidAudioFocus(context: Context) {
     private val transientMayDuck = buildRequest(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
     private val gain = buildRequest(AudioManager.AUDIOFOCUS_GAIN)
 
-    /** The request [abandon] releases: the last one asked for. */
+    /** The granted focus [abandon] releases; null when nothing is held. Internal so device tests can observe it. */
     @Volatile
-    private var current: AudioFocusRequest = transientMayDuck
+    internal var held: FocusType? = null
+        private set
 
     private fun buildRequest(focusGain: Int): AudioFocusRequest = AudioFocusRequest.Builder(focusGain)
         .setAudioAttributes(
@@ -51,17 +52,25 @@ class AndroidAudioFocus(context: Context) {
         }
     }
 
-    /** True when focus was granted. */
-    fun request(type: FocusType = FocusType.TransientMayDuck): Boolean {
-        val request = when (type) {
-            FocusType.TransientMayDuck -> transientMayDuck
-            FocusType.Gain -> gain
-        }
-        current = request
-        return audioManager.requestAudioFocus(request) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+    private fun requestFor(type: FocusType): AudioFocusRequest = when (type) {
+        FocusType.TransientMayDuck -> transientMayDuck
+        FocusType.Gain -> gain
     }
 
+    /**
+     * True when focus was granted. Both requests share one listener, so Android treats them as one focus client: a
+     * second request replaces the first. Callers request only when the engine leaves Idle (contracts/metronome-audio-kotlin.md).
+     */
+    fun request(type: FocusType = FocusType.TransientMayDuck): Boolean {
+        val granted = audioManager.requestAudioFocus(requestFor(type)) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+        if (granted) held = type
+        return granted
+    }
+
+    /** Releases the held focus; does nothing when none is held. */
     fun abandon() {
-        audioManager.abandonAudioFocusRequest(current)
+        val type = held ?: return
+        held = null
+        audioManager.abandonAudioFocusRequest(requestFor(type))
     }
 }

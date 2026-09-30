@@ -58,6 +58,9 @@ class FakeAudioEngine(
 
     private var nextHandle = 1
 
+    /** True from a successful [previewClick] until the preview ends ([endPreview], [stopMetronome], [stopTone]). */
+    private var previewing = false
+
     private val _events = MutableSharedFlow<AudioEvent>(extraBufferCapacity = 16)
     override val events: Flow<AudioEvent> = _events
 
@@ -114,6 +117,7 @@ class FakeAudioEngine(
     override fun stopTone() {
         _calls += "stopTone"
         if (audioState == AudioState.Tone) audioState = AudioState.Idle
+        previewing = false
     }
 
     override fun setGrid(grid: MetronomeGrid): AudioResult {
@@ -144,12 +148,24 @@ class FakeAudioEngine(
 
     override fun startMetronome(): AudioResult = startOrFail("startMetronome", AudioState.Metronome)
 
+    /** Also clears the Tone a preview left, so a test need not script the click's end before stopping. */
     override fun stopMetronome() {
         _calls += "stopMetronome"
-        if (audioState == AudioState.Metronome) audioState = AudioState.Idle
+        if (audioState == AudioState.Metronome || (audioState == AudioState.Tone && previewing)) audioState = AudioState.Idle
+        previewing = false
     }
 
-    override fun previewClick(level: ClickLevel): AudioResult = startOrFail("previewClick(${level.name})", AudioState.Tone)
+    override fun previewClick(level: ClickLevel): AudioResult {
+        val result = startOrFail("previewClick(${level.name})", AudioState.Tone)
+        if (result == AudioResult.Ok) previewing = true
+        return result
+    }
+
+    /** The preview click ended on its own: the engine returns to Idle (not recorded as a call). */
+    fun endPreview() {
+        if (previewing && audioState == AudioState.Tone) audioState = AudioState.Idle
+        previewing = false
+    }
 
     override fun reportOutputLatencyNanos(nanos: Long) {
         _calls += "reportOutputLatencyNanos($nanos)"

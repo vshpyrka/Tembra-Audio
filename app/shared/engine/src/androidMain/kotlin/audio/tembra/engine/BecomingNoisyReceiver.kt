@@ -16,8 +16,10 @@ import android.os.Build
 class BecomingNoisyReceiver(context: Context, private val onBecomingNoisy: () -> Unit) {
     private val context: Context = context.applicationContext ?: context
 
+    /** True while registered with the context; internal so device tests can observe it. */
     @Volatile
-    private var registered = false
+    internal var registered: Boolean = false
+        private set
 
     /** Internal so device tests can deliver the intent: only system uids may send this protected broadcast. */
     internal val receiver: BroadcastReceiver = object : BroadcastReceiver() {

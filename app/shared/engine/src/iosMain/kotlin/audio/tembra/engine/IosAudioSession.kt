@@ -71,6 +71,11 @@ object IosAudioSession {
      * Called on every route change, on the notification's thread; the engine sets it while the metronome runs to
      * re-report the output latency of the new route (feature 004 R7) and clears it on stop.
      */
+    /** True between a successful activation and a successful deactivation; internal so tests can observe it. */
+    @Volatile
+    internal var isActive: Boolean = false
+        private set
+
     @Volatile
     internal var routeChangeListener: (() -> Unit)? = null
 
@@ -96,6 +101,7 @@ object IosAudioSession {
         withError { session.setPreferredSampleRate(PREFERRED_SAMPLE_RATE, it) }
         withError { session.setPreferredIOBufferDuration(PREFERRED_IO_BUFFER_SECONDS, it) }
         val active = withError { session.setActive(true, it) }
+        if (active) isActive = true
         return category && active
     }
 
@@ -103,6 +109,7 @@ object IosAudioSession {
     fun activateForPlayback(): Boolean {
         val category = withError { session.setCategory(AVAudioSessionCategoryPlayback, AVAudioSessionModeDefault, 0uL, it) }
         val active = withError { session.setActive(true, it) }
+        if (active) isActive = true
         return category && active
     }
 
@@ -110,7 +117,11 @@ object IosAudioSession {
     fun outputLatencyNanos(): Long = ((session.outputLatency + session.IOBufferDuration) * NANOS_PER_SECOND).toLong()
 
     /** Deactivates and tells other apps they may resume; true on success. */
-    fun deactivate(): Boolean = withError { session.setActive(false, AVAudioSessionSetActiveOptionNotifyOthersOnDeactivation, it) }
+    fun deactivate(): Boolean {
+        val deactivated = withError { session.setActive(false, AVAudioSessionSetActiveOptionNotifyOthersOnDeactivation, it) }
+        if (deactivated) isActive = false
+        return deactivated
+    }
 
     private fun onInterruption(notification: NSNotification?) {
         val info = notification?.userInfo ?: return
