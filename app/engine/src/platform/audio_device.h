@@ -29,8 +29,17 @@ public:
     /** The actual rate of the open stream (the preferred rate before any stream opened). */
     virtual uint32_t sampleRate() const = 0;
 
-    /** True after the platform closed the stream on its own (device disconnected); the host re-opens. */
+    /** True after the platform closed the input stream on its own (device disconnected); the host re-opens. */
     virtual bool deviceLost() const = 0;
+
+    /**
+     * Output latency of the open output stream in nanoseconds, 0 when unknown (research R7). Control thread only: on
+     * Android it calls Oboe's calculateLatencyMillis(), which is not safe on the data callback before Android R.
+     */
+    virtual int64_t outputLatencyNanos() const { return 0; }
+
+    /** Latency measured by the host (iOS: AVAudioSession.outputLatency + ioBufferDuration); ignored where the device measures it. */
+    virtual void setReportedLatencyNanos(int64_t /*nanos*/) {}
 };
 
 }  // namespace tembra
