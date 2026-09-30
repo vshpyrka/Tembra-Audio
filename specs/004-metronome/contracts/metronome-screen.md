@@ -86,12 +86,12 @@ Row(testTag "screen.metronome", padding pageMargin, gap md)
 Landscape (600 dp or wider, shorter than 480 dp):
 Row(testTag "screen.metronome", padding pageMargin × sm, gap md)
 ├── settings column (36 % of the width within 224–280 dp, verticalScroll): TimeSignatureChips in two rows of three (`columns = 3`), SubdivisionChips, AccentCells + StyleRow, ClickSoundPicker(Dropdown)
-└── pane (weight 1): TempoDial sized from the pane height (height − slider row − tap/play row − gaps, 160–420 dp), TempoSlider, then the tap/play row; scrolls only when the dial would drop under 160 dp
+└── pane (weight 1): TempoDial sized from the pane with TempoSlider under it, and the tap/play controls placed by whichever arrangement yields the larger dial (B13 ruling, 2026-09-30): the tap/play row under the slider when the pane is tall enough (the Stitch phone-landscape mock; dial = height − slider row − tap/play row − gaps), otherwise tap over play in a column beside the dial card (a phone held sideways has about 290 dp of pane height, where the stacked order pushed the transport off screen and shrank the readout); the dial stays within 160–420 dp and the pane scrolls only when neither arrangement keeps it at 160 dp
 ```
 
 **Semantics** (spec FR-030): chips and pills `role = Tab` + `selected`; cells `role = Button`,
 `contentDescription = "Beat 3"`, `stateDescription = level.label` (+ ", playing" when lit at the
-10 Hz sample); the dial is one node with `role = Slider`, `progressBarRangeInfo(40..240)`,
+10 Hz sample); the dial is one node with Material's slider semantics (Compose has no `Role.Slider`; B13 ruling): `progressBarRangeInfo(40..240)`,
 `stateDescription = "120 beats per minute, Moderato"`, `setProgress` action; steppers `role =
 Button` with `contentDescription` "Decrease tempo" / "Increase tempo" (also their tooltips),
 `disabled` at the ends; slider Material semantics; tap button `contentDescription = "Tap tempo"`,
