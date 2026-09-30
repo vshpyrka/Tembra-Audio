@@ -60,7 +60,8 @@ import kotlin.test.assertTrue
  * the signature, subdivision, cell and style intents with their re-application rules (spec FR-006 to FR-010) and the
  * debug Syncopated reading (spec FR-037). User Story 3: tap tempo and its caption timer (spec FR-015 to FR-017). User
  * Story 4: the sound selection with its preview, swap and import rules (spec FR-020, FR-022). User Story 5: the custom
- * WAV import, its refusals, the replace action and the startup fallback (spec FR-022 to FR-025).
+ * WAV import, its refusals, the replace action and the startup fallback (spec FR-022 to FR-025). User Story 6: the
+ * interruptions, route and device losses, stop requests and the screen leaving, none of which ever restarts (spec FR-027).
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class MetronomeViewModelTest {
@@ -1121,5 +1122,99 @@ class MetronomeViewModelTest {
         // The cancelled pick restores what the startup load found, not the state from before it.
         assertEquals(CustomSoundState.Available("Kick"), viewModel.uiState.value.customSound)
         assertEquals("selectSound(Custom)", audio.calls.last())
+    }
+
+    // --- User Story 6: background playback and interruptions (spec FR-027) -------------------------------------------
+
+    @Test
+    fun anOutputRouteLossStops() = viewModelTest {
+        val viewModel = running()
+        audio.emit(AudioEvent.OutputRouteLost)
+        runCurrent()
+        assertEquals(PlaybackState.Stopped, viewModel.uiState.value.playback)
+        assertEquals("stopMetronome", audio.calls.last())
+        assertEquals(1, fakeHost.releaseCount)
+        assertFalse(fakeHost.alive)
+    }
+
+    @Test
+    fun aDeviceLostEventStops() = viewModelTest {
+        val viewModel = running()
+        audio.emit(AudioEvent.DeviceLost)
+        runCurrent()
+        assertEquals(PlaybackState.Stopped, viewModel.uiState.value.playback)
+        assertEquals("stopMetronome", audio.calls.last())
+        assertEquals(1, fakeHost.releaseCount)
+    }
+
+    @Test
+    fun theEngineFallingToIdleWhileRunningIsADeviceLoss() = viewModelTest {
+        val viewModel = running()
+        // The tick still reads running: only the engine state reports the closed stream.
+        audio.audioState = AudioState.Idle
+        advanceTimeBy(150)
+        runCurrent()
+        assertEquals(PlaybackState.Stopped, viewModel.uiState.value.playback)
+        assertEquals("stopMetronome", audio.calls.last())
+        assertEquals(1, fakeHost.releaseCount)
+        assertEquals(1, startMetronomeCount())
+    }
+
+    @Test
+    fun leavingTheScreenCancelsTheObserversSoLaterEventsCallNothing() = viewModelTest {
+        val viewModel = running()
+        viewModel.screenVisible(false)
+        runCurrent()
+        assertEquals(PlaybackState.Stopped, viewModel.uiState.value.playback)
+        val callsAfterLeaving = audio.calls.toList()
+        audio.emit(AudioEvent.Interrupted)
+        audio.emit(AudioEvent.InterruptionEnded)
+        audio.emit(AudioEvent.OutputRouteLost)
+        audio.emit(AudioEvent.DeviceLost)
+        fakeHost.requestStop()
+        advanceTimeBy(1_000)
+        runCurrent()
+        assertEquals(callsAfterLeaving, audio.calls, "an event after leaving reached the engine")
+        assertEquals(1, fakeHost.keepAliveCount)
+        assertEquals(1, fakeHost.releaseCount)
+        assertEquals(PlaybackState.Stopped, viewModel.uiState.value.playback)
+    }
+
+    @Test
+    fun returningToTheScreenDoesNotRestartTheClick() = viewModelTest {
+        val viewModel = running()
+        viewModel.screenVisible(false)
+        runCurrent()
+        show(viewModel)
+        advanceTimeBy(1_000)
+        runCurrent()
+        assertEquals(PlaybackState.Stopped, viewModel.uiState.value.playback)
+        assertEquals(1, startMetronomeCount())
+        assertEquals(1, fakeHost.keepAliveCount)
+        assertFalse(fakeHost.alive)
+    }
+
+    @Test
+    fun eventsWhileStoppedAreIgnored() = viewModelTest {
+        val viewModel = viewModel()
+        show(viewModel)
+        val messages = collectMessages(viewModel)
+        val callsBefore = audio.calls.toList()
+        audio.emit(AudioEvent.Interrupted)
+        runCurrent()
+        audio.emit(AudioEvent.InterruptionEnded)
+        runCurrent()
+        audio.emit(AudioEvent.OutputRouteLost)
+        runCurrent()
+        audio.emit(AudioEvent.DeviceLost)
+        runCurrent()
+        fakeHost.requestStop()
+        advanceTimeBy(1_000)
+        runCurrent()
+        assertEquals(callsBefore, audio.calls, "an event while stopped reached the engine")
+        assertEquals(0, fakeHost.keepAliveCount)
+        assertEquals(0, fakeHost.releaseCount)
+        assertEquals(PlaybackState.Stopped, viewModel.uiState.value.playback)
+        assertEquals(emptyList(), messages, "an ignored event produced a message")
     }
 }
