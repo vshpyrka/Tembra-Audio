@@ -268,13 +268,13 @@ description: "Task list for feature 004: metronome"
 
 ### Tests for User Story 6 (write first, watch them fail)
 
-- [ ] T124 [P] [US6] Extend `MetronomeViewModelTest.kt`: while `Running`, `emit(AudioEvent.Interrupted)` → `stopMetronome`, `release`, `Stopped`; `emit(InterruptionEnded)` afterwards → still `Stopped`, no start; `emit(OutputRouteLost)` → `Stopped`; `host.requestStop()` → `Stopped`; the poll seeing `audioState == Idle` while `Running` (`FakeAudioEngine.audioState = Idle`) → `DeviceLost` → `Stopped`; `screenVisible(false)` → `Stopped` and the jobs cancelled (no further engine calls after subsequent `emit`); `screenVisible(true)` again does not restart the click; events while `Stopped` are ignored
+- [X] T124 [P] [US6] Extend `MetronomeViewModelTest.kt`: while `Running`, `emit(AudioEvent.Interrupted)` → `stopMetronome`, `release`, `Stopped`; `emit(InterruptionEnded)` afterwards → still `Stopped`, no start; `emit(OutputRouteLost)` → `Stopped`; `host.requestStop()` → `Stopped`; the poll seeing `audioState == Idle` while `Running` (`FakeAudioEngine.audioState = Idle`) → `DeviceLost` → `Stopped`; `screenVisible(false)` → `Stopped` and the jobs cancelled (no further engine calls after subsequent `emit`); `screenVisible(true)` again does not restart the click; events while `Stopped` are ignored
 
 ### Implementation for User Story 6
 
-- [ ] T125 [US6] Complete `observeAudioEvents()`, `observeStopRequests()` and the `DeviceLost` detection in `pollAudioState()` in `MetronomeViewModel.kt` through `PlaybackPolicy`; T124 passes
-- [ ] T126 [US6] Run every row of quickstart §7 on the Pixel 6 Pro (Android 14+) and on the physical iPhone 14 (screen lock ten minutes, app switch, notification Stop, an incoming call, YouTube, a notification sound, headphones in and out, a Bluetooth speaker, leaving the destination, force quit); record the device, OS version and outcome per row in `specs/004-metronome/screenshots/NOTES.md`; any failure becomes a fix task before the checkpoint
-- [ ] T127 [US6] Review the platform classes of T065, T066, T075 and T076 (`app/shared/engine/src/androidMain/`, `app/shared/engine/src/iosMain/`, `app/shared/ui/src/iosMain/`, `app/androidApp/src/main/`) against `kotlin-api-design` multiplatform-boundaries (no platform types in common signatures) and `kotlin-concurrency-and-flow` (the `callbackFlow`s complete and unregister); commit through the spec-kit hook
+- [X] T125 [US6] Complete `observeAudioEvents()`, `observeStopRequests()` and the `DeviceLost` detection in `pollAudioState()` in `MetronomeViewModel.kt` through `PlaybackPolicy`; T124 passes
+- [X] T126 [US6] Run every row of quickstart §7 on the Pixel 6 Pro (Android 14+) and on the physical iPhone 14 (screen lock ten minutes, app switch, notification Stop, an incoming call, YouTube, a notification sound, headphones in and out, a Bluetooth speaker, leaving the destination, force quit); record the device, OS version and outcome per row in `specs/004-metronome/screenshots/NOTES.md`; any failure becomes a fix task before the checkpoint
+- [X] T127 [US6] Review the platform classes of T065, T066, T075 and T076 (`app/shared/engine/src/androidMain/`, `app/shared/engine/src/iosMain/`, `app/shared/ui/src/iosMain/`, `app/androidApp/src/main/`) against `kotlin-api-design` multiplatform-boundaries (no platform types in common signatures) and `kotlin-concurrency-and-flow` (the `callbackFlow`s complete and unregister); commit through the spec-kit hook
 
 **Checkpoint**: the metronome survives the lock screen and yields to calls and other apps.
 
