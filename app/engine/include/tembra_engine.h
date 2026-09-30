@@ -1,12 +1,14 @@
 /*
- * Tembra Audio engine C ABI, revision 2.
+ * Tembra Audio engine C ABI, revision 3.
  *
  * This header is the only interface the Kotlin side ever sees (JNI shim on Android, cinterop on
  * iOS). Rules: plain C, no C++ types, no callbacks into the host, every returned pointer has static
  * storage and is never freed by the caller, every function is safe from any thread that is not an
  * audio callback and nothing here is ever called on one. Revision 1 (descriptor functions) is
  * specs/001-project-scaffold/contracts/engine-c-abi.md; revision 2 (the tuner) is
- * specs/003-instrument-tuner/contracts/engine-c-abi-v2.md.
+ * specs/003-instrument-tuner/contracts/engine-c-abi-v2.md; revision 3 (the metronome: TEMBRA_ERR_SILENT,
+ * TEMBRA_AUDIO_METRONOME and the tembra_metronome_* functions; every revision 2 function unchanged) is
+ * specs/004-metronome/contracts/engine-c-abi-v3.md.
  */
 #ifndef TEMBRA_ENGINE_H
 #define TEMBRA_ENGINE_H
@@ -18,13 +20,13 @@ extern "C" {
 #endif
 
 /* ABI revision of this header. Incremented whenever a function is added, removed or changed. */
-#define TEMBRA_ENGINE_ABI_VERSION 2u
+#define TEMBRA_ENGINE_ABI_VERSION 3u
 uint32_t tembra_engine_abi_version(void);
 
 /* Human-readable engine name, e.g. "Tembra Engine". Static storage. */
 const char* tembra_engine_name(void);
 
-/* Engine semantic version "major.minor.patch", e.g. "0.2.0". Static storage. */
+/* Engine semantic version "major.minor.patch", e.g. "0.3.0". Static storage. */
 const char* tembra_engine_version(void);
 
 /*
@@ -40,14 +42,16 @@ enum tembra_error {
     TEMBRA_ERR_STATE = -1,    /* the command is not allowed in the current audio state */
     TEMBRA_ERR_DEVICE = -2,   /* the platform stream could not open (no permission, no device) */
     TEMBRA_ERR_ARGUMENT = -3, /* null pointer or a value outside its range */
-    TEMBRA_ERR_DECODE = -4    /* the bytes are not a WAV dr_wav can decode */
+    TEMBRA_ERR_DECODE = -4,   /* the bytes are not a WAV dr_wav can decode */
+    TEMBRA_ERR_SILENT = -5    /* the file decodes but holds no sound above -60 dBFS */
 };
 
-/* At most one stream is open: listening and a tone never overlap (spec FR-006). */
+/* At most one stream is open: listening, a tone and the metronome never overlap (spec FR-006; data-model.md §6). */
 enum tembra_audio_state {
     TEMBRA_AUDIO_IDLE = 0,
     TEMBRA_AUDIO_LISTENING = 1,
-    TEMBRA_AUDIO_TONE = 2
+    TEMBRA_AUDIO_TONE = 2,
+    TEMBRA_AUDIO_METRONOME = 3
 };
 uint32_t tembra_audio_state(void); /* atomic read */
 
@@ -93,6 +97,58 @@ int32_t tembra_sample_load_wav(const uint8_t* bytes, uint32_t length); /* decode
 int32_t tembra_sample_play(int32_t handle, uint32_t loop);             /* loop 0 = once in full, 1 = seamless loop */
 void    tembra_sample_unload(int32_t handle);                          /* never while playing that handle: stop first */
 void    tembra_tone_stop(void);                                        /* stops a sine or a sample with a 5 ms release; idempotent */
+
+/* --- Metronome (research R1-R5, R7) --- */
+enum tembra_click_level { TEMBRA_CLICK_SUB = 0, TEMBRA_CLICK_CLICK = 1, TEMBRA_CLICK_ACCENT = 2 };
+enum tembra_click_sound {
+    TEMBRA_SOUND_CLASSIC_WOOD = 0,
+    TEMBRA_SOUND_808_RIM = 1,
+    TEMBRA_SOUND_DIGITAL_BEEP = 2,
+    TEMBRA_SOUND_COWBELL = 3,
+    TEMBRA_SOUND_MECHANICAL = 4,
+    TEMBRA_SOUND_CUSTOM = 5
+};
+
+/* The bar as a flat list of tick levels, computed in Kotlin (research R2). */
+typedef struct tembra_metronome_grid {
+    double   bpm;             /* 40..240; the beat is the signature's lower-number note */
+    uint32_t ticks_per_beat;  /* 1, 2, 3 or 4 */
+    uint32_t ticks_per_bar;   /* beats x ticks_per_beat, 1..32 */
+    uint8_t  levels[32];      /* tembra_click_level per tick, tick 0 = beat 1 */
+} tembra_metronome_grid;
+int32_t tembra_metronome_set_grid(const tembra_metronome_grid* grid); /* any state; published to the renderer; applies from the next block (R1 maps the position) */
+int32_t tembra_metronome_select_sound(uint32_t sound);                /* tembra_click_sound; TEMBRA_SOUND_CUSTOM needs a loaded custom sound (else TEMBRA_ERR_STATE) */
+
+/* What the custom sound preparation kept (research R4). */
+typedef struct tembra_custom_sound_info {
+    uint32_t source_rate;     /* as decoded */
+    uint32_t source_channels;
+    uint32_t source_bits;     /* 32 for float */
+    uint32_t kept_frames;     /* after onset alignment and the 2 s cap, at the source rate */
+    float    trimmed_ms;      /* leading silence removed */
+    float    kept_ms;
+} tembra_custom_sound_info;
+int32_t tembra_metronome_load_custom_sound(const char* wav_path, tembra_custom_sound_info* out_info);
+        /* decodes (dr_wav, first 30 s) and prepares on the calling thread; publishes the custom click set (R4);
+           TEMBRA_ERR_ARGUMENT (null / cannot open), TEMBRA_ERR_DECODE (not PCM WAV), TEMBRA_ERR_SILENT */
+void    tembra_metronome_unload_custom_sound(void);  /* falls back to Classic Wood if custom was selected */
+
+int32_t tembra_metronome_start(void);  /* opens the output stream, prepares the built-in sets at its rate on first open, state METRONOME, beat 1 at frame 0 of the first block (R1) */
+void    tembra_metronome_stop(void);   /* 5 ms release, closes the stream, state IDLE; idempotent (R1, R5) */
+int32_t tembra_metronome_preview(uint32_t level);  /* one click of the selected sound at `level`; IDLE only; state TONE until it ends */
+void    tembra_metronome_set_output_latency_ns(int64_t nanos);  /* iOS reports AVAudioSession.outputLatency + ioBufferDuration; Android passes 0 = ask the device (R7) */
+
+/* The last emitted tick, latency-compensated for the beat light (research R7). */
+typedef struct tembra_metronome_tick {
+    uint64_t tick_index;      /* +1 per emitted tick since start; 0 before the first */
+    uint32_t beat_index;      /* 0-based beat of the last emitted tick */
+    uint32_t level;           /* tembra_click_level of that tick */
+    int64_t  audible_in_ns;   /* when that tick reaches the listener, relative to now (negative = already audible) */
+    int64_t  beat_period_ns;  /* 60e9 / bpm at the time of the tick */
+    uint32_t running;         /* 1 while state == METRONOME */
+    uint32_t sample_rate;     /* stream rate */
+} tembra_metronome_tick;
+void    tembra_metronome_read(tembra_metronome_tick* out);  /* lock-free seqlock read; computes audible_in_ns against the monotonic clock at call time */
 
 #ifdef __cplusplus
 }
