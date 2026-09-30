@@ -12,7 +12,7 @@ import kotlinx.coroutines.CompletableDeferred
 class SoundFilePickerHost() {
 
     /** Test constructor: [launch] stands in for the activity result launcher. */
-    constructor(launch: (Array<String>) -> Unit) : this() {
+    internal constructor(launch: (Array<String>) -> Unit) : this() {
         this.launch = launch
     }
 
@@ -38,10 +38,10 @@ class SoundFilePickerHost() {
 
     /**
      * Opens the document picker for [mimeTypes] and suspends until [onResult]; null at once when no activity is
-     * attached. A request made while one is pending shares its result instead of opening the picker again.
+     * attached, and null at once for a second request while the picker is already open (the first one gets the pick).
      */
     suspend fun open(mimeTypes: Array<String>): Uri? {
-        pending?.let { return it.await() }
+        if (pending != null) return null
         val launcher = launch ?: return null
         val deferred = CompletableDeferred<Uri?>()
         pending = deferred

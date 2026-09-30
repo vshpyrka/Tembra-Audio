@@ -61,6 +61,23 @@ class AndroidBackgroundPlaybackHostTest {
         assertTrue("the service still runs 2 s after release()", waitUntil { !isRunning() })
     }
 
+    /**
+     * The ViewModel releases on the main thread right after `keepAlive()` when the engine start fails or the user taps
+     * Pause at once; the stop must not reach the system before the service has entered the foreground, or the process
+     * dies with "startForegroundService() did not then call startForeground()".
+     */
+    @Test
+    fun releaseRightAfterKeepAliveLeavesTheProcessRunningAndStopsTheService() {
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            assertTrue(host.keepAlive())
+            host.release()
+        }
+        assertTrue("the service still runs 2 s after release()", waitUntil { !isRunning() })
+        // The system's crash message follows the stop at once; the process is still here to assert after a further second.
+        SystemClock.sleep(1_000)
+        assertTrue(!isRunning())
+    }
+
     @Test
     fun theStopActionEmitsOneStopRequest() = runBlocking {
         assertTrue(host.keepAlive())

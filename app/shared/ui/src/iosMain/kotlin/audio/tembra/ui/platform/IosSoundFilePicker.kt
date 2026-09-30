@@ -12,6 +12,8 @@ import platform.UIKit.UIApplication
 import platform.UIKit.UIDocumentPickerViewController
 import platform.UIKit.UIViewController
 import platform.UIKit.UIWindowScene
+import platform.UIKit.modalInPresentation
+import platform.UIKit.presentationController
 import platform.UniformTypeIdentifiers.UTTypeWAV
 
 /**
@@ -21,9 +23,17 @@ import platform.UniformTypeIdentifiers.UTTypeWAV
  */
 class IosSoundFilePicker : SoundFilePicker {
 
+    @OptIn(ExperimentalForeignApi::class)
     override suspend fun pickWav(destinationPath: String): SoundPickResult {
         val url = withContext(Dispatchers.Main) { present() } ?: return SoundPickResult.Cancelled
-        return withContext(Dispatchers.IO) { copyPicked(url, destinationPath) }
+        return withContext(Dispatchers.IO) {
+            try {
+                copyPicked(url, destinationPath)
+            } finally {
+                // The picker's `asCopy` file in tmp/<bundle>-Inbox is ours to remove once copied (or refused).
+                NSFileManager.defaultManager.removeItemAtURL(url, error = null)
+            }
+        }
     }
 
     /** Presents the picker and suspends until the user picks (the URL) or cancels (null); dismisses it if cancelled. */
@@ -33,6 +43,9 @@ class IosSoundFilePicker : SoundFilePicker {
         val picker = UIDocumentPickerViewController(forOpeningContentTypes = listOfNotNull(UTTypeWAV), asCopy = true)
         picker.delegate = delegate
         picker.allowsMultipleSelection = false
+        // Only the explicit Cancel dismisses the sheet; a dismissal that still happens answers as cancelled.
+        picker.modalInPresentation = true
+        picker.presentationController?.delegate = delegate
         presenter.presentViewController(picker, animated = true, completion = null)
         try {
             return delegate.await()
@@ -54,6 +67,9 @@ class IosSoundFilePicker : SoundFilePicker {
         /** The largest custom sound accepted: 64 MB. */
         private const val MAX_BYTES = 64L * 1024 * 1024
 
+        /** The label of a picked sound whose file name is empty. */
+        private const val FALLBACK_NAME = "Custom sound"
+
         /**
          * Copies the file at [url] to [destinationPath], replacing what is there. Refuses a file over 64 MB; a failed
          * copy leaves nothing at the destination. Returns the file's name without its extension.
@@ -74,7 +90,7 @@ class IosSoundFilePicker : SoundFilePicker {
                 files.removeItemAtPath(destinationPath, error = null)
                 return SoundPickResult.Failed(SoundPickFailure.Unreadable)
             }
-            val name = url.URLByDeletingPathExtension?.lastPathComponent ?: url.lastPathComponent.orEmpty()
+            val name = url.URLByDeletingPathExtension?.lastPathComponent?.takeIf { it.isNotBlank() } ?: FALLBACK_NAME
             return SoundPickResult.Picked(name)
         }
     }

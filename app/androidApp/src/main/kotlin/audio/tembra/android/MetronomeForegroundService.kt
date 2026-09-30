@@ -27,6 +27,7 @@ class MetronomeForegroundService : Service() {
             ACTION_START -> enterForeground()
             ACTION_STOP -> {
                 AndroidBackgroundPlaybackHost.stopSignals.tryEmit(Unit)
+                AndroidBackgroundPlaybackHost.stopped()
                 stop()
             }
             else -> stop()
@@ -36,11 +37,16 @@ class MetronomeForegroundService : Service() {
 
     /** Swiping the app away ends the session; the engine stops with the activity's ViewModel or the process. */
     override fun onTaskRemoved(rootIntent: Intent?) {
+        AndroidBackgroundPlaybackHost.stopped()
         stop()
     }
 
     override fun onBind(intent: Intent?): IBinder = MetronomeServiceBinder(this)
 
+    /**
+     * Always enters the foreground first, as `startForegroundService` requires, then stops at once when the host was
+     * released while this start was queued.
+     */
     private fun enterForeground() {
         val notification = buildNotification()
         try {
@@ -51,8 +57,14 @@ class MetronomeForegroundService : Service() {
             }
         } catch (e: IllegalStateException) {
             // API 31+: the system may refuse the foreground start after the app left the screen; give up quietly.
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && e is ForegroundServiceStartNotAllowedException) stopSelf() else throw e
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && e is ForegroundServiceStartNotAllowedException) {
+                AndroidBackgroundPlaybackHost.stopped()
+                stopSelf()
+                return
+            }
+            throw e
         }
+        if (AndroidBackgroundPlaybackHost.enteredForeground()) stop()
     }
 
     private fun stop() {
