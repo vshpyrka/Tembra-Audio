@@ -1,8 +1,9 @@
 package audio.tembra.ui.theme
 
 /**
- * The twelve text styles of design/stitch/theme.json → typography (px → sp, em → em), plus the tuner's screen-derived
- * styles (research R9 of feature 003), which have no theme.json entry and stay out of [byThemeName].
+ * The twelve text styles of design/stitch/theme.json → typography (px → sp, em → em), plus the tuner's and the
+ * metronome's screen-derived styles (research R9 of feature 003, R10 of feature 004), which have no theme.json entry and
+ * stay out of [byThemeName].
  */
 object TembraTypeScale {
     val headlineLg = TembraTextStyleSpec(TembraFont.SpaceGrotesk, 32f, 40f, 600, -0.02f)
@@ -31,6 +32,12 @@ object TembraTypeScale {
     val tunerReadout = TembraTextStyleSpec(TembraFont.SpaceGrotesk, 18f, 24f, 600, 0.05f, tabularFigures = true)
     /** Chip and card overlines: `text-[11px] uppercase font-semibold tracking-wider`. */
     val microLabel = TembraTextStyleSpec(TembraFont.SpaceGrotesk, 11f, 14f, 600, 0.04f)
+
+    // Metronome styles from the Stitch metronome screens (feature 004, data-model.md §9, research R10).
+    /** Dial tempo: `text-[64px] font-bold tracking-tighter`, tabular so the number does not jitter while dragging. */
+    val tempoNumber = TembraTextStyleSpec(TembraFont.SpaceGrotesk, 64f, 64f, 700, -0.05f, tabularFigures = true)
+    /** Section overlines ("TIME SIGNATURE", "STYLE"): `text-[10px] font-semibold tracking-wider`, uppercase in use. */
+    val sectionLabel = TembraTextStyleSpec(TembraFont.SpaceGrotesk, 10f, 14f, 600, 0.05f)
 
     /** Keyed by the theme.json names, in the file's order. */
     val byThemeName: Map<String, TembraTextStyleSpec> = mapOf(

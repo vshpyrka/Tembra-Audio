@@ -48,5 +48,7 @@ object TembraTypography {
         tunerCardOctave = style(TembraTypeScale.tunerCardOctave),
         tunerReadout = style(TembraTypeScale.tunerReadout),
         microLabel = style(TembraTypeScale.microLabel),
+        tempoNumber = style(TembraTypeScale.tempoNumber),
+        sectionLabel = style(TembraTypeScale.sectionLabel),
     )
 }
