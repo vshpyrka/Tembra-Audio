@@ -56,7 +56,7 @@ class FakeBackgroundPlaybackHost(var allow: Boolean = true) : BackgroundPlayback
 
 | Trigger | Android source | iOS source | Result |
 |---|---|---|---|
-| Play pressed | `keepAlive()` → `startMetronome()` | `keepAlive()` (true) → `startMetronome()` | `Running`, or `Stopped` + `FocusDenied` (host refused) / `DeviceUnavailable` (engine error) |
+| Play pressed | `keepAlive()` → `startMetronome()` | `keepAlive()` (true) → `startMetronome()` | `Running`, or `Stopped` + `FocusDenied` (focus denied: `startMetronome()` returned `Error(AudioResult.FOCUS_DENIED)`, Android only) / `DeviceUnavailable` (host refused: `keepAlive()` false) / `DeviceUnavailable` (any other engine error) |
 | Pause pressed / leaving the destination / ViewModel cleared | `stopMetronome()` → `release()` | same | `Stopped` |
 | Incoming call, assistant, another app playing | `AudioEvent.Interrupted` (focus loss) | `AudioEvent.Interrupted` (`.began`) | `Stopped`; no auto-resume |
 | Headphones unplugged | `AudioEvent.OutputRouteLost` (becoming noisy) | `AudioEvent.OutputRouteLost` | `Stopped` |

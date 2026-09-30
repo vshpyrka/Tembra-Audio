@@ -46,7 +46,9 @@ object PlaybackPolicy {
     }
 
     private fun messageFor(reason: StartFailure): MetronomeMessage = when (reason) {
-        StartFailure.HostRefused -> MetronomeMessage.FocusDenied
+        StartFailure.FocusDenied -> MetronomeMessage.FocusDenied
+        // A refused foreground service is not another app holding the audio: the output is what is unavailable.
+        StartFailure.HostRefused -> MetronomeMessage.DeviceUnavailable
         StartFailure.EngineError -> MetronomeMessage.DeviceUnavailable
     }
 }

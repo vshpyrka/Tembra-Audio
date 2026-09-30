@@ -17,9 +17,9 @@ sealed interface MetronomeMessage {
     /** The stored custom sound is missing, so Classic Wood plays. */
     data object CustomSoundMissing : MetronomeMessage
 
-    /** The platform refused to let the metronome hold the audio (focus or background playback). */
+    /** The platform refused the metronome audio focus: another app holds the audio (Android, `AudioResult.FOCUS_DENIED`). */
     data object FocusDenied : MetronomeMessage
 
-    /** The audio output could not be opened. */
+    /** The audio output could not be opened, or the background host refused to keep the process alive. */
     data object DeviceUnavailable : MetronomeMessage
 }

@@ -43,9 +43,18 @@ class PlaybackPolicyTest {
     }
 
     @Test
-    fun aRefusedHostStopsTheStartWithFocusDenied() {
+    fun aFocusDenialStopsTheStartWithFocusDenied() {
         assertEquals(
             PlaybackTransition.Stop(MetronomeMessage.FocusDenied),
+            PlaybackPolicy.onEvent(PlaybackState.Starting, PlaybackEvent.StartFailed(StartFailure.FocusDenied)),
+        )
+    }
+
+    /** The foreground service was refused: not another app holding the audio, so the output is reported unavailable. */
+    @Test
+    fun aRefusedHostStopsTheStartWithDeviceUnavailable() {
+        assertEquals(
+            PlaybackTransition.Stop(MetronomeMessage.DeviceUnavailable),
             PlaybackPolicy.onEvent(PlaybackState.Starting, PlaybackEvent.StartFailed(StartFailure.HostRefused)),
         )
     }

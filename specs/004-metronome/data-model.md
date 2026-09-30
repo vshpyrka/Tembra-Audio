@@ -190,15 +190,18 @@ object PlaybackPolicy {                                         // pure, unit-te
     // PlaybackEvent: PlayPressed, PausePressed, ScreenHidden, AudioInterrupted, OutputRouteLost, DeviceLost, StopRequested, StartFailed(reason)
     // PlaybackTransition: Start, Stop(message: MetronomeMessage?), Ignore
     //   Running + {ScreenHidden, AudioInterrupted, OutputRouteLost, DeviceLost, StopRequested, PausePressed} → Stop
-    //   Starting + StartFailed(HostRefused) → Stop(FocusDenied); Starting + StartFailed(EngineError) → Stop(DeviceUnavailable)
+    //   Starting + StartFailed(FocusDenied) → Stop(FocusDenied); Starting + StartFailed(HostRefused) → Stop(DeviceUnavailable); Starting + StartFailed(EngineError) → Stop(DeviceUnavailable)
     //   Starting + {ScreenHidden, AudioInterrupted, OutputRouteLost, DeviceLost, StopRequested, PausePressed} → Stop(null) (the start is cancelled: the ViewModel stops and releases whatever the start had acquired)
     //   Stopped + PlayPressed → Start; anything else → Ignore; nothing ever restarts by itself (spec FR-027)
 }
 ```
 
-Start sequence (ViewModel): `host.keepAlive()` (Android: focus + service; iOS: true) → on
-false: `Stop(message = FocusDenied)`; else `audio.startMetronome()` → on `Error`: release the
-host, `Stop(message = DeviceUnavailable)`; else `Running`. Stop sequence: `audio.stopMetronome()`
+Start sequence (ViewModel): `host.keepAlive()` (Android: the foreground service; iOS: true) → on
+false (`StartFailure.HostRefused`, the service start was refused): `Stop(message = DeviceUnavailable)`;
+else `audio.startMetronome()`, which on Android requests audio focus itself → on
+`Error(AudioResult.FOCUS_DENIED)` (`StartFailure.FocusDenied`): release the host,
+`Stop(message = FocusDenied)`; on any other `Error` (`StartFailure.EngineError`): release the host,
+`Stop(message = DeviceUnavailable)`; on `Ok`: `Running`. Stop sequence: `audio.stopMetronome()`
 then `host.release()`. The order guarantees the process is foreground-privileged before the
 stream opens and that focus is abandoned after the stream closes.
 

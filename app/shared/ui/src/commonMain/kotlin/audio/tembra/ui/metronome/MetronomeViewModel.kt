@@ -488,17 +488,20 @@ class MetronomeViewModel(
         // A preview click still sounding would make the engine refuse the start.
         if (audio.audioState == AudioState.Tone) audio.stopTone()
         _uiState.update { it.copy(playback = PlaybackState.Starting) }
-        val failure = when {
-            !host.keepAlive() -> StartFailure.HostRefused
-            audio.startMetronome() is AudioResult.Error -> StartFailure.EngineError
-            else -> null
-        }
+        val failure = if (host.keepAlive()) startFailureOf(audio.startMetronome()) else StartFailure.HostRefused
         if (failure != null) {
             onPlaybackEvent(PlaybackEvent.StartFailed(failure))
             return
         }
         pollsSinceStart = 0
         _uiState.update { it.copy(playback = PlaybackState.Running) }
+    }
+
+    /** Android requests audio focus inside the engine start, so a denial arrives as [AudioResult.FOCUS_DENIED]. */
+    private fun startFailureOf(result: AudioResult): StartFailure? = when (result) {
+        AudioResult.Ok -> null
+        is AudioResult.Error if result.code == AudioResult.FOCUS_DENIED -> StartFailure.FocusDenied
+        is AudioResult.Error -> StartFailure.EngineError
     }
 
     /**
