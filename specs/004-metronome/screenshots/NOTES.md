@@ -67,3 +67,63 @@ Differences, to settle later:
   gradient). The rotated gradient and the filled glyph are covered on the simulator by `TempoDialTest.
   theRingGradientRunsFromBottomLeftToTopRight` and `MetronomeControlsTest.thePlayButtonUsesTheFilledGlyphs`; the two
   iOS captures are to be retaken when the Mac is unlocked.
+
+## User Story 2 (batch B9, T106), 2026-09-30
+
+**Devices**: Pixel 6 Pro (Android 17, serial 19021FDEE001AH, 411 dp wide, debug APK from `:androidApp:assembleDebug`);
+iPhone 17 simulator (iOS 26.5, 402 pt wide, Debug build from `xcodebuild -scheme iosApp`). Both runs were launched with
+the debug argument (`--es tembra.metronome.syncopation <id>` / `--tembra-metronome-syncopation=<id>`), which also opens
+the app on the Metronome destination. The simulator was driven through System Events `click at` on the Compose
+accessibility elements (the Mac was unlocked this time).
+
+| File | What it shows |
+|---|---|
+| `<platform>-compact-standard.png` | Launch state: 4/4 and 1/4 selected, "Common & Complex" caption, A C C C, "Standard" selected |
+| `<platform>-compact-downbeat.png` | After "Downbeat": A S S S and the Downbeat pill selected |
+| `<platform>-compact-syncopated.png` | Syncopated + 1/8, running (pause glyph), relaunched with `off-beat-ticks` (Android) / `all-but-one` (iOS): the cells keep the even-beat pattern C A C A |
+| `<platform>-compact-7-8.png` | 7/8 + Standard: the subdivision chips read 1/8, 1/16, 1/32, 3let with 1/8 selected; seven cells A C C C C C C in two rows (4 + 3) |
+| `<platform>-compact-6-8-labels.png` | 6/8 + Standard: A C C A C C, x/8 subdivision labels; two rows of three on the Pixel, one row on the iPhone 17 |
+
+### Quickstart §4, steps 1–4 and 6, by observation
+
+- **Step 1.** 7/8 gives seven cells, Accent then six Clicks, and the x/8 labels with 1/8 selected (both platforms).
+  Running across a signature change was not listened to; the grid is sent at once and the engine maps the position
+  (research R1, `metronome_renderer_test`).
+- **Step 2.** 1/8 on 4/4 leaves the cells unchanged (the grid is `ASCSCSCS`, `MetronomeViewModelTest`); the soft tick
+  between beats is an ear check left for the user.
+- **Step 3.** Pixel: from Downbeat (A S S S), tapping cell 2 gave A A S S and every style pill deselected; Syncopated
+  then rewrote the cells to C A C A and selected its pill. Simulator: "Downbeat" gave A S S S with the pill selected.
+- **Step 4.** 6/8 + Standard shows A C C A C C; 4/4 + Syncopated shows C A C A. What they sound like is left for the
+  listening check.
+- **Step 6 (debug readings).** `off-beat-ticks` (Pixel) and `all-but-one` (both) were each launched with Syncopated and
+  1/8 stored and played: the app opened on the Metronome, the settings were restored, playback started and the cells
+  kept the even-beat pattern C A C A. The grids themselves (`SASASASA` for off-beat ticks with 1/8, `SAAA` for all but
+  one with 1/4) are asserted by `MetronomeViewModelTest`; the audible difference is an ear check for the user. A
+  release build never reads the argument (`BuildConfig.DEBUG` in `MainActivity`, `#if DEBUG` in `ContentView.swift`).
+- Once, the Pixel opened on Home rather than the Metronome: the start was sent right after `adb install -r`, while
+  the freshly installed process was still coming up. Three later force-stop + start runs with the extra all opened on
+  the Metronome.
+
+### Found and fixed on the Pixel: truncated "ACCENT" labels
+
+The first 6/8 and 7/8 captures on the Pixel kept every cell in one row (seven 46 dp cells fit the 363 dp row at the
+44 dp target), so the "ACCENT" label was clipped to "ACCE". `AccentCells` now also floors a cell at its widest level
+label ("ACCENT" in bold, measured with the theme's `microLabel`) plus its padding, so 6/8 and 7/8 wrap on the Pixel and
+large fonts wrap earlier, while the iPhone 17's wider row still fits 6/8 in one row. The test is
+`AccentCellsTest.cellsWrapBeforeTheirLabelsWouldClip` (RED on the simulator before the fix).
+
+### Against the Stitch phone screen (`design/stitch/screens/metronome/phone/screenshot.jpg`)
+
+Matches: the section order and cards (`surfaceContainerLow`, 12 dp corners, 8 dp padding); "TIME SIGNATURE" with the
+"Common & Complex" caption on the right; six equal chips in one row with 4/4 in `secondaryContainer`; four
+subdivision chips with the note glyph and 1/4 in `primaryContainer`; the cells card with the "STYLE" row under a seam
+and the three pills, Standard in `secondaryContainer`.
+
+Differences, to settle later:
+- The style row is taller than the design's (the pills keep a 44 dp target, the design's buttons are about 28 dp), so
+  the gap between the cells and the row reads larger.
+- The design draws beat 3 as SUB in its 4/4 illustration; Standard is A C C C by the spec (FR-010, research table).
+- The sound pill ("Classic Wood") between the cells card and the dial is not there yet (User Story 4).
+- The caption uses the tabular-parameter face at the section label's 10 sp size (the design's `text-[10px]`).
+- The two iOS User Story 1 captures noted as stale above (`ios-compact-stopped.png`, `ios-compact-running-beat1.png`)
+  were not retaken in this batch.
