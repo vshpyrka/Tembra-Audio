@@ -2,7 +2,7 @@
 
 Every dependency of the application, with its licence (Constitution VI: permissive licences only in the
 shipped binary). Versions are pinned in `gradle/libs.versions.toml` unless a path is given.
-Last reviewed: 2026-09-29 (feature 004, metronome).
+Last reviewed: 2026-09-30 (feature 004, metronome).
 
 ## Shipped in the app binaries
 

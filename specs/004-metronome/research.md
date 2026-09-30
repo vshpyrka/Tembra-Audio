@@ -494,6 +494,34 @@ stability is settled at runtime, as for `TembraNavigationBar` and `TembraSegment
 feature 002); `classes.txt` reports `ChipSpec` as `stable` in every field. No type needed
 changing and no stability annotation was added.
 
+**Stability outcome (T138, 2026-09-30)**: `./gradlew :shared:ui:compileAndroidMain -PcomposeReports=true --rerun-tasks`
+(`compose-performance`, stability reference; Kotlin 2.4.20, strong skipping, intrinsic remember and pausable composition on).
+Reports: `app/shared/ui/build/compose_compiler/tembra_shared:ui-{composables.txt,composables.csv,classes.txt}` and
+`android/main/tembra_shared:ui-module.json`. Every named restartable composable of the module is `restartable skippable`
+(84 of 84), including all 34 metronome and design-system composables of this feature (`MetronomeScreen`,
+`MetronomeScreenContent`, the three layouts, `LandscapePane`, `DialCard`, `TempoDialFor`, `TransportRow`,
+`MetronomeSettingsPanel`, `SoundPicker`, `SectionCard`, `SectionHeader` and every component in
+`metronome.components` and `designsystem`). The three non-restartable entries, `rememberFrameTick`, `rememberWidestChip`
+and `rememberGlowPulse`, return values and are not restart scopes by design. No metronome parameter is reported
+`unstable`; the five `unstable` parameters in the module are feature 003's `TuningPreset` and `TargetString`.
+Exceptions, parameters left without a stability marker (settled at runtime), each accepted without a code change:
+
+- `state: MetronomeUiState` (screen, layouts, panel, dial, transport row): the class is `unstable` because
+  `MetronomeSettings` (through `AccentPattern`, a value class over `List<BeatLevel>`) and `TapTempoSequence`
+  (`List<Long>`) come from `:shared:core`, which has no Compose compiler and whose `List` fields the compiler cannot
+  prove immutable. Under strong skipping these compare by identity: the ViewModel's `StateFlow` emits a new instance only
+  when something changed, and `copy()` keeps the reference of every unchanged field, so an unchanged state or pattern
+  still skips. The models are never mutated after construction, but a `stabilityConfigurationFiles` entry for
+  `audio.tembra.core.metronome.*` would promise that for every future `List` field too, so none is added.
+- `pattern: AccentPattern` (`AccentCells`): the same identity comparison; the cells restart only when the pattern
+  instance changes, which is when a cell or style changed.
+- `callbacks: MetronomeCallbacks`, `telemetry: BeatTelemetry`, `sound: ClickSound`, `customSound: CustomSoundState`:
+  runtime-checked types (a class built once per ViewModel in `remember`, a `fun interface` implemented by the ViewModel,
+  and two sealed interfaces whose subtypes `classes.txt` reports `stable`); each resolves `Stable` at runtime.
+- `items: List<ChipSpec>` (`TembraChipRow`, `Chip`): `ChipSpec` is `stable` in every field and both callers build the
+  list in `remember` (keyed on the beat unit for the subdivisions), so the identity never churns.
+- `viewModel: MetronomeViewModel?` (`MetronomeScreen`): a ViewModel is identity-stable for the destination's lifetime.
+
 ## R12. Screen ownership, effects and coroutines
 
 **Decision** (`compose-state-and-effects`, `kotlin-concurrency-and-flow`):
