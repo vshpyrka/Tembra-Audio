@@ -41,6 +41,12 @@ class MetronomeForegroundService : Service() {
         stop()
     }
 
+    /** However the service ends, the host must not keep believing it is in the foreground. */
+    override fun onDestroy() {
+        AndroidBackgroundPlaybackHost.serviceDestroyed()
+        super.onDestroy()
+    }
+
     override fun onBind(intent: Intent?): IBinder = MetronomeServiceBinder(this)
 
     /**
