@@ -437,3 +437,261 @@ film.mov -vf showinfo` for frame times). For five beats, note the time of the fi
 `secondary` outline appears and the time of the click's onset in the waveform, and log each offset (light minus
 click) here. Each must be within ±30 ms (spec SC-006). A constant offset in one direction points at the output
 latency compensation (research R7); a spread points at the frame loop.
+
+## Polish (batch B14, T138–T141), 2026-09-30
+
+### Compose compiler report (T138)
+
+`./gradlew :shared:ui:compileAndroidMain -PcomposeReports=true --rerun-tasks --warning-mode all` (through the
+`gradle-run` wrapper; strong skipping, intrinsic remember and pausable composition on). Report files:
+`app/shared/ui/build/compose_compiler/tembra_shared:ui-composables.txt`, `…-composables.csv`, `…-classes.txt` and
+`android/main/tembra_shared:ui-module.json` (build output, not committed). Every named restartable composable of
+`:shared:ui` is `restartable skippable` (84 of 84), the feature's 34 among them; no metronome parameter is `unstable`
+(the module's five `unstable` parameters are feature 003's `TuningPreset` and `TargetString`). The runtime-checked
+parameters (`MetronomeUiState`, `AccentPattern`, `MetronomeCallbacks`, `BeatTelemetry`, `ClickSound`,
+`CustomSoundState`, `List<ChipSpec>`, the ViewModel) are explained one by one in research.md R11 ("Stability outcome
+(T138)"); no code change was needed.
+
+### Skill review (T139)
+
+Routed through `using-chrisbanes-skills`; loaded `kotlin-concurrency-and-flow`, `kotlin-control-flow`,
+`kotlin-api-design`, `compose-state-and-effects`, `compose-performance`, `compose-component-design`,
+`compose-focus-navigation`, `compose-animations` and `compose-ui-testing-patterns`. The main sources were read in full;
+the tests and the smaller model files were checked against the same clusters and by a signal scan (stored scopes,
+`runBlocking`, `!!`, broad catches, `else` over closed types, raw threads, `init` work; one top-level type per file).
+The earlier batch reviews' deferred minors were taken up here.
+
+Fixed: 3 (F1–F3). Deferred with a reason: 3 (D4–D6). Everything else: no finding.
+
+- **F1** The dial readout was three extra screen-reader stops (B13 review, spec FR-030). The texts now carry
+  `hideFromAccessibility()`. RED: `TempoDialTest.theReadoutIsNotASeparateScreenReaderStop` failed on the simulator;
+  GREEN after the change. On the Pixel the uiautomator tree no longer lists "120", "BPM" or "Moderato (108-120)" (the
+  dial node still has its state). On the iPhone 17 simulator the macOS accessibility bridge still lists the three
+  texts, so whether VoiceOver skips them is part of the VoiceOver run left for the user (User Story 7).
+- **F2** Tab order was asserted in the Stacked form only (B13 review). Wide and Landscape passes were added; a
+  mutation (two sound tiles swapped in the expected order) makes the Wide test fail.
+- **F3** The tap and play code was duplicated in `LandscapePane` (B13 review). One private `TapTempoFor`.
+- **D4** iOS start ignores a failed audio-session activation: no seam to test it, feature 003 does the same; follow-up.
+- **D5** The ViewModel reloads a selected custom sound after a failed pick: harmless and covers the catch-all path.
+- **D6** The click-sound entry's `dashed`/`muted`/`enabled` flags and long names in the 160 dp menu: semantic states
+  of an `internal` tile, names ellipsised with the full name in the description; accepted.
+
+| File | Cluster | Outcome |
+|---|---|---|
+| `androidApp/src/androidTest/java/audio/tembra/android/TestSoundProvider.java` | kotlin-concurrency-and-flow (test shape) | No finding |
+| `androidApp/src/androidTest/kotlin/audio/tembra/android/AndroidBackgroundPlaybackHostTest.kt` | kotlin-concurrency-and-flow (test shape) | No finding |
+| `androidApp/src/androidTest/kotlin/audio/tembra/android/AndroidSoundFilePickerTest.kt` | kotlin-concurrency-and-flow (test shape) | No finding |
+| `androidApp/src/main/kotlin/audio/tembra/android/AndroidAppGraph.kt` | kotlin-api-design | No finding |
+| `androidApp/src/main/kotlin/audio/tembra/android/AndroidBackgroundPlaybackHost.kt` | kotlin-concurrency-and-flow | No finding: process-wide replay-0 `SharedFlow` justified in KDoc; state under one lock |
+| `androidApp/src/main/kotlin/audio/tembra/android/AndroidSoundFilePicker.kt` | kotlin-api-design | No finding |
+| `androidApp/src/main/kotlin/audio/tembra/android/ForegroundState.kt` | kotlin-api-design | No finding |
+| `androidApp/src/main/kotlin/audio/tembra/android/MainActivity.kt` | kotlin-api-design | No finding |
+| `androidApp/src/main/kotlin/audio/tembra/android/MetronomeForegroundService.kt` | kotlin-control-flow | No finding: `else` over an open intent action |
+| `androidApp/src/main/kotlin/audio/tembra/android/MetronomeServiceBinder.kt` | kotlin-api-design | No finding |
+| `androidApp/src/main/kotlin/audio/tembra/android/SoundFilePickerHost.kt` | kotlin-concurrency-and-flow | No finding: main-thread `CompletableDeferred` handoff |
+| `core/src/commonMain/kotlin/audio/tembra/core/metronome/AccentPattern.kt` | kotlin-api-design | No finding |
+| `core/src/commonMain/kotlin/audio/tembra/core/metronome/BeatLevel.kt` | kotlin-api-design | No finding |
+| `core/src/commonMain/kotlin/audio/tembra/core/metronome/BeatUnit.kt` | kotlin-api-design | No finding |
+| `core/src/commonMain/kotlin/audio/tembra/core/metronome/BuiltInClickSound.kt` | kotlin-api-design | No finding |
+| `core/src/commonMain/kotlin/audio/tembra/core/metronome/ClickSound.kt` | kotlin-api-design | No finding |
+| `core/src/commonMain/kotlin/audio/tembra/core/metronome/CustomSoundRef.kt` | kotlin-api-design | No finding |
+| `core/src/commonMain/kotlin/audio/tembra/core/metronome/MetronomeSettings.kt` | kotlin-api-design | No finding |
+| `core/src/commonMain/kotlin/audio/tembra/core/metronome/MetronomeStyle.kt` | kotlin-api-design | No finding |
+| `core/src/commonMain/kotlin/audio/tembra/core/metronome/Subdivision.kt` | kotlin-api-design | No finding |
+| `core/src/commonMain/kotlin/audio/tembra/core/metronome/SyncopationReading.kt` | kotlin-api-design | No finding |
+| `core/src/commonMain/kotlin/audio/tembra/core/metronome/TapTempoSequence.kt` | kotlin-api-design | No finding |
+| `core/src/commonMain/kotlin/audio/tembra/core/metronome/Tempo.kt` | kotlin-api-design | No finding |
+| `core/src/commonMain/kotlin/audio/tembra/core/metronome/TempoMarking.kt` | kotlin-api-design | No finding |
+| `core/src/commonMain/kotlin/audio/tembra/core/metronome/TickGrid.kt` | kotlin-api-design | No finding |
+| `core/src/commonMain/kotlin/audio/tembra/core/metronome/TimeSignature.kt` | kotlin-api-design | No finding |
+| `core/src/commonTest/kotlin/audio/tembra/core/metronome/AccentPatternTest.kt` | kotlin-api-design (test) | No finding |
+| `core/src/commonTest/kotlin/audio/tembra/core/metronome/ClickSoundTest.kt` | kotlin-api-design (test) | No finding |
+| `core/src/commonTest/kotlin/audio/tembra/core/metronome/MetronomeStyleTest.kt` | kotlin-api-design (test) | No finding |
+| `core/src/commonTest/kotlin/audio/tembra/core/metronome/SubdivisionTest.kt` | kotlin-api-design (test) | No finding |
+| `core/src/commonTest/kotlin/audio/tembra/core/metronome/TapTempoSequenceTest.kt` | kotlin-api-design (test) | No finding |
+| `core/src/commonTest/kotlin/audio/tembra/core/metronome/TempoMarkingTest.kt` | kotlin-api-design (test) | No finding |
+| `core/src/commonTest/kotlin/audio/tembra/core/metronome/TempoTest.kt` | kotlin-api-design (test) | No finding |
+| `core/src/commonTest/kotlin/audio/tembra/core/metronome/TickGridTest.kt` | kotlin-api-design (test) | No finding |
+| `core/src/commonTest/kotlin/audio/tembra/core/metronome/TimeSignatureTest.kt` | kotlin-api-design (test) | No finding |
+| `data/src/androidDeviceTest/kotlin/audio/tembra/data/metronome/CustomClickSoundStoreFileTest.kt` | kotlin-concurrency-and-flow (test shape) | No finding |
+| `data/src/androidDeviceTest/kotlin/audio/tembra/data/metronome/DataStoreMetronomePreferencesTest.kt` | kotlin-concurrency-and-flow (test shape) | No finding |
+| `data/src/commonMain/kotlin/audio/tembra/data/metronome/CustomClickSoundStore.kt` | kotlin-api-design, kotlin-concurrency-and-flow | No finding |
+| `data/src/commonMain/kotlin/audio/tembra/data/metronome/DataStoreMetronomePreferences.kt` | kotlin-api-design, kotlin-concurrency-and-flow | No finding |
+| `data/src/commonMain/kotlin/audio/tembra/data/metronome/FakeCustomClickSoundStore.kt` | kotlin-api-design, kotlin-concurrency-and-flow | No finding |
+| `data/src/commonMain/kotlin/audio/tembra/data/metronome/FakeMetronomePreferences.kt` | kotlin-api-design, kotlin-concurrency-and-flow | No finding |
+| `data/src/commonMain/kotlin/audio/tembra/data/metronome/MetronomePreferenceKeys.kt` | kotlin-api-design, kotlin-concurrency-and-flow | No finding |
+| `data/src/commonMain/kotlin/audio/tembra/data/metronome/MetronomePreferences.kt` | kotlin-api-design, kotlin-concurrency-and-flow | No finding |
+| `data/src/commonMain/kotlin/audio/tembra/data/metronome/MetronomePreferencesSnapshot.kt` | kotlin-control-flow | No finding: `else` decodes an open stored string |
+| `data/src/commonMain/kotlin/audio/tembra/data/metronome/OkioCustomClickSoundStore.kt` | kotlin-concurrency-and-flow | Observation: `createDirectories` in `init` is one small I/O call when the graph builds the store; accepted (every other operation is on `Dispatchers.IO`) |
+| `data/src/commonMain/kotlin/audio/tembra/data/tuner/TembraDataStore.kt` | kotlin-api-design, kotlin-concurrency-and-flow | No finding |
+| `data/src/commonTest/kotlin/audio/tembra/data/metronome/FakeAppDirectories.kt` | kotlin-concurrency-and-flow (test shape) | No finding |
+| `data/src/commonTest/kotlin/audio/tembra/data/metronome/FakeCustomClickSoundStoreTest.kt` | kotlin-concurrency-and-flow (test shape) | No finding |
+| `data/src/commonTest/kotlin/audio/tembra/data/metronome/FakeMetronomePreferencesTest.kt` | kotlin-concurrency-and-flow (test shape) | No finding |
+| `data/src/commonTest/kotlin/audio/tembra/data/metronome/MetronomePreferencesSnapshotTest.kt` | kotlin-concurrency-and-flow (test shape) | No finding |
+| `data/src/commonTest/kotlin/audio/tembra/data/metronome/OkioCustomClickSoundStoreTest.kt` | kotlin-concurrency-and-flow (test shape) | No finding |
+| `data/src/iosTest/kotlin/audio/tembra/data/metronome/CustomClickSoundStoreFileTest.kt` | kotlin-concurrency-and-flow (test shape) | No finding |
+| `data/src/iosTest/kotlin/audio/tembra/data/metronome/DataStoreMetronomePreferencesTest.kt` | kotlin-concurrency-and-flow (test shape) | No finding |
+| `engine/src/androidDeviceTest/kotlin/audio/tembra/engine/AndroidAudioFocusTest.kt` | kotlin-concurrency-and-flow (test shape) | No finding |
+| `engine/src/androidDeviceTest/kotlin/audio/tembra/engine/BecomingNoisyReceiverTest.kt` | kotlin-concurrency-and-flow (test shape) | No finding |
+| `engine/src/androidDeviceTest/kotlin/audio/tembra/engine/MetronomeTimingEndToEndTest.kt` | kotlin-concurrency-and-flow (test shape) | No finding |
+| `engine/src/androidDeviceTest/kotlin/audio/tembra/engine/NativeAudioEngineTest.kt` | kotlin-concurrency-and-flow (test shape) | No finding |
+| `engine/src/androidMain/kotlin/audio/tembra/engine/AndroidAudioFocus.kt` | kotlin-concurrency-and-flow, kotlin-control-flow | No finding: `else -> Unit` is over an open platform `Int` |
+| `engine/src/androidMain/kotlin/audio/tembra/engine/BecomingNoisyReceiver.kt` | kotlin-api-design | No finding |
+| `engine/src/androidMain/kotlin/audio/tembra/engine/FocusType.kt` | kotlin-api-design | No finding |
+| `engine/src/androidMain/kotlin/audio/tembra/engine/NativeAudioEngine.android.kt` | kotlin-api-design | No finding |
+| `engine/src/commonMain/kotlin/audio/tembra/engine/AudioEngine.kt` | kotlin-api-design | No finding |
+| `engine/src/commonMain/kotlin/audio/tembra/engine/AudioResult.kt` | kotlin-api-design | No finding |
+| `engine/src/commonMain/kotlin/audio/tembra/engine/AudioState.kt` | kotlin-api-design | No finding |
+| `engine/src/commonMain/kotlin/audio/tembra/engine/AudioStatus.kt` | kotlin-api-design | No finding |
+| `engine/src/commonMain/kotlin/audio/tembra/engine/ClickLevel.kt` | kotlin-control-flow | No finding: `else` maps an open native code |
+| `engine/src/commonMain/kotlin/audio/tembra/engine/ClickSoundId.kt` | kotlin-api-design | No finding |
+| `engine/src/commonMain/kotlin/audio/tembra/engine/CustomSoundInfo.kt` | kotlin-api-design | No finding |
+| `engine/src/commonMain/kotlin/audio/tembra/engine/CustomSoundResult.kt` | kotlin-control-flow | No finding: `else` maps an open native code |
+| `engine/src/commonMain/kotlin/audio/tembra/engine/FakeAudioEngine.kt` | kotlin-api-design | No finding |
+| `engine/src/commonMain/kotlin/audio/tembra/engine/MetronomeAudio.kt` | kotlin-api-design | No finding |
+| `engine/src/commonMain/kotlin/audio/tembra/engine/MetronomeGrid.kt` | kotlin-api-design | No finding |
+| `engine/src/commonMain/kotlin/audio/tembra/engine/TickSnapshot.kt` | kotlin-api-design | No finding |
+| `engine/src/commonMain/kotlin/audio/tembra/engine/TunerAudio.kt` | kotlin-api-design | No finding |
+| `engine/src/commonTest/kotlin/audio/tembra/engine/FakeAudioEngineTest.kt` | kotlin-concurrency-and-flow (test shape) | No finding |
+| `engine/src/iosMain/kotlin/audio/tembra/engine/IosAudioSession.kt` | kotlin-api-design | No finding |
+| `engine/src/iosMain/kotlin/audio/tembra/engine/NativeAudioEngine.ios.kt` | kotlin-api-design (platform seam) | Deferred (D4): `startMetronome`/`previewClick` ignore a failed `activateForPlayback()`, as the feature 003 tone and listening paths do; `IosAudioSession` is an `object` with no seam to force the failure in the simulator (Constitution III), and the engine start reports its own error when the output cannot open. Follow-up: a session seam shared with the tuner paths |
+| `engine/src/iosTest/kotlin/audio/tembra/engine/IosAudioSessionTest.kt` | kotlin-concurrency-and-flow (test shape) | No finding |
+| `engine/src/iosTest/kotlin/audio/tembra/engine/MetronomeTimingEndToEndTest.kt` | kotlin-concurrency-and-flow (test shape) | No finding |
+| `engine/src/iosTest/kotlin/audio/tembra/engine/NativeAudioEngineTest.kt` | kotlin-concurrency-and-flow (test shape) | No finding |
+| `ui/src/androidDeviceTest/kotlin/audio/tembra/ui/navigation/AndroidBackTest.kt` | kotlin-api-design (test) | No finding |
+| `ui/src/androidHostTest/kotlin/audio/tembra/ui/theme/IconAssetsTest.kt` | kotlin-api-design (test) | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/App.kt` | kotlin-api-design | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/designsystem/CardDiscs.kt` | compose-component-design | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/designsystem/ChipAccent.kt` | compose-component-design | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/designsystem/ChipSpec.kt` | compose-component-design | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/designsystem/FocusRing.kt` | compose-component-design | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/designsystem/FrameTick.kt` | compose-state-and-effects, compose-performance | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/designsystem/TembraChipRow.kt` | compose-component-design | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/designsystem/TembraGradientCard.kt` | compose-component-design | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/designsystem/TembraPill.kt` | compose-component-design | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/di/AppBindings.kt` | kotlin-api-design | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/di/AppGraph.kt` | kotlin-api-design | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/metronome/BeatTelemetry.kt` | compose-state-and-effects | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/metronome/CustomSoundState.kt` | kotlin-control-flow | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/metronome/LocalMetronomeDebug.kt` | compose-state-and-effects | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/metronome/MetronomeCallbacks.kt` | compose-state-and-effects | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/metronome/MetronomeCopy.kt` | kotlin-control-flow | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/metronome/MetronomeDebugRequest.kt` | compose-state-and-effects | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/metronome/MetronomeLayout.kt` | kotlin-control-flow | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/metronome/MetronomeMessage.kt` | kotlin-control-flow | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/metronome/MetronomeScreen.kt` | compose-state-and-effects | No finding: wiring seam; effects keyed on the ViewModel; stateless `MetronomeScreenContent` takes state and callbacks |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/metronome/MetronomeScreenContent.kt` | compose-component-design, compose-state-and-effects | **Fixed (F3)**: the tap button wiring was written twice (`TransportRow` and the landscape tap-over-play column); now one private `TapTempoFor(state, callbacks, modifier)` |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/metronome/MetronomeSettingsPanel.kt` | compose-state-and-effects | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/metronome/MetronomeUiState.kt` | compose-state-and-effects | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/metronome/MetronomeViewModel.kt` | kotlin-concurrency-and-flow, kotlin-control-flow | Deferred (D5): a picker failure (`SoundPickResult.Failed`) still reloads a selected custom sound from its copy, although the engine was not touched; harmless (idempotent, off the main thread) and the reload also covers the catch-all path where the engine state is unknown. Otherwise no finding: named jobs owned by `viewModelScope`, `Channel` for one-consumer messages, cancellation rethrown, exhaustive sealed mappings |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/metronome/PlaybackEvent.kt` | kotlin-control-flow | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/metronome/PlaybackPolicy.kt` | kotlin-control-flow | No finding: exhaustive `when` on state and event, no `else` |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/metronome/PlaybackState.kt` | kotlin-control-flow | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/metronome/PlaybackTransition.kt` | kotlin-control-flow | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/metronome/StartFailure.kt` | kotlin-control-flow | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/metronome/TapCaption.kt` | kotlin-control-flow | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/metronome/components/AccentCell.kt` | compose-performance, compose-component-design | No change: the lit state and glow are read in the draw phase; the radial glow brush is built per drawn frame while running (UI thread only, never the audio thread); accepted |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/metronome/components/AccentCells.kt` | compose-performance | No finding: the frame tick is read in the draw lambdas only |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/metronome/components/ClickSoundGlyphs.kt` | compose-component-design | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/metronome/components/ClickSoundPicker.kt` | compose-component-design | Deferred (D6): long custom names ellipsise in the 160 dp menu (the entry's description carries the whole name; the width is the design's); accepted |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/metronome/components/ClickSoundPickerLayout.kt` | compose-component-design | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/metronome/components/ClickSoundTile.kt` | compose-component-design | Deferred (D6): `dashed`, `muted`, `enabled` are the Custom entry's semantic states (empty, unavailable, importing), not caller shape flags; the tile is `internal` to the picker. Accepted, revisit if the transport reuses the tile |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/metronome/components/MetronomeDefaults.kt` | compose-component-design | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/metronome/components/PlayPauseButton.kt` | compose-animations, compose-performance | No finding: `rememberInfiniteTransition` for the breathing glow, read in `drawBehind`, static under reduce motion |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/metronome/components/SectionLabel.kt` | compose-component-design | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/metronome/components/StyleRow.kt` | compose-component-design | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/metronome/components/SubdivisionChips.kt` | compose-component-design | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/metronome/components/TapTempoButton.kt` | compose-state-and-effects, compose-animations | No finding: per-tap `Animatable` flash in the draw phase; tap time from a user-event coroutine |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/metronome/components/TempoDial.kt` | compose-focus-navigation, compose-component-design | No finding: one focusable slider node between the steppers, keys consumed only when handled, `center` slot |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/metronome/components/TempoDialGeometry.kt` | compose-component-design | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/metronome/components/TempoReadout.kt` | compose-component-design (semantics) | **Fixed (F1)**: "120", "BPM" and the marking were three extra screen-reader stops after the dial; each text now carries `hideFromAccessibility()` (kept in the test tree) |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/metronome/components/TempoSlider.kt` | compose-focus-navigation | No finding: Page keys in `onPreviewKeyEvent`, consumed only when handled |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/metronome/components/TempoStepper.kt` | compose-state-and-effects | No finding: the hold repeat is a user-event job in `rememberCoroutineScope`, cancelled on release, disable and dispose |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/metronome/components/TimeSignatureChips.kt` | compose-component-design | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/navigation/NavigationShell.kt` | kotlin-api-design | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/platform/BackgroundPlaybackHost.kt` | kotlin-api-design | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/platform/SoundFilePicker.kt` | kotlin-api-design | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/platform/SoundPickFailure.kt` | kotlin-api-design | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/platform/SoundPickResult.kt` | kotlin-api-design | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/theme/LinearGlow.kt` | compose-performance (tokens) | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/theme/LocalTembraTypographyExtras.kt` | compose-performance (tokens) | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/theme/TembraGradients.kt` | compose-performance (tokens) | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/theme/TembraIcon.kt` | compose-performance (tokens) | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/theme/TembraSpacing.kt` | compose-performance (tokens) | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/theme/TembraTypeScale.kt` | compose-performance (tokens) | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/theme/TembraTypography.kt` | compose-performance (tokens) | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/theme/TembraTypographyExtras.kt` | compose-performance (tokens) | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/tuner/TunerMeter.kt` | kotlin-api-design | No finding |
+| `ui/src/commonMain/kotlin/audio/tembra/ui/tuner/TunerUiState.kt` | kotlin-api-design | No finding |
+| `ui/src/commonTest/kotlin/audio/tembra/ui/metronome/MetronomeDebugRequestTest.kt` | kotlin-api-design (test) | No finding |
+| `ui/src/commonTest/kotlin/audio/tembra/ui/metronome/MetronomeLayoutTest.kt` | kotlin-api-design (test) | No finding |
+| `ui/src/commonTest/kotlin/audio/tembra/ui/metronome/MetronomeUiStateTest.kt` | kotlin-api-design (test) | No finding |
+| `ui/src/commonTest/kotlin/audio/tembra/ui/metronome/MetronomeViewModelTest.kt` | kotlin-api-design (test) | No finding |
+| `ui/src/commonTest/kotlin/audio/tembra/ui/metronome/PlaybackPolicyTest.kt` | kotlin-api-design (test) | No finding |
+| `ui/src/commonTest/kotlin/audio/tembra/ui/metronome/components/TempoDialGeometryTest.kt` | kotlin-api-design (test) | No finding |
+| `ui/src/commonTest/kotlin/audio/tembra/ui/platform/FakeBackgroundPlaybackHost.kt` | kotlin-concurrency-and-flow (test shape) | No finding |
+| `ui/src/commonTest/kotlin/audio/tembra/ui/platform/FakeBackgroundPlaybackHostTest.kt` | kotlin-concurrency-and-flow (test shape) | No finding |
+| `ui/src/commonTest/kotlin/audio/tembra/ui/platform/FakeSoundFilePicker.kt` | kotlin-concurrency-and-flow (test shape) | No finding |
+| `ui/src/commonTest/kotlin/audio/tembra/ui/platform/FakeSoundFilePickerTest.kt` | kotlin-concurrency-and-flow (test shape) | No finding |
+| `ui/src/commonTest/kotlin/audio/tembra/ui/theme/MetronomeTokensTest.kt` | kotlin-api-design (test) | No finding |
+| `ui/src/iosMain/kotlin/audio/tembra/ui/IosAppGraph.kt` | kotlin-api-design | No finding |
+| `ui/src/iosMain/kotlin/audio/tembra/ui/MainViewController.kt` | kotlin-api-design | No finding |
+| `ui/src/iosMain/kotlin/audio/tembra/ui/platform/IosBackgroundPlaybackHost.kt` | kotlin-api-design | No finding |
+| `ui/src/iosMain/kotlin/audio/tembra/ui/platform/IosDocumentPickerDelegate.kt` | kotlin-api-design | No finding |
+| `ui/src/iosMain/kotlin/audio/tembra/ui/platform/IosSoundFilePicker.kt` | kotlin-concurrency-and-flow, kotlin-api-design | No finding |
+| `ui/src/iosTest/kotlin/audio/tembra/ui/platform/IosBackgroundPlaybackHostTest.kt` | kotlin-concurrency-and-flow (test shape) | No finding |
+| `ui/src/iosTest/kotlin/audio/tembra/ui/platform/IosSoundFilePickerTest.kt` | kotlin-concurrency-and-flow (test shape) | No finding |
+| `ui/src/uiTest/kotlin/audio/tembra/ui/designsystem/TembraChipRowTest.kt` | compose-ui-testing-patterns | No finding |
+| `ui/src/uiTest/kotlin/audio/tembra/ui/designsystem/TembraGradientCardTest.kt` | compose-ui-testing-patterns | No finding |
+| `ui/src/uiTest/kotlin/audio/tembra/ui/designsystem/TembraPillTest.kt` | compose-ui-testing-patterns | No finding |
+| `ui/src/uiTest/kotlin/audio/tembra/ui/metronome/AccentCellsTest.kt` | compose-ui-testing-patterns | No finding |
+| `ui/src/uiTest/kotlin/audio/tembra/ui/metronome/ClickSoundPickerTest.kt` | compose-ui-testing-patterns | No finding |
+| `ui/src/uiTest/kotlin/audio/tembra/ui/metronome/MetronomeControlsTest.kt` | compose-ui-testing-patterns | No finding |
+| `ui/src/uiTest/kotlin/audio/tembra/ui/metronome/MetronomeScreenTest.kt` | compose-ui-testing-patterns, compose-focus-navigation | **Fixed (F2)**: Tab order was asserted in Stacked only; `assertTabOrder` now also runs the Wide (1024 × 768, sound tiles row by row) and Landscape (892 × 330, tap over play) forms; a swapped-tile mutation makes the Wide test fail |
+| `ui/src/uiTest/kotlin/audio/tembra/ui/metronome/ScriptedBeatTelemetry.kt` | compose-ui-testing-patterns | No finding |
+| `ui/src/uiTest/kotlin/audio/tembra/ui/metronome/TempoDialTest.kt` | compose-ui-testing-patterns | **Fixed (F1)**: `theReadoutIsNotASeparateScreenReaderStop` (RED on the simulator before F1, GREEN after) |
+| `ui/src/uiTest/kotlin/audio/tembra/ui/navigation/NavigationShellTest.kt` | compose-ui-testing-patterns | No finding |
+
+### Final lanes (T140)
+
+Pixel 6 Pro (19021FDEE001AH, Android 17) with `ANDROID_SERIAL` set (the emulator 127.0.0.1:5556 was attached too),
+the app force-stopped first; iPhone 17 and iPad Pro 13-inch (M5) simulators, iOS 26.5. Every lane through the
+`gradle-run` wrapper with `--warning-mode all` (and `--rerun`/`--rerun-tasks` so the tests executed); every lane green,
+no warning fingerprint.
+
+| Lane | Tests | Result |
+|---|---|---|
+| `engineHostTest` | 107 Catch2 cases | 107 passed |
+| `checkAndroidHost` | 353 (core 76, engine 31, data 30, ui 216) | all passed |
+| `checkIos` (iPhone 17) | 582 (core 76, engine 51, data 39, ui 416) | all passed |
+| `checkIos -Ptembra.iosSimulator="iPad Pro 13-inch (M5)"` | 582 (same split) | all passed |
+| `checkAndroidDevice` (Pixel 6 Pro) | 579 (core 76, engine 55, data 39, ui 409) | all passed |
+| `:androidApp:connectedDebugAndroidTest` (Pixel 6 Pro) | 17 | all passed |
+| `:androidApp:assembleDebug` | build | built, no warning |
+
+Known and out of scope: `:androidApp:lintDebug` (feature 001's `themes.xml:7` NewApi and two launcher-icon warnings);
+Xcode's one `libicu.icudtl_dat.o` linker warning from the Kotlin/Native runtime.
+
+### Quickstart walk (T141)
+
+Pixel 6 Pro (debug build reinstalled after `connectedDebugAndroidTest`), iPhone 17 simulator, iPad Pro 13-inch (M5)
+simulator, all on the B14 build.
+
+- §1: Pixel and iPhone open on Home; Metronome shows 120 "Moderato (108-120)", 4/4, 1/4, Accent Click Click Click,
+  Standard, "Classic Wood", the play button, no transport bar or right-hand panel. Matches.
+- §2: the lanes above. The compose report command in the quickstart named a task that does not exist
+  (`compileDebugKotlinAndroid`); corrected to `compileAndroidMain`, and the lane lists gained `MetronomeControlsTest`,
+  `IosSoundFilePickerTest` and the iPad run.
+- §3: play shows pause and lights the cells in turn (Pixel, iPhone); "+" gives 121 "Allegro (120-156)"; pause shows play.
+- §4: 7/8 gives seven cells wrapped 4 + 3 and the chips 1/8, 1/16, 1/32, 3let; back to 4/4 gives four.
+- §5: `silence-then-click.wav` pushed to Download and picked in DocumentsUI: the pill reads "silence-then-click" at
+  once and the copy is `files/metronome/custom.wav` (11564 bytes). The quickstart's path
+  (`files/../documents/metronome/custom.wav`) and its fixture source (a `--write` flag the engine test does not have,
+  `notes.txt`) were wrong; corrected to `files/metronome/custom.wav`, `Documents/metronome/custom.wav` on iOS, and
+  `fixtures/make_fixtures.py` with `notes.wav`.
+- §6: four taps over adb settle the dial (107 with adb's latency) and the caption returns to "Sync finger rhythm"
+  three seconds after the last tap.
+- §7: unchanged since User Story 6 (the rows that need a call, another app or headphones remain with the user).
+- §8: Pixel landscape shows the settings column beside the dial card with tap over play (the "beside" arrangement);
+  the iPad shows the Wide form in portrait too, so the quickstart now says "portrait or landscape".
+- §9: keyboard order proven by the three Tab-order tests; hover and the screen-reader runs remain with the user.

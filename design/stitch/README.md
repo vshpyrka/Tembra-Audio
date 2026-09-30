@@ -51,6 +51,7 @@ The four original reference mockups uploaded to the project are already in `../m
 - **Spacing:** 4/8px base module, 12px gutter, 16px page margin, 44px minimum touch target.
 - **Elevation:** no drop shadows. Depth comes from stepping surface levels and 1px `#2B2A34` seams. The only glow is `0 0 12px rgba(167,139,250,0.25)` on active clips and nodes.
 - **Per-screen drift:** the Tailwind config embedded in each HTML file is not identical across screens. Six screens carry no config at all, and the drum-sequencer phone screen uses its own slightly different palette (`#121116` surfaces, `#ec4899` active pad) plus amber and cyan step colours that are not in the design system. When these conflict, `DESIGN.md` and `theme.json` win.
+- **Metronome implementation:** feature 004 implements the three metronome screens (`metronome/phone`, `metronome/tablet`, `metronome/phone-landscape`) in `app/shared/ui` (`audio.tembra.ui.metronome`). The landscape screen's twenty off-token greys and roses are followed for layout only; each is mapped to the nearest token of the phone screen, and no new colour was added (`specs/004-metronome/research.md` R10).
 - **Screenshot artefact:** `instrument-tuner/phone/screenshot.jpg` rendered with a serif fallback font and an overlapping title; the HTML is correct. Rely on the HTML for that screen.
 
 ## Re-pulling from Stitch

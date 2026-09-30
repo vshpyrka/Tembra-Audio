@@ -308,12 +308,12 @@ description: "Task list for feature 004: metronome"
 
 **Purpose**: documentation, inventory, the compiler report, a final skill review, the full lanes and the final commit.
 
-- [ ] T136 [P] Update `app/README.md` (module map rows added in T078 checked against the final file set), `app/engine/README.md` (engine core, ABI 3 rule for new functions unchanged) and `design/stitch/README.md` (a sentence that the metronome screens are implemented by feature 004 with the landscape colours mapped to tokens)
-- [ ] T137 [P] Update `app/THIRD_PARTY_LICENSES.md` "Last reviewed" and confirm no dependency beyond the T001 catalog entry was added (`git diff main -- app/gradle/libs.versions.toml`)
-- [ ] T138 Produce the compose compiler report through `gradle-run` (`-PcomposeReports=true`), confirm every metronome composable is skippable and every parameter stable (or explain each exception in `specs/004-metronome/research.md` R11), and attach the report path to `NOTES.md`
-- [ ] T139 Final skill review of every Kotlin and Compose file of this feature through `using-chrisbanes-skills` (one cluster per concern), listing findings and fixes in `specs/004-metronome/screenshots/NOTES.md` under "Skill review"
-- [ ] T140 Run every lane through `gradle-run` with `--warning-mode all`: `engineHostTest`, `checkAndroidHost`, `checkIos`, `checkAndroidDevice`, `:androidApp:connectedDebugAndroidTest`; all green, zero warnings; record the counts in `NOTES.md`
-- [ ] T141 Walk `specs/004-metronome/quickstart.md` end to end on both platforms and fix anything that does not match; update the quickstart where the product taught otherwise
+- [X] T136 [P] Update `app/README.md` (module map rows added in T078 checked against the final file set), `app/engine/README.md` (engine core, ABI 3 rule for new functions unchanged) and `design/stitch/README.md` (a sentence that the metronome screens are implemented by feature 004 with the landscape colours mapped to tokens)
+- [X] T137 [P] Update `app/THIRD_PARTY_LICENSES.md` "Last reviewed" and confirm no dependency beyond the T001 catalog entry was added (`git diff main -- app/gradle/libs.versions.toml`)
+- [X] T138 Produce the compose compiler report through `gradle-run` (`-PcomposeReports=true`), confirm every metronome composable is skippable and every parameter stable (or explain each exception in `specs/004-metronome/research.md` R11), and attach the report path to `NOTES.md`
+- [X] T139 Final skill review of every Kotlin and Compose file of this feature through `using-chrisbanes-skills` (one cluster per concern), listing findings and fixes in `specs/004-metronome/screenshots/NOTES.md` under "Skill review"
+- [X] T140 Run every lane through `gradle-run` with `--warning-mode all`: `engineHostTest`, `checkAndroidHost`, `checkIos`, `checkAndroidDevice`, `:androidApp:connectedDebugAndroidTest`; all green, zero warnings; record the counts in `NOTES.md`
+- [X] T141 Walk `specs/004-metronome/quickstart.md` end to end on both platforms and fix anything that does not match; update the quickstart where the product taught otherwise
 - [ ] T142 Final commit of the `app/` and `specs/004-metronome/` changes through the spec-kit hook (`/speckit-git-commit`, conventional message `feat(metronome): global metronome with tempo controls, bar shape, click sounds, custom WAV and background playback (feature 004)`), then mark this task done
 
 ---
