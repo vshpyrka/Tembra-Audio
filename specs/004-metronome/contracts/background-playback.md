@@ -59,7 +59,7 @@ class FakeBackgroundPlaybackHost(var allow: Boolean = true) : BackgroundPlayback
 | Play pressed | `keepAlive()` → `startMetronome()` | `keepAlive()` (true) → `startMetronome()` | `Running`, or `Stopped` + `FocusDenied` (focus denied: `startMetronome()` returned `Error(AudioResult.FOCUS_DENIED)`, Android only) / `DeviceUnavailable` (host refused: `keepAlive()` false) / `DeviceUnavailable` (any other engine error) |
 | Pause pressed / leaving the destination / ViewModel cleared | `stopMetronome()` → `release()` | same | `Stopped` |
 | Incoming call, assistant, another app playing | `AudioEvent.Interrupted` (focus loss) | `AudioEvent.Interrupted` (`.began`) | `Stopped`; no auto-resume |
-| Headphones unplugged | `AudioEvent.OutputRouteLost` (becoming noisy) | `AudioEvent.OutputRouteLost` | `Stopped` |
+| Headphones unplugged (wired, USB-C, Bluetooth, AirPlay) | `AudioEvent.OutputRouteLost` (becoming noisy) | `AudioEvent.OutputRouteLost` (route change `.oldDeviceUnavailable` unless the previous route was only the built-in speaker or receiver) | `Stopped` |
 | Headphones plugged in | (Oboe reopen inside the engine) | (RemoteIO follows) | keeps `Running` |
 | Notification Stop | `stopRequests` | — | `Stopped` |
 | Stream lost and not reopened | `AudioEvent.DeviceLost` (audio state fell to `Idle` while `Running`, from the 10 Hz poll) | same | `Stopped` |

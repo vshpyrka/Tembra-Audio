@@ -34,7 +34,10 @@ interface MetronomeAudio : AudioStatus {
      */
     fun stopTone()
 
-    /** iOS reports the session's output latency; Android passes 0, which asks the device again. */
+    /**
+     * A positive [nanos] is the output latency the beat light allows for; 0 means "measure the current route again"
+     * (Android asks the Oboe stream, iOS forwards the session's latency), so a refresh never wipes the compensation.
+     */
     fun reportOutputLatencyNanos(nanos: Long)
 
     /**

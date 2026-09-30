@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.merge
  * Focus and the becoming-noisy receiver are acquired only by the call that moves the engine out of Idle and released
  * only when it returns there (contracts/metronome-audio-kotlin.md): a refused start never touches what the running
  * stream holds, and a stop leaves alone what another running stream holds. A preview click ends on its own, so the
- * actual releases its focus itself once the engine is back to Idle.
+ * actual closes its output stream and releases its focus itself once the engine is back to Idle.
  */
 actual class NativeAudioEngine(context: Context) : AudioEngine {
 
@@ -178,8 +178,9 @@ actual class NativeAudioEngine(context: Context) : AudioEngine {
     }
 
     /**
-     * Checks the engine state on the main thread every [PREVIEW_CHECK_INTERVAL_MS] and abandons the preview's focus once
-     * the click has ended. Gives up (keeping the focus for the next stop) after [PREVIEW_CHECKS] checks.
+     * Checks the engine state on the main thread every [PREVIEW_CHECK_INTERVAL_MS] and, once the click has ended, closes
+     * the output stream the preview opened (the engine's tone stop, the documented end of a preview) and abandons the
+     * preview's focus. Gives up (keeping the stream and focus for the next stop) after [PREVIEW_CHECKS] checks.
      */
     private fun schedulePreviewRelease() {
         val check = object : Runnable {
@@ -191,6 +192,7 @@ actual class NativeAudioEngine(context: Context) : AudioEngine {
                     when (audioState) {
                         AudioState.Idle -> {
                             previewRelease = null
+                            nativeToneStop()  // closes the stream the preview left open, which otherwise renders silence
                             focus.abandon()
                         }
                         AudioState.Tone ->

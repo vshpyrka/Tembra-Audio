@@ -20,11 +20,9 @@ import platform.AVFAudio.AVAudioSessionInterruptionTypeEnded
 import platform.AVFAudio.AVAudioSessionInterruptionTypeKey
 import platform.AVFAudio.AVAudioSessionModeDefault
 import platform.AVFAudio.AVAudioSessionModeMeasurement
-import platform.AVFAudio.AVAudioSessionPortBluetoothA2DP
-import platform.AVFAudio.AVAudioSessionPortBluetoothHFP
-import platform.AVFAudio.AVAudioSessionPortBluetoothLE
+import platform.AVFAudio.AVAudioSessionPortBuiltInReceiver
+import platform.AVFAudio.AVAudioSessionPortBuiltInSpeaker
 import platform.AVFAudio.AVAudioSessionPortDescription
-import platform.AVFAudio.AVAudioSessionPortHeadphones
 import platform.AVFAudio.AVAudioSessionRouteChangeNotification
 import platform.AVFAudio.AVAudioSessionRouteChangePreviousRouteKey
 import platform.AVFAudio.AVAudioSessionRouteChangeReasonKey
@@ -45,8 +43,8 @@ import kotlin.concurrent.Volatile
 /**
  * The AVAudioSession around the engine's streams (research R3, R7): measurement mode keeps processing off the
  * microphone, playback category routes tones with other media, and deactivating with `notifyOthersOnDeactivation`
- * lets other apps' audio resume. Interruptions and route changes surface as [AudioEvent]s; losing headphones or a
- * Bluetooth output is [AudioEvent.OutputRouteLost] (feature 004 R6).
+ * lets other apps' audio resume. Interruptions and route changes surface as [AudioEvent]s; losing any output but the
+ * built-in speaker or receiver (wired, USB-C, Bluetooth, AirPlay) is [AudioEvent.OutputRouteLost] (feature 004 R6).
  */
 @OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
 object IosAudioSession {
@@ -57,12 +55,13 @@ object IosAudioSession {
     private val _events = MutableSharedFlow<AudioEvent>(extraBufferCapacity = 16)
     val events: Flow<AudioEvent> = _events
 
-    /** Ports whose loss means the listener took the audio off (Apple: stop playback when headphones are unplugged). */
-    private val privateOutputs = setOf(
-        AVAudioSessionPortHeadphones,
-        AVAudioSessionPortBluetoothA2DP,
-        AVAudioSessionPortBluetoothLE,
-        AVAudioSessionPortBluetoothHFP,
+    /**
+     * The phone's own outputs. Apple keys "stop playback when the old device became unavailable" on the reason alone, so
+     * losing any other output (wired, USB-C, Bluetooth, AirPlay, CarPlay, line out) takes the audio off the listener.
+     */
+    private val builtInOutputs = setOf(
+        AVAudioSessionPortBuiltInSpeaker,
+        AVAudioSessionPortBuiltInReceiver,
     )
 
     private val session: AVAudioSession get() = AVAudioSession.sharedInstance()
@@ -149,11 +148,11 @@ object IosAudioSession {
 
     /**
      * The route-change handler on parsed values ([previousOutputs] are the previous route's output port types);
-     * internal so tests need no real notification. Only a lost headphone or Bluetooth output is reported: a new device
-     * or a lost speaker keeps the audio going.
+     * internal so tests need no real notification. A lost output is reported unless the previous route was only the
+     * built-in speaker or receiver: a new device or a lost built-in output keeps the audio going.
      */
     internal fun handleRouteChange(reason: ULong, previousOutputs: List<String>) {
-        if (reason == AVAudioSessionRouteChangeReasonOldDeviceUnavailable && previousOutputs.any { it in privateOutputs }) {
+        if (reason == AVAudioSessionRouteChangeReasonOldDeviceUnavailable && previousOutputs.any { it !in builtInOutputs }) {
             _events.tryEmit(AudioEvent.OutputRouteLost)
         }
         routeChangeListener?.invoke()

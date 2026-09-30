@@ -53,11 +53,16 @@ import platform.darwin.dispatch_time
  *
  * The session is activated only by the call that moves the engine out of Idle and deactivated only when it returns
  * there (contracts/metronome-audio-kotlin.md): a refused start never deactivates under a running stream, and a stop
- * leaves the session alone while another stream runs. A preview click ends on its own, so the actual deactivates the
- * session itself once the engine is back to Idle.
+ * leaves the session alone while another stream runs. A preview click ends on its own, so the actual closes the output
+ * and deactivates the session itself once the engine is back to Idle.
  */
 @OptIn(ExperimentalForeignApi::class)
-actual class NativeAudioEngine : AudioEngine {
+actual class NativeAudioEngine internal constructor(
+    /** Where [reportOutputLatencyNanos] delivers the latency: the engine; tests record it instead. */
+    private val engineLatencySink: (Long) -> Unit,
+) : AudioEngine {
+
+    constructor() : this({ nanos -> tembra_metronome_set_output_latency_ns(nanos) })
 
     private val reading = nativeHeap.alloc<tembra_pitch_reading>()
     private val config = nativeHeap.alloc<tembra_tuner_config>()
@@ -242,9 +247,10 @@ actual class NativeAudioEngine : AudioEngine {
     }
 
     /**
-     * Checks the engine state on the main queue every [PREVIEW_CHECK_INTERVAL_NANOS] and deactivates the session
-     * (`notifyOthersOnDeactivation`) once the click has ended. Gives up (leaving the session to the next stop) after
-     * [PREVIEW_CHECKS] checks.
+     * Checks the engine state on the main queue every [PREVIEW_CHECK_INTERVAL_NANOS] and, once the click has ended,
+     * closes the output unit the preview opened (the engine's tone stop, the documented end of a preview; a running unit
+     * would make the deactivation fail as busy) and deactivates the session (`notifyOthersOnDeactivation`). Gives up
+     * (leaving the unit and session to the next stop) after [PREVIEW_CHECKS] checks.
      */
     private fun schedulePreviewRelease() {
         previewLock.lock()
@@ -262,6 +268,7 @@ actual class NativeAudioEngine : AudioEngine {
                 when (audioState) {
                     AudioState.Idle -> {
                         previewPending = false
+                        tembra_tone_stop()  // closes the unit the preview left open; the session cannot deactivate under it
                         IosAudioSession.deactivate()
                     }
                     AudioState.Tone ->
@@ -282,8 +289,9 @@ actual class NativeAudioEngine : AudioEngine {
         previewLock.unlock()
     }
 
+    /** 0 means "measure the current route again": the session's latency is forwarded, never a 0 that would wipe it. */
     override fun reportOutputLatencyNanos(nanos: Long) {
-        tembra_metronome_set_output_latency_ns(nanos)
+        engineLatencySink(if (nanos > 0) nanos else IosAudioSession.outputLatencyNanos())
     }
 
     override fun readTick(into: TickSnapshot) {
