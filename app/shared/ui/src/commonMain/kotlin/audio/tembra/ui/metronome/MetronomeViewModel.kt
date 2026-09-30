@@ -5,7 +5,11 @@ import androidx.lifecycle.viewModelScope
 import audio.tembra.core.metronome.BuiltInClickSound
 import audio.tembra.core.metronome.ClickSound
 import audio.tembra.core.metronome.MetronomeSettings
+import audio.tembra.core.metronome.MetronomeStyle
+import audio.tembra.core.metronome.Subdivision
+import audio.tembra.core.metronome.SyncopationReading
 import audio.tembra.core.metronome.Tempo
+import audio.tembra.core.metronome.TimeSignature
 import audio.tembra.data.metronome.CustomClickSoundStore
 import audio.tembra.data.metronome.MetronomePreferences
 import audio.tembra.engine.AudioEvent
@@ -168,6 +172,67 @@ class MetronomeViewModel(
     /** Moves the tempo by [delta], held inside 40–240; at an end nothing changes and nothing is written. */
     fun stepTempo(delta: Int) {
         setTempo(_uiState.value.settings.tempo.plus(delta))
+    }
+
+    // --- Bar shape and styles (spec FR-006 to FR-010) ------------------------------------------------------------------
+
+    /**
+     * Changes the bar's length. The selected style is re-applied at the new length; with none (cells edited by hand)
+     * the remaining beats keep their levels and new beats are Click, and the style is whatever the result matches.
+     */
+    fun selectSignature(signature: TimeSignature) {
+        updateSettings { settings ->
+            val style = settings.style
+            if (style != null) {
+                settings.copy(signature = signature, pattern = style.pattern(signature))
+            } else {
+                val pattern = settings.pattern.resizedTo(signature.beats)
+                settings.copy(signature = signature, pattern = pattern, style = MetronomeStyle.matching(pattern, signature))
+            }
+        }
+    }
+
+    fun selectSubdivision(subdivision: Subdivision) {
+        updateSettings { it.copy(subdivision = subdivision) }
+    }
+
+    /** Advances the level of the 0-based [index]; the style follows the cells (none when they match no style). */
+    fun cycleBeat(index: Int) {
+        if (index !in _uiState.value.settings.pattern.levels.indices) return
+        updateSettings { settings ->
+            val pattern = settings.pattern.cycle(index)
+            settings.copy(pattern = pattern, style = MetronomeStyle.matching(pattern, settings.signature))
+        }
+    }
+
+    /** Rewrites every cell from [style] (spec FR-010). */
+    fun selectStyle(style: MetronomeStyle) {
+        updateSettings { it.copy(pattern = style.pattern(it.signature), style = style) }
+    }
+
+    /**
+     * The debug build's Syncopated reading (research R14); null restores the shipped one. It is not persisted. Called
+     * before [screenVisible], it only sets the reading, and the first grid sent on loading carries it.
+     */
+    fun useDebugSettings(request: MetronomeDebugRequest?) {
+        val reading = request?.syncopation ?: SyncopationReading.EvenBeats
+        if (_uiState.value.syncopationReading == reading) return
+        _uiState.update { it.copy(syncopationReading = reading) }
+        if (_uiState.value.loaded) sendGrid()
+    }
+
+    /**
+     * Applies a settings change once loaded: the new state, the engine's grid (applied from its next block while
+     * running) and the stored copy. A change that leaves the settings as they are does nothing.
+     */
+    private fun updateSettings(transform: (MetronomeSettings) -> MetronomeSettings) {
+        val state = _uiState.value
+        if (!state.loaded) return
+        val next = transform(state.settings)
+        if (next == state.settings) return
+        _uiState.update { it.copy(settings = next) }
+        sendGrid()
+        persist { it.copy(signature = next.signature, subdivision = next.subdivision, pattern = next.pattern, style = next.style) }
     }
 
     // --- Playback (spec FR-001, FR-027) -------------------------------------------------------------------------------

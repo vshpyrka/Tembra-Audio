@@ -1,8 +1,14 @@
 package audio.tembra.ui.metronome
 
 import androidx.lifecycle.ViewModelStore
+import audio.tembra.core.metronome.AccentPattern
+import audio.tembra.core.metronome.BeatLevel
 import audio.tembra.core.metronome.MetronomeSettings
+import audio.tembra.core.metronome.MetronomeStyle
+import audio.tembra.core.metronome.Subdivision
+import audio.tembra.core.metronome.SyncopationReading
 import audio.tembra.core.metronome.Tempo
+import audio.tembra.core.metronome.TimeSignature
 import audio.tembra.data.metronome.FakeCustomClickSoundStore
 import audio.tembra.data.metronome.FakeMetronomePreferences
 import audio.tembra.data.metronome.MetronomePreferences
@@ -31,11 +37,14 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
- * The ViewModel against the fakes (contracts/metronome-screen.md), User Story 1: loading, tempo intents and
- * persistence, the start and stop sequences, refused starts, the 10 Hz poll and the draw-phase telemetry.
+ * The ViewModel against the fakes (contracts/metronome-screen.md). User Story 1: loading, tempo intents and
+ * persistence, the start and stop sequences, refused starts, the 10 Hz poll and the draw-phase telemetry. User Story 2:
+ * the signature, subdivision, cell and style intents with their re-application rules (spec FR-006 to FR-010) and the
+ * debug Syncopated reading (spec FR-037).
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class MetronomeViewModelTest {
@@ -370,5 +379,144 @@ class MetronomeViewModelTest {
         assertEquals(PlaybackState.Stopped, viewModel.uiState.value.playback)
         assertEquals("stopMetronome", audio.calls.last())
         assertEquals(1, fakeHost.releaseCount)
+    }
+
+    // --- User Story 2: bar shape and styles ------------------------------------------------------------------------------
+
+    private fun TestScope.running(settings: MetronomeSettings = MetronomeSettings()): MetronomeViewModel {
+        preferences = CountingPreferences(FakeMetronomePreferences(MetronomePreferencesSnapshot(settings)))
+        val viewModel = viewModel()
+        show(viewModel)
+        audio.nextTick.running = true
+        viewModel.togglePlayback()
+        return viewModel
+    }
+
+    private fun pattern(text: String) = AccentPattern(text.map { BeatLevel.byId(it)!! })
+
+    @Test
+    fun selectSignatureReappliesTheSelectedStyleAndReachesARunningEngine() = viewModelTest {
+        val viewModel = running()
+        viewModel.selectSignature(TimeSignature.SevenEight)
+        runCurrent()
+        val settings = viewModel.uiState.value.settings
+        assertEquals(TimeSignature.SevenEight, settings.signature)
+        assertEquals(pattern("ACCCCCC"), settings.pattern)
+        assertEquals(MetronomeStyle.Standard, settings.style)
+        assertEquals("setGrid(bpm=120, ticks=1, levels=ACCCCCC)", audio.calls.last())
+        val stored = preferences.snapshot.first().settings
+        assertEquals(TimeSignature.SevenEight, stored.signature)
+        assertEquals(pattern("ACCCCCC"), stored.pattern)
+    }
+
+    @Test
+    fun selectSignatureAfterAHandEditResizesAndKeepsNoStyle() = viewModelTest {
+        val viewModel = running()
+        viewModel.cycleBeat(1)
+        viewModel.selectSignature(TimeSignature.SixEight)
+        runCurrent()
+        val settings = viewModel.uiState.value.settings
+        assertEquals(pattern("ASCC").resizedTo(6), settings.pattern)
+        assertNull(settings.style)
+        assertEquals("setGrid(bpm=120, ticks=1, levels=ASCCCC)", audio.calls.last())
+        assertNull(preferences.snapshot.first().settings.style)
+    }
+
+    @Test
+    fun selectSubdivisionSendsTheSubdividedGrid() = viewModelTest {
+        val viewModel = running()
+        viewModel.selectSubdivision(Subdivision.Two)
+        runCurrent()
+        assertEquals(Subdivision.Two, viewModel.uiState.value.settings.subdivision)
+        assertEquals("setGrid(bpm=120, ticks=2, levels=ASCSCSCS)", audio.calls.last())
+        assertEquals(Subdivision.Two, preferences.snapshot.first().settings.subdivision)
+    }
+
+    @Test
+    fun cycleBeatClearsTheStyleWhenThePatternMatchesNone() = viewModelTest {
+        val viewModel = running()
+        viewModel.cycleBeat(1)
+        runCurrent()
+        val settings = viewModel.uiState.value.settings
+        assertEquals(BeatLevel.Sub, settings.pattern.levels[1])
+        assertNull(settings.style)
+        assertEquals("setGrid(bpm=120, ticks=1, levels=ASCC)", audio.calls.last())
+        assertEquals(pattern("ASCC"), preferences.snapshot.first().settings.pattern)
+    }
+
+    @Test
+    fun cycleBeatBackToAStylesPatternSelectsThatStyle() = viewModelTest {
+        val viewModel = running()
+        viewModel.cycleBeat(1)
+        viewModel.cycleBeat(1)
+        runCurrent()
+        assertEquals(pattern("AACC"), viewModel.uiState.value.settings.pattern)
+        assertNull(viewModel.uiState.value.settings.style)
+        viewModel.cycleBeat(1)
+        runCurrent()
+        assertEquals(pattern("ACCC"), viewModel.uiState.value.settings.pattern)
+        assertEquals(MetronomeStyle.Standard, viewModel.uiState.value.settings.style)
+        assertEquals(MetronomeStyle.Standard, preferences.snapshot.first().settings.style)
+    }
+
+    @Test
+    fun selectStyleRewritesTheCells() = viewModelTest {
+        val viewModel = running()
+        viewModel.selectStyle(MetronomeStyle.Downbeat)
+        runCurrent()
+        val settings = viewModel.uiState.value.settings
+        assertEquals(pattern("ASSS"), settings.pattern)
+        assertEquals(MetronomeStyle.Downbeat, settings.style)
+        assertEquals("setGrid(bpm=120, ticks=1, levels=ASSS)", audio.calls.last())
+        assertEquals(MetronomeStyle.Downbeat, preferences.snapshot.first().settings.style)
+    }
+
+    @Test
+    fun reselectingTheSelectedStyleChangesNothing() = viewModelTest {
+        val viewModel = running()
+        val callsBefore = audio.calls.size
+        val updatesBefore = preferences.updates
+        viewModel.selectStyle(MetronomeStyle.Standard)
+        viewModel.selectSignature(TimeSignature.FourFour)
+        viewModel.selectSubdivision(Subdivision.One)
+        runCurrent()
+        assertEquals(callsBefore, audio.calls.size)
+        assertEquals(updatesBefore, preferences.updates)
+    }
+
+    @Test
+    fun theDebugReadingChangesTheSyncopatedGrid() = viewModelTest {
+        val syncopated = MetronomeSettings(
+            subdivision = Subdivision.Two,
+            pattern = MetronomeStyle.Syncopated.pattern(TimeSignature.FourFour),
+            style = MetronomeStyle.Syncopated,
+        )
+        val viewModel = running(syncopated)
+        assertEquals("setGrid(bpm=120, ticks=2, levels=CSASCSAS)", audio.calls.first())
+        viewModel.useDebugSettings(MetronomeDebugRequest(SyncopationReading.OffBeatTicks))
+        runCurrent()
+        assertEquals(SyncopationReading.OffBeatTicks, viewModel.uiState.value.syncopationReading)
+        assertEquals("setGrid(bpm=120, ticks=2, levels=SASASASA)", audio.calls.last())
+        viewModel.useDebugSettings(null)
+        runCurrent()
+        assertEquals(SyncopationReading.EvenBeats, viewModel.uiState.value.syncopationReading)
+        assertEquals("setGrid(bpm=120, ticks=2, levels=CSASCSAS)", audio.calls.last())
+    }
+
+    @Test
+    fun aDebugReadingSetBeforeLoadingReachesTheFirstGrid() = viewModelTest {
+        preferences = CountingPreferences(
+            FakeMetronomePreferences(
+                MetronomePreferencesSnapshot(
+                    MetronomeSettings(pattern = MetronomeStyle.Syncopated.pattern(TimeSignature.FourFour), style = MetronomeStyle.Syncopated),
+                ),
+            ),
+        )
+        val viewModel = viewModel()
+        viewModel.useDebugSettings(MetronomeDebugRequest(SyncopationReading.AllButOne))
+        runCurrent()
+        assertEquals(emptyList(), audio.calls)
+        show(viewModel)
+        assertEquals("setGrid(bpm=120, ticks=1, levels=SAAA)", audio.calls.first())
     }
 }

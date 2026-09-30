@@ -66,6 +66,16 @@ internal object MetronomeDefaults {
     const val GLOW_PULSE_MIN = 0.6f
     const val GLOW_PULSE_MILLIS = 1200
 
+    // Style row (research R10).
+    /** Gap between the style pills: `gap-1.5`. */
+    val PillGap: Dp = 6.dp
+
+    // Settings sections (research R10): `space-y-1.5` between a section's header and its chips.
+    val SectionGap: Dp = 6.dp
+
+    /** Between the beat cells and the style row: `space-y-2`. */
+    val CellsStyleGap: Dp = 8.dp
+
     // Play button and tap tempo (research R10).
     /** Play and pause glyph: `text-[34px]`, filled. */
     val PlayIconSize: Dp = 34.dp
