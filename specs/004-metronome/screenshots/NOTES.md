@@ -127,3 +127,52 @@ Differences, to settle later:
 - The caption uses the tabular-parameter face at the section label's 10 sp size (the design's `text-[10px]`).
 - The two iOS User Story 1 captures noted as stale above (`ios-compact-stopped.png`, `ios-compact-running-beat1.png`)
   were not retaken in this batch.
+
+## User Stories 3 and 4 (batch B10, T111 and T117), 2026-09-30
+
+**Devices**: Pixel 6 Pro (Android 17, serial 19021FDEE001AH, debug APK from `:androidApp:assembleDebug`); iPhone 17
+simulator (iOS 26.5, Debug build from `xcodebuild -scheme iosApp`). Both were launched with the debug argument, which
+opens the app on the Metronome. The Pixel was driven with `adb shell input tap` (tap loops run inside the device shell
+so the intervals are steady) and read with `uiautomator dump`; the simulator with System Events `click at` on the
+Compose accessibility elements (the Mac was unlocked).
+
+| File | What it shows |
+|---|---|
+| `<platform>-compact-picker-open.png` | 4/4 stopped, the sound pill "Classic Wood" under the cells card and its menu open: Classic Wood (primary, check), 808 Rim, Digital Beep, Cowbell, Mechanical, Custom with a "+" |
+
+### Quickstart §6 (tap tempo), by observation
+
+- **One tap**: tempo unchanged, caption "Tap again" (Pixel).
+- **A steady run**: ten taps every ~550 ms on the Pixel (0.5 s sleep plus the `input tap` cost) settled on 109 BPM,
+  six taps every ~710 ms on the simulator (AppleScript clicks) gave 84 BPM with the caption "6 taps"; both match the
+  intervals the drivers produce. A steady 100 BPM by finger is the user's check.
+- **Found and fixed on the Pixel**: ten taps read "9 taps" because the sequence keeps the last nine taps for the
+  average. The caption now counts every tap of the run (`MetronomeViewModelTest.theCaptionCountsEveryTapOfALongRun`,
+  RED before the fix); twelve taps read "12 taps" on the Pixel afterwards.
+- **Fast and slow**: taps as fast as `input tap` allows gave 240; three taps 1.9 s apart gave 40.
+- **Rest**: three seconds after the last tap the caption reads "Sync finger rhythm" again and the next tap starts over
+  ("Tap again") on both platforms.
+- **Running**: taps while running changed the tempo without a restart (the play button kept "Stop metronome"; the
+  grid is re-sent, `MetronomeViewModelTest.aSecondTapSetsTheTempoThroughTheSettingsPath`). Whether the click adopts the
+  new tempo on the next tick is an ear check for the user.
+- **Flash**: the 120 ms `primary` flash is verified by `MetronomeScreenTest` with the frozen clock (and absent under
+  a zero `MotionDurationScale`); it is too short to catch in a device screenshot.
+
+### Quickstart §4 step 5 (sounds), by observation
+
+- The menu lists the six entries in the spec's order with the current one checked (both platforms, captures above).
+- Stopped: choosing 808 Rim closed the menu and the pill read "808 Rim" (both); the engine calls
+  `selectSound(Rim808)` then `previewClick(Click)` (`MetronomeViewModelTest`).
+- Running: choosing Cowbell kept the click running ("Stop metronome") and the pill read "Cowbell" (both).
+- Not listened to (driven over adb and AppleScript): the preview click, the swap on the next tick, and the three levels
+  of each sound (Accent clearly louder, Sub clearly softer) are left for the user's ear check.
+- Custom with nothing imported opens the platform WAV picker; preparing and selecting the picked file is User Story 5.
+
+### Against the Stitch phone screen
+
+Matches: the pill between the cells card and the dial card, centred, `surfaceContainerHigh`, fully rounded, with the
+`graphic_eq` glyph in `primary`, the name in `labelMedium` and the `expand_more` chevron in `outline`; the 160 dp menu
+on `surfaceContainerHighest` with 12 dp corners, the current entry in `primary` with a check and the others in
+`onSurfaceVariant`. Differences: the menu's rows are Material's 48 dp (the design's `py-1.5` rows are about 32 dp), so
+the menu is taller; it opens above the pill on both phones (Material positions it);
+the design's list ("808 Click", "Studio Rim", no Custom) is replaced by the spec's (FR-021).
