@@ -190,6 +190,7 @@ object PlaybackPolicy {                                         // pure, unit-te
     // PlaybackTransition: Start, Stop(message: MetronomeMessage?), Ignore
     //   Running + {ScreenHidden, AudioInterrupted, OutputRouteLost, DeviceLost, StopRequested, PausePressed} → Stop
     //   Starting + StartFailed(HostRefused) → Stop(FocusDenied); Starting + StartFailed(EngineError) → Stop(DeviceUnavailable)
+    //   Starting + {ScreenHidden, AudioInterrupted, OutputRouteLost, DeviceLost, StopRequested, PausePressed} → Stop(null) (the start is cancelled: the ViewModel stops and releases whatever the start had acquired)
     //   Stopped + PlayPressed → Start; anything else → Ignore; nothing ever restarts by itself (spec FR-027)
 }
 ```
