@@ -13,7 +13,7 @@ class FakeMetronomePreferences(initial: MetronomePreferencesSnapshot = Metronome
 
 interface CustomClickSoundStore {                       // data-model.md §5
     val path: String; val stagingPath: String
-    suspend fun commit(): Boolean; suspend fun exists(): Boolean; suspend fun delete()
+    suspend fun commit(): Boolean; suspend fun exists(): Boolean; suspend fun delete(); suspend fun deleteStaging()   // deleteStaging: idempotent; removes a staged file the engine refused
 }
 class OkioCustomClickSoundStore(directories: AppDirectories, private val fileSystem: FileSystem = FileSystem.SYSTEM) : CustomClickSoundStore
 //   directory <documents>/metronome created on first use; commit() = atomicMove(staging → path) after deleting an existing target; runs on Dispatchers.IO inside
