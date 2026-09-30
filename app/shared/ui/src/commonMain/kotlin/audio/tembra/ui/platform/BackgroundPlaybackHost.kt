@@ -14,6 +14,10 @@ interface BackgroundPlaybackHost {
     /** Gives the eligibility back; called after the engine has stopped. */
     fun release()
 
-    /** The user asked to stop from outside the app (the Android notification's Stop action). Cold; one collector. */
+    /**
+     * The user asked to stop from outside the app (the Android notification's Stop action). Hot, without replay: a
+     * request made while nobody collects is dropped, since only a running metronome, whose ViewModel collects, has
+     * anything to stop. One collector (the metronome ViewModel).
+     */
     val stopRequests: Flow<Unit>
 }

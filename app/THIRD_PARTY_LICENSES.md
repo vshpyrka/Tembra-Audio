@@ -38,7 +38,7 @@ Last reviewed: 2026-09-29 (feature 004, metronome).
 | kotlin-test, kotlinx-coroutines-test | 2.4.20, 1.11.0 | Apache-2.0 | JetBrains |
 | kotlinx-serialization-json (theme parity test on the JVM) | 1.11.0 | Apache-2.0 | https://github.com/Kotlin/kotlinx.serialization |
 | Compose UI test (`org.jetbrains.compose.ui:ui-test`, `ui-test-junit4-android`, `ui-test-manifest`) | 1.12.1 | Apache-2.0 | JetBrains, AndroidX |
-| AndroidX Test runner, Espresso core | 1.7.0, 3.7.0 | Apache-2.0 | https://developer.android.com/testing |
+| AndroidX Test runner, rules, Espresso core | 1.7.0, 1.7.0, 3.7.0 | Apache-2.0 | https://developer.android.com/testing |
 | Catch2 (fetched by CMake for `engine/tests`) | v3.16.0 | Boost Software License 1.0 | https://github.com/catchorg/Catch2 |
 
 ## Build tooling (not shipped)
