@@ -1,10 +1,51 @@
 package audio.tembra.ui.metronome
 
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import audio.tembra.ui.designsystem.PlaceholderDestination
-import audio.tembra.ui.navigation.Destination
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.zacsweers.metrox.viewmodel.metroViewModel
 
-/** The Metronome destination; a placeholder until its feature lands (spec FR-013). */
+/**
+ * The Metronome destination (contracts/metronome-screen.md, research R12): the wiring seam between the entry-scoped
+ * [MetronomeViewModel] and the stateless [MetronomeScreenContent]. Visibility comes from this composition (Navigation 3
+ * disposes the entry on a destination switch); no lifecycle effect stops the click, which keeps playing with the
+ * screen locked or the app in the background by design (spec FR-027). Every effect is keyed on the ViewModel it talks
+ * to, so a different instance would be wired afresh; the snackbar collects the one-shot messages.
+ */
 @Composable
-fun MetronomeScreen(modifier: Modifier = Modifier) = PlaceholderDestination(Destination.Metronome, modifier)
+fun MetronomeScreen(modifier: Modifier = Modifier, viewModel: MetronomeViewModel = metroViewModel()) {
+    DisposableEffect(viewModel) {
+        viewModel.screenVisible(true)
+        onDispose { viewModel.screenVisible(false) }
+    }
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(viewModel, snackbarHostState) {
+        viewModel.messages.collect { snackbarHostState.showSnackbar(MetronomeCopy.of(it)) }
+    }
+    val layout = MetronomeLayout.from(currentWindowAdaptiveInfo().windowSizeClass)
+    val callbacks = remember(viewModel) {
+        // The settings, sound and tap intents are bound as their stories land (User Stories 2 to 5).
+        MetronomeCallbacks.None.copy(
+            onTempo = viewModel::setTempo,
+            onStep = viewModel::stepTempo,
+            onTogglePlayback = viewModel::togglePlayback,
+        )
+    }
+    if (state.loaded) {
+        MetronomeScreenContent(
+            state = state,
+            callbacks = callbacks,
+            telemetry = viewModel.telemetry,
+            layout = layout,
+            snackbarHostState = snackbarHostState,
+            modifier = modifier,
+        )
+    }
+}
