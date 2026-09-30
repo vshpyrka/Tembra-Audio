@@ -30,7 +30,11 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import audio.tembra.core.metronome.Tempo
+import audio.tembra.core.metronome.TempoMarking
+import audio.tembra.ui.metronome.MetronomeCopy
 import audio.tembra.ui.theme.TembraTheme
 import kotlin.math.roundToInt
 
@@ -60,6 +64,7 @@ internal fun TempoSlider(
     val thumbColor = colors.primary
     val ring = spacing.focusRingWidth
     val labelStyle = TembraTheme.typographyExtras.tabularParam
+    val announcement = MetronomeCopy.dialState(tempo, TempoMarking.of(tempo))
     val currentTempo by rememberUpdatedState(tempo)
     val currentOnTempo by rememberUpdatedState(onTempo)
 
@@ -79,6 +84,8 @@ internal fun TempoSlider(
             modifier = Modifier
                 .weight(1f)
                 .testTag(testTag)
+                // Announced like the dial, "120 beats per minute, Moderato", not Material's "120.0" (spec FR-030).
+                .semantics { this.stateDescription = announcement }
                 .onPreviewKeyEvent { event ->
                     val delta = when {
                         event.type != KeyEventType.KeyDown -> 0

@@ -40,6 +40,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -172,7 +173,15 @@ private fun SoundDropdown(
                             tint = colors.primary,
                             modifier = Modifier.size(MetronomeDefaults.SoundPillIconSize),
                         )
-                        Text(text = name, style = TembraTheme.typography.labelMedium, color = colors.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        // The pill's description already names the sound: the drawn name stays out of the merged node.
+                        Text(
+                            text = name,
+                            style = TembraTheme.typography.labelMedium,
+                            color = colors.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.testTag("$testTag.label").clearAndSetSemantics {},
+                        )
                     }
                     Icon(
                         imageVector = TembraIcons.vector(TembraIcon.ExpandMore),

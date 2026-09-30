@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -51,8 +52,8 @@ import kotlin.math.max
  * 42 %) and the level's name below. [lit] is a provider read only in the draw phase: while it answers true the bar box
  * is outlined in `secondary`, the bar is drawn at full alpha and the Accent glow brightens (not under reduce motion).
  * [playing] (the 10 Hz sample) adds ", playing" to the cell's state for accessibility. Hover and press raise the card to
- * `surfaceContainerLow`; keyboard focus draws the `primary` ring. With a [testTag], the bar box carries `<tag>.bar` and
- * the bar `<tag>.level`.
+ * `surfaceContainerLow`; keyboard focus draws the `primary` ring. With a [testTag], the bar box carries `<tag>.bar`,
+ * the bar `<tag>.level` and the drawn label `<tag>.label` (kept out of the accessibility tree: the state names it).
  */
 @Composable
 internal fun AccentCell(
@@ -169,6 +170,8 @@ internal fun AccentCell(
             maxLines = 1,
             overflow = TextOverflow.Clip,
             autoSize = TextAutoSize.StepBased(minFontSize = MetronomeDefaults.CellLabelMinSize, maxFontSize = labelStyle.fontSize),
+            // The cell's state already names the level ("Beat 1", "Accent"): the drawn label is not read a second time.
+            modifier = Modifier.testTagIfSet(testTag?.let { "$it.label" }).clearAndSetSemantics {},
         )
     }
 }

@@ -330,8 +330,10 @@ class MetronomeScreenTest {
         onNodeWithTag("metronome.tap")
             .assertContentDescriptionEquals("Tap tempo")
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Sync finger rhythm"))
-        onNode(hasText("TAP TEMPO") and hasAnyAncestor(hasTestTag("metronome.tap")), useUnmergedTree = true).assertExists()
-        onNode(hasText("Sync finger rhythm") and hasAnyAncestor(hasTestTag("metronome.tap")), useUnmergedTree = true).assertExists()
+        // The drawn title and caption are there, but only the description and the state are read.
+        onNodeWithTag("metronome.tap.title", useUnmergedTree = true).assertExists()
+        onNodeWithTag("metronome.tap.caption", useUnmergedTree = true).assertExists()
+        onNodeWithTag("metronome.tap").assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Text))
     }
 
     @Test
@@ -346,7 +348,7 @@ class MetronomeScreenTest {
     @Test
     fun theCaptionCountsTheTaps() = runComposeUiTest {
         setScreen(loaded.copy(tapCaption = TapCaption.Counting(3)))
-        onNode(hasText("3 taps") and hasAnyAncestor(hasTestTag("metronome.tap")), useUnmergedTree = true).assertExists()
+        onNodeWithTag("metronome.tap.caption", useUnmergedTree = true).assertExists()
         // The state names the tempo the taps set, so the live region announces it (spec FR-030).
         onNodeWithTag("metronome.tap").assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "3 taps, 120 beats per minute"))
     }
@@ -494,11 +496,8 @@ class MetronomeScreenTest {
             "metronome.settings" to "TIME SIGNATURE", "metronome.settings" to "Common & Complex", "metronome.settings" to "RHYTHM SUBDIVISION",
             "metronome.signature.4-4" to "4/4", "metronome.signature.7-8" to "7/8",
             "metronome.subdivision.1" to "1/4", "metronome.subdivision.4" to "1/16", "metronome.subdivision.3" to "3let",
-            "metronome.cell.1" to "ACCENT", "metronome.cell.2" to "CLICK",
             "metronome.style.standard" to "Standard", "metronome.style.downbeat" to "Downbeat", "metronome.style.syncopated" to "Syncopated",
-            "metronome.sound" to "Classic Wood",
             "metronome.dial" to "120", "metronome.dial" to "BPM", "metronome.dial" to "Moderato (108-120)",
-            "metronome.tap" to "TAP TEMPO", "metronome.tap" to "Sync finger rhythm",
         )
         for ((parent, label) in labels) {
             val text = onNode(hasText(label) and hasAnyAncestor(hasTestTag(parent)), useUnmergedTree = true)
@@ -509,6 +508,18 @@ class MetronomeScreenTest {
             val layout = text.textLayoutResult()
             val cut = layout.multiParagraph.didExceedMaxLines || (0 until layout.lineCount).any { layout.isLineEllipsized(it) }
             assertTrue(!cut, "\"$label\" in $parent is cut short at the largest font (${layout.lineCount} lines in ${layout.size})")
+        }
+        // The drawn labels kept out of the accessibility tree (read through their control's description or state):
+        // found by tag, each inside its control.
+        val drawn = listOf(
+            "metronome.cell.1" to "metronome.cell.1.label", "metronome.cell.2" to "metronome.cell.2.label",
+            "metronome.sound" to "metronome.sound.label",
+            "metronome.tap" to "metronome.tap.title", "metronome.tap" to "metronome.tap.caption",
+        )
+        for ((parent, tag) in drawn) {
+            val text = onNodeWithTag(tag, useUnmergedTree = true)
+            if (parent != "metronome.tap") text.performScrollTo()
+            text.assertDisplayedWithin(bounds(parent), "$tag in $parent")
         }
         val controls = listOf("4-4", "3-4", "6-8", "2-4", "5-4", "7-8").map { "metronome.signature.$it" } +
             listOf("1", "2", "4", "3").map { "metronome.subdivision.$it" } +
@@ -676,8 +687,12 @@ class MetronomeScreenTest {
             .assertContentDescriptionEquals("Beat 3")
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Click"))
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
+            .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Text))
+        // The slider announces the tempo and its name as the dial does (spec FR-030), not Material's "120.0".
+        onNodeWithTag("metronome.slider").assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "120 beats per minute, Moderato"))
         onNodeWithTag("metronome.play").assertContentDescriptionEquals("Start metronome")
         onNodeWithTag("metronome.sound").performScrollTo().assertContentDescriptionEquals("Click sound, Classic Wood")
+            .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Text))
         for (tag in listOf("metronome.signature.4-4", "metronome.subdivision.1", "metronome.style.standard")) {
             onNodeWithTag(tag).assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab)).assertIsSelected()
         }
@@ -697,6 +712,7 @@ class MetronomeScreenTest {
             .assertContentDescriptionEquals("Tap tempo")
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "3 taps, 124 beats per minute"))
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite))
+            .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Text))
     }
 
     /** The screen's pixels [above] dp over the play button's top edge, at its centre: only the play glow tints them. */

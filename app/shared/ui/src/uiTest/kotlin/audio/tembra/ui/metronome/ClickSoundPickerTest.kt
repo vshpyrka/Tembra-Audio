@@ -11,8 +11,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsEnabled
@@ -99,7 +102,9 @@ class ClickSoundPickerTest {
     fun thePillNamesTheCurrentSound() = runComposeUiTest {
         setPicker(ClickSoundPickerLayout.Dropdown)
         onNodeWithTag("sound").assertContentDescriptionEquals("Click sound, Classic Wood")
-        onNode(hasText("Classic Wood") and hasAnyAncestor(hasTestTag("sound")), useUnmergedTree = true).assertExists()
+        // The drawn name is there, but only the description is read.
+        onNodeWithTag("sound.label", useUnmergedTree = true).assertExists()
+        onNodeWithTag("sound").assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Text))
         onNodeWithTag("sound").assertHeightIsAtLeast(44.dp)
         onNodeWithTag("sound.classic-wood").assertDoesNotExist()
     }

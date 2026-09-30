@@ -35,6 +35,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
@@ -127,7 +128,8 @@ internal fun TapTempoButton(
                 color = colors.primary,
                 textAlign = TextAlign.Center,
                 maxLines = 2,
-                modifier = Modifier.weight(1f, fill = false),
+                // The description and the state say these: the drawn title and caption are not read a second time.
+                modifier = Modifier.weight(1f, fill = false).testTag("$testTag.title").clearAndSetSemantics {},
             )
         }
         Text(
@@ -136,6 +138,7 @@ internal fun TapTempoButton(
             color = colors.outline,
             textAlign = TextAlign.Center,
             maxLines = 2,
+            modifier = Modifier.testTag("$testTag.caption").clearAndSetSemantics {},
         )
     }
 }

@@ -23,12 +23,11 @@ import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
-import androidx.compose.ui.test.hasAnyAncestor
-import androidx.compose.ui.test.hasTestTag
-import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.v2.runComposeUiTest
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.width
 import audio.tembra.core.metronome.AccentPattern
@@ -37,7 +36,6 @@ import audio.tembra.ui.designsystem.approximately
 import audio.tembra.ui.designsystem.averageColorAt
 import audio.tembra.ui.designsystem.isCloserTo
 import audio.tembra.ui.designsystem.luminance
-import audio.tembra.ui.designsystem.textLayoutResult
 import audio.tembra.ui.metronome.components.AccentCell
 import audio.tembra.ui.metronome.components.AccentCells
 import audio.tembra.ui.metronome.components.MetronomeDefaults
@@ -98,7 +96,6 @@ class AccentCellsTest {
     @Test
     fun rendersOneCellPerBeatWithLabelsAndSemantics() = runComposeUiTest {
         setCells(ScriptedBeatTelemetry())
-        val labels = listOf("ACCENT", "CLICK", "CLICK", "CLICK")
         val levels = listOf("Accent", "Click", "Click", "Click")
         for (beat in 1..4) {
             onNodeWithTag("metronome.cell.$beat")
@@ -106,7 +103,9 @@ class AccentCellsTest {
                 .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, levels[beat - 1]))
                 .assertWidthIsAtLeast(44.dp)
                 .assertHeightIsAtLeast(44.dp)
-            onNode(hasText(labels[beat - 1]) and hasAnyAncestor(hasTestTag("metronome.cell.$beat")), useUnmergedTree = true).assertExists()
+            // The drawn label is there, but out of the accessibility tree: the state already names the level.
+            onNodeWithTag("metronome.cell.$beat.label", useUnmergedTree = true).assertExists()
+            onNodeWithTag("metronome.cell.$beat").assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Text))
         }
         onNodeWithTag("metronome.cell.5").assertDoesNotExist()
     }
@@ -228,8 +227,14 @@ class AccentCellsTest {
     @Test
     fun aNarrowColumnWrapsIntoAsManyRowsAsTheLabelsNeed() = runComposeUiTest {
         mainClock.autoAdvance = false
+        var labelWidth = 0.dp
         setContent {
             TembraTheme {
+                // The widest label at its full size, as the row measures it.
+                val measurer = rememberTextMeasurer()
+                val style = TembraTheme.typographyExtras.microLabel.copy(fontWeight = FontWeight.Bold)
+                val density = LocalDensity.current
+                labelWidth = with(density) { measurer.measure("ACCENT", style).size.width.toDp() }
                 Box(Modifier.width(200.dp)) {
                     val pattern = AccentPattern(List(7) { if (it == 0) BeatLevel.Accent else BeatLevel.Click })
                     AccentCells(pattern = pattern, running = false, currentBeat = -1, telemetry = ScriptedBeatTelemetry(), onCycle = {})
@@ -237,11 +242,12 @@ class AccentCellsTest {
             }
         }
         repeat(2) { mainClock.advanceTimeByFrame() }
-        val label = onNode(hasText("ACCENT") and hasAnyAncestor(hasTestTag("metronome.cell.1")), useUnmergedTree = true)
-        val layout = label.textLayoutResult()
-        assertTrue(!layout.multiParagraph.didExceedMaxLines && layout.size.width.toFloat() >= layout.multiParagraph.maxIntrinsicWidth - 0.5f, "ACCENT is clipped in a ${onNodeWithTag("metronome.cell.1").getUnclippedBoundsInRoot().width} cell")
         val cell = onNodeWithTag("metronome.cell.1").getUnclippedBoundsInRoot()
-        val text = label.getUnclippedBoundsInRoot()
+        val room = cell.width - MetronomeDefaults.CellPadding * 2
+        assertTrue(room >= labelWidth - 0.5.dp, "a ${cell.width} cell leaves $room for ACCENT, which needs $labelWidth")
+        val tops = (1..7).map { onNodeWithTag("metronome.cell.$it").getUnclippedBoundsInRoot().top }
+        assertEquals(3, tops.distinct().size, "7 cells at 200 dp: rows at $tops")
+        val text = onNodeWithTag("metronome.cell.1.label", useUnmergedTree = true).getUnclippedBoundsInRoot()
         assertTrue(text.left >= cell.left && text.right <= cell.right, "ACCENT ($text) leaves its cell ($cell)")
     }
 
