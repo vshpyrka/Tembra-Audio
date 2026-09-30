@@ -2,6 +2,7 @@
 // Targets: Android (com.android.kotlin.multiplatform.library, single variant), iosArm64, iosSimulatorArm64.
 // Test lanes: androidHostTest (JVM), androidDeviceTest (connected device), iosSimulatorArm64Test.
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeSimulatorTest
 
 plugins {
     id("org.jetbrains.kotlin.multiplatform")
@@ -84,9 +85,15 @@ tasks.register("checkAndroidHost") {
     description = "Runs this module's Android host (JVM) unit tests"
     dependsOn(tasks.withType<Test>().matching { it.name.contains("HostTest", ignoreCase = true) })
 }
+// `-Ptembra.iosSimulator="<simctl device name or UDID>"` runs the iOS lane on that simulator
+// (for example the iPad Pro 13-inch); without it the Kotlin plugin picks its default iPhone.
+tasks.withType<KotlinNativeSimulatorTest>().configureEach {
+    val simulator = providers.gradleProperty("tembra.iosSimulator")
+    if (simulator.isPresent) device.set(simulator)
+}
 tasks.register("checkIos") {
     group = "verification"
-    description = "Runs this module's tests on the iOS simulator"
+    description = "Runs this module's tests on the iOS simulator (override with -Ptembra.iosSimulator)"
     dependsOn(tasks.matching { it.name == "iosSimulatorArm64Test" })
 }
 tasks.register("checkAndroidDevice") {

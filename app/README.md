@@ -56,6 +56,7 @@ One command per lane; each aggregates every `:shared:*` module.
 cd app
 ./gradlew checkAndroidHost     # JVM unit tests (domain, parser, ViewModel, theme.json parity)
 ./gradlew checkIos             # iOS simulator: all shared tests + Compose UI tests + native engine link
+# add -Ptembra.iosSimulator="iPad Pro 13-inch (M5)" (any simctl name or UDID) to run the iOS lane on another simulator
 ./gradlew checkAndroidDevice   # connected Android device: Compose UI tests + native engine link + AppDirectories
 ./gradlew engineHostTest       # C++ engine Catch2 tests on the macOS host (no audio device)
 ```
