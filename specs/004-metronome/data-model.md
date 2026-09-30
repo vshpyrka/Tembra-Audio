@@ -138,9 +138,10 @@ interface MetronomePreferences { val snapshot: Flow<MetronomePreferencesSnapshot
 interface CustomClickSoundStore {
     val path: String                                   // <documents>/metronome/custom.wav
     val stagingPath: String                            // <documents>/metronome/custom.wav.tmp
-    suspend fun commit(): Boolean                      // atomic rename staging → path; false if staging is missing
+    suspend fun commit(): Boolean                      // atomic rename staging → path; false if staging is missing; called only after the engine accepted the staged file
     suspend fun exists(): Boolean
     suspend fun delete()
+    suspend fun deleteStaging()                        // idempotent; removes a refused staged file
 }
 ```
 

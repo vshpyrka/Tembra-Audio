@@ -43,10 +43,15 @@ class FakeSoundFilePicker(var next: SoundPickResult = Cancelled) : SoundFilePick
 | Cancellation | `Cancelled` when the result is null | `Cancelled` from `documentPickerWasCancelled` |
 
 The ViewModel's `importCustomSound()` (contracts/metronome-screen.md) calls
-`picker.pickWav(store.stagingPath)` → `store.commit()` → `audio.loadCustomSound(store.path)` on
-`prepareDispatcher` → on `Loaded` persists `sound = Custom(name)` and `customSound = CustomSoundRef(name, store.path)`; on a refusal
-keeps the previous sound, shows the message and deletes the staging file. `replaceCustomSound()`
-is the same flow from the filled Custom entry.
+`picker.pickWav(store.stagingPath)` → `audio.loadCustomSound(store.stagingPath)` on
+`prepareDispatcher` (the engine validates and prepares the staged file; the prepared set is in
+memory, so the path only matters for the next launch) → on `Loaded`: `store.commit()` (the
+staged file replaces the previous copy atomically) and persist `sound = Custom(name)` and
+`customSound = CustomSoundRef(name, store.path)`; on a refusal (`NotWav`, `Silent`, `Missing`,
+or a `commit()` that returns false): `store.deleteStaging()`, keep the previous sound and the
+previous copy untouched, reload the previous custom sound into the engine if one was selected,
+and show the message once (spec FR-025: a refused file never displaces the sound that was
+playing). `replaceCustomSound()` is the same flow from the filled Custom entry.
 
 **Copy** (`MetronomeCopy`): `NotWav` "That file isn't a WAV file Tembra can read.", `Silent` "That
 file has no sound in it.", `TooLarge` "That file is too large (64 MB at most).", `ImportFailed`
