@@ -146,6 +146,10 @@ uint32_t RemoteIoAudioDevice::sampleRate() const { return sampleRate_.load(); }
 
 bool RemoteIoAudioDevice::deviceLost() const { return false; }
 
+int64_t RemoteIoAudioDevice::outputLatencyNanos() const { return reportedLatencyNanos_.load(); }
+
+void RemoteIoAudioDevice::setReportedLatencyNanos(int64_t nanos) { reportedLatencyNanos_.store(nanos); }
+
 OSStatus RemoteIoAudioDevice::inputProc(void* refCon, AudioUnitRenderActionFlags* flags, const AudioTimeStamp* timestamp, UInt32 bus,
                                         UInt32 frames, AudioBufferList*) {
     // Audio thread: render the captured frames into the pre-allocated buffer and hand them on (Constitution I).
