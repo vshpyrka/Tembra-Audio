@@ -453,7 +453,9 @@ latency compensation (research R7); a spread points at the frame loop.
 `gradle-run` wrapper; strong skipping, intrinsic remember and pausable composition on). Report files:
 `app/shared/ui/build/compose_compiler/tembra_shared:ui-composables.txt`, `…-composables.csv`, `…-classes.txt` and
 `android/main/tembra_shared:ui-module.json` (build output, not committed). Every named restartable composable of
-`:shared:ui` is `restartable skippable` (84 of 84), the feature's 34 among them; no metronome parameter is `unstable`
+`:shared:ui` is `restartable skippable` (85 of 85, measured again on the final tree after the final review's fix wave,
+now including `TapTempoFor`), the feature's 35 among them (32 in `metronome` and `metronome.components`, plus
+`TembraPill`, `TembraChipRow` and `Chip`); no metronome parameter is `unstable`
 (the module's five `unstable` parameters are feature 003's `TuningPreset` and `TargetString`). The runtime-checked
 parameters (`MetronomeUiState`, `AccentPattern`, `MetronomeCallbacks`, `BeatTelemetry`, `ClickSound`,
 `CustomSoundState`, `List<ChipSpec>`, the ViewModel) are explained one by one in research.md R11 ("Stability outcome
