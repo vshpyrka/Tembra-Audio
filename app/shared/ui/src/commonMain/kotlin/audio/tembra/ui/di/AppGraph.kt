@@ -5,7 +5,9 @@ import audio.tembra.data.metronome.CustomClickSoundStore
 import audio.tembra.data.metronome.MetronomePreferences
 import audio.tembra.data.tuner.TunerPreferences
 import audio.tembra.engine.AudioEngine
+import audio.tembra.ui.platform.BackgroundPlaybackHost
 import audio.tembra.ui.platform.MicrophonePermission
+import audio.tembra.ui.platform.SoundFilePicker
 import dev.zacsweers.metrox.viewmodel.ViewModelGraph
 
 /**
@@ -19,4 +21,6 @@ interface AppGraph : ViewModelGraph {
     val metronomePreferences: MetronomePreferences
     val customClickSoundStore: CustomClickSoundStore
     val microphonePermission: MicrophonePermission
+    val backgroundPlaybackHost: BackgroundPlaybackHost
+    val soundFilePicker: SoundFilePicker
 }

@@ -20,6 +20,9 @@ class MainActivity : ComponentActivity() {
         val host = appGraph.microphonePermissionHost
         val launcher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted -> host.onResult(granted) }
         host.attach(this, launcher)
+        // The custom click sound is picked through this activity's document picker (feature 004, contracts/click-sounds.md).
+        val pickerHost = appGraph.soundFilePickerHost
+        pickerHost.attach(registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> pickerHost.onResult(uri) })
         // Debug builds accept the "tembra.developer.view" extra (feature 002, spec FR-022) and the "tembra.tuner.testSignal"
         // extra (feature 003, spec FR-032); the shrinker removes this branch from release.
         val request = if (BuildConfig.DEBUG) {
@@ -33,6 +36,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         appGraph.microphonePermissionHost.detach()
+        appGraph.soundFilePickerHost.detach()
         super.onDestroy()
     }
 }
