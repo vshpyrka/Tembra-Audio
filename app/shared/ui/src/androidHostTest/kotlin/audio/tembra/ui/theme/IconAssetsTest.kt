@@ -7,19 +7,26 @@ import kotlin.test.assertTrue
 
 /**
  * Every bundled glyph is normalised for the Compose resource loader and licensed (spec FR-016 of feature 002,
- * FR-026 of feature 003, research R6 / R14): the Material Symbols files name the pinned commit, the two design
+ * FR-026 of feature 003, research R6 / R14; FR-028 of feature 004): the Material Symbols files name the pinned commit, the two design
  * glyphs name the Stitch screen they were converted from. Runs on the JVM host because it reads repository files.
  */
 class IconAssetsTest {
 
     private val resources = File(System.getProperty("tembra.repoRoot"), "app/shared/ui/src/commonMain/composeResources")
     private val drawable = File(resources, "drawable")
-    private val materialGlyphs = listOf(
-        "ic_home_24.xml", "ic_graphic_eq_24.xml", "ic_music_note_24.xml",
-        "ic_av_timer_24.xml", "ic_folder_24.xml", "ic_person_24.xml",
-        "ic_mic_24.xml", "ic_mic_off_24.xml", "ic_hearing_24.xml", "ic_play_arrow_24.xml", "ic_pause_24.xml",
-        "ic_volume_up_24.xml", "ic_expand_more_24.xml", "ic_arrow_left_24.xml", "ic_arrow_right_24.xml", "ic_settings_24.xml",
+    /** Feature 004 (metronome); `ic_graphic_eq_24` and `ic_music_note_24` were already bundled for navigation. */
+    private val metronomeGlyphs = listOf(
+        "ic_remove_24.xml", "ic_add_24.xml", "ic_touch_app_24.xml", "ic_music_note_24.xml", "ic_graphic_eq_24.xml",
+        "ic_radio_button_checked_24.xml", "ic_notifications_24.xml", "ic_sensors_24.xml", "ic_tune_24.xml", "ic_check_24.xml",
     )
+    private val materialGlyphs = (
+        listOf(
+            "ic_home_24.xml", "ic_graphic_eq_24.xml", "ic_music_note_24.xml",
+            "ic_av_timer_24.xml", "ic_folder_24.xml", "ic_person_24.xml",
+            "ic_mic_24.xml", "ic_mic_off_24.xml", "ic_hearing_24.xml", "ic_play_arrow_24.xml", "ic_pause_24.xml",
+            "ic_volume_up_24.xml", "ic_expand_more_24.xml", "ic_arrow_left_24.xml", "ic_arrow_right_24.xml", "ic_settings_24.xml",
+        ) + metronomeGlyphs
+        ).distinct()
     private val designGlyphs = listOf("ic_guitar_24.xml", "ic_cello_24.xml")
     private val glyphFiles = materialGlyphs + designGlyphs
 
