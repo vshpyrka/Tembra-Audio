@@ -43,8 +43,10 @@ import audio.tembra.ui.theme.TembraTheme
  * Selected: `secondaryContainer` at 20 % with a `secondary` border, glyph and name. Otherwise `surfaceContainerHigh`
  * with a faint `outlineVariant` border that hover raises to `outline`, and hover turns the glyph and name `primary`.
  * [dashed] is the design system's state of the empty Custom tile: a dashed border (hover `primary`) around a `primary`
- * "+". [trailing] holds an action beside the name, such as the filled Custom tile's Replace button. Keyboard focus
- * draws a `primary` ring.
+ * "+". [muted] is the state of a Custom tile whose sound could not be loaded: the name and glyph in `onSurfaceVariant`,
+ * still clickable. A tile that is not [enabled] (the Custom tile while a file is imported) ignores clicks and draws its
+ * name and glyph at the disabled alpha. [trailing] holds an action beside the name, such as the filled Custom tile's
+ * Replace button. Keyboard focus draws a `primary` ring.
  */
 @Composable
 internal fun ClickSoundTile(
@@ -54,6 +56,8 @@ internal fun ClickSoundTile(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     dashed: Boolean = false,
+    enabled: Boolean = true,
+    muted: Boolean = false,
     trailing: (@Composable () -> Unit)? = null,
     interactionSource: MutableInteractionSource? = null,
     testTag: String? = null,
@@ -64,7 +68,8 @@ internal fun ClickSoundTile(
     val hovered by source.collectIsHoveredAsState()
     val pressed by source.collectIsPressedAsState()
     val focused by source.collectIsFocusedAsState()
-    val raised = hovered || pressed
+    val raised = enabled && (hovered || pressed)
+    val disabled = colors.onSurface.copy(alpha = MetronomeDefaults.DISABLED_ALPHA)
 
     val fill = if (selected) colors.secondaryContainer.copy(alpha = MetronomeDefaults.SOUND_TINT_ALPHA) else colors.surfaceContainerHigh
     val border = when {
@@ -80,13 +85,16 @@ internal fun ClickSoundTile(
         else -> colors.surfaceContainerHighest
     }
     val glyph = when {
+        !enabled -> disabled
         selected -> colors.secondary
         dashed || raised -> colors.primary
         else -> colors.onSurfaceVariant
     }
     val text = when {
+        !enabled -> disabled
         selected -> colors.secondary
         dashed || raised -> colors.primary
+        muted -> colors.onSurfaceVariant
         else -> colors.onSurface
     }
     val seam = spacing.seam
@@ -98,7 +106,7 @@ internal fun ClickSoundTile(
         modifier = modifier
             .testTagIfSet(testTag)
             .height(spacing.soundTileHeight)
-            .selectable(selected = selected, interactionSource = source, indication = null, role = Role.RadioButton, onClick = onClick)
+            .selectable(selected = selected, interactionSource = source, indication = null, enabled = enabled, role = Role.RadioButton, onClick = onClick)
             .drawBehind {
                 val radius = CornerRadius(TembraShapes.default.toPx())
                 drawRoundRect(color = fill, cornerRadius = radius)

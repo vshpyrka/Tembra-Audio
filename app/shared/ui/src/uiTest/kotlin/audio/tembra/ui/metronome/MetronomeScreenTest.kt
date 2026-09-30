@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.MotionDurationScale
@@ -36,6 +36,8 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.v2.runComposeUiTest
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.ui.unit.dp
 import audio.tembra.core.metronome.BuiltInClickSound
 import audio.tembra.core.metronome.ClickSound
@@ -57,7 +59,8 @@ import kotlin.test.assertTrue
 /**
  * The stateless metronome screen driven by state (contracts/metronome-screen.md) in the Stacked layout at 360 dp:
  * User Story 1 (tempo, play, cells), User Story 2 (signature and subdivision chips, cells, style pills, section labels),
- * User Story 3 (the tap card, its caption and flash) and User Story 4 (the sound pill and its menu).
+ * User Story 3 (the tap card, its caption and flash), User Story 4 (the sound pill and its menu) and User Story 5 (the
+ * import messages reach the snackbar host).
  */
 @OptIn(ExperimentalTestApi::class)
 class MetronomeScreenTest {
@@ -73,6 +76,7 @@ class MetronomeScreenTest {
     private val sounds = mutableListOf<ClickSound>()
     private var primary = Color.Unspecified
     private var pixelDensity = 1f
+    private lateinit var compositionScope: CoroutineScope
     private val zeroScale = object : MotionDurationScale {
         override val scaleFactor: Float get() = 0f
     }
@@ -89,20 +93,25 @@ class MetronomeScreenTest {
 
     private val loaded = MetronomeUiState(loaded = true)
 
-    private fun ComposeUiTest.setScreen(initial: MetronomeUiState = loaded, layout: MetronomeLayout = MetronomeLayout.Stacked): (MetronomeUiState) -> Unit {
+    private fun ComposeUiTest.setScreen(
+        initial: MetronomeUiState = loaded,
+        layout: MetronomeLayout = MetronomeLayout.Stacked,
+        snackbarHostState: SnackbarHostState = SnackbarHostState(),
+    ): (MetronomeUiState) -> Unit {
         var state by mutableStateOf(initial)
         mainClock.autoAdvance = false
         setContent {
             TembraTheme {
                 primary = TembraTheme.colors.primary
                 pixelDensity = LocalDensity.current.density
+                compositionScope = rememberCoroutineScope()
                 Box(Modifier.width(360.dp).fillMaxHeight()) {
                     MetronomeScreenContent(
                         state = state,
                         callbacks = callbacks,
                         telemetry = telemetry,
                         layout = layout,
-                        snackbarHostState = remember { SnackbarHostState() },
+                        snackbarHostState = snackbarHostState,
                     )
                 }
             }
@@ -338,5 +347,18 @@ class MetronomeScreenTest {
         onNodeWithTag("metronome.sound.digital-beep").performClick()
         settle()
         assertEquals(listOf<ClickSound>(ClickSound.BuiltIn(BuiltInClickSound.DigitalBeep)), sounds)
+    }
+
+    // --- User Story 5 ------------------------------------------------------------------------------------------------
+
+    @Test
+    fun anImportRefusalShowsItsMessageInTheSnackbar() = runComposeUiTest {
+        val snackbar = SnackbarHostState()
+        setScreen(snackbarHostState = snackbar)
+        // What the wiring's effect does with a `MetronomeMessage` from the ViewModel.
+        val shown = runOnIdle { compositionScope.launch { snackbar.showSnackbar(MetronomeCopy.of(MetronomeMessage.NotWav)) } }
+        mainClock.advanceTimeBy(1_000)
+        onNode(hasText("That file isn't a WAV file Tembra can read.")).assertIsDisplayed()
+        shown.cancel()
     }
 }

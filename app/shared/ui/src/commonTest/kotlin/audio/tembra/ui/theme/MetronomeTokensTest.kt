@@ -81,7 +81,7 @@ class MetronomeTokensTest {
     @Test
     fun iconRegistryCarriesTheMetronomeGlyphs() {
         val names = TembraIcon.entries.map { it.name }
-        for (expected in listOf("Remove", "Add", "TouchApp", "MusicNote", "GraphicEq", "RadioButtonChecked", "Notifications", "Sensors", "Tune", "Check", "PlayArrowFilled", "PauseFilled")) {
+        for (expected in listOf("Remove", "Add", "TouchApp", "MusicNote", "GraphicEq", "RadioButtonChecked", "Notifications", "Sensors", "Tune", "Check", "PlayArrowFilled", "PauseFilled", "SwapHoriz")) {
             assertTrue(expected in names, "TembraIcon.$expected is missing")
         }
     }
