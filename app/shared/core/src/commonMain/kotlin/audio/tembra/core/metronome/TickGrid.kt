@@ -28,7 +28,7 @@ data class TickGrid(val ticksPerBeat: Int, val levels: List<BeatLevel>) {
                         if (ticksPerBeat == 1) pattern.levels[beat]
                         else if (onBeat) BeatLevel.Sub else BeatLevel.Accent
                     SyncopationReading.AllButOne ->
-                        if (onBeat) (if (beat == 0) BeatLevel.Sub else BeatLevel.Accent) else BeatLevel.Click
+                        if (onBeat && beat != 0) BeatLevel.Accent else BeatLevel.Sub
                 }
             }
             return TickGrid(ticksPerBeat, levels)
