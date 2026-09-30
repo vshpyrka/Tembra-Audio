@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import audio.tembra.core.metronome.BuiltInClickSound
 import audio.tembra.core.metronome.ClickSound
+import audio.tembra.core.metronome.CustomSoundRef
 import audio.tembra.core.metronome.MetronomeSettings
 import audio.tembra.core.metronome.MetronomeStyle
 import audio.tembra.core.metronome.Subdivision
@@ -58,7 +59,8 @@ import kotlin.math.min
  * `stopMetronome` before `release`.
  *
  * Tap tempo (User Story 3) owns one more job, the caption timer: each tap cancels the previous one and launches its
- * replacement, so the sequence ends two seconds after the last tap only.
+ * replacement, so the sequence ends two seconds after the last tap only; leaving the screen cancels it and ends the
+ * sequence at once.
  *
  * [store], [picker] and [prepareDispatcher] serve the custom-sound import (User Story 5).
  */
@@ -110,29 +112,42 @@ class MetronomeViewModel(
         } else {
             onPlaybackEvent(PlaybackEvent.ScreenHidden)
             cancelJobs()
+            // A tap sequence ends with the screen; a returning user starts a new one.
+            _uiState.update { it.copy(tap = TapTempoSequence(), tapCaption = TapCaption.Rest) }
         }
     }
 
     /**
      * Applies the stored settings once and programs the engine with them. The ViewModel is the only writer of the
      * preferences, so later emissions are its own writes and the state already holds them.
+     *
+     * A stored custom sound is prepared after that, off the main thread; until it is loaded the engine plays Classic
+     * Wood in its place. The preparation is part of this job, so leaving the screen can cancel it halfway: the next
+     * [screenVisible] finds the custom sound still unprepared and prepares it again.
      */
     private suspend fun observePreferences() {
-        if (_uiState.value.loaded) return
-        val stored = preferences.snapshot.first().settings
-        _uiState.update { it.copy(loaded = true, settings = stored) }
-        sendGrid()
-        val custom = stored.customSound
-        if (custom != null) {
-            // The Missing fallback and its message come with User Story 5 (contracts/click-sounds.md).
-            val result = withContext(prepareDispatcher) { audio.loadCustomSound(custom.path) }
-            val state = when (result) {
-                is CustomSoundResult.Loaded -> CustomSoundState.Available(custom.displayName)
-                CustomSoundResult.NotWav, CustomSoundResult.Silent, CustomSoundResult.Missing -> CustomSoundState.Unavailable(custom.displayName)
-            }
-            _uiState.update { it.copy(customSound = state) }
+        if (!_uiState.value.loaded) {
+            val stored = preferences.snapshot.first().settings
+            _uiState.update { it.copy(loaded = true, settings = stored) }
+            sendGrid()
+            val sound = stored.sound
+            audio.selectSound(if (sound is ClickSound.Custom) ClickSoundId.ClassicWood else soundIdOf(sound))
         }
-        audio.selectSound(soundIdOf(stored.sound))
+        val state = _uiState.value
+        val custom = state.settings.customSound
+        if (custom != null && state.customSound == CustomSoundState.None) prepareStoredCustomSound(custom)
+    }
+
+    /** Loads the imported sound named in the preferences; the Missing fallback and its message come with User Story 5. */
+    private suspend fun prepareStoredCustomSound(custom: CustomSoundRef) {
+        val result = withContext(prepareDispatcher) { audio.loadCustomSound(custom.path) }
+        val loaded = when (result) {
+            is CustomSoundResult.Loaded -> true
+            CustomSoundResult.NotWav, CustomSoundResult.Silent, CustomSoundResult.Missing -> false
+        }
+        val customState = if (loaded) CustomSoundState.Available(custom.displayName) else CustomSoundState.Unavailable(custom.displayName)
+        _uiState.update { it.copy(customSound = customState) }
+        if (loaded && _uiState.value.settings.sound is ClickSound.Custom) audio.selectSound(ClickSoundId.Custom)
     }
 
     private suspend fun observeAudioEvents() {
@@ -417,6 +432,8 @@ class MetronomeViewModel(
         stopRequestsJob = null
         pollJob?.cancel()
         pollJob = null
+        tapCaptionJob?.cancel()
+        tapCaptionJob = null
     }
 
     override fun onCleared() {
