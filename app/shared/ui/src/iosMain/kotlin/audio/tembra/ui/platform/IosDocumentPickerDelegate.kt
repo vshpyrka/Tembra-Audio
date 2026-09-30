@@ -2,17 +2,21 @@ package audio.tembra.ui.platform
 
 import kotlinx.coroutines.CompletableDeferred
 import platform.Foundation.NSURL
+import platform.UIKit.UIAdaptivePresentationControllerDelegateProtocol
 import platform.UIKit.UIDocumentPickerDelegateProtocol
 import platform.UIKit.UIDocumentPickerViewController
+import platform.UIKit.UIPresentationController
 import platform.darwin.NSObject
 
 /**
- * Answers one document picker: the picked file's URL, or null when the user cancels. The picker holds its delegate
- * weakly; a caller suspended in [await] keeps this object reachable until the answer arrives.
+ * Answers one document picker: the picked file's URL, or null when the user cancels, including a dismissal of the
+ * sheet that bypasses `documentPickerWasCancelled` (it is also the picker's presentation controller delegate). The
+ * picker holds its delegates weakly; a caller suspended in [await] keeps this object reachable until the answer arrives.
  */
 internal class IosDocumentPickerDelegate :
     NSObject(),
-    UIDocumentPickerDelegateProtocol {
+    UIDocumentPickerDelegateProtocol,
+    UIAdaptivePresentationControllerDelegateProtocol {
 
     private val result = CompletableDeferred<NSURL?>()
 
@@ -27,6 +31,10 @@ internal class IosDocumentPickerDelegate :
     }
 
     override fun documentPickerWasCancelled(controller: UIDocumentPickerViewController) {
+        result.complete(null)
+    }
+
+    override fun presentationControllerDidDismiss(presentationController: UIPresentationController) {
         result.complete(null)
     }
 }

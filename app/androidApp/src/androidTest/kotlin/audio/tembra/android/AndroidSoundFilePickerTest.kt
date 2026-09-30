@@ -54,6 +54,35 @@ class AndroidSoundFilePickerTest {
         assertFalse(destination.exists())
     }
 
+    private fun providerUri(path: String): Uri = Uri.parse("content://${TestSoundProvider.AUTHORITY}/$path")
+
+    @Test
+    fun aContentDocumentIsNamedByItsDisplayName() {
+        val destination = File(root, "custom.wav")
+
+        val result = AndroidSoundFilePicker.copy(providerUri("named/42"), destination, context.contentResolver)
+
+        assertEquals(SoundPickResult.Picked("Rim Shot"), result)
+        assertArrayEquals(TestSoundProvider.BYTES, destination.readBytes())
+    }
+
+    @Test
+    fun aBlankDisplayNameFallsBackToThePathSegment() {
+        val result = AndroidSoundFilePicker.copy(providerUri("blank/Cowbell.wav"), File(root, "custom.wav"), context.contentResolver)
+
+        assertEquals(SoundPickResult.Picked("Cowbell"), result)
+    }
+
+    @Test
+    fun aFailingNameQueryFallsBackToThePathSegment() {
+        val destination = File(root, "custom.wav")
+
+        val result = AndroidSoundFilePicker.copy(providerUri("throwing/Clave.wav"), destination, context.contentResolver)
+
+        assertEquals(SoundPickResult.Picked("Clave"), result)
+        assertArrayEquals(TestSoundProvider.BYTES, destination.readBytes())
+    }
+
     @Test
     fun pickWavSuspendsUntilTheLauncherResultArrives() = runBlocking {
         var launched: List<String>? = null
@@ -82,5 +111,21 @@ class AndroidSoundFilePickerTest {
         }
         host.onResult(null)
         assertEquals(SoundPickResult.Cancelled, withTimeout(2_000) { pending.await() })
+    }
+
+    @Test
+    fun aSecondPickWhileOneIsPendingIsCancelled() = runBlocking {
+        var launches = 0
+        val host = SoundFilePickerHost { launches++ }
+        val picker = AndroidSoundFilePicker(host, context)
+        val first = async { picker.pickWav(File(root, "first.wav").path) }
+        withTimeout(2_000) {
+            while (launches == 0) yield()
+        }
+        assertEquals(SoundPickResult.Cancelled, withTimeout(2_000) { picker.pickWav(File(root, "second.wav").path) })
+        assertEquals("the picker was opened again", 1, launches)
+        assertTrue(first.isActive)
+        host.onResult(Uri.fromFile(kilobyteFile("Rim.wav")))
+        assertEquals(SoundPickResult.Picked("Rim"), withTimeout(2_000) { first.await() })
     }
 }

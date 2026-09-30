@@ -44,6 +44,10 @@ class AndroidSoundFilePicker(private val host: SoundFilePickerHost, private val 
                 SoundPickFailure.Unreadable
             } catch (_: SecurityException) {
                 SoundPickFailure.Unreadable
+            } catch (_: IllegalArgumentException) {
+                SoundPickFailure.Unreadable
+            } catch (_: UnsupportedOperationException) {
+                SoundPickFailure.Unreadable
             }
             if (failure != null) {
                 destination.delete()
@@ -72,12 +76,30 @@ class AndroidSoundFilePicker(private val host: SoundFilePickerHost, private val 
             return null
         }
 
-        /** `OpenableColumns.DISPLAY_NAME` for a content URI, the last path segment otherwise, without the extension. */
+        /**
+         * `OpenableColumns.DISPLAY_NAME` without its extension; the URI's last path segment when the provider has no
+         * name, a blank one, or refuses the query (some throw `SecurityException`, `IllegalArgumentException` or
+         * `UnsupportedOperationException`); [FALLBACK_NAME] when neither gives a name.
+         */
         private fun displayName(uri: Uri, resolver: ContentResolver): String {
-            val name = resolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
-                if (cursor.moveToFirst()) cursor.getString(0) else null
-            } ?: uri.lastPathSegment.orEmpty()
-            return name.substringBeforeLast('.')
+            val provided = try {
+                resolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+                    if (cursor.moveToFirst()) cursor.getString(0) else null
+                }
+            } catch (_: SecurityException) {
+                null
+            } catch (_: IllegalArgumentException) {
+                null
+            } catch (_: UnsupportedOperationException) {
+                null
+            }
+            return listOfNotNull(provided, uri.lastPathSegment)
+                .map { it.substringBeforeLast('.') }
+                .firstOrNull { it.isNotBlank() }
+                ?: FALLBACK_NAME
         }
+
+        /** The label of a picked sound whose provider gives no usable name. */
+        private const val FALLBACK_NAME = "Custom sound"
     }
 }
