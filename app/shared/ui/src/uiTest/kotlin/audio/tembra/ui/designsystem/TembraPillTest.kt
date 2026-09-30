@@ -10,7 +10,6 @@ import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
-import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
@@ -30,7 +29,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-/** The style row's pill (contracts/design-system-additions.md, research R10): colours, semantics and targets. */
+/** The style row's pill (contracts/design-system-additions.md, research R10): colours, semantics and the 44 dp target. */
 @OptIn(ExperimentalTestApi::class)
 class TembraPillTest {
 
@@ -70,7 +69,7 @@ class TembraPillTest {
         onNodeWithTag("pill")
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab))
             .assertIsSelected()
-            .assertHeightIsAtLeast(44.dp)
+            .assertHeightIsEqualTo(44.dp)
             .assertWidthIsAtLeast(44.dp)
         onNodeWithTag("pill.surface", useUnmergedTree = true).assertHeightIsEqualTo(28.dp)
     }

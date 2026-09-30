@@ -18,9 +18,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -36,7 +38,8 @@ import audio.tembra.ui.theme.TembraTheme
 /**
  * The metronome's equal-width chip grid (research R10, contracts/design-system-additions.md): [columns] chips per row,
  * wrapping into further rows, each row's chips sharing its width equally (a short last row keeps the same widths).
- * Chips keep their drawn 32 dp height inside a target of at least 44 dp (`minimumInteractiveComponentSize`); each is a
+ * Chips keep their drawn 32 dp height inside a 44 dp target (`minimumInteractiveComponentSize` at the project's
+ * `touchTargetMin` rather than Material's 48 dp); each is a
  * tab with `selected` semantics. The selected chip fills with the [accent]; the others sit on `surfaceContainerHigh`
  * with an `onSurfaceVariant` label that hover raises to `onSurface`; keyboard focus draws a `primary` ring. Selecting
  * the selected chip calls nothing. With a [testTag], every chip carries `<tag>.<id>`, its drawn surface
@@ -59,22 +62,24 @@ fun TembraChipRow(
         modifier = modifier.testTagIfSet(testTag),
         verticalArrangement = Arrangement.spacedBy(gap),
     ) {
-        for (row in items.chunked(perRow)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(gap),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                for (item in row) {
-                    Chip(
-                        item = item,
-                        selected = item.id == selectedId,
-                        accent = accent,
-                        onSelect = onSelect,
-                        testTag = testTag?.let { "$it.${item.id}" },
-                    )
+        CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides spacing.touchTargetMin) {
+            for (row in items.chunked(perRow)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(gap),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    for (item in row) {
+                        Chip(
+                            item = item,
+                            selected = item.id == selectedId,
+                            accent = accent,
+                            onSelect = onSelect,
+                            testTag = testTag?.let { "$it.${item.id}" },
+                        )
+                    }
+                    repeat(perRow - row.size) { Spacer(Modifier.weight(1f)) }
                 }
-                repeat(perRow - row.size) { Spacer(Modifier.weight(1f)) }
             }
         }
     }
