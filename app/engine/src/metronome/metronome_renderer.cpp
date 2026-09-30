@@ -56,7 +56,8 @@ bool MetronomeRenderer::isActive() const {
 }
 
 bool MetronomeRenderer::references(const ClickSet* set) const {
-    return voiceSets_[0].load(std::memory_order_acquire) == set || voiceSets_[1].load(std::memory_order_acquire) == set;
+    const VoiceSets sets = voiceSets_.load();
+    return sets.voice == set || sets.releasing == set;
 }
 
 void MetronomeRenderer::silence() {
@@ -68,8 +69,7 @@ void MetronomeRenderer::silence() {
     previewRequest_.store(-1, std::memory_order_release);
     running_.store(false, std::memory_order_release);
     active_.store(false, std::memory_order_release);
-    voiceSets_[0].store(nullptr, std::memory_order_release);
-    voiceSets_[1].store(nullptr, std::memory_order_release);
+    voiceSets_.store(VoiceSets{});
 }
 
 void MetronomeRenderer::readTick(int64_t latencyNs, int64_t nowNs, tembra_metronome_tick* out) const {
@@ -129,7 +129,8 @@ void MetronomeRenderer::applyGrid(const MetronomeGrid& next) {
         const uint32_t inBeat = nextTick_ % oldTpb;
         const double oldFramesPerTick = 60.0 / next.bpm * static_cast<double>(rate_) / static_cast<double>(oldTpb);
         const double ticksToBoundary = inBeat == 0 ? 1.0 : static_cast<double>(oldTpb - inBeat + 1);
-        const double boundary = lastTickFrame_ + ticksToBoundary * oldFramesPerTick;
+        // A faster tempo can put the boundary before this block: then the next tick is its first frame.
+        const double boundary = std::max(lastTickFrame_ + ticksToBoundary * oldFramesPerTick, static_cast<double>(framePos_));
         uint32_t nextBeat = (nextTick_ / oldTpb + (inBeat == 0 ? 0u : 1u)) % std::max<uint32_t>(1, previous.beats());
         if (next.beats() != previous.beats() || nextBeat >= next.beats()) nextBeat = 0;
         nextTick_ = nextBeat * next.ticksPerBeat;
@@ -145,7 +146,8 @@ void MetronomeRenderer::applyAnchor(const AnchorRequest& request) {
     const double framesPerTick = grid_.framesPerTick(rate_);
     const double ticks = std::max(0.0, request.beatPosition) * static_cast<double>(grid_.ticksPerBeat);
     const double nextWhole = std::ceil(ticks - 1e-9);
-    const double nextFrame = static_cast<double>(request.frame) + (nextWhole - ticks) * framesPerTick;
+    // An anchor in the past lands its next tick on the first frame of this block, never a burst of past ticks.
+    const double nextFrame = std::max(static_cast<double>(request.frame) + (nextWhole - ticks) * framesPerTick, static_cast<double>(framePos_));
     nextTick_ = static_cast<uint32_t>(static_cast<uint64_t>(nextWhole) % grid_.ticksPerBar);
     lastTickFrame_ = nextFrame - framesPerTick;
     restartAtBeat_ = false;
@@ -252,9 +254,14 @@ void MetronomeRenderer::render(float* out, uint32_t frames) {
     int64_t pendingTick = kNoTick;
     if (ticking_) {
         const double framesPerTick = grid_.framesPerTick(rate_);
-        // Bounded: framesPerTick is at least rate / 16, so a block holds at most frames / framesPerTick + 1 ticks.
+        // Bounded: a tick that would fall before this block (a large tempo increase) is emitted once at frame 0 and
+        // the position restarts there, so each later tick is at least framesPerTick (≥ rate / 16) further on and a
+        // block holds at most frames / framesPerTick + 1 ticks (FR-013: changes apply from the next tick).
         for (;;) {
-            const double exact = lastTickFrame_ + framesPerTick;
+            double exact = lastTickFrame_ + framesPerTick;
+            // Only a tick whose rounded frame precedes the block moves: one rounding to the block's first frame (x.5
+            // deferred from the last block) keeps its exact position, so rounding never accumulates drift.
+            if (std::llround(exact) < framePos_) exact = static_cast<double>(framePos_);
             const int64_t tickFrame = std::llround(exact);
             if (tickFrame >= blockEnd) {
                 pendingTick = tickFrame;
@@ -272,8 +279,8 @@ void MetronomeRenderer::render(float* out, uint32_t frames) {
     record_.blockTimeNs = blockTimeNs;
     tick_.store(record_);
     framePos_ = blockEnd;
-    voiceSets_[0].store(voice_.active ? voice_.set : nullptr, std::memory_order_release);
-    voiceSets_[1].store(releasing_.active ? releasing_.set : nullptr, std::memory_order_release);
+    // Both voices in one seqlock record so the host never pairs this block's voice with last block's releasing voice.
+    voiceSets_.store(VoiceSets{voice_.active ? voice_.set : nullptr, releasing_.active ? releasing_.set : nullptr});
     blocks_.fetch_add(1, std::memory_order_acq_rel);
     if (!ticking_ && !voice_.active && !releasing_.active) active_.store(false, std::memory_order_release);
 }

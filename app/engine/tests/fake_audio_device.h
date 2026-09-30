@@ -19,8 +19,9 @@ public:
     bool lost = false;
     bool inputOpen = false;
     bool outputOpen = false;
-    int64_t latencyNanos = 0;
+    int64_t latencyNanos = 0;  // what a measurement would find; outputLatencyNanos() returns the last refresh
     int reopenCount = 0;
+    bool reopenFails = false;
 
     int32_t openInput(uint32_t preferredRate, InputCallback callback, void* context) override {
         requestedRate = preferredRate;
@@ -37,6 +38,8 @@ public:
         if (failOpen) return TEMBRA_ERR_DEVICE;
         renderCallback_ = callback;
         renderContext_ = context;
+        storedRender_ = callback;
+        storedContext_ = context;
         outputOpen = true;
         closed = false;
         return TEMBRA_OK;
@@ -52,11 +55,30 @@ public:
 
     uint32_t sampleRate() const override { return reportedRate; }
     bool deviceLost() const override { return lost; }
-    int64_t outputLatencyNanos() const override { return latencyNanos; }
+    int64_t outputLatencyNanos() const override { return cachedLatency_; }
+    void refreshOutputLatency() override { cachedLatency_ = outputOpen ? latencyNanos : 0; }
 
-    /** Simulates the platform reopening the output after a route change: same callback, same rate (research R1). */
-    void reopenOutput() {
-        if (renderCallback_ != nullptr) ++reopenCount;
+    /**
+     * Simulates OboeAudioDevice after a route change (research R1): the platform closes the output, then the device
+     * reopens it with the settings and render callback it stored at openOutput() and measures the new latency; frames
+     * pulled in between are silence the engine never sees. With [reopenFails] the stream stays closed and deviceLost()
+     * turns true. Returns false when no output was open.
+     */
+    bool reopenOutput(uint32_t framesLostDuringReopen = 0) {
+        if (!outputOpen) return false;
+        renderCallback_ = nullptr;
+        std::vector<float> gap(2u * framesLostDuringReopen);
+        if (framesLostDuringReopen > 0) pullOutput(gap.data(), framesLostDuringReopen);
+        ++reopenCount;
+        if (reopenFails) {
+            outputOpen = false;
+            lost = true;
+            return true;
+        }
+        renderCallback_ = storedRender_;
+        renderContext_ = storedContext_;
+        refreshOutputLatency();
+        return true;
     }
 
     /** Delivers [frames] mono frames to the input callback, as a platform callback would. */
@@ -75,6 +97,9 @@ private:
     void* inputContext_ = nullptr;
     RenderCallback renderCallback_ = nullptr;
     void* renderContext_ = nullptr;
+    RenderCallback storedRender_ = nullptr;
+    void* storedContext_ = nullptr;
+    int64_t cachedLatency_ = 0;
 };
 
 }  // namespace tembra

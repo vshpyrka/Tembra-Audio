@@ -26,6 +26,7 @@ public:
     uint32_t sampleRate() const override;
     bool deviceLost() const override;
     int64_t outputLatencyNanos() const override;
+    void refreshOutputLatency() override;
 
 private:
     /** Oboe keeps its callbacks as shared pointers; this bridge forwards to the device that owns it. */
@@ -43,6 +44,7 @@ private:
     oboe::Result openOutputStream(uint32_t preferredRate);
     oboe::DataCallbackResult onAudioReady(oboe::AudioStream* stream, void* audioData, int32_t numFrames);
     void onStreamClosedByPlatform(oboe::AudioStream* stream);
+    void measureLatencyLocked();  // streamLock_ held; control or error thread
 
     std::shared_ptr<Bridge> bridge_;
     // Host threads and Oboe's error thread only, never the data callback. Oboe calls are made outside it where a
@@ -57,6 +59,7 @@ private:
     void* context_ = nullptr;
     std::atomic<uint32_t> sampleRate_{48000};
     std::atomic<bool> lost_{false};
+    std::atomic<int64_t> latencyNanos_{0};  // measured on the control or error thread, read lock-free
 };
 
 }  // namespace tembra

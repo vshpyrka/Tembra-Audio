@@ -464,12 +464,18 @@ TEST_CASE("a device reopen keeps the tick position", "[engine][metronome]") {
     tembra_metronome_tick tick{};
     tembra_metronome_read(&tick);
     REQUIRE(tick.tick_index == 3u);
-    fake->reopenOutput();  // the platform reopened the stream after a route change (research R1)
+    // The platform closes and reopens the stream after a route change (research R1); 480 frames are lost meanwhile.
+    REQUIRE(fake->reopenOutput(480));
+    REQUIRE(fake->reopenCount == 1);
+    REQUIRE(fake->outputOpen);
     REQUIRE(tembra_audio_state() == TEMBRA_AUDIO_METRONOME);
-    for (int block = 0; block < 20; ++block) pullMono(fake, 480);  // to 38 400: tick 3 at 36 000
     tembra_metronome_read(&tick);
-    REQUIRE(tick.tick_index == 4u);
+    REQUIRE(tick.running == 1u);
+    for (int block = 0; block < 20; ++block) pullMono(fake, 480);  // renderer frames to 38 400: tick 3 at 36 000
+    tembra_metronome_read(&tick);
+    REQUIRE(tick.tick_index == 4u);  // the bar position continued; nothing restarted at beat 1
     REQUIRE(tick.beat_index == 3u);
+    REQUIRE(tick.sample_rate == 48000u);
     // Latency: 0 asks the device (7 ms here); a reported value (iOS) replaces it.
     fake->latencyNanos = 7'000'000;
     tembra_metronome_set_output_latency_ns(0);
@@ -484,4 +490,38 @@ TEST_CASE("a device reopen keeps the tick position", "[engine][metronome]") {
     tembra_metronome_set_output_latency_ns(0);
     tembra_metronome_stop();
     REQUIRE(tembra_audio_state() == TEMBRA_AUDIO_IDLE);
+}
+
+TEST_CASE("a reopen that fails reports the metronome as not running", "[engine][metronome]") {
+    tembra::FakeAudioDevice* fake = installFake();
+    tembra_metronome_grid grid = validGrid();
+    REQUIRE(tembra_metronome_set_grid(&grid) == TEMBRA_OK);
+    REQUIRE(tembra_metronome_start() == TEMBRA_OK);
+    pullMono(fake, 480);
+    tembra_metronome_tick tick{};
+    tembra_metronome_read(&tick);
+    REQUIRE(tick.running == 1u);
+    fake->reopenFails = true;
+    REQUIRE(fake->reopenOutput());
+    REQUIRE(fake->deviceLost());
+    tembra_metronome_read(&tick);
+    REQUIRE(tick.running == 0u);  // the host sees the click has stopped and can stop or restart it
+    tembra_metronome_stop();
+    REQUIRE(tembra_audio_state() == TEMBRA_AUDIO_IDLE);
+}
+
+TEST_CASE("the latency read by the beat light is a cache refreshed on request", "[engine][metronome]") {
+    tembra::FakeAudioDevice* fake = installFake();
+    REQUIRE(tembra_metronome_start() == TEMBRA_OK);
+    pullMono(fake, 480);
+    fake->latencyNanos = 9'000'000;  // the route changed; nobody asked yet
+    tembra_metronome_tick before{};
+    tembra_metronome_read(&before);
+    tembra_metronome_set_output_latency_ns(0);  // Android: "ask the device"
+    tembra_metronome_tick after{};
+    tembra_metronome_read(&after);
+    const int64_t difference = after.audible_in_ns - before.audible_in_ns;
+    REQUIRE(difference > 9'000'000 - 5'000'000);
+    REQUIRE(difference <= 9'000'000);
+    tembra_metronome_stop();
 }

@@ -79,7 +79,7 @@ private:
     const ClickSet* selectedSetLocked() const;
     void retireLocked(std::unique_ptr<ClickSet> set);
     void sweepRetiredLocked(bool outputClosed);
-    int64_t outputLatencyNanos();
+    int64_t outputLatencyNanos() const;
     int32_t beginCapture(const tembra_tuner_config& config, AudioDevice& device, bool synthetic);
     void analysisLoop();
     void finishCaptureFromThread();
@@ -90,7 +90,6 @@ private:
     static constexpr int kIdleSleepMillis = 4;
     static constexpr int kReleaseWaitMillis = 30;
     static constexpr size_t kScratchFrames = 4096;
-    static constexpr int64_t kLatencyRefreshNanos = 200'000'000;
     static constexpr size_t kBuiltInSounds = 5;
 
     std::mutex commands_;
@@ -134,8 +133,9 @@ private:
     MetronomeGrid grid_;
     uint32_t selectedSound_ = TEMBRA_SOUND_CLASSIC_WOOD;
     std::atomic<int64_t> reportedLatencyNs_{0};
-    std::atomic<int64_t> deviceLatencyNs_{0};
-    std::atomic<int64_t> lastLatencyQueryNs_{0};
+    // The platform device as tembra_metronome_read sees it: only its lock-free outputLatencyNanos() and deviceLost()
+    // are called through it. It changes only in the test hook setDevice().
+    std::atomic<AudioDevice*> telemetryDevice_{nullptr};
 };
 
 }  // namespace tembra

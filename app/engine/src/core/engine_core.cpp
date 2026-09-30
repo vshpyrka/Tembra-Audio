@@ -41,7 +41,7 @@ EngineCore& EngineCore::instance() {
     return engine;
 }
 
-EngineCore::EngineCore() : platformDevice_(makePlatformDevice()) {}
+EngineCore::EngineCore() : platformDevice_(makePlatformDevice()) { telemetryDevice_.store(platformDevice_.get()); }
 
 void EngineCore::defaultConfig(tembra_tuner_config& out) {
     out.window_frames = 4096;
@@ -449,8 +449,7 @@ int32_t EngineCore::startMetronome() {
     metronome_->setGrid(grid_);
     metronome_->setSet(selectedSetLocked());
     metronome_->start();
-    deviceLatencyNs_.store(platformDevice_->outputLatencyNanos(), std::memory_order_release);
-    lastLatencyQueryNs_.store(MetronomeRenderer::nowNanos(), std::memory_order_release);
+    platformDevice_->refreshOutputLatency();  // control thread; the device also refreshes after a reopen
     state_.store(TEMBRA_AUDIO_METRONOME, std::memory_order_release);
     return TEMBRA_OK;
 }
@@ -484,20 +483,15 @@ void EngineCore::setOutputLatencyNs(int64_t nanos) {
     std::lock_guard<std::mutex> lock(commands_);
     reportedLatencyNs_.store(nanos < 0 ? 0 : nanos, std::memory_order_release);
     platformDevice_->setReportedLatencyNanos(nanos < 0 ? 0 : nanos);
-    lastLatencyQueryNs_.store(0, std::memory_order_release);  // re-ask the device on the next read
+    if (nanos <= 0 && outputOpen_) platformDevice_->refreshOutputLatency();  // 0 = ask the device (contract)
 }
 
-int64_t EngineCore::outputLatencyNanos() {
+int64_t EngineCore::outputLatencyNanos() const {
+    // Atomics only: no mutex and no device call on the reader's thread (contract: the read takes no mutex).
     const int64_t reported = reportedLatencyNs_.load(std::memory_order_acquire);
     if (reported > 0) return reported;
-    // Ask the device at most every 200 ms, and only when no host command holds the mutex (never blocks the reader).
-    const int64_t now = MetronomeRenderer::nowNanos();
-    if (now - lastLatencyQueryNs_.load(std::memory_order_acquire) >= kLatencyRefreshNanos && commands_.try_lock()) {
-        deviceLatencyNs_.store(outputOpen_ ? platformDevice_->outputLatencyNanos() : 0, std::memory_order_release);
-        lastLatencyQueryNs_.store(now, std::memory_order_release);
-        commands_.unlock();
-    }
-    return deviceLatencyNs_.load(std::memory_order_acquire);
+    const AudioDevice* device = telemetryDevice_.load(std::memory_order_acquire);
+    return device != nullptr ? device->outputLatencyNanos() : 0;
 }
 
 void EngineCore::readTick(tembra_metronome_tick& out) {
@@ -508,7 +502,10 @@ void EngineCore::readTick(tembra_metronome_tick& out) {
     }
     const int64_t latency = outputLatencyNanos();
     metronome->readTick(latency, MetronomeRenderer::nowNanos(), &out);
-    out.running = state() == TEMBRA_AUDIO_METRONOME ? 1u : 0u;
+    // A stream the platform closed and could not reopen stops the click: report it so the host can stop (R1).
+    const AudioDevice* device = telemetryDevice_.load(std::memory_order_acquire);
+    const bool lost = device != nullptr && device->deviceLost();
+    out.running = state() == TEMBRA_AUDIO_METRONOME && !lost ? 1u : 0u;
 }
 
 #ifdef TEMBRA_BUILD_TESTS
@@ -519,6 +516,7 @@ void EngineCore::setDevice(std::unique_ptr<AudioDevice> device) {
     stopToneLocked();
     std::atomic_store(&analyzer_, std::shared_ptr<TunerAnalyzer>());
     platformDevice_ = std::move(device);
+    telemetryDevice_.store(platformDevice_.get(), std::memory_order_release);
     // Forget the metronome's telemetry and click tables so every test starts from "before any start". Tests read
     // telemetry on this thread only, so freeing the renderers here is safe.
     callbackMetronome_.store(nullptr, std::memory_order_release);
@@ -528,8 +526,6 @@ void EngineCore::setDevice(std::unique_ptr<AudioDevice> device) {
     retiredSets_.clear();
     builtInRate_ = 0;
     reportedLatencyNs_.store(0);
-    deviceLatencyNs_.store(0);
-    lastLatencyQueryNs_.store(0);
 }
 #endif
 
