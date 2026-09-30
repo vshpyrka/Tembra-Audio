@@ -1,13 +1,8 @@
 // Compiles the vendored, permissively licensed audio libraries into the engine and exposes their versions.
-// This is the single translation unit that carries their implementations (research R5).
-// No audio device is touched: miniaudio is built without device I/O (MA_NO_DEVICE_IO comes from CMakeLists.txt) and without its bundled decoders
-// (dr_wav is vendored separately at the version we pin).
+// This unit carries dr_wav's implementation (research R5); miniaudio's lives in core/miniaudio_impl.cpp (feature 004,
+// research R16) and is included here for its version string only.
 #include "third_party_versions.h"
 
-#define MA_NO_WAV
-#define MA_NO_FLAC
-#define MA_NO_MP3
-#define MINIAUDIO_IMPLEMENTATION
 #include "miniaudio.h"
 
 #define DR_WAV_IMPLEMENTATION
