@@ -195,6 +195,30 @@ class AccentCellsTest {
         }
     }
 
+    /**
+     * The Pixel 6 Pro's 363 dp content width fits six or seven 44 dp cells in a row, but not their "ACCENT" label:
+     * a cell is at least as wide as its widest label, so 6/8 and 7/8 wrap there while 5/4 keeps one row.
+     */
+    @Test
+    fun cellsWrapBeforeTheirLabelsWouldClip() = runComposeUiTest {
+        var beats by mutableStateOf(7)
+        mainClock.autoAdvance = false
+        setContent {
+            TembraTheme {
+                Box(Modifier.width(363.dp)) {
+                    val pattern = AccentPattern(List(beats) { if (it == 0) BeatLevel.Accent else BeatLevel.Click })
+                    AccentCells(pattern = pattern, running = false, currentBeat = -1, telemetry = ScriptedBeatTelemetry(), onCycle = {})
+                }
+            }
+        }
+        for ((count, rows) in listOf(7 to 2, 6 to 2, 5 to 1, 4 to 1)) {
+            beats = count
+            repeat(2) { mainClock.advanceTimeByFrame() }
+            val tops = (1..count).map { onNodeWithTag("metronome.cell.$it").getUnclippedBoundsInRoot().top }
+            assertEquals(rows, tops.distinct().size, "$count cells at 363 dp: rows at $tops")
+        }
+    }
+
     @Test
     fun clickingACellCyclesIt() = runComposeUiTest {
         setCells(ScriptedBeatTelemetry())

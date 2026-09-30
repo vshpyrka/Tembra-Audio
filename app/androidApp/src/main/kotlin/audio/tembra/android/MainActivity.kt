@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import audio.tembra.ui.App
 import audio.tembra.ui.devtools.DeveloperViewRequest
+import audio.tembra.ui.metronome.MetronomeDebugRequest
 import audio.tembra.ui.tuner.TunerTestSignalRequest
 
 class MainActivity : ComponentActivity() {
@@ -23,15 +24,21 @@ class MainActivity : ComponentActivity() {
         // The custom click sound is picked through this activity's document picker (feature 004, contracts/click-sounds.md).
         val pickerHost = appGraph.soundFilePickerHost
         pickerHost.attach(registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> pickerHost.onResult(uri) })
-        // Debug builds accept the "tembra.developer.view" extra (feature 002, spec FR-022) and the "tembra.tuner.testSignal"
-        // extra (feature 003, spec FR-032); the shrinker removes this branch from release.
+        // Debug builds accept the "tembra.developer.view" extra (feature 002, spec FR-022), the "tembra.tuner.testSignal"
+        // extra (feature 003, spec FR-032) and the "tembra.metronome.syncopation" extra (feature 004, spec FR-037); the
+        // shrinker removes these branches from release.
         val request = if (BuildConfig.DEBUG) {
             DeveloperViewRequest.parse(intent.getStringExtra("tembra.developer.view"))
         } else {
             DeveloperViewRequest(null)
         }
         val testSignal = if (BuildConfig.DEBUG) TunerTestSignalRequest.parse(intent.getStringExtra("tembra.tuner.testSignal")) else null
-        setContent { App(appGraph, request, testSignal) }
+        val metronomeDebug = if (BuildConfig.DEBUG) {
+            MetronomeDebugRequest.parse(intent.getStringExtra("tembra.metronome.syncopation"))
+        } else {
+            null
+        }
+        setContent { App(appGraph, request, testSignal, metronomeDebug) }
     }
 
     override fun onDestroy() {

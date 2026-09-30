@@ -20,7 +20,10 @@ import dev.zacsweers.metrox.viewmodel.metroViewModel
  */
 @Composable
 fun MetronomeScreen(modifier: Modifier = Modifier, viewModel: MetronomeViewModel = metroViewModel()) {
+    // The debug Syncopated reading (research R14) is static for the process, so the ViewModel key alone restarts this.
+    val debug = LocalMetronomeDebug.current
     DisposableEffect(viewModel) {
+        viewModel.useDebugSettings(debug)
         viewModel.screenVisible(true)
         onDispose { viewModel.screenVisible(false) }
     }
@@ -31,10 +34,14 @@ fun MetronomeScreen(modifier: Modifier = Modifier, viewModel: MetronomeViewModel
     }
     val layout = MetronomeLayout.from(currentWindowAdaptiveInfo().windowSizeClass)
     val callbacks = remember(viewModel) {
-        // The settings, sound and tap intents are bound as their stories land (User Stories 2 to 5).
+        // The sound and tap intents are bound as their stories land (User Stories 3 to 5).
         MetronomeCallbacks.None.copy(
             onTempo = viewModel::setTempo,
             onStep = viewModel::stepTempo,
+            onSignature = viewModel::selectSignature,
+            onSubdivision = viewModel::selectSubdivision,
+            onCycleBeat = viewModel::cycleBeat,
+            onStyle = viewModel::selectStyle,
             onTogglePlayback = viewModel::togglePlayback,
         )
     }

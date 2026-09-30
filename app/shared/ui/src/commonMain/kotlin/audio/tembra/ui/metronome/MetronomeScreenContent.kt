@@ -1,6 +1,5 @@
 package audio.tembra.ui.metronome
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -18,24 +16,22 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import audio.tembra.core.metronome.AccentPattern
 import audio.tembra.core.metronome.Tempo
 import audio.tembra.core.metronome.TempoMarking
+import audio.tembra.core.metronome.TimeSignature
 import audio.tembra.ui.designsystem.CardDiscs
 import audio.tembra.ui.designsystem.TembraGradientCard
-import audio.tembra.ui.metronome.components.AccentCells
 import audio.tembra.ui.metronome.components.PlayPauseButton
 import audio.tembra.ui.metronome.components.TapTempoButton
 import audio.tembra.ui.metronome.components.TempoDial
 import audio.tembra.ui.metronome.components.TempoSlider
-import audio.tembra.ui.theme.TembraShapes
 import audio.tembra.ui.theme.TembraTheme
 
 /**
  * The stateless metronome screen the UI tests drive (contracts/metronome-screen.md). The Stacked composition: a
- * scrolling column with the beat cells card and the dial card, and the tap and play row pinned below it so the
- * transport stays reachable. The settings panel (signature, subdivision, style, sound) joins the column with
- * User Stories 2 and 4; [MetronomeLayout.Wide] and [MetronomeLayout.Landscape] get their own forms with User Story 7
+ * scrolling column with the [MetronomeSettingsPanel] (signature, subdivision, beat cells and style) and the dial card,
+ * and the tap and play row pinned below it so the transport stays reachable. The sound picker joins the panel with
+ * User Story 4; [MetronomeLayout.Wide] and [MetronomeLayout.Landscape] get their own forms with User Story 7
  * and use this one until then. Root tag `screen.metronome` keeps the shell's convention; snackbars show over it.
  */
 @Composable
@@ -74,12 +70,11 @@ private fun StackedMetronome(state: MetronomeUiState, callbacks: MetronomeCallba
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(spacing.md),
         ) {
-            BeatCellsCard(
-                pattern = state.settings.pattern,
-                running = state.running,
-                currentBeat = state.currentBeat,
+            MetronomeSettingsPanel(
+                state = state,
+                callbacks = callbacks,
                 telemetry = telemetry,
-                onCycle = callbacks.onCycleBeat,
+                signatureColumns = TimeSignature.entries.size,
             )
             DialCard(
                 tempo = state.settings.tempo,
@@ -98,20 +93,6 @@ private fun StackedMetronome(state: MetronomeUiState, callbacks: MetronomeCallba
             TapTempoButton(caption = MetronomeCopy.caption(state.tapCaption), onTap = callbacks.onTap, modifier = Modifier.weight(1f))
             PlayPauseButton(running = state.running, onToggle = callbacks.onTogglePlayback)
         }
-    }
-}
-
-/** The section card of the beat cells: `surfaceContainerLow`, 12 dp corners, 8 dp padding. */
-@Composable
-private fun BeatCellsCard(pattern: AccentPattern, running: Boolean, currentBeat: Int, telemetry: BeatTelemetry, onCycle: (Int) -> Unit) {
-    val spacing = TembraTheme.spacing
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(TembraTheme.colors.surfaceContainerLow, RoundedCornerShape(TembraShapes.medium))
-            .padding(spacing.sm),
-    ) {
-        AccentCells(pattern = pattern, running = running, currentBeat = currentBeat, telemetry = telemetry, onCycle = onCycle)
     }
 }
 
