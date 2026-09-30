@@ -42,7 +42,7 @@ enum class CardDiscs { TopStartBottomEnd, TopEndBottomStart, None }
 @Composable fun AccentCells(pattern: AccentPattern, running: Boolean, currentBeat: Int, telemetry: BeatTelemetry, onCycle: (Int) -> Unit, modifier: Modifier = Modifier, testTag: String = "metronome.cells")
 //   `currentBeat` is the ViewModel's 10 Hz sample (-1 when stopped) and feeds each cell's stateDescription (", playing"); the light itself comes from `telemetry` in the draw phase; cells are tagged `metronome.cell.<n>`
 //   one AccentCell per beat, gap 8, wraps to two rows when a cell would be under 44 dp; each cell reads `tick.longValue` (rememberFrameTick(running)) and telemetry.litBeat(frame) inside drawBehind
-@Composable fun AccentCell(index: Int, level: BeatLevel, lit: () -> Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, interactionSource: MutableInteractionSource? = null, testTag: String? = null)
+@Composable fun AccentCell(index: Int, level: BeatLevel, lit: () -> Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, playing: Boolean = false, interactionSource: MutableInteractionSource? = null, testTag: String? = null)
 //   surfaceContainerLowest card; bar box 64 dp; bar height by level (95/62/42 %), colours secondary / primary / primary 70 %; accentGlow on Accent; label microLabel; `lit` is a provider read in the draw phase only
 
 @Composable fun StyleRow(selected: MetronomeStyle?, onSelect: (MetronomeStyle) -> Unit, modifier: Modifier = Modifier, testTag: String = "metronome.style")
@@ -55,18 +55,18 @@ enum class ClickSoundPickerLayout { Dropdown, Tiles }
 @Composable fun ClickSoundTile(label: String, icon: TembraIcon, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, dashed: Boolean = false, trailing: (@Composable () -> Unit)? = null, interactionSource: MutableInteractionSource? = null, testTag: String? = null)
 //   `dashed` is the design-system state of the empty Custom tile (a constrained value, not a shape flag); `trailing` is the slot for the Replace action (an icon-only button whose contentDescription and tooltip read "Replace custom sound", spec FR-029)
 
-@Composable fun TempoDial(tempo: Tempo, marking: TempoMarking, canStepDown: Boolean, canStepUp: Boolean, onTempo: (Tempo) -> Unit, onStep: (Int) -> Unit, modifier: Modifier = Modifier, center: @Composable () -> Unit = { TempoReadout(tempo, marking) }, testTag: String = "metronome.dial")
+@Composable fun TempoDial(tempo: Tempo, marking: TempoMarking, canStepDown: Boolean, canStepUp: Boolean, onTempo: (Tempo) -> Unit, onStep: (Int) -> Unit, modifier: Modifier = Modifier, interactionSource: MutableInteractionSource? = null, center: @Composable () -> Unit = { TempoReadout(tempo, marking) }, testTag: String = "metronome.dial")
 //   square Box: Canvas ring (TempoDialGeometry, tempoArc brush drawn so the gradient runs bottom-left → top-right as the design's rotated SVG does, glow stroke, ticks), pointer drag on the ring band only (never on a stepper), wheel via a pointer-scroll handler, key handler; semantics: progressBarRangeInfo + setProgress + stateDescription (Compose 1.12 has no Role.Slider); steppers (TempoStepper) at the left and right inside the ring; `center` slot defaults to the readout so the transport can put its own readout there
 @Composable fun TempoReadout(tempo: Tempo, marking: TempoMarking, modifier: Modifier = Modifier)   // "120" tempoNumber + "BPM" labelMedium secondary; marking.display labelMedium tertiary
 @Composable fun TempoStepper(icon: TembraIcon, enabled: Boolean, contentDescription: String, onStep: () -> Unit, modifier: Modifier = Modifier, interactionSource: MutableInteractionSource? = null, testTag: String? = null)
 //   44 dp round surfaceContainerHigh; press-and-hold repeat (400 ms, then every 80 ms) through rememberCoroutineScope, cancelled on release; tooltip = contentDescription
-@Composable fun TempoSlider(tempo: Tempo, onTempo: (Tempo) -> Unit, modifier: Modifier = Modifier, testTag: String = "metronome.slider")
+@Composable fun TempoSlider(tempo: Tempo, onTempo: (Tempo) -> Unit, modifier: Modifier = Modifier, interactionSource: MutableInteractionSource? = null, testTag: String = "metronome.slider")
 //   Material Slider 40f..240f with 199 steps, 6 dp track surfaceContainerHighest, primary thumb; end labels tabularParam outline
 
 @Composable fun TapTempoButton(caption: String, onTap: (frameNanos: Long) -> Unit, modifier: Modifier = Modifier, interactionSource: MutableInteractionSource? = null, testTag: String = "metronome.tap")
 //   64 dp tall surfaceContainerHigh card; title "TAP TEMPO" headlineSmall primary with touch_app; caption labelSmall outline; a primary 20 % flash per tap (120 ms; static under reduce motion); onTap receives withFrameNanos time
 @Composable fun PlayPauseButton(running: Boolean, onToggle: () -> Unit, modifier: Modifier = Modifier, interactionSource: MutableInteractionSource? = null, testTag: String = "metronome.play")
-//   64 dp round secondaryContainer, hover secondary, PlayArrow / Pause 34 dp filled, playGlow; contentDescription follows `running`
+//   64 dp round secondaryContainer, hover secondary, TembraIcon.PlayArrowFilled / PauseFilled 34 dp (fetched with `tools/fetch-material-symbols.sh --fill`), playGlow; contentDescription follows `running`
 
 @Composable fun MetronomeSettingsPanel(state: MetronomeUiState, callbacks: MetronomeCallbacks, telemetry: BeatTelemetry, pickerLayout: ClickSoundPickerLayout, signatureColumns: Int, modifier: Modifier = Modifier)
 //   stacks the section cards in the design order; used by all three layouts; lives in `audio.tembra.ui.metronome` (screen-level), not in `components`
