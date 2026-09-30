@@ -21,6 +21,7 @@ kotlin {
             implementation(project(":shared:core"))
             implementation(project(":shared:engine"))
             implementation(project(":shared:data"))
+            implementation(libs.androidx.datastore.preferences.core)
             implementation(libs.androidx.lifecycle.viewmodel.compose)
             implementation(libs.androidx.lifecycle.runtime.compose)
             implementation(libs.metrox.viewmodel.compose)

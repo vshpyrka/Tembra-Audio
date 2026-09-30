@@ -1,6 +1,8 @@
 package audio.tembra.ui.di
 
 import audio.tembra.data.AppDirectories
+import audio.tembra.data.metronome.CustomClickSoundStore
+import audio.tembra.data.metronome.MetronomePreferences
 import audio.tembra.data.tuner.TunerPreferences
 import audio.tembra.engine.AudioEngine
 import audio.tembra.ui.platform.MicrophonePermission
@@ -14,5 +16,7 @@ interface AppGraph : ViewModelGraph {
     val appDirectories: AppDirectories
     val audioEngine: AudioEngine
     val tunerPreferences: TunerPreferences
+    val metronomePreferences: MetronomePreferences
+    val customClickSoundStore: CustomClickSoundStore
     val microphonePermission: MicrophonePermission
 }
