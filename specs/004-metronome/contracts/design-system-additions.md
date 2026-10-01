@@ -40,8 +40,8 @@ enum class CardDiscs { TopStartBottomEnd, TopEndBottomStart, None }
 //   both are thin wrappers over TembraChipRow; the subdivision chip's note glyph is the row's `icon`
 @Composable fun TimeSignatureMenu(selected: TimeSignature, onSelect: (TimeSignature) -> Unit, modifier: Modifier = Modifier, testTag: String = "metronome.signature")
 //   compact-layout menu (2026-10-01): a TembraPill-styled trigger showing the signature label with an expand_more 16 dp glyph; DropdownMenu on surfaceContainerHighest listing the six signatures, trailing Check on the selected; contentDescription "Time signature, 4/4"; items "metronome.signature.<id>"
-@Composable fun StyleMenu(selected: MetronomeStyle, onSelect: (MetronomeStyle) -> Unit, modifier: Modifier = Modifier, testTag: String = "metronome.style")
-//   landscape-only menu (2026-10-01, sixth check): the TimeSignatureMenu shape for the style ("Standard ▾"); contentDescription "Style, Standard"; items "metronome.style.<id>" with a trailing Check; expanded/collapsed stateDescription like the other pills
+@Composable fun StyleMenu(selected: MetronomeStyle?, onSelect: (MetronomeStyle) -> Unit, modifier: Modifier = Modifier, testTag: String = "metronome.style")
+//   landscape-only menu (2026-10-01, sixth check): the TimeSignatureMenu shape for the style ("Standard ▾"); contentDescription "Style, Standard", or the pill reads "Style" and announces "Style, none" when the cells were edited by hand and no style is selected (review ruling); items "metronome.style.<id>" with a trailing Check; expanded/collapsed stateDescription like the other pills
 @Composable fun SubdivisionTiles(selected: Subdivision, unit: BeatUnit, onSelect: (Subdivision) -> Unit, modifier: Modifier = Modifier, testTag: String = "metronome.subdivision")
 //   compact-layout tiles (2026-10-01): four 44 dp square tiles, icon only (TembraIcon.Note* per subdivision and beat unit), selected = primary container, role = Tab + selected, tooltip and contentDescription = the value label; items "metronome.subdivision.<id>"; SubdivisionChips keeps the labels and uses the same glyphs as its icon
 
