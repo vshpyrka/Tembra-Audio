@@ -95,6 +95,19 @@ class TimeSignatureMenuTest {
         assertEquals(tops.sorted(), tops, "the entries are not in the spec's order")
     }
 
+    /** The pill says whether its menu is open, as a dropdown trigger does. */
+    @Test
+    fun theTriggerReadsCollapsedOrExpanded() = runComposeUiTest {
+        setMenu()
+        onNodeWithTag("metronome.signature").assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Collapsed"))
+        onNodeWithTag("metronome.signature").performClick()
+        waitForIdle()
+        onNodeWithTag("metronome.signature").assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Expanded"))
+        onNodeWithTag("metronome.signature.3-4").performClick()
+        waitForIdle()
+        onNodeWithTag("metronome.signature").assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Collapsed"))
+    }
+
     @Test
     fun anEntrySelectsItsSignatureAndClosesTheMenu() = runComposeUiTest {
         setMenu()

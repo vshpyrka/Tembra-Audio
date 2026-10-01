@@ -34,6 +34,7 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertHeightIsAtLeast
@@ -230,7 +231,8 @@ class MetronomeScreenTest {
     fun theReadoutFollowsTheTempo() = runComposeUiTest {
         setScreen(loaded.copy(settings = MetronomeSettings(tempo = Tempo(121))))
         onNode(hasText("121") and hasAnyAncestor(hasTestTag("metronome.dial"))).assertExists()
-        onNode(hasText("Allegro (120-156)") and hasAnyAncestor(hasTestTag("metronome.dial"))).assertExists()
+        // The full "Allegro (120-156)" or, on a ring too small for the range, the name alone (one line either way).
+        onNode(hasText("Allegro", substring = true) and hasAnyAncestor(hasTestTag("metronome.dial"))).assertExists()
     }
 
     // --- User Story 2 ------------------------------------------------------------------------------------------------
@@ -355,6 +357,9 @@ class MetronomeScreenTest {
         setScreen()
         onNode(hasText("STYLE"), useUnmergedTree = true).assertExists()
         for (drawn in listOf("TIME SIGNATURE", "RHYTHM SUBDIVISION")) onNode(hasText(drawn), useUnmergedTree = true).assertDoesNotExist()
+        // No drawn heading: the card's semantics name the group (contracts/metronome-screen.md).
+        onNodeWithTag("metronome.bar").assertContentDescriptionEquals("Bar shape")
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.IsTraversalGroup, true))
         val card = bounds("metronome.bar")
         for (tag in listOf("metronome.signature", "metronome.subdivision", "metronome.cells", "metronome.style")) {
             assertTrue(card.contains(bounds(tag)), "$tag (${bounds(tag)}) is not in the bar-shape card $card")
@@ -592,6 +597,7 @@ class MetronomeScreenTest {
             val dial = bounds("metronome.dial")
             assertTrue(dial.height >= 160.dp - 0.5.dp && dial.height <= 300.dp + 0.5.dp, "$what: the dial is ${dial.height}")
             assertTrue(bounds("metronome.dialCard").contains(bounds("metronome.slider")), "$what: the slider is not in the dial card")
+            assertMarkingOnOneLine()
         }
     }
 
@@ -624,6 +630,89 @@ class MetronomeScreenTest {
         for (tag in listOf("metronome.tap", "metronome.play")) assertTrue(root.contains(bounds(tag)), "$tag is not pinned on screen")
     }
 
+    /**
+     * The text [label] inside [parent], scrolled into view (except in the pinned tap card), displayed within its parent
+     * and whole: no line dropped past the line limit and none ellipsised (hasVisualOverflow also flags a paragraph laid
+     * out wider than the text it holds, which is not a cut).
+     */
+    private fun ComposeUiTest.assertWhole(parent: String, label: String, onScreen: Boolean = true) {
+        val text = onNode(hasText(label) and hasAnyAncestor(hasTestTag(parent)), useUnmergedTree = true)
+        if (parent != "metronome.tap") text.performScrollTo()
+        assertWithin(text, parent, "\"$label\" in $parent", onScreen)
+        val layout = text.textLayoutResult()
+        val cut = layout.multiParagraph.didExceedMaxLines || (0 until layout.lineCount).any { layout.isLineEllipsized(it) }
+        assertTrue(!cut, "\"$label\" in $parent is cut short at the largest font (${layout.lineCount} lines in ${layout.size})")
+    }
+
+    /** The dial's marking, "Moderato (108-120)" or the name alone where the range does not fit: inside the dial, one line. */
+    private fun ComposeUiTest.assertMarkingOnOneLine(onScreen: Boolean = true) {
+        val marking = onNode(hasText("Moderato", substring = true) and hasAnyAncestor(hasTestTag("metronome.dial")), useUnmergedTree = true)
+        // The Stacked dial sits in the scrolling column; the landscape pane does not scroll.
+        if (onScreen) marking.performScrollTo()
+        assertWithin(marking, "metronome.dial", "the marking", onScreen)
+        val text = marking.fetchSemanticsNode().config[SemanticsProperties.Text].single().text
+        assertTrue(text == "Moderato (108-120)" || text == "Moderato", "the marking reads \"$text\"")
+        assertEquals(1, marking.textLayoutResult().lineCount, "the marking \"$text\" wraps")
+    }
+
+    /**
+     * Inside [parent]'s bounds; [onScreen] also asserts it is displayed. A host wider than the device's window (the
+     * 892 dp landscape host on a phone held upright) is laid out in full but partly outside the window, so those
+     * cases read bounds only, as the other landscape layout tests do.
+     */
+    private fun ComposeUiTest.assertWithin(node: SemanticsNodeInteraction, parent: String, what: String, onScreen: Boolean) {
+        val container = bounds(parent)
+        if (onScreen) {
+            node.assertDisplayedWithin(container, what)
+        } else {
+            val rect = node.getUnclippedBoundsInRoot()
+            assertTrue(container.contains(rect), "$what ($rect) leaves $parent ($container)")
+        }
+    }
+
+    /**
+     * FR-028 at the largest font in a phone held sideways (the Pixel's pane): the section labels and the chips, with their
+     * note glyphs, stay whole in the settings column, nothing there overlaps, and play stays above tap beside the dial.
+     */
+    @Test
+    fun theLargestFontKeepsTheLandscapeChipsWholeWithPlayAboveTap() = runComposeUiTest {
+        setScreen(layout = MetronomeLayout.Landscape, size = DpSize(892.dp, 330.dp), fontScale = 2f)
+        mainClock.autoAdvance = true
+        val settings = "metronome.settings"
+        val signatures = listOf("4-4", "3-4", "6-8", "2-4", "5-4", "7-8")
+        val subdivisions = listOf("1" to "1/4", "2" to "1/8", "4" to "1/16", "3" to "3let")
+        val labels = listOf(settings to "TIME SIGNATURE", settings to "Common & Complex", settings to "RHYTHM SUBDIVISION") +
+            signatures.map { "metronome.signature.$it" to it.replace('-', '/') } +
+            subdivisions.map { (id, label) -> "metronome.subdivision.$id" to label } +
+            listOf("metronome.style.standard" to "Standard", "metronome.style.downbeat" to "Downbeat", "metronome.style.syncopated" to "Syncopated")
+        // The 892 dp host is wider than a phone held upright: bounds, not visibility (see assertWithin).
+        for ((parent, label) in labels) assertWhole(parent, label, onScreen = false)
+        for ((id, _) in subdivisions) {
+            val glyph = onNodeWithTag("metronome.subdivision.$id.icon", useUnmergedTree = true)
+            glyph.performScrollTo()
+            assertWithin(glyph, "metronome.subdivision.$id", "the note glyph of subdivision $id", onScreen = false)
+        }
+        val controls = signatures.map { "metronome.signature.$it" } +
+            subdivisions.map { "metronome.subdivision.${it.first}" } +
+            (1..4).map { "metronome.cell.$it" } +
+            listOf("standard", "downbeat", "syncopated").map { "metronome.style.$it" } + "metronome.sound"
+        val column = bounds(settings)
+        val placed = controls.map { it to bounds(it) }
+        for ((tag, rect) in placed) assertTrue(rect.left >= column.left - 0.5.dp && rect.right <= column.right + 0.5.dp, "$tag ($rect) leaves the column $column")
+        for (i in placed.indices) for (j in i + 1 until placed.size) {
+            assertTrue(!placed[i].second.intersects(placed[j].second), "${placed[i].first} ${placed[i].second} overlaps ${placed[j].first} ${placed[j].second}")
+        }
+        val screen = bounds("screen.metronome")
+        for (tag in listOf("metronome.dial", "metronome.slider", "metronome.tap", "metronome.play")) {
+            assertTrue(screen.contains(bounds(tag)), "$tag (${bounds(tag)}) is outside the window $screen")
+        }
+        assertTrue(bounds("metronome.play").bottom <= bounds("metronome.tap").top, "play (${bounds("metronome.play")}) is not above tap (${bounds("metronome.tap")})")
+        for (tag in listOf("metronome.tap.title", "metronome.tap.caption")) {
+            assertWithin(onNodeWithTag(tag, useUnmergedTree = true), "metronome.tap", "$tag in metronome.tap", onScreen = false)
+        }
+        assertMarkingOnOneLine(onScreen = false)
+    }
+
     @Test
     fun theLargestFontKeepsEveryLabelWholeAndNothingOverlaps() = runComposeUiTest {
         setScreen(fontScale = 2f)
@@ -631,18 +720,10 @@ class MetronomeScreenTest {
         mainClock.autoAdvance = true
         val labels = listOf(
             "metronome.style.standard" to "Standard", "metronome.style.downbeat" to "Downbeat", "metronome.style.syncopated" to "Syncopated",
-            "metronome.dial" to "120", "metronome.dial" to "BPM", "metronome.dial" to "Moderato (108-120)",
+            "metronome.dial" to "120", "metronome.dial" to "BPM",
         )
-        for ((parent, label) in labels) {
-            val text = onNode(hasText(label) and hasAnyAncestor(hasTestTag(parent)), useUnmergedTree = true)
-            if (parent != "metronome.tap") text.performScrollTo()
-            text.assertDisplayedWithin(bounds(parent), "\"$label\" in $parent")
-            // Whole: no line dropped past the line limit and none ellipsised (hasVisualOverflow also flags a paragraph laid
-            // out wider than the text it holds, which is not a cut).
-            val layout = text.textLayoutResult()
-            val cut = layout.multiParagraph.didExceedMaxLines || (0 until layout.lineCount).any { layout.isLineEllipsized(it) }
-            assertTrue(!cut, "\"$label\" in $parent is cut short at the largest font (${layout.lineCount} lines in ${layout.size})")
-        }
+        for ((parent, label) in labels) assertWhole(parent, label)
+        assertMarkingOnOneLine()
         // The drawn labels kept out of the accessibility tree (read through their control's description or state):
         // found by tag, each inside its control.
         val drawn = listOf(

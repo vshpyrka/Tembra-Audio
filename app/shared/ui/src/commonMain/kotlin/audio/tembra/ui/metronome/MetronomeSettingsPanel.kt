@@ -14,6 +14,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import audio.tembra.core.metronome.TimeSignature
 import audio.tembra.ui.metronome.components.AccentCells
@@ -77,7 +80,12 @@ internal fun MetronomeSettingsPanel(
 private fun BarShapeCard(state: MetronomeUiState, callbacks: MetronomeCallbacks, telemetry: BeatTelemetry) {
     val settings = state.settings
     val spacing = TembraTheme.spacing
-    SectionCard(gap = spacing.sm, modifier = Modifier.testTag(BAR_TAG)) {
+    // No drawn heading (the Stitch variant has none): the card's semantics carry its name and group its controls.
+    val bar = Modifier.testTag(BAR_TAG).semantics {
+        contentDescription = MetronomeCopy.barShape
+        isTraversalGroup = true
+    }
+    SectionCard(gap = spacing.sm, modifier = bar) {
         FlowRow(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(spacing.sm),

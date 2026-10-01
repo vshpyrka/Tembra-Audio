@@ -33,6 +33,9 @@ internal object MetronomeDefaults {
     const val HOLD_DELAY_MILLIS = 400L
     const val HOLD_INTERVAL_MILLIS = 80L
 
+    /** The smallest the readout's marking steps down to before it would wrap or clip (the largest fonts). */
+    val MarkingMinSize: TextUnit = 8.sp
+
     /** The page keys move the tempo by ten, the arrows and the wheel by one. */
     const val PAGE_STEP = 10
 
