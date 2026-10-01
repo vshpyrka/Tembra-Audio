@@ -913,3 +913,26 @@ Lanes: `checkAndroidHost` (core 76, engine 31, data 30, ui 219), `checkIos` on t
 13-inch (M5) (each core 76, engine 53, data 39, ui 446), `checkAndroidDevice` on the Pixel 6 Pro (core 76, engine 56,
 data 39, ui 439; rotation locked for the run, auto-rotate restored), `:androidApp:assembleDebug`: green, zero warnings.
 
+### Landscape fix round 1 (2026-10-01, review I1–I4)
+
+- **I1, large fonts:** the landscape column is now `min(max(2⁄5 · W, 240 dp × font scale), W − 12 − (160 + 16))`, so the
+  pane always keeps room for a 160 dp ring, and the ring is never returned under 160 dp. At font scale 2 on the
+  measured content areas (686 × 308 and 785 × 303 dp hosts) the dial pane stays whole beside a narrower,
+  scrolling column (`theLargestFontKeepsTheDialPaneOnTheDeviceHosts`).
+- **I2, tap card text:** the one-line, step-down title and caption apply only in a row shorter than 64 dp (the
+  landscape block's 48–64 dp row), with their own 10 sp floor (`TapTextMinSize`); elsewhere they wrap to two lines and
+  the card grows, as before D1 (asserted at font scale 2 in portrait). The readout marking keeps its 6 sp floor,
+  justified in `MetronomeDefaults.MarkingMinSize`: at font scale 2 the 892 × 330 dp landscape host gets a 188 dp ring
+  whose 68 dp readout cannot hold "Moderato" at an 8 sp floor (≈ 70 dp); 6 sp there draws 12 dp tall, and at the
+  default scale the floor is never reached.
+- **I3:** the 2× landscape test asserts each pill label (signature, sound, and the style with Standard and with
+  Syncopated) is drawn at its full width on one line and inside its pill.
+- **I4, keyboard:** `TimeSignatureMenuTest.theSignatureMenuOpensFromTheKeyboard` (focus the pill, Enter opens the
+  menu, Down moves into and along the entries, Enter chooses 7/8 and closes it) and
+  `MetronomeScreenTest.enterOpensTheSignatureMenuInTheLandscapeLayout` pass on the iOS simulator lanes (the Android
+  device lane declares no keyboard mode). The earlier manual observation (the menu not opening from the Simulator's
+  hardware keyboard in landscape) did not reproduce in the tests; the open menu takes focus only after the first Down,
+  which matches what was seen in portrait. A manual recheck in the landscape app can be done with the iOS captures
+  once the Mac is unlocked.
+- No visual change at the default font: the Pixel captures stand; the iOS landscape captures are still pending.
+
