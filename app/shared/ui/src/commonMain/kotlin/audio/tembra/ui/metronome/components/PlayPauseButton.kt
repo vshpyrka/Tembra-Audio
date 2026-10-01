@@ -34,6 +34,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import audio.tembra.ui.designsystem.drawFocusRing
 import audio.tembra.ui.metronome.MetronomeCopy
 import audio.tembra.ui.theme.TembraIcon
@@ -41,7 +42,7 @@ import audio.tembra.ui.theme.TembraIcons
 import audio.tembra.ui.theme.TembraTheme
 
 /**
- * Play and pause (research R10): a 64 dp round `secondaryContainer` button (hover `secondary`) with the play or pause
+ * Play and pause (research R10): a [diameter] (64 dp; 48–64 dp in the landscape block's row) round `secondaryContainer` button (hover `secondary`) with the play or pause
  * glyph (filled, as the design) and the `playGlow` drawn around it as a radial brush, never a shadow. While [running]
  * the glow breathes; it is static under reduce motion. Keyboard focus draws the `primary` ring, and hovering shows
  * the button's description ("Start metronome" / "Stop metronome") as a tooltip, as the icon-only steppers do. The glyph
@@ -53,6 +54,7 @@ internal fun PlayPauseButton(
     running: Boolean,
     onToggle: () -> Unit,
     modifier: Modifier = Modifier,
+    diameter: Dp = TembraTheme.spacing.playButton,
     interactionSource: MutableInteractionSource? = null,
     testTag: String = "metronome.play",
 ) {
@@ -86,7 +88,7 @@ internal fun PlayPauseButton(
             Box(
                 modifier = Modifier
                     .testTag(testTag)
-                    .size(spacing.playButton)
+                    .size(diameter)
                     .drawBehind {
                         val radius = size.minDimension / 2
                         val reach = radius + glow.radius.toPx()
@@ -112,7 +114,8 @@ internal fun PlayPauseButton(
                     imageVector = TembraIcons.vector(icon),
                     contentDescription = null,
                     tint = content,
-                    modifier = Modifier.size(MetronomeDefaults.PlayIconSize).testTag("$testTag.icon.${icon.name}"),
+                    // The glyph keeps its share of the button (34 of 64 dp) when the landscape row makes it smaller.
+                    modifier = Modifier.size(MetronomeDefaults.PlayIconSize * (diameter / spacing.playButton)).testTag("$testTag.icon.${icon.name}"),
                 )
             }
         }
