@@ -888,3 +888,28 @@ Lanes: `checkAndroidHost` (core 76, engine 31, data 30, ui 219), `checkIos` on t
 data 39, ui 436; rotation locked for the run, auto-rotate switched back on after), `:androidApp:assembleDebug`: green,
 zero warnings.
 
+### T152 sixth check: the landscape card that fits the real column (2026-10-01)
+
+With the 2:3 split kept, the landscape settings card now differs from portrait so it fits the measured column
+(302 dp × 287 dp on the Pixel 6 Pro, 261 dp × 292 dp on the iPhone 17) without scrolling: row 1 the time-signature
+menu and the new `StyleMenu` pill ("Standard ▾", announced "Style, Standard", Collapsed/Expanded), row 2 the four
+subdivision tiles spread across the width, row 3 the accent cells as 44 dp bar boxes without labels
+(`AccentCellsForm.BarOnly`: the level shows in the bar and is announced by the cell's state; one row when each keeps
+44 dp, otherwise two rows at 44 dp, 4 dp apart), then the sound pill. `TimeSignatureMenu` and `StyleMenu` share
+`MenuPill`. The dial pane is unchanged. Portrait is unchanged.
+
+Measured on the Pixel 6 Pro (`uiautomator dump`, 3.5 px/dp): the card is 164 dp tall at 4/4 and 212 dp at 7/8 (4 + 3
+cells); with the sound pill under it 220 dp and 268 dp, inside the 287 dp content height, so the column does not
+scroll. The iPhone 17's card has the same rows (pills 172 dp wide in a 245 dp inner width, 4/4 cells one row, 7/8 two
+rows of four and three), so the same heights; `landscapeOnTheDeviceHostsShowsTheWholeCardAndDialPane` asserts the
+whole card and the sound pill without scrolling at both measured content sizes and both signatures.
+
+Captures retaken: `android-landscape-stopped.png` (4/4) and `android-landscape-7-8.png` (Pixel 6 Pro, Android 17).
+**Not retaken:** `ios-landscape-stopped.png` and `ios-landscape-7-8.png` still show the previous 2:3 card: the Mac's
+console was locked (`IOConsoleLocked`) during this round, so the Simulator could not be rotated or driven from the
+keyboard (`simctl` has no rotation); they need retaking once the session is unlocked.
+
+Lanes: `checkAndroidHost` (core 76, engine 31, data 30, ui 219), `checkIos` on the iPhone 17 and on the iPad Pro
+13-inch (M5) (each core 76, engine 53, data 39, ui 446), `checkAndroidDevice` on the Pixel 6 Pro (core 76, engine 56,
+data 39, ui 439; rotation locked for the run, auto-rotate restored), `:androidApp:assembleDebug`: green, zero warnings.
+
