@@ -785,9 +785,8 @@ glyphs and the landscape transport order).
 
 Observations:
 
-- At the iPhone's 201 dp ring (and in the Pixel's landscape pane, unchanged by D1) the readout's "Moderato (108-120)"
-  sets on two lines between the steppers. Nothing is clipped (the largest-font test checks for cut lines), but the
-  Stitch phone screen shows it on one line.
+- At the iPhone's 201 dp ring (and in the Pixel's landscape pane) the readout's "Moderato (108-120)" used to set on
+  two lines between the steppers; fixed in fix round 1 (below): the marking stays on one line and drops the range.
 - At 2× font the compact 4/4 cells are narrower than "ACCENT" too, so they drop their labels and stay in one row
   (per the revised FR-028); the column scrolls there with the dial at 300 dp (its minimum grows with the font scale so
   the readout stays whole).
@@ -813,10 +812,35 @@ and return by declaration on the Android device lane.
   cells, the pills, the sound, the dial, the slider, then tap and play (play then tap in landscape, as drawn).
 - Deviations from the contracts, kept deliberately: `MetronomeSettingsPanel(state, callbacks, telemetry, layout,
   modifier)` (contract lists `pickerLayout`, `signatureColumns`); `AccentCell` gains the `label` slot and `AccentCells`
-  a `gap` parameter; the compact card draws no "BAR SHAPE" heading (the Stitch variant has none; the name is its tag).
+  a `gap` parameter; the compact card draws no "BAR SHAPE" heading (the Stitch variant has none); since fix round 1
+  its semantics carry the name "Bar shape" as a traversal group (contracts/metronome-screen.md).
 - Deferred: the Stacked column keeps `verticalScroll` attached and reports a zero scroll range when everything fits
   (switching the modifier on and off would feed a measured size back into composition); the tests assert the range.
   `TembraSpacing.tempoDialMaxWidth` (270 dp) is no longer read by the screen (the compact cap is
   `MetronomeDefaults.CompactDialMax`, 300 dp, per the revised contract) and `TembraIcon.MusicNote` is no longer drawn
   by the metronome; both stay until data-model §9 drops them. The menu trigger's drawn "4/4" is kept out of the
   accessibility tree (the description names it), so tests assert the description, not the drawn text.
+
+### Fix round 1 (2026-10-01, review I1–I3, M3, M5)
+
+- **One-line marking** (I1, ruling in contracts/design-system-additions.md): `TempoReadout` measures "Moderato
+  (108-120)" against the width the readout is given (a `BoxWithConstraints` constraint read with a `TextMeasurer`,
+  nothing written back) and shows the name alone when the full string does not fit; one line, no wrap, a step-down
+  size only for a name too wide at the largest fonts. Retaken: `ios-compact-stopped.png` (iPhone 17, 4/4, ring about
+  201 dp: "Moderato" on one line) and `android-landscape-stopped.png` (Pixel held sideways: "Moderato" on one line).
+  The Pixel portrait ring (253 dp) still fits the full "Moderato (108-120)". `TempoReadoutTest` covers both widths.
+- **Bar-shape name** (I2): the card's semantics read "Bar shape" and group its controls (`isTraversalGroup`), without
+  merging them; asserted in `theCompactCardKeepsOnlyTheStyleLabel`.
+- **Landscape at 2× font** (I3): `theLargestFontKeepsTheLandscapeChipsWholeWithPlayAboveTap` (892 × 330 dp host, the
+  Pixel's pane) checks the section labels, the six signature chips, the four subdivision chips with their glyphs and
+  the style pills whole inside the column, no overlap among the settings controls, the dial, slider, tap and play in
+  the window, play above tap, and the one-line marking. The host is wider than a phone held upright, so it reads bounds
+  rather than visibility, like the other landscape layout tests.
+- **Minors**: `IconAssetsTest` covers the eight `ic_note_*` drawables (bundled, 24 dp, literal white fill, no platform
+  references, the generator named in the header); the signature pill and the sound pill expose "Collapsed" /
+  "Expanded" as their state (`theTriggerReadsCollapsedOrExpanded`).
+- Lanes: `checkAndroidHost` (core 76, engine 31, data 30, ui 219), `checkIos` on the iPhone 17 and on the iPad Pro
+  13-inch (M5) (each: core 76, engine 53, data 39, ui 439), `checkAndroidDevice` on the Pixel 6 Pro (core 76, engine 56,
+  data 39, ui 432), `:androidApp:assembleDebug`: green, zero warnings. The Pixel's auto-rotate had been switched on
+  since the first D1 run, so device tests composed in landscape (the navigation rail grew by the cutout inset and three
+  tuner tests failed); the lane ran with rotation locked to portrait, and auto-rotate was switched back on afterwards.
