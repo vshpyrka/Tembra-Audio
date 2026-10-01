@@ -357,9 +357,9 @@ and the picker with the platform screen reader.
    dial, and no right-hand panel is shown.
 3. **Given** a window at least 600 dp wide and shorter than 480 dp (a phone held sideways),
    **When** Metronome is shown, **Then** the settings stand in a column beside the dial as the
-   same compact bar-shape card as portrait with the accent cells visible, the dial, slider, Tap
-   Tempo and play controls fit without scrolling, and the settings column scrolls only if the
-   height requires it.
+   same compact bar-shape card as portrait with the accent cells visible, the dial with its
+   slider and the Tap Tempo and play controls underneath form one block at the right edge, they
+   fit without scrolling, and the settings column scrolls only if the height requires it.
 4. **Given** a pointer, **When** it hovers over any chip, cell, pill, picker entry, stepper,
    slider, dial or button, **Then** the control shows a hover state, the icon-only controls show
    a tooltip, and the scroll wheel over the dial changes the tempo by one per notch; **When**
@@ -595,9 +595,11 @@ and the picker with the platform screen reader.
   phone held sideways) the settings stand in a column beside the dial using the same compact
   bar-shape card as portrait (time signature menu, subdivision tiles, accent cells in one row,
   style pills) so that the accent cells are visible without scrolling (revised 2026-10-01 after
-  the Pixel landscape check: the chip cards pushed the cells below the fold), the play control
-  sits above the Tap Tempo control beside the dial, and the dial, slider, Tap Tempo and play
-  controls fit without scrolling while the settings column may scroll only at large font sizes. The accent cells MUST stay in one row for every time signature whenever each
+  the Pixel landscape check: the chip cards pushed the cells below the fold), the dial with its
+  slider and, underneath it, the Tap Tempo and play controls form one block at the right edge so
+  the settings take the remaining width (revised 2026-10-01, second user check), and the dial,
+  slider, Tap Tempo and play controls fit without scrolling while the settings column may scroll
+  only at large font sizes. The accent cells MUST stay in one row for every time signature whenever each
   cell can keep its 44 dp minimum, hiding the level label when a cell is narrower than its widest
   label; only when 44 dp cannot be kept do they, like the chips, wrap to a second row rather than
   shrink below their minimum size. Nothing MUST clip, overlap or scroll horizontally at any
