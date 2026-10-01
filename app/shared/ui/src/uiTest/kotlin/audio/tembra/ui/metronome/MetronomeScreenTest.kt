@@ -686,21 +686,20 @@ class MetronomeScreenTest {
         mainClock.autoAdvance = true
         val settings = "metronome.settings"
         val subdivisions = listOf("1", "2", "4", "3")
-        val labels = listOf(settings to "STYLE") +
-            listOf("metronome.style.standard" to "Standard", "metronome.style.downbeat" to "Downbeat", "metronome.style.syncopated" to "Syncopated")
         // The 892 dp host is wider than a phone held upright: bounds, not visibility (see assertWithin).
-        for ((parent, label) in labels) assertWhole(parent, label, onScreen = false)
-        val drawn = listOf("metronome.signature" to "metronome.signature.label", "metronome.sound" to "metronome.sound.label") +
-            subdivisions.map { "metronome.subdivision.$it" to "metronome.subdivision.$it.icon.${quarterGlyphs.getValue(it)}" }
+        val drawn = listOf(
+            "metronome.signature" to "metronome.signature.label",
+            "metronome.style" to "metronome.style.label",
+            "metronome.sound" to "metronome.sound.label",
+        ) + subdivisions.map { "metronome.subdivision.$it" to "metronome.subdivision.$it.icon.${quarterGlyphs.getValue(it)}" }
         for ((parent, tag) in drawn) {
             val node = onNodeWithTag(tag, useUnmergedTree = true)
             node.performScrollTo()
             assertWithin(node, parent, "$tag in $parent", onScreen = false)
         }
-        val controls = listOf("metronome.signature") +
+        val controls = listOf("metronome.signature", "metronome.style") +
             subdivisions.map { "metronome.subdivision.$it" } +
-            (1..4).map { "metronome.cell.$it" } +
-            listOf("standard", "downbeat", "syncopated").map { "metronome.style.$it" } + "metronome.sound"
+            (1..4).map { "metronome.cell.$it" } + "metronome.sound"
         val column = bounds(settings)
         val placed = controls.map { it to bounds(it) }
         for ((tag, rect) in placed) assertTrue(rect.left >= column.left - 0.5.dp && rect.right <= column.right + 0.5.dp, "$tag ($rect) leaves the column $column")
@@ -747,8 +746,8 @@ class MetronomeScreenTest {
 
     /**
      * A Pixel 6 Pro (891 × 411 dp) and an iPhone 17 (874 × 402 dp) held sideways at the default font: the settings
-     * column (2⁄5 of the width, T152) holds the compact card with the signature pill beside the tiles, 7/8's seven cells
-     * in one row of 44 dp cells and the style row, without scrolling; the dial card and the transport row span the pane.
+     * column (2⁄5 of the width, T152) holds the landscape card (see [assertLandscapeCard]) without scrolling; the dial
+     * card and the transport row span the pane.
      */
     @Test
     fun landscapeShowsTheWholeCompactCardWithoutScrolling() = runComposeUiTest {
@@ -766,36 +765,47 @@ class MetronomeScreenTest {
     }
 
     /**
-     * The compact card in the landscape column (T150) at the default font: the signature pill beside the tiles, the
-     * [beats] cells in one row of 44 dp cells, the style row and the sound pill, all inside the column and the screen,
-     * and the column does not scroll.
+     * The landscape card (T152) at the default font: the signature and style menus share the first line, the four tiles
+     * the second, the [beats] cells (44 dp bar boxes, no label text) one row when each keeps 44 dp and two otherwise,
+     * then the sound pill, all inside the column and the screen; the column does not scroll.
      */
     private fun ComposeUiTest.assertLandscapeCard(what: String, beats: Int) {
         val root = bounds("screen.metronome")
         val column = bounds("metronome.settings")
         val scroll = onNodeWithTag("metronome.settings").fetchSemanticsNode().config.getOrNull(SemanticsProperties.VerticalScrollAxisRange)
         assertEquals(0f, scroll?.maxValue?.invoke() ?: 0f, "$what: the settings column scrolls")
-        for (tag in listOf("metronome.bar", "metronome.signature", "metronome.subdivision", "metronome.cells", "metronome.style", "metronome.sound")) {
+        for (tag in listOf("metronome.bar", "metronome.signature", "metronome.style", "metronome.subdivision", "metronome.cells", "metronome.sound")) {
             val rect = bounds(tag)
             assertTrue(root.contains(rect) && column.contains(rect), "$what: $tag ($rect) is not inside the column $column and the screen $root")
         }
-        val pill = bounds("metronome.signature")
-        val tiles = bounds("metronome.subdivision")
-        assertTrue(pill.right <= tiles.left && pill.bottom > tiles.top && tiles.bottom > pill.top, "$what: the pill $pill is not beside the tiles $tiles")
+        val signature = bounds("metronome.signature")
+        val style = bounds("metronome.style")
+        assertTrue(signature.right <= style.left && signature.bottom > style.top && style.bottom > signature.top, "$what: the menus $signature and $style do not share a line")
+        val tiles = listOf("1", "2", "4", "3").map { bounds("metronome.subdivision.$it") }
+        assertEquals(1, tiles.map { it.top }.distinct().size, "$what: the tiles are not one line")
+        assertTrue(tiles.first().top >= maxOf(signature.bottom, style.bottom) - 0.5.dp, "$what: the tiles are not under the menus")
+        val card = bounds("metronome.bar")
+        val inner = card.width - 16.dp
+        val oneRow = (inner - 4.dp * (beats - 1)) / beats >= 44.dp
         val cells = (1..beats).map { bounds("metronome.cell.$it") }
-        assertEquals(1, cells.map { it.top }.distinct().size, "$what: the cells are not one row: ${cells.map { it.top }}")
-        for ((n, cell) in cells.withIndex()) assertTrue(cell.width >= 44.dp - 0.5.dp, "$what: cell ${n + 1} is ${cell.width}")
+        assertEquals(if (oneRow) 1 else 2, cells.map { it.top }.distinct().size, "$what: the cells are in ${cells.map { it.top }.distinct().size} rows")
+        for ((n, cell) in cells.withIndex()) {
+            assertTrue(cell.width >= 44.dp - 0.5.dp && cell.height >= 44.dp - 0.5.dp, "$what: cell ${n + 1} is ${cell.width} × ${cell.height}")
+            onNodeWithTag("metronome.cell.${n + 1}.label", useUnmergedTree = true).assertDoesNotExist()
+        }
+        assertTrue(cells.first().top >= tiles.first().bottom - 0.5.dp, "$what: the cells are not under the tiles")
+        // The level is still announced without a drawn label.
+        onNodeWithTag("metronome.cell.1").assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Accent"))
     }
 
     /**
-     * The real hosts of a phone held sideways (the window less the navigation rail, the header and the safe areas,
-     * measured on the devices, NOTES.md T152): the Pixel 6 Pro (785 × 303 dp) and the iPhone 17 (686 × 308 dp). The
-     * dial pane holds whole there; the 2⁄5 column (301 and 262 dp) is narrower than the window-based sizing assumed, so
-     * the card is taller than the screen and the column scrolls (asserted: the cells keep 44 dp, the card starts in
-     * view, the column scrolls rather than clipping).
+     * The real content areas of a phone held sideways (the window less the navigation rail, the header, the safe areas
+     * and the page margin, measured on the devices, NOTES.md T152): Pixel 6 Pro 753 × 287 dp, iPhone 17 654 × 292 dp
+     * (the hosts here add the 16 dp side and 8 dp top and bottom margins). The 2⁄5 column (301 and 262 dp) holds the
+     * whole landscape card and the sound pill without scrolling at 4/4 and at 7/8, and the dial pane stays whole.
      */
     @Test
-    fun landscapeOnTheDeviceHostsKeepsTheDialPaneWhole() = runComposeUiTest {
+    fun landscapeOnTheDeviceHostsShowsTheWholeCardAndDialPane() = runComposeUiTest {
         val show = setLandscapeForms()
         for (host in listOf(DpSize(785.dp, 303.dp), DpSize(686.dp, 308.dp))) for (signature in listOf(TimeSignature.FourFour, TimeSignature.SevenEight)) {
             show(host, loaded.copy(settings = settingsFor(signature)))
@@ -803,8 +813,7 @@ class MetronomeScreenTest {
             val root = bounds("screen.metronome")
             val column = bounds("metronome.settings")
             assertTrue(abs((column.width - maxOf(root.width * 2f / 5f, 240.dp)).value) <= 1f, "$what: the column is ${column.width}")
-            for (n in 1..signature.beats) assertTrue(bounds("metronome.cell.$n").width >= 44.dp - 0.5.dp, "$what: cell $n is under 44 dp")
-            assertTrue(root.contains(bounds("metronome.signature")), "$what: the card does not start in view")
+            assertLandscapeCard(what, beats = signature.beats)
             assertLandscapeBlock(what)
         }
     }
@@ -900,8 +909,8 @@ class MetronomeScreenTest {
             settle()
             val interactive = SemanticsMatcher.keyIsDefined(SemanticsActions.OnClick) or SemanticsMatcher.keyIsDefined(SemanticsActions.SetProgress)
             val nodes = onAllNodes(interactive).fetchSemanticsNodes()
-            // 19 in the compact card's form (one signature menu instead of six chips), more in the others.
-            assertTrue(nodes.size >= 19, "$layout: only ${nodes.size} interactive nodes")
+            // 17 in the landscape card (two menus for six chips and three pills), 19 in the portrait card, more in Wide.
+            assertTrue(nodes.size >= 17, "$layout: only ${nodes.size} interactive nodes")
             for (node in nodes) {
                 val tag = node.config.getOrNull(SemanticsProperties.TestTag)
                 assertTrue(tag != null, "$layout: an interactive node has no test tag: ${node.config}")
@@ -931,7 +940,8 @@ class MetronomeScreenTest {
     @Test
     fun tabFollowsTheReadingOrderInTheLandscapeLayout() = runComposeUiTest {
         setScreen(layout = MetronomeLayout.Landscape, size = DpSize(892.dp, 330.dp))
-        assertTabOrder(from = "metronome.signature", expected = compactSettingsTabOrder + "metronome.sound" + transportTabOrder)
+        val landscapeCard = listOf("metronome.style") + listOf("1", "2", "4", "3").map { "metronome.subdivision.$it" } + (1..4).map { "metronome.cell.$it" }
+        assertTabOrder(from = "metronome.signature", expected = landscapeCard + "metronome.sound" + transportTabOrder)
     }
 
     /** From [from] (the 4/4 chip by default), each Tab moves keyboard focus to the next of [expected]. */

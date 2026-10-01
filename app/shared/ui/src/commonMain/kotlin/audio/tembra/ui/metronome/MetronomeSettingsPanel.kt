@@ -20,10 +20,12 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import audio.tembra.core.metronome.TimeSignature
 import audio.tembra.ui.metronome.components.AccentCells
+import audio.tembra.ui.metronome.components.AccentCellsForm
 import audio.tembra.ui.metronome.components.ClickSoundPicker
 import audio.tembra.ui.metronome.components.ClickSoundPickerLayout
 import audio.tembra.ui.metronome.components.MetronomeDefaults
 import audio.tembra.ui.metronome.components.SectionLabel
+import audio.tembra.ui.metronome.components.StyleMenu
 import audio.tembra.ui.metronome.components.StyleRow
 import audio.tembra.ui.metronome.components.SubdivisionChips
 import audio.tembra.ui.metronome.components.SubdivisionTiles
@@ -34,10 +36,11 @@ import audio.tembra.ui.theme.TembraTheme
 
 /**
  * The metronome's settings in the design's order (contracts/metronome-screen.md, research R10), shaped by [layout]:
- * - [MetronomeLayout.Stacked] and [MetronomeLayout.Landscape] (design iteration D1, T150): one compact "bar shape"
- *   card, tagged `metronome.bar`, holding the signature menu and the subdivision tiles on one line, the accent cells in
- *   one row and the style row, then the click sound pill centred under it; the card is small enough that the dial
- *   keeps its size under it on a phone held upright, and that it stands whole beside the dial pane held sideways;
+ * - [MetronomeLayout.Stacked] (design iteration D1): one compact "bar shape" card, tagged `metronome.bar`, holding the
+ *   signature menu and the subdivision tiles on one line, the accent cells in one row and the style row, then the
+ *   click sound pill centred under it; the card is small enough that the dial keeps its size under it on a phone;
+ * - [MetronomeLayout.Landscape] (T150, T152): the same card restacked for the narrow column (see
+ *   [LandscapeBarShapeCard]), then the sound pill;
  * - [MetronomeLayout.Wide]: section cards for the time signature (with its "Common & Complex" caption, six chips in a
  *   row), the subdivision chips, the cells with the style row, and the sound tile grid in its own "Click timbre" card,
  *   as in the tablet design.
@@ -52,11 +55,12 @@ internal fun MetronomeSettingsPanel(
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(TembraTheme.spacing.md)) {
         when (layout) {
-            MetronomeLayout.Stacked, MetronomeLayout.Landscape -> {
-                // The landscape column (2⁄5 of a phone held sideways) is narrower than a phone held upright: 2 dp between
-                // the cells keeps 7/8 in one row of 44 dp cells there; the portrait card keeps 4 dp.
-                val cellGap = if (layout == MetronomeLayout.Landscape) TembraTheme.spacing.xs / 2 else TembraTheme.spacing.xs
-                BarShapeCard(state = state, callbacks = callbacks, telemetry = telemetry, cellGap = cellGap)
+            MetronomeLayout.Stacked -> {
+                BarShapeCard(state = state, callbacks = callbacks, telemetry = telemetry)
+                SoundPicker(state, callbacks, ClickSoundPickerLayout.Dropdown, Modifier.align(Alignment.CenterHorizontally))
+            }
+            MetronomeLayout.Landscape -> {
+                LandscapeBarShapeCard(state = state, callbacks = callbacks, telemetry = telemetry)
                 SoundPicker(state, callbacks, ClickSoundPickerLayout.Dropdown, Modifier.align(Alignment.CenterHorizontally))
             }
             MetronomeLayout.Wide -> {
@@ -76,7 +80,7 @@ internal fun MetronomeSettingsPanel(
  * no room), the accent cells in one row 4 dp apart, and the style row.
  */
 @Composable
-private fun BarShapeCard(state: MetronomeUiState, callbacks: MetronomeCallbacks, telemetry: BeatTelemetry, cellGap: Dp) {
+private fun BarShapeCard(state: MetronomeUiState, callbacks: MetronomeCallbacks, telemetry: BeatTelemetry) {
     val settings = state.settings
     val spacing = TembraTheme.spacing
     SectionCard(gap = spacing.sm, modifier = barShapeSemantics()) {
@@ -90,8 +94,38 @@ private fun BarShapeCard(state: MetronomeUiState, callbacks: MetronomeCallbacks,
             Spacer(Modifier.weight(1f))
             SubdivisionTiles(selected = settings.subdivision, unit = settings.signature.unit, onSelect = callbacks.onSubdivision)
         }
-        Cells(state, callbacks, telemetry, gap = cellGap)
+        Cells(state, callbacks, telemetry, gap = spacing.xs)
         StyleRow(selected = settings.style, onSelect = callbacks.onStyle, modifier = Modifier.fillMaxWidth())
+    }
+}
+
+/**
+ * The phone-landscape card (T152): the real 2⁄5 column is about 300 dp on a Pixel 6 Pro and 260 dp on an iPhone 17
+ * held sideways, so the card stacks the signature and style menus on the first line, the subdivision tiles across the
+ * second, and the accent cells as 44 dp bar boxes without labels (one row when each keeps 44 dp, otherwise two), so
+ * card and sound pill fit the content height without scrolling.
+ */
+@Composable
+private fun LandscapeBarShapeCard(state: MetronomeUiState, callbacks: MetronomeCallbacks, telemetry: BeatTelemetry) {
+    val settings = state.settings
+    val spacing = TembraTheme.spacing
+    SectionCard(gap = spacing.sm, modifier = barShapeSemantics()) {
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+            verticalArrangement = Arrangement.spacedBy(spacing.xs),
+            itemVerticalAlignment = Alignment.CenterVertically,
+        ) {
+            TimeSignatureMenu(selected = settings.signature, onSelect = callbacks.onSignature)
+            StyleMenu(selected = settings.style, onSelect = callbacks.onStyle)
+        }
+        SubdivisionTiles(
+            selected = settings.subdivision,
+            unit = settings.signature.unit,
+            onSelect = callbacks.onSubdivision,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Cells(state, callbacks, telemetry, gap = spacing.xs, form = AccentCellsForm.BarOnly)
     }
 }
 
@@ -130,7 +164,13 @@ private fun SectionCards(state: MetronomeUiState, callbacks: MetronomeCallbacks,
 }
 
 @Composable
-private fun Cells(state: MetronomeUiState, callbacks: MetronomeCallbacks, telemetry: BeatTelemetry, gap: Dp) {
+private fun Cells(
+    state: MetronomeUiState,
+    callbacks: MetronomeCallbacks,
+    telemetry: BeatTelemetry,
+    gap: Dp,
+    form: AccentCellsForm = AccentCellsForm.Labelled,
+) {
     AccentCells(
         pattern = state.settings.pattern,
         running = state.running,
@@ -138,6 +178,7 @@ private fun Cells(state: MetronomeUiState, callbacks: MetronomeCallbacks, teleme
         telemetry = telemetry,
         onCycle = callbacks.onCycleBeat,
         gap = gap,
+        form = form,
     )
 }
 
