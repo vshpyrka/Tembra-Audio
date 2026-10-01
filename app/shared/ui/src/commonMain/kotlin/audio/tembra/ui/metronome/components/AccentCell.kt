@@ -38,6 +38,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import audio.tembra.core.metronome.BeatLevel
 import audio.tembra.ui.designsystem.drawFocusRing
 import audio.tembra.ui.designsystem.testTagIfSet
@@ -54,7 +55,8 @@ import kotlin.math.max
  * [playing] (the 10 Hz sample) adds ", playing" to the cell's state for accessibility. Hover and press raise the card to
  * `surfaceContainerLow`; keyboard focus draws the `primary` ring. [label] is drawn under the bar box, the level's name
  * by default ([AccentCellLabel]); a row of cells too narrow for their widest label passes null and the bar alone shows
- * the level (design iteration D1). With a [testTag], the bar box carries `<tag>.bar`, the bar `<tag>.level` and the
+ * the level (design iteration D1). [barHeight] is the bar box's height: 64 dp, or 32 dp in the landscape card's 44 dp
+ * cells (T152). With a [testTag], the bar box carries `<tag>.bar`, the bar `<tag>.level` and the
  * drawn label `<tag>.label` (kept out of the accessibility tree: the state names the level).
  */
 @Composable
@@ -67,6 +69,7 @@ internal fun AccentCell(
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource? = null,
     testTag: String? = null,
+    barHeight: Dp = TembraTheme.spacing.accentCellBarHeight,
     label: (@Composable () -> Unit)? = { AccentCellLabel(level) },
 ) {
     val colors = TembraTheme.colors
@@ -115,7 +118,7 @@ internal fun AccentCell(
             modifier = Modifier
                 .testTagIfSet(testTag?.let { "$it.bar" })
                 .fillMaxWidth()
-                .height(spacing.accentCellBarHeight)
+                .height(barHeight)
                 .clip(RoundedCornerShape(MetronomeDefaults.BarBoxRadius))
                 .background(colors.surfaceContainer)
                 .drawWithContent {

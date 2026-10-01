@@ -31,6 +31,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import audio.tembra.core.metronome.BeatUnit
 import audio.tembra.core.metronome.Subdivision
 import audio.tembra.ui.designsystem.drawFocusRing
@@ -41,7 +44,8 @@ import audio.tembra.ui.theme.TembraTheme
 
 /**
  * The compact layout's subdivisions (design iteration D1, contracts/design-system-additions.md): four 44 dp square
- * tiles in one row, 4 dp apart, icon only, each the note figure of its subdivision on the beat [unit]
+ * tiles in one row, 4 dp apart (spread edge to edge when the caller makes the row wider, as the landscape card does),
+ * icon only, each the note figure of its subdivision on the beat [unit]
  * ([SubdivisionGlyphs]). The [selected] tile fills with `primaryContainer` as a selected chip; the others sit on
  * `surfaceContainerHigh` with an `onSurfaceVariant` glyph that hover raises to `onSurface`; keyboard focus draws the
  * `primary` ring. Each tile is a tab with `selected`, named by its value ("1/4", "1/16", "3let") to accessibility and in
@@ -57,9 +61,10 @@ internal fun SubdivisionTiles(
     modifier: Modifier = Modifier,
     testTag: String = "metronome.subdivision",
 ) {
+    val gap = TembraTheme.spacing.xs
     Row(
         modifier = modifier.testTag(testTag),
-        horizontalArrangement = Arrangement.spacedBy(TembraTheme.spacing.xs),
+        horizontalArrangement = remember(gap) { SpreadAtLeast(gap) },
         verticalAlignment = Alignment.CenterVertically,
     ) {
         for (subdivision in Subdivision.entries) {
@@ -133,6 +138,20 @@ private fun SubdivisionTile(
                 tint = tint,
                 modifier = Modifier.size(MetronomeDefaults.SubdivisionGlyphSize).testTag("$testTag.icon.${icon.name}"),
             )
+        }
+    }
+}
+
+/** At least [gap] between the items; a row wider than they need spreads them evenly from edge to edge. */
+private class SpreadAtLeast(private val gap: Dp) : Arrangement.Horizontal {
+    override val spacing: Dp get() = gap
+
+    override fun Density.arrange(totalSize: Int, sizes: IntArray, layoutDirection: LayoutDirection, outPositions: IntArray) {
+        val between = if (sizes.size > 1) maxOf(gap.roundToPx(), (totalSize - sizes.sum()) / (sizes.size - 1)) else 0
+        var x = 0
+        for (index in sizes.indices) {
+            outPositions[index] = if (layoutDirection == LayoutDirection.Ltr) x else totalSize - x - sizes[index]
+            x += sizes[index] + between
         }
     }
 }

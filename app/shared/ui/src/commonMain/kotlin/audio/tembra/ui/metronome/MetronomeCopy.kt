@@ -38,6 +38,7 @@ internal object MetronomeCopy {
     const val replace = "Replace"
     const val replaceCustomSound = "Replace custom sound"
     const val empty = "empty"
+    const val none = "none"
 
     // Messages (contracts/click-sounds.md).
     const val notWav = "That file isn't a WAV file Tembra can read."
@@ -81,6 +82,9 @@ internal object MetronomeCopy {
 
     /** The compact signature menu's name: "Time signature, 4/4". */
     fun timeSignatureOf(label: String): String = "$timeSignature, $label"
+
+    /** The landscape style menu's name: "Style, Standard", or "Style, none" when the cells match no style. */
+    fun styleOf(label: String?): String = "$style, ${label ?: none}"
 
     fun customEntry(name: String?): String = "$custom, ${name ?: empty}"
 
