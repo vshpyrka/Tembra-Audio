@@ -5,6 +5,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -199,7 +200,8 @@ private fun SoundDropdown(
         DropdownMenu(
             expanded = open,
             onDismissRequest = { open = false },
-            modifier = Modifier.width(spacing.soundMenuWidth),
+            // Bounded height: see MetronomeDefaults.MenuMaxHeight (iOS popup layers can offer infinite height).
+            modifier = Modifier.width(spacing.soundMenuWidth).heightIn(max = MetronomeDefaults.MenuMaxHeight),
             shape = RoundedCornerShape(TembraShapes.medium),
             containerColor = colors.surfaceContainerHighest,
         ) {

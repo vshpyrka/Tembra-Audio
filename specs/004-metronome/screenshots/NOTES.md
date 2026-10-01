@@ -936,3 +936,18 @@ data 39, ui 439; rotation locked for the run, auto-rotate restored), `:androidAp
   once the Mac is unlocked.
 - No visual change at the default font: the Pixel captures stand; the iOS landscape captures are still pending.
 
+
+### iOS crash on opening a menu (found by the user on the iPhone 17 simulator, 2026-10-01, fixed in the same day's commit)
+
+Two crash reports (11:17 and 13:34) showed an uncaught Kotlin exception inside Compose's Metal redraw. Replaying on the
+iPhone 17 simulator with the console captured (`xcrun simctl launch --console-pty`) reproduced it: after opening the
+signature, style and sound menus in landscape, playing, tapping and rotating several times, the first tap on the
+signature pill in portrait threw `IllegalStateException: Vertically scrollable component was measured with an infinity
+maximum height constraints` from the dropdown's scrolling column, measured by Compose's iOS popup layer
+(`ComposeSceneLayerMeasurePolicy`) with an unbounded height. A fresh launch, a rotation round trip, or a landscape menu
+followed by a portrait menu did not reproduce it on their own, so the exact layer state is unknown; the fix bounds the
+menus instead: `MetronomeDefaults.MenuMaxHeight` (360 dp, seven entries plus padding) on both `DropdownMenu` modifiers
+(`MenuPill`, `ClickSoundPicker`), which keeps the scrolling column measurable whatever the layer offers. With the fix
+the same sequence (landscape menus, play, tap, seven rotations, portrait signature and sound menus) ran with no
+exception. The two iOS landscape captures (`ios-landscape-stopped.png` at 4/4, `ios-landscape-7-8.png`) were retaken on
+the fixed build once the Mac was unlocked; the Pixel captures were unaffected.

@@ -121,7 +121,8 @@ internal fun MenuPill(
         DropdownMenu(
             expanded = open,
             onDismissRequest = { open = false },
-            modifier = Modifier.width(spacing.soundMenuWidth),
+            // Bounded height: see MetronomeDefaults.MenuMaxHeight (iOS popup layers can offer infinite height).
+            modifier = Modifier.width(spacing.soundMenuWidth).heightIn(max = MetronomeDefaults.MenuMaxHeight),
             shape = RoundedCornerShape(TembraShapes.medium),
             containerColor = colors.surfaceContainerHighest,
         ) {

@@ -112,6 +112,14 @@ internal object MetronomeDefaults {
     val SoundPillIconSize: Dp = 18.dp
     val SoundPillChevronSize: Dp = 16.dp
     val SoundPillVerticalPadding: Dp = 6.dp
+    /**
+     * Upper bound for a dropdown menu's height, seven entries plus the menu padding. Compose's iOS popup layer can
+     * hand the menu an unbounded height after orientation changes, and the menu's scrolling column then throws
+     * "Vertically scrollable component was measured with an infinity maximum height" (crash seen on the iPhone 17
+     * simulator, 2026-10-01); a bounded maximum keeps the column measurable whatever the layer offers.
+     */
+    val MenuMaxHeight: Dp = 360.dp
+
 
     /** The menu's check and a tile's glyph: `text-[16px]`. */
     val SoundGlyphSize: Dp = 16.dp
