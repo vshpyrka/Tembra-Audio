@@ -844,3 +844,47 @@ and return by declaration on the Android device lane.
   data 39, ui 432), `:androidApp:assembleDebug`: green, zero warnings. The Pixel's auto-rotate had been switched on
   since the first D1 run, so device tests composed in landscape (the navigation rail grew by the cutout inset and three
   tuner tests failed); the lane ran with rotation locked to portrait, and auto-rotate was switched back on afterwards.
+
+### T150 and T152: phone landscape (2026-10-01)
+
+The landscape layout went through four rulings the same day (T150: the compact card in a 240–344 dp column; T152:
+the dial block at the right edge, then a 3:4 split, then 1:3 with a landscape-only style menu, finally **2:3**). What
+ships is the last one: the settings column is 2⁄5 of the content width (at least 240 dp × font scale) and holds the
+same compact card as portrait (signature pill + tiles, the cells in one row 2 dp apart, the style row, the sound
+pill); the dial pane is the remaining 3⁄5, the dial card spans it with the ring centred and sized from the height
+(height − the tap/play row − the slider − gaps − `sm` card padding, within 160–300 dp), and the tap and play row
+spans the pane under it, 48 dp tall up to a 300 dp pane and 64 dp from 420 dp. The "larger dial" rule is withdrawn;
+`StyleMenu` from the 1:3 ruling was removed again before shipping. Also: `TapTempoButton` takes a `minHeight` and
+keeps its title and caption on one line each (step-down size), `PlayPauseButton` takes a `diameter`, and the
+readout sets "BPM" under the number on the smallest rings so "120" never clips (it showed "1" on a 160 dp ring).
+
+Captures retaken: `android-landscape-stopped.png`, `android-landscape-7-8.png` (Pixel 6 Pro, Android 17, rotated
+with auto-rotate off), `ios-landscape-stopped.png`, `ios-landscape-7-8.png` (iPhone 17 simulator, iOS 26.5,
+Landscape Left, rotated upright with `sips`).
+
+Measured on the devices (Pixel from `uiautomator dump`, iPhone from the capture):
+
+| | Pixel 6 Pro | iPhone 17 |
+|---|---|---|
+| Screen host (window less the rail, header, safe areas) | 785 × 303 dp | 686 × 308 dp |
+| Content (inside the page margin) | 753 × 287 dp | 654 × 292 dp |
+| Settings column (2⁄5) | 302 dp | 261 dp |
+| Dial pane | 439 dp | 381 dp |
+| Ring | ≈163 dp | ≈168 dp |
+| Tap/play row | 48 dp | 48 dp |
+
+**Not met on the devices** (reported, not hidden): the 2⁄5 rule was sized against the full windows (891 and 874 dp,
+giving 344 and 337 dp columns, where `MetronomeScreenTest` shows everything fitting without scrolling). The real
+content is narrower because of the navigation rail and the safe areas, so on the devices the column is 302 / 261 dp:
+7/8 needs 336 dp for seven 44 dp cells and wraps into two rows of labelled cells; on the Pixel the style pills wrap
+under one another; on the iPhone the tiles wrap under the signature pill; on both the sound pill (and at 7/8 the
+style row) is below the fold, so the settings column scrolls. The dial pane (ring, slider, tap, play) is whole on
+both. `landscapeOnTheDeviceHostsKeepsTheDialPaneWhole` pins this at the measured hosts. The iOS landscape menu did
+not open from the hardware keyboard in landscape (it does in portrait), so the 7/8 captures were set in portrait and
+rotated; not investigated further.
+
+Lanes: `checkAndroidHost` (core 76, engine 31, data 30, ui 219), `checkIos` on the iPhone 17 and on the iPad Pro
+13-inch (M5) (each core 76, engine 53, data 39, ui 443), `checkAndroidDevice` on the Pixel 6 Pro (core 76, engine 56,
+data 39, ui 436; rotation locked for the run, auto-rotate switched back on after), `:androidApp:assembleDebug`: green,
+zero warnings.
+
