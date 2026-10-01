@@ -744,3 +744,79 @@ that is not the built-in speaker or receiver). It left these as follow-ups:
   `emu gsm call` does nothing there), wired and USB-C headphones, Bluetooth, TalkBack and VoiceOver (including whether
   VoiceOver still speaks "120", "BPM" and the marking as separate stops), hover with a pointer, the SC-006 beat-light
   timing recording, and the listening checks (click quality and levels, onset alignment of an imported WAV).
+
+## Design iteration D1 (2026-10-01): the compact bar-shape card, one-row accents, note glyphs, play above tap
+
+T144–T147. The three settings cards pushed the dial half off a phone in portrait; the compact (Stacked) layout now
+holds the time-signature menu, the four note-figure subdivision tiles, the accent cells in one row and the style pills
+in one card (`metronome.bar`), the sound pill under it, and the dial card takes the height left above the pinned tap
+and play row (ring 160–300 dp; the column scrolls only when 160 dp cannot be kept). Landscape puts play above tap
+beside the dial card; the play glow reaches 8 dp (was 24 dp). Wide and Landscape keep the chips, now with the same
+note glyphs as icons.
+
+Devices: Pixel 6 Pro, Android 17 (1440 × 3120 px, 560 dpi = 411 × 891 dp), and the iPhone 17 and iPad Pro 13-inch
+(M5) simulators, iOS 26.5. Build of the working tree after the T145 changes (base c06d027).
+
+| Capture | What it shows |
+|---|---|
+| `android-compact-stopped.png` | 4/4, stopped: the card (4/4 pill, quarter-note tile selected, four labelled cells, style row), Classic Wood, the whole dial card with its slider, Tap Tempo and play, no scrolling |
+| `android-compact-7-8.png` | 7/8 chosen from the menu: seven 44 dp-plus cells in one row with no labels (the bars show the levels), eighth-note glyphs on the tiles, everything in view |
+| `android-compact-running-beat1.png` | 4/4 running, beat 1 lit (secondary outline), pause glyph, the 8 dp glow clear of the Tap Tempo card |
+| `android-landscape-stopped.png` | Pixel held sideways: settings column with the chips (note glyphs as chip icons), dial card, play above Tap Tempo beside it |
+| `ios-compact-stopped.png` | iPhone 17, 4/4, stopped: as on the Pixel, all in view |
+| `ios-compact-7-8.png` | iPhone 17, 7/8: one row of seven unlabelled cells, all in view |
+| `ios-landscape-stopped.png` | iPhone 17 Landscape Left (rotated upright with `sips -r -90`): play above Tap Tempo beside the dial card |
+| `ios-expanded-stopped.png` | iPad Pro landscape: unchanged Wide layout, the subdivision chips now with the note glyphs |
+
+Measured on the devices (Pixel from `uiautomator dump` bounds at 3.5 px/dp; iPhone from the capture at 3 px/dp, the
+stepper edges ± 1 dp):
+
+- Screen host (between the app header and the navigation bar): Pixel 411 × 706 dp, iPhone 17 402 × 658 dp. The
+  `MetronomeScreenTest` compact cases use 411 × 700 and 402 × 652 (a few dp stricter); a 360 × 640 phone is modelled
+  as 360 × 449 (the Pixel's 191 dp of chrome), where the column scrolls and the dial keeps 160 dp.
+- Dial ring: Pixel 253 dp at 4/4 and 273 dp at 7/8 (the unlabelled cells are shorter); iPhone 17 about 201 dp at 4/4
+  and 220 dp at 7/8. Before D1 the dial was 270 dp wide and its lower half was off screen on both phones.
+- The keyboard path works on the iPhone simulator: Tab reaches the signature pill (focus ring), Return opens the menu,
+  Down focuses 4/4, Return selects it (used to reset the persisted 7/8 for `ios-compact-stopped.png`).
+
+Not captured: `android-compact-running-beat1` exists only for Android (no iOS running capture was asked for); the
+landscape and expanded 7/8 and running sets were not retaken (their composition is unchanged apart from the chip
+glyphs and the landscape transport order).
+
+Observations:
+
+- At the iPhone's 201 dp ring (and in the Pixel's landscape pane, unchanged by D1) the readout's "Moderato (108-120)"
+  sets on two lines between the steppers. Nothing is clipped (the largest-font test checks for cut lines), but the
+  Stitch phone screen shows it on one line.
+- At 2× font the compact 4/4 cells are narrower than "ACCENT" too, so they drop their labels and stay in one row
+  (per the revised FR-028); the column scrolls there with the dial at 300 dp (its minimum grows with the font scale so
+  the readout stays whole).
+
+### Lanes (T146)
+
+`checkAndroidHost` (core 76, engine 31, data 30, ui 218), `checkIos` on the iPhone 17 and on the iPad Pro 13-inch (M5)
+(each: core 76, engine 53, data 39, ui 435), `checkAndroidDevice` on the Pixel 6 Pro (core 76, engine 56, data 39,
+ui 428) and `:androidApp:assembleDebug`: all green, zero warnings with `--warning-mode all`. Keyboard tests run on iOS
+and return by declaration on the Android device lane.
+
+### Skill review (T147)
+
+`compose-component-design`, `compose-focus-navigation` and `compose-ui-testing-patterns` over `TimeSignatureMenu.kt`,
+`SubdivisionTiles.kt`, `AccentCells.kt` (and `AccentCell.kt`), `MetronomeSettingsPanel.kt`,
+`MetronomeScreenContent.kt`:
+
+- Fixed while implementing: the cell label is an optional slot (`label: (@Composable () -> Unit)?`, default
+  `AccentCellLabel(level)`) rather than a Boolean show-label flag; the panel takes the `MetronomeLayout` it serves
+  instead of the `pickerLayout` + `signatureColumns` pair (three forms, one enum); the cell gap is a design-value
+  parameter; every new component applies its `modifier` at its root; the new tiles and menu reuse the chip, pill and
+  sound-menu colours, the focus ring and the 44 dp minimum; tab order reads the menu, the tiles left to right, the
+  cells, the pills, the sound, the dial, the slider, then tap and play (play then tap in landscape, as drawn).
+- Deviations from the contracts, kept deliberately: `MetronomeSettingsPanel(state, callbacks, telemetry, layout,
+  modifier)` (contract lists `pickerLayout`, `signatureColumns`); `AccentCell` gains the `label` slot and `AccentCells`
+  a `gap` parameter; the compact card draws no "BAR SHAPE" heading (the Stitch variant has none; the name is its tag).
+- Deferred: the Stacked column keeps `verticalScroll` attached and reports a zero scroll range when everything fits
+  (switching the modifier on and off would feed a measured size back into composition); the tests assert the range.
+  `TembraSpacing.tempoDialMaxWidth` (270 dp) is no longer read by the screen (the compact cap is
+  `MetronomeDefaults.CompactDialMax`, 300 dp, per the revised contract) and `TembraIcon.MusicNote` is no longer drawn
+  by the metronome; both stay until data-model §9 drops them. The menu trigger's drawn "4/4" is kept out of the
+  accessibility tree (the description names it), so tests assert the description, not the drawn text.
