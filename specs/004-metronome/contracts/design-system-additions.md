@@ -10,7 +10,7 @@
   `tempoDialMaxWidthWide`, `tempoStepper`, `tapTempoHeight`, `playButton`, `soundMenuWidth`,
   `soundTileHeight`, `soundTileGlyphBox`, `wideSettingsMinWidth` (values in data-model.md §9).
 - `TembraGradients`: `tempoArc: LinearGlow` (new helper `LinearGlow(start: Offset fraction, end: Offset fraction, stops)` with `brush(size)`, beside `RadialGlow`), `tempoDialCard: RadialGlow`,
-  `tempoDialOverlay: LinearGlow`, `accentGlow: Glow`, `playGlow: Glow`. No colour token is added
+  `tempoDialOverlay: LinearGlow`, `accentGlow: Glow`, `playGlow: Glow` (radius 8 dp since 2026-10-01, was 24 dp: the halo overlapped the Tap Tempo card). No colour token is added
   (`ThemeJsonParityTest` unchanged; `MetronomeTokensTest` asserts every stop is a scheme colour or
   the documented in-gradient stop `#1E1B2E`).
 - `TembraIcon`: `Remove, Add, TouchApp, MusicNote, GraphicEq, RadioButtonChecked, Notifications,
@@ -38,10 +38,14 @@ enum class CardDiscs { TopStartBottomEnd, TopEndBottomStart, None }
 @Composable fun TimeSignatureChips(selected: TimeSignature, onSelect: (TimeSignature) -> Unit, modifier: Modifier = Modifier, columns: Int = 6, testTag: String = "metronome.signature")
 @Composable fun SubdivisionChips(selected: Subdivision, unit: BeatUnit, onSelect: (Subdivision) -> Unit, modifier: Modifier = Modifier, testTag: String = "metronome.subdivision")
 //   both are thin wrappers over TembraChipRow; the subdivision chip's note glyph is the row's `icon`
+@Composable fun TimeSignatureMenu(selected: TimeSignature, onSelect: (TimeSignature) -> Unit, modifier: Modifier = Modifier, testTag: String = "metronome.signature")
+//   compact-layout menu (2026-10-01): a TembraPill-styled trigger showing the signature label with an expand_more 16 dp glyph; DropdownMenu on surfaceContainerHighest listing the six signatures, trailing Check on the selected; contentDescription "Time signature, 4/4"; items "metronome.signature.<id>"
+@Composable fun SubdivisionTiles(selected: Subdivision, unit: BeatUnit, onSelect: (Subdivision) -> Unit, modifier: Modifier = Modifier, testTag: String = "metronome.subdivision")
+//   compact-layout tiles (2026-10-01): four 44 dp square tiles, icon only (TembraIcon.Note* per subdivision and beat unit), selected = primary container, role = Tab + selected, tooltip and contentDescription = the value label; items "metronome.subdivision.<id>"; SubdivisionChips keeps the labels and uses the same glyphs as its icon
 
 @Composable fun AccentCells(pattern: AccentPattern, running: Boolean, currentBeat: Int, telemetry: BeatTelemetry, onCycle: (Int) -> Unit, modifier: Modifier = Modifier, testTag: String = "metronome.cells")
 //   `currentBeat` is the ViewModel's 10 Hz sample (-1 when stopped) and feeds each cell's stateDescription (", playing"); the light itself comes from `telemetry` in the draw phase; cells are tagged `metronome.cell.<n>`
-//   one AccentCell per beat, gap 8, wraps to two rows when a cell would be under 44 dp or narrower than its widest level label ("ACCENT" in microLabel bold plus the cell padding; 6/8 and 7/8 on a phone); each cell reads `tick.longValue` (rememberFrameTick(running)) and telemetry.litBeat(frame) inside drawBehind
+//   one AccentCell per beat in one row whenever each cell keeps 44 dp (gap 2–4 dp in the compact card, 8 dp elsewhere); the level label is hidden when a cell is narrower than its widest label ("ACCENT" in microLabel bold plus the cell padding; 6/8 and 7/8 on a phone) and only when 44 dp cannot be kept the cells wrap to two rows (revised 2026-10-01); each cell reads `tick.longValue` (rememberFrameTick(running)) and telemetry.litBeat(frame) inside drawBehind
 @Composable fun AccentCell(index: Int, level: BeatLevel, lit: () -> Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, playing: Boolean = false, interactionSource: MutableInteractionSource? = null, testTag: String? = null)
 //   surfaceContainerLowest card; bar box 64 dp; bar height by level (95/62/42 %), colours secondary / primary / primary 70 %; accentGlow on Accent; label microLabel; `lit` is a provider read in the draw phase only
 

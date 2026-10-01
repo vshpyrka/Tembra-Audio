@@ -62,19 +62,20 @@ fun interface BeatTelemetry { fun litBeat(frameNanos: Long): Int }   // -1 = non
 ## Composition
 
 ```
-Stacked (width under 600 dp, or under 840 dp at 480 dp or taller):
+Stacked (width under 600 dp, or under 840 dp at 480 dp or taller) — revised 2026-10-01 (design iteration D1: the three separate cards pushed the dial off a phone screen):
 Column(testTag "screen.metronome", padding pageMargin)
-├── Column(verticalScroll, weight 1, gap md)
-│   ├── MetronomeSettingsPanel(state, callbacks, layout)                       one card per section, design order
-│   │   ├── SectionCard "TIME SIGNATURE" + caption "Common & Complex": TimeSignatureChips   "metronome.signature", items "metronome.signature.<id>"
-│   │   ├── SectionCard "RHYTHM SUBDIVISION": SubdivisionChips (labels per beat unit)       "metronome.subdivision", items "metronome.subdivision.<id>"
-│   │   ├── SectionCard: AccentCells(state.settings.pattern, telemetry, running)             "metronome.cells", cells "metronome.cell.<n>"
-│   │   │                StyleRow(state.settings.style, onStyle)                              "metronome.style", pills "metronome.style.<id>"
-│   │   └── ClickSoundPicker(layout = Dropdown, sound, customSound, onSound, onImport, onReplace)   "metronome.sound", menu items "metronome.sound.<id>", "metronome.sound.replace"
-│   └── TembraGradientCard(glow = tempoDialCard, testTag "metronome.dialCard")
-│       ├── TempoDial(tempo, marking, canStepDown, canStepUp, onTempo, onStep)               "metronome.dial", steppers "metronome.dial.down" / "metronome.dial.up"
-│       └── TempoSlider(tempo, onTempo)                                                       "metronome.slider"
+├── Column(weight 1, gap md; verticalScroll only when the dial ring would drop under 160 dp)
+│   ├── SectionCard "BAR SHAPE" (gap sm)                                                                 "metronome.bar"
+│   │   ├── Row(gap sm): TimeSignatureMenu — a pill in the TembraPill style showing the current signature ("4/4") with an expand_more glyph; DropdownMenu (surfaceContainerHighest) listing the six signatures with a trailing Check on the selected one   "metronome.signature", items "metronome.signature.<id>"
+│   │   │              + SubdivisionTiles — four 44 dp square tiles, icon only (the note glyph per subdivision and beat unit: TembraIcon.NoteQuarter/NoteEighthPair/NoteSixteenthQuad/NoteEighthTriplet on a quarter beat, NoteEighth/NoteSixteenthPair/NoteThirtySecondQuad/NoteSixteenthTriplet on an eighth beat), selected = primary container like a selected chip; tooltip and contentDescription = the value label ("1/4" …); role = Tab + selected   "metronome.subdivision", items "metronome.subdivision.<id>"
+│   │   ├── AccentCells(oneRow) — every beat in one row whenever each cell keeps 44 dp: the row spans the card's inner width with a 2–4 dp gap and the cell width is the share of that width; the level label is hidden when a cell is narrower than its widest label (6/8 and 7/8 on a phone) and the bar alone shows the level; only when 44 dp cannot be kept the cells wrap as before   "metronome.cells", cells "metronome.cell.<n>"
+│   │   └── StyleRow(state.settings.style, onStyle)                                                      "metronome.style", pills "metronome.style.<id>"
+│   ├── ClickSoundPicker(layout = Dropdown, sound, customSound, onSound, onImport, onReplace)             "metronome.sound", menu items "metronome.sound.<id>", "metronome.sound.replace"
+│   └── TembraGradientCard(glow = tempoDialCard, weight 1, testTag "metronome.dialCard"): TempoDial sized from the remaining height (ring 160–300 dp)   "metronome.dial", steppers "metronome.dial.down" / "metronome.dial.up"
+│       └── TempoSlider(tempo, onTempo)                                                                   "metronome.slider"
 └── Row(pinned, gap md): TapTempoButton(caption, onTap) "metronome.tap"; PlayPauseButton(running, onTogglePlayback) "metronome.play"
+
+On a 411 × 891 dp phone (Pixel 6 Pro) and a 402 × 874 dp phone (iPhone 17) at the default font scale the dial card, its slider and the pinned row are all inside the viewport without scrolling; TimeSignatureChips and SubdivisionChips (with labels and the same note glyphs as icons) remain the Wide and Landscape controls.
 
 Wide (840 dp or wider and 480 dp or taller):
 Row(testTag "screen.metronome", padding pageMargin, gap md)
@@ -86,7 +87,7 @@ Row(testTag "screen.metronome", padding pageMargin, gap md)
 Landscape (600 dp or wider, shorter than 480 dp):
 Row(testTag "screen.metronome", padding pageMargin × sm, gap md)
 ├── settings column (36 % of the width within 224–280 dp, both bounds multiplied by the font scale so large fonts keep whole chips — B13 review note, verticalScroll): TimeSignatureChips in two rows of three (`columns = 3`), SubdivisionChips, AccentCells + StyleRow, ClickSoundPicker(Dropdown)
-└── pane (weight 1): TempoDial sized from the pane with TempoSlider under it, and the tap/play controls placed by whichever arrangement yields the larger dial (B13 ruling, 2026-09-30): the tap/play row under the slider when the pane is tall enough (the Stitch phone-landscape mock; dial = height − slider row − tap/play row − gaps), otherwise tap over play in a column beside the dial card (a phone held sideways has about 290 dp of pane height, where the stacked order pushed the transport off screen and shrank the readout); the dial stays within 160–420 dp and the pane scrolls only when neither arrangement keeps it at 160 dp
+└── pane (weight 1): TempoDial sized from the pane with TempoSlider under it, and the tap/play controls placed by whichever arrangement yields the larger dial (B13 ruling, 2026-09-30): the tap/play row under the slider when the pane is tall enough (the Stitch phone-landscape mock; dial = height − slider row − tap/play row − gaps), otherwise play over tap in a column beside the dial card (revised 2026-10-01: play on top, as the user asked) (a phone held sideways has about 290 dp of pane height, where the stacked order pushed the transport off screen and shrank the readout); the dial stays within 160–420 dp and the pane scrolls only when neither arrangement keeps it at 160 dp
 ```
 
 **Semantics** (spec FR-030): chips and pills `role = Tab` + `selected`; cells `role = Button`,
