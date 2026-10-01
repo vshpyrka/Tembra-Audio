@@ -562,6 +562,7 @@ class MetronomeScreenTest {
         mainClock.autoAdvance = false
         setContent {
             TembraTheme {
+                pixelDensity = LocalDensity.current.density
                 Box(Modifier.requiredSize(form.first)) {
                     MetronomeScreenContent(
                         state = form.second,
@@ -652,7 +653,14 @@ class MetronomeScreenTest {
         assertWithin(marking, "metronome.dial", "the marking", onScreen)
         val text = marking.fetchSemanticsNode().config[SemanticsProperties.Text].single().text
         assertTrue(text == "Moderato (108-120)" || text == "Moderato", "the marking reads \"$text\"")
-        assertEquals(1, marking.textLayoutResult().lineCount, "the marking \"$text\" wraps")
+        val layout = marking.textLayoutResult()
+        assertEquals(1, layout.lineCount, "the marking \"$text\" wraps")
+        // One line is not enough: with `softWrap = false` a name too wide even at the step-down floor would be clipped.
+        assertTrue(!layout.didOverflowWidth, "the marking \"$text\" overflows its width (${layout.size})")
+        assertTrue(!layout.isLineEllipsized(0), "the marking \"$text\" is ellipsised")
+        val dial = bounds("metronome.dial")
+        val drawn = (layout.size.width / pixelDensity).dp
+        assertTrue(drawn <= dial.width + 0.5.dp, "the marking \"$text\" is $drawn wide, wider than the dial ${dial.width}")
     }
 
     /**

@@ -109,6 +109,20 @@ class ClickSoundPickerTest {
         onNodeWithTag("sound.classic-wood").assertDoesNotExist()
     }
 
+    /** The pill says whether its menu is open, as the signature pill does. */
+    @Test
+    fun thePillReadsCollapsedOrExpanded() = runComposeUiTest {
+        setPicker(ClickSoundPickerLayout.Dropdown)
+        onNodeWithTag("sound").assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Collapsed"))
+        onNodeWithTag("sound").performClick()
+        settle()
+        onNodeWithTag("sound").assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Expanded"))
+        onNodeWithTag("sound.cowbell").performClick()
+        settle()
+        assertEquals(listOf<ClickSound>(ClickSound.BuiltIn(BuiltInClickSound.Cowbell)), selected)
+        onNodeWithTag("sound").assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Collapsed"))
+    }
+
     @Test
     fun theMenuListsTheSoundsInOrderAndChecksTheCurrentOne() = runComposeUiTest {
         setPicker(ClickSoundPickerLayout.Dropdown)
