@@ -596,8 +596,9 @@ and the picker with the platform screen reader.
   bar-shape card as portrait (time signature menu, subdivision tiles, accent cells in one row,
   style pills) so that the accent cells are visible without scrolling (revised 2026-10-01 after
   the Pixel landscape check: the chip cards pushed the cells below the fold), the dial with its
-  slider and, underneath it, the Tap Tempo and play controls form one block at the right edge so
-  the settings take the remaining width (revised 2026-10-01, second user check), and the dial,
+  slider and, underneath it, the Tap Tempo and play controls form one block centred in the right
+  four sevenths of the width while the settings take the left three sevenths (revised
+  2026-10-01, second and third user checks), and the dial,
   slider, Tap Tempo and play controls fit without scrolling while the settings column may scroll
   only at large font sizes. The accent cells MUST stay in one row for every time signature whenever each
   cell can keep its 44 dp minimum, hiding the level label when a cell is narrower than its widest
