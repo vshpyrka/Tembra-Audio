@@ -86,8 +86,8 @@ Row(testTag "screen.metronome", padding pageMargin, gap md)
 
 Landscape (600 dp or wider, shorter than 480 dp):
 Row(testTag "screen.metronome", padding pageMargin × sm, gap md)
-├── settings column (40 % of the width within 240–344 dp, both bounds multiplied by the font scale, so that seven 44 dp cells and the signature pill beside four 44 dp tiles fit on a phone — revised 2026-10-01 after the Pixel landscape check: the chip cards pushed the accent cells below the fold; verticalScroll only when the card does not fit): the same compact bar-shape card as Stacked (TimeSignatureMenu + SubdivisionTiles row, AccentCells one row, StyleRow), then ClickSoundPicker(Dropdown); TimeSignatureChips and SubdivisionChips remain the Wide controls only
-└── dial block (end-aligned, fixed width = the dial card's width, revised 2026-10-01 after the user's second landscape check — the settings column keeps the remaining width): Column(gap sm)
+├── settings column (3⁄7 of the width — a 3:4 split against the dial pane, the user's choice on 2026-10-01 after a full-width column took too much room — never under 240 dp × font scale; verticalScroll only when the card does not fit): the same compact bar-shape card as Stacked (TimeSignatureMenu + SubdivisionTiles row, AccentCells one row, StyleRow), then ClickSoundPicker(Dropdown); TimeSignatureChips and SubdivisionChips remain the Wide controls only
+└── dial pane (the remaining 4⁄7): the dial block — Column(gap sm) of the dial card and the transport row, width = the dial card's width — centred horizontally in the pane (revised 2026-10-01, the user's second and third landscape checks)
     ├── TembraGradientCard(tempoDialCard, testTag "metronome.dialCard"): TempoDial with the ring sized from the pane height (height − transport row − slider − gaps − paddings, clamped 160–300 dp), TempoSlider
     └── Row(gap sm): TapTempoButton (weight 1) + PlayPauseButton — the row's height scales between 48 and 64 dp with the pane height (targets never under 44 dp); the pane scrolls only when even a 48 dp row leaves the ring under 160 dp
     (the former "larger dial" rule that put tap and play beside the dial card is withdrawn)
