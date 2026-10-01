@@ -73,7 +73,7 @@ enum class ClickSoundPickerLayout { Dropdown, Tiles }
 @Composable fun PlayPauseButton(running: Boolean, onToggle: () -> Unit, modifier: Modifier = Modifier, interactionSource: MutableInteractionSource? = null, testTag: String = "metronome.play")
 //   64 dp round secondaryContainer, hover secondary, TembraIcon.PlayArrowFilled / PauseFilled 34 dp (fetched with `tools/fetch-material-symbols.sh --fill`), playGlow; contentDescription follows `running`
 
-@Composable fun MetronomeSettingsPanel(state: MetronomeUiState, callbacks: MetronomeCallbacks, telemetry: BeatTelemetry, pickerLayout: ClickSoundPickerLayout, signatureColumns: Int, modifier: Modifier = Modifier)
+@Composable fun MetronomeSettingsPanel(state: MetronomeUiState, callbacks: MetronomeCallbacks, telemetry: BeatTelemetry, layout: MetronomeLayout, modifier: Modifier = Modifier)
 //   stacks the section cards in the design order; used by all three layouts; lives in `audio.tembra.ui.metronome` (screen-level), not in `components`
 object MetronomeDefaults { /* bar heights, glyph sizes, repeat delays, section label style */ }
 ```
