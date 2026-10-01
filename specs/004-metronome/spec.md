@@ -345,10 +345,12 @@ and the picker with the platform screen reader.
 
 **Acceptance Scenarios**:
 
-1. **Given** a window narrower than 600 dp, **When** Metronome is shown, **Then** the cards form
-   one column in the design's order (time signature, subdivision, accents and style, sound
-   picker, dial with slider), the column scrolls if the height is short, and the Tap Tempo and
-   play controls stay visible at the bottom without scrolling; nothing is clipped or overlapping.
+1. **Given** a window narrower than 600 dp, **When** Metronome is shown, **Then** one compact
+   card holds the bar-shape controls (time signature menu, subdivision tiles, accent cells in one
+   row, style pills), the sound picker and the dial with its slider follow, the dial, slider, Tap
+   Tempo and play controls are visible without scrolling at the default font scale, the column
+   scrolls only when the height cannot hold the dial at its minimum, and the Tap Tempo and play
+   controls stay visible at the bottom; nothing is clipped or overlapping.
 2. **Given** a window 840 dp or wider and at least 480 dp tall, **When** Metronome is shown,
    **Then** the settings cards stand in a left column with the sound picker as a tile grid, the
    dial and slider fill the area beside them, the Tap Tempo and play controls sit beneath the
@@ -578,17 +580,25 @@ and the picker with the platform screen reader.
 
 **Layout, input and accessibility**
 
-- **FR-028**: The screen MUST adapt to the window: in windows narrower than 600 dp the cards
-  form one scrolling column in the design's order with the Tap Tempo and play controls always
-  visible at the bottom; in windows 840 dp or wider that are at least 480 dp tall the settings
-  cards (with the picker as a tile grid) form a left column, the dial and slider fill the area
-  beside them and the Tap Tempo and play controls sit beneath the dial; between 600 and 839 dp
-  the compact rules apply; in windows at least 600 dp wide and shorter than 480 dp (a phone held
-  sideways) the settings stand in a column beside the dial with the time-signature chips in two
-  rows of three, and the dial, slider, Tap Tempo and play controls fit without scrolling while
-  the settings column may scroll. The accent cells and the chips MUST wrap to a second row
-  rather than shrink below their minimum size. Nothing MUST clip, overlap or scroll horizontally
-  at any width, including at the largest system font size.
+- **FR-028**: The screen MUST adapt to the window: in windows narrower than 600 dp the
+  bar-shape controls share one compact card (the time signature as a menu, the subdivisions as
+  note-figure tiles, the accent cells in one row, the style pills) above the sound picker and the
+  dial, the dial card takes the remaining height so that the dial, its slider and the Tap Tempo
+  and play controls are visible without scrolling on a phone in portrait at the default font
+  scale, and the column scrolls only when the dial would fall under its minimum size, with the
+  Tap Tempo and play controls always visible at the bottom (revised 2026-10-01: the separate
+  cards pushed the dial off screen); in windows 840 dp or wider that are at least 480 dp tall the
+  settings cards (with the picker as a tile grid) form a left column, the dial and slider fill
+  the area beside them and the Tap Tempo and play controls sit beneath the dial; between 600 and
+  839 dp the compact rules apply; in windows at least 600 dp wide and shorter than 480 dp (a
+  phone held sideways) the settings stand in a column beside the dial with the time-signature
+  chips in two rows of three, the play control sits above the Tap Tempo control beside the dial,
+  and the dial, slider, Tap Tempo and play controls fit without scrolling while the settings
+  column may scroll. The accent cells MUST stay in one row for every time signature whenever each
+  cell can keep its 44 dp minimum, hiding the level label when a cell is narrower than its widest
+  label; only when 44 dp cannot be kept do they, like the chips, wrap to a second row rather than
+  shrink below their minimum size. Nothing MUST clip, overlap or scroll horizontally at any
+  width, including at the largest system font size.
 - **FR-029**: Every chip, cell, pill, picker entry, stepper, the slider, the dial, the Tap Tempo
   button and the play button MUST show a hover state under a pointer and a visible focus
   indicator, MUST be operable from the keyboard, and MUST measure at least 44 dp in both
