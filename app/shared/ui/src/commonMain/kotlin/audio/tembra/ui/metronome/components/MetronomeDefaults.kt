@@ -33,8 +33,11 @@ internal object MetronomeDefaults {
     const val HOLD_DELAY_MILLIS = 400L
     const val HOLD_INTERVAL_MILLIS = 80L
 
+    /** The smallest "120" may be with "BPM" beside it; below that "BPM" sets under the number. */
+    val ReadoutNumberFloor: TextUnit = 28.sp
+
     /** The smallest the readout's marking steps down to before it would wrap or clip (the largest fonts). */
-    val MarkingMinSize: TextUnit = 8.sp
+    val MarkingMinSize: TextUnit = 6.sp
 
     /** The page keys move the tempo by ten, the arrows and the wheel by one. */
     const val PAGE_STEP = 10
@@ -131,11 +134,21 @@ internal object MetronomeDefaults {
     const val WIDE_SETTINGS_FRACTION = 1f / 3f
 
     /**
-     * The landscape settings column: 36 % of the width within feature 003's landscape column tokens, those bounds
-     * scaled by the font scale, and never over half the width, as the tuner's column.
+     * The landscape settings column (T150, T152): 2⁄5 of the width (a 2:3 split against the dial pane, the user's
+     * choice), at least [LandscapeSettingsMinWidth] scaled by the font scale; it scrolls only when the card is taller
+     * than the screen.
      */
-    const val LANDSCAPE_SETTINGS_FRACTION = 0.36f
-    const val LANDSCAPE_SETTINGS_MAX_FRACTION = 0.5f
+    const val LANDSCAPE_SETTINGS_FRACTION = 2f / 5f
+    val LandscapeSettingsMinWidth: Dp = 240.dp
+
+    /**
+     * The landscape block's tap and play row (T152): [LandscapeRowMin] for panes up to [LandscapeRowScaleFrom] tall,
+     * growing linearly to [LandscapeRowMax] at [LandscapeRowScaleTo]; the targets never go under 44 dp.
+     */
+    val LandscapeRowMin: Dp = 48.dp
+    val LandscapeRowMax: Dp = 64.dp
+    val LandscapeRowScaleFrom: Dp = 300.dp
+    val LandscapeRowScaleTo: Dp = 420.dp
 
     /** The dial grows with the space it is given down to this; below it the column or the pane scrolls instead. */
     val DialMin: Dp = 160.dp
@@ -145,7 +158,4 @@ internal object MetronomeDefaults {
 
     /** A subdivision tile's note figure inside its 44 dp tile (design iteration D1). */
     val SubdivisionGlyphSize: Dp = 24.dp
-
-    /** The landscape pane's tap and play column, when it stands beside the dial: wide enough for "TAP TEMPO". */
-    val LandscapeTransportWidth: Dp = 176.dp
 }

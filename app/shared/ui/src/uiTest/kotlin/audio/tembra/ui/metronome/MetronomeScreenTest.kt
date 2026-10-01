@@ -85,6 +85,7 @@ import audio.tembra.ui.designsystem.textLayoutResult
 import audio.tembra.ui.metronome.components.AccentCell
 import audio.tembra.ui.metronome.components.MetronomeDefaults
 import audio.tembra.ui.metronome.components.PlayPauseButton
+import audio.tembra.ui.theme.TembraIcon
 import audio.tembra.ui.theme.TembraTheme
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -272,7 +273,7 @@ class MetronomeScreenTest {
 
     @Test
     fun aSignatureChipSelectsItsSignature() = runComposeUiTest {
-        setScreen(layout = MetronomeLayout.Landscape, size = landscapeWindow)
+        setScreen(layout = MetronomeLayout.Wide, size = wideWindow)
         onNodeWithTag("metronome.signature.6-8").performClick()
         settle()
         assertEquals(listOf(TimeSignature.SixEight), signatures)
@@ -508,13 +509,13 @@ class MetronomeScreenTest {
     fun landscapeHasANarrowColumnAndTheWholeTransportWithoutScrolling() = runComposeUiTest {
         setScreen(layout = MetronomeLayout.Landscape, size = landscapeWindow)
         val settings = bounds("metronome.settings")
-        assertTrue(settings.width >= 224.dp - 0.5.dp && settings.width <= 280.dp + 0.5.dp, "the settings column is ${settings.width} wide")
-        val first = listOf("4-4", "3-4", "6-8").map { bounds("metronome.signature.$it") }
-        val second = listOf("2-4", "5-4", "7-8").map { bounds("metronome.signature.$it") }
-        for (chip in first + second) assertTrue(settings.contains(chip), "a signature chip $chip leaves the column $settings")
-        assertEquals(1, first.map { it.top }.distinct().size, "the first three signatures are not one row")
-        assertEquals(1, second.map { it.top }.distinct().size, "the last three signatures are not one row")
-        assertTrue(second[0].top >= first[0].bottom, "the signatures are not two rows")
+        assertTrue(settings.width >= 240.dp - 0.5.dp, "the settings column is ${settings.width} wide")
+        // The compact card (T150): the signature menu and the tiles, no chips.
+        for (tag in listOf("metronome.bar", "metronome.signature", "metronome.subdivision", "metronome.cells", "metronome.style")) {
+            assertTrue(settings.contains(bounds(tag)), "$tag (${bounds(tag)}) leaves the column $settings")
+        }
+        onNodeWithTag("metronome.signature").assertContentDescriptionEquals("Time signature, 4/4")
+        onNodeWithTag("metronome.signature.4-4").assertDoesNotExist()
         val screen = bounds("screen.metronome")
         for (tag in listOf("metronome.dial", "metronome.slider", "metronome.tap", "metronome.play")) {
             val control = bounds(tag)
@@ -534,12 +535,8 @@ class MetronomeScreenTest {
             assertTrue(screen.contains(bounds(tag)), "$tag (${bounds(tag)}) is outside the window $screen")
             onNode(hasTestTag(tag) and hasAnyAncestor(hasScrollAction())).assertDoesNotExist()
         }
-        assertTrue(bounds("metronome.dial").height >= 200.dp, "the dial is ${bounds("metronome.dial").height}, too small for its readout")
-        // Beside the dial card, play sits above tap (revised 2026-10-01).
-        val play = bounds("metronome.play")
-        val tap = bounds("metronome.tap")
-        assertTrue(play.left >= bounds("metronome.dialCard").right, "play ($play) is not beside the dial card")
-        assertTrue(play.bottom <= tap.top, "play ($play) is not above tap ($tap)")
+        assertTrue(bounds("metronome.dial").height >= 160.dp - 0.5.dp, "the dial is ${bounds("metronome.dial").height}")
+        assertLandscapeBlock("892 × 330")
     }
 
     // --- Design iteration D1: the compact card keeps the dial on a phone screen (T144) ---------------------------------
@@ -679,46 +676,164 @@ class MetronomeScreenTest {
     }
 
     /**
-     * FR-028 at the largest font in a phone held sideways (the Pixel's pane): the section labels and the chips, with their
-     * note glyphs, stay whole in the settings column, nothing there overlaps, and play stays above tap beside the dial.
+     * FR-028 at the largest font in a phone held sideways (the Pixel's pane): the compact bar-shape card (T150) renders
+     * whole in the settings column, which may scroll at this size; nothing there overlaps, the signature pill's label and
+     * the tiles' glyphs stay inside their controls, and the dial block (tap and play under the dial card) holds.
      */
     @Test
-    fun theLargestFontKeepsTheLandscapeChipsWholeWithPlayAboveTap() = runComposeUiTest {
+    fun theLargestFontKeepsTheLandscapeCardWholeBesideTheDialBlock() = runComposeUiTest {
         setScreen(layout = MetronomeLayout.Landscape, size = DpSize(892.dp, 330.dp), fontScale = 2f)
         mainClock.autoAdvance = true
         val settings = "metronome.settings"
-        val signatures = listOf("4-4", "3-4", "6-8", "2-4", "5-4", "7-8")
-        val subdivisions = listOf("1" to "1/4", "2" to "1/8", "4" to "1/16", "3" to "3let")
-        val labels = listOf(settings to "TIME SIGNATURE", settings to "Common & Complex", settings to "RHYTHM SUBDIVISION") +
-            signatures.map { "metronome.signature.$it" to it.replace('-', '/') } +
-            subdivisions.map { (id, label) -> "metronome.subdivision.$id" to label } +
+        val subdivisions = listOf("1", "2", "4", "3")
+        val labels = listOf(settings to "STYLE") +
             listOf("metronome.style.standard" to "Standard", "metronome.style.downbeat" to "Downbeat", "metronome.style.syncopated" to "Syncopated")
         // The 892 dp host is wider than a phone held upright: bounds, not visibility (see assertWithin).
         for ((parent, label) in labels) assertWhole(parent, label, onScreen = false)
-        for ((id, _) in subdivisions) {
-            val glyph = onNodeWithTag("metronome.subdivision.$id.icon", useUnmergedTree = true)
-            glyph.performScrollTo()
-            assertWithin(glyph, "metronome.subdivision.$id", "the note glyph of subdivision $id", onScreen = false)
+        val drawn = listOf("metronome.signature" to "metronome.signature.label", "metronome.sound" to "metronome.sound.label") +
+            subdivisions.map { "metronome.subdivision.$it" to "metronome.subdivision.$it.icon.${quarterGlyphs.getValue(it)}" }
+        for ((parent, tag) in drawn) {
+            val node = onNodeWithTag(tag, useUnmergedTree = true)
+            node.performScrollTo()
+            assertWithin(node, parent, "$tag in $parent", onScreen = false)
         }
-        val controls = signatures.map { "metronome.signature.$it" } +
-            subdivisions.map { "metronome.subdivision.${it.first}" } +
+        val controls = listOf("metronome.signature") +
+            subdivisions.map { "metronome.subdivision.$it" } +
             (1..4).map { "metronome.cell.$it" } +
             listOf("standard", "downbeat", "syncopated").map { "metronome.style.$it" } + "metronome.sound"
         val column = bounds(settings)
         val placed = controls.map { it to bounds(it) }
         for ((tag, rect) in placed) assertTrue(rect.left >= column.left - 0.5.dp && rect.right <= column.right + 0.5.dp, "$tag ($rect) leaves the column $column")
+        for ((tag, rect) in placed) assertTrue(rect.width >= 44.dp - 0.5.dp && rect.height >= 44.dp - 0.5.dp, "$tag is ${rect.width} × ${rect.height}")
         for (i in placed.indices) for (j in i + 1 until placed.size) {
             assertTrue(!placed[i].second.intersects(placed[j].second), "${placed[i].first} ${placed[i].second} overlaps ${placed[j].first} ${placed[j].second}")
         }
-        val screen = bounds("screen.metronome")
-        for (tag in listOf("metronome.dial", "metronome.slider", "metronome.tap", "metronome.play")) {
-            assertTrue(screen.contains(bounds(tag)), "$tag (${bounds(tag)}) is outside the window $screen")
-        }
-        assertTrue(bounds("metronome.play").bottom <= bounds("metronome.tap").top, "play (${bounds("metronome.play")}) is not above tap (${bounds("metronome.tap")})")
+        assertLandscapeBlock("2× font")
         for (tag in listOf("metronome.tap.title", "metronome.tap.caption")) {
             assertWithin(onNodeWithTag(tag, useUnmergedTree = true), "metronome.tap", "$tag in metronome.tap", onScreen = false)
         }
         assertMarkingOnOneLine(onScreen = false)
+    }
+
+    /** The quarter-note figures by tile id, as `SubdivisionGlyphs` maps them. */
+    private val quarterGlyphs = mapOf(
+        "1" to TembraIcon.NoteQuarter.name, "2" to TembraIcon.NoteEighthPair.name,
+        "4" to TembraIcon.NoteSixteenthQuad.name, "3" to TembraIcon.NoteEighthTriplet.name,
+    )
+
+    // --- T150: phone landscape uses the compact card ---------------------------------------------------------------------
+
+    /** Composes the Landscape screen once; the returned setter switches window and state. */
+    private fun ComposeUiTest.setLandscapeForms(): (DpSize, MetronomeUiState) -> Unit {
+        var form by mutableStateOf(DpSize(891.dp, 411.dp) to loaded)
+        mainClock.autoAdvance = false
+        setContent {
+            TembraTheme {
+                pixelDensity = LocalDensity.current.density
+                Box(Modifier.requiredSize(form.first)) {
+                    MetronomeScreenContent(
+                        state = form.second,
+                        callbacks = callbacks,
+                        telemetry = telemetry,
+                        layout = MetronomeLayout.Landscape,
+                        snackbarHostState = remember { SnackbarHostState() },
+                    )
+                }
+            }
+        }
+        settle()
+        return { size, state -> form = size to state; settle() }
+    }
+
+    /**
+     * A Pixel 6 Pro (891 × 411 dp) and an iPhone 17 (874 × 402 dp) held sideways at the default font: the settings
+     * column (2⁄5 of the width, T152) holds the compact card with the signature pill beside the tiles, 7/8's seven cells
+     * in one row of 44 dp cells and the style row, without scrolling; the dial card and the transport row span the pane.
+     */
+    @Test
+    fun landscapeShowsTheWholeCompactCardWithoutScrolling() = runComposeUiTest {
+        val show = setLandscapeForms()
+        for (window in listOf(DpSize(891.dp, 411.dp), DpSize(874.dp, 402.dp))) for (signature in listOf(TimeSignature.FourFour, TimeSignature.SevenEight)) {
+            show(window, loaded.copy(settings = settingsFor(signature)))
+            val what = "${window.width} × ${window.height}, ${signature.label}"
+            val root = bounds("screen.metronome")
+            val column = bounds("metronome.settings")
+            // The 2:3 split: the column is 2⁄5 of the content width.
+            assertTrue(abs((column.width - root.width * 2f / 5f).value) <= 1f, "$what: the column is ${column.width} of ${root.width}")
+            assertLandscapeCard(what, beats = signature.beats)
+            assertLandscapeBlock(what)
+        }
+    }
+
+    /**
+     * The compact card in the landscape column (T150) at the default font: the signature pill beside the tiles, the
+     * [beats] cells in one row of 44 dp cells, the style row and the sound pill, all inside the column and the screen,
+     * and the column does not scroll.
+     */
+    private fun ComposeUiTest.assertLandscapeCard(what: String, beats: Int) {
+        val root = bounds("screen.metronome")
+        val column = bounds("metronome.settings")
+        val scroll = onNodeWithTag("metronome.settings").fetchSemanticsNode().config.getOrNull(SemanticsProperties.VerticalScrollAxisRange)
+        assertEquals(0f, scroll?.maxValue?.invoke() ?: 0f, "$what: the settings column scrolls")
+        for (tag in listOf("metronome.bar", "metronome.signature", "metronome.subdivision", "metronome.cells", "metronome.style", "metronome.sound")) {
+            val rect = bounds(tag)
+            assertTrue(root.contains(rect) && column.contains(rect), "$what: $tag ($rect) is not inside the column $column and the screen $root")
+        }
+        val pill = bounds("metronome.signature")
+        val tiles = bounds("metronome.subdivision")
+        assertTrue(pill.right <= tiles.left && pill.bottom > tiles.top && tiles.bottom > pill.top, "$what: the pill $pill is not beside the tiles $tiles")
+        val cells = (1..beats).map { bounds("metronome.cell.$it") }
+        assertEquals(1, cells.map { it.top }.distinct().size, "$what: the cells are not one row: ${cells.map { it.top }}")
+        for ((n, cell) in cells.withIndex()) assertTrue(cell.width >= 44.dp - 0.5.dp, "$what: cell ${n + 1} is ${cell.width}")
+    }
+
+    /**
+     * The real hosts of a phone held sideways (the window less the navigation rail, the header and the safe areas,
+     * measured on the devices, NOTES.md T152): the Pixel 6 Pro (785 × 303 dp) and the iPhone 17 (686 × 308 dp). The
+     * dial pane holds whole there; the 2⁄5 column (301 and 262 dp) is narrower than the window-based sizing assumed, so
+     * the card is taller than the screen and the column scrolls (asserted: the cells keep 44 dp, the card starts in
+     * view, the column scrolls rather than clipping).
+     */
+    @Test
+    fun landscapeOnTheDeviceHostsKeepsTheDialPaneWhole() = runComposeUiTest {
+        val show = setLandscapeForms()
+        for (host in listOf(DpSize(785.dp, 303.dp), DpSize(686.dp, 308.dp))) for (signature in listOf(TimeSignature.FourFour, TimeSignature.SevenEight)) {
+            show(host, loaded.copy(settings = settingsFor(signature)))
+            val what = "host ${host.width} × ${host.height}, ${signature.label}"
+            val root = bounds("screen.metronome")
+            val column = bounds("metronome.settings")
+            assertTrue(abs((column.width - maxOf(root.width * 2f / 5f, 240.dp)).value) <= 1f, "$what: the column is ${column.width}")
+            for (n in 1..signature.beats) assertTrue(bounds("metronome.cell.$n").width >= 44.dp - 0.5.dp, "$what: cell $n is under 44 dp")
+            assertTrue(root.contains(bounds("metronome.signature")), "$what: the card does not start in view")
+            assertLandscapeBlock(what)
+        }
+    }
+
+    /**
+     * T152: the dial card spans the dial pane (the 3⁄5 right of the settings column and its gap) with the ring inside it,
+     * and tap (taking the rest of the row) and play sit under it across the pane; all inside the screen, the ring at
+     * least 160 dp, the row 48–64 dp tall, nothing in the pane scrolls.
+     */
+    private fun ComposeUiTest.assertLandscapeBlock(what: String) {
+        val root = bounds("screen.metronome")
+        val pane = bounds("metronome.settings").right + 12.dp to root.right
+        val card = bounds("metronome.dialCard")
+        val tap = bounds("metronome.tap")
+        val play = bounds("metronome.play")
+        assertTrue(abs((card.left - pane.first).value) < 1f && abs((card.right - pane.second).value) < 1f, "$what: the dial card ($card) does not span the pane ${pane.first}..${pane.second}")
+        for ((tag, rect) in listOf("metronome.dialCard" to card, "metronome.tap" to tap, "metronome.play" to play, "metronome.slider" to bounds("metronome.slider"))) {
+            assertTrue(root.contains(rect), "$what: $tag ($rect) is outside the screen $root")
+            onNode(hasTestTag(tag) and hasAnyAncestor(hasScrollAction())).assertDoesNotExist()
+        }
+        assertTrue(tap.top >= card.bottom - 0.5.dp && play.top >= card.bottom - 0.5.dp, "$what: tap ($tap) and play ($play) are not under the dial card ($card)")
+        assertTrue(abs((tap.left - pane.first).value) < 1f && abs((play.right - pane.second).value) < 1f && play.left >= tap.right, "$what: tap ($tap) and play ($play) do not span the pane")
+        for ((tag, rect) in listOf("metronome.tap" to tap, "metronome.play" to play)) {
+            assertTrue(rect.height >= 48.dp - 0.5.dp && rect.height <= 64.dp + 0.5.dp, "$what: $tag is ${rect.height} tall")
+        }
+        val dial = bounds("metronome.dial")
+        assertTrue(dial.height >= 160.dp - 0.5.dp, "$what: the ring is ${dial.height}")
+        assertTrue(card.contains(dial), "$what: the dial leaves its card")
+        assertTrue(abs(((dial.left + dial.right) / 2 - (card.left + card.right) / 2).value) < 1f, "$what: the ring is not centred in its card")
     }
 
     @Test
@@ -812,11 +927,11 @@ class MetronomeScreenTest {
         assertTabOrder(settingsTabOrder + tiles + transportTabOrder)
     }
 
-    /** A phone held sideways, play over tap beside the dial: the column first, then the dial, the slider, play and tap. */
+    /** A phone held sideways: the compact card first, then the dial block (the dial, the slider, tap and play under it). */
     @Test
     fun tabFollowsTheReadingOrderInTheLandscapeLayout() = runComposeUiTest {
         setScreen(layout = MetronomeLayout.Landscape, size = DpSize(892.dp, 330.dp))
-        assertTabOrder(settingsTabOrder + "metronome.sound" + transportTabOrder.dropLast(2) + "metronome.play" + "metronome.tap")
+        assertTabOrder(from = "metronome.signature", expected = compactSettingsTabOrder + "metronome.sound" + transportTabOrder)
     }
 
     /** From [from] (the 4/4 chip by default), each Tab moves keyboard focus to the next of [expected]. */

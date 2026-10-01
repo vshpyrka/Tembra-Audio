@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.hideFromAccessibility
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -22,7 +23,7 @@ import audio.tembra.ui.theme.TembraTheme
 
 /**
  * The dial's centre (research R8): "120" in `tempoNumber` with "BPM" in `secondary`, the marking in `tertiary` below.
- * The number steps its size down to fit its width. The marking stays on one line (ruling 2026-10-01): "Moderato
+ * The number steps its size down to fit its width, with "BPM" set under it on the smallest rings. The marking stays on one line (ruling 2026-10-01): "Moderato
  * (108-120)" when it fits the readout's width, the name alone ("Moderato") when it does not (rings under about 240 dp:
  * the iPhone 17 portrait dial, phone landscape), and a name still too wide (the largest fonts) steps its size down
  * rather than wrap or clip. The choice is made from the width the readout is given, while it is measured.
@@ -36,27 +37,62 @@ internal fun TempoReadout(tempo: Tempo, marking: TempoMarking, modifier: Modifie
     val typography = TembraTheme.typography
     val spacing = TembraTheme.spacing
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(spacing.xs / 2)) {
-        Row {
-            // The number shrinks to the room "BPM" leaves (a small dial, the largest font sizes); it never clips.
-            val number = TembraTheme.typographyExtras.tempoNumber
+        NumberLine(tempo)
+        MarkingLine(marking)
+    }
+}
+
+/**
+ * "120" with "BPM" beside it; when even the number at [MetronomeDefaults.ReadoutNumberFloor] and "BPM" do not fit the
+ * width offered (a 160 dp ring leaves about 40 dp between the steppers), "BPM" sets under the number instead, so the
+ * number never clips. Decided from the constraints while measuring, nothing written back.
+ */
+@Composable
+private fun NumberLine(tempo: Tempo) {
+    val colors = TembraTheme.colors
+    val spacing = TembraTheme.spacing
+    val number = TembraTheme.typographyExtras.tempoNumber
+    val unit = TembraTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold)
+    val measurer = rememberTextMeasurer()
+    val digits = tempo.bpm.toString()
+    val gapPx = with(LocalDensity.current) { spacing.xs.roundToPx() }
+    BoxWithConstraints(contentAlignment = Alignment.Center) {
+        val beside = !constraints.hasBoundedWidth || run {
+            val numberWidth = measurer.measure(digits, number.copy(fontSize = MetronomeDefaults.ReadoutNumberFloor), maxLines = 1).size.width
+            val unitWidth = measurer.measure(MetronomeCopy.bpm, unit, maxLines = 1).size.width
+            numberWidth + gapPx + unitWidth <= constraints.maxWidth
+        }
+        val numberText: @Composable (Modifier) -> Unit = { textModifier ->
+            // The number shrinks to the room it is given (a small dial, the largest font sizes); it never clips.
             Text(
-                text = tempo.bpm.toString(),
+                text = digits,
                 style = number,
                 color = colors.onSurface,
                 maxLines = 1,
                 autoSize = TextAutoSize.StepBased(maxFontSize = number.fontSize),
-                modifier = Modifier.alignByBaseline().weight(1f, fill = false).semantics { hideFromAccessibility() },
-            )
-            Text(
-                text = MetronomeCopy.bpm,
-                style = typography.labelMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = colors.secondary,
-                maxLines = 1,
-                modifier = Modifier.alignByBaseline().padding(start = spacing.xs).semantics { hideFromAccessibility() },
+                modifier = textModifier.semantics { hideFromAccessibility() },
             )
         }
-        MarkingLine(marking)
+        val unitText: @Composable (Modifier) -> Unit = { textModifier ->
+            Text(
+                text = MetronomeCopy.bpm,
+                style = unit,
+                color = colors.secondary,
+                maxLines = 1,
+                modifier = textModifier.semantics { hideFromAccessibility() },
+            )
+        }
+        if (beside) {
+            Row {
+                numberText(Modifier.alignByBaseline().weight(1f, fill = false))
+                unitText(Modifier.alignByBaseline().padding(start = spacing.xs))
+            }
+        } else {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                numberText(Modifier)
+                unitText(Modifier)
+            }
+        }
     }
 }
 

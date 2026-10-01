@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,6 +43,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import audio.tembra.ui.designsystem.drawFocusRing
 import audio.tembra.ui.metronome.MetronomeCopy
 import audio.tembra.ui.theme.TembraIcon
@@ -56,8 +58,9 @@ import kotlinx.coroutines.launch
  * in, from a user-event coroutine (`compose-state-and-effects`). Each tap also flashes the card with `primary` at 20 %
  * fading out over 120 ms: an [Animatable] restarted per tap (a new tap interrupts the fade) and read in the draw phase
  * only; under reduce motion the card stays still and the caption acknowledges the tap. [stateDescription] (the caption
- * by default; the screen adds the tempo the taps set) is announced politely as it changes. The card is at least 64 dp
- * tall and grows when large fonts wrap its title or caption.
+ * by default; the screen adds the tempo the taps set) is announced politely as it changes. The card is at least
+ * [minHeight] tall (64 dp; the landscape block's row passes 48–64 dp); its title and caption each keep one line,
+ * stepping their size down to fit.
  */
 @Composable
 internal fun TapTempoButton(
@@ -65,6 +68,7 @@ internal fun TapTempoButton(
     onTap: (frameNanos: Long) -> Unit,
     modifier: Modifier = Modifier,
     stateDescription: String = caption,
+    minHeight: Dp = TembraTheme.spacing.tapTempoHeight,
     interactionSource: MutableInteractionSource? = null,
     testTag: String = "metronome.tap",
 ) {
@@ -91,7 +95,7 @@ internal fun TapTempoButton(
     Column(
         modifier = modifier
             .testTag(testTag)
-            .heightIn(min = spacing.tapTempoHeight)
+            .heightIn(min = minHeight)
             .clip(RoundedCornerShape(TembraShapes.medium))
             .background(if (pressed || hovered) colors.surfaceContainerHighest else colors.surfaceContainerHigh)
             .drawWithContent {
@@ -113,7 +117,8 @@ internal fun TapTempoButton(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        // The title and caption wrap rather than clip at the largest font sizes; the card grows with them.
+        // The title and caption keep one line each and step their size down rather than wrap or clip (the landscape
+        // block's narrow 48 dp row, the largest font sizes).
         Row(horizontalArrangement = Arrangement.spacedBy(spacing.xs), verticalAlignment = Alignment.CenterVertically) {
             Icon(
                 imageVector = TembraIcons.vector(TembraIcon.TouchApp),
@@ -121,23 +126,27 @@ internal fun TapTempoButton(
                 tint = colors.primary,
                 modifier = Modifier.size(MetronomeDefaults.TapIconSize),
             )
+            val title = TembraTheme.typography.headlineSmall
             Text(
                 text = MetronomeCopy.tapTempo.uppercase(),
-                style = TembraTheme.typography.headlineSmall,
+                style = title,
                 fontWeight = FontWeight.Bold,
                 color = colors.primary,
                 textAlign = TextAlign.Center,
-                maxLines = 2,
+                maxLines = 1,
+                autoSize = TextAutoSize.StepBased(minFontSize = MetronomeDefaults.MarkingMinSize, maxFontSize = title.fontSize),
                 // The description and the state say these: the drawn title and caption are not read a second time.
                 modifier = Modifier.weight(1f, fill = false).testTag("$testTag.title").clearAndSetSemantics {},
             )
         }
+        val captionStyle = TembraTheme.typography.labelSmall
         Text(
             text = caption,
-            style = TembraTheme.typography.labelSmall,
+            style = captionStyle,
             color = colors.outline,
             textAlign = TextAlign.Center,
-            maxLines = 2,
+            maxLines = 1,
+            autoSize = TextAutoSize.StepBased(minFontSize = MetronomeDefaults.MarkingMinSize, maxFontSize = captionStyle.fontSize),
             modifier = Modifier.testTag("$testTag.caption").clearAndSetSemantics {},
         )
     }

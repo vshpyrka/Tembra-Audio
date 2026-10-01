@@ -8,6 +8,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.Dp
@@ -19,6 +20,7 @@ import audio.tembra.ui.metronome.components.TempoReadout
 import audio.tembra.ui.theme.TembraTheme
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 /**
  * The readout's marking stays on one line (contracts/design-system-additions.md, ruling 2026-10-01): the full
@@ -62,5 +64,22 @@ class TempoReadoutTest {
         // Wide again: the range comes back.
         resize(240.dp)
         assertOneLine("Moderato (108-120)")
+    }
+
+    /**
+     * A 160 dp ring leaves about 40 dp between the steppers: "BPM" sets under the number, which stays whole instead of
+     * clipping to "1" (found on the iPhone 17 held sideways, T150).
+     */
+    @Test
+    fun aRingAtItsMinimumSetsBpmUnderTheWholeNumber() = runComposeUiTest {
+        val resize = setReadout(240.dp)
+        val number = onNode(hasText("120"), useUnmergedTree = true)
+        val bpm = onNode(hasText("BPM"), useUnmergedTree = true)
+        val wide = bpm.getUnclippedBoundsInRoot()
+        assertTrue(wide.left >= number.getUnclippedBoundsInRoot().right - 0.5.dp, "BPM is not beside the number on a wide readout")
+        resize(40.dp)
+        val layout = number.textLayoutResult()
+        assertTrue(!layout.didOverflowWidth && layout.lineCount == 1, "the number is cut at 40 dp (${layout.size})")
+        assertTrue(bpm.getUnclippedBoundsInRoot().top >= number.getUnclippedBoundsInRoot().bottom - 0.5.dp, "BPM is not under the number at 40 dp")
     }
 }

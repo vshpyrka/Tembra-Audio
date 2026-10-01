@@ -34,13 +34,13 @@ import audio.tembra.ui.theme.TembraTheme
 
 /**
  * The metronome's settings in the design's order (contracts/metronome-screen.md, research R10), shaped by [layout]:
- * - [MetronomeLayout.Stacked] (design iteration D1): one compact "bar shape" card, tagged `metronome.bar`, holding the
- *   signature menu and the subdivision tiles on one line, the accent cells in one row and the style row, then the click
- *   sound pill centred under it; the card is small enough that the dial keeps its size under it on a phone;
- * - [MetronomeLayout.Wide] and [MetronomeLayout.Landscape]: section cards for the time signature (with its
- *   "Common & Complex" caption; six chips in a row, or two rows of three in the landscape column), the subdivision
- *   chips, the cells with the style row, and the sound picker: the centred pill in landscape, the tile grid in its own
- *   "Click timbre" card in the expanded layout, as in the tablet design.
+ * - [MetronomeLayout.Stacked] and [MetronomeLayout.Landscape] (design iteration D1, T150): one compact "bar shape"
+ *   card, tagged `metronome.bar`, holding the signature menu and the subdivision tiles on one line, the accent cells in
+ *   one row and the style row, then the click sound pill centred under it; the card is small enough that the dial
+ *   keeps its size under it on a phone held upright, and that it stands whole beside the dial pane held sideways;
+ * - [MetronomeLayout.Wide]: section cards for the time signature (with its "Common & Complex" caption, six chips in a
+ *   row), the subdivision chips, the cells with the style row, and the sound tile grid in its own "Click timbre" card,
+ *   as in the tablet design.
  */
 @Composable
 internal fun MetronomeSettingsPanel(
@@ -52,16 +52,15 @@ internal fun MetronomeSettingsPanel(
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(TembraTheme.spacing.md)) {
         when (layout) {
-            MetronomeLayout.Stacked -> {
-                BarShapeCard(state = state, callbacks = callbacks, telemetry = telemetry)
-                SoundPicker(state, callbacks, ClickSoundPickerLayout.Dropdown, Modifier.align(Alignment.CenterHorizontally))
-            }
-            MetronomeLayout.Landscape -> {
-                SectionCards(state = state, callbacks = callbacks, telemetry = telemetry, signatureColumns = LANDSCAPE_SIGNATURE_COLUMNS)
+            MetronomeLayout.Stacked, MetronomeLayout.Landscape -> {
+                // The landscape column (2⁄5 of a phone held sideways) is narrower than a phone held upright: 2 dp between
+                // the cells keeps 7/8 in one row of 44 dp cells there; the portrait card keeps 4 dp.
+                val cellGap = if (layout == MetronomeLayout.Landscape) TembraTheme.spacing.xs / 2 else TembraTheme.spacing.xs
+                BarShapeCard(state = state, callbacks = callbacks, telemetry = telemetry, cellGap = cellGap)
                 SoundPicker(state, callbacks, ClickSoundPickerLayout.Dropdown, Modifier.align(Alignment.CenterHorizontally))
             }
             MetronomeLayout.Wide -> {
-                SectionCards(state = state, callbacks = callbacks, telemetry = telemetry, signatureColumns = TimeSignature.entries.size)
+                SectionCards(state = state, callbacks = callbacks, telemetry = telemetry)
                 SectionCard {
                     SectionHeader(label = MetronomeCopy.clickTimbre)
                     SoundPicker(state, callbacks, ClickSoundPickerLayout.Tiles, Modifier.fillMaxWidth())
@@ -77,15 +76,10 @@ internal fun MetronomeSettingsPanel(
  * no room), the accent cells in one row 4 dp apart, and the style row.
  */
 @Composable
-private fun BarShapeCard(state: MetronomeUiState, callbacks: MetronomeCallbacks, telemetry: BeatTelemetry) {
+private fun BarShapeCard(state: MetronomeUiState, callbacks: MetronomeCallbacks, telemetry: BeatTelemetry, cellGap: Dp) {
     val settings = state.settings
     val spacing = TembraTheme.spacing
-    // No drawn heading (the Stitch variant has none): the card's semantics carry its name and group its controls.
-    val bar = Modifier.testTag(BAR_TAG).semantics {
-        contentDescription = MetronomeCopy.barShape
-        isTraversalGroup = true
-    }
-    SectionCard(gap = spacing.sm, modifier = bar) {
+    SectionCard(gap = spacing.sm, modifier = barShapeSemantics()) {
         FlowRow(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(spacing.sm),
@@ -96,14 +90,20 @@ private fun BarShapeCard(state: MetronomeUiState, callbacks: MetronomeCallbacks,
             Spacer(Modifier.weight(1f))
             SubdivisionTiles(selected = settings.subdivision, unit = settings.signature.unit, onSelect = callbacks.onSubdivision)
         }
-        Cells(state, callbacks, telemetry, gap = spacing.xs)
+        Cells(state, callbacks, telemetry, gap = cellGap)
         StyleRow(selected = settings.style, onSelect = callbacks.onStyle, modifier = Modifier.fillMaxWidth())
     }
 }
 
-/** The expanded and landscape settings: a card per section, as the tablet design. */
+/** The bar-shape card has no drawn heading (the Stitch screens have none): its semantics name it and group its controls. */
+private fun barShapeSemantics(): Modifier = Modifier.testTag(BAR_TAG).semantics {
+    contentDescription = MetronomeCopy.barShape
+    isTraversalGroup = true
+}
+
+/** The expanded settings: a card per section, as the tablet design. */
 @Composable
-private fun SectionCards(state: MetronomeUiState, callbacks: MetronomeCallbacks, telemetry: BeatTelemetry, signatureColumns: Int) {
+private fun SectionCards(state: MetronomeUiState, callbacks: MetronomeCallbacks, telemetry: BeatTelemetry) {
     val settings = state.settings
     SectionCard {
         SectionHeader(label = MetronomeCopy.timeSignature, caption = MetronomeCopy.commonAndComplex)
@@ -111,7 +111,7 @@ private fun SectionCards(state: MetronomeUiState, callbacks: MetronomeCallbacks,
             selected = settings.signature,
             onSelect = callbacks.onSignature,
             modifier = Modifier.fillMaxWidth(),
-            columns = signatureColumns,
+            columns = TimeSignature.entries.size,
         )
     }
     SectionCard {
@@ -197,4 +197,3 @@ private fun SectionHeader(label: String, caption: String? = null) {
 }
 
 private const val BAR_TAG = "metronome.bar"
-private const val LANDSCAPE_SIGNATURE_COLUMNS = 3
