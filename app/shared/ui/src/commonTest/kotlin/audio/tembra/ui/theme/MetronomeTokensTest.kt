@@ -61,7 +61,7 @@ class MetronomeTokensTest {
             gradients.tempoDialOverlay,
         )
         assertEquals(Glow(Color(0x80FFAFD3), 12.dp), gradients.accentGlow)
-        assertEquals(Glow(Color(0x59FFAFD3), 24.dp), gradients.playGlow)
+        assertEquals(Glow(Color(0x59FFAFD3), 8.dp), gradients.playGlow)
     }
 
     @Test

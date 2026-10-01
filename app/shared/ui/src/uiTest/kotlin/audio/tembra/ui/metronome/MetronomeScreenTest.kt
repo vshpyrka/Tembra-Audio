@@ -241,31 +241,58 @@ class MetronomeScreenTest {
         style = style,
     )
 
+    /** The compact layout's signature is a menu: the pill names it, the six entries open from it (design iteration D1). */
     @Test
-    fun theSixSignaturesAreTabsWithFourFourSelected() = runComposeUiTest {
+    fun theCompactSignatureIsAMenuOfTheSix() = runComposeUiTest {
         setScreen()
-        onNodeWithTag("metronome.signature").assertExists()
-        val ids = listOf("4-4", "3-4", "6-8", "2-4", "5-4", "7-8")
-        for (id in ids) onNodeWithTag("metronome.signature.$id").assertExists()
+        onNodeWithTag("metronome.signature").assertContentDescriptionEquals("Time signature, 4/4")
+        onNodeWithTag("metronome.signature").performClick()
+        settle()
         onNodeWithTag("metronome.signature.4-4").assertIsSelected()
-        for (id in ids.drop(1)) onNodeWithTag("metronome.signature.$id").assertIsNotSelected()
-        // Six chips share one row at 360 dp, each keeping its 44 dp target.
-        val bounds = ids.map { onNodeWithTag("metronome.signature.$it").getUnclippedBoundsInRoot() }
-        assertEquals(1, bounds.map { it.top }.distinct().size, "the signature chips wrapped at 360 dp")
-        for (id in ids) onNodeWithTag("metronome.signature.$id").assertWidthIsAtLeast(44.dp).assertHeightIsAtLeast(44.dp)
-    }
-
-    @Test
-    fun aSignatureChipSelectsItsSignature() = runComposeUiTest {
-        setScreen()
         onNodeWithTag("metronome.signature.6-8").performClick()
         settle()
         assertEquals(listOf(TimeSignature.SixEight), signatures)
     }
 
     @Test
-    fun theSubdivisionLabelsFollowTheBeatUnit() = runComposeUiTest {
+    fun theSixSignaturesAreTabsWithFourFourSelected() = runComposeUiTest {
+        setScreen(layout = MetronomeLayout.Wide, size = wideWindow)
+        onNodeWithTag("metronome.signature").assertExists()
+        val ids = listOf("4-4", "3-4", "6-8", "2-4", "5-4", "7-8")
+        for (id in ids) onNodeWithTag("metronome.signature.$id").assertExists()
+        onNodeWithTag("metronome.signature.4-4").assertIsSelected()
+        for (id in ids.drop(1)) onNodeWithTag("metronome.signature.$id").assertIsNotSelected()
+        // Six chips share one row in the expanded settings column, each keeping its 44 dp target.
+        val bounds = ids.map { onNodeWithTag("metronome.signature.$it").getUnclippedBoundsInRoot() }
+        assertEquals(1, bounds.map { it.top }.distinct().size, "the signature chips wrapped in the expanded column")
+        for (id in ids) onNodeWithTag("metronome.signature.$id").assertWidthIsAtLeast(44.dp).assertHeightIsAtLeast(44.dp)
+    }
+
+    @Test
+    fun aSignatureChipSelectsItsSignature() = runComposeUiTest {
+        setScreen(layout = MetronomeLayout.Landscape, size = landscapeWindow)
+        onNodeWithTag("metronome.signature.6-8").performClick()
+        settle()
+        assertEquals(listOf(TimeSignature.SixEight), signatures)
+    }
+
+    /** The compact tiles name their value to accessibility (the chips' text in the other layouts). */
+    @Test
+    fun theCompactSubdivisionTilesFollowTheBeatUnit() = runComposeUiTest {
         val update = setScreen()
+        val tags = listOf("metronome.subdivision.1", "metronome.subdivision.2", "metronome.subdivision.4", "metronome.subdivision.3")
+        tags.zip(listOf("1/4", "1/8", "1/16", "3let")).forEach { (tag, label) -> onNodeWithTag(tag).assertContentDescriptionEquals(label) }
+        onNodeWithTag("metronome.subdivision.1").assertIsSelected()
+        update(loaded.copy(settings = settingsFor(TimeSignature.SixEight)))
+        tags.zip(listOf("1/8", "1/16", "1/32", "3let")).forEach { (tag, label) -> onNodeWithTag(tag).assertContentDescriptionEquals(label) }
+        onNodeWithTag("metronome.subdivision.2").performClick()
+        settle()
+        assertEquals(listOf(Subdivision.Two), subdivisions)
+    }
+
+    @Test
+    fun theSubdivisionLabelsFollowTheBeatUnit() = runComposeUiTest {
+        val update = setScreen(layout = MetronomeLayout.Wide, size = wideWindow)
         val tags = listOf("metronome.subdivision.1", "metronome.subdivision.2", "metronome.subdivision.4", "metronome.subdivision.3")
         tags.zip(listOf("1/4", "1/8", "1/16", "3let")).forEach { (tag, label) -> onNodeWithTag(tag).assertTextEquals(label) }
         onNodeWithTag("metronome.subdivision.1").assertIsSelected()
@@ -277,7 +304,7 @@ class MetronomeScreenTest {
     }
 
     @Test
-    fun sevenEightWrapsItsSevenCellsIntoTwoRows() = runComposeUiTest {
+    fun sevenEightWrapsItsSevenCellsIntoTwoRowsOnA360dpPhone() = runComposeUiTest {
         setScreen(loaded.copy(settings = settingsFor(TimeSignature.SevenEight)))
         val cells = (1..7).map { onNodeWithTag("metronome.cell.$it").getUnclippedBoundsInRoot() }
         onNodeWithTag("metronome.cell.8").assertDoesNotExist()
@@ -313,13 +340,31 @@ class MetronomeScreenTest {
 
     @Test
     fun sectionLabelsAreDrawnUppercaseAndExposedInSentenceCase() = runComposeUiTest {
-        setScreen()
+        setScreen(layout = MetronomeLayout.Wide, size = wideWindow)
         for ((drawn, exposed) in listOf("TIME SIGNATURE" to "Time signature", "RHYTHM SUBDIVISION" to "Rhythm subdivision", "STYLE" to "Style")) {
             onNode(hasText(drawn), useUnmergedTree = true).assertExists()
             onNode(hasContentDescription(exposed), useUnmergedTree = true).assertExists()
             onNode(hasText(exposed), useUnmergedTree = true).assertDoesNotExist()
         }
         onNode(hasText("Common & Complex") and hasAnyAncestor(hasTestTag("screen.metronome")), useUnmergedTree = true).assertExists()
+    }
+
+    /** The compact bar-shape card has no section headers but the style row's (design iteration D1). */
+    @Test
+    fun theCompactCardKeepsOnlyTheStyleLabel() = runComposeUiTest {
+        setScreen()
+        onNode(hasText("STYLE"), useUnmergedTree = true).assertExists()
+        for (drawn in listOf("TIME SIGNATURE", "RHYTHM SUBDIVISION")) onNode(hasText(drawn), useUnmergedTree = true).assertDoesNotExist()
+        val card = bounds("metronome.bar")
+        for (tag in listOf("metronome.signature", "metronome.subdivision", "metronome.cells", "metronome.style")) {
+            assertTrue(card.contains(bounds(tag)), "$tag (${bounds(tag)}) is not in the bar-shape card $card")
+        }
+        // Row 1: the signature pill at the left, the tiles at the right, on one line.
+        val pill = bounds("metronome.signature")
+        val tiles = bounds("metronome.subdivision")
+        assertTrue(pill.right <= tiles.left && pill.bottom > tiles.top && tiles.bottom > pill.top, "the pill $pill and the tiles $tiles do not share a row")
+        assertTrue(bounds("metronome.cells").top >= tiles.bottom, "the cells are not under the first row")
+        assertTrue(bounds("metronome.style").top >= bounds("metronome.cells").bottom, "the style row is not under the cells")
     }
 
     // --- User Story 3 ------------------------------------------------------------------------------------------------
@@ -485,6 +530,98 @@ class MetronomeScreenTest {
             onNode(hasTestTag(tag) and hasAnyAncestor(hasScrollAction())).assertDoesNotExist()
         }
         assertTrue(bounds("metronome.dial").height >= 200.dp, "the dial is ${bounds("metronome.dial").height}, too small for its readout")
+        // Beside the dial card, play sits above tap (revised 2026-10-01).
+        val play = bounds("metronome.play")
+        val tap = bounds("metronome.tap")
+        assertTrue(play.left >= bounds("metronome.dialCard").right, "play ($play) is not beside the dial card")
+        assertTrue(play.bottom <= tap.top, "play ($play) is not above tap ($tap)")
+    }
+
+    // --- Design iteration D1: the compact card keeps the dial on a phone screen (T144) ---------------------------------
+
+    /**
+     * The screen's host on a Pixel 6 Pro in portrait: its 411 × 891 dp window less the status bar, the app header and
+     * the navigation bar (measured on the device, NOTES.md "Design iteration D1").
+     */
+    private val pixelHost = DpSize(411.dp, 700.dp)
+
+    /** The same on the iPhone 17 (402 × 874 dp less the safe areas, the header and the navigation bar). */
+    private val iphoneHost = DpSize(402.dp, 652.dp)
+
+    /** A 360 × 640 dp phone less the same chrome as the Pixel (191 dp): the dial cannot keep its size without scrolling. */
+    private val smallPhoneHost = DpSize(360.dp, 449.dp)
+
+    /** Composes the Stacked screen once (Android allows one `setContent` per test); the returned setter switches host and state. */
+    private fun ComposeUiTest.setStackedForms(): (DpSize, MetronomeUiState) -> Unit {
+        var form by mutableStateOf(pixelHost to loaded)
+        mainClock.autoAdvance = false
+        setContent {
+            TembraTheme {
+                Box(Modifier.requiredSize(form.first)) {
+                    MetronomeScreenContent(
+                        state = form.second,
+                        callbacks = callbacks,
+                        telemetry = telemetry,
+                        layout = MetronomeLayout.Stacked,
+                        snackbarHostState = remember { SnackbarHostState() },
+                    )
+                }
+            }
+        }
+        settle()
+        return { size, state -> form = size to state; settle() }
+    }
+
+    /** How far the Stacked column can scroll: 0 when everything fits. */
+    private fun ComposeUiTest.scrollRange(): Float {
+        val nodes = onAllNodes(hasScrollAction() and hasAnyAncestor(hasTestTag("screen.metronome"))).fetchSemanticsNodes()
+        return nodes.maxOfOrNull { it.config.getOrNull(SemanticsProperties.VerticalScrollAxisRange)?.maxValue?.invoke() ?: 0f } ?: 0f
+    }
+
+    @Test
+    fun theDialSliderTapAndPlayFitAPhoneWithoutScrolling() = runComposeUiTest {
+        val show = setStackedForms()
+        for (host in listOf(pixelHost, iphoneHost)) for (signature in listOf(TimeSignature.FourFour, TimeSignature.SevenEight)) {
+            show(host, loaded.copy(settings = settingsFor(signature)))
+            val what = "${host.width} × ${host.height}, ${signature.label}"
+            val root = bounds("screen.metronome")
+            for (tag in listOf("metronome.bar", "metronome.sound", "metronome.dialCard", "metronome.dial", "metronome.slider", "metronome.tap", "metronome.play")) {
+                assertTrue(root.contains(bounds(tag)), "$what: $tag (${bounds(tag)}) is outside the screen $root")
+            }
+            assertEquals(0f, scrollRange(), "$what: the column scrolls")
+            val dial = bounds("metronome.dial")
+            assertTrue(dial.height >= 160.dp - 0.5.dp && dial.height <= 300.dp + 0.5.dp, "$what: the dial is ${dial.height}")
+            assertTrue(bounds("metronome.dialCard").contains(bounds("metronome.slider")), "$what: the slider is not in the dial card")
+        }
+    }
+
+    @Test
+    fun sevenEightKeepsItsCellsInOneRowOnAPhone() = runComposeUiTest {
+        val show = setStackedForms()
+        for (host in listOf(pixelHost, iphoneHost)) {
+            show(host, loaded.copy(settings = settingsFor(TimeSignature.SevenEight)))
+            val cells = (1..7).map { bounds("metronome.cell.$it") }
+            assertEquals(1, cells.map { it.top }.distinct().size, "${host.width}: the seven cells are not one row: ${cells.map { it.top }}")
+            for ((n, cell) in cells.withIndex()) {
+                assertTrue(cell.width >= 44.dp - 0.5.dp && cell.height >= 44.dp - 0.5.dp, "${host.width}: cell ${n + 1} is ${cell.width} × ${cell.height}")
+                assertTrue(abs((cell.width - cells[0].width).value) < 1f, "${host.width}: cell ${n + 1} is ${cell.width}, cell 1 ${cells[0].width}")
+                // Too narrow for "ACCENT": the bar alone shows the level, no label is drawn.
+                onNodeWithTag("metronome.cell.${n + 1}.label", useUnmergedTree = true).assertDoesNotExist()
+            }
+            assertTrue(bounds("metronome.bar").contains(bounds("metronome.cells")), "${host.width}: the cells leave the card")
+        }
+        show(pixelHost, loaded)
+        for (n in 1..4) onNodeWithTag("metronome.cell.$n.label", useUnmergedTree = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun aSmallPhoneScrollsTheColumnAndKeepsTheDialAt160dp() = runComposeUiTest {
+        val show = setStackedForms()
+        show(smallPhoneHost, loaded)
+        assertTrue(scrollRange() > 0f, "the column does not scroll on a 360 × 640 dp phone")
+        assertTrue(bounds("metronome.dial").height >= 160.dp - 0.5.dp, "the dial is ${bounds("metronome.dial").height}")
+        val root = bounds("screen.metronome")
+        for (tag in listOf("metronome.tap", "metronome.play")) assertTrue(root.contains(bounds(tag)), "$tag is not pinned on screen")
     }
 
     @Test
@@ -493,9 +630,6 @@ class MetronomeScreenTest {
         // Scrolling a label into view animates; nothing else runs while stopped, so the clock may run by itself.
         mainClock.autoAdvance = true
         val labels = listOf(
-            "metronome.settings" to "TIME SIGNATURE", "metronome.settings" to "Common & Complex", "metronome.settings" to "RHYTHM SUBDIVISION",
-            "metronome.signature.4-4" to "4/4", "metronome.signature.7-8" to "7/8",
-            "metronome.subdivision.1" to "1/4", "metronome.subdivision.4" to "1/16", "metronome.subdivision.3" to "3let",
             "metronome.style.standard" to "Standard", "metronome.style.downbeat" to "Downbeat", "metronome.style.syncopated" to "Syncopated",
             "metronome.dial" to "120", "metronome.dial" to "BPM", "metronome.dial" to "Moderato (108-120)",
         )
@@ -512,7 +646,7 @@ class MetronomeScreenTest {
         // The drawn labels kept out of the accessibility tree (read through their control's description or state):
         // found by tag, each inside its control.
         val drawn = listOf(
-            "metronome.cell.1" to "metronome.cell.1.label", "metronome.cell.2" to "metronome.cell.2.label",
+            "metronome.signature" to "metronome.signature.label",
             "metronome.sound" to "metronome.sound.label",
             "metronome.tap" to "metronome.tap.title", "metronome.tap" to "metronome.tap.caption",
         )
@@ -521,7 +655,10 @@ class MetronomeScreenTest {
             if (parent != "metronome.tap") text.performScrollTo()
             text.assertDisplayedWithin(bounds(parent), "$tag in $parent")
         }
-        val controls = listOf("4-4", "3-4", "6-8", "2-4", "5-4", "7-8").map { "metronome.signature.$it" } +
+        // At this size even 4/4 cells are narrower than "ACCENT": the one row keeps 44 dp cells and the bars alone show
+        // the levels rather than wrapping or cutting the labels (design iteration D1).
+        for (n in 1..4) onNodeWithTag("metronome.cell.$n.label", useUnmergedTree = true).assertDoesNotExist()
+        val controls = listOf("metronome.signature") +
             listOf("1", "2", "4", "3").map { "metronome.subdivision.$it" } +
             (1..4).map { "metronome.cell.$it" } +
             listOf("standard", "downbeat", "syncopated").map { "metronome.style.$it" } +
@@ -559,7 +696,8 @@ class MetronomeScreenTest {
             settle()
             val interactive = SemanticsMatcher.keyIsDefined(SemanticsActions.OnClick) or SemanticsMatcher.keyIsDefined(SemanticsActions.SetProgress)
             val nodes = onAllNodes(interactive).fetchSemanticsNodes()
-            assertTrue(nodes.size >= 20, "$layout: only ${nodes.size} interactive nodes")
+            // 19 in the compact card's form (one signature menu instead of six chips), more in the others.
+            assertTrue(nodes.size >= 19, "$layout: only ${nodes.size} interactive nodes")
             for (node in nodes) {
                 val tag = node.config.getOrNull(SemanticsProperties.TestTag)
                 assertTrue(tag != null, "$layout: an interactive node has no test tag: ${node.config}")
@@ -574,7 +712,7 @@ class MetronomeScreenTest {
     @Test
     fun tabFollowsTheReadingOrder() = runComposeUiTest {
         setScreen()
-        assertTabOrder(settingsTabOrder + "metronome.sound" + transportTabOrder)
+        assertTabOrder(from = "metronome.signature", expected = compactSettingsTabOrder + "metronome.sound" + transportTabOrder)
     }
 
     /** The expanded form: the settings column (with the sound tiles row by row), then the dial card and the transport card. */
@@ -585,19 +723,19 @@ class MetronomeScreenTest {
         assertTabOrder(settingsTabOrder + tiles + transportTabOrder)
     }
 
-    /** A phone held sideways, tap over play beside the dial: the column first, then the dial, the slider, tap and play. */
+    /** A phone held sideways, play over tap beside the dial: the column first, then the dial, the slider, play and tap. */
     @Test
     fun tabFollowsTheReadingOrderInTheLandscapeLayout() = runComposeUiTest {
         setScreen(layout = MetronomeLayout.Landscape, size = DpSize(892.dp, 330.dp))
-        assertTabOrder(settingsTabOrder + "metronome.sound" + transportTabOrder)
+        assertTabOrder(settingsTabOrder + "metronome.sound" + transportTabOrder.dropLast(2) + "metronome.play" + "metronome.tap")
     }
 
-    /** From the 4/4 chip, each Tab moves keyboard focus to the next of [expected]. */
-    private fun ComposeUiTest.assertTabOrder(expected: List<String>) {
+    /** From [from] (the 4/4 chip by default), each Tab moves keyboard focus to the next of [expected]. */
+    private fun ComposeUiTest.assertTabOrder(expected: List<String>, from: String = "metronome.signature.4-4") {
         if (!enterKeyboardMode(inputModeManager)) return
-        onNodeWithTag("metronome.signature.4-4").requestFocus()
+        onNodeWithTag(from).requestFocus()
         settle()
-        onNodeWithTag("metronome.signature.4-4").assertIsFocused()
+        onNodeWithTag(from).assertIsFocused()
         for (tag in expected) {
             onNode(isFocused()).performKeyInput { pressKey(Key.Tab) }
             settle()
@@ -611,7 +749,12 @@ class MetronomeScreenTest {
         (1..4).map { "metronome.cell.$it" } +
         listOf("standard", "downbeat", "syncopated").map { "metronome.style.$it" }
 
-    /** The dial card and the transport, in every layout. */
+    /** The compact card after the signature menu, up to the sound picker: the tiles, the cells and the style pills. */
+    private val compactSettingsTabOrder = listOf("1", "2", "4", "3").map { "metronome.subdivision.$it" } +
+        (1..4).map { "metronome.cell.$it" } +
+        listOf("standard", "downbeat", "syncopated").map { "metronome.style.$it" }
+
+    /** The dial card and the transport (tap, then play, as the row reads). */
     private val transportTabOrder =
         listOf("metronome.dial.down", "metronome.dial", "metronome.dial.up", "metronome.slider", "metronome.tap", "metronome.play")
 
@@ -631,7 +774,7 @@ class MetronomeScreenTest {
 
     @Test
     fun enterSelectsTheFocusedChip() = runComposeUiTest {
-        setScreen()
+        setScreen(layout = MetronomeLayout.Wide, size = wideWindow)
         if (!enterKeyboardMode(inputModeManager)) return@runComposeUiTest
         onNodeWithTag("metronome.signature.6-8").requestFocus()
         settle()
@@ -718,9 +861,12 @@ class MetronomeScreenTest {
         onNodeWithTag("metronome.play").assertContentDescriptionEquals("Start metronome")
         onNodeWithTag("metronome.sound").performScrollTo().assertContentDescriptionEquals("Click sound, Classic Wood")
             .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Text))
-        for (tag in listOf("metronome.signature.4-4", "metronome.subdivision.1", "metronome.style.standard")) {
+        for (tag in listOf("metronome.subdivision.1", "metronome.style.standard")) {
             onNodeWithTag(tag).assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab)).assertIsSelected()
         }
+        onNodeWithTag("metronome.signature")
+            .assertContentDescriptionEquals("Time signature, 4/4")
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
         onNodeWithTag("metronome.dial.down").assertContentDescriptionEquals("Decrease tempo")
         onNodeWithTag("metronome.dial.up").assertContentDescriptionEquals("Increase tempo")
         update(loaded.copy(playback = PlaybackState.Running, currentBeat = 2))
@@ -741,7 +887,7 @@ class MetronomeScreenTest {
     }
 
     /** The screen's pixels [above] dp over the play button's top edge, at its centre: only the play glow tints them. */
-    private fun ComposeUiTest.overThePlayButton(above: Dp = 8.dp): Color {
+    private fun ComposeUiTest.overThePlayButton(above: Dp = 4.dp): Color {
         val root = bounds("screen.metronome")
         val play = bounds("metronome.play")
         val image = onNodeWithTag("screen.metronome").captureToImage()

@@ -197,11 +197,12 @@ class AccentCellsTest {
     }
 
     /**
-     * The Pixel 6 Pro's 363 dp content width fits six or seven 44 dp cells in a row, but not their "ACCENT" label:
-     * a cell is at least as wide as its widest label, so 6/8 and 7/8 wrap there while 5/4 keeps one row.
+     * One row whenever every cell keeps 44 dp (design iteration D1, spec FR-028): at the Pixel 6 Pro's 363 dp card width
+     * 7/8 stays in one row of 44 dp cells too narrow for "ACCENT", so no cell draws its label and the bar alone shows
+     * the level; 5/4 and 4/4 cells are wide enough and keep their labels.
      */
     @Test
-    fun cellsWrapBeforeTheirLabelsWouldClip() = runComposeUiTest {
+    fun cellsKeepOneRowAndDropTheirLabelsWhenTooNarrowForThem() = runComposeUiTest {
         var beats by mutableStateOf(7)
         mainClock.autoAdvance = false
         setContent {
@@ -212,17 +213,24 @@ class AccentCellsTest {
                 }
             }
         }
-        for ((count, rows) in listOf(7 to 2, 6 to 2, 5 to 1, 4 to 1)) {
+        for ((count, labelled) in listOf(7 to false, 5 to true, 4 to true)) {
             beats = count
             repeat(2) { mainClock.advanceTimeByFrame() }
-            val tops = (1..count).map { onNodeWithTag("metronome.cell.$it").getUnclippedBoundsInRoot().top }
-            assertEquals(rows, tops.distinct().size, "$count cells at 363 dp: rows at $tops")
+            val cells = (1..count).map { onNodeWithTag("metronome.cell.$it").getUnclippedBoundsInRoot() }
+            assertEquals(1, cells.map { it.top }.distinct().size, "$count cells at 363 dp: rows at ${cells.map { it.top }}")
+            for (cell in cells) assertTrue(cell.width >= 44.dp - 0.5.dp, "$count cells at 363 dp: a cell is ${cell.width}")
+            for (n in 1..count) {
+                val label = onNodeWithTag("metronome.cell.$n.label", useUnmergedTree = true)
+                if (labelled) label.assertExists() else label.assertDoesNotExist()
+            }
+            // The level is still announced without the drawn label.
+            onNodeWithTag("metronome.cell.1").assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Accent"))
         }
     }
 
     /**
-     * A phone's landscape settings column (about 200 dp inside its card) fits three cells with a whole "ACCENT" label but
-     * not four: 7/8 takes three rows (3 + 3 + 1) rather than clipping its labels in rows of four.
+     * A phone's landscape settings column (about 200 dp inside its card) cannot hold seven 44 dp cells in one row, so
+     * the cells wrap as before: three with a whole "ACCENT" label per row, 7/8 in three rows (3 + 3 + 1).
      */
     @Test
     fun aNarrowColumnWrapsIntoAsManyRowsAsTheLabelsNeed() = runComposeUiTest {

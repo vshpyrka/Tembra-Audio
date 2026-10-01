@@ -52,8 +52,10 @@ import kotlin.math.max
  * 42 %) and the level's name below. [lit] is a provider read only in the draw phase: while it answers true the bar box
  * is outlined in `secondary`, the bar is drawn at full alpha and the Accent glow brightens (not under reduce motion).
  * [playing] (the 10 Hz sample) adds ", playing" to the cell's state for accessibility. Hover and press raise the card to
- * `surfaceContainerLow`; keyboard focus draws the `primary` ring. With a [testTag], the bar box carries `<tag>.bar`,
- * the bar `<tag>.level` and the drawn label `<tag>.label` (kept out of the accessibility tree: the state names it).
+ * `surfaceContainerLow`; keyboard focus draws the `primary` ring. [label] is drawn under the bar box, the level's name
+ * by default ([AccentCellLabel]); a row of cells too narrow for their widest label passes null and the bar alone shows
+ * the level (design iteration D1). With a [testTag], the bar box carries `<tag>.bar`, the bar `<tag>.level` and the
+ * drawn label `<tag>.label` (kept out of the accessibility tree: the state names the level).
  */
 @Composable
 internal fun AccentCell(
@@ -65,6 +67,7 @@ internal fun AccentCell(
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource? = null,
     testTag: String? = null,
+    label: (@Composable () -> Unit)? = { AccentCellLabel(level) },
 ) {
     val colors = TembraTheme.colors
     val spacing = TembraTheme.spacing
@@ -84,16 +87,6 @@ internal fun AccentCell(
         BeatLevel.Accent -> MetronomeDefaults.ACCENT_BAR_FRACTION
         BeatLevel.Click -> MetronomeDefaults.CLICK_BAR_FRACTION
         BeatLevel.Sub -> MetronomeDefaults.SUB_BAR_FRACTION
-    }
-    val labelColor = when (level) {
-        BeatLevel.Accent -> colors.secondary
-        BeatLevel.Click -> colors.onSurface
-        BeatLevel.Sub -> colors.onSurfaceVariant
-    }
-    val labelWeight = when (level) {
-        BeatLevel.Accent -> FontWeight.Bold
-        BeatLevel.Click -> FontWeight.Medium
-        BeatLevel.Sub -> FontWeight.Normal
     }
     val outline = colors.secondary
     val ringColor = colors.primary
@@ -159,21 +152,41 @@ internal fun AccentCell(
                     },
             )
         }
-        // The row sizes cells from the label's measured width; should the drawn face still come out wider (a font that
-        // loaded after that measure), the label steps its size down rather than losing letters.
-        val labelStyle = TembraTheme.typographyExtras.microLabel
-        Text(
-            text = MetronomeCopy.levelLabel(level),
-            style = labelStyle,
-            fontWeight = labelWeight,
-            color = labelColor,
-            maxLines = 1,
-            overflow = TextOverflow.Clip,
-            autoSize = TextAutoSize.StepBased(minFontSize = MetronomeDefaults.CellLabelMinSize, maxFontSize = labelStyle.fontSize),
+        if (label != null) {
             // The cell's state already names the level ("Beat 1", "Accent"): the drawn label is not read a second time.
-            modifier = Modifier.testTagIfSet(testTag?.let { "$it.label" }).clearAndSetSemantics {},
-        )
+            Box(modifier = Modifier.testTagIfSet(testTag?.let { "$it.label" }).clearAndSetSemantics {}) { label() }
+        }
     }
+}
+
+/**
+ * A cell's drawn level name: `microLabel` in the level's colour and weight (Accent `secondary` bold, Click `onSurface`
+ * medium, Sub `onSurfaceVariant` regular), on one line. The row sizes cells from the label's measured width; should the
+ * drawn face still come out wider (a font that loaded after that measure), the label steps its size down rather than
+ * losing letters.
+ */
+@Composable
+internal fun AccentCellLabel(level: BeatLevel, modifier: Modifier = Modifier) {
+    val colors = TembraTheme.colors
+    val style = TembraTheme.typographyExtras.microLabel
+    Text(
+        text = MetronomeCopy.levelLabel(level),
+        style = style,
+        fontWeight = when (level) {
+            BeatLevel.Accent -> FontWeight.Bold
+            BeatLevel.Click -> FontWeight.Medium
+            BeatLevel.Sub -> FontWeight.Normal
+        },
+        color = when (level) {
+            BeatLevel.Accent -> colors.secondary
+            BeatLevel.Click -> colors.onSurface
+            BeatLevel.Sub -> colors.onSurfaceVariant
+        },
+        maxLines = 1,
+        overflow = TextOverflow.Clip,
+        autoSize = TextAutoSize.StepBased(minFontSize = MetronomeDefaults.CellLabelMinSize, maxFontSize = style.fontSize),
+        modifier = modifier,
+    )
 }
 
 /** The bar's glow: a radial brush from its centre, solid over the bar and fading to nothing [reach] beyond its edges. */

@@ -40,7 +40,7 @@ internal object MetronomeDefaults {
     /** The smallest a cell's level label shrinks to rather than clip. */
     val CellLabelMinSize: TextUnit = 7.sp
 
-    /** Gap between cells: `gap-2`. */
+    /** Gap between cells: `gap-2` (the compact bar-shape card uses `TembraSpacing.xs` so 7/8 keeps one row). */
     val CellGap: Dp = 8.dp
 
     /** Cell padding `p-1.5` and the gap between the bar box and the label `gap-1.5`. */
@@ -134,8 +134,14 @@ internal object MetronomeDefaults {
     const val LANDSCAPE_SETTINGS_FRACTION = 0.36f
     const val LANDSCAPE_SETTINGS_MAX_FRACTION = 0.5f
 
-    /** The landscape dial grows with the pane's height down to this; below it the pane scrolls instead. */
-    val LandscapeDialMin: Dp = 160.dp
+    /** The dial grows with the space it is given down to this; below it the column or the pane scrolls instead. */
+    val DialMin: Dp = 160.dp
+
+    /** The compact layout's dial grows with the height left under the settings up to this (design iteration D1). */
+    val CompactDialMax: Dp = 300.dp
+
+    /** A subdivision tile's note figure inside its 44 dp tile (design iteration D1). */
+    val SubdivisionGlyphSize: Dp = 24.dp
 
     /** The landscape pane's tap and play column, when it stands beside the dial: wide enough for "TAP TEMPO". */
     val LandscapeTransportWidth: Dp = 176.dp

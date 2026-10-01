@@ -18,19 +18,22 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
-import audio.tembra.core.metronome.TimeSignature
+import androidx.compose.ui.unit.max
+import androidx.compose.ui.unit.min
 import audio.tembra.ui.designsystem.CardDiscs
 import audio.tembra.ui.designsystem.TembraGradientCard
-import audio.tembra.ui.metronome.components.ClickSoundPickerLayout
 import audio.tembra.ui.metronome.components.MetronomeDefaults
 import audio.tembra.ui.metronome.components.PlayPauseButton
 import audio.tembra.ui.metronome.components.TapTempoButton
@@ -42,13 +45,14 @@ import kotlin.math.roundToInt
 
 /**
  * The stateless metronome screen the UI tests drive (contracts/metronome-screen.md, spec FR-028). Three forms:
- * - [MetronomeLayout.Stacked]: a scrolling column with the [MetronomeSettingsPanel] and the dial card, and the tap and
- *   play row pinned below it so the transport stays reachable;
+ * - [MetronomeLayout.Stacked]: the compact [MetronomeSettingsPanel] over the dial card, which takes the remaining
+ *   height, and the tap and play row pinned below them; the column scrolls only when the dial would drop under its
+ *   minimum (see [StackedMetronome]);
  * - [MetronomeLayout.Wide]: the settings (with the sound picker as tiles in a "Click timbre" card) in a left column a
  *   third of the width, the dial card filling the rest and the tap and play card under it;
  * - [MetronomeLayout.Landscape]: a narrow scrolling settings column (the signatures in two rows of three) beside a
- *   pane whose dial is sized from its height, so the dial, the slider, tap and play fit without scrolling (see
- *   [LandscapePane] for where tap and play go).
+ *   pane whose dial is sized from its height, so the dial, the slider, play and tap fit without scrolling (see
+ *   [LandscapePane] for where they go).
  *
  * The settings column is tagged `metronome.settings` in every form; the root keeps the shell's `screen.metronome`,
  * and snackbars show over it. The column comes before the dial in every form, so keyboard focus reads the settings
@@ -80,31 +84,91 @@ fun MetronomeScreenContent(
     }
 }
 
+/**
+ * The compact form (design iteration D1): the settings ([MetronomeSettingsPanel]'s one bar-shape card and the sound
+ * pill) over the dial card, which takes the height left above the pinned tap and play row, so on a phone the dial, its
+ * slider, tap and play are all in view. The ring grows with that height between [MetronomeDefaults.DialMin] and
+ * [MetronomeDefaults.CompactDialMax]; only when it would drop under the minimum (a small phone, large fonts) does the
+ * column get taller than its viewport and scroll, the card at its minimum. The sizes are worked out in layout from the
+ * viewport and the measured settings: nothing measured is written back to composition.
+ */
 @Composable
 private fun StackedMetronome(state: MetronomeUiState, callbacks: MetronomeCallbacks, telemetry: BeatTelemetry, modifier: Modifier) {
     val spacing = TembraTheme.spacing
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(spacing.md)) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(spacing.md),
-        ) {
-            MetronomeSettingsPanel(
-                state = state,
-                callbacks = callbacks,
-                telemetry = telemetry,
-                pickerLayout = ClickSoundPickerLayout.Dropdown,
-                signatureColumns = TimeSignature.entries.size,
-                modifier = Modifier.testTag(SETTINGS_TAG),
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth().weight(1f)) {
+            SettingsOverDial(
+                viewportHeight = maxHeight,
+                gap = spacing.md,
+                minDialCardHeight = compactDialMin() + dialCardChrome(),
+                modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+                settings = {
+                    MetronomeSettingsPanel(
+                        state = state,
+                        callbacks = callbacks,
+                        telemetry = telemetry,
+                        layout = MetronomeLayout.Stacked,
+                        modifier = Modifier.fillMaxWidth().testTag(SETTINGS_TAG),
+                    )
+                },
+                dialCard = {
+                    DialCard(state = state, callbacks = callbacks, discs = CardDiscs.None, modifier = Modifier.fillMaxSize()) {
+                        DialInCard(state, callbacks, cap = MetronomeDefaults.CompactDialMax)
+                    }
+                },
             )
-            DialCard(state = state, callbacks = callbacks, discs = CardDiscs.None, modifier = Modifier.fillMaxWidth()) {
-                TempoDialFor(state, callbacks, Modifier.widthIn(max = spacing.tempoDialMaxWidth).fillMaxWidth())
-            }
         }
         TransportRow(state = state, callbacks = callbacks, modifier = Modifier.fillMaxWidth())
     }
+}
+
+/**
+ * [settings] at their own height, then [dialCard] [gap] under them filling the rest of [viewportHeight], but never
+ * shorter than [minDialCardHeight]: past that the layout is taller than the viewport and its scrolling parent scrolls.
+ */
+@Composable
+private fun SettingsOverDial(
+    viewportHeight: Dp,
+    gap: Dp,
+    minDialCardHeight: Dp,
+    modifier: Modifier,
+    settings: @Composable () -> Unit,
+    dialCard: @Composable () -> Unit,
+) {
+    Layout(contents = listOf(settings, dialCard), modifier = modifier) { (settingsMeasurables, dialMeasurables), constraints ->
+        val width = constraints.maxWidth
+        val gapPx = gap.roundToPx()
+        val settingsPlaceables = settingsMeasurables.map { it.measure(Constraints(minWidth = width, maxWidth = width)) }
+        val settingsHeight = settingsPlaceables.sumOf { it.height }
+        val cardHeight = maxOf(viewportHeight.roundToPx() - settingsHeight - gapPx, minDialCardHeight.roundToPx())
+        val dialPlaceables = dialMeasurables.map { it.measure(Constraints.fixed(width, cardHeight)) }
+        layout(width, settingsHeight + gapPx + cardHeight) {
+            var y = 0
+            settingsPlaceables.forEach { it.place(0, y); y += it.height }
+            dialPlaceables.forEach { it.place(0, y + gapPx) }
+        }
+    }
+}
+
+/**
+ * The dial card's height around its dial: the padding above and below, the gap and the slider, whose Material track
+ * keeps the platform's minimum interactive size (48 dp) around the 44 dp thumb target.
+ */
+@Composable
+private fun dialCardChrome(): Dp {
+    val spacing = TembraTheme.spacing
+    val slider = max(spacing.touchTargetMin, LocalMinimumInteractiveComponentSize.current)
+    return spacing.md * 2 + spacing.xs + slider
+}
+
+/**
+ * The compact dial's minimum: [MetronomeDefaults.DialMin] grown with the font scale (the readout's tempo name must stay
+ * whole between the steppers at the largest fonts, where the column scrolls anyway), within the compact cap.
+ */
+@Composable
+private fun compactDialMin(): Dp {
+    val fontScale = LocalDensity.current.fontScale.coerceAtLeast(1f)
+    return min(MetronomeDefaults.DialMin * fontScale, MetronomeDefaults.CompactDialMax)
 }
 
 @Composable
@@ -115,8 +179,7 @@ private fun WideMetronome(state: MetronomeUiState, callbacks: MetronomeCallbacks
             state = state,
             callbacks = callbacks,
             telemetry = telemetry,
-            pickerLayout = ClickSoundPickerLayout.Tiles,
-            signatureColumns = TimeSignature.entries.size,
+            layout = MetronomeLayout.Wide,
             modifier = Modifier
                 .widthFraction(MetronomeDefaults.WIDE_SETTINGS_FRACTION, min = spacing.wideSettingsMinWidth)
                 .fillMaxHeight()
@@ -131,10 +194,7 @@ private fun WideMetronome(state: MetronomeUiState, callbacks: MetronomeCallbacks
                 modifier = Modifier.weight(1f).fillMaxWidth(),
                 sliderMaxWidth = spacing.tempoDialMaxWidthWide,
             ) {
-                Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    val cap = spacing.tempoDialMaxWidthWide
-                    TempoDialFor(state, callbacks, Modifier.sizeIn(maxWidth = cap, maxHeight = cap))
-                }
+                DialInCard(state, callbacks, cap = spacing.tempoDialMaxWidthWide)
             }
             Box(
                 modifier = Modifier
@@ -158,8 +218,7 @@ private fun LandscapeMetronome(state: MetronomeUiState, callbacks: MetronomeCall
             state = state,
             callbacks = callbacks,
             telemetry = telemetry,
-            pickerLayout = ClickSoundPickerLayout.Dropdown,
-            signatureColumns = LANDSCAPE_SIGNATURE_COLUMNS,
+            layout = MetronomeLayout.Landscape,
             modifier = Modifier
                 .widthFraction(
                     fraction = MetronomeDefaults.LANDSCAPE_SETTINGS_FRACTION,
@@ -177,34 +236,28 @@ private fun LandscapeMetronome(state: MetronomeUiState, callbacks: MetronomeCall
 
 /**
  * The landscape pane. The dial is sized from the pane: either the dial card over the tap and play row (the design's
- * order) or, when that leaves the dial smaller, the dial card beside a column holding tap over play; a phone held
+ * order) or, when that leaves the dial smaller, the dial card beside a column holding play over tap; a phone held
  * sideways has under 300 dp of height, where the stacked order would shrink the dial until the readout no longer fits
  * between the steppers. Either way the dial, the slider, tap and play fit without scrolling; only when even the larger
- * of the two would put the dial under [MetronomeDefaults.LandscapeDialMin] does the pane scroll, stacked, with the dial
+ * of the two would put the dial under [MetronomeDefaults.DialMin] does the pane scroll, stacked, with the dial
  * at that size.
  */
 @Composable
 private fun LandscapePane(state: MetronomeUiState, callbacks: MetronomeCallbacks, modifier: Modifier) {
     val spacing = TembraTheme.spacing
     BoxWithConstraints(modifier = modifier) {
-        // Around the dial inside its card: the padding on both sides, the gap and the slider (a 44 dp target).
-        val cardAroundDial = spacing.md * 2 + spacing.xs + spacing.touchTargetMin
+        val cardAroundDial = dialCardChrome()
         val cardSides = spacing.md * 2
         val stackedDial = minOf(maxHeight - cardAroundDial - spacing.md - spacing.tapTempoHeight, maxWidth - cardSides)
         val besideDial = minOf(maxHeight - cardAroundDial, maxWidth - MetronomeDefaults.LandscapeTransportWidth - spacing.md - cardSides)
-        val cap = spacing.tempoDialMaxWidthWide
-        val dialInCard: @Composable ColumnScope.() -> Unit = {
-            Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                TempoDialFor(state, callbacks, Modifier.sizeIn(maxWidth = cap, maxHeight = cap))
-            }
-        }
+        val dialInCard: @Composable ColumnScope.() -> Unit = { DialInCard(state, callbacks, cap = spacing.tempoDialMaxWidthWide) }
         when {
-            maxOf(stackedDial, besideDial) < MetronomeDefaults.LandscapeDialMin -> Column(
+            maxOf(stackedDial, besideDial) < MetronomeDefaults.DialMin -> Column(
                 modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(spacing.md),
             ) {
                 DialCard(state = state, callbacks = callbacks, discs = CardDiscs.None, modifier = Modifier.fillMaxWidth()) {
-                    TempoDialFor(state, callbacks, Modifier.size(MetronomeDefaults.LandscapeDialMin))
+                    TempoDialFor(state, callbacks, Modifier.size(MetronomeDefaults.DialMin))
                 }
                 TransportRow(state = state, callbacks = callbacks, modifier = Modifier.fillMaxWidth())
             }
@@ -219,8 +272,9 @@ private fun LandscapePane(state: MetronomeUiState, callbacks: MetronomeCallbacks
                     verticalArrangement = Arrangement.spacedBy(spacing.md, Alignment.CenterVertically),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    TapTempoFor(state, callbacks, Modifier.fillMaxWidth())
+                    // Play on top, where the thumb rests on a phone held sideways (revised 2026-10-01).
                     PlayPauseButton(running = state.running, onToggle = callbacks.onTogglePlayback)
+                    TapTempoFor(state, callbacks, Modifier.fillMaxWidth())
                 }
             }
         }
@@ -257,6 +311,14 @@ private fun DialCard(
             dial()
             TempoSlider(tempo = state.settings.tempo, onTempo = callbacks.onTempo, modifier = Modifier.widthIn(max = sliderMaxWidth).fillMaxWidth())
         }
+    }
+}
+
+/** The dial in the card's remaining height, centred, as large as the card allows up to [cap]. */
+@Composable
+private fun ColumnScope.DialInCard(state: MetronomeUiState, callbacks: MetronomeCallbacks, cap: Dp) {
+    Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+        TempoDialFor(state, callbacks, Modifier.sizeIn(maxWidth = cap, maxHeight = cap))
     }
 }
 
@@ -323,4 +385,3 @@ private fun Modifier.widthFraction(
 }
 
 private const val SETTINGS_TAG = "metronome.settings"
-private const val LANDSCAPE_SIGNATURE_COLUMNS = 3
