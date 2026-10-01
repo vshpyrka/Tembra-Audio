@@ -36,6 +36,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import audio.tembra.core.metronome.TimeSignature
 import audio.tembra.ui.designsystem.drawFocusRing
 import audio.tembra.ui.metronome.MetronomeCopy
@@ -51,7 +52,8 @@ import audio.tembra.ui.theme.TembraTheme
  * `surfaceContainerHighest` listing the six signatures in the spec's order with a check on the current one; choosing
  * another calls [onSelect], the current one selects nothing again. The pill carries [testTag], its drawn label
  * `<testTag>.label` and each entry `<testTag>.<id>` (`metronome.signature.7-8`), the same tags as the chips it replaces
- * on a phone, with the check `<testTag>.<id>.check`. Keyboard focus draws the `primary` ring; Enter opens the menu.
+ * on a phone, with the check `<testTag>.<id>.check`. The pill's state reads "Collapsed" or "Expanded" with the menu.
+ * Keyboard focus draws the `primary` ring; Enter opens the menu.
  */
 @Composable
 internal fun TimeSignatureMenu(
@@ -79,7 +81,10 @@ internal fun TimeSignatureMenu(
                 modifier = Modifier
                     .testTag(testTag)
                     .clickable(interactionSource = source, indication = null, role = Role.Button) { open = true }
-                    .semantics { contentDescription = MetronomeCopy.timeSignatureOf(selected.label) }
+                    .semantics {
+                        contentDescription = MetronomeCopy.timeSignatureOf(selected.label)
+                        stateDescription = if (open) MetronomeCopy.expanded else MetronomeCopy.collapsed
+                    }
                     .minimumInteractiveComponentSize(),
                 contentAlignment = Alignment.Center,
             ) {

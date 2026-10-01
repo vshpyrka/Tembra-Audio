@@ -32,10 +32,26 @@ class IconAssetsTest {
         ) + metronomeGlyphs
         ).distinct()
     private val designGlyphs = listOf("ic_guitar_24.xml", "ic_cello_24.xml")
-    private val glyphFiles = materialGlyphs + designGlyphs
+
+    /** Feature 004 D1: the subdivision note figures, hand-authored by `tools/make-note-glyphs.py`. */
+    private val noteGlyphs = listOf(
+        "ic_note_quarter_24.xml", "ic_note_eighth_pair_24.xml", "ic_note_sixteenth_quad_24.xml", "ic_note_eighth_triplet_24.xml",
+        "ic_note_eighth_24.xml", "ic_note_sixteenth_pair_24.xml", "ic_note_thirty_second_quad_24.xml", "ic_note_sixteenth_triplet_24.xml",
+    )
+    private val glyphFiles = materialGlyphs + designGlyphs + noteGlyphs
 
     /** The header comment names the source; the vector body must not reference any platform resource. */
     private fun bodyWithoutHeader(text: String): String = text.lines().filterNot { it.trimStart().startsWith("<!--") }.joinToString("\n")
+
+    @Test
+    fun noteGlyphsNameTheirGenerator() {
+        for (name in noteGlyphs) {
+            val header = File(drawable, name).readText().lineSequence().first { it.trimStart().startsWith("<!--") }
+            assertTrue(header.startsWith("<!-- Tembra note glyph"), "$name header is not the note glyph header")
+            assertTrue(header.contains("tools/make-note-glyphs.py"), "$name header does not name tools/make-note-glyphs.py")
+            assertTrue(File(drawable, name).readText().contains("android:fillColor=\"#FFFFFFFF\""), "$name has no literal white fill")
+        }
+    }
 
     @Test
     fun everyGlyphIsBundled() {

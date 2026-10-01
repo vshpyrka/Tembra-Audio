@@ -12,6 +12,11 @@ internal object MetronomeCopy {
     const val rhythmSubdivision = "Rhythm subdivision"
     const val style = "Style"
     const val clickTimbre = "Click timbre"
+    const val barShape = "Bar shape"
+
+    // A menu trigger's state (the signature pill, the sound pill).
+    const val expanded = "Expanded"
+    const val collapsed = "Collapsed"
 
     // Tempo.
     const val bpm = "BPM"
