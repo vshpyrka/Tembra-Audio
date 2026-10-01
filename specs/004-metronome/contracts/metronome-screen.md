@@ -75,7 +75,7 @@ Column(testTag "screen.metronome", padding pageMargin)
 │       └── TempoSlider(tempo, onTempo)                                                                   "metronome.slider"
 └── Row(pinned, gap md): TapTempoButton(caption, onTap) "metronome.tap"; PlayPauseButton(running, onTogglePlayback) "metronome.play"
 
-On a 411 × 891 dp phone (Pixel 6 Pro) and a 402 × 874 dp phone (iPhone 17) at the default font scale the dial card, its slider and the pinned row are all inside the viewport without scrolling; TimeSignatureChips and SubdivisionChips (with labels and the same note glyphs as icons) remain the Wide and Landscape controls.
+On a 411 × 891 dp phone (Pixel 6 Pro) and a 402 × 874 dp phone (iPhone 17) at the default font scale the dial card, its slider and the pinned row are all inside the viewport without scrolling; TimeSignatureChips and SubdivisionChips (with labels and the same note glyphs as icons) remain the Wide controls; Landscape uses the compact card too (revised 2026-10-01).
 
 Wide (840 dp or wider and 480 dp or taller):
 Row(testTag "screen.metronome", padding pageMargin, gap md)
@@ -86,7 +86,7 @@ Row(testTag "screen.metronome", padding pageMargin, gap md)
 
 Landscape (600 dp or wider, shorter than 480 dp):
 Row(testTag "screen.metronome", padding pageMargin × sm, gap md)
-├── settings column (36 % of the width within 224–280 dp, both bounds multiplied by the font scale so large fonts keep whole chips — B13 review note, verticalScroll): TimeSignatureChips in two rows of three (`columns = 3`), SubdivisionChips, AccentCells + StyleRow, ClickSoundPicker(Dropdown)
+├── settings column (40 % of the width within 240–344 dp, both bounds multiplied by the font scale, so that seven 44 dp cells and the signature pill beside four 44 dp tiles fit on a phone — revised 2026-10-01 after the Pixel landscape check: the chip cards pushed the accent cells below the fold; verticalScroll only when the card does not fit): the same compact bar-shape card as Stacked (TimeSignatureMenu + SubdivisionTiles row, AccentCells one row, StyleRow), then ClickSoundPicker(Dropdown); TimeSignatureChips and SubdivisionChips remain the Wide controls only
 └── pane (weight 1): TempoDial sized from the pane with TempoSlider under it, and the tap/play controls placed by whichever arrangement yields the larger dial (B13 ruling, 2026-09-30): the tap/play row under the slider when the pane is tall enough (the Stitch phone-landscape mock; dial = height − slider row − tap/play row − gaps), otherwise play over tap in a column beside the dial card (revised 2026-10-01: play on top, as the user asked) (a phone held sideways has about 290 dp of pane height, where the stacked order pushed the transport off screen and shrank the readout); the dial stays within 160–420 dp and the pane scrolls only when neither arrangement keeps it at 160 dp
 ```
 
