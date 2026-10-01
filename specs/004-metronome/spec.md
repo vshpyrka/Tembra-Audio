@@ -597,8 +597,10 @@ and the picker with the platform screen reader.
   style pills) so that the accent cells are visible without scrolling (revised 2026-10-01 after
   the Pixel landscape check: the chip cards pushed the cells below the fold), the dial with its
   slider and, underneath it, the Tap Tempo and play controls fill the right three fifths of the
-  width while the settings, as the same compact card as portrait, take the left two fifths
-  (revised 2026-10-01, second to fifth user checks), and the dial,
+  width while the settings take the left two fifths as a landscape card (signature and style
+  menus on one row, the subdivision tiles, the accent cells without labels in one row or, for
+  6/8 and 7/8, two rows of 44 dp cells, the sound picker) that fits the height without
+  scrolling (revised 2026-10-01, second to sixth user checks), and the dial,
   slider, Tap Tempo and play controls fit without scrolling while the settings column may scroll
   only at large font sizes. The accent cells MUST stay in one row for every time signature whenever each
   cell can keep its 44 dp minimum, hiding the level label when a cell is narrower than its widest
