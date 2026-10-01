@@ -56,352 +56,44 @@
     }
   </style>
 <meta content="web_standard" name="shell-type">
-
-<!-- BEGIN: PhoneDeviceContainer -->
-<!-- Encapsulates the entire ~20:9 landscape viewport -->
-<div class="phone-canvas relative flex flex-col bg-[#0e0e12] rounded-3xl border border-zinc-800 shadow-2xl overflow-hidden" data-purpose="landscape-phone-device">
-<!-- BEGIN: StatusBar -->
-<!-- Top compact mobile landscape status bar -->
-<header class="h-6 w-full px-5 flex items-center justify-between text-[11px] text-zinc-400 font-medium select-none z-20 shrink-0 border-b border-zinc-900/60" data-purpose="status-bar">
-<div class="flex items-center space-x-2">
-<span class="text-zinc-200 font-semibold tracking-wide">11:58</span>
-<!-- Small icon / spiral indicator -->
-<svg class="w-3 h-3 text-zinc-400 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-<path d="M12 4v1m0 14v1m8-8h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
-</svg>
-</div>
-<div class="flex items-center space-x-2">
-
-</div>
-<div class="flex items-center space-x-2 text-zinc-400">
-<!-- Wi-Fi Icon -->
-<svg class="w-3.5 h-3.5 text-zinc-300" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24">
-<path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
-<path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
-<path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
-<line x1="12" x2="12.01" y1="20" y2="20"></line>
-</svg>
-<!-- Battery Icon with charge -->
-<div class="flex items-center space-x-0.5">
-<div class="w-5 h-2.5 rounded-sm border border-zinc-400 p-[1px] flex items-center">
-<div class="bg-emerald-400 h-full w-4/5 rounded-2xs"></div>
-</div>
-<div class="w-0.5 h-1 bg-zinc-400 rounded-r-xs"></div>
-</div>
-</div>
-</header>
-<!-- END: StatusBar -->
-<!-- BEGIN: MainContentWrapper -->
-<!-- Contains the left navigation rail, the control panel, and the tuner gauge widget -->
-<div class="flex-1 flex overflow-hidden w-full relative" data-purpose="main-layout-area">
-<!-- BEGIN: LeftmostNavRail -->
-<!-- Matches https://lh3.googleusercontent.com/aida-public/AB6AXuB-L7LGmPHvUVQZUXV97PBVcVyxA42MgaXWnyPeN0VE8N-Fxm2bi8F0ZQq2N9P5kLP9YMODnocSGdSIc3P1RPL3c-CwZLgKE-qb-7y6JmzuyYIgnzn5YiRr8fG2OO39UHZZjvJm5wFtNX7orpBpPW3aQScdvxWYHGh7AxRE_IgjB4rCKKOBy8DjC50JLdMUbUsAdwric5aX_Gm1h3wuhgW0eSCSPu2PtHNNobjPXkt_8wnD314iyJVf2gJlLwuN8FgWgL4 Navigation Rail -->
-<nav class="w-16 bg-[#0c0c0f] border-r border-[#1e1e24] flex flex-col items-center justify-between py-2 shrink-0 z-10 select-none" data-purpose="left-navigation-rail">
-<div class="flex flex-col items-center space-y-2.5 w-full"><!-- Home -->
-<button class="flex flex-col items-center justify-center w-full py-1 text-zinc-400 hover:text-zinc-200 transition-colors" title="Home">
-<svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-<path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke-linecap="round" stroke-linejoin="round"></path>
-</svg>
-<span class="text-[9px] font-medium tracking-tight">Home</span>
-</button>
-<!-- Timeline -->
-<button class="flex flex-col items-center justify-center w-full py-1 text-zinc-400 hover:text-zinc-200 transition-colors" title="Timeline">
-<svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-<path d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" stroke-linecap="round" stroke-linejoin="round"></path>
-</svg>
-<span class="text-[9px] font-medium tracking-tight">Timeline</span>
-</button>
-<!-- Tuner (Inactive) -->
-<button class="flex flex-col items-center justify-center w-full py-1 text-zinc-400 hover:text-zinc-200 transition-colors" title="Tuner">
-<svg class="w-5 h-5 mb-0.5" fill="currentColor" viewBox="0 0 24 24">
-<path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"></path>
-</svg>
-<span class="text-[8.5px] font-medium tracking-tight">Tuner</span>
-</button>
-<!-- Metronome (Active) -->
-<div class="flex flex-col items-center justify-center w-full px-1" title="Metronome">
-<div class="w-12 h-10 bg-brand-magenta rounded-xl flex flex-col items-center justify-center text-white shadow-md shadow-pink-950/40">
-<svg class="w-4 h-4 mb-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-<path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"></path>
-</svg>
-<span class="text-[8.5px] font-bold tracking-tight">Metronome</span>
-</div>
-</div>
-<!-- Projects -->
-<button class="flex flex-col items-center justify-center w-full py-1 text-zinc-400 hover:text-zinc-200 transition-colors" title="Projects">
-<svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-<path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" stroke-linecap="round" stroke-linejoin="round"></path>
-</svg>
-<span class="text-[8.5px] font-medium tracking-tight">Projects</span>
-</button></div>
-<!-- Profile (bottom) -->
-<button class="flex flex-col items-center justify-center w-full py-1 text-zinc-400 hover:text-zinc-200 transition-colors" title="Profile">
-<svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-<path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-linecap="round" stroke-linejoin="round"></path>
-</svg>
-<span class="text-[8.5px] font-medium tracking-tight">Profile</span>
-</button>
+<style>.material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24}</style>
+<div class="phone-canvas relative flex flex-col bg-[#131316] rounded-3xl border border-zinc-800 shadow-2xl overflow-hidden" data-purpose="landscape-phone-device">
+<header class="h-[74px] shrink-0 bg-[#0e0e11] px-4 flex flex-col justify-center" data-purpose="app-header"><span class="text-[12px] font-medium tracking-wide uppercase text-[#cebdff] leading-tight">Tembra Audio</span><span class="text-[24px] font-medium text-[#e4e1e6] leading-tight">Metronome</span></header>
+<div class="flex-1 flex min-h-0" data-purpose="main-layout-area">
+<nav class="w-16 shrink-0 bg-[#0e0e11] flex flex-col items-center gap-1 pt-[20px]" data-purpose="left-navigation-rail">
+<div class="h-[45px] w-full flex flex-col items-center justify-center text-[#cac4d4]"><span class="material-symbols-outlined text-[24px] leading-none">home</span><span class="text-[9px] tracking-wide leading-tight mt-0.5">Home</span></div><div class="h-[45px] w-full flex flex-col items-center justify-center text-[#cac4d4]"><span class="material-symbols-outlined text-[24px] leading-none">graphic_eq</span><span class="text-[9px] tracking-wide leading-tight mt-0.5">Timeline</span></div><div class="h-[45px] w-full flex flex-col items-center justify-center text-[#cac4d4]"><span class="material-symbols-outlined text-[24px] leading-none">music_note</span><span class="text-[9px] tracking-wide leading-tight mt-0.5">Tuner</span></div>
+<div class="h-[45px] w-[54px] rounded-[22px] bg-[#85145a] flex flex-col items-center justify-center text-[#ff93c8]"><span class="material-symbols-outlined text-[24px] leading-none" style="font-variation-settings:'FILL' 0,'wght' 400">av_timer</span><span class="text-[9px] tracking-wide leading-tight mt-0.5">Metronome</span></div>
+<div class="h-[45px] w-full flex flex-col items-center justify-center text-[#cac4d4]"><span class="material-symbols-outlined text-[24px] leading-none">folder</span><span class="text-[9px] tracking-wide leading-tight mt-0.5">Projects</span></div><div class="h-[45px] w-full flex flex-col items-center justify-center text-[#cac4d4]"><span class="material-symbols-outlined text-[24px] leading-none">person</span><span class="text-[9px] tracking-wide leading-tight mt-0.5">Profile</span></div>
 </nav>
-<!-- END: LeftmostNavRail -->
-<!-- BEGIN: ControlsPanel -->
-<!-- Compact sidebar containing all settings reorganized from Image 32 toolbar -->
-<section class="w-[40%] min-w-0 shrink-0 bg-[#121217] border-r border-[#202027] p-3 flex flex-col justify-start gap-2 select-none z-10 overflow-y-auto" data-purpose="metronome-controls-panel"><!-- Landscape bar-shape card (design iteration D1, 2026-10-01, 1:3 split): signature and style menu pills, then the four subdivision tiles -->
-<div class="bg-[#1a1a22] p-1.5 rounded-lg border border-zinc-800 flex flex-col gap-1.5">
-<div class="flex items-center justify-between gap-1.5"><button type="button" class="h-11 px-2.5 rounded-full bg-[#b82a67] text-white font-bold text-sm flex items-center gap-1 shadow-sm" aria-haspopup="listbox" aria-expanded="false" title="Time signature"><span>4/4</span><span class="material-symbols-outlined text-[16px] leading-none">expand_more</span></button><button type="button" class="h-11 px-2.5 rounded-full bg-[#202024] text-[#e4e1e6] font-semibold text-xs flex items-center gap-1 border border-zinc-800/80" aria-haspopup="listbox" aria-expanded="false" title="Style"><span>Standard</span><span class="material-symbols-outlined text-[16px] leading-none">expand_more</span></button></div>
-<div class="flex items-center justify-between gap-1.5"><button type="button" class="w-11 h-11 rounded-lg bg-[#cebdff] text-[#21005e] flex items-center justify-center shadow-sm" title="1/4" aria-label="1/4" aria-pressed="true"><svg class="w-6 h-6 fill-current" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.35,16.2L14.41,16.43L14.43,16.67L14.41,16.91L14.34,17.16L14.24,17.41L14.1,17.65L13.92,17.88L13.71,18.09L13.47,18.29L13.2,18.47L12.92,18.62L12.62,18.75L12.3,18.84L11.99,18.91L11.67,18.94L11.36,18.95L11.06,18.92L10.77,18.85L10.51,18.76L10.27,18.64L10.07,18.49L9.89,18.32L9.75,18.12L9.65,17.91L9.59,17.68L9.57,17.44L9.59,17.2L9.66,16.95L9.76,16.7L9.9,16.46L10.08,16.23L10.29,16.02L10.53,15.82L10.8,15.64L11.08,15.49L11.38,15.36L11.7,15.27L12.01,15.2L12.33,15.16L12.64,15.16L12.94,15.19L13.23,15.25L13.49,15.35L13.73,15.47L13.93,15.62L14.11,15.79L14.25,15.99Z M12.98,5.05L14.38,5.05L14.38,16.75L12.98,16.75Z"/></svg></button>
-<button type="button" class="w-11 h-11 rounded-lg bg-[#202024] text-[#c9c5d0] hover:text-white flex items-center justify-center border border-zinc-800/80 transition-colors" title="1/8" aria-label="1/8"><svg class="w-6 h-6 fill-current" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.35,16.2L10.41,16.43L10.43,16.67L10.41,16.91L10.34,17.16L10.24,17.41L10.1,17.65L9.92,17.88L9.71,18.09L9.47,18.29L9.2,18.47L8.92,18.62L8.62,18.75L8.3,18.84L7.99,18.91L7.67,18.94L7.36,18.95L7.06,18.92L6.77,18.85L6.51,18.76L6.27,18.64L6.07,18.49L5.89,18.32L5.75,18.12L5.65,17.91L5.59,17.68L5.57,17.44L5.59,17.2L5.66,16.95L5.76,16.7L5.9,16.46L6.08,16.23L6.29,16.02L6.53,15.82L6.8,15.64L7.08,15.49L7.38,15.36L7.7,15.27L8.01,15.2L8.33,15.16L8.64,15.16L8.94,15.19L9.23,15.25L9.49,15.35L9.73,15.47L9.93,15.62L10.11,15.79L10.25,15.99Z M8.98,5.05L10.38,5.05L10.38,16.75L8.98,16.75Z M18.35,16.2L18.41,16.43L18.43,16.67L18.41,16.91L18.34,17.16L18.24,17.41L18.1,17.65L17.92,17.88L17.71,18.09L17.47,18.29L17.2,18.47L16.92,18.62L16.62,18.75L16.3,18.84L15.99,18.91L15.67,18.94L15.36,18.95L15.06,18.92L14.77,18.85L14.51,18.76L14.27,18.64L14.07,18.49L13.89,18.32L13.75,18.12L13.65,17.91L13.59,17.68L13.57,17.44L13.59,17.2L13.66,16.95L13.76,16.7L13.9,16.46L14.08,16.23L14.29,16.02L14.53,15.82L14.8,15.64L15.08,15.49L15.38,15.36L15.7,15.27L16.01,15.2L16.33,15.16L16.64,15.16L16.94,15.19L17.23,15.25L17.49,15.35L17.73,15.47L17.93,15.62L18.11,15.79L18.25,15.99Z M16.98,5.05L18.38,5.05L18.38,16.75L16.98,16.75Z M8.98,5.05L18.38,5.05L18.38,7.25L8.98,7.25Z"/></svg></button>
-<button type="button" class="w-11 h-11 rounded-lg bg-[#202024] text-[#c9c5d0] hover:text-white flex items-center justify-center border border-zinc-800/80 transition-colors" title="1/16" aria-label="1/16"><svg class="w-6 h-6 fill-current" viewBox="0 0 24 24" aria-hidden="true"><path d="M5.95,16.2L6.01,16.43L6.03,16.67L6.01,16.91L5.94,17.16L5.84,17.41L5.7,17.65L5.52,17.88L5.31,18.09L5.07,18.29L4.8,18.47L4.52,18.62L4.22,18.75L3.9,18.84L3.59,18.91L3.27,18.94L2.96,18.95L2.66,18.92L2.37,18.85L2.11,18.76L1.87,18.64L1.67,18.49L1.49,18.32L1.35,18.12L1.25,17.91L1.19,17.68L1.17,17.44L1.19,17.2L1.26,16.95L1.36,16.7L1.5,16.46L1.68,16.23L1.89,16.02L2.13,15.82L2.4,15.64L2.68,15.49L2.98,15.36L3.3,15.27L3.61,15.2L3.93,15.16L4.24,15.16L4.54,15.19L4.83,15.25L5.09,15.35L5.33,15.47L5.53,15.62L5.71,15.79L5.85,15.99Z M4.58,5.05L5.98,5.05L5.98,16.75L4.58,16.75Z M11.55,16.2L11.61,16.43L11.63,16.67L11.61,16.91L11.54,17.16L11.44,17.41L11.3,17.65L11.12,17.88L10.91,18.09L10.67,18.29L10.4,18.47L10.12,18.62L9.82,18.75L9.5,18.84L9.19,18.91L8.87,18.94L8.56,18.95L8.26,18.92L7.97,18.85L7.71,18.76L7.47,18.64L7.27,18.49L7.09,18.32L6.95,18.12L6.85,17.91L6.79,17.68L6.77,17.44L6.79,17.2L6.86,16.95L6.96,16.7L7.1,16.46L7.28,16.23L7.49,16.02L7.73,15.82L8,15.64L8.28,15.49L8.58,15.36L8.9,15.27L9.21,15.2L9.53,15.16L9.84,15.16L10.14,15.19L10.43,15.25L10.69,15.35L10.93,15.47L11.13,15.62L11.31,15.79L11.45,15.99Z M10.18,5.05L11.58,5.05L11.58,16.75L10.18,16.75Z M17.15,16.2L17.21,16.43L17.23,16.67L17.21,16.91L17.14,17.16L17.04,17.41L16.9,17.65L16.72,17.88L16.51,18.09L16.27,18.29L16,18.47L15.72,18.62L15.42,18.75L15.1,18.84L14.79,18.91L14.47,18.94L14.16,18.95L13.86,18.92L13.57,18.85L13.31,18.76L13.07,18.64L12.87,18.49L12.69,18.32L12.55,18.12L12.45,17.91L12.39,17.68L12.37,17.44L12.39,17.2L12.46,16.95L12.56,16.7L12.7,16.46L12.88,16.23L13.09,16.02L13.33,15.82L13.6,15.64L13.88,15.49L14.18,15.36L14.5,15.27L14.81,15.2L15.13,15.16L15.44,15.16L15.74,15.19L16.03,15.25L16.29,15.35L16.53,15.47L16.73,15.62L16.91,15.79L17.05,15.99Z M15.78,5.05L17.18,5.05L17.18,16.75L15.78,16.75Z M22.75,16.2L22.81,16.43L22.83,16.67L22.81,16.91L22.74,17.16L22.64,17.41L22.5,17.65L22.32,17.88L22.11,18.09L21.87,18.29L21.6,18.47L21.32,18.62L21.02,18.75L20.7,18.84L20.39,18.91L20.07,18.94L19.76,18.95L19.46,18.92L19.17,18.85L18.91,18.76L18.67,18.64L18.47,18.49L18.29,18.32L18.15,18.12L18.05,17.91L17.99,17.68L17.97,17.44L17.99,17.2L18.06,16.95L18.16,16.7L18.3,16.46L18.48,16.23L18.69,16.02L18.93,15.82L19.2,15.64L19.48,15.49L19.78,15.36L20.1,15.27L20.41,15.2L20.73,15.16L21.04,15.16L21.34,15.19L21.63,15.25L21.89,15.35L22.13,15.47L22.33,15.62L22.51,15.79L22.65,15.99Z M21.38,5.05L22.78,5.05L22.78,16.75L21.38,16.75Z M4.58,5.05L22.78,5.05L22.78,7.25L4.58,7.25Z M4.58,8.15L22.78,8.15L22.78,10.35L4.58,10.35Z"/></svg></button>
-<button type="button" class="w-11 h-11 rounded-lg bg-[#202024] text-[#c9c5d0] hover:text-white flex items-center justify-center border border-zinc-800/80 transition-colors" title="3let" aria-label="3let"><svg class="w-6 h-6 fill-current" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.75,18.7L7.81,18.93L7.83,19.16L7.81,19.41L7.74,19.66L7.64,19.9L7.5,20.14L7.32,20.37L7.11,20.59L6.87,20.79L6.6,20.97L6.32,21.12L6.02,21.24L5.7,21.34L5.39,21.41L5.07,21.44L4.76,21.45L4.46,21.42L4.17,21.35L3.91,21.26L3.67,21.14L3.47,20.99L3.29,20.82L3.15,20.62L3.05,20.41L2.99,20.18L2.97,19.94L2.99,19.7L3.06,19.45L3.16,19.2L3.3,18.96L3.48,18.73L3.69,18.52L3.93,18.32L4.2,18.14L4.48,17.99L4.78,17.86L5.1,17.76L5.41,17.7L5.73,17.66L6.04,17.66L6.34,17.69L6.63,17.75L6.89,17.84L7.13,17.97L7.33,18.12L7.51,18.29L7.65,18.48Z M6.38,7.55L7.78,7.55L7.78,19.25L6.38,19.25Z M14.35,18.7L14.41,18.93L14.43,19.16L14.41,19.41L14.34,19.66L14.24,19.9L14.1,20.14L13.92,20.37L13.71,20.59L13.47,20.79L13.2,20.97L12.92,21.12L12.62,21.24L12.3,21.34L11.99,21.41L11.67,21.44L11.36,21.45L11.06,21.42L10.77,21.35L10.51,21.26L10.27,21.14L10.07,20.99L9.89,20.82L9.75,20.62L9.65,20.41L9.59,20.18L9.57,19.94L9.59,19.7L9.66,19.45L9.76,19.2L9.9,18.96L10.08,18.73L10.29,18.52L10.53,18.32L10.8,18.14L11.08,17.99L11.38,17.86L11.7,17.76L12.01,17.7L12.33,17.66L12.64,17.66L12.94,17.69L13.23,17.75L13.49,17.84L13.73,17.97L13.93,18.12L14.11,18.29L14.25,18.48Z M12.98,7.55L14.38,7.55L14.38,19.25L12.98,19.25Z M20.95,18.7L21.01,18.93L21.03,19.16L21.01,19.41L20.94,19.66L20.84,19.9L20.7,20.14L20.52,20.37L20.31,20.59L20.07,20.79L19.8,20.97L19.52,21.12L19.22,21.24L18.9,21.34L18.59,21.41L18.27,21.44L17.96,21.45L17.66,21.42L17.37,21.35L17.11,21.26L16.87,21.14L16.67,20.99L16.49,20.82L16.35,20.62L16.25,20.41L16.19,20.18L16.17,19.94L16.19,19.7L16.26,19.45L16.36,19.2L16.5,18.96L16.68,18.73L16.89,18.52L17.13,18.32L17.4,18.14L17.68,17.99L17.98,17.86L18.3,17.76L18.61,17.7L18.93,17.66L19.24,17.66L19.54,17.69L19.83,17.75L20.09,17.84L20.33,17.97L20.53,18.12L20.71,18.29L20.85,18.48Z M19.58,7.55L20.98,7.55L20.98,19.25L19.58,19.25Z M6.38,7.55L20.98,7.55L20.98,9.75L6.38,9.75Z M12.29,3.09L12.41,2.97L12.58,2.84L12.76,2.75L12.95,2.67L13.16,2.61L13.37,2.57L13.59,2.55L13.8,2.56L14.02,2.58L14.23,2.62L14.43,2.68L14.63,2.76L14.81,2.86L14.97,2.99L15.11,3.14L15.22,3.33L15.29,3.54L15.3,3.76L15.26,3.98L15.16,4.18L15.03,4.35L14.88,4.49L14.71,4.6L14.52,4.69L14.32,4.76L14.11,4.81L13.9,4.84L13.68,4.84L13.18,4.84L13.18,3.89L13.67,3.89L13.81,3.89L13.94,3.87L14.06,3.84L14.16,3.81L14.24,3.77L14.3,3.73L14.34,3.7L14.36,3.68L14.36,3.68L14.35,3.69L14.35,3.71L14.36,3.72L14.35,3.71L14.33,3.69L14.28,3.65L14.21,3.61L14.12,3.57L14.01,3.54L13.88,3.52L13.75,3.5L13.62,3.5L13.49,3.51L13.37,3.54L13.26,3.57L13.16,3.61L13.09,3.65L13.03,3.68L12.98,3.75Z M13.18,3.89L13.69,3.9L13.97,3.91L14.26,3.97L14.54,4.06L14.79,4.18L15.02,4.35L15.22,4.55L15.36,4.79L15.44,5.07L15.45,5.36L15.37,5.63L15.23,5.88L15.04,6.09L14.81,6.25L14.56,6.38L14.29,6.48L14,6.53L13.7,6.55L13.41,6.54L13.12,6.49L12.84,6.4L12.58,6.28L12.35,6.12L12.16,5.92L12.01,5.68L11.92,5.4L11.91,5.12L11.98,4.84L12.08,4.64L12.92,5.09L12.86,5.18L12.85,5.21L12.85,5.24L12.87,5.27L12.9,5.32L12.96,5.39L13.06,5.45L13.19,5.52L13.34,5.56L13.51,5.59L13.69,5.6L13.87,5.59L14.04,5.56L14.19,5.51L14.32,5.44L14.41,5.38L14.47,5.31L14.49,5.27L14.5,5.24L14.5,5.21L14.49,5.18L14.46,5.13L14.4,5.07L14.31,5L14.18,4.94L14.03,4.89L13.86,4.86L13.67,4.84L13.18,4.84Z M6.38,4.2L11.35,4.2L11.35,4.9L6.38,4.9Z M16,4.2L20.98,4.2L20.98,4.9L16,4.9Z M6.38,4.2L7.08,4.2L7.08,6.75L6.38,6.75Z M20.28,4.2L20.98,4.2L20.98,6.75L20.28,6.75Z"/></svg></button></div>
+<div class="flex-1 min-w-0 flex gap-3 p-2 pl-3 pr-3" data-purpose="content">
+<section class="flex-[2] min-w-0 flex flex-col" data-purpose="metronome-controls-panel">
+<div class="rounded-[14px] bg-[#1b1b1e] p-2 flex flex-col gap-2">
+<div class="flex gap-2"><button class="h-8 px-3 rounded-full bg-[#85145a] text-[#ff93c8] text-[14px] flex items-center gap-1.5">4/4<span class="material-symbols-outlined text-[16px] leading-none">expand_more</span></button><button class="h-8 px-3 rounded-full bg-[#85145a] text-[#ff93c8] text-[14px] flex items-center gap-1.5">Standard<span class="material-symbols-outlined text-[16px] leading-none">expand_more</span></button></div>
+<div class="flex justify-between"><div class="w-11 h-11 rounded-xl bg-[#a78bfa] text-[#3c1989] flex items-center justify-center"><svg class="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M14.35,16.2L14.41,16.43L14.43,16.67L14.41,16.91L14.34,17.16L14.24,17.41L14.1,17.65L13.92,17.88L13.71,18.09L13.47,18.29L13.2,18.47L12.92,18.62L12.62,18.75L12.3,18.84L11.99,18.91L11.67,18.94L11.36,18.95L11.06,18.92L10.77,18.85L10.51,18.76L10.27,18.64L10.07,18.49L9.89,18.32L9.75,18.12L9.65,17.91L9.59,17.68L9.57,17.44L9.59,17.2L9.66,16.95L9.76,16.7L9.9,16.46L10.08,16.23L10.29,16.02L10.53,15.82L10.8,15.64L11.08,15.49L11.38,15.36L11.7,15.27L12.01,15.2L12.33,15.16L12.64,15.16L12.94,15.19L13.23,15.25L13.49,15.35L13.73,15.47L13.93,15.62L14.11,15.79L14.25,15.99Z M12.98,5.05L14.38,5.05L14.38,16.75L12.98,16.75Z"/></svg></div><div class="w-11 h-11 rounded-xl bg-[#2a2a2d] text-[#cac4d4] flex items-center justify-center"><svg class="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M10.35,16.2L10.41,16.43L10.43,16.67L10.41,16.91L10.34,17.16L10.24,17.41L10.1,17.65L9.92,17.88L9.71,18.09L9.47,18.29L9.2,18.47L8.92,18.62L8.62,18.75L8.3,18.84L7.99,18.91L7.67,18.94L7.36,18.95L7.06,18.92L6.77,18.85L6.51,18.76L6.27,18.64L6.07,18.49L5.89,18.32L5.75,18.12L5.65,17.91L5.59,17.68L5.57,17.44L5.59,17.2L5.66,16.95L5.76,16.7L5.9,16.46L6.08,16.23L6.29,16.02L6.53,15.82L6.8,15.64L7.08,15.49L7.38,15.36L7.7,15.27L8.01,15.2L8.33,15.16L8.64,15.16L8.94,15.19L9.23,15.25L9.49,15.35L9.73,15.47L9.93,15.62L10.11,15.79L10.25,15.99Z M8.98,5.05L10.38,5.05L10.38,16.75L8.98,16.75Z M18.35,16.2L18.41,16.43L18.43,16.67L18.41,16.91L18.34,17.16L18.24,17.41L18.1,17.65L17.92,17.88L17.71,18.09L17.47,18.29L17.2,18.47L16.92,18.62L16.62,18.75L16.3,18.84L15.99,18.91L15.67,18.94L15.36,18.95L15.06,18.92L14.77,18.85L14.51,18.76L14.27,18.64L14.07,18.49L13.89,18.32L13.75,18.12L13.65,17.91L13.59,17.68L13.57,17.44L13.59,17.2L13.66,16.95L13.76,16.7L13.9,16.46L14.08,16.23L14.29,16.02L14.53,15.82L14.8,15.64L15.08,15.49L15.38,15.36L15.7,15.27L16.01,15.2L16.33,15.16L16.64,15.16L16.94,15.19L17.23,15.25L17.49,15.35L17.73,15.47L17.93,15.62L18.11,15.79L18.25,15.99Z M16.98,5.05L18.38,5.05L18.38,16.75L16.98,16.75Z M8.98,5.05L18.38,5.05L18.38,7.25L8.98,7.25Z"/></svg></div><div class="w-11 h-11 rounded-xl bg-[#2a2a2d] text-[#cac4d4] flex items-center justify-center"><svg class="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M5.95,16.2L6.01,16.43L6.03,16.67L6.01,16.91L5.94,17.16L5.84,17.41L5.7,17.65L5.52,17.88L5.31,18.09L5.07,18.29L4.8,18.47L4.52,18.62L4.22,18.75L3.9,18.84L3.59,18.91L3.27,18.94L2.96,18.95L2.66,18.92L2.37,18.85L2.11,18.76L1.87,18.64L1.67,18.49L1.49,18.32L1.35,18.12L1.25,17.91L1.19,17.68L1.17,17.44L1.19,17.2L1.26,16.95L1.36,16.7L1.5,16.46L1.68,16.23L1.89,16.02L2.13,15.82L2.4,15.64L2.68,15.49L2.98,15.36L3.3,15.27L3.61,15.2L3.93,15.16L4.24,15.16L4.54,15.19L4.83,15.25L5.09,15.35L5.33,15.47L5.53,15.62L5.71,15.79L5.85,15.99Z M4.58,5.05L5.98,5.05L5.98,16.75L4.58,16.75Z M11.55,16.2L11.61,16.43L11.63,16.67L11.61,16.91L11.54,17.16L11.44,17.41L11.3,17.65L11.12,17.88L10.91,18.09L10.67,18.29L10.4,18.47L10.12,18.62L9.82,18.75L9.5,18.84L9.19,18.91L8.87,18.94L8.56,18.95L8.26,18.92L7.97,18.85L7.71,18.76L7.47,18.64L7.27,18.49L7.09,18.32L6.95,18.12L6.85,17.91L6.79,17.68L6.77,17.44L6.79,17.2L6.86,16.95L6.96,16.7L7.1,16.46L7.28,16.23L7.49,16.02L7.73,15.82L8,15.64L8.28,15.49L8.58,15.36L8.9,15.27L9.21,15.2L9.53,15.16L9.84,15.16L10.14,15.19L10.43,15.25L10.69,15.35L10.93,15.47L11.13,15.62L11.31,15.79L11.45,15.99Z M10.18,5.05L11.58,5.05L11.58,16.75L10.18,16.75Z M17.15,16.2L17.21,16.43L17.23,16.67L17.21,16.91L17.14,17.16L17.04,17.41L16.9,17.65L16.72,17.88L16.51,18.09L16.27,18.29L16,18.47L15.72,18.62L15.42,18.75L15.1,18.84L14.79,18.91L14.47,18.94L14.16,18.95L13.86,18.92L13.57,18.85L13.31,18.76L13.07,18.64L12.87,18.49L12.69,18.32L12.55,18.12L12.45,17.91L12.39,17.68L12.37,17.44L12.39,17.2L12.46,16.95L12.56,16.7L12.7,16.46L12.88,16.23L13.09,16.02L13.33,15.82L13.6,15.64L13.88,15.49L14.18,15.36L14.5,15.27L14.81,15.2L15.13,15.16L15.44,15.16L15.74,15.19L16.03,15.25L16.29,15.35L16.53,15.47L16.73,15.62L16.91,15.79L17.05,15.99Z M15.78,5.05L17.18,5.05L17.18,16.75L15.78,16.75Z M22.75,16.2L22.81,16.43L22.83,16.67L22.81,16.91L22.74,17.16L22.64,17.41L22.5,17.65L22.32,17.88L22.11,18.09L21.87,18.29L21.6,18.47L21.32,18.62L21.02,18.75L20.7,18.84L20.39,18.91L20.07,18.94L19.76,18.95L19.46,18.92L19.17,18.85L18.91,18.76L18.67,18.64L18.47,18.49L18.29,18.32L18.15,18.12L18.05,17.91L17.99,17.68L17.97,17.44L17.99,17.2L18.06,16.95L18.16,16.7L18.3,16.46L18.48,16.23L18.69,16.02L18.93,15.82L19.2,15.64L19.48,15.49L19.78,15.36L20.1,15.27L20.41,15.2L20.73,15.16L21.04,15.16L21.34,15.19L21.63,15.25L21.89,15.35L22.13,15.47L22.33,15.62L22.51,15.79L22.65,15.99Z M21.38,5.05L22.78,5.05L22.78,16.75L21.38,16.75Z M4.58,5.05L22.78,5.05L22.78,7.25L4.58,7.25Z M4.58,8.15L22.78,8.15L22.78,10.35L4.58,10.35Z"/></svg></div><div class="w-11 h-11 rounded-xl bg-[#2a2a2d] text-[#cac4d4] flex items-center justify-center"><svg class="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M7.75,18.7L7.81,18.93L7.83,19.16L7.81,19.41L7.74,19.66L7.64,19.9L7.5,20.14L7.32,20.37L7.11,20.59L6.87,20.79L6.6,20.97L6.32,21.12L6.02,21.24L5.7,21.34L5.39,21.41L5.07,21.44L4.76,21.45L4.46,21.42L4.17,21.35L3.91,21.26L3.67,21.14L3.47,20.99L3.29,20.82L3.15,20.62L3.05,20.41L2.99,20.18L2.97,19.94L2.99,19.7L3.06,19.45L3.16,19.2L3.3,18.96L3.48,18.73L3.69,18.52L3.93,18.32L4.2,18.14L4.48,17.99L4.78,17.86L5.1,17.76L5.41,17.7L5.73,17.66L6.04,17.66L6.34,17.69L6.63,17.75L6.89,17.84L7.13,17.97L7.33,18.12L7.51,18.29L7.65,18.48Z M6.38,7.55L7.78,7.55L7.78,19.25L6.38,19.25Z M14.35,18.7L14.41,18.93L14.43,19.16L14.41,19.41L14.34,19.66L14.24,19.9L14.1,20.14L13.92,20.37L13.71,20.59L13.47,20.79L13.2,20.97L12.92,21.12L12.62,21.24L12.3,21.34L11.99,21.41L11.67,21.44L11.36,21.45L11.06,21.42L10.77,21.35L10.51,21.26L10.27,21.14L10.07,20.99L9.89,20.82L9.75,20.62L9.65,20.41L9.59,20.18L9.57,19.94L9.59,19.7L9.66,19.45L9.76,19.2L9.9,18.96L10.08,18.73L10.29,18.52L10.53,18.32L10.8,18.14L11.08,17.99L11.38,17.86L11.7,17.76L12.01,17.7L12.33,17.66L12.64,17.66L12.94,17.69L13.23,17.75L13.49,17.84L13.73,17.97L13.93,18.12L14.11,18.29L14.25,18.48Z M12.98,7.55L14.38,7.55L14.38,19.25L12.98,19.25Z M20.95,18.7L21.01,18.93L21.03,19.16L21.01,19.41L20.94,19.66L20.84,19.9L20.7,20.14L20.52,20.37L20.31,20.59L20.07,20.79L19.8,20.97L19.52,21.12L19.22,21.24L18.9,21.34L18.59,21.41L18.27,21.44L17.96,21.45L17.66,21.42L17.37,21.35L17.11,21.26L16.87,21.14L16.67,20.99L16.49,20.82L16.35,20.62L16.25,20.41L16.19,20.18L16.17,19.94L16.19,19.7L16.26,19.45L16.36,19.2L16.5,18.96L16.68,18.73L16.89,18.52L17.13,18.32L17.4,18.14L17.68,17.99L17.98,17.86L18.3,17.76L18.61,17.7L18.93,17.66L19.24,17.66L19.54,17.69L19.83,17.75L20.09,17.84L20.33,17.97L20.53,18.12L20.71,18.29L20.85,18.48Z M19.58,7.55L20.98,7.55L20.98,19.25L19.58,19.25Z M6.38,7.55L20.98,7.55L20.98,9.75L6.38,9.75Z M12.29,3.09L12.41,2.97L12.58,2.84L12.76,2.75L12.95,2.67L13.16,2.61L13.37,2.57L13.59,2.55L13.8,2.56L14.02,2.58L14.23,2.62L14.43,2.68L14.63,2.76L14.81,2.86L14.97,2.99L15.11,3.14L15.22,3.33L15.29,3.54L15.3,3.76L15.26,3.98L15.16,4.18L15.03,4.35L14.88,4.49L14.71,4.6L14.52,4.69L14.32,4.76L14.11,4.81L13.9,4.84L13.68,4.84L13.18,4.84L13.18,3.89L13.67,3.89L13.81,3.89L13.94,3.87L14.06,3.84L14.16,3.81L14.24,3.77L14.3,3.73L14.34,3.7L14.36,3.68L14.36,3.68L14.35,3.69L14.35,3.71L14.36,3.72L14.35,3.71L14.33,3.69L14.28,3.65L14.21,3.61L14.12,3.57L14.01,3.54L13.88,3.52L13.75,3.5L13.62,3.5L13.49,3.51L13.37,3.54L13.26,3.57L13.16,3.61L13.09,3.65L13.03,3.68L12.98,3.75Z M13.18,3.89L13.69,3.9L13.97,3.91L14.26,3.97L14.54,4.06L14.79,4.18L15.02,4.35L15.22,4.55L15.36,4.79L15.44,5.07L15.45,5.36L15.37,5.63L15.23,5.88L15.04,6.09L14.81,6.25L14.56,6.38L14.29,6.48L14,6.53L13.7,6.55L13.41,6.54L13.12,6.49L12.84,6.4L12.58,6.28L12.35,6.12L12.16,5.92L12.01,5.68L11.92,5.4L11.91,5.12L11.98,4.84L12.08,4.64L12.92,5.09L12.86,5.18L12.85,5.21L12.85,5.24L12.87,5.27L12.9,5.32L12.96,5.39L13.06,5.45L13.19,5.52L13.34,5.56L13.51,5.59L13.69,5.6L13.87,5.59L14.04,5.56L14.19,5.51L14.32,5.44L14.41,5.38L14.47,5.31L14.49,5.27L14.5,5.24L14.5,5.21L14.49,5.18L14.46,5.13L14.4,5.07L14.31,5L14.18,4.94L14.03,4.89L13.86,4.86L13.67,4.84L13.18,4.84Z M6.38,4.2L11.35,4.2L11.35,4.9L6.38,4.9Z M16,4.2L20.98,4.2L20.98,4.9L16,4.9Z M6.38,4.2L7.08,4.2L7.08,6.75L6.38,6.75Z M20.28,4.2L20.98,4.2L20.98,6.75L20.28,6.75Z"/></svg></div></div>
+<div class="grid grid-cols-4 gap-2" id="accentCells"><div class="h-11 rounded-xl bg-[#0e0e11] p-[5px]"><div class="border border-[#ffafd3]/40 w-full h-full rounded-lg bg-[#1b1b1e] flex items-end justify-center pb-[4px]"><div class="w-[38px] h-[24px] rounded-[5px] bg-[#ffafd3]" style="box-shadow:0 0 8px rgba(255,175,211,.55)"></div></div></div><div class="h-11 rounded-xl bg-[#0e0e11] p-[5px]"><div class="w-full h-full rounded-lg bg-[#1b1b1e] flex items-end justify-center pb-[4px]"><div class="w-[38px] h-[15px] rounded-[4px] bg-[#cebdff]"></div></div></div><div class="h-11 rounded-xl bg-[#0e0e11] p-[5px]"><div class="w-full h-full rounded-lg bg-[#1b1b1e] flex items-end justify-center pb-[4px]"><div class="w-[38px] h-[15px] rounded-[4px] bg-[#cebdff]"></div></div></div><div class="h-11 rounded-xl bg-[#0e0e11] p-[5px]"><div class="w-full h-full rounded-lg bg-[#1b1b1e] flex items-end justify-center pb-[4px]"><div class="w-[38px] h-[15px] rounded-[4px] bg-[#cebdff]"></div></div></div></div>
 </div>
-
-  <!-- Section 3: Accent Bars & Style -->
-  
-
-  <!-- Section 4: Timbre Sound Selector Dropdown -->
-  <div class="rounded-xl bg-[#1b1b1e] p-2 shadow-sm flex flex-col gap-2"><div class="grid grid-cols-4 gap-2"><div class="beat-col flex flex-col items-center gap-1.5 p-1.5 rounded-lg bg-[#0e0e11] cursor-pointer"><div class="w-full h-11 bg-[#1f1f22] rounded-md p-1 flex items-end overflow-hidden"><div class="w-full bg-[#ffafd3] rounded-sm h-[95%]" style="box-shadow: 0 0 12px rgba(255,175,211,0.5);"></div></div></div><div class="beat-col flex flex-col items-center gap-1.5 p-1.5 rounded-lg bg-[#0e0e11] cursor-pointer"><div class="w-full h-11 bg-[#1f1f22] rounded-md p-1 flex items-end overflow-hidden"><div class="w-full bg-[#cebdff] rounded-sm h-[62%]"></div></div></div><div class="beat-col flex flex-col items-center gap-1.5 p-1.5 rounded-lg bg-[#0e0e11] cursor-pointer"><div class="w-full h-11 bg-[#1f1f22] rounded-md p-1 flex items-end overflow-hidden"><div class="w-full bg-[#cebdff]/70 rounded-sm h-[42%]"></div></div></div><div class="beat-col flex flex-col items-center gap-1.5 p-1.5 rounded-lg bg-[#0e0e11] cursor-pointer"><div class="w-full h-11 bg-[#1f1f22] rounded-md p-1 flex items-end overflow-hidden"><div class="w-full bg-[#cebdff] rounded-sm h-[62%]"></div></div></div></div></div><div class="bg-[#181820] py-1.5 px-2.5 rounded-lg border border-zinc-800/80 flex items-center justify-between cursor-pointer hover:border-zinc-700 transition-colors shadow-sm">
-    <div class="flex items-center space-x-2">
-      <span class="material-symbols-outlined text-secondary text-base">graphic_eq</span>
-      <div class="flex flex-col text-left">
-        <span class="text-[8px] uppercase tracking-wider text-zinc-400 font-bold leading-tight">Sound Engine</span>
-        <span class="text-xs font-bold text-zinc-200 leading-tight">Classic Wood</span>
-      </div>
-    </div>
-    <span class="material-symbols-outlined text-zinc-400 text-base">expand_more</span>
-  </div></section>
-<!-- END: ControlsPanel -->
-<!-- BEGIN: TunerGaugeWidget -->
-<!-- Centerpiece widget: frequency arc, needle, note display and status -->
-<main class="flex-1 min-w-0 bg-[#141419] p-3 flex flex-col items-stretch justify-center relative overflow-hidden" data-purpose="metronome-dial-pane"><div class="flex flex-col w-full h-full select-none overflow-hidden justify-between p-1">
-  <!-- Top bar with active pulse indicator and mute/preset quick bar -->
-  
-
-  <div class="w-full flex flex-col items-stretch justify-center gap-2 min-h-0">
-<!-- Center Section (left of the transport column): BPM Circular Gauge Dial & Horizontal Slider -->
-  <div class="flex flex-col items-center justify-center min-h-0 relative shrink-0"><div class="w-full h-[190px] relative rounded-xl overflow-hidden flex items-center justify-center shadow-lg" style="background-color: #1b1b1e; background-image: radial-gradient(circle, rgba(167,139,250,0.08) 0%, rgba(30,27,46,0.4) 40%, rgba(19,19,22,0.95) 100%);"><div class="absolute inset-0 pointer-events-none z-0" style="background: linear-gradient(180deg, rgba(206,189,255,0.10) 0%, transparent 50%, rgba(255,175,211,0.10) 100%);"></div><svg class="w-full h-full -rotate-90 transform relative z-10" viewBox="0 0 240 240"><defs><filter id="portraitBlurGlow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3"></feGaussianBlur></filter><linearGradient id="portraitArcGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#cebdff"></stop><stop offset="50%" stop-color="#a78bfa"></stop><stop offset="100%" stop-color="#ffafd3"></stop></linearGradient></defs><circle cx="120" cy="120" r="96" fill="none" stroke="#2a2a2d" stroke-width="6" stroke-dasharray="460 140" stroke-linecap="round"></circle><circle cx="120" cy="120" r="96" fill="none" stroke="url(#portraitArcGrad)" stroke-width="8" stroke-dasharray="240 600" stroke-linecap="round" opacity="0.5" filter="url(#portraitBlurGlow)"></circle><circle cx="120" cy="120" r="96" fill="none" stroke="url(#portraitArcGrad)" stroke-width="6" stroke-dasharray="228 600" stroke-linecap="round"></circle><line x1="218" y1="120" x2="226" y2="120" stroke="#494552" stroke-width="1.5" opacity="0.5"></line><line x1="189.29" y1="189.29" x2="194.95" y2="194.95" stroke="#494552" stroke-width="1.5" opacity="0.5"></line><line x1="120" y1="218" x2="120" y2="226" stroke="#494552" stroke-width="1.5" opacity="0.5"></line><line x1="50.71" y1="189.29" x2="45.05" y2="194.95" stroke="#494552" stroke-width="1.5" opacity="0.5"></line><line x1="22" y1="120" x2="14" y2="120" stroke="#494552" stroke-width="1.5" opacity="0.5"></line><line x1="50.71" y1="50.71" x2="45.05" y2="45.05" stroke="#494552" stroke-width="1.5" opacity="0.5"></line><line x1="120" y1="22" x2="120" y2="14" stroke="#494552" stroke-width="1.5" opacity="0.5"></line><line x1="189.29" y1="50.71" x2="194.95" y2="45.05" stroke="#494552" stroke-width="1.5" opacity="0.5"></line></svg><div class="absolute inset-y-0 left-1/2 -translate-x-1/2 w-[290px] flex items-center justify-between z-20"><button type="button" class="bpm-step-btn w-11 h-11 rounded-full bg-[#2a2a2d] hover:bg-[#353438] active:scale-95 text-[#e4e1e6] flex items-center justify-center shadow transition-all shrink-0 cursor-pointer" data-delta="-1" title="Decrease Tempo"><span class="material-symbols-outlined text-[22px] leading-none">remove</span></button><div class="flex flex-col items-center justify-center text-center select-none pointer-events-none"><div class="flex items-baseline space-x-1 leading-none"><span id="bpmValue" class="text-[48px] font-bold leading-none tracking-tight text-[#e4e1e6]">120</span><span class="text-[11px] font-semibold tracking-wider uppercase text-[#ffafd3]">BPM</span></div><span id="tempoSubText" class="text-[11px] font-medium text-[#d0bcff] tracking-wide mt-1" style="white-space: nowrap;">Moderato (108-120)</span></div><button type="button" class="bpm-step-btn w-11 h-11 rounded-full bg-[#2a2a2d] hover:bg-[#353438] active:scale-95 text-[#e4e1e6] flex items-center justify-center shadow transition-all shrink-0 cursor-pointer" data-delta="1" title="Increase Tempo"><span class="material-symbols-outlined text-[22px] leading-none">add</span></button></div></div><div class="w-[220px] max-w-full flex items-center gap-2.5 mt-2"><span class="text-[11px] font-medium text-[#948e9d] font-mono leading-none">40</span><input type="range" min="40" max="240" value="120" class="flex-1 h-1.5 bg-[#353438] rounded-full appearance-none cursor-pointer accent-[#cebdff]" id="tempoSlider"><span class="text-[11px] font-medium text-[#948e9d] font-mono leading-none">240</span></div></div>
-
-  <!-- Transport column beside the dial: play above Tap Tempo (design iteration D1, 2026-10-01) -->
-<div class="w-full flex items-center gap-2 shrink-0"><button id="tapTempoBtn" type="button" class="flex-1 h-12 rounded-xl bg-[#2a2a2d] hover:bg-[#353438] active:scale-[0.99] flex flex-col items-center justify-center shadow-md transition-all cursor-pointer"><div class="flex items-center gap-1.5 text-[#cebdff]"><span class="material-symbols-outlined text-[20px]">touch_app</span><span class="font-bold text-sm tracking-wider uppercase leading-none">TAP TEMPO</span></div><span class="text-[11px] text-[#948e9d] mt-1 leading-none" id="tapHelperText">Sync Finger Rhythm</span></button><button id="playToggleBtn" type="button" class="w-12 h-12 rounded-full bg-[#85145a] hover:bg-[#a0186c] text-[#ff93c8] flex items-center justify-center active:scale-90 transition-all shrink-0 cursor-pointer" style="box-shadow: 0 0 8px rgba(255,175,211,0.35);" title="Start Metronome"><span id="playIcon" class="material-symbols-outlined text-[26px] leading-none fill-1">play_arrow</span></button></div>
+<div class="mt-5 self-center h-[30px] pl-3 pr-3.5 rounded-full bg-[#2a2a2d] text-[#e4e1e6] text-[14px] flex items-center gap-2.5"><span class="material-symbols-outlined text-[18px] leading-none text-[#cebdff]">graphic_eq</span>Classic Wood<span class="material-symbols-outlined text-[16px] leading-none text-[#cac4d4]">expand_more</span></div>
+</section>
+<main class="flex-[3] min-w-0 flex flex-col gap-2" data-purpose="metronome-dial-pane">
+<div class="relative h-[236px] shrink-0 rounded-[22px] overflow-hidden border border-[#494552]/40" style="background:linear-gradient(180deg,rgba(206,189,255,.14) 0%,rgba(19,19,22,0) 50%,rgba(255,175,211,.12) 100%),#1b1b1e">
+<svg class="absolute top-0 left-1/2 -ml-[189.5px]" width="379" height="236" viewBox="0 0 379 236"><defs><linearGradient id="ag" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#cebdff"/><stop offset=".6" stop-color="#d0a0f0"/><stop offset="1" stop-color="#ffafd3"/></linearGradient></defs>
+<g transform="rotate(-90 189.5 92)"><circle cx="189.5" cy="92" r="68" fill="none" stroke="#2a2a2d" stroke-width="6" stroke-linecap="round" stroke-dasharray="284.8 427.3"/><circle cx="189.5" cy="92" r="68" fill="none" stroke="url(#ag)" stroke-width="6" stroke-linecap="round" stroke-dasharray="166.2 427.3"/></g><line x1="189.5" y1="22.0" x2="189.5" y2="16.0" stroke="#494552" stroke-width="1.2" opacity=".7"/><line x1="250.1" y1="57.0" x2="255.3" y2="54.0" stroke="#494552" stroke-width="1.2" opacity=".7"/><line x1="250.1" y1="127.0" x2="255.3" y2="130.0" stroke="#494552" stroke-width="1.2" opacity=".7"/><line x1="189.5" y1="162.0" x2="189.5" y2="168.0" stroke="#494552" stroke-width="1.2" opacity=".7"/><line x1="128.9" y1="127.0" x2="123.7" y2="130.0" stroke="#494552" stroke-width="1.2" opacity=".7"/><line x1="128.9" y1="57.0" x2="123.7" y2="54.0" stroke="#494552" stroke-width="1.2" opacity=".7"/></svg>
+<button class="bpm-step-btn absolute w-11 h-11 rounded-full bg-[#2a2a2d] text-[#e4e1e6] flex items-center justify-center" style="left:113.5px;top:70px" data-delta="-1"><span class="material-symbols-outlined text-[24px]">remove</span></button>
+<button class="bpm-step-btn absolute w-11 h-11 rounded-full bg-[#2a2a2d] text-[#e4e1e6] flex items-center justify-center" style="left:calc(50% + 32px);top:70px" data-delta="1"><span class="material-symbols-outlined text-[24px]">add</span></button>
+<div class="absolute left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none" style="top:58px"><span id="bpmValue" class="text-[30px] font-bold leading-none tracking-tight text-[#e4e1e6]">120</span><span class="text-[11px] font-medium text-[#ffafd3] mt-2 leading-none">BPM</span><span id="tempoMarking" class="text-[11px] text-[#cebdff] mt-2 leading-none whitespace-nowrap">Moderato</span></div>
+<div class="absolute left-2 right-2 flex items-center gap-2" style="top:196px"><span class="text-[12px] text-[#948e9d]">40</span><input id="tempoSlider" type="range" min="40" max="240" value="120" class="flex-1 h-1.5 rounded-full appearance-none bg-[#353438] accent-[#cebdff]"><span class="text-[12px] text-[#948e9d]">240</span></div>
 </div>
+<div class="flex items-center gap-2 h-12"><button id="tapTempoBtn" class="flex-1 h-12 rounded-[22px] bg-[#2a2a2d] flex flex-col items-center justify-center"><span class="flex items-center gap-1.5 text-[#cebdff] font-bold text-[17px] leading-none"><span class="material-symbols-outlined text-[20px]">touch_app</span>TAP TEMPO</span><span class="text-[11px] text-[#948e9d] mt-1 leading-none">Sync finger rhythm</span></button>
+<button id="playToggleBtn" class="w-12 h-12 rounded-full bg-[#85145a] text-[#ffafd3] flex items-center justify-center shrink-0" style="box-shadow:0 0 8px rgba(255,175,211,.35)"><span id="playIcon" class="material-symbols-outlined text-[30px]" style="font-variation-settings:'FILL' 1">play_arrow</span></button></div>
+</main></div></div>
+<div class="w-full h-3 flex items-center justify-center bg-[#0e0e11] shrink-0"><div class="w-36 h-1 bg-zinc-600/80 rounded-full"></div></div>
 </div>
-
-<script class="">
-  (function () {
-    let bpm = 120;
-    let isPlaying = false;
-    let currentBeat = 0;
-    let totalBeats = 4;
-    let intervalId = null;
-    let tapTimes = [];
-    let isMuted = false;
-
-    const tempoMarkings = [
-      { max: 45, text: "Grave (< 45)" },
-      { max: 60, text: "Largo (45 - 60)" },
-      { max: 76, text: "Adagio (66 - 76)" },
-      { max: 108, text: "Andante (76 - 108)" },
-      { max: 120, text: "Moderato (108 - 120)" },
-      { max: 168, text: "Allegro (120 - 168)" },
-      { max: 200, text: "Presto (168 - 200)" },
-      { max: 999, text: "Prestissimo (> 200)" }
-    ];
-
-    const bpmEl = document.getElementById('bpmValue');
-    const tempoMarkingEl = document.getElementById('tempoMarking');
-    const playToggleBtn = document.getElementById('playToggleBtn');
-    const playIcon = document.getElementById('playIcon');
-    const syncPulse = document.getElementById('syncPulse');
-    const tapFeedback = document.getElementById('tapFeedback');
-    const currentBeatNum = document.getElementById('currentBeatNum');
-    const muteBtn = document.getElementById('muteBtn');
-    const muteIcon = document.getElementById('muteIcon');
-    const podsContainer = document.getElementById('beatPodsContainer');
-
-    function updateTempoText() {
-      const entry = tempoMarkings.find(m => bpm <= m.max) || tempoMarkings[tempoMarkings.length - 1];
-      tempoMarkingEl.textContent = entry.text;
-    }
-
-    function setBpm(val) {
-      bpm = Math.min(260, Math.max(30, val));
-      bpmEl.textContent = bpm;
-      updateTempoText();
-      if (isPlaying) {
-        restartTimer();
-      }
-    }
-
-    document.querySelectorAll('.bpm-step-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const delta = parseInt(btn.getAttribute('data-delta'), 10);
-        setBpm(bpm + delta);
-      });
-    });
-
-    let audioCtx = null;
-    function playClick(isAccent) {
-      if (isMuted) return;
-      try {
-        if (!audioCtx) {
-          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        if (audioCtx.state === 'suspended') {
-          audioCtx.resume();
-        }
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-
-        if (isAccent) {
-          osc.frequency.setValueAtTime(1400, audioCtx.currentTime);
-          gain.gain.setValueAtTime(0.85, audioCtx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
-          osc.start(audioCtx.currentTime);
-          osc.stop(audioCtx.currentTime + 0.08);
-        } else {
-          osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-          gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
-          osc.start(audioCtx.currentTime);
-          osc.stop(audioCtx.currentTime + 0.05);
-        }
-      } catch (e) {}
-    }
-
-    function triggerBeatVisuals() {
-      currentBeat = (currentBeat % totalBeats) + 1;
-      if (currentBeatNum) currentBeatNum.textContent = currentBeat;
-
-      const isAccent = (currentBeat === 1);
-      playClick(isAccent);
-
-      if (syncPulse) {
-        syncPulse.style.transform = 'scale(1.5)';
-        syncPulse.style.backgroundColor = isAccent ? '#ffd8e7' : '#cebdff';
-        setTimeout(() => {
-          syncPulse.style.transform = 'scale(1)';
-          syncPulse.style.backgroundColor = '';
-        }, 100);
-      }
-
-      if (podsContainer) {
-        const pods = podsContainer.querySelectorAll('.beat-pod');
-        pods.forEach((pod) => {
-          const b = parseInt(pod.getAttribute('data-beat'), 10);
-          if (b === currentBeat) {
-            pod.className = 'beat-pod w-7 h-7 rounded-lg bg-secondary text-[#21005e] font-bold text-xs flex items-center justify-center font-mono shadow-[0_0_8px_#ffafd3] scale-105 transition-transform';
-          } else {
-            pod.className = 'beat-pod w-7 h-7 rounded-lg bg-[#1e1e26] text-zinc-400 font-bold text-xs flex items-center justify-center font-mono border border-zinc-800 scale-100 transition-transform';
-          }
-        });
-      }
-    }
-
-    function startTimer() {
-      const intervalMs = (60 / bpm) * 1000;
-      currentBeat = 0;
-      triggerBeatVisuals();
-      intervalId = setInterval(triggerBeatVisuals, intervalMs);
-    }
-
-    function stopTimer() {
-      clearInterval(intervalId);
-      intervalId = null;
-      currentBeat = 0;
-      if (currentBeatNum) currentBeatNum.textContent = '1';
-      if (podsContainer) {
-        const pods = podsContainer.querySelectorAll('.beat-pod');
-        pods.forEach((pod, idx) => {
-          if (idx === 0) {
-            pod.className = 'beat-pod w-7 h-7 rounded-lg bg-secondary text-[#21005e] font-bold text-xs flex items-center justify-center font-mono shadow-[0_0_6px_#ffafd3]';
-          } else {
-            pod.className = 'beat-pod w-7 h-7 rounded-lg bg-[#1e1e26] text-zinc-400 font-bold text-xs flex items-center justify-center font-mono border border-zinc-800';
-          }
-        });
-      }
-    }
-
-    function restartTimer() {
-      clearInterval(intervalId);
-      const intervalMs = (60 / bpm) * 1000;
-      intervalId = setInterval(triggerBeatVisuals, intervalMs);
-    }
-
-    if (playToggleBtn) {
-      playToggleBtn.addEventListener('click', () => {
-        isPlaying = !isPlaying;
-        if (isPlaying) {
-          playIcon.textContent = 'pause';
-          playToggleBtn.classList.remove('from-[#b82a67]', 'to-[#e44d8b]');
-          playToggleBtn.classList.add('from-[#85145a]', 'to-[#b82a67]');
-          startTimer();
-        } else {
-          playIcon.textContent = 'play_arrow';
-          playToggleBtn.classList.remove('from-[#85145a]', 'to-[#b82a67]');
-          playToggleBtn.classList.add('from-[#b82a67]', 'to-[#e44d8b]');
-          stopTimer();
-        }
-      });
-    }
-
-    const tapTempoBtn = document.getElementById('tapTempoBtn');
-    if (tapTempoBtn) {
-      tapTempoBtn.addEventListener('click', () => {
-        const now = performance.now();
-        tapTimes.push(now);
-        if (tapTimes.length > 5) tapTimes.shift();
-
-        if (tapTimes.length > 1) {
-          let diffs = [];
-          for (let i = 1; i < tapTimes.length; i++) {
-            diffs.push(tapTimes[i] - tapTimes[i - 1]);
-          }
-          const avgDiff = diffs.reduce((a, b) => a + b, 0) / diffs.length;
-          const calculatedBpm = Math.round(60000 / avgDiff);
-          if (calculatedBpm >= 30 && calculatedBpm <= 260) {
-            setBpm(calculatedBpm);
-            if (tapFeedback) tapFeedback.textContent = calculatedBpm + ' BPM';
-          }
-        } else {
-          if (tapFeedback) tapFeedback.textContent = 'TAP...';
-        }
-
-        clearTimeout(window.tapResetTimer);
-        window.tapResetTimer = setTimeout(() => {
-          tapTimes = [];
-          if (tapFeedback) tapFeedback.textContent = 'READY';
-        }, 2500);
-      });
-    }
-
-    if (muteBtn) {
-      muteBtn.addEventListener('click', () => {
-        isMuted = !isMuted;
-        muteIcon.textContent = isMuted ? 'volume_off' : 'volume_up';
-        muteBtn.classList.toggle('text-rose-400', isMuted);
-      });
-    }
-  })();
-</script></main>
-<!-- END: TunerGaugeWidget -->
-</div>
-<!-- END: MainContentWrapper -->
-<!-- BEGIN: AndroidGestureBar -->
-<!-- Android bottom gesture navigation pill -->
-<div class="w-full h-3 flex items-center justify-center bg-[#0c0c0f] shrink-0" data-purpose="bottom-gesture-bar">
-<div class="w-36 h-1 bg-zinc-600/80 rounded-full"></div>
-</div>
-<!-- END: AndroidGestureBar -->
-</div>
-<!-- END: PhoneDeviceContainer -->
-
-
-
-
-
-
-
-
-
-
+<script>
+(function(){let bpm=120;const b=document.getElementById('bpmValue'),m=document.getElementById('tempoMarking'),s=document.getElementById('tempoSlider');
+const T=[[60,'Largo'],[76,'Adagio'],[108,'Andante'],[120,'Moderato'],[168,'Allegro'],[200,'Presto'],[999,'Prestissimo']];
+function set(v){bpm=Math.min(240,Math.max(40,v));b.textContent=bpm;s.value=bpm;m.textContent=T.find(t=>bpm<=t[0])[1];}
+document.querySelectorAll('.bpm-step-btn').forEach(x=>x.onclick=()=>set(bpm+ +x.dataset.delta));s.oninput=()=>set(+s.value);
+let tp=[];document.getElementById('tapTempoBtn').onclick=()=>{const n=performance.now();tp.push(n);if(tp.length>5)tp.shift();if(tp.length>1)set(Math.round(60000/((tp[tp.length-1]-tp[0])/(tp.length-1))));};
+let on=false;document.getElementById('playToggleBtn').onclick=()=>{on=!on;document.getElementById('playIcon').textContent=on?'pause':'play_arrow';};})();
+</script>
 </body></html>
