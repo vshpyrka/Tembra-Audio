@@ -17,6 +17,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.material3.Typography
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.MotionDurationScale
 import androidx.compose.ui.graphics.Color
@@ -116,6 +120,8 @@ class MetronomeScreenTest {
     private var primary = Color.Unspecified
     private var secondary = Color.Unspecified
     private var pixelDensity = 1f
+    private var measurer: TextMeasurer? = null
+    private var typography: Typography? = null
     private var inputModeManager: InputModeManager? = null
     private lateinit var compositionScope: CoroutineScope
     private val zeroScale = object : MotionDurationScale {
@@ -156,6 +162,9 @@ class MetronomeScreenTest {
                 pixelDensity = LocalDensity.current.density
                 compositionScope = rememberCoroutineScope()
                 val content: @Composable () -> Unit = {
+                    // Measured under the same density (and font scale) as the screen.
+                    measurer = rememberTextMeasurer()
+                    typography = TembraTheme.typography
                     Box(if (size != null) Modifier.requiredSize(size) else Modifier.width(360.dp).fillMaxHeight()) {
                         MetronomeScreenContent(
                             state = state,
@@ -682,8 +691,14 @@ class MetronomeScreenTest {
      */
     @Test
     fun theLargestFontKeepsTheLandscapeCardWholeBesideTheDialBlock() = runComposeUiTest {
-        setScreen(layout = MetronomeLayout.Landscape, size = DpSize(892.dp, 330.dp), fontScale = 2f)
+        val update = setScreen(layout = MetronomeLayout.Landscape, size = DpSize(892.dp, 330.dp), fontScale = 2f)
         mainClock.autoAdvance = true
+        // The pills' labels whole at this size: the signature, the sound, and the style with its longest name too.
+        assertPillLabelNotCut("metronome.signature", "4/4")
+        assertPillLabelNotCut("metronome.sound", "Classic Wood")
+        assertPillLabelNotCut("metronome.style", "Standard")
+        update(loaded.copy(settings = MetronomeSettings(style = MetronomeStyle.Syncopated, pattern = MetronomeStyle.Syncopated.pattern(TimeSignature.FourFour))))
+        assertPillLabelNotCut("metronome.style", "Syncopated")
         val settings = "metronome.settings"
         val subdivisions = listOf("1", "2", "4", "3")
         // The 892 dp host is wider than a phone held upright: bounds, not visibility (see assertWithin).
@@ -714,6 +729,37 @@ class MetronomeScreenTest {
         assertMarkingOnOneLine(onScreen = false)
     }
 
+    /**
+     * A pill's drawn label ([text], tagged `<pill>.label`, kept out of the accessibility tree so its layout is not
+     * exposed) is not cut: the label node is at least as wide as the text measured at the pill's style and the current
+     * font scale on one line, and it lies inside its pill.
+     */
+    private fun ComposeUiTest.assertPillLabelNotCut(pill: String, text: String) {
+        val label = onNodeWithTag("$pill.label", useUnmergedTree = true)
+        label.performScrollTo()
+        val node = label.getUnclippedBoundsInRoot()
+        val style = checkNotNull(typography).labelMedium
+        val needed = (checkNotNull(measurer).measure(text, style, maxLines = 1, softWrap = false).size.width / pixelDensity).dp
+        assertTrue(node.width >= needed - 0.5.dp, "\"$text\" in $pill is cut: drawn ${node.width}, needs $needed")
+        assertTrue(bounds(pill).contains(node), "\"$text\" leaves $pill")
+    }
+
+    /**
+     * I1: large fonts on the measured phone content areas held sideways. The column grows with the font but never takes
+     * the room the pane needs for a 160 dp ring: the dial pane stays whole beside it (the column may scroll).
+     */
+    @Test
+    fun theLargestFontKeepsTheDialPaneOnTheDeviceHosts() = runComposeUiTest {
+        val show = setLandscapeForms(fontScale = 2f)
+        for (host in listOf(DpSize(686.dp, 308.dp), DpSize(785.dp, 303.dp))) {
+            show(host, loaded)
+            val what = "2× font, host ${host.width} × ${host.height}"
+            assertLandscapeBlock(what)
+            val pane = bounds("screen.metronome").right - bounds("metronome.settings").right - 12.dp
+            assertTrue(pane >= 160.dp + 16.dp - 0.5.dp, "$what: the pane is $pane wide")
+        }
+    }
+
     /** The quarter-note figures by tile id, as `SubdivisionGlyphs` maps them. */
     private val quarterGlyphs = mapOf(
         "1" to TembraIcon.NoteQuarter.name, "2" to TembraIcon.NoteEighthPair.name,
@@ -723,21 +769,24 @@ class MetronomeScreenTest {
     // --- T150: phone landscape uses the compact card ---------------------------------------------------------------------
 
     /** Composes the Landscape screen once; the returned setter switches window and state. */
-    private fun ComposeUiTest.setLandscapeForms(): (DpSize, MetronomeUiState) -> Unit {
+    private fun ComposeUiTest.setLandscapeForms(fontScale: Float? = null): (DpSize, MetronomeUiState) -> Unit {
         var form by mutableStateOf(DpSize(891.dp, 411.dp) to loaded)
         mainClock.autoAdvance = false
         setContent {
             TembraTheme {
                 pixelDensity = LocalDensity.current.density
-                Box(Modifier.requiredSize(form.first)) {
-                    MetronomeScreenContent(
-                        state = form.second,
-                        callbacks = callbacks,
-                        telemetry = telemetry,
-                        layout = MetronomeLayout.Landscape,
-                        snackbarHostState = remember { SnackbarHostState() },
-                    )
+                val content: @Composable () -> Unit = {
+                    Box(Modifier.requiredSize(form.first)) {
+                        MetronomeScreenContent(
+                            state = form.second,
+                            callbacks = callbacks,
+                            telemetry = telemetry,
+                            layout = MetronomeLayout.Landscape,
+                            snackbarHostState = remember { SnackbarHostState() },
+                        )
+                    }
                 }
+                if (fontScale == null) content() else CompositionLocalProvider(LocalDensity provides largeFonts(fontScale)) { content() }
             }
         }
         settle()
@@ -868,6 +917,11 @@ class MetronomeScreenTest {
             if (parent != "metronome.tap") text.performScrollTo()
             text.assertDisplayedWithin(bounds(parent), "$tag in $parent")
         }
+        // The tap title keeps its full size and wraps rather than shrinking (I2: only the landscape row steps it down).
+        val title = onNodeWithTag("metronome.tap.title", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val titleStyle = checkNotNull(typography).headlineSmall.copy(fontWeight = FontWeight.Bold)
+        val line = (checkNotNull(measurer).measure("TAP TEMPO", titleStyle, maxLines = 1).size.height / pixelDensity).dp
+        assertTrue(title.height >= line - 0.5.dp && title.height <= line * 2 + 0.5.dp, "the tap title is ${title.height} tall, one line is $line")
         // At this size even 4/4 cells are narrower than "ACCENT": the one row keeps 44 dp cells and the bars alone show
         // the levels rather than wrapping or cutting the labels (design iteration D1).
         for (n in 1..4) onNodeWithTag("metronome.cell.$n.label", useUnmergedTree = true).assertDoesNotExist()
@@ -942,6 +996,19 @@ class MetronomeScreenTest {
         setScreen(layout = MetronomeLayout.Landscape, size = DpSize(892.dp, 330.dp))
         val landscapeCard = listOf("metronome.style") + listOf("1", "2", "4", "3").map { "metronome.subdivision.$it" } + (1..4).map { "metronome.cell.$it" }
         assertTabOrder(from = "metronome.signature", expected = landscapeCard + "metronome.sound" + transportTabOrder)
+    }
+
+    /** I4: in the landscape card, Enter on the focused signature pill opens its menu (as in portrait). */
+    @Test
+    fun enterOpensTheSignatureMenuInTheLandscapeLayout() = runComposeUiTest {
+        setScreen(layout = MetronomeLayout.Landscape, size = DpSize(892.dp, 330.dp))
+        if (!enterKeyboardMode(inputModeManager)) return@runComposeUiTest
+        onNodeWithTag("metronome.signature").requestFocus()
+        settle()
+        onNodeWithTag("metronome.signature").performKeyInput { pressKey(Key.Enter) }
+        settle()
+        onNodeWithTag("metronome.signature").assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Expanded"))
+        onNodeWithTag("metronome.signature.7-8").assertExists()
     }
 
     /** From [from] (the 4/4 chip by default), each Tab moves keyboard focus to the next of [expected]. */

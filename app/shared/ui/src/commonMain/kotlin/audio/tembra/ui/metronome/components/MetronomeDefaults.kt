@@ -36,8 +36,17 @@ internal object MetronomeDefaults {
     /** The smallest "120" may be with "BPM" beside it; below that "BPM" sets under the number. */
     val ReadoutNumberFloor: TextUnit = 28.sp
 
-    /** The smallest the readout's marking steps down to before it would wrap or clip (the largest fonts). */
+    /**
+     * The smallest the readout's marking steps down to before it would clip. 6 sp, under the 8 sp of the cell labels,
+     * because the case that reaches it is the largest font: at font scale 2 a phone held sideways (892 × 330 dp) gets a
+     * 188 dp ring whose readout is 68 dp wide, and "Moderato" at an 8 sp floor needs about 70 dp there. 6 sp at font
+     * scale 2 draws 12 dp tall, larger than 8 sp at the default scale; at scale 1 even a 160 dp ring's 40 dp readout fits
+     * "Moderato" above 8 sp, so the lower floor only takes effect at large fonts.
+     */
     val MarkingMinSize: TextUnit = 6.sp
+
+    /** The smallest the tap card's title and caption step down to, in the landscape block's 48–64 dp row only. */
+    val TapTextMinSize: TextUnit = 10.sp
 
     /** The page keys move the tempo by ten, the arrows and the wheel by one. */
     const val PAGE_STEP = 10

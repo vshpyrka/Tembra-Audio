@@ -12,6 +12,7 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
@@ -23,6 +24,8 @@ import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.isFocused
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
@@ -143,6 +146,40 @@ class TimeSignatureMenuTest {
         waitForIdle()
         val changed = changedPixels(rest, onNodeWithTag("metronome.signature").captureToImage())
         assertTrue(changed > 20, "hover did not change the trigger ($changed pixels)")
+    }
+
+    /**
+     * FR-029 (I4): the whole keyboard path. Focus the pill, Enter opens the menu, the arrow keys move along the entries
+     * and Enter chooses one, which closes the menu. Runs on every lane that declares keyboard input mode (the iOS
+     * simulator; the Android device lane declares none).
+     */
+    @Test
+    fun theSignatureMenuOpensFromTheKeyboard() = runComposeUiTest {
+        setMenu()
+        if (!enterKeyboardMode(inputModeManager)) return@runComposeUiTest
+        onNodeWithTag("metronome.signature").requestFocus()
+        waitForIdle()
+        onNodeWithTag("metronome.signature").performKeyInput { pressKey(Key.Enter) }
+        waitForIdle()
+        for (id in ids) onNodeWithTag("metronome.signature.$id").assertExists()
+        // Down moves keyboard focus from the pill into the open menu and then along its entries (the pill keeps the
+        // focus of the screen's own root, so the key goes to the focused entry once there is one).
+        val entry = SemanticsMatcher("an entry of the menu") { node ->
+            node.config.getOrNull(SemanticsProperties.TestTag)?.startsWith("metronome.signature.") == true
+        }
+        val inMenu = isFocused() and entry
+        fun focusedTarget() = if (onAllNodes(inMenu).fetchSemanticsNodes().isNotEmpty()) onNode(inMenu) else onNodeWithTag("metronome.signature")
+        var presses = 0
+        while (onAllNodes(inMenu and hasTestTag("metronome.signature.7-8")).fetchSemanticsNodes().isEmpty() && presses <= ids.size) {
+            focusedTarget().performKeyInput { pressKey(Key.DirectionDown) }
+            waitForIdle()
+            presses++
+        }
+        onNodeWithTag("metronome.signature.7-8").assertIsFocused()
+        focusedTarget().performKeyInput { pressKey(Key.Enter) }
+        waitForIdle()
+        assertEquals(listOf(TimeSignature.SevenEight), chosen)
+        onNodeWithTag("metronome.signature.7-8").assertDoesNotExist()
     }
 
     @Test
