@@ -16,6 +16,14 @@ import audio.tembra.ui.resources.ic_home_24
 import audio.tembra.ui.resources.ic_mic_24
 import audio.tembra.ui.resources.ic_mic_off_24
 import audio.tembra.ui.resources.ic_music_note_24
+import audio.tembra.ui.resources.ic_note_eighth_24
+import audio.tembra.ui.resources.ic_note_eighth_pair_24
+import audio.tembra.ui.resources.ic_note_eighth_triplet_24
+import audio.tembra.ui.resources.ic_note_quarter_24
+import audio.tembra.ui.resources.ic_note_sixteenth_pair_24
+import audio.tembra.ui.resources.ic_note_sixteenth_quad_24
+import audio.tembra.ui.resources.ic_note_sixteenth_triplet_24
+import audio.tembra.ui.resources.ic_note_thirty_second_quad_24
 import audio.tembra.ui.resources.ic_notifications_24
 import audio.tembra.ui.resources.ic_pause_24
 import audio.tembra.ui.resources.ic_pause_fill_24
@@ -26,8 +34,8 @@ import audio.tembra.ui.resources.ic_radio_button_checked_24
 import audio.tembra.ui.resources.ic_remove_24
 import audio.tembra.ui.resources.ic_sensors_24
 import audio.tembra.ui.resources.ic_settings_24
-import audio.tembra.ui.resources.ic_touch_app_24
 import audio.tembra.ui.resources.ic_swap_horiz_24
+import audio.tembra.ui.resources.ic_touch_app_24
 import audio.tembra.ui.resources.ic_tune_24
 import audio.tembra.ui.resources.ic_volume_up_24
 import org.jetbrains.compose.resources.DrawableResource
@@ -37,7 +45,8 @@ import org.jetbrains.compose.resources.DrawableResource
  * grade 0, unfilled) copied from google/material-design-icons at commit 27e9ef1dbeedc13d682fece4a58e1eda4cb0961a
  * (Apache-2.0) and normalised by `tools/fetch-material-symbols.sh` (research R6 of feature 002); [Guitar] and
  * [Cello] are the project's own design artwork, hand-converted from the Stitch instrument selector (research R14 of
- * feature 003). Screens use these names only (spec FR-016, FR-026); to add a glyph run the script and add a value.
+ * feature 003). The `Note*` figures are hand-authored by `tools/make-note-glyphs.py`, not fetched Material Symbols.
+ * Screens use these names only (spec FR-016, FR-026); to add a glyph run the script and add a value.
  */
 enum class TembraIcon(internal val resource: DrawableResource) {
     Home(Res.drawable.ic_home_24),
@@ -74,4 +83,13 @@ enum class TembraIcon(internal val resource: DrawableResource) {
     // Filled variants (FILL 1) for the metronome's play button, as the design draws them (`tools/fetch-material-symbols.sh --fill`).
     PlayArrowFilled(Res.drawable.ic_play_arrow_fill_24),
     PauseFilled(Res.drawable.ic_pause_fill_24),
+    // Note figures for the metronome's subdivision controls, hand-authored by `tools/make-note-glyphs.py`.
+    NoteQuarter(Res.drawable.ic_note_quarter_24),
+    NoteEighthPair(Res.drawable.ic_note_eighth_pair_24),
+    NoteSixteenthQuad(Res.drawable.ic_note_sixteenth_quad_24),
+    NoteEighthTriplet(Res.drawable.ic_note_eighth_triplet_24),
+    NoteEighth(Res.drawable.ic_note_eighth_24),
+    NoteSixteenthPair(Res.drawable.ic_note_sixteenth_pair_24),
+    NoteThirtySecondQuad(Res.drawable.ic_note_thirty_second_quad_24),
+    NoteSixteenthTriplet(Res.drawable.ic_note_sixteenth_triplet_24),
 }
