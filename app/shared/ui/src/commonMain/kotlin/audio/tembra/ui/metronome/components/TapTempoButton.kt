@@ -59,8 +59,9 @@ import kotlinx.coroutines.launch
  * fading out over 120 ms: an [Animatable] restarted per tap (a new tap interrupts the fade) and read in the draw phase
  * only; under reduce motion the card stays still and the caption acknowledges the tap. [stateDescription] (the caption
  * by default; the screen adds the tempo the taps set) is announced politely as it changes. The card is at least
- * [minHeight] tall (64 dp; the landscape block's row passes 48–64 dp); its title and caption each keep one line,
- * stepping their size down to fit.
+ * [minHeight] tall (64 dp; the landscape block's row passes 48–64 dp). Its title and caption wrap to a second line and
+ * the card grows (large fonts); only in a row shorter than 64 dp do they keep one line each, stepping their size down
+ * to [MetronomeDefaults.TapTextMinSize].
  */
 @Composable
 internal fun TapTempoButton(
@@ -117,8 +118,9 @@ internal fun TapTempoButton(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        // The title and caption keep one line each and step their size down rather than wrap or clip (the landscape
-        // block's narrow 48 dp row, the largest font sizes).
+        // In a height-limited row (the landscape block's 48–64 dp) the title and caption keep one line each and step
+        // their size down; at the usual 64 dp or more they wrap to a second line and the card grows, as at large fonts.
+        val oneLine = minHeight < spacing.tapTempoHeight
         Row(horizontalArrangement = Arrangement.spacedBy(spacing.xs), verticalAlignment = Alignment.CenterVertically) {
             Icon(
                 imageVector = TembraIcons.vector(TembraIcon.TouchApp),
@@ -133,8 +135,8 @@ internal fun TapTempoButton(
                 fontWeight = FontWeight.Bold,
                 color = colors.primary,
                 textAlign = TextAlign.Center,
-                maxLines = 1,
-                autoSize = TextAutoSize.StepBased(minFontSize = MetronomeDefaults.MarkingMinSize, maxFontSize = title.fontSize),
+                maxLines = if (oneLine) 1 else 2,
+                autoSize = if (oneLine) TextAutoSize.StepBased(minFontSize = MetronomeDefaults.TapTextMinSize, maxFontSize = title.fontSize) else null,
                 // The description and the state say these: the drawn title and caption are not read a second time.
                 modifier = Modifier.weight(1f, fill = false).testTag("$testTag.title").clearAndSetSemantics {},
             )
@@ -145,8 +147,8 @@ internal fun TapTempoButton(
             style = captionStyle,
             color = colors.outline,
             textAlign = TextAlign.Center,
-            maxLines = 1,
-            autoSize = TextAutoSize.StepBased(minFontSize = MetronomeDefaults.MarkingMinSize, maxFontSize = captionStyle.fontSize),
+            maxLines = if (oneLine) 1 else 2,
+            autoSize = if (oneLine) TextAutoSize.StepBased(minFontSize = MetronomeDefaults.TapTextMinSize, maxFontSize = captionStyle.fontSize) else null,
             modifier = Modifier.testTag("$testTag.caption").clearAndSetSemantics {},
         )
     }

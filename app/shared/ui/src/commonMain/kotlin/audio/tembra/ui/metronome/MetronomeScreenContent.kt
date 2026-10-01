@@ -213,7 +213,8 @@ private fun WideMetronome(state: MetronomeUiState, callbacks: MetronomeCallbacks
 
 /**
  * The phone-landscape form (T150, T152): a 2:3 split. The compact settings card in a column 2⁄5 of the width (at
- * least 240 dp, scaled by the font scale; it scrolls only when the card is taller than the screen), and the dial pane,
+ * least 240 dp, scaled by the font scale, but never so wide that the pane loses room for a 160 dp ring; it scrolls only
+ * when the card is taller than the screen), and the dial pane,
  * the remaining 3⁄5: the dial card across the whole pane with its ring sized from the height (see [landscapeBlock]),
  * and the tap and play row under it across the pane too.
  */
@@ -223,7 +224,11 @@ private fun LandscapeMetronome(state: MetronomeUiState, callbacks: MetronomeCall
     val fontScale = LocalDensity.current.fontScale.coerceAtLeast(1f)
     val chrome = landscapeDialChrome()
     BoxWithConstraints(modifier = modifier) {
-        val paneWidth = maxWidth - maxOf(maxWidth * MetronomeDefaults.LANDSCAPE_SETTINGS_FRACTION, MetronomeDefaults.LandscapeSettingsMinWidth * fontScale) - spacing.md
+        // The column never takes the room a 160 dp ring needs in the pane (large fonts on a narrow phone).
+        val columnMax = maxWidth - spacing.md - (MetronomeDefaults.DialMin + spacing.sm * 2)
+        val columnMin = MetronomeDefaults.LandscapeSettingsMinWidth * fontScale
+        val column = min(max(maxWidth * MetronomeDefaults.LANDSCAPE_SETTINGS_FRACTION, columnMin), columnMax)
+        val paneWidth = maxWidth - column - spacing.md
         val block = landscapeBlock(height = maxHeight, chrome = chrome, ringWidth = paneWidth - spacing.sm * 2)
         Row(modifier = Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(spacing.md)) {
             MetronomeSettingsPanel(
@@ -232,7 +237,7 @@ private fun LandscapeMetronome(state: MetronomeUiState, callbacks: MetronomeCall
                 telemetry = telemetry,
                 layout = MetronomeLayout.Landscape,
                 modifier = Modifier
-                    .widthFraction(MetronomeDefaults.LANDSCAPE_SETTINGS_FRACTION, min = MetronomeDefaults.LandscapeSettingsMinWidth * fontScale)
+                    .widthFraction(MetronomeDefaults.LANDSCAPE_SETTINGS_FRACTION, min = columnMin, max = columnMax)
                     .fillMaxHeight()
                     .testTag(SETTINGS_TAG)
                     .verticalScroll(rememberScrollState()),
@@ -259,8 +264,17 @@ private fun landscapeBlock(height: Dp, chrome: Dp, ringWidth: Dp): LandscapeBloc
     val ring = height - chrome - row
     val ringAtMinRow = height - chrome - MetronomeDefaults.LandscapeRowMin
     return when {
-        ring >= MetronomeDefaults.DialMin -> LandscapeBlock(ring = min(min(ring, MetronomeDefaults.CompactDialMax), ringWidth), row = row, scrolls = false)
-        ringAtMinRow >= MetronomeDefaults.DialMin -> LandscapeBlock(ring = min(ringAtMinRow, ringWidth), row = MetronomeDefaults.LandscapeRowMin, scrolls = false)
+        // Never under DialMin: the column cap keeps the pane wide enough for it.
+        ring >= MetronomeDefaults.DialMin -> LandscapeBlock(
+            ring = min(min(ring, MetronomeDefaults.CompactDialMax), ringWidth).coerceAtLeast(MetronomeDefaults.DialMin),
+            row = row,
+            scrolls = false,
+        )
+        ringAtMinRow >= MetronomeDefaults.DialMin -> LandscapeBlock(
+            ring = min(ringAtMinRow, ringWidth).coerceAtLeast(MetronomeDefaults.DialMin),
+            row = MetronomeDefaults.LandscapeRowMin,
+            scrolls = false,
+        )
         else -> LandscapeBlock(ring = MetronomeDefaults.DialMin, row = MetronomeDefaults.LandscapeRowMin, scrolls = true)
     }
 }
@@ -403,8 +417,10 @@ private fun Modifier.widthFraction(
     val upper = if (max == Dp.Infinity) Int.MAX_VALUE else max.roundToPx()
     val width = if (constraints.hasBoundedWidth) {
         val available = constraints.maxWidth
+        // Lower bound first, then the upper one wins: a cap under the floor (large fonts, a narrow window) still holds.
         (available * fraction).roundToInt()
-            .coerceIn(lower, upper)
+            .coerceAtLeast(lower)
+            .coerceAtMost(upper)
             .coerceAtMost((available * maxFraction).roundToInt())
             .coerceAtMost(available)
     } else {
