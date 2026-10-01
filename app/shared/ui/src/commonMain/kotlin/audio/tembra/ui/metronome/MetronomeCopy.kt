@@ -74,6 +74,9 @@ internal object MetronomeCopy {
 
     fun clickSound(name: String): String = "Click sound, $name"
 
+    /** The compact signature menu's name: "Time signature, 4/4". */
+    fun timeSignatureOf(label: String): String = "$timeSignature, $label"
+
     fun customEntry(name: String?): String = "$custom, ${name ?: empty}"
 
     fun of(message: MetronomeMessage): String = when (message) {

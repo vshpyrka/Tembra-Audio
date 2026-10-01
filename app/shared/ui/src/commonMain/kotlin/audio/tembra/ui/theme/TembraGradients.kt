@@ -38,7 +38,7 @@ data class TembraGradients(
     val tempoDialOverlay: LinearGlow,
     /** Accent bar glow: `0 0 12px rgba(255,175,211,0.5)`, drawn not shadowed. */
     val accentGlow: Glow,
-    /** Play button glow: `0 0 24px rgba(255,175,211,0.35)`, drawn not shadowed. */
+    /** Play button glow: the design's `rgba(255,175,211,0.35)` reaching 8 dp (was 24 dp until design iteration D1: the halo overlapped the Tap Tempo card), drawn not shadowed. */
     val playGlow: Glow,
 ) {
     companion object {
@@ -74,7 +74,7 @@ data class TembraGradients(
                 stops = listOf(0f to Color(0x1ACEBDFF), 0.5f to Color.Transparent, 1f to Color(0x1AFFAFD3)),
             ),
             accentGlow = Glow(Color(0x80FFAFD3), 12.dp),
-            playGlow = Glow(Color(0x59FFAFD3), 24.dp),
+            playGlow = Glow(Color(0x59FFAFD3), 8.dp),
         )
     }
 }

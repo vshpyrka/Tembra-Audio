@@ -8,11 +8,10 @@ import audio.tembra.core.metronome.Subdivision
 import audio.tembra.ui.designsystem.ChipAccent
 import audio.tembra.ui.designsystem.ChipSpec
 import audio.tembra.ui.designsystem.TembraChipRow
-import audio.tembra.ui.theme.TembraIcon
 
 /**
- * The four subdivisions (spec FR-007) as a [TembraChipRow] in the `primary` accent, each with the note glyph and the
- * note value for the beat [unit] ("1/4", "1/8", "1/16", "3let" on a quarter; "1/8", "1/16", "1/32", "3let" on an
+ * The four subdivisions (spec FR-007) as a [TembraChipRow] in the `primary` accent, each with its note figure
+ * ([SubdivisionGlyphs], the same as the compact [SubdivisionTiles]) and the note value for the beat [unit] ("1/4", "1/8", "1/16", "3let" on a quarter; "1/8", "1/16", "1/32", "3let" on an
  * eighth). Each chip is tagged `<testTag>.<id>` (`metronome.subdivision.2`).
  */
 @Composable
@@ -24,7 +23,7 @@ internal fun SubdivisionChips(
     testTag: String = "metronome.subdivision",
 ) {
     val items = remember(unit) {
-        Subdivision.entries.map { ChipSpec(id = it.id, label = it.label(unit), icon = TembraIcon.MusicNote) }
+        Subdivision.entries.map { ChipSpec(id = it.id, label = it.label(unit), icon = SubdivisionGlyphs.of(it, unit)) }
     }
     TembraChipRow(
         items = items,
