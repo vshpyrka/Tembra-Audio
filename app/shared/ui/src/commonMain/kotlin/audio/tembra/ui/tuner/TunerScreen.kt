@@ -10,6 +10,7 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import audio.tembra.ui.posture.currentTabletopFold
+import audio.tembra.ui.posture.currentVerticalFold
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 
 /**
@@ -54,6 +55,6 @@ fun TunerScreen(modifier: Modifier = Modifier, viewModel: TunerViewModel = metro
         )
     }
     if (state.loaded) {
-        TunerScreenContent(state = state, callbacks = callbacks, telemetry = viewModel.telemetry, layout = layout, modifier = modifier, fold = fold)
+        TunerScreenContent(state = state, callbacks = callbacks, telemetry = viewModel.telemetry, layout = layout, modifier = modifier, fold = fold, verticalFold = currentVerticalFold())
     }
 }

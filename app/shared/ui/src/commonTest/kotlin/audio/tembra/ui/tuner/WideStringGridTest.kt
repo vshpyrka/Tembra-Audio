@@ -33,6 +33,12 @@ class WideStringGridTest {
         assertEquals(WideStringGrid(2, 170.dp), arrange(4, 2, width = 740, height = 360))
     }
 
+    /** A pane beside a book-posture hinge (design iteration D3): three columns would be 112 dp, two give 160. */
+    @Test
+    fun aNarrowTallPaneDropsToTwoColumns() {
+        assertEquals(WideStringGrid(2, 160.dp), arrange(7, 3, width = 376, height = 700))
+    }
+
     @Test
     fun cardsNeverShrinkUnderTheMinimum() {
         assertEquals(WideStringGrid(7, 128.dp), arrange(7, 3, width = 700, height = 120))
