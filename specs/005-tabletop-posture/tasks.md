@@ -116,6 +116,17 @@ description: "Task list for feature 005: tabletop posture"
 - [X] T042 Runs and lanes: the app on the iPhone 17 and iPad Pro simulators, the iPhone 14 and the Pixel 6 Pro; JVM, iPhone 17, iPad Pro and Android device lanes; captures `*-d2-*.png`
 - [X] T043 Stitch: tabletop screens refreshed to D1 (v2), new "Metronome (Foldable Book)" and "Tuner By Ear (Foldable Open)" screens; spec, research R9, data model, contract, plan and NOTES updated
 
+---
+
+## Phase 10: Design iteration D3 (2026-10-02, the tuner's hinge split)
+
+- [X] T044 [US5] Failing tests first: `uiTest/.../tuner/TunerHingeLayoutTest.kt` (controls before the hinge, gauge after it; seven square cards after it with the preset only once; heading and pill never overlap) and `WideStringGridTest.aNarrowTallPaneDropsToTwoColumns`
+- [X] T045 [US5] `TunerScreenContent` `Wide if verticalFold != null` branch with `FoldSplitRow`; `ByEarCardsPane`/`WideByEarCard` share the wide By Ear card through a controls slot; `FittedByEarBlock` drops its gap when there are no controls; `TunerScreen` passes `currentVerticalFold()`
+- [X] T046 `WideStringGrid.arrange` takes the largest cards over every column count when the base columns go under the minimum
+- [X] T047 `CentredHeading` in `TunerTabletopSettings`: the pill moves under the centred heading when they do not fit on one line
+- [X] T048 Runs and lanes: the app on the Pixel 6 Pro, the fold emulator (book posture), the iPhone 17 and iPad Pro simulators and the iPhone 14; JVM, iPhone 17, iPad Pro and Android device lanes; captures `android-fold-d3-*.png`
+- [X] T049 Device-independent hinge tests: `TunerHingeLayoutTest` and `MetronomeHingeLayoutTest` place the fold relative to the host's position in the window and read bounds relative to the host; `threeColumnsWhenWideTwoWhenStacked` uses an 830 × 740 dp host (both failed only on the Pixel 6 Pro's 412 dp window)
+
 ## Dependencies
 
 Phase 1 → Phase 2 → US1 → US2 (shares `TunerTabletopSettings`) ; US3 depends only on Phase 2 ; US4 after US1–US3 ; Polish last.

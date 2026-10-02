@@ -39,6 +39,13 @@ With `verticalFold` passed to `MetronomeScreenContent` in the `Wide` layout: `me
 `spacing.md` before the fold's left edge and `metronome.dialCard`, `metronome.tap` and `metronome.play` start at least
 `spacing.md` after its right edge (`MetronomeHingeLayoutTest`). Without it the column is the usual third (≥ 320 dp).
 
+## Tuner in book posture (design iteration D3)
+
+With `verticalFold` passed to `TunerScreenContent` in the `Wide` layout: `tuner.settings` (with `tuner.instrument`,
+`tuner.mode`, `tuner.pill` and, in By Ear, `tuner.strings` and the only `tuner.preset.picker`) ends at least `spacing.md`
+before the fold; `tuner.autoListen`/`tuner.meter` or `tuner.byEar` with every square `tuner.card.<numeral>` start at
+least `spacing.md` after it (`TunerHingeLayoutTest`).
+
 ## Wide By Ear grid (design iteration D2)
 
 In `TunerLayout.Wide` every `tuner.card.<numeral>` is square (±1 dp) and at least `stringCardMinWide`; the grid is

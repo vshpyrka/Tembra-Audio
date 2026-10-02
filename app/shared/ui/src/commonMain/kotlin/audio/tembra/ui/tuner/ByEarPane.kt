@@ -72,28 +72,57 @@ internal fun ByEarPane(
                 )
             }
         }
-        TunerLayout.Wide -> TembraGradientCard(glow = gradients.byEarWide, modifier = modifier, testTag = "tuner.byEar") {
-            BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-                val viewport = maxHeight - spacing.md * 2
-                Box(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(spacing.md)) {
-                    FittedByEarBlock(
-                        viewportHeight = viewport,
-                        gap = spacing.md,
-                        controls = { ByEarControls(guitarStrings, preset, presets, loopTone, callbacks, maxWidth = spacing.byEarGridMaxWidthWide) },
-                        grid = { width, height ->
-                            StringCardGrid(
-                                strings = strings,
-                                playingIndex = playingIndex,
-                                layout = layout,
-                                onAudition = callbacks.onAudition,
-                                onStop = callbacks.onStopAudition,
-                                modifier = Modifier.fillMaxWidth(),
-                                heightBudget = height,
-                                widthBudget = width,
-                            )
-                        },
-                    )
-                }
+        TunerLayout.Wide -> WideByEarCard(
+            strings = strings,
+            playingIndex = playingIndex,
+            callbacks = callbacks,
+            modifier = modifier,
+            controls = { ByEarControls(guitarStrings, preset, presets, loopTone, callbacks, maxWidth = spacing.byEarGridMaxWidthWide) },
+        )
+    }
+}
+
+/**
+ * The string cards alone in the wide By Ear card, for the pane beside a book-posture hinge (design iteration D3): the
+ * string count, the preset and the loop tone are in the tuner's controls card on the other side of the hinge.
+ */
+@Composable
+internal fun ByEarCardsPane(preset: TuningPreset, playingIndex: Int?, callbacks: TunerCallbacks, modifier: Modifier = Modifier) {
+    val strings = remember(preset) { preset.strings }
+    WideByEarCard(strings = strings, playingIndex = playingIndex, callbacks = callbacks, modifier = modifier, controls = {})
+}
+
+/** The wide By Ear card: [controls] over the fitted grid of square cards ([FittedByEarBlock]). */
+@Composable
+private fun WideByEarCard(
+    strings: List<TargetString>,
+    playingIndex: Int?,
+    callbacks: TunerCallbacks,
+    modifier: Modifier,
+    controls: @Composable () -> Unit,
+) {
+    val spacing = TembraTheme.spacing
+    TembraGradientCard(glow = TembraTheme.gradients.byEarWide, modifier = modifier, testTag = "tuner.byEar") {
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            val viewport = maxHeight - spacing.md * 2
+            Box(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(spacing.md)) {
+                FittedByEarBlock(
+                    viewportHeight = viewport,
+                    gap = spacing.md,
+                    controls = controls,
+                    grid = { width, height ->
+                        StringCardGrid(
+                            strings = strings,
+                            playingIndex = playingIndex,
+                            layout = TunerLayout.Wide,
+                            onAudition = callbacks.onAudition,
+                            onStop = callbacks.onStopAudition,
+                            modifier = Modifier.fillMaxWidth(),
+                            heightBudget = height,
+                            widthBudget = width,
+                        )
+                    },
+                )
             }
         }
     }
@@ -149,9 +178,10 @@ private fun FittedByEarBlock(
     SubcomposeLayout { constraints ->
         val width = constraints.maxWidth
         val loose = Constraints(maxWidth = width)
-        val gapPx = gap.roundToPx()
         val controlPlaceables = subcompose(ByEarSlot.Controls, controls).map { it.measure(loose) }
         val controlsHeight = controlPlaceables.maxOfOrNull { it.height } ?: 0
+        // No controls (the pane beside a hinge): no gap above the grid either.
+        val gapPx = if (controlsHeight > 0) gap.roundToPx() else 0
         val budget = (viewportHeight.roundToPx() - controlsHeight - gapPx).coerceAtLeast(0).toDp()
         val gridPlaceables = subcompose(ByEarSlot.Grid) { grid(width.toDp(), budget) }.map { it.measure(loose) }
         val gridHeight = gridPlaceables.maxOfOrNull { it.height } ?: 0

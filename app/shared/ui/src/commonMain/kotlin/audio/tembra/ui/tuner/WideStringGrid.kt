@@ -12,21 +12,26 @@ internal data class WideStringGrid(val columns: Int, val card: Dp) {
     companion object {
         /**
          * The usual [baseColumns] (three, or two for the cello) whenever their square cards, shrunk to fit
-         * [widthBudget] and [heightBudget] and never over [full], keep [min]; otherwise the first larger column count
-         * whose cards keep [min] (seven strings in a short window as 4 + 3); if none does, the count with the largest
-         * cards, raised to [min], and the grid is taller than the budget so its parent scrolls.
+         * [widthBudget] and [heightBudget] and never over [full], keep [min]; otherwise the column count, fewer or more,
+         * whose cards are largest (seven strings as 4 + 3 in a short window, as 2 per row in a narrow pane beside a
+         * hinge), raised to [min] if even those are smaller, and then the grid is taller than the budget and its parent
+         * scrolls.
          */
         fun arrange(count: Int, baseColumns: Int, full: Dp, gap: Dp, widthBudget: Dp, heightBudget: Dp, min: Dp): WideStringGrid {
-            var largest = WideStringGrid(baseColumns, Dp.Hairline)
-            for (columns in baseColumns..maxOf(baseColumns, count)) {
+            fun cardFor(columns: Int): Dp {
                 val rows = (count + columns - 1) / columns
                 val byWidth = (widthBudget - gap * (columns - 1)) / columns
                 val byHeight = (heightBudget - gap * (rows - 1)) / rows
-                val card = min(full, min(byWidth, byHeight))
-                if (card >= min) return WideStringGrid(columns, card)
+                return min(full, min(byWidth, byHeight))
+            }
+            val base = cardFor(baseColumns)
+            if (base >= min) return WideStringGrid(baseColumns, base)
+            var largest = WideStringGrid(baseColumns, base)
+            for (columns in 1..maxOf(1, count)) {
+                val card = cardFor(columns)
                 if (card > largest.card) largest = WideStringGrid(columns, card)
             }
-            return largest.copy(card = min)
+            return largest.copy(card = largest.card.coerceAtLeast(min))
         }
     }
 }
