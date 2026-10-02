@@ -24,6 +24,9 @@ public:
     void close() override;
     uint32_t sampleRate() const override;
     bool deviceLost() const override;
+    /** The latency the host reported (AVAudioSession.outputLatency + ioBufferDuration, research R7); 0 until then. */
+    int64_t outputLatencyNanos() const override;
+    void setReportedLatencyNanos(int64_t nanos) override;
 
 private:
     static OSStatus inputProc(void* refCon, AudioUnitRenderActionFlags* flags, const AudioTimeStamp* timestamp, UInt32 bus,
@@ -45,6 +48,7 @@ private:
     AudioBufferList inputList_{};
     std::vector<float> outputScratch_;  // interleaved stereo rendered by the engine, split into the unit's planar buffers
     std::atomic<uint32_t> sampleRate_{48000};
+    std::atomic<int64_t> reportedLatencyNanos_{0};
 };
 
 }  // namespace tembra

@@ -12,8 +12,30 @@ oboe::DataCallbackResult OboeAudioDevice::Bridge::onAudioReady(oboe::AudioStream
     return device_->onAudioReady(stream, audioData, numFrames);
 }
 
-void OboeAudioDevice::Bridge::onErrorAfterClose(oboe::AudioStream*, oboe::Result) {
-    device_->lost_.store(true);
+void OboeAudioDevice::Bridge::onErrorAfterClose(oboe::AudioStream* stream, oboe::Result) {
+    device_->onStreamClosedByPlatform(stream);
+}
+
+void OboeAudioDevice::onStreamClosedByPlatform(oboe::AudioStream* stream) {
+    // Oboe's error thread, after it closed [stream] (a device was disconnected or the route changed).
+    std::lock_guard<std::mutex> lock(streamLock_);
+    if (closing_ || !stream_ || stream_.get() != stream) return;  // the host is closing it, or it is an old stream
+    if (stream->getDirection() == oboe::Direction::Input) {
+        lost_.store(true);  // the tuner's capture path stops and the host decides (feature 003)
+        return;
+    }
+    // Output: reopen with the stored settings and the same render callback; the renderer keeps its position and,
+    // because Oboe converts to the requested rate, the stream rate is unchanged (research R1). Opening a new stream
+    // is a valid action in onErrorAfterClose.
+    retiredStream_ = std::move(stream_);
+    if (openOutputStream(outputRate_) != oboe::Result::OK || !stream_ || stream_->requestStart() != oboe::Result::OK) {
+        if (stream_) stream_->close();
+        stream_.reset();
+        lost_.store(true);
+        return;
+    }
+    sampleRate_.store(static_cast<uint32_t>(stream_->getSampleRate()));
+    measureLatencyLocked();  // the new route (e.g. Bluetooth) has its own latency (research R7)
 }
 
 oboe::Result OboeAudioDevice::openInputWithPreset(uint32_t preferredRate, oboe::InputPreset preset) {
@@ -33,6 +55,7 @@ oboe::Result OboeAudioDevice::openInputWithPreset(uint32_t preferredRate, oboe::
 
 int32_t OboeAudioDevice::openInput(uint32_t preferredRate, InputCallback callback, void* context) {
     close();
+    std::lock_guard<std::mutex> lock(streamLock_);
     input_ = callback;
     render_ = nullptr;
     context_ = context;
@@ -53,12 +76,7 @@ int32_t OboeAudioDevice::openInput(uint32_t preferredRate, InputCallback callbac
     return TEMBRA_OK;
 }
 
-int32_t OboeAudioDevice::openOutput(uint32_t preferredRate, RenderCallback callback, void* context) {
-    close();
-    input_ = nullptr;
-    render_ = callback;
-    context_ = context;
-    lost_.store(false);
+oboe::Result OboeAudioDevice::openOutputStream(uint32_t preferredRate) {
     oboe::AudioStreamBuilder builder;
     builder.setDirection(oboe::Direction::Output)
         ->setFormat(oboe::AudioFormat::Float)
@@ -71,7 +89,18 @@ int32_t OboeAudioDevice::openOutput(uint32_t preferredRate, RenderCallback callb
         ->setContentType(oboe::ContentType::Music)
         ->setDataCallback(bridge_)
         ->setErrorCallback(bridge_);
-    if (builder.openStream(stream_) != oboe::Result::OK || !stream_) {
+    return builder.openStream(stream_);
+}
+
+int32_t OboeAudioDevice::openOutput(uint32_t preferredRate, RenderCallback callback, void* context) {
+    close();
+    std::lock_guard<std::mutex> lock(streamLock_);
+    input_ = nullptr;
+    render_ = callback;
+    context_ = context;
+    lost_.store(false);
+    outputRate_ = preferredRate;
+    if (openOutputStream(preferredRate) != oboe::Result::OK || !stream_) {
         stream_.reset();
         return TEMBRA_ERR_DEVICE;
     }
@@ -85,13 +114,39 @@ int32_t OboeAudioDevice::openOutput(uint32_t preferredRate, RenderCallback callb
 }
 
 void OboeAudioDevice::close() {
-    if (stream_) {
-        stream_->stop();
-        stream_->close();
-        stream_.reset();
+    std::shared_ptr<oboe::AudioStream> stream;
+    std::shared_ptr<oboe::AudioStream> retired;
+    {
+        std::lock_guard<std::mutex> lock(streamLock_);
+        closing_ = true;  // a disconnect arriving now does not reopen
+        stream = std::move(stream_);
+        retired = std::move(retiredStream_);
     }
+    if (stream) {
+        stream->stop();
+        stream->close();
+    }
+    std::lock_guard<std::mutex> lock(streamLock_);
+    closing_ = false;
     input_ = nullptr;
     render_ = nullptr;
+}
+
+int64_t OboeAudioDevice::outputLatencyNanos() const { return latencyNanos_.load(std::memory_order_acquire); }
+
+void OboeAudioDevice::refreshOutputLatency() {
+    std::lock_guard<std::mutex> lock(streamLock_);
+    measureLatencyLocked();
+}
+
+void OboeAudioDevice::measureLatencyLocked() {
+    // calculateLatencyMillis() is not safe on the data callback before Android R (research R7); never called there.
+    if (!stream_ || stream_->getDirection() != oboe::Direction::Output) {
+        latencyNanos_.store(0, std::memory_order_release);
+        return;
+    }
+    const auto latency = stream_->calculateLatencyMillis();
+    latencyNanos_.store(latency ? static_cast<int64_t>(latency.value() * 1'000'000.0) : 0, std::memory_order_release);
 }
 
 uint32_t OboeAudioDevice::sampleRate() const { return sampleRate_.load(); }

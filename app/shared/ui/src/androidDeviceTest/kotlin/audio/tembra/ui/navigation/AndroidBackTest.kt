@@ -21,8 +21,8 @@ class AndroidBackTest {
     @Test
     fun backReturnsToHomeThenFinishesTheActivity() {
         rule.setContent { TembraTheme { NavigationShell(viewModel = ShellViewModel(), layoutMode = LayoutMode.BottomBar) } }
-        rule.onNodeWithTag("nav.item.metronome").performClick()
-        rule.onNodeWithTag("screen.metronome").assertIsDisplayed()
+        rule.onNodeWithTag("nav.item.projects").performClick()
+        rule.onNodeWithTag("screen.projects").assertIsDisplayed()
         Espresso.pressBack()
         rule.onNodeWithTag("screen.home").assertIsDisplayed()
         assertFailsWith<NoActivityResumedException> { Espresso.pressBack() }

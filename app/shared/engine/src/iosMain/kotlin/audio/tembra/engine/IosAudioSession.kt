@@ -20,10 +20,17 @@ import platform.AVFAudio.AVAudioSessionInterruptionTypeEnded
 import platform.AVFAudio.AVAudioSessionInterruptionTypeKey
 import platform.AVFAudio.AVAudioSessionModeDefault
 import platform.AVFAudio.AVAudioSessionModeMeasurement
+import platform.AVFAudio.AVAudioSessionPortBuiltInReceiver
+import platform.AVFAudio.AVAudioSessionPortBuiltInSpeaker
+import platform.AVFAudio.AVAudioSessionPortDescription
 import platform.AVFAudio.AVAudioSessionRouteChangeNotification
+import platform.AVFAudio.AVAudioSessionRouteChangePreviousRouteKey
 import platform.AVFAudio.AVAudioSessionRouteChangeReasonKey
 import platform.AVFAudio.AVAudioSessionRouteChangeReasonOldDeviceUnavailable
+import platform.AVFAudio.AVAudioSessionRouteDescription
 import platform.AVFAudio.AVAudioSessionSetActiveOptionNotifyOthersOnDeactivation
+import platform.AVFAudio.IOBufferDuration
+import platform.AVFAudio.outputLatency
 import platform.AVFAudio.setActive
 import platform.AVFAudio.setPreferredIOBufferDuration
 import platform.AVFAudio.setPreferredSampleRate
@@ -31,21 +38,45 @@ import platform.Foundation.NSError
 import platform.Foundation.NSNotification
 import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSNumber
+import kotlin.concurrent.Volatile
 
 /**
  * The AVAudioSession around the engine's streams (research R3, R7): measurement mode keeps processing off the
  * microphone, playback category routes tones with other media, and deactivating with `notifyOthersOnDeactivation`
- * lets other apps' audio resume. Interruptions and route changes surface as [AudioEvent]s.
+ * lets other apps' audio resume. Interruptions and route changes surface as [AudioEvent]s; losing any output but the
+ * built-in speaker or receiver (wired, USB-C, Bluetooth, AirPlay) is [AudioEvent.OutputRouteLost] (feature 004 R6).
  */
 @OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
 object IosAudioSession {
     private const val PREFERRED_SAMPLE_RATE = 48000.0
     private const val PREFERRED_IO_BUFFER_SECONDS = 0.005
+    private const val NANOS_PER_SECOND = 1_000_000_000.0
 
     private val _events = MutableSharedFlow<AudioEvent>(extraBufferCapacity = 16)
     val events: Flow<AudioEvent> = _events
 
+    /**
+     * The phone's own outputs. Apple keys "stop playback when the old device became unavailable" on the reason alone, so
+     * losing any other output (wired, USB-C, Bluetooth, AirPlay, CarPlay, line out) takes the audio off the listener.
+     */
+    private val builtInOutputs = setOf(
+        AVAudioSessionPortBuiltInSpeaker,
+        AVAudioSessionPortBuiltInReceiver,
+    )
+
     private val session: AVAudioSession get() = AVAudioSession.sharedInstance()
+
+    /** True between a successful activation and a successful deactivation; internal so tests can observe it. */
+    @Volatile
+    internal var isActive: Boolean = false
+        private set
+
+    /**
+     * Called on every route change, on the notification's thread; the engine sets it while the metronome runs to
+     * re-report the output latency of the new route (feature 004 R7) and clears it on stop.
+     */
+    @Volatile
+    internal var routeChangeListener: (() -> Unit)? = null
 
     init {
         val center = NSNotificationCenter.defaultCenter
@@ -69,6 +100,7 @@ object IosAudioSession {
         withError { session.setPreferredSampleRate(PREFERRED_SAMPLE_RATE, it) }
         withError { session.setPreferredIOBufferDuration(PREFERRED_IO_BUFFER_SECONDS, it) }
         val active = withError { session.setActive(true, it) }
+        if (active) isActive = true
         return category && active
     }
 
@@ -76,27 +108,53 @@ object IosAudioSession {
     fun activateForPlayback(): Boolean {
         val category = withError { session.setCategory(AVAudioSessionCategoryPlayback, AVAudioSessionModeDefault, 0uL, it) }
         val active = withError { session.setActive(true, it) }
+        if (active) isActive = true
         return category && active
     }
 
+    /** The active route's output latency plus one IO buffer, in nanoseconds: what the listener hears late by. */
+    fun outputLatencyNanos(): Long = ((session.outputLatency + session.IOBufferDuration) * NANOS_PER_SECOND).toLong()
+
     /** Deactivates and tells other apps they may resume; true on success. */
-    fun deactivate(): Boolean = withError { session.setActive(false, AVAudioSessionSetActiveOptionNotifyOthersOnDeactivation, it) }
+    fun deactivate(): Boolean {
+        val deactivated = withError { session.setActive(false, AVAudioSessionSetActiveOptionNotifyOthersOnDeactivation, it) }
+        if (deactivated) isActive = false
+        return deactivated
+    }
 
     private fun onInterruption(notification: NSNotification?) {
         val info = notification?.userInfo ?: return
         val type = (info[AVAudioSessionInterruptionTypeKey] as? NSNumber)?.unsignedLongValue ?: return
+        val options = (info[AVAudioSessionInterruptionOptionKey] as? NSNumber)?.unsignedLongValue ?: 0uL
+        handleInterruption(type, options)
+    }
+
+    /** The interruption handler on parsed values; internal so tests need no real notification. */
+    internal fun handleInterruption(type: ULong, options: ULong) {
         when (type) {
             AVAudioSessionInterruptionTypeBegan -> _events.tryEmit(AudioEvent.Interrupted)
-            AVAudioSessionInterruptionTypeEnded -> {
-                val options = (info[AVAudioSessionInterruptionOptionKey] as? NSNumber)?.unsignedLongValue ?: 0uL
+            AVAudioSessionInterruptionTypeEnded ->
                 if (options and AVAudioSessionInterruptionOptionShouldResume != 0uL) _events.tryEmit(AudioEvent.InterruptionEnded)
-            }
         }
     }
 
     private fun onRouteChange(notification: NSNotification?) {
         val info = notification?.userInfo ?: return
         val reason = (info[AVAudioSessionRouteChangeReasonKey] as? NSNumber)?.unsignedLongValue ?: return
-        if (reason == AVAudioSessionRouteChangeReasonOldDeviceUnavailable) _events.tryEmit(AudioEvent.OutputRouteLost)
+        val previous = info[AVAudioSessionRouteChangePreviousRouteKey] as? AVAudioSessionRouteDescription
+        val previousOutputs = previous?.outputs.orEmpty().mapNotNull { (it as? AVAudioSessionPortDescription)?.portType }
+        handleRouteChange(reason, previousOutputs)
+    }
+
+    /**
+     * The route-change handler on parsed values ([previousOutputs] are the previous route's output port types);
+     * internal so tests need no real notification. A lost output is reported unless the previous route was only the
+     * built-in speaker or receiver: a new device or a lost built-in output keeps the audio going.
+     */
+    internal fun handleRouteChange(reason: ULong, previousOutputs: List<String>) {
+        if (reason == AVAudioSessionRouteChangeReasonOldDeviceUnavailable && previousOutputs.any { it !in builtInOutputs }) {
+            _events.tryEmit(AudioEvent.OutputRouteLost)
+        }
+        routeChangeListener?.invoke()
     }
 }

@@ -5,6 +5,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import audio.tembra.ui.metronome.LocalMetronomeDebug
 import audio.tembra.ui.tuner.LocalTunerTestSignal
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 
@@ -15,10 +16,15 @@ fun NavigationShell(
     viewModel: ShellViewModel = metroViewModel(),
     layoutMode: LayoutMode = rememberLayoutMode(),
 ) {
-    // A debug test signal opens the app on the Tuner so the meter can be captured without a tap (spec FR-032).
+    // A debug test signal opens the app on the Tuner so the meter can be captured without a tap (feature 003, spec
+    // FR-032); a debug metronome request likewise opens it on the Metronome (feature 004, spec FR-037).
     val testSignal = LocalTunerTestSignal.current
+    val metronomeDebug = LocalMetronomeDebug.current
     LaunchedEffect(Unit) {
-        if (testSignal != null) viewModel.select(Destination.Tuner)
+        when {
+            testSignal != null -> viewModel.select(Destination.Tuner)
+            metronomeDebug != null -> viewModel.select(Destination.Metronome)
+        }
     }
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     NavigationShellContent(

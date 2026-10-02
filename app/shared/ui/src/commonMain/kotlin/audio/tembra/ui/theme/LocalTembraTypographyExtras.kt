@@ -14,5 +14,7 @@ val LocalTembraTypographyExtras = staticCompositionLocalOf {
         tunerCardOctave = TextStyle.Default,
         tunerReadout = TextStyle.Default,
         microLabel = TextStyle.Default,
+        tempoNumber = TextStyle.Default,
+        sectionLabel = TextStyle.Default,
     )
 }

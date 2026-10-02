@@ -15,16 +15,16 @@ Commands (run from `app/`, Gradle wrapper 9.7.0; prerequisites in `app/README.md
 - Test lanes: `./gradlew checkAndroidHost` (JVM), `./gradlew checkIos` (simulator), `./gradlew checkAndroidDevice` (connected device), `./gradlew engineHostTest` (C++ Catch2). Compose UI tests live in the `uiTest` source set and run only on the simulator and the device.
 - Screenshots: `android screen capture --output <file>`; `xcrun simctl io "<device>" screenshot <file>`
 - Zero compiler warnings is a gate; run with `--warning-mode all`.
-- Add a Material Symbols glyph: `tools/fetch-material-symbols.sh <glyph> [<glyph> ...]` (pinned commit, normalised for the Compose resource loader), then add a `TembraIcon` value.
+- Add a Material Symbols glyph: `tools/fetch-material-symbols.sh [--fill] <glyph> [<glyph> ...]` (pinned commit, normalised for the Compose resource loader; `--fill` fetches the filled variant as `ic_<glyph>_fill_24.xml`), then add a `TembraIcon` value.
 
 ## Workflow: spec-kit drives all feature work
 
 The project uses GitHub spec-kit. It was initialised on 2026-09-18 with `uvx --from git+https://github.com/github/spec-kit.git specify init --here --integration claude --script sh` (the old `--ai` flag is gone; re-run the same command with `--force` to refresh templates). The skills live in `.claude/skills/speckit-*/` and are invoked with hyphens: `/speckit-constitution`, `/speckit-specify`, `/speckit-clarify`, `/speckit-plan`, `/speckit-checklist`, `/speckit-tasks`, `/speckit-analyze`, `/speckit-implement`, `/speckit-converge` (not the older dotted `/speckit.*` form). Helper scripts are in `.specify/scripts/bash/`. `specs/` is created by the first `/speckit-specify`.
 
-- `.specify/memory/constitution.md` is the ratified constitution (v1.0.3, ratified 2026-09-19, amended 2026-09-26): seven principles plus stack constraints and quality gates, seeded from the research briefs below and `docs/research/kmp-code-architecture.md`. It supersedes this file where they disagree; amend it only through `/speckit-constitution`.
+- `.specify/memory/constitution.md` is the ratified constitution (v1.2.0, ratified 2026-09-19, last amended 2026-09-29): eight principles plus stack constraints and quality gates, seeded from the research briefs below and `docs/research/kmp-code-architecture.md`. It supersedes this file where they disagree; amend it only through `/speckit-constitution`.
 - `specs/<feature>/spec.md` says WHAT (user-facing behaviour); `plan.md` holds technology choices. Keep them apart.
 - The first feature is the project scaffold that creates `app/shared`, `app/engine`, `app/androidApp`, `app/iosApp`.
-- Build order after that is fixed in the constitution (amended 2026-09-26): tuner first (microphone capture and reference tones, the first audio in the app), then audio spine (engine + JNI/cinterop bridge playing one clip), transport/timeline, mixer, metronome, effects + automation, recording + loops + speed, collaboration last. `docs/DAW-App-Research-Report.md` §6 has the rationale for each step.
+- Build order after that is fixed in the constitution (amended 2026-09-29): tuner first (microphone capture and reference tones, the first audio in the app), then metronome (a global, standalone metronome for playing along, not part of any recording or timeline session; its sound set and configuration, tempo and bar-shape models and engine click scheduler are reused by transport/timeline, never duplicated), then audio spine (engine + JNI/cinterop bridge playing one clip), transport/timeline, mixer, effects + automation, recording + loops + speed, collaboration last. `docs/DAW-App-Research-Report.md` §6 has the rationale for each step.
 
 ## Architecture rules that every spec and plan must respect
 

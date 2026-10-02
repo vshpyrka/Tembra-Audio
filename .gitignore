@@ -23,6 +23,7 @@ app/**/.cxx/
 app/build-logic/build/
 app/build-logic/.gradle/
 app/iosApp/build/
+app/iosApp/build-device/
 app/iosApp/**/xcuserdata/
 app/iosApp/**/DerivedData/
 *.xcuserstate

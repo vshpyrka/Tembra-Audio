@@ -4,6 +4,16 @@
     <!-- Auto Listen hears the instrument through the microphone (feature 003, spec FR-014). -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
+    <!-- The metronome keeps clicking with the screen off through a media-playback foreground service (feature 004). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <!--
+        Declared, never requested at runtime (contracts/background-playback.md): on Android 13+ the service's "Metronome
+        · Running" notification with its Stop action shows once the user allows notifications in the app's settings.
+        Without the declaration the system can never grant it and the Stop action is unreachable.
+    -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
         android:name=".TembraApplication"
         android:allowBackup="true"
@@ -21,6 +31,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name=".MetronomeForegroundService"
+            android:foregroundServiceType="mediaPlayback"
+            android:exported="false" />
     </application>
 
 </manifest>

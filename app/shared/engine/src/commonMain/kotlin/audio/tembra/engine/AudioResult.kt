@@ -7,6 +7,9 @@ sealed interface AudioResult {
     data class Error(val code: Int) : AudioResult
 
     companion object {
+        /** Android only: audio focus was refused, so the metronome did not start (not a `tembra_error`). */
+        const val FOCUS_DENIED: Int = -100
+
         fun fromNative(code: Int): AudioResult = if (code == 0) Ok else Error(code)
     }
 }

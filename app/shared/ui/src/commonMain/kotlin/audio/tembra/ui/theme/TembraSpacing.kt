@@ -87,4 +87,26 @@ data class TembraSpacing(
     val landscapeSettingsMaxWidth: Dp = 280.dp,
     /** Below this the landscape meter scrolls instead of shrinking further. */
     val meterMinWidth: Dp = 200.dp,
+    // Metronome metrics from the Stitch metronome screens (feature 004, data-model.md §9, research R10).
+    /** Time-signature and subdivision chip: `py-1.5` around `labelMedium` (a 44 dp target around it). */
+    val chipHeight: Dp = 32.dp,
+    /** Style pill: `py-1` around 11 px text (a 44 dp target around it). */
+    val pillHeight: Dp = 28.dp,
+    /** Accent cell bar box: `h-16`. */
+    val accentCellBarHeight: Dp = 64.dp,
+    /** Tempo dial on compact windows: `max-w-[270px]`; on expanded windows: `max-w-[420px]`. */
+    val tempoDialMaxWidth: Dp = 270.dp,
+    val tempoDialMaxWidthWide: Dp = 420.dp,
+    /** Tempo stepper: `w-11 h-11`. */
+    val tempoStepper: Dp = 44.dp,
+    /** Tap tempo card: `h-16`; play button: `w-16 h-16`. */
+    val tapTempoHeight: Dp = 64.dp,
+    val playButton: Dp = 64.dp,
+    /** Sound menu: `w-40`. */
+    val soundMenuWidth: Dp = 160.dp,
+    /** Sound tile on expanded windows and its glyph box (`w-7 h-7`). */
+    val soundTileHeight: Dp = 44.dp,
+    val soundTileGlyphBox: Dp = 28.dp,
+    /** The wide layout's settings column: a third of the width, at least this. */
+    val wideSettingsMinWidth: Dp = 320.dp,
 )
