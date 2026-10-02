@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import audio.tembra.ui.posture.currentTabletopFold
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 
 /**
@@ -37,7 +38,9 @@ fun TunerScreen(modifier: Modifier = Modifier, viewModel: TunerViewModel = metro
     }
 
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val layout = TunerLayout.from(currentWindowAdaptiveInfo().windowSizeClass)
+    // A tabletop foldable splits the screen at its fold (feature 005); both are read from the window on every change.
+    val fold = currentTabletopFold()
+    val layout = TunerLayout.from(currentWindowAdaptiveInfo().windowSizeClass, fold)
     val callbacks = remember(viewModel) {
         TunerCallbacks(
             onInstrument = viewModel::selectInstrument,
@@ -51,6 +54,6 @@ fun TunerScreen(modifier: Modifier = Modifier, viewModel: TunerViewModel = metro
         )
     }
     if (state.loaded) {
-        TunerScreenContent(state = state, callbacks = callbacks, telemetry = viewModel.telemetry, layout = layout, modifier = modifier)
+        TunerScreenContent(state = state, callbacks = callbacks, telemetry = viewModel.telemetry, layout = layout, modifier = modifier, fold = fold)
     }
 }

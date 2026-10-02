@@ -38,6 +38,11 @@ The fold position is clamped into the layout's height; a degenerate split (a reg
 
 **Rationale**: these are the user's assignments (spec FR-003 to FR-005). Reusing the landscape forms for the upper content is natural: landscape already solves "fit this into a short, wide card" for the meter and the string cards. The tempo dial component already takes any size; the landscape pane sizes it from height. The accent cells get a `barHeight` so the tabletop card draws bars tall enough to read from a music stand (the existing 64 dp bar box is sized for a settings card).
 
+**Narrow windows (added during the T027 review)**: a flip-style foldable half-opened also reports tabletop, with a
+window about 412 dp wide. Side by side, the dial and the accent card would get about 190 dp each and the cells would
+wrap into two rows of tall bars that do not fit. Under `MetronomeDefaults.TabletopSideBySideMinWidth` (600 dp, the
+medium width breakpoint) each half therefore stacks its two cards, and the stacked accent card keeps the 64 dp bar box.
+
 **Alternatives considered**: putting the slider in the upper region with the dial (it is part of the dial card everywhere else) — rejected, the user listed the slider among the bottom controls. Moving the − / + steps out of the dial — rejected, they are drawn inside the ring and are part of the dial widget.
 
 ## R5 — Layout selection

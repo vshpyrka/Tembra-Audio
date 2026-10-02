@@ -41,6 +41,8 @@ import audio.tembra.ui.theme.TembraTheme
  *   click sound pill centred under it; the card is small enough that the dial keeps its size under it on a phone;
  * - [MetronomeLayout.Landscape] (T150, T152): the same card restacked for the narrow column (see
  *   [LandscapeBarShapeCard]), then the sound pill;
+ * - [MetronomeLayout.Tabletop] (feature 005): the compact card without its accent cells (they sit above the fold, see
+ *   [TabletopBarShapeCard]), then the sound pill;
  * - [MetronomeLayout.Wide]: section cards for the time signature (with its "Common & Complex" caption, six chips in a
  *   row), the subdivision chips, the cells with the style row, and the sound tile grid in its own "Click timbre" card,
  *   as in the tablet design.
@@ -61,6 +63,10 @@ internal fun MetronomeSettingsPanel(
             }
             MetronomeLayout.Landscape -> {
                 LandscapeBarShapeCard(state = state, callbacks = callbacks, telemetry = telemetry)
+                SoundPicker(state, callbacks, ClickSoundPickerLayout.Dropdown, Modifier.align(Alignment.CenterHorizontally))
+            }
+            MetronomeLayout.Tabletop -> {
+                TabletopBarShapeCard(state = state, callbacks = callbacks)
                 SoundPicker(state, callbacks, ClickSoundPickerLayout.Dropdown, Modifier.align(Alignment.CenterHorizontally))
             }
             MetronomeLayout.Wide -> {
@@ -126,6 +132,29 @@ private fun LandscapeBarShapeCard(state: MetronomeUiState, callbacks: MetronomeC
             modifier = Modifier.fillMaxWidth(),
         )
         Cells(state, callbacks, telemetry, gap = spacing.xs, form = AccentCellsForm.BarOnly)
+    }
+}
+
+/**
+ * Below a tabletop fold (feature 005, spec FR-005): the compact card's signature menu and subdivision tiles line and its
+ * style row, without the accent cells, which sit above the fold.
+ */
+@Composable
+private fun TabletopBarShapeCard(state: MetronomeUiState, callbacks: MetronomeCallbacks) {
+    val settings = state.settings
+    val spacing = TembraTheme.spacing
+    SectionCard(gap = spacing.sm, modifier = barShapeSemantics()) {
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+            verticalArrangement = Arrangement.spacedBy(spacing.xs),
+            itemVerticalAlignment = Alignment.CenterVertically,
+        ) {
+            TimeSignatureMenu(selected = settings.signature, onSelect = callbacks.onSignature)
+            Spacer(Modifier.weight(1f))
+            SubdivisionTiles(selected = settings.subdivision, unit = settings.signature.unit, onSelect = callbacks.onSubdivision)
+        }
+        StyleRow(selected = settings.style, onSelect = callbacks.onStyle, modifier = Modifier.fillMaxWidth())
     }
 }
 

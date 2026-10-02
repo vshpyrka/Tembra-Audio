@@ -2,6 +2,7 @@ package audio.tembra.ui.metronome
 
 import androidx.window.core.layout.WindowSizeClass
 import androidx.window.core.layout.computeWindowSizeClass
+import audio.tembra.ui.posture.TabletopFold
 import audio.tembra.ui.theme.WindowWidth
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -37,5 +38,15 @@ class MetronomeLayoutTest {
         assertEquals(MetronomeLayout.Wide, layoutOf(840, 500))
         assertEquals(MetronomeLayout.Landscape, layoutOf(900, 400))
         assertEquals(MetronomeLayout.Wide, layoutOf(1024, 768))
+    }
+
+    @Test
+    fun aTabletopFoldWinsOverEveryBand() {
+        val fold = TabletopFold(top = 1038f, bottom = 1038f)
+        for ((width, height) in listOf(883 to 852, 360 to 800, 900 to 400, 1280 to 800)) {
+            val sizeClass = WindowSizeClass.BREAKPOINTS_V1.computeWindowSizeClass(width, height)
+            assertEquals(MetronomeLayout.Tabletop, MetronomeLayout.from(sizeClass, fold), "$width x $height")
+            assertEquals(MetronomeLayout.from(sizeClass), MetronomeLayout.from(sizeClass, fold = null), "$width x $height without a fold")
+        }
     }
 }

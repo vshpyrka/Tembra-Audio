@@ -173,6 +173,19 @@ internal object MetronomeDefaults {
     /** The compact layout's dial grows with the height left under the settings up to this (design iteration D1). */
     val CompactDialMax: Dp = 300.dp
 
+    /**
+     * Above a tabletop fold (feature 005): the accent cells' bar box grows with the region's height from
+     * `TembraSpacing.accentCellBarHeight` up to [TabletopCellBarMax], leaving [TabletopCellLabelRoom] for the level label.
+     */
+    val TabletopCellBarMax: Dp = 160.dp
+
+    /**
+     * Above and below a tabletop fold, the two cards of each half sit side by side from this width (a book-style
+     * foldable's inner screen) and stack under it (a flip-style foldable).
+     */
+    val TabletopSideBySideMinWidth: Dp = 600.dp
+    val TabletopCellLabelRoom: Dp = 28.dp
+
     /** A subdivision tile's note figure inside its 44 dp tile (design iteration D1). */
     val SubdivisionGlyphSize: Dp = 24.dp
 }
