@@ -13,6 +13,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.max
 import audio.tembra.core.metronome.AccentPattern
 import audio.tembra.core.metronome.BeatLevel
@@ -28,7 +29,8 @@ import audio.tembra.ui.theme.TembraTheme
  * its label and the bar alone shows the level. Only when 44 dp cannot be kept do the cells wrap, into as few rows as
  * hold each cell at its widest label. [form] [AccentCellsForm.BarOnly] (the phone-landscape card, T152) draws 44 dp cells
  * with the bar box only, wrapping at 44 dp (7/8 is 4 + 3 there). While [running] a frame tick drives
- * the light: each cell's draw phase reads the tick and asks [telemetry] which beat is audible, so only drawing is
+ * the light. A specified [barHeight] replaces the form's bar box height (the tall cells above a tabletop fold, feature
+ * 005). While running, each cell's draw phase reads the tick and asks [telemetry] which beat is audible, so only drawing is
  * invalidated and nothing is written back to composition (`compose-performance`). Stopped, the telemetry is never
  * read. [currentBeat] is the ViewModel's 10 Hz sample (-1 when stopped): the cell it names is announced as playing.
  * Clicking a cell reports its 0-based index to [onCycle]. The row carries [testTag] and each cell the singular of it
@@ -44,6 +46,7 @@ internal fun AccentCells(
     modifier: Modifier = Modifier,
     gap: Dp = MetronomeDefaults.CellGap,
     form: AccentCellsForm = AccentCellsForm.Labelled,
+    barHeight: Dp = Dp.Unspecified,
     testTag: String = "metronome.cells",
 ) {
     // A labelled cell is at least as wide as its widest label ("ACCENT" in bold) with its padding.
@@ -70,7 +73,8 @@ internal fun AccentCells(
         val cellWidth = with(density) { cellPx.toDp() }
         val labelled = form == AccentCellsForm.Labelled && cellWidth >= labelledCell
         // A bar-only cell is a 44 dp target: its padding around a 32 dp bar box.
-        val barHeight = if (form == AccentCellsForm.BarOnly) target - MetronomeDefaults.CellPadding * 2 else TembraTheme.spacing.accentCellBarHeight
+        val formBarHeight = if (form == AccentCellsForm.BarOnly) target - MetronomeDefaults.CellPadding * 2 else TembraTheme.spacing.accentCellBarHeight
+        val cellBarHeight = if (barHeight.isSpecified) barHeight else formBarHeight
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(gap, Alignment.CenterHorizontally),
             verticalArrangement = Arrangement.spacedBy(gap),
@@ -85,7 +89,7 @@ internal fun AccentCells(
                     onClick = { onCycle(index) },
                     modifier = Modifier.width(cellWidth),
                     testTag = "${cellTagPrefix(testTag)}.${index + 1}",
-                    barHeight = barHeight,
+                    barHeight = cellBarHeight,
                     label = if (labelled) {
                         { AccentCellLabel(level) }
                     } else {

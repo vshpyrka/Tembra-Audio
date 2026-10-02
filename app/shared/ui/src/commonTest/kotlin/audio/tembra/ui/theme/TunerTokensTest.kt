@@ -29,7 +29,7 @@ class TunerTokensTest {
         assertEquals(480.dp, spacing.meterMaxWidthWide)
         assertEquals(384.dp, spacing.byEarGridMaxWidth)
         assertEquals(576.dp, spacing.byEarGridMaxWidthWide)
-        assertEquals(144.dp, spacing.stringCardHeightWide)
+        assertEquals(128.dp, spacing.stringCardMinWide)
         assertEquals(128.dp, spacing.stringCardHeightLandscape)
         assertEquals(224.dp, spacing.landscapeSettingsMinWidth)
         assertEquals(280.dp, spacing.landscapeSettingsMaxWidth)

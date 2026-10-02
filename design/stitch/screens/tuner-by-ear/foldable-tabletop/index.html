@@ -1,0 +1,121 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=883, initial-scale=1.0">
+<title>Tembra Audio - Tuner By Ear (Foldable Tabletop) v2</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,300..400,0..1,0" rel="stylesheet">
+<script>
+tailwind.config={darkMode:"class",theme:{extend:{colors:{
+  "background":"#131316","surface":"#131316","surface-container-lowest":"#0e0e11","surface-container-low":"#1b1b1e",
+  "surface-container":"#1f1f22","surface-container-high":"#2a2a2d","surface-container-highest":"#353438",
+  "on-surface":"#e4e1e6","on-surface-variant":"#cac4d4","outline":"#948e9d","outline-variant":"#494552",
+  "primary":"#cebdff","primary-container":"#a78bfa","on-primary-container":"#3c1989",
+  "secondary":"#ffafd3","secondary-container":"#85145a","on-secondary-container":"#ff93c8"},
+  fontFamily:{headline:["Space Grotesk"],label:["Space Grotesk"],body:["Inter"]}}}}
+</script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:883px;height:852px;overflow:hidden}
+body{background:#0e0e11;color:#e4e1e6;font-family:'Space Grotesk',sans-serif;position:relative}
+.material-symbols-outlined{font-family:'Material Symbols Outlined';font-weight:300;font-style:normal;font-size:24px;line-height:1;display:inline-block;white-space:nowrap;-webkit-font-smoothing:antialiased;font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 24}
+.material-symbols-outlined.fill{font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24}
+.header{position:absolute;left:16px;top:62px}
+.brand{font-size:10px;font-weight:600;letter-spacing:.04em;color:#cebdff;text-transform:uppercase;line-height:14px}
+.title{font-size:18px;font-weight:500;line-height:24px;color:#e4e1e6}
+.rail{position:absolute;left:0;top:110px;width:64px;bottom:0;background:#0e0e11;display:flex;flex-direction:column;align-items:center;padding-top:8px}
+.ritem{width:48px;height:47px;margin-bottom:4px;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#cac4d4}
+.ritem .material-symbols-outlined{font-size:22px}
+.ritem.sel{background:#85145a;color:#ff93c8}
+.ritem.sel .rlabel{font-weight:600}
+.rlabel{font-size:10px;font-weight:500;letter-spacing:.04em;line-height:12px}
+.content{position:absolute;left:64px;top:110px;right:0;bottom:0;background:#131316}
+.panel{position:absolute;left:80px;right:31px;border-radius:24px;border:1px solid #1f1a24;
+  background:radial-gradient(120% 140% at 50% 50%,#1a1622 0%,#151219 55%,#120e13 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.02)}
+.upper{top:119px;height:287px;padding:11px;display:grid;grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(2,1fr);gap:10px}
+.lower{top:431px;height:367px;padding:0 11px;display:flex;flex-direction:column;justify-content:center}
+.scard{background:#1b1b1e;border:1px solid #26252b;border-radius:16px;padding:12px 8px 8px 8px;display:flex;flex-direction:column;justify-content:space-between}
+.roman{font-size:11px;font-weight:500;color:#948e9d;padding-left:0;letter-spacing:.02em}
+.hz{font-size:12px;font-weight:500;color:#cac4d4;letter-spacing:.02em;font-feature-settings:"tnum" 1}
+.note{font-size:32px;font-weight:700;line-height:32px;color:#e4e1e6;letter-spacing:-.01em;margin-top:-4px}
+.note sub{font-size:20px;font-weight:600;color:#cebdff;vertical-align:-6px;margin-left:2px}
+.aud{height:35px;width:100%;background:#242427;border:1px solid #2a2a2d;border-radius:10px;color:#e4e1e6;font-family:'Space Grotesk';font-size:13px;font-weight:500;letter-spacing:.02em;display:flex;align-items:center;justify-content:center;gap:4px}
+.sec{font-size:10px;font-weight:600;letter-spacing:.04em;color:#cac4d4;text-transform:uppercase;line-height:14px}
+.seam{height:1px;background:#25222b;margin:11px 0 0}
+.col{width:100%;max-width:566px;margin:0 auto;display:flex;flex-direction:column}
+.seg{display:flex;border-radius:12px;padding:4px;height:39px}
+.seg button{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;border-radius:8px;font-family:'Space Grotesk';font-size:13px;font-weight:500;letter-spacing:.02em;color:#cac4d4;background:transparent;border:0}
+.seg svg{width:16px;height:16px}
+.box{border:1px solid #2a2a2d;background:#16131a;border-radius:14px}
+.fold-guide{position:absolute;left:64px;right:0;top:426px;height:0;border-top:1px dashed rgba(206,189,255,.10);pointer-events:none}
+</style>
+</head>
+<body>
+  <div class="header"><div class="brand">Tembra Audio</div><div class="title">Tuner</div></div>
+  <nav class="rail" aria-label="Primary">
+      <div class="ritem"><span class="material-symbols-outlined">home</span><span class="rlabel">Home</span></div>
+      <div class="ritem"><span class="material-symbols-outlined">graphic_eq</span><span class="rlabel">Timeline</span></div>
+      <div class="ritem sel"><span class="material-symbols-outlined fill">music_note</span><span class="rlabel">Tuner</span></div>
+      <div class="ritem"><span class="material-symbols-outlined">timer</span><span class="rlabel">Metronome</span></div>
+      <div class="ritem"><span class="material-symbols-outlined">folder</span><span class="rlabel">Projects</span></div>
+      <div class="ritem"><span class="material-symbols-outlined">person</span><span class="rlabel">Profile</span></div>
+  </nav>
+  <div class="content"></div>
+
+  <!-- Above the fold: string reference cards -->
+  <section class="panel upper" aria-label="Strings">
+        <div class="scard">
+          <div class="flex justify-between items-start"><span class="roman">IV</span><span class="hz">65.4 Hz</span></div>
+          <div class="note">C<sub>2</sub></div>
+          <button class="aud"><span class="material-symbols-outlined" style="font-size:18px">play_arrow</span>Audition</button>
+        </div>
+        <div class="scard">
+          <div class="flex justify-between items-start"><span class="roman">III</span><span class="hz">98.0 Hz</span></div>
+          <div class="note">G<sub>2</sub></div>
+          <button class="aud"><span class="material-symbols-outlined" style="font-size:18px">play_arrow</span>Audition</button>
+        </div>
+        <div class="scard">
+          <div class="flex justify-between items-start"><span class="roman">II</span><span class="hz">146.8 Hz</span></div>
+          <div class="note">D<sub>3</sub></div>
+          <button class="aud"><span class="material-symbols-outlined" style="font-size:18px">play_arrow</span>Audition</button>
+        </div>
+        <div class="scard">
+          <div class="flex justify-between items-start"><span class="roman">I</span><span class="hz">220.0 Hz</span></div>
+          <div class="note">A<sub>3</sub></div>
+          <button class="aud"><span class="material-symbols-outlined" style="font-size:18px">play_arrow</span>Audition</button>
+        </div>
+  </section>
+
+  <div class="fold-guide" aria-hidden="true"></div>
+
+  <!-- Below the fold: tuner controls -->
+  <section class="panel lower" aria-label="Tuner controls">
+    <div class="sec" style="text-align:center;color:#e4e1e6">Tuner Controls</div>
+    <div class="seam"></div>
+    <div class="col">
+      <div class="seg mt-[16px]" style="background:#0e0e11">
+        <button style="color:#e4e1e6;font-size:13.5px"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 4.41c-.78-.78-2.05-.78-2.83 0l-1.34 1.34 2.83 2.83 1.34-1.34c.78-.78.78-2.05 0-2.83zM3 18.25V21h2.75L17.5 9.25l-2.75-2.75L3 18.25z"/></svg>Guitar</button>
+        <button style="background:#85145a;color:#ff93c8;font-size:13.5px"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a2 2 0 0 0-2 2c0 .74.4 1.39 1 1.73V8.5C9.5 9 8 11 8 13.5c0 1.6 1 3 2 4v2.5a2 2 0 1 0 4 0V17.5c1-1 2-2.4 2-4 0-2.5-1.5-4.5-3-5V5.73c.6-.34 1-.99 1-1.73a2 2 0 0 0-2-2z"/></svg>Cello</button>
+      </div>
+      <div class="seg mt-[20px]" style="background:#1b1b1e;padding:2px;height:31px">
+        <button style="color:#e4e1e6"><span class="material-symbols-outlined" style="font-size:18px">mic</span>Auto Listen</button>
+        <button style="background:#a78bfa;color:#3c1989"><span class="material-symbols-outlined" style="font-size:18px">hearing</span>By Ear</button>
+      </div>
+      <div class="box flex items-center mt-[17px]" style="height:44px;padding:0 14px 0 12px;background:#1b1b1e">
+        <span class="material-symbols-outlined fill" style="color:#cebdff;font-size:22px">music_note</span>
+        <div class="flex flex-col ml-[6px] flex-1">
+          <span style="font-size:11px;font-weight:500;letter-spacing:.04em;color:#948e9d;text-transform:uppercase;line-height:14px">Tuning Preset</span>
+          <span style="font-size:14px;font-weight:500;color:#e4e1e6;line-height:18px">Standard (C2 G2 D3 A3)</span>
+        </div>
+        <span class="material-symbols-outlined" style="color:#948e9d;font-size:20px">expand_more</span>
+      </div>
+      <div class="box flex items-center justify-between mt-[9px]" style="height:54px;padding:0 19px 0 11px;background:#1b1b1e">
+        <div class="flex flex-col">
+          <span style="font-size:11px;font-weight:600;letter-spacing:.04em;color:#ff93c8;text-transform:uppercase;line-height:14px">Loop Tone</span>
+          <span style="font-size:12px;font-weight:500;color:#e4e1e6;line-height:16px">Active</span>
+        </div>
+        <div style="width:32px;height:16px;border-radius:8px;background:#ffafd3;position:relative"><div style="position:absolute;right:2px;top:2px;width:12px;height:12px;border-radius:6px;background:#f472b6"></div></div>
+      </div>
+    </div>
+  </section>
+</body></html>
