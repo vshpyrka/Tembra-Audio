@@ -70,6 +70,13 @@ visible on a somewhat smaller large screen rather than scroll (scrolling stays f
   that would make them smaller than their content allows does the grid use more columns (seven strings as 4 + 3).
   Scrolling remains for windows too small even for that, and for a phone in portrait.
 
+## Design iteration D3 (2026-10-02)
+
+The user asked for the book-posture hinge split (FR-011) on the tuner as well: with the device half-opened like a
+book, the tuner's controls card sits before the hinge and the gauge or the string cards after it. In the narrower
+controls card the "Tuner controls" heading stays centred and the microphone-status pill moves under it when the two
+no longer fit on one line.
+
 ## User Scenarios & Testing *(mandatory)*
 
 Every story is checked on a foldable that can be half-opened with a horizontal fold. "Upper half" is the part of the
@@ -162,6 +169,9 @@ dial, tap tempo and play fill the page right of it.
 
 1. **Given** the device half-opened with a vertical fold, **When** the Metronome shows its wide layout, **Then** the
    settings end a gutter before the hinge and the dial card, tap tempo and play start a gutter after it.
+2. **Given** the same posture, **When** the Tuner shows its wide layout, **Then** the "Tuner controls" card (instrument,
+   mode and, in By Ear, string count, preset and loop tone) ends a gutter before the hinge and the gauge or every
+   string card starts a gutter after it, the string cards square and all visible (D3).
 2. **Given** a device with no vertical fold (flat, a tablet), **When** the Metronome shows its wide layout, **Then**
    it is unchanged.
 
@@ -260,6 +270,9 @@ and the iPad Pro simulators are unchanged; on the foldable, flat and book postur
   last row centred; when the grid would not fit the card's height the cards MUST shrink (staying square) or, below
   the size their content needs, spread over more columns, so that every card is visible without scrolling; only a
   window too small even for that, or a phone in portrait, scrolls (D2).
+- **FR-014**: With a vertical fold that separates the screen, the Tuner's wide layout MUST place its controls before the
+  fold and the gauge or the string cards after it, each a gutter clear of the fold's area; the controls' heading MUST
+  never overlap the microphone-status pill (D3).
 
 ### Key Entities
 

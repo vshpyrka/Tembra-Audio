@@ -118,3 +118,15 @@ grid ran under the card and scrolled.
 
 **Alternatives considered**: non-square cards when height-limited (rejected: the user asked for 1:1); a smaller card
 typography below 128 dp (more code for a case only very short large windows reach).
+
+## R10 — Design iteration D3: the tuner's hinge split
+
+Decided with the user on 2026-10-02 (FR-014).
+
+**Decision**: `TunerScreenContent` takes `verticalFold`; `TunerLayout.Wide if verticalFold != null` (a `when` guard,
+`kotlin-control-flow`) lays out `FoldSplitRow`: `TunerTabletopSettings` before the hinge, and after it the Auto Listen
+pane or `ByEarCardsPane` (the wide By Ear card with an empty controls slot, so the preset and loop tone are not shown
+twice). The pane beside the hinge is about 400 dp wide, so `WideStringGrid.arrange` now considers fewer columns too:
+when the base columns would go under 128 dp it takes the column count with the largest cards (seven strings as 2 per
+row there, 160 dp). `CentredHeading` keeps the "Tuner controls" heading centred and moves the pill under it when the
+two would come within 8 dp; the first build clipped the heading to "TUNER CONTROI" under the TEST SIGNAL pill.
