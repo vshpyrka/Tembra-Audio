@@ -39,6 +39,13 @@ With `verticalFold` passed to `MetronomeScreenContent` in the `Wide` layout: `me
 `spacing.md` before the fold's left edge and `metronome.dialCard`, `metronome.tap` and `metronome.play` start at least
 `spacing.md` after its right edge (`MetronomeHingeLayoutTest`). Without it the column is the usual third (≥ 320 dp).
 
+## Wide By Ear grid (design iteration D2)
+
+In `TunerLayout.Wide` every `tuner.card.<numeral>` is square (±1 dp) and at least `stringCardMinWide`; the grid is
+centred in `tuner.byEar`; four strings are two rows of two; seven strings in an 830 × 740 dp host are three rows, in a
+776 × 560 dp host all inside `tuner.byEar` without scrolling (`TunerScreenLayoutTest.wideCardsAreSquareInACentredGrid`,
+`aShorterWideWindowFitsAllSevenCards`, `WideStringGridTest`). Stacked (phone portrait) is unchanged and scrolls.
+
 ## Unchanged
 
 `Stacked`, `Wide` and `Landscape` keep every existing contract (`specs/003-instrument-tuner/contracts/tuner-screen.md`,

@@ -112,3 +112,28 @@ Lanes after D1: JVM and iPhone 17 green (new `VerticalFoldTest`, `MetronomeHinge
 474/474 on the Pixel 6 Pro and the fold emulator, core/data/engine green except the emulator's
 `MetronomeTimingEndToEndTest` (the emulator audio clock, engine unchanged). Not done for D1: the Stitch screens still show the first build's lower regions; the
 wide tuner's gauge still sits across a book-posture hinge (not requested).
+
+## Design iteration D2 (2026-10-02): the wide By Ear grid
+
+| File | What it shows |
+|---|---|
+| `android-fold-d2-book-byear-cello-before.png` | Before: the wide grid spanning the whole card (~830 dp), 255 × 160 dp cards, the cello as 3 + 1 |
+| `android-fold-d2-flat-byear-cello.png` | Opened flat: the cello as 2 + 2 square cards, centred in both directions |
+| `android-fold-d2-flat-byear7.png` | Opened flat: seven strings 3 + 3 + 1, square, the last card centred, all visible |
+| `android-fold-d2-flat-byear7-short-before.png` | `wm size 2076x1700` (852 × 697 dp) before the fit: the seventh card below the card's edge |
+| `android-fold-d2-flat-byear7-short.png` | The same window after: 4 + 3 square cards, the short row centred, all visible |
+| `ios-ipadpro-d2-byear.png` | iPad Pro simulator, By Ear: square cards, grid centred both ways |
+| `android-pixel6pro-d2-byear.png` | Pixel 6 Pro portrait: unchanged two-column grid that scrolls |
+
+Runs: the app was installed and launched on the iPhone 17 and iPad Pro simulators, the iPhone 14 (devicectl, process
+4104; no CLI screenshot exists for the phone) and the Pixel 6 Pro (the microphone prompt answered "Only this time").
+The emulator was reset with `wm size reset` after the short-window check.
+
+Lanes after D2: JVM, iPhone 17 and iPad Pro green (`WideStringGridTest`, `wideCardsAreSquareInACentredGrid`,
+`aShorterWideWindowFitsAllSevenCards`); Android device: `:shared:ui` 481/481 on the Pixel 6 Pro and the fold emulator,
+core/data/engine green except the emulator's `MetronomeTimingEndToEndTest` (its audio clock; engine unchanged).
+
+Stitch (T043): tabletop v2 screens Auto Listen `13960272211985517803`, By Ear `1287530494016647918`, Metronome
+`862177940405487424` replace (and hide) the v1 uploads at the same canvas positions; new screens "Tuner By Ear (Foldable
+Open)" `5540163438071420436` (x 9600, y 1166) and "Metronome (Foldable Book)" `6217065375771697420` (x 4200, y 13317).
+All five pulled HTML files are byte-identical to the uploads; the v1 instances are hidden.

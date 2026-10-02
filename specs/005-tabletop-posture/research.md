@@ -92,3 +92,29 @@ Decided with the user on 2026-10-02 after trying the first build on the emulator
 
 **Alternatives considered**: applying the hinge split to the wide tuner too — not requested; the gauge still sits
 across the fold there (noted in `screenshots/NOTES.md`).
+
+## R9 — Design iteration D2: the wide By Ear grid
+
+Decided with the user on 2026-10-02 (spec "Design iteration D2", FR-013).
+
+**Findings**: on the fold opened flat (852 × 883 dp) the wide grid filled the whole card (about 830 dp) with 255 × 160 dp
+cards. `StringCardGrid` applied `widthIn(max = byEarGridMaxWidthWide)` *after* the caller's `fillMaxWidth()`, and a
+`widthIn` inside a `fillMaxWidth` cannot narrow it, so the 576 dp cap never took effect; wide cards were only
+`heightIn(min = 144.dp)`. With the window shortened to 852 × 697 dp (`adb shell wm size 2076x1700`) the seven-string
+grid ran under the card and scrolled.
+
+**Decision**:
+- The cap is applied before the caller's modifier; wide cards use the stacked layout's `squareOrTaller`; the
+  `stringCardHeightWide` token (the design's `h-36`) is gone, `stringCardMinWide` (128 dp, the smallest card whose
+  numeral, note and Audition button still fit) replaces it.
+- `WideStringGrid.arrange(count, baseColumns, full, gap, widthBudget, heightBudget, min)`: the base columns (three,
+  or two when that fills every row and three would not: the cello) with square cards shrunk to fit, never over the
+  three-column size; if that would go under `min`, the first larger column count that keeps `min`; else the largest
+  cards, raised to `min`, and the parent scrolls. Wide cards get exactly that width; rows are centred
+  (`Arrangement.spacedBy(gap, CenterHorizontally)`).
+- `FittedByEarBlock` (a `SubcomposeLayout` in `ByEarPane`) measures the controls row, hands the grid the card's width
+  and the height left as budgets, and centres the block vertically when it is shorter than the card; it sits in a
+  `verticalScroll` so the fallback still scrolls. The stacked (phone portrait) branch is unchanged.
+
+**Alternatives considered**: non-square cards when height-limited (rejected: the user asked for 1:1); a smaller card
+typography below 128 dp (more code for a case only very short large windows reach).
