@@ -184,6 +184,55 @@ class TunerScreenLayoutTest {
         assertTrue(bounds("tuner.card.V").top > bounds("tuner.card.VII").bottom, "stacked does not use two columns")
     }
 
+    /** A large window (a foldable opened flat): the wide grid keeps its 576 dp cap, centred, with square cards. */
+    @Test
+    fun wideCardsAreSquareInACentredGrid() = runComposeUiTest {
+        setScreen(byEarSeven, TunerLayout.Wide, size = DpSize(830.dp, 740.dp))
+        val numerals = listOf("VII", "VI", "V", "IV", "III", "II", "I")
+        val cards = numerals.map { bounds("tuner.card.$it") }
+        for ((numeral, card) in numerals.zip(cards)) {
+            assertTrue(abs((card.width - card.height).value) < 1f, "card $numeral is ${card.width} x ${card.height}, not square")
+        }
+        val gridLeft = cards.minOf { it.left }
+        val gridRight = cards.maxOf { it.right }
+        assertTrue(gridRight - gridLeft <= 576.dp + 1.dp, "the grid is ${gridRight - gridLeft} wide, over its 576 dp cap")
+        val pane = bounds("tuner.byEar")
+        assertTrue(abs(((gridLeft + gridRight) / 2 - (pane.left + pane.right) / 2).value) < 1f, "the grid is not centred in $pane")
+        // Seven square cards are taller than the card, so that column scrolls from the top; the cello's four sit in
+        // the card's vertical middle with the controls.
+        setScreen(byEarCello, TunerLayout.Wide, size = DpSize(830.dp, 740.dp))
+        val celloPane = bounds("tuner.byEar")
+        val cello = listOf("IV", "III", "II", "I").map { bounds("tuner.card.$it") }
+        val block = DpRect(cello.minOf { it.left }, bounds("tuner.preset.picker").top, cello.maxOf { it.right }, cello.maxOf { it.bottom })
+        // The cello's four cards are two rows of two, centred under the controls.
+        val (iv, iii, ii, i) = cello
+        assertEquals(iv.top, iii.top)
+        assertEquals(ii.top, i.top)
+        assertTrue(ii.top > iv.bottom, "the cello does not use two rows of two")
+        // Two rows need less height than the guitar's three, so the cello's cards are at least the guitar's size.
+        assertTrue(iv.width >= cards.first().width - 0.5.dp, "the cello's cards (${iv.width}) are smaller than the guitar's (${cards.first().width})")
+        assertTrue(abs(((block.left + block.right) / 2 - (celloPane.left + celloPane.right) / 2).value) < 1f, "the cello grid is not centred in $celloPane")
+        // The row's tallest item is the untagged loop-tone box, a few dp above the picker's top: 8 dp of slack.
+        assertTrue(abs(((block.top - celloPane.top) - (celloPane.bottom - block.bottom)).value) < 8f, "the By Ear block $block is not centred vertically in $celloPane")
+    }
+
+    /**
+     * A shorter large window (the fold at 852 x 697 dp less the shell): the seven cards shrink, still square, so the
+     * whole grid fits without scrolling.
+     */
+    @Test
+    fun aShorterWideWindowFitsAllSevenCards() = runComposeUiTest {
+        setScreen(byEarSeven, TunerLayout.Wide, size = DpSize(776.dp, 560.dp))
+        val pane = bounds("tuner.byEar")
+        val cards = listOf("VII", "VI", "V", "IV", "III", "II", "I").map { bounds("tuner.card.$it") }
+        for (card in cards) {
+            assertTrue(card.bottom <= pane.bottom + 0.5.dp && card.top >= pane.top - 0.5.dp, "card $card is outside the card $pane")
+            assertTrue(abs((card.width - card.height).value) < 1f, "card $card is not square")
+            assertTrue(card.width >= 128.dp - 0.5.dp, "card $card is under the 128 dp minimum")
+        }
+        assertTrue(cards.first().width < 186.dp, "the cards did not shrink to fit (${cards.first().width})")
+    }
+
     @Test
     fun landscapeStacksTheSelectorsBesideTheContent() = runComposeUiTest {
         setScreen(autoListen, TunerLayout.Landscape, size = phoneLandscape)

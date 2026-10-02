@@ -54,9 +54,9 @@ import audio.tembra.ui.theme.TembraTheme
 /**
  * One By Ear card (spec FR-017, FR-018, research R9): numeral, target frequency, note and octave and the Audition
  * button; while sounding the card is outlined in `secondary` with the design's glow, the button reads "Playing" and a
- * three-bar level indicator moves unless the platform asks for reduced motion (spec FR-027). Stacked cards are square
- * (or taller), wide cards at least 144 dp on `surfaceContainerLowest`, landscape cards fill their row with the
- * design's tighter padding.
+ * three-bar level indicator moves unless the platform asks for reduced motion (spec FR-027). Stacked and wide cards are
+ * square (or taller when large fonts need it; wide ones on `surfaceContainerLowest`), landscape cards fill their row
+ * with the design's tighter padding.
  */
 @Composable
 internal fun StringCard(
@@ -77,14 +77,13 @@ internal fun StringCard(
     val border = if (playing) colors.secondary else colors.outlineVariant.copy(alpha = BORDER_ALPHA)
     val glow = gradients.playingGlow
     val sizeModifier = when (layout) {
-        TunerLayout.Stacked -> Modifier.squareOrTaller()
-        TunerLayout.Wide -> Modifier.heightIn(min = spacing.stringCardHeightWide)
-        TunerLayout.Landscape -> Modifier.fillMaxHeight()
+        TunerLayout.Stacked, TunerLayout.Wide -> Modifier.squareOrTaller()
+        TunerLayout.Landscape, TunerLayout.Tabletop -> Modifier.fillMaxHeight()
     }
     val padding = when (layout) {
         TunerLayout.Stacked -> spacing.md
         TunerLayout.Wide -> spacing.md + spacing.xs / 2
-        TunerLayout.Landscape -> spacing.sm
+        TunerLayout.Landscape, TunerLayout.Tabletop -> spacing.sm
     }
     Column(
         modifier = modifier

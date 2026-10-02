@@ -17,7 +17,8 @@ import audio.tembra.ui.theme.TembraTheme
 /**
  * The selector bar above both modes (spec FR-002, FR-023): instrument, audio-state pill and mode. The string count
  * is not here: it only matters to By Ear, so it sits beside the tuning preset in that card (clarified 2026-09-28).
- * [TunerLayout.Wide] puts the three on one row; the stacked layout uses two rows (instrument + pill; mode). Phone
+ * [TunerLayout.Wide] puts the three on one row (the tabletop form uses [TunerTabletopSettings] instead and takes the
+ * same one-row branch should it ever be passed); the stacked layout uses two rows (instrument + pill; mode). Phone
  * landscape does not use this bar: [TunerSettingsColumn] holds the same controls in a column. It takes only the
  * fields it renders, so the 10 Hz reading never recomposes it.
  */
@@ -33,7 +34,7 @@ internal fun TunerSelectors(
 ) {
     val spacing = TembraTheme.spacing
     when (layout) {
-        TunerLayout.Wide -> Row(
+        TunerLayout.Wide, TunerLayout.Tabletop -> Row(
             modifier = modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(spacing.sm),
             verticalAlignment = Alignment.CenterVertically,

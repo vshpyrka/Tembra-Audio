@@ -55,7 +55,8 @@ internal fun MetronomeSettingsPanel(
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(TembraTheme.spacing.md)) {
         when (layout) {
-            MetronomeLayout.Stacked -> {
+            // The tabletop form lays out its own controls card (MetronomeScreenContent) and never reaches this panel.
+            MetronomeLayout.Stacked, MetronomeLayout.Tabletop -> {
                 BarShapeCard(state = state, callbacks = callbacks, telemetry = telemetry)
                 SoundPicker(state, callbacks, ClickSoundPickerLayout.Dropdown, Modifier.align(Alignment.CenterHorizontally))
             }
