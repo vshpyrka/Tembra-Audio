@@ -111,6 +111,13 @@ centred headings), added the book-posture hinge split for the wide metronome and
 research R8 records the decisions, spec "Design iteration D1" and FR-011/FR-012 the behaviour, tasks T030–T036 the
 work. The Constitution Check is unchanged: no dependency, the hinge comes from the same common `windowPosture`.
 
+## Design iteration D2 (2026-10-02)
+
+The wide By Ear grid (a feature 003 layout, reached here on the opened foldable): square cards, a working 576 dp cap,
+two-by-two for the cello, cards fitted to the height (`WideStringGrid`, `FittedByEarBlock`). Research R9, FR-013,
+tasks T037–T043. New file `commonMain/.../tuner/WideStringGrid.kt`; token `stringCardMinWide` replaces
+`stringCardHeightWide`. Constitution Check unchanged.
+
 ## Complexity Tracking
 
 None.

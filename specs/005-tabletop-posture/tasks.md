@@ -104,6 +104,18 @@ description: "Task list for feature 005: tabletop posture"
 - [X] T035 Lanes: JVM, iPhone 17, iPad Pro, Android device on the Pixel 6 Pro and the fold emulator; captures `android-fold-d1-*.png` and NOTES
 - [X] T036 Spec, research R8, data model, contract and plan updated for D1 (Stitch screens not refreshed: the user asked for code and spec-kit documents only)
 
+---
+
+## Phase 9: Design iteration D2 (2026-10-02, the wide By Ear grid)
+
+- [X] T037 [US6] Square wide cards: `StringCard` uses `squareOrTaller` for `Wide`; `StringCardGrid` applies its width cap before the caller's modifier; token `stringCardHeightWide` removed (`TunerTokensTest`)
+- [X] T038 [US6] Centred grid: the wide `ByEarPane` centres the controls and the grid; a short last row is centred; test `TunerScreenLayoutTest.wideCardsAreSquareInACentredGrid`
+- [X] T039 [US6] Cello 2 + 2: two wide columns when that fills every row and three would not; the cello grid narrows so its cards keep their size
+- [X] T040 [P] [US6] `WideStringGrid` (`commonMain/.../tuner/WideStringGrid.kt`) with `arrange(...)`; test `commonTest/.../tuner/WideStringGridTest.kt` (tall keeps base columns at full size, slightly short shrinks in base columns, short spreads 7 as 4 + 3, cello keeps 2 + 2, never under 128 dp); token `stringCardMinWide` = 128 dp
+- [X] T041 [US6] `FittedByEarBlock` in `ByEarPane` hands the grid width and height budgets; test `TunerScreenLayoutTest.aShorterWideWindowFitsAllSevenCards`
+- [X] T042 Runs and lanes: the app on the iPhone 17 and iPad Pro simulators, the iPhone 14 and the Pixel 6 Pro; JVM, iPhone 17, iPad Pro and Android device lanes; captures `*-d2-*.png`
+- [X] T043 Stitch: tabletop screens refreshed to D1 (v2), new "Metronome (Foldable Book)" and "Tuner By Ear (Foldable Open)" screens; spec, research R9, data model, contract, plan and NOTES updated
+
 ## Dependencies
 
 Phase 1 → Phase 2 → US1 → US2 (shares `TunerTabletopSettings`) ; US3 depends only on Phase 2 ; US4 after US1–US3 ; Polish last.

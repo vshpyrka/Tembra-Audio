@@ -52,8 +52,8 @@ data class TembraSpacing(
     val byEarGridMaxWidth: Dp = 384.dp,
     /** By Ear grid width on expanded windows: `max-w-xl`. */
     val byEarGridMaxWidthWide: Dp = 576.dp,
-    /** By Ear card height on expanded windows: `h-36` (compact cards are square). */
-    val stringCardHeightWide: Dp = 144.dp,
+    /** The smallest a wide By Ear card shrinks to fit the height: its numeral, note and Audition button still fit. */
+    val stringCardMinWide: Dp = 128.dp,
     /** Loop toggle track: `w-8 h-4`, knob `w-3 h-3`. */
     val toggleWidth: Dp = 32.dp,
     val toggleHeight: Dp = 16.dp,

@@ -32,6 +32,18 @@ The hinge of a window half-opened like a book, in window pixels.
 - `currentVerticalFold()`: the composable read. `FoldSplitRow(fold, …, start, end)` maps it into the layout by its own
   left edge in the window and splits with `FoldSplitGeometry` on the x axis.
 
+## 1b. WideStringGrid (`audio.tembra.ui.tuner`, design iteration D2)
+
+| Field | Type | Rule |
+|---|---|---|
+| `columns` | `Int` | Cards per row in the wide By Ear grid |
+| `card` | `Dp` | The square card's side |
+
+`arrange(count, baseColumns, full, gap, widthBudget, heightBudget, min)`: `baseColumns` (3, or 2 when
+`count % 3 != 0 && count % 2 == 0`) while `min(full, byWidth, byHeight) >= min`; otherwise the first larger count that
+keeps `min`; otherwise the largest card, raised to `min`. `full` is the card three columns give across
+`byEarGridMaxWidthWide` (576 dp) with 20 dp gaps.
+
 ## 2. TunerLayout / MetronomeLayout (existing enums, one new entry each)
 
 | Entry | When |

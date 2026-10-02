@@ -56,6 +56,20 @@ After trying the first build on the Pixel 9 Pro Fold emulator the user asked for
   the shell's top bar used to grow by the cutout's height and leave a gap above the content; the top bar now only
   keeps clear of the top and side insets. (A navigation-shell defect from feature 002, fixed here.)
 
+## Design iteration D2 (2026-10-02)
+
+Looking at the tuner's By Ear mode on the foldable opened flat, the user asked for the string cards on large screens
+to be square and centred, for the cello's four cards to show as two rows of two, and for the cards to stay fully
+visible on a somewhat smaller large screen rather than scroll (scrolling stays for a phone in portrait):
+
+- **Square, centred cards.** On large screens every string card is square, and the grid is centred under the preset
+  row and in the middle of the card's height when it is shorter than the card.
+- **Cello: two rows of two.** Four strings show as 2 + 2; the guitar keeps three per row (3 + 3, or 3 + 3 + 1 with the
+  last card centred).
+- **Fit, do not scroll.** When the grid would be taller than the card, the cards shrink, staying square; only when
+  that would make them smaller than their content allows does the grid use more columns (seven strings as 4 + 3).
+  Scrolling remains for windows too small even for that, and for a phone in portrait.
+
 ## User Scenarios & Testing *(mandatory)*
 
 Every story is checked on a foldable that can be half-opened with a horizontal fold. "Upper half" is the part of the
@@ -153,6 +167,24 @@ dial, tap tempo and play fill the page right of it.
 
 ---
 
+### User Story 6 - Tune by ear on a large screen without scrolling (Priority: P2)
+
+On a tablet or an opened foldable, By Ear shows every string card at once as a centred grid of square cards.
+
+**Independent Test**: open By Ear on the foldable opened flat, and on a shorter large window, with six, seven and four
+(cello) strings; every card is visible, square and centred.
+
+**Acceptance Scenarios**:
+
+1. **Given** a large window and the guitar, **When** By Ear shows, **Then** the cards are square, three per row, the
+   last short row centred, and the grid centred under the preset row.
+2. **Given** a large window and the cello, **When** By Ear shows, **Then** its four cards are two rows of two.
+3. **Given** a large window too short for three rows of full-size cards, **When** By Ear shows seven strings, **Then**
+   the cards shrink or spread over four columns and all seven stay visible without scrolling.
+4. **Given** a phone in portrait, **When** By Ear shows, **Then** its two-column grid scrolls as before.
+
+---
+
 ### User Story 4 - Everything else stays as it is (Priority: P2)
 
 On phones, tablets, an iPhone, an iPad and on a foldable that is flat, closed, or half-opened with a vertical fold
@@ -223,6 +255,11 @@ and the iPad Pro simulators are unchanged; on the foldable, flat and book postur
   measured from the fold's reported position (D1).
 - **FR-012**: The shell's top bar MUST keep clear of the status bar and of a display cutout on the top or the sides,
   and MUST NOT grow by a cutout reported on the bottom edge (D1, a feature 002 defect).
+- **FR-013**: On large screens By Ear MUST show square string cards in a grid centred horizontally and, when shorter
+  than its card, vertically; four strings MUST show as two rows of two and other counts three per row with a short
+  last row centred; when the grid would not fit the card's height the cards MUST shrink (staying square) or, below
+  the size their content needs, spread over more columns, so that every card is visible without scrolling; only a
+  window too small even for that, or a phone in portrait, scrolls (D2).
 
 ### Key Entities
 
