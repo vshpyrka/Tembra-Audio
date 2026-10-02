@@ -14,7 +14,9 @@ import androidx.compose.ui.platform.testTag
 import audio.tembra.core.tuner.TunerMode
 import audio.tembra.engine.AudioState
 import audio.tembra.ui.designsystem.FoldSplit
+import audio.tembra.ui.designsystem.FoldSplitRow
 import audio.tembra.ui.posture.TabletopFold
+import audio.tembra.ui.posture.VerticalFold
 import audio.tembra.ui.theme.TembraTheme
 
 /**
@@ -22,7 +24,8 @@ import audio.tembra.ui.theme.TembraTheme
  * put the selector bar above the Auto Listen or By Ear card; [TunerLayout.Landscape] puts the settings column beside
  * it (spec FR-023); [TunerLayout.Tabletop] splits the screen at the tabletop [fold]: the Auto Listen or By Ear card above
  * it, [TunerTabletopSettings] below it (feature 005, FR-003, FR-004; a null [fold] splits in half, as the UI tests do),
- * the regions tagged `tuner.tabletop.upper` and `.lower`. Root tag `screen.tuner` keeps the shell's convention. Each
+ * the regions tagged `tuner.tabletop.upper` and `.lower`; [TunerLayout.Wide] with a book-posture [verticalFold] puts
+ * the same controls card before the hinge and the gauge or the string cards after it (design iteration D3). Root tag `screen.tuner` keeps the shell's convention. Each
  * child receives only the fields it renders, so the 10 Hz reading recomposes the meter and nothing beside it.
  */
 @Composable
@@ -33,6 +36,7 @@ fun TunerScreenContent(
     layout: TunerLayout,
     modifier: Modifier = Modifier,
     fold: TabletopFold? = null,
+    verticalFold: VerticalFold? = null,
 ) {
     val spacing = TembraTheme.spacing
     val root = modifier
@@ -72,6 +76,36 @@ fun TunerScreenContent(
                         preset = state.preset,
                         presets = state.presets,
                         loopTone = state.loopTone,
+                        callbacks = callbacks,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
+            },
+        )
+        // A book-posture foldable splits the wide tuner at its hinge (design iteration D3): the controls card before it,
+        // the gauge or the string cards after it, each a gutter clear of the fold.
+        TunerLayout.Wide if verticalFold != null -> FoldSplitRow(
+            fold = verticalFold,
+            modifier = root,
+            start = {
+                TunerTabletopSettings(
+                    instrument = state.instrument,
+                    guitarStrings = state.guitarStrings,
+                    mode = state.mode,
+                    pill = state.pill,
+                    preset = state.preset,
+                    presets = state.presets,
+                    loopTone = state.loopTone,
+                    callbacks = callbacks,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            },
+            end = {
+                when (state.mode) {
+                    TunerMode.AutoListen -> ModePane(state = state, callbacks = callbacks, telemetry = telemetry, layout = layout, modifier = Modifier.fillMaxSize())
+                    TunerMode.ByEar -> ByEarCardsPane(
+                        preset = state.preset,
+                        playingIndex = state.audition?.stringIndex,
                         callbacks = callbacks,
                         modifier = Modifier.fillMaxSize(),
                     )

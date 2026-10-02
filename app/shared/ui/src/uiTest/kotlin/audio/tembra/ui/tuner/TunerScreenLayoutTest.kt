@@ -175,11 +175,12 @@ class TunerScreenLayoutTest {
 
     @Test
     fun threeColumnsWhenWideTwoWhenStacked() = runComposeUiTest {
-        setScreen(byEarSeven, TunerLayout.Wide)
+        // A wide window (the wide layout starts at 840 dp): a phone-width host would let the grid drop to two columns.
+        setScreen(byEarSeven, TunerLayout.Wide, size = DpSize(830.dp, 740.dp))
         assertEquals(bounds("tuner.card.VII").top, bounds("tuner.card.VI").top)
         assertEquals(bounds("tuner.card.VII").top, bounds("tuner.card.V").top)
         assertTrue(bounds("tuner.card.IV").top > bounds("tuner.card.VII").bottom, "IV does not start the second row")
-        setScreen(byEarSeven, TunerLayout.Stacked)
+        setScreen(byEarSeven, TunerLayout.Stacked, size = null)
         assertEquals(bounds("tuner.card.VII").top, bounds("tuner.card.VI").top)
         assertTrue(bounds("tuner.card.V").top > bounds("tuner.card.VII").bottom, "stacked does not use two columns")
     }

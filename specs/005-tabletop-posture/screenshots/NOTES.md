@@ -137,3 +137,21 @@ Stitch (T043): tabletop v2 screens Auto Listen `13960272211985517803`, By Ear `1
 `862177940405487424` replace (and hide) the v1 uploads at the same canvas positions; new screens "Tuner By Ear (Foldable
 Open)" `5540163438071420436` (x 9600, y 1166) and "Metronome (Foldable Book)" `6217065375771697420` (x 4200, y 13317).
 All five pulled HTML files are byte-identical to the uploads; the v1 instances are hidden.
+
+## Design iteration D3 (2026-10-02): the tuner's hinge split
+
+| File | What it shows |
+|---|---|
+| `android-fold-d3-book-autolisten-before-heading.png` | First build: controls before the hinge, gauge after it; the heading clipped to "TUNER CONTROI" under the TEST SIGNAL pill |
+| `android-fold-d3-book-autolisten.png` | After `CentredHeading`: the heading centred, the pill centred under it |
+| `android-fold-d3-book-byear7.png` | By Ear: controls card (7-String, preset, loop tone) before the hinge; seven square cards two per row after it |
+
+Runs: the app on the Pixel 6 Pro, the fold emulator (book posture: half-opened, rotation 0), the iPhone 17 and iPad Pro
+simulators and the iPhone 14 (devicectl). Lanes: JVM, iPhone 17, iPad Pro green, zero warnings (one
+`UNNECESSARY_SAFE_CALL` in `CentredHeading` fixed on the way). Android device, first run: the emulator 485/485, the
+Pixel 6 Pro 2 failures, both test-host artifacts of its 412 dp window: an 852 dp host is centred about 220 dp left of
+the window's origin, so `TunerHingeLayoutTest`'s fold (given in window coordinates as if the host sat at 0) left the
+pane beside it ~178 dp wide; and `threeColumnsWhenWideTwoWhenStacked` forced the wide layout into a phone-width host,
+where the grid now (D3) drops to two columns. The hinge tests now place the fold relative to the host and read bounds
+relative to it; the column test uses an 830 × 740 dp host. Rerun: `:shared:ui` 485/485 on both the Pixel 6 Pro and the
+emulator (core, data, engine as before; the emulator's `MetronomeTimingEndToEndTest` still fails on its audio clock).

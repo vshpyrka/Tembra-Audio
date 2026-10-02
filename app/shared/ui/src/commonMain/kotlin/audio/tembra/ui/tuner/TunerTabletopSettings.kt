@@ -15,7 +15,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import audio.tembra.core.tuner.GuitarStringCount
 import audio.tembra.core.tuner.Instrument
 import audio.tembra.core.tuner.TunerMode
@@ -55,17 +57,22 @@ internal fun TunerTabletopSettings(
                 .padding(spacing.md),
             verticalArrangement = Arrangement.spacedBy(spacing.md, Alignment.CenterVertically),
         ) {
-            // The heading centred over the card, the audio-state pill at the end of its line (design iteration D1).
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                Text(
-                    text = TunerCopy.tunerControls.uppercase(),
-                    style = TembraTheme.typography.labelSmall,
-                    color = colors.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                if (pill != null) AudioStatePillView(pill, modifier = Modifier.align(Alignment.CenterEnd))
-            }
+            // The heading centred over the card, the audio-state pill at the end of its line (design iteration D1), or
+            // centred under it when the card is too narrow for both (beside a book-posture hinge, D3).
+            CentredHeading(
+                heading = {
+                    Text(
+                        text = TunerCopy.tunerControls.uppercase(),
+                        style = TembraTheme.typography.labelSmall,
+                        color = colors.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                },
+                trailing = { if (pill != null) AudioStatePillView(pill) },
+                gap = spacing.sm,
+                modifier = Modifier.fillMaxWidth(),
+            )
             Box(modifier = Modifier.fillMaxWidth().height(spacing.seam).background(colors.outlineVariant.copy(alpha = SEAM_ALPHA)))
             // Every control stacked full width in one centred column, no wider than the wide string grid (D1).
             Column(
@@ -87,3 +94,34 @@ internal fun TunerTabletopSettings(
 }
 
 private const val SEAM_ALPHA = 0.2f
+
+/**
+ * [heading] centred across the width with [trailing] at the end of the same line; when [trailing] would come within
+ * [gap] of the centred heading, [trailing] moves under it, centred, [gap] below. Measured once, nothing written back.
+ */
+@Composable
+private fun CentredHeading(heading: @Composable () -> Unit, trailing: @Composable () -> Unit, gap: Dp, modifier: Modifier = Modifier) {
+    Layout(contents = listOf(heading, trailing), modifier = modifier) { (headingMeasurables, trailingMeasurables), constraints ->
+        val width = constraints.maxWidth
+        val loose = constraints.copy(minWidth = 0, minHeight = 0)
+        val headingPlaceable = headingMeasurables.firstOrNull()?.measure(loose)
+        val trailingPlaceable = trailingMeasurables.firstOrNull()?.measure(loose)
+        val headingWidth = headingPlaceable?.width ?: 0
+        val headingHeight = headingPlaceable?.height ?: 0
+        val trailingWidth = trailingPlaceable?.width ?: 0
+        val trailingHeight = trailingPlaceable?.height ?: 0
+        val gapPx = gap.roundToPx()
+        val headingRight = (width + headingWidth) / 2
+        val oneLine = trailingPlaceable == null || headingRight + gapPx <= width - trailingWidth
+        val height = if (oneLine) maxOf(headingHeight, trailingHeight) else headingHeight + gapPx + trailingHeight
+        layout(width, height) {
+            if (oneLine) {
+                headingPlaceable?.place((width - headingWidth) / 2, (height - headingHeight) / 2)
+                trailingPlaceable?.place(width - trailingWidth, (height - trailingHeight) / 2)
+            } else {
+                headingPlaceable?.place((width - headingWidth) / 2, 0)
+                trailingPlaceable.place((width - trailingWidth) / 2, headingHeight + gapPx)
+            }
+        }
+    }
+}
