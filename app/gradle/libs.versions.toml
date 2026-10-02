@@ -17,10 +17,14 @@ metro = "1.4.4"
 androidx-activity = "1.13.0"
 androidx-compose = "1.12.1"
 androidx-test-runner = "1.7.0"
+# ServiceTestRule for the metronome foreground service test (feature 004, T042): released with runner 1.7.0.
+androidx-test-rules = "1.7.0"
 androidx-test-espresso = "3.7.0"
 oboe = "1.11.0"
 # DataStore Preferences multiplatform for the tuner's remembered choices (feature 003, research R13).
 androidx-datastore = "1.2.1"
+# Okio at the version DataStore 1.2.1 resolves (3.9.1), now a direct dependency of :shared:data (feature 004, research R16).
+okio = "3.9.1"
 android-compileSdk = "37"
 android-targetSdk = "36"
 android-minSdk = "26"
@@ -53,10 +57,14 @@ androidx-activity-compose = { module = "androidx.activity:activity-compose", ver
 androidx-compose-ui-test-junit4-android = { module = "androidx.compose.ui:ui-test-junit4-android", version.ref = "androidx-compose" }
 androidx-compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest", version.ref = "androidx-compose" }
 androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidx-test-runner" }
+androidx-test-rules = { module = "androidx.test:rules", version.ref = "androidx-test-rules" }
 androidx-test-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "androidx-test-espresso" }
 oboe = { module = "com.google.oboe:oboe", version.ref = "oboe" }
 # DataStore Preferences core (multiplatform; pulls datastore-core-okio and Okio 3.x): feature 003, research R13.
 androidx-datastore-preferences-core = { module = "androidx.datastore:datastore-preferences-core", version.ref = "androidx-datastore" }
+# Okio: the metronome's custom-click file store (feature 004, research R16); FakeFileSystem in tests only.
+okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
+okio-fakefilesystem = { module = "com.squareup.okio:okio-fakefilesystem", version.ref = "okio" }
 
 # Gradle plugin artifacts consumed by build-logic (convention plugins)
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }

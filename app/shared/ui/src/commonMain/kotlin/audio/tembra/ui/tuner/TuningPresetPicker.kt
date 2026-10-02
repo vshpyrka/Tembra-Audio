@@ -31,6 +31,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import audio.tembra.core.tuner.TuningPreset
 import audio.tembra.ui.theme.TembraIcon
 import audio.tembra.ui.theme.TembraIcons
@@ -78,7 +79,12 @@ internal fun TuningPresetPicker(current: TuningPreset, presets: List<TuningPrese
             }
             Icon(imageVector = TembraIcons.vector(TembraIcon.ExpandMore), contentDescription = null, tint = colors.outlineVariant, modifier = Modifier.size(spacing.pickerIconSize))
         }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+        DropdownMenu(
+            expanded = open,
+            onDismissRequest = { open = false },
+            // Bounded height: see MetronomeDefaults.MenuMaxHeight (iOS popup layers can offer infinite height).
+            modifier = Modifier.heightIn(max = MenuMaxHeight),
+        ) {
             for (preset in presets) {
                 val selected = preset.id == current.id
                 DropdownMenuItem(
@@ -101,3 +107,6 @@ internal fun TuningPresetPicker(current: TuningPreset, presets: List<TuningPrese
 
 private const val BORDER_ALPHA = 0.3f
 private const val HOVER_BORDER_ALPHA = 0.6f
+
+/** Same bound as the metronome menus: Compose's iOS popup layer can measure a dropdown with infinite height. */
+private val MenuMaxHeight = 360.dp

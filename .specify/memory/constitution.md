@@ -185,6 +185,17 @@ specifications technology-free and the test-first loop of Principle III intact.
   are Timeline, Tuner, Effects, Pads and Projects; the navigation also carries Home (the start
   destination), Metronome and Profile. The transport bar is present on every DAW screen. Fonts
   are Space Grotesk and Inter, bundled; live numbers use tabular figures.
+- The Metronome destination is a global, standalone metronome for playing along (amended
+  2026-09-29). It runs on its own tempo and settings, kept in the app's preferences, and is not
+  part of any recording session, project or timeline session: a project's tempo map never drives
+  it and it never drives a project. Its parts MUST be built for reuse by the transport and
+  timeline feature: the click sound set and its configuration (the built-in sounds, the custom
+  sound import and preparation, the Accent, Click and Sub levels), the tempo and tempo-name
+  model, the time signature, subdivision and accent-pattern model, and the engine's
+  sample-accurate click scheduler. When the transport and timeline feature lands, its transport
+  bar metronome toggle MUST drive that same click from the project tempo map, it takes over the
+  tempo and time signature from the project, and it MUST NOT duplicate the sound set, the models
+  or the scheduler.
 - Product name is "Tembra Audio".
 
 ## Development Workflow & Quality Gates
@@ -193,12 +204,14 @@ specifications technology-free and the test-first loop of Principle III intact.
   `/speckit-plan` (how, technology), `/speckit-tasks`, `/speckit-implement`. Specifications
   MUST NOT contain technology choices; plans MUST cite this constitution's principles in their
   Constitution Check and justify any deviation.
-- Build order is fixed: project scaffold, navigation shell, tuner, audio spine, transport and
-  timeline, mixer, metronome, effects and automation, recording and loops and speed,
+- Build order is fixed: project scaffold, navigation shell, tuner, metronome, audio spine,
+  transport and timeline, mixer, effects and automation, recording and loops and speed,
   collaboration. A plan MUST NOT pull later work forward without amending this order here. The
   tuner precedes the audio spine (amended 2026-09-26): it is the first feature to capture audio
   and produce sound, and its input and output paths MUST obey Principle I so the audio spine can
-  grow from them.
+  grow from them. The metronome follows the tuner (amended 2026-09-29): it is the second feature
+  to produce sound and the first to schedule it sample-accurately, and its click path MUST obey
+  Principle I so the audio spine and the transport can grow from it.
 - Definition of done for any task: failing test written first; tests green on the JVM and, for
   shared code, on the iOS simulator; engine changes green in the C++ test target; UI changes
   screenshot-verified at compact and expanded widths on Android and on the iOS simulator; no
@@ -227,4 +240,4 @@ specifications technology-free and the test-first loop of Principle III intact.
 - `CLAUDE.md` is the runtime guidance file for agents working in this repository; it MUST point
   at this constitution and MUST NOT restate rules in a way that drifts from it.
 
-**Version**: 1.1.0 | **Ratified**: 2026-09-19 | **Last Amended**: 2026-09-28
+**Version**: 1.2.0 | **Ratified**: 2026-09-19 | **Last Amended**: 2026-09-29

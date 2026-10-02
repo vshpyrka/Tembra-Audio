@@ -4,7 +4,8 @@ package audio.tembra.engine
 enum class AudioState {
     Idle,
     Listening,
-    Tone;
+    Tone,
+    Metronome;
 
     companion object {
         /** Maps the C ABI value; anything unknown reads as [Idle]. */

@@ -36,6 +36,8 @@ fun registerEngineBuild(target: String, sysroot: String): TaskProvider<Exec> {
         description = "Builds libtembra_engine.a for $target with CMake"
         inputs.dir("$source/include")
         inputs.dir("$source/src")
+        inputs.dir("$source/src/core")
+        inputs.dir("$source/src/metronome")
         inputs.dir("$source/src/tuner")
         inputs.dir("$source/src/platform")
         inputs.file("$source/CMakeLists.txt")
@@ -70,6 +72,8 @@ tasks.register<Exec>("engineHostTest") {
     val recordingsDir = rootDir.parentFile.resolve("app/shared/ui/src/commonMain/composeResources/files/tuner").absolutePath
     inputs.dir("$source/include")
     inputs.dir("$source/src")
+    inputs.dir("$source/src/core")
+    inputs.dir("$source/src/metronome")
     inputs.dir("$source/src/tuner")
     inputs.dir("$source/src/platform")
     inputs.dir("$source/tests")

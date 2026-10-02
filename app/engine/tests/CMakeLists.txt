@@ -11,13 +11,18 @@ add_executable(tembra_engine_tests
     engine_info_test.cpp
     seqlock_test.cpp
     ring_buffer_test.cpp
-    tuner_engine_state_test.cpp
+    engine_core_state_test.cpp
     mpm_test.cpp
     band_pass_test.cpp
     tuner_analyzer_test.cpp
     tone_generator_test.cpp
     sample_player_test.cpp
     recordings_on_pitch_test.cpp
+    triple_buffer_test.cpp
+    click_synth_test.cpp
+    click_sample_builder_test.cpp
+    custom_sound_loader_test.cpp
+    metronome_renderer_test.cpp
 )
 target_include_directories(tembra_engine_tests PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../src

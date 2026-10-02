@@ -27,9 +27,13 @@ dependencies {
     implementation(project(":shared:data"))
     implementation(libs.androidx.activity.compose)
     implementation(libs.metrox.viewmodel.compose)
+    // Metro generates AndroidAppGraph here, and the shared AppBindings expose the one DataStore<Preferences> (feature 004).
+    implementation(libs.androidx.datastore.preferences.core)
     // AndroidMicrophonePermission suspends on the activity result (feature 003, research R6).
     implementation(libs.kotlinx.coroutines.core)
-    // AndroidMicrophonePermissionTest (feature 003): the app module hosts one instrumented test.
+    // AndroidMicrophonePermissionTest (feature 003) and the feature 004 host and picker tests are instrumented tests of this module.
     androidTestImplementation(libs.androidx.test.runner)
+    // AndroidBackgroundPlaybackHostTest (feature 004): ServiceTestRule binds the metronome foreground service.
+    androidTestImplementation(libs.androidx.test.rules)
     androidTestImplementation(libs.kotlinx.coroutines.core)
 }

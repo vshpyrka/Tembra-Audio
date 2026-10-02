@@ -31,6 +31,7 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import audio.tembra.core.tuner.PitchDirection
 import audio.tembra.engine.PitchSnapshot
+import audio.tembra.ui.designsystem.rememberFrameTick
 import audio.tembra.ui.theme.TembraIcon
 import audio.tembra.ui.theme.TembraIcons
 import audio.tembra.ui.theme.TembraTheme

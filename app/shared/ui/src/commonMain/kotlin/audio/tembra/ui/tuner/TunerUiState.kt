@@ -37,6 +37,8 @@ data class TunerUiState(
             AudioState.Listening -> AudioStatePill.MicActive
             AudioState.Tone -> AudioStatePill.ToneOut
             AudioState.Idle -> null
+            // The metronome's own state: it stops before the tuner can start, so the tuner never shows it.
+            AudioState.Metronome -> null
         }
 
     /** The meter is replaced by the denied panel (spec FR-015); a test signal never needs the microphone. */

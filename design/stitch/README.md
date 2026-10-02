@@ -17,7 +17,7 @@ Pulled from Google Stitch project **Tembra Audio DAW Design** on 2026-09-17.
 
 ## Screen catalogue
 
-Eight screens, each in a phone (390-wide) and tablet (1280-wide) variant. Five of them are the primary bottom-nav / left-rail destinations.
+Nine screens, each in a phone (390-wide) and tablet (1280-wide) variant; the tuner and the metronome also have phone-landscape variants. Five of them are the primary bottom-nav / left-rail destinations.
 
 | Screen | Phone | Tablet | What it shows |
 |--------|-------|--------|---------------|
@@ -29,6 +29,7 @@ Eight screens, each in a phone (390-wide) and tablet (1280-wide) variant. Five o
 | **Instrument tuner** | `instrument-tuner/phone` | `instrument-tuner/tablet` | Guitar / Cello, 6- or 7-string, Auto Listen vs By Ear. Arc gauge with needle, detected note (E2), Hz readout vs target, flat/sharp arrows, "In tune" badge, mic-active pill. |
 | **Tuner by ear** | `tuner-by-ear-cello/phone` | `tuner-by-ear-7-string-guitar/tablet` | Reference-tone mode: tuning preset picker, loop-tone toggle, one card per string (note, Hz, Audition / Playing). |
 | **Tuner, phone landscape** (added 2026-09-28) | `tuner-landscape-auto-listen-a` … `-e`, `tuner-landscape-by-ear-a` … `-g` | — | Twelve variants of the tuner for a phone held sideways (all `DESKTOP` canvases, about 1280 × 410–720). The app follows `tuner-landscape-auto-listen-b` ("Mobile Landscape Auto Listen Tuner") and `tuner-landscape-by-ear-g` / `-e` ("Mobile Landscape By Ear", six and seven strings): a labelled rail, a settings column (instrument, strings, mode, preset, loop toggle) and the gauge or the string cards beside it. Rationale and the rejected variants: `specs/003-instrument-tuner/research.md` R9/R11. |
+| **Metronome** (added 2026-09-29; all three screens re-synced to the app on 2026-10-01) | `metronome/phone` | `metronome/tablet` | Each screen is now an HTML upload that mirrors the app's own captures (`specs/004-metronome/screenshots/`), not a Stitch generation. Phone (v3): app header, one compact bar-shape card (time-signature menu pill beside four note-figure subdivision tiles, accent cells with labels, STYLE pills), the sound pill, a dial card that takes the remaining height, the Tap Tempo and Play row with an 8 px halo, and the app's bottom bar (Home, Timeline, Tuner, Metronome, Projects, Profile). `metronome/phone-landscape` (v9): header, the app's rail, a 2:3 split with the stacked landscape card (signature and style menu pills, tiles, label-less cells, sound pill) and the dial card spanning the right pane with the transport beneath. Tablet (v2): header, rail, the Wide layout's settings column (TIME SIGNATURE chips, RHYTHM SUBDIVISION chips with glyphs and labels, accent cells with STYLE pills, CLICK TIMBRE tiles) beside a dial card filling the rest and the transport card beneath. Superseded instances are hidden on the canvas; Stitch's three generated proposals for the compact phone layout stay for reference. |
 | **Audio export & stem mastering** | `export-mastering/phone` | `export-mastering/tablet` | Stem routing matrix (per-stem checkbox, tag, format, size), estimated total, format (WAV / FLAC / MP3 320 / AAC), sample rate, bit depth, gradient "Render selected stems" CTA. |
 
 The four original reference mockups uploaded to the project are already in `../mockups/`.
@@ -50,6 +51,8 @@ The four original reference mockups uploaded to the project are already in `../m
 - **Spacing:** 4/8px base module, 12px gutter, 16px page margin, 44px minimum touch target.
 - **Elevation:** no drop shadows. Depth comes from stepping surface levels and 1px `#2B2A34` seams. The only glow is `0 0 12px rgba(167,139,250,0.25)` on active clips and nodes.
 - **Per-screen drift:** the Tailwind config embedded in each HTML file is not identical across screens. Six screens carry no config at all, and the drum-sequencer phone screen uses its own slightly different palette (`#121116` surfaces, `#ec4899` active pad) plus amber and cyan step colours that are not in the design system. When these conflict, `DESIGN.md` and `theme.json` win.
+- **Metronome implementation:** feature 004 implements the three metronome screens (`metronome/phone`, `metronome/tablet`, `metronome/phone-landscape`) in `app/shared/ui` (`audio.tembra.ui.metronome`). The landscape screen's twenty off-token greys and roses are followed for layout only; each is mapped to the nearest token of the phone screen, and no new colour was added (`specs/004-metronome/research.md` R10).
+- **Screenshot artefact:** Stitch renders uploaded screens on a 1280 × 800 canvas, so `metronome/phone/screenshot.jpg` shows the 390-wide phone screen centred in a wide frame; the HTML is the phone layout. Headless Chrome clamps its window to 500 px wide, so render local checks at 500 × 844 and read the centred 420 px column.
 - **Screenshot artefact:** `instrument-tuner/phone/screenshot.jpg` rendered with a serif fallback font and an overlapping title; the HTML is correct. Rely on the HTML for that screen.
 
 ## Re-pulling from Stitch

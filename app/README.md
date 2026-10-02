@@ -56,6 +56,7 @@ One command per lane; each aggregates every `:shared:*` module.
 cd app
 ./gradlew checkAndroidHost     # JVM unit tests (domain, parser, ViewModel, theme.json parity)
 ./gradlew checkIos             # iOS simulator: all shared tests + Compose UI tests + native engine link
+# add -Ptembra.iosSimulator="iPad Pro 13-inch (M5)" (any simctl name or UDID) to run the iOS lane on another simulator
 ./gradlew checkAndroidDevice   # connected Android device: Compose UI tests + native engine link + AppDirectories
 ./gradlew engineHostTest       # C++ engine Catch2 tests on the macOS host (no audio device)
 ```
@@ -70,11 +71,11 @@ Where tests live:
 |---|---|---|
 | `commonTest` | JVM host, iOS simulator, Android device | pure logic, ViewModels with `FakeAudioEngine` |
 | `androidHostTest` | JVM host only | tests that read repository files (`ThemeJsonParityTest`) |
-| `uiTest` (`:shared:ui`) | iOS simulator, Android device | `runComposeUiTest` screen tests (they need a real UI platform): `NavigationShellTest`, `TembraNavigationBarTest`, `TembraNavigationRailTest`, `TembraTopBarTest`, `TembraSupportingPaneTest`, `EmptyStateTest`, `ReduceMotionTest`, `RememberLayoutModeTest`, `AppContentTest`, `DesignTokenPreviewTest`; tuner: `TunerScreenTest`, `TunerScreenByEarTest`, `TunerScreenPlayingTest`, `TunerScreenDeniedTest`, `TunerScreenLayoutTest`, `TunerMeterTest`, `TunerMeterLayoutTest`, `TembraSegmentedControlTest`, `TembraToggleTest`, `TembraStatusPillTest`, `TembraGradientCardTest` |
-| `iosTest`, `androidDeviceTest` | one platform | the real `NativeAudioEngine` (descriptor, tone round trip, idle reading, `TunerSignalEndToEndTest`: every test signal through the real engine), `IosAudioSessionTest` / `AndroidAudioFocusTest`, `DataStoreTunerPreferencesTest`, platform directories; `IosMicrophonePermissionTest` (`:shared:ui`); `AndroidBackTest` (system back through the shell, Espresso) |
-| `androidTest` (`:androidApp`) | Android device | `AndroidMicrophonePermissionTest`: the activity-hosted permission implementation; run with `./gradlew :androidApp:connectedDebugAndroidTest` |
+| `uiTest` (`:shared:ui`) | iOS simulator, Android device | `runComposeUiTest` screen tests (they need a real UI platform): `NavigationShellTest`, `TembraNavigationBarTest`, `TembraNavigationRailTest`, `TembraTopBarTest`, `TembraSupportingPaneTest`, `EmptyStateTest`, `ReduceMotionTest`, `RememberLayoutModeTest`, `AppContentTest`, `DesignTokenPreviewTest`; tuner: `TunerScreenTest`, `TunerScreenByEarTest`, `TunerScreenPlayingTest`, `TunerScreenDeniedTest`, `TunerScreenLayoutTest`, `TunerMeterTest`, `TunerMeterLayoutTest`, `TembraSegmentedControlTest`, `TembraToggleTest`, `TembraStatusPillTest`, `TembraGradientCardTest`; metronome: `MetronomeScreenTest`, `MetronomeControlsTest`, `TempoDialTest`, `AccentCellsTest`, `ClickSoundPickerTest`, `TembraChipRowTest`, `TembraPillTest` |
+| `iosTest`, `androidDeviceTest` | one platform | the real `NativeAudioEngine` (descriptor, tone round trip, idle reading, `TunerSignalEndToEndTest`: every test signal through the real engine), `IosAudioSessionTest` / `AndroidAudioFocusTest`, `DataStoreTunerPreferencesTest`, platform directories; metronome: `MetronomeTimingEndToEndTest` (start latency and tick spacing through the real engine), `BecomingNoisyReceiverTest`, `DataStoreMetronomePreferencesTest`, `CustomClickSoundStoreFileTest`; `IosMicrophonePermissionTest`, `IosBackgroundPlaybackHostTest`, `IosSoundFilePickerTest` (`:shared:ui`); `AndroidBackTest` (system back through the shell, Espresso) |
+| `androidTest` (`:androidApp`) | Android device | `AndroidMicrophonePermissionTest`: the activity-hosted permission implementation; `AndroidBackgroundPlaybackHostTest` (the metronome foreground service) and `AndroidSoundFilePickerTest` (the WAV picker, through `TestSoundProvider`); run with `./gradlew :androidApp:connectedDebugAndroidTest` |
 | `androidHostTest` (`:shared:ui`) | JVM host only | `IconAssetsTest` (glyph files normalised, pinned commit, licence bundled) |
-| `engine/tests` | macOS host | Catch2, offline, no audio device: `engine_info_test`, `seqlock_test`, `ring_buffer_test`, `band_pass_test`, `mpm_test` (accuracy and octave), `tuner_analyzer_test`, `tone_generator_test`, `sample_player_test`, `recordings_on_pitch_test`, `tuner_engine_state_test` (with `fake_audio_device.h`) |
+| `engine/tests` | macOS host | Catch2, offline, no audio device: `engine_info_test`, `seqlock_test`, `ring_buffer_test`, `band_pass_test`, `mpm_test` (accuracy and octave), `tuner_analyzer_test`, `tone_generator_test`, `sample_player_test`, `recordings_on_pitch_test`, `engine_core_state_test` (with `fake_audio_device.h`); metronome: `metronome_renderer_test` (ten-minute timing), `click_synth_test`, `click_sample_builder_test`, `custom_sound_loader_test` (with `wav_fixtures.h`), `triple_buffer_test` |
 
 ## Screenshots
 
@@ -100,26 +101,29 @@ app/
 ├── build-logic/            convention plugins: tembra.kmp.library, tembra.kmp.compose, tembra.android.app, tembra.android.native
 ├── engine/                 C++ engine (CMake). include/tembra_engine.h is the only header Kotlin sees (plain C ABI)
 │   ├── src/                engine_info.cpp (descriptor), third_party_check.cpp (compiles vendored libs)
-│   │   ├── tuner/          TunerEngine state machine + C ABI forwarders, ring buffer, seqlock, band-pass, McLeod detector, smoother, analyzer, tone generator, sample player, WAV decoder
+│   │   ├── core/           EngineCore state machine (owns the device and every renderer), miniaudio_impl.cpp
+│   │   ├── metronome/      MetronomeRenderer, click synth, sample builder, custom sound loader, resampler, triple buffer, C ABI forwarders
+│   │   ├── tuner/          C ABI forwarders, ring buffer, seqlock, band-pass, McLeod detector, smoother, analyzer, tone generator, sample player, WAV decoder
 │   │   └── platform/       AudioDevice seam: null (host), synthetic (test signals), android/oboe, apple/remote_io
 │   ├── third_party/        miniaudio, dr_wav, Signalsmith Stretch (+ licences)
 │   ├── tests/              Catch2 tests
 │   └── android/            :engine:android — com.android.library + CMake/NDK + Prefab Oboe → libtembra_engine.so + JNI shim
 ├── shared/
 │   ├── core/               :shared:core   — pure Kotlin domain (no Compose, no platform APIs, no project dependencies)
-│   ├── engine/             :shared:engine — AudioEngine facade: NativeAudioEngine (JNI / cinterop), FakeAudioEngine, parser
-│   ├── data/               :shared:data   — persistence: AppDirectories, tuner/ DataStore preferences (TunerPreferences, TembraDataStore)
+│   ├── engine/             :shared:engine — AudioEngine facade (TunerAudio + MetronomeAudio): NativeAudioEngine (JNI / cinterop), FakeAudioEngine, parser
+│   ├── data/               :shared:data   — persistence: AppDirectories, tuner/ DataStore preferences (TunerPreferences, TembraDataStore), metronome/ (MetronomePreferences, CustomClickSoundStore)
 │   └── ui/                 :shared:ui     — Compose screens, ViewModels, theme, Metro graph; iOS framework "TembraShared"
 │       ├── theme/          design tokens from design/stitch/theme.json: colours, type, shapes, spacing and chrome metrics, motion, TembraIcon registry
-│       ├── designsystem/   chrome components: TembraTopBar, TembraNavigationBar, TembraNavigationRail, TembraSupportingPane, EmptyState, PlaceholderDestination, TembraSegmentedControl, TembraToggle, TembraStatusPill, TembraGradientCard
-│       ├── platform/       MicrophonePermission interface (+ IosMicrophonePermission in iosMain; the Android one lives in :androidApp)
+│       ├── designsystem/   chrome components: TembraTopBar, TembraNavigationBar, TembraNavigationRail, TembraSupportingPane, EmptyState, PlaceholderDestination, TembraSegmentedControl, TembraToggle, TembraStatusPill, TembraGradientCard, TembraChipRow, TembraPill, FocusRing, FrameTick
+│       ├── platform/       MicrophonePermission, BackgroundPlaybackHost, SoundFilePicker interfaces (+ IosMicrophonePermission, IosBackgroundPlaybackHost, IosSoundFilePicker in iosMain; the Android ones live in :androidApp)
 │       ├── navigation/     the shell: Destination registry, ShellViewModel, LayoutMode, NavigationShell, Navigation 3 wiring (TembraNavDisplay), SupportingPaneSceneStrategy
-│       ├── home/ timeline/ metronome/ projects/ profile/   one package per destination (HomeScreen, LibraryPane, ...); each independent of the shell
+│       ├── metronome/      MetronomeScreen + MetronomeViewModel, PlaybackPolicy, MetronomeSettingsPanel; components/ (TempoDial, TempoSlider, AccentCells, StyleRow, ClickSoundPicker, TapTempoButton, PlayPauseButton, MetronomeDefaults)
+│       ├── home/ timeline/ projects/ profile/   one package per destination (HomeScreen, LibraryPane, ...); each independent of the shell
 │       ├── tuner/          TunerScreen + TunerViewModel, ListeningPolicy, TunerMeter (one Canvas), By Ear cards, ReferenceSoundRepository, test-signal request
 │       └── devtools/       debug-only developer views (DesignTokenPreview behind a launch argument)
-├── androidApp/             :androidApp — TembraApplication (Metro graph), MainActivity, AndroidMicrophonePermission + MicrophonePermissionHost
+├── androidApp/             :androidApp — TembraApplication (Metro graph), MainActivity, AndroidMicrophonePermission + MicrophonePermissionHost, MetronomeForegroundService + AndroidBackgroundPlaybackHost, SoundFilePickerHost + AndroidSoundFilePicker
 ├── iosApp/                 Xcode project; two Swift files host MainViewController()
-└── tools/                  fetch-material-symbols.sh (glyphs at a pinned commit); capture-tuner-states.sh (the tuner's test-signal screenshot matrix)
+└── tools/                  fetch-material-symbols.sh (glyphs at a pinned commit); make-note-glyphs.py (the note-figure glyphs); capture-tuner-states.sh (the tuner's test-signal screenshot matrix)
 ```
 
 Dependencies point inward: apps → `:shared:ui` → `:shared:engine` / `:shared:data` → `:shared:core`.
@@ -131,7 +135,7 @@ A dependency in the wrong direction fails configuration (`tembra.kmp.library`).
 |---|---|---|
 | a new screen | `:shared:ui`, package `audio.tembra.ui.<feature>` | one `ViewModel` per destination, `StateFlow<UiState>`; tests in `uiTest` (screen) and `commonTest` (ViewModel) |
 | a new navigation destination | `audio.tembra.ui.navigation.Destination` (enum value: id, label, title, `TembraIcon`, supporting pane, placeholder sentence) + a screen composable in its own package + the branch in `DestinationContent` | the exhaustive `when` fails to compile until mapped; labels use `labelSmall`, the bar and rail need nothing else |
-| an icon | `tools/fetch-material-symbols.sh <glyph>` then a `TembraIcon` value | Material Symbols Outlined only, bundled as normalised vector XML; screens use `TembraIcons.vector(TembraIcon.X)`, never `Res.drawable` |
+| an icon | `tools/fetch-material-symbols.sh [--fill] <glyph>` then a `TembraIcon` value (`--fill` for the filled variant) | Material Symbols Outlined only, bundled as normalised vector XML; screens use `TembraIcons.vector(TembraIcon.X)`, never `Res.drawable` |
 | a chrome component (bar, rail, panel, top bar, empty state) | `audio.tembra.ui.designsystem` | stateless, every value from `TembraTheme`, semantics and `testTag` on every control |
 | a developer-only view | `audio.tembra.ui.devtools` + a `DeveloperView` value | opened only through the debug launch argument (`tembra.developer.view` / `--tembra-developer-view=`), never from the UI |
 | a domain rule, model or pure calculation | `:shared:core` | no Compose, no platform code; test on JVM and iOS |
@@ -144,7 +148,14 @@ A dependency in the wrong direction fails configuration (`tembra.kmp.library`).
 | a preference | `:shared:data`, package `tuner` (or the feature's): keys as constants, a snapshot data class with `decode`/`encode`, an interface with a `Flow` and `suspend fun update`, a `Fake…Preferences`, the DataStore implementation over `TembraDataStore.preferences` | one DataStore file per process (`tembra.preferences_pb`); unknown stored values decode to defaults |
 | a reference recording | `shared/ui/src/commonMain/composeResources/files/tuner/<instrument>-<note>.wav` (`guitar-E2.wav`, `guitar-Fsharp3.wav`, `cello-C2.wav`) | PCM or float WAV, mono or stereo, any rate, at least 1 s; `engineHostTest` fails if it is more than 1 cent off its note; none ships |
 | a design glyph that Material Symbols lacks | hand-written `ic_<name>_24.xml` under `composeResources/drawable/` with the header `<!-- Tembra design glyph "<name>" from <stitch screen>; hand-converted, do not edit -->`, then a `TembraIcon` value | 24 × 24 viewport, one path, `android:fillColor="#FFFFFFFF"`; `IconAssetsTest` checks it |
+| a note-figure glyph (metronome subdivisions) | edit the figure in `tools/make-note-glyphs.py`, then `python3 tools/make-note-glyphs.py` (rewrites every `ic_note_*_24.xml`; `--preview <dir>` writes an HTML sheet and the SVG path JSON) and a `TembraIcon` value | generated, not hand-edited: head, stem, beam and flag proportions are shared constants so the figures stay one family |
 | a tuner test signal | a row in `TestSignals` (`:shared:engine`) with its expected reading | debug launch argument `tembra.tuner.testSignal` (Android extra) / `--tembra-tuner-test-signal=` (iOS), catalogue id or `E2:-20`; `tools/capture-tuner-states.sh` captures every entry; `TunerSignalEndToEndTest` asserts it on both platforms |
+| engine core shared by the tuner and the metronome (stream, render loop, command FIFO) | `engine/src/core/` (`engine_core.{h,cpp}`; `miniaudio_impl.cpp` is the one miniaudio translation unit) | features render from `EngineCore`'s callback; no allocation, lock, I/O or logging inside `render` |
+| metronome scheduling or a click sound | `engine/src/metronome/` (`metronome_renderer`, `metronome_grid.h`, `triple_buffer.h`; sounds in `click_synth`, `click_sample_builder`, `custom_sound_loader`, `sound_resampler`), exported through `metronome_abi.cpp` | Catch2 tests beside the others in `engine/tests/`; sample-accurate ticks, sounds prepared off the audio thread |
+| a metronome engine call from Kotlin | `:shared:engine` `MetronomeAudio` (with `ClickLevel`, `ClickSoundId`, `MetronomeGrid`, `TickSnapshot`, `CustomSoundResult`); `AudioEngine` implements it, `FakeAudioEngine` for tests | the ViewModel depends on `MetronomeAudio`, never on `AudioEngine`; events and status come from `AudioStatus` |
+| metronome preferences or the custom click file | `:shared:data` package `metronome` (`MetronomePreferences` over the one DataStore, `CustomClickSoundStore` on Okio) | fakes live beside them; the picker writes to `stagingPath`, `commit()` moves it to `path` |
+| a background-playback host or a file picker | interface in `:shared:ui` `audio.tembra.ui.platform` (`BackgroundPlaybackHost`, `SoundFilePicker`); Android in `:androidApp` (`MetronomeForegroundService`, `AndroidBackgroundPlaybackHost`, `SoundFilePickerHost` + `AndroidSoundFilePicker` attached by `MainActivity`); iOS in `:shared:ui` `iosMain` (`IosBackgroundPlaybackHost`, `IosSoundFilePicker`) | bound in `AndroidAppGraph` / `IosAppGraph`; host tests in `androidTest` of `:androidApp` and `iosTest` of `:shared:ui`; the OS picker and the lock-screen run are manual checks |
+| a reusable metronome control (dial, chip row, accent cells, sound picker) | generic pieces in `audio.tembra.ui.designsystem` (`TembraChipRow`, `TembraPill`, `TembraGradientCard` discs); metronome-specific ones in `audio.tembra.ui.metronome.components` (`internal`) | stateless, `modifier` first optional parameter, primitives in, callbacks out; every value from `TembraTheme` (metronome tokens included) |
 
 ## Conventions
 
