@@ -28,7 +28,10 @@ its content is taller than it (FR-007, SC-005).
 |---|---|
 | `metronome.dialCard` with the tempo dial (readout, marking, − / +); `metronome.cells` with one cell per beat | `metronome.settings` with `metronome.bar` (signature menu, subdivision tiles, style row) and the sound pill; the tempo slider; tap tempo; play/pause |
 
-The slider is NOT in `metronome.dialCard` in this layout. The cells keep tap-to-cycle and lighting.
+The slider is NOT in `metronome.dialCard` in this layout. The cells keep tap-to-cycle and lighting. From 600 dp of
+width (a book-style foldable) each half puts its two cards side by side; narrower (a flip-style foldable, ~412 dp) each
+half stacks them: the dial card over the accent card above the fold, the settings card over the slider and transport
+card below it (T029, found in the T027 review).
 
 ## Unchanged
 

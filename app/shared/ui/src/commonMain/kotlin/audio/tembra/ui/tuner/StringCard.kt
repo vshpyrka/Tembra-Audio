@@ -79,12 +79,12 @@ internal fun StringCard(
     val sizeModifier = when (layout) {
         TunerLayout.Stacked -> Modifier.squareOrTaller()
         TunerLayout.Wide -> Modifier.heightIn(min = spacing.stringCardHeightWide)
-        TunerLayout.Landscape -> Modifier.fillMaxHeight()
+        TunerLayout.Landscape, TunerLayout.Tabletop -> Modifier.fillMaxHeight()
     }
     val padding = when (layout) {
         TunerLayout.Stacked -> spacing.md
         TunerLayout.Wide -> spacing.md + spacing.xs / 2
-        TunerLayout.Landscape -> spacing.sm
+        TunerLayout.Landscape, TunerLayout.Tabletop -> spacing.sm
     }
     Column(
         modifier = modifier

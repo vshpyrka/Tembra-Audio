@@ -18,7 +18,7 @@ import audio.tembra.ui.theme.TembraTheme
 
 /**
  * At most seven cards, lowest string first (spec FR-017, FR-023): two columns when stacked, three when wide, and in
- * phone landscape as many as fill two rows. A specified [rowMinHeight] (landscape) makes every row at least that tall
+ * phone landscape and above a tabletop fold as many as fill two rows. A specified [rowMinHeight] (landscape) makes every row at least that tall
  * and its cards equally tall, so the rows fill the card.
  */
 @Composable
@@ -35,16 +35,16 @@ internal fun StringCardGrid(
     val columns = when (layout) {
         TunerLayout.Stacked -> 2
         TunerLayout.Wide -> 3
-        TunerLayout.Landscape -> ((strings.size + 1) / 2).coerceAtLeast(1)
+        TunerLayout.Landscape, TunerLayout.Tabletop -> ((strings.size + 1) / 2).coerceAtLeast(1)
     }
     val gap = when (layout) {
-        TunerLayout.Stacked, TunerLayout.Landscape -> spacing.sm
+        TunerLayout.Stacked, TunerLayout.Landscape, TunerLayout.Tabletop -> spacing.sm
         TunerLayout.Wide -> spacing.lg
     }
     val maxWidth = when (layout) {
         TunerLayout.Stacked -> spacing.byEarGridMaxWidth
         TunerLayout.Wide -> spacing.byEarGridMaxWidthWide
-        TunerLayout.Landscape -> Dp.Unspecified
+        TunerLayout.Landscape, TunerLayout.Tabletop -> Dp.Unspecified
     }
     val rowModifier = if (rowMinHeight.isSpecified) Modifier.heightIn(min = rowMinHeight).height(IntrinsicSize.Max) else Modifier
     Column(

@@ -24,7 +24,8 @@ import audio.tembra.ui.theme.TembraTheme
 /**
  * The By Ear card (spec FR-017, contracts/tuner-screen.md): in the stacked and wide layouts the string count (guitar
  * only, [guitarStrings] null hides it), the preset picker and the loop toggle sit above the string cards; in phone
- * landscape those live in the settings column and the cards fill the card in two rows (research R9). It takes only
+ * landscape those live in the settings column and the cards fill the card in two rows (research R9); above a tabletop
+ * fold (feature 005, FR-004) the cards fill the card the same way and the settings sit below the fold. It takes only
  * the fields it renders, so a reading-only state change leaves it untouched.
  */
 @OptIn(ExperimentalLayoutApi::class)
@@ -43,8 +44,8 @@ internal fun ByEarPane(
     val gradients = TembraTheme.gradients
     val strings = remember(preset) { preset.strings }
     when (layout) {
-        TunerLayout.Landscape -> TembraGradientCard(glow = gradients.byEarWide, modifier = modifier, testTag = "tuner.byEar") {
-            FilledStringCards(strings = strings, playingIndex = playingIndex, onAudition = callbacks.onAudition, onStop = callbacks.onStopAudition)
+        TunerLayout.Landscape, TunerLayout.Tabletop -> TembraGradientCard(glow = gradients.byEarWide, modifier = modifier, testTag = "tuner.byEar") {
+            FilledStringCards(strings = strings, playingIndex = playingIndex, layout = layout, onAudition = callbacks.onAudition, onStop = callbacks.onStopAudition)
         }
         TunerLayout.Stacked, TunerLayout.Wide -> {
             val wide = layout == TunerLayout.Wide
@@ -93,7 +94,7 @@ internal fun ByEarPane(
  * only when large fonts make the cards taller than that.
  */
 @Composable
-private fun FilledStringCards(strings: List<TargetString>, playingIndex: Int?, onAudition: (Int) -> Unit, onStop: () -> Unit) {
+private fun FilledStringCards(strings: List<TargetString>, playingIndex: Int?, layout: TunerLayout, onAudition: (Int) -> Unit, onStop: () -> Unit) {
     val spacing = TembraTheme.spacing
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val rowMinHeight = maxOf(spacing.stringCardHeightLandscape, (maxHeight - spacing.md * 2 - spacing.sm) / 2)
@@ -106,7 +107,7 @@ private fun FilledStringCards(strings: List<TargetString>, playingIndex: Int?, o
             StringCardGrid(
                 strings = strings,
                 playingIndex = playingIndex,
-                layout = TunerLayout.Landscape,
+                layout = layout,
                 onAudition = onAudition,
                 onStop = onStop,
                 rowMinHeight = rowMinHeight,

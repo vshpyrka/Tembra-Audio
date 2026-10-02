@@ -9,6 +9,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import audio.tembra.ui.posture.currentTabletopFold
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 
 /**
@@ -32,7 +33,9 @@ fun MetronomeScreen(modifier: Modifier = Modifier, viewModel: MetronomeViewModel
     LaunchedEffect(viewModel, snackbarHostState) {
         viewModel.messages.collect { snackbarHostState.showSnackbar(MetronomeCopy.of(it)) }
     }
-    val layout = MetronomeLayout.from(currentWindowAdaptiveInfo().windowSizeClass)
+    // A tabletop foldable splits the screen at its fold (feature 005); both are read from the window on every change.
+    val fold = currentTabletopFold()
+    val layout = MetronomeLayout.from(currentWindowAdaptiveInfo().windowSizeClass, fold)
     val callbacks = remember(viewModel) {
         MetronomeCallbacks.None.copy(
             onTempo = viewModel::setTempo,
@@ -56,6 +59,7 @@ fun MetronomeScreen(modifier: Modifier = Modifier, viewModel: MetronomeViewModel
             layout = layout,
             snackbarHostState = snackbarHostState,
             modifier = modifier,
+            fold = fold,
         )
     }
 }

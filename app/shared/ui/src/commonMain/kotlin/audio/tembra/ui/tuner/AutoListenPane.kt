@@ -18,7 +18,8 @@ import audio.tembra.ui.theme.TembraTheme
 /**
  * The Auto Listen card: the meter centred on the design's radial glow, or the denied panel (contracts/tuner-screen.md).
  * Stacked and wide layouts cap the meter's width and scroll when it is taller than the card; phone landscape sizes
- * the compact meter from the card's height so it fits without scrolling (spec FR-023, research R9). It takes only the
+ * the compact meter from the card's height so it fits without scrolling (spec FR-023, research R9), as does the region
+ * above the fold of a tabletop foldable (feature 005, FR-003). It takes only the
  * fields it renders, so the 10 Hz [reading] is the one input that recomposes it.
  */
 @Composable
@@ -34,7 +35,7 @@ internal fun AutoListenPane(
     val spacing = TembraTheme.spacing
     TembraGradientCard(glow = TembraTheme.gradients.meterCompact, modifier = modifier, testTag = "tuner.autoListen") {
         when (layout) {
-            TunerLayout.Landscape -> FittedMeter(
+            TunerLayout.Landscape, TunerLayout.Tabletop -> FittedMeter(
                 reading = reading,
                 listening = listening,
                 showDeniedState = showDeniedState,

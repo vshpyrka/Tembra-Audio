@@ -1,6 +1,7 @@
 package audio.tembra.ui.tuner
 
 import androidx.window.core.layout.WindowSizeClass
+import audio.tembra.ui.posture.TabletopFold
 import audio.tembra.ui.theme.WindowWidth
 
 /**
@@ -13,7 +14,10 @@ import audio.tembra.ui.theme.WindowWidth
 enum class TunerLayout {
     Stacked,
     Wide,
-    Landscape;
+    Landscape,
+
+    /** A foldable in tabletop posture: watched content above the fold, settings below it (feature 005, research R5). */
+    Tabletop;
 
     companion object {
         fun from(width: WindowWidth, isShort: Boolean): TunerLayout = when (width) {
@@ -27,5 +31,9 @@ enum class TunerLayout {
             width = WindowWidth.from(windowSizeClass),
             isShort = !windowSizeClass.isHeightAtLeastBreakpoint(WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND),
         )
+
+        /** [Tabletop] whenever the window has a tabletop [fold], at any size class; otherwise the window's band. */
+        fun from(windowSizeClass: WindowSizeClass, fold: TabletopFold?): TunerLayout =
+            if (fold != null) Tabletop else from(windowSizeClass)
     }
 }
