@@ -6,7 +6,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,6 +24,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,6 +33,7 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.lerp
@@ -36,14 +41,21 @@ import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.min
 import audio.tembra.ui.designsystem.CardDiscs
 import audio.tembra.ui.designsystem.FoldSplit
+import audio.tembra.ui.designsystem.FoldSplitRow
 import audio.tembra.ui.designsystem.TembraGradientCard
 import audio.tembra.ui.metronome.components.AccentCells
+import audio.tembra.ui.metronome.components.ClickSoundPicker
+import audio.tembra.ui.metronome.components.ClickSoundPickerLayout
 import audio.tembra.ui.metronome.components.MetronomeDefaults
 import audio.tembra.ui.metronome.components.PlayPauseButton
+import audio.tembra.ui.metronome.components.StyleRow
+import audio.tembra.ui.metronome.components.SubdivisionTiles
 import audio.tembra.ui.metronome.components.TapTempoButton
 import audio.tembra.ui.metronome.components.TempoDial
 import audio.tembra.ui.metronome.components.TempoSlider
+import audio.tembra.ui.metronome.components.TimeSignatureMenu
 import audio.tembra.ui.posture.TabletopFold
+import audio.tembra.ui.posture.VerticalFold
 import audio.tembra.ui.theme.TembraShapes
 import audio.tembra.ui.theme.TembraTheme
 import kotlin.math.roundToInt
@@ -75,6 +87,7 @@ fun MetronomeScreenContent(
     snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
     fold: TabletopFold? = null,
+    verticalFold: VerticalFold? = null,
 ) {
     val spacing = TembraTheme.spacing
     Box(modifier = modifier.fillMaxSize()) {
@@ -86,7 +99,7 @@ fun MetronomeScreenContent(
         val root = Modifier.fillMaxSize().then(margin).testTag("screen.metronome")
         when (layout) {
             MetronomeLayout.Stacked -> StackedMetronome(state = state, callbacks = callbacks, telemetry = telemetry, modifier = root)
-            MetronomeLayout.Wide -> WideMetronome(state = state, callbacks = callbacks, telemetry = telemetry, modifier = root)
+            MetronomeLayout.Wide -> WideMetronome(state = state, callbacks = callbacks, telemetry = telemetry, verticalFold = verticalFold, modifier = root)
             MetronomeLayout.Landscape -> LandscapeMetronome(state = state, callbacks = callbacks, telemetry = telemetry, modifier = root)
             MetronomeLayout.Tabletop -> TabletopMetronome(state = state, callbacks = callbacks, telemetry = telemetry, fold = fold, modifier = root)
         }
@@ -182,21 +195,28 @@ private fun compactDialMin(): Dp {
 }
 
 @Composable
-private fun WideMetronome(state: MetronomeUiState, callbacks: MetronomeCallbacks, telemetry: BeatTelemetry, modifier: Modifier) {
+private fun WideMetronome(
+    state: MetronomeUiState,
+    callbacks: MetronomeCallbacks,
+    telemetry: BeatTelemetry,
+    verticalFold: VerticalFold?,
+    modifier: Modifier,
+) {
     val spacing = TembraTheme.spacing
-    Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(spacing.md)) {
+    val settings: @Composable (Modifier) -> Unit = { size ->
         MetronomeSettingsPanel(
             state = state,
             callbacks = callbacks,
             telemetry = telemetry,
             layout = MetronomeLayout.Wide,
-            modifier = Modifier
-                .widthFraction(MetronomeDefaults.WIDE_SETTINGS_FRACTION, min = spacing.wideSettingsMinWidth)
+            modifier = size
                 .fillMaxHeight()
                 .testTag(SETTINGS_TAG)
                 .verticalScroll(rememberScrollState()),
         )
-        Column(modifier = Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(spacing.md)) {
+    }
+    val dialPane: @Composable (Modifier) -> Unit = { size ->
+        Column(modifier = size.fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(spacing.md)) {
             DialCard(
                 state = state,
                 callbacks = callbacks,
@@ -215,6 +235,21 @@ private fun WideMetronome(state: MetronomeUiState, callbacks: MetronomeCallbacks
             ) {
                 TransportRow(state = state, callbacks = callbacks, modifier = Modifier.widthIn(max = MetronomeDefaults.TransportMaxWidth).fillMaxWidth())
             }
+        }
+    }
+    if (verticalFold != null) {
+        // A book-posture foldable splits at its hinge (design iteration D1, FR-011): the settings before it and the
+        // dial pane after it, each a gutter clear of the fold.
+        FoldSplitRow(
+            fold = verticalFold,
+            modifier = modifier,
+            start = { settings(Modifier.fillMaxWidth()) },
+            end = { dialPane(Modifier.fillMaxWidth()) },
+        )
+    } else {
+        Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(spacing.md)) {
+            settings(Modifier.widthFraction(MetronomeDefaults.WIDE_SETTINGS_FRACTION, min = spacing.wideSettingsMinWidth))
+            dialPane(Modifier.weight(1f))
         }
     }
 }
@@ -258,10 +293,9 @@ private fun LandscapeMetronome(state: MetronomeUiState, callbacks: MetronomeCall
 /**
  * The tabletop form (feature 005, spec FR-005): above the fold only what is watched, the dial card holding the ring
  * alone (readout, tempo name, − / + and drag) and the accent cells, which grow tall enough to read from a music stand;
- * below it the settings (the compact card without cells, the sound pill) and the slider over tap and play. From
- * [MetronomeDefaults.TabletopSideBySideMinWidth] (a book-style foldable) each half puts its two cards side by side, each
- * centred in its card; narrower (a flip-style foldable) each half stacks them, the dial taking the height the cells
- * leave. The regions are tagged `metronome.tabletop.upper` and `.lower`; each scrolls its own content when large fonts
+ * below it one controls card ([TabletopControlDeck], design iteration D1). From
+ * [MetronomeDefaults.TabletopSideBySideMinWidth] (a book-style foldable) the dial and the cells sit side by side;
+ * narrower (a flip-style foldable) they stack, the dial taking the height the cells leave. The regions are tagged `metronome.tabletop.upper` and `.lower`; each scrolls its own content when large fonts
  * make it taller than the region.
  */
 @Composable
@@ -305,63 +339,70 @@ private fun TabletopMetronome(
                 }
             },
             lower = {
-                if (sideBySide) {
-                    Row(
-                        modifier = Modifier.fillMaxSize().testTag(TABLETOP_LOWER_TAG),
-                        horizontalArrangement = Arrangement.spacedBy(spacing.md),
-                    ) {
-                        Box(modifier = Modifier.weight(1f).fillMaxHeight().tabletopCard(card), contentAlignment = Alignment.Center) {
-                            TabletopSettings(state, callbacks, telemetry, Modifier.fillMaxWidth().verticalScroll(rememberScrollState()))
-                        }
-                        Column(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight()
-                                .tabletopCard(card)
-                                .verticalScroll(rememberScrollState())
-                                .padding(spacing.md),
-                            verticalArrangement = Arrangement.spacedBy(spacing.md, Alignment.CenterVertically),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            TabletopTransport(state, callbacks)
-                        }
-                    }
-                } else {
-                    Column(
-                        modifier = Modifier.fillMaxSize().testTag(TABLETOP_LOWER_TAG).verticalScroll(rememberScrollState()),
-                        verticalArrangement = Arrangement.spacedBy(spacing.md),
-                    ) {
-                        TabletopSettings(state, callbacks, telemetry, Modifier.fillMaxWidth().tabletopCard(card))
-                        Column(
-                            modifier = Modifier.fillMaxWidth().tabletopCard(card).padding(spacing.md),
-                            verticalArrangement = Arrangement.spacedBy(spacing.md),
-                        ) {
-                            TabletopTransport(state, callbacks)
-                        }
-                    }
+                Box(modifier = Modifier.fillMaxSize().testTag(TABLETOP_LOWER_TAG)) {
+                    TabletopControlDeck(state = state, callbacks = callbacks, modifier = Modifier.fillMaxSize())
                 }
             },
         )
     }
 }
 
-/** The settings below the fold: the compact card without cells and the sound pill, tagged `metronome.settings`. */
+/**
+ * Every control below a tabletop fold in one card (feature 005, design iteration D1), tagged `metronome.settings`: a
+ * centred "Metronome controls" heading over a seam, the signature menu and the subdivision tiles with the sound pill at
+ * the end of their line, the style row, the slider, then tap tempo and play. The rows wrap and the card scrolls when
+ * they do not fit (FR-007).
+ */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun TabletopSettings(state: MetronomeUiState, callbacks: MetronomeCallbacks, telemetry: BeatTelemetry, modifier: Modifier) {
-    MetronomeSettingsPanel(
-        state = state,
-        callbacks = callbacks,
-        telemetry = telemetry,
-        layout = MetronomeLayout.Tabletop,
-        modifier = modifier.testTag(SETTINGS_TAG).padding(TembraTheme.spacing.sm),
-    )
-}
-
-/** The slider over the tap and play row. */
-@Composable
-private fun TabletopTransport(state: MetronomeUiState, callbacks: MetronomeCallbacks) {
-    TempoSlider(tempo = state.settings.tempo, onTempo = callbacks.onTempo, modifier = Modifier.fillMaxWidth())
-    TransportRow(state = state, callbacks = callbacks, modifier = Modifier.fillMaxWidth())
+private fun TabletopControlDeck(state: MetronomeUiState, callbacks: MetronomeCallbacks, modifier: Modifier) {
+    val spacing = TembraTheme.spacing
+    val settings = state.settings
+    Column(
+        modifier = modifier
+            .tabletopCard(TembraTheme.colors.surfaceContainerLow)
+            .verticalScroll(rememberScrollState())
+            .padding(spacing.md)
+            .testTag(SETTINGS_TAG),
+        verticalArrangement = Arrangement.spacedBy(spacing.md, Alignment.CenterVertically),
+    ) {
+        // The deck's heading, centred like the tuner's "Tuner controls", over a seam.
+        Text(
+            text = MetronomeCopy.metronomeControls.uppercase(),
+            style = TembraTheme.typography.labelSmall,
+            color = TembraTheme.colors.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(spacing.seam)
+                .background(TembraTheme.colors.outlineVariant.copy(alpha = DECK_SEAM_ALPHA)),
+        )
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+            verticalArrangement = Arrangement.spacedBy(spacing.xs),
+            itemVerticalAlignment = Alignment.CenterVertically,
+        ) {
+            TimeSignatureMenu(selected = settings.signature, onSelect = callbacks.onSignature)
+            SubdivisionTiles(selected = settings.subdivision, unit = settings.signature.unit, onSelect = callbacks.onSubdivision)
+            Spacer(Modifier.weight(1f))
+            ClickSoundPicker(
+                sound = settings.sound,
+                customSound = state.customSound,
+                layout = ClickSoundPickerLayout.Dropdown,
+                onSelect = callbacks.onSound,
+                onImportCustom = callbacks.onImportCustom,
+                onReplaceCustom = callbacks.onReplaceCustom,
+            )
+        }
+        StyleRow(selected = settings.style, onSelect = callbacks.onStyle, modifier = Modifier.fillMaxWidth())
+        TempoSlider(tempo = settings.tempo, onTempo = callbacks.onTempo, modifier = Modifier.fillMaxWidth())
+        TransportRow(state = state, callbacks = callbacks, modifier = Modifier.fillMaxWidth())
+    }
 }
 
 /** A tabletop card: [color] (`surfaceContainerLow`) with the medium corners. */
@@ -606,5 +647,6 @@ private fun Modifier.widthFraction(
 }
 
 private const val SETTINGS_TAG = "metronome.settings"
+private const val DECK_SEAM_ALPHA = 0.2f
 private const val TABLETOP_UPPER_TAG = "metronome.tabletop.upper"
 private const val TABLETOP_LOWER_TAG = "metronome.tabletop.lower"

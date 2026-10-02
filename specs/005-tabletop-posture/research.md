@@ -65,3 +65,30 @@ medium width breakpoint) each half therefore stacks its two cards, and the stack
 **Decision**: after the layouts are built and captured, three new Stitch screens ("Tembra Audio - Tuner Auto Listen (Foldable Tabletop)", "… Tuner By Ear (Foldable Tabletop)", "… Metronome (Foldable Tabletop)") are produced as HTML from the app's captures and uploaded to project `12040171611712589599` with the upload workflow used for the metronome on 2026-10-01 (upload, place via `screenInstances`, re-pull the export into `design/stitch/screens/`).
 
 **Rationale**: `edit_screens` does not persist (verified 2026-09-29); uploads do.
+
+## R8 — Design iteration D1: one controls card, stacked tuner controls, the hinge in book posture
+
+Decided with the user on 2026-10-02 after trying the first build on the emulator (spec "Design iteration D1").
+
+**Decision**:
+- Metronome, below a tabletop fold: one `surfaceContainerLow` card, `TabletopControlDeck`, tagged `metronome.settings`:
+  a centred "METRONOME CONTROLS" heading (`labelSmall`, `onSurfaceVariant`) over a seam, then a `FlowRow` with the
+  signature menu, the subdivision tiles and the sound pill pushed to the end, the `StyleRow`, the `TempoSlider` and the
+  tap and play row. The compact-card branch the panel had for tabletop is gone; `MetronomeSettingsPanel` now treats
+  `Tabletop` like `Stacked`, and the tabletop form never calls it.
+- Tuner, below a tabletop fold: the heading is centred in a `Box` with the audio-state pill at `CenterEnd`; the
+  selectors and the By Ear controls stack in one column at full width, capped at `byEarGridMaxWidthWide` (576 dp) and
+  centred.
+- Book posture: `VerticalFold.from(posture)` takes the first hinge that is vertical and separating
+  (`HingeInfo.bounds` left/right in window px; flat hinges are ignored). `FoldSplitRow` is `FoldSplit` on its side: it
+  reads its own left edge in the window in `onPlaced` and reuses `FoldSplitGeometry` on the x axis, so the start slot
+  ends `spacing.md` before the hinge and the end slot starts `spacing.md` after it. Only the Metronome's `Wide` layout
+  uses it (the user's request); without a vertical fold it keeps its one-third column.
+- Top bar: `TembraTopBar` pads `statusBars ∪ displayCutout` only on `Top + Horizontal`. On the emulator rotated 180°
+  the cutout is reported on the bottom edge (`DisplayCutout{insets=Rect(0, 0 - 0, 136)}`, `sideOverrides`
+  `ROTATION_180: bottom`), which the full union added as 56 dp under the title.
+
+**Rationale**: the user's visual review; the hinge API is the same `windowPosture` already used for tabletop (R1).
+
+**Alternatives considered**: applying the hinge split to the wide tuner too — not requested; the gauge still sits
+across the fold there (noted in `screenshots/NOTES.md`).

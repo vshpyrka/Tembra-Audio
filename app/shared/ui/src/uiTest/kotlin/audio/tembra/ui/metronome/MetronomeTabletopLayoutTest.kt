@@ -11,6 +11,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.v2.runComposeUiTest
@@ -23,6 +24,7 @@ import audio.tembra.core.metronome.MetronomeSettings
 import audio.tembra.core.metronome.MetronomeStyle
 import audio.tembra.core.metronome.TimeSignature
 import audio.tembra.ui.theme.TembraTheme
+import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -92,12 +94,28 @@ class MetronomeTabletopLayoutTest {
         for (tag in listOf("metronome.dialCard", "metronome.dial", "metronome.cells") + (1..4).map { "metronome.cell.$it" }) {
             assertTrue(upper.contains(bounds(tag)), "$tag (${bounds(tag)}) is not above the fold $upper")
         }
-        for (tag in listOf("metronome.settings", "metronome.bar", "metronome.signature", "metronome.subdivision", "metronome.style", "metronome.sound", "metronome.slider", "metronome.tap", "metronome.play")) {
-            assertTrue(lower.contains(bounds(tag)), "$tag (${bounds(tag)}) is not below the fold $lower")
+        // Design iteration D1: every control below the fold sits in one card, `metronome.settings`.
+        val deck = bounds("metronome.settings")
+        assertTrue(lower.contains(deck), "the controls card $deck is not below the fold $lower")
+        for (tag in listOf("metronome.signature", "metronome.subdivision", "metronome.style", "metronome.sound", "metronome.slider", "metronome.tap", "metronome.play")) {
+            assertTrue(deck.contains(bounds(tag)), "$tag (${bounds(tag)}) is not in the controls card $deck")
         }
-        // The slider leaves the dial card in this form; the cells leave the bar-shape card.
+        // The slider leaves the dial card in this form; the cells stay out of the controls card.
         onNodeWithTag("metronome.slider").assertNotIn("metronome.dialCard")
-        onNodeWithTag("metronome.cells").assertNotIn("metronome.bar")
+        onNodeWithTag("metronome.cells").assertNotIn("metronome.settings")
+    }
+
+    @Test
+    fun theControlsCardIsHeadedAndReadsTopToBottom() = runComposeUiTest {
+        setScreen(loaded)
+        val heading = onNode(hasText("METRONOME CONTROLS") and hasAnyAncestor(hasTestTag("metronome.settings")), useUnmergedTree = true)
+            .getUnclippedBoundsInRoot()
+        val deck = bounds("metronome.settings")
+        assertTrue(abs(((heading.left + heading.right) / 2 - (deck.left + deck.right) / 2).value) < 1f, "the heading $heading is not centred in $deck")
+        val order = listOf("metronome.signature", "metronome.style", "metronome.slider", "metronome.tap").map { bounds(it).top }
+        assertTrue(heading.bottom <= order.first(), "the heading is not above the controls")
+        assertEquals(order.sorted(), order, "signature, style, slider and tap are not in that order: $order")
+        assertTrue(abs((bounds("metronome.sound").top - bounds("metronome.signature").top).value) < 8f, "the sound pill is not on the signature line")
     }
 
     @Test

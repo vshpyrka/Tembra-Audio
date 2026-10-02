@@ -93,3 +93,22 @@ to the upload.
 
 A physical foldable on a real table (hinge with height, real audio while folding), and the flip-style narrow form on a
 real flip phone (only covered by `aNarrowTabletopStacksEachHalfAndKeepsEveryCellAboveTheFold`).
+
+## Design iteration D1 (2026-10-02)
+
+The user tried the first build on the emulator and kept these changes (spec "Design iteration D1", research R8,
+tasks T030–T036):
+
+| File | What it shows |
+|---|---|
+| `android-fold-d1-tabletop-autolisten.png` | Centred TUNER CONTROLS heading with the TEST SIGNAL pill at the end of its line; Guitar/Cello over Auto Listen/By Ear in one centred column |
+| `android-fold-d1-tabletop-byear.png` | The same column with the tuning preset and loop tone stacked under the selectors (cello: no string count) |
+| `android-fold-d1-tabletop-metronome.png` | One METRONOME CONTROLS card: 6/8 menu, tiles and Classic Wood on one line, STYLE, the slider, tap and play |
+| `android-fold-d1-book-topbar-gap-before.png` | Book posture at 180°: the ~56 dp gap under the top bar (the cutout reported on the bottom edge) before FR-012 |
+| `android-fold-d1-book-metronome-hinge.png` | Book posture after FR-011/FR-012: no gap; settings end at px 1008, the dial card starts at px 1068, centred on the hinge at px 1038 |
+
+Lanes after D1: JVM and iPhone 17 green (new `VerticalFoldTest`, `MetronomeHingeLayoutTest`,
+`theControlsCardIsHeadedAndReadsTopToBottom`, `theControlsStackUnderACentredHeading`), iPad Pro green; Android device: `:shared:ui`
+474/474 on the Pixel 6 Pro and the fold emulator, core/data/engine green except the emulator's
+`MetronomeTimingEndToEndTest` (the emulator audio clock, engine unchanged). Not done for D1: the Stitch screens still show the first build's lower regions; the
+wide tuner's gauge still sits across a book-posture hinge (not requested).
