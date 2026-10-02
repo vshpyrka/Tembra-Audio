@@ -8,6 +8,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.v2.runComposeUiTest
@@ -22,6 +25,7 @@ import audio.tembra.core.tuner.TuningPresets
 import audio.tembra.engine.AudioState
 import audio.tembra.ui.platform.MicrophonePermissionStatus
 import audio.tembra.ui.theme.TembraTheme
+import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -121,6 +125,21 @@ class TunerTabletopLayoutTest {
             lowerTags = listOf("tuner.preset.picker", "tuner.loop"),
         )
         onNodeWithTag("tuner.strings").assertDoesNotExist()
+    }
+
+    /** Design iteration D1: the controls stack in one centred column under a centred heading. */
+    @Test
+    fun theControlsStackUnderACentredHeading() = runComposeUiTest {
+        setScreen(byEarSeven)
+        val card = bounds("tuner.settings")
+        val heading = onNode(hasText("TUNER CONTROLS") and hasAnyAncestor(hasTestTag("tuner.settings")), useUnmergedTree = true)
+            .getUnclippedBoundsInRoot()
+        assertTrue(abs(((heading.left + heading.right) / 2 - (card.left + card.right) / 2).value) < 1f, "the heading $heading is not centred in $card")
+        val stack = listOf("tuner.instrument", "tuner.mode", "tuner.strings", "tuner.preset.picker", "tuner.loop").map { bounds(it) }
+        for ((above, below) in stack.zipWithNext()) assertTrue(below.top >= above.bottom - 0.5.dp, "$below is not under $above")
+        val centre = (card.left + card.right) / 2
+        // `tuner.loop` is the switch at the end of its full-width row, so only the first four are checked for centring.
+        for (b in stack.dropLast(1)) assertTrue(abs(((b.left + b.right) / 2 - centre).value) < 1f, "$b is not centred in the card")
     }
 
     @Test

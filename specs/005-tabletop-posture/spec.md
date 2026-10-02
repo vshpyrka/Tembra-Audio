@@ -38,6 +38,24 @@ horizontal fold across a window of about 883 × 852 dp, so each half is roughly 
 wide tablet layouts of both screens (settings in a column on the left, gauge or dial on the right), which put the gauge
 and the dial across the fold.
 
+## Design iteration D1 (2026-10-02)
+
+After trying the first build on the Pixel 9 Pro Fold emulator the user asked for, and kept, these changes:
+
+- **One controls card below the fold.** The metronome's two lower cards become one card headed "Metronome controls"
+  (centred): the time signature and subdivisions with the click sound at the end of their line, the style row, the
+  tempo slider, then tap tempo and play/stop.
+- **Stacked tuner controls.** The tuner's lower card keeps its "Tuner controls" heading, now centred, with the
+  microphone status at the end of the heading's line; under it the controls stack in one centred column: the
+  instrument (guitar / cello), then Auto Listen / By Ear, then, in By Ear, the string count, the tuning preset and the
+  loop tone.
+- **Book posture respects the hinge.** With the device half-opened like a book (vertical fold), the wide metronome
+  places its settings before the hinge and the dial, tap tempo and play after it, so nothing sits on the fold
+  (FR-011).
+- **Top bar fix found on the way.** With the device rotated so that its camera cutout is reported on the bottom edge,
+  the shell's top bar used to grow by the cutout's height and leave a gap above the content; the top bar now only
+  keeps clear of the top and side insets. (A navigation-shell defect from feature 002, fixed here.)
+
 ## User Scenarios & Testing *(mandatory)*
 
 Every story is checked on a foldable that can be half-opened with a horizontal fold. "Upper half" is the part of the
@@ -58,8 +76,9 @@ wholly above the fold and every setting is wholly below it.
 **Acceptance Scenarios**:
 
 1. **Given** the Tuner in Auto Listen and the device in tabletop posture, **When** the screen shows, **Then** the
-   gauge with its note, cents and frequency is the only content of the upper half, and the instrument control, the
-   microphone status and the mode control are in the lower half.
+   gauge with its note, cents and frequency is the only content of the upper half, and the lower half shows a card
+   headed "Tuner controls" with the microphone status beside the heading and, stacked under it, the instrument control
+   and the mode control.
 2. **Given** the gauge is following a pitch, **When** the device goes from flat to tabletop or back, **Then** the
    listening does not stop and the gauge keeps moving through the change.
 3. **Given** microphone access was refused, **When** the Tuner is in tabletop, **Then** the refusal message and its
@@ -81,7 +100,7 @@ it; tapping a card plays its tone.
 **Acceptance Scenarios**:
 
 1. **Given** By Ear in tabletop, **When** the screen shows, **Then** all string cards are in the upper half and the
-   instrument, mode, string count, preset and loop-tone controls are in the lower half.
+   instrument, mode, string count, preset and loop-tone controls are stacked in that order in the lower half.
 2. **Given** a 7-string guitar preset, **When** the cards do not fit the upper half at their usual size, **Then** they
    shrink to fit or scroll within the upper half; no card crosses the fold.
 3. **Given** a card's tone is playing, **When** the posture changes, **Then** the tone keeps playing and its card stays
@@ -104,14 +123,33 @@ fold and the cells light on each beat; every other control is below the fold and
 **Acceptance Scenarios**:
 
 1. **Given** the Metronome in tabletop, **When** the screen shows, **Then** the upper half contains only the tempo dial
-   (with its readout, tempo name and − / + steps) and the accent cells, and the lower half contains the slider, tap
-   tempo, play/stop, time signature, subdivision, style and click sound.
+   (with its readout, tempo name and − / + steps) and the accent cells, and the lower half is one card headed
+   "Metronome controls" holding the time signature, subdivision and click sound, the style, the slider, then tap
+   tempo and play/stop.
 2. **Given** the metronome is running, **When** a beat sounds, **Then** that beat's accent cell lights in the upper half
    as it does in the other layouts.
 3. **Given** the metronome is running, **When** the device goes from flat to tabletop or back, **Then** the click does
    not stop or skip and the tempo, signature, accents, style and sound are unchanged.
 4. **Given** tabletop, **When** the musician taps an accent cell, **Then** its level cycles exactly as in the other
    layouts.
+
+---
+
+### User Story 5 - Keep the metronome off the hinge in book posture (Priority: P2)
+
+A musician holds the half-opened phone like a book. The metronome's settings fill the page left of the hinge; the
+dial, tap tempo and play fill the page right of it.
+
+**Why this priority**: the wide metronome otherwise draws its dial card across the fold.
+
+**Independent Test**: on the foldable in book posture, open the Metronome; no card crosses the hinge.
+
+**Acceptance Scenarios**:
+
+1. **Given** the device half-opened with a vertical fold, **When** the Metronome shows its wide layout, **Then** the
+   settings end a gutter before the hinge and the dial card, tap tempo and play start a gutter after it.
+2. **Given** a device with no vertical fold (flat, a tablet), **When** the Metronome shows its wide layout, **Then**
+   it is unchanged.
 
 ---
 
@@ -127,8 +165,8 @@ and the iPad Pro simulators are unchanged; on the foldable, flat and book postur
 
 **Acceptance Scenarios**:
 
-1. **Given** any device that is not in tabletop posture, **When** either screen shows, **Then** its layout is the one it
-   had before this feature.
+1. **Given** any device that is not in tabletop posture and has no vertical fold, **When** either screen shows,
+   **Then** its layout is the one it had before this feature.
 2. **Given** the foldable in tabletop, **When** it is unfolded flat, **Then** the screen returns to the existing layout
    for that window within one posture change, with no state lost.
 
@@ -141,7 +179,8 @@ and the iPad Pro simulators are unchanged; on the foldable, flat and book postur
 - **One half is too short for its content** (large fonts, a small foldable, the shell's top bar in the upper half):
   that half scrolls on its own; nothing moves across the fold to make room.
 - **The navigation rail**: it stays where the shell puts it, beside both halves; only the screen's own content is split.
-- **Rotating while in tabletop**: a vertical fold is book posture and gets the existing layout.
+- **Rotating while in tabletop**: a vertical fold is book posture: the existing layouts, except that the wide
+  Metronome splits at the fold (FR-011).
 - **Menus and pickers opened in the lower half** (time signature, style, sound, tuning preset) open as they do today
   and keep the height bound that prevents the iOS menu crash; they may overlap the upper half while open.
 - **Snackbars** (metronome messages) appear at the bottom of the lower half, as today.
@@ -158,15 +197,17 @@ and the iPad Pro simulators are unchanged; on the foldable, flat and book postur
   lower region, measured from the fold's reported position, with no content in the fold's area or within a gutter of
   it.
 - **FR-003**: Tuner, Auto Listen, in tabletop: the upper region MUST show only the gauge (note, cents, frequency, the
-  flat/sharp labels and the in-tune state); the lower region MUST show the instrument control, the microphone status
-  and the mode control. When microphone access is refused, the refusal message and its action replace the gauge in the
+  flat/sharp labels and the in-tune state); the lower region MUST show one card with a centred "Tuner controls"
+  heading, the microphone status on the heading's line, and the instrument control over the mode control in one
+  centred column (D1). When microphone access is refused, the refusal message and its action replace the gauge in the
   upper region.
 - **FR-004**: Tuner, By Ear, in tabletop: the upper region MUST show only the string cards; the lower region MUST show
   the instrument control, the mode control, the string count (when the instrument has one), the tuning preset picker
-  and the loop-tone switch. The cards keep their tap-to-play behaviour.
+  and the loop-tone switch, stacked in that order in the same centred column (D1). The cards keep their tap-to-play behaviour.
 - **FR-005**: Metronome, in tabletop: the upper region MUST show only the tempo dial (readout, tempo name, − / + steps,
-  drag) and the accent cells; the lower region MUST show the tempo slider, tap tempo, play/stop, the time signature,
-  the subdivision, the style and the click sound. The accent cells keep lighting on each beat and keep their
+  drag) and the accent cells; the lower region MUST show one card with a centred "Metronome controls" heading holding,
+  in order, the time signature and the subdivision with the click sound on their line, the style, the tempo slider,
+  then tap tempo and play/stop (D1). The accent cells keep lighting on each beat and keep their
   tap-to-cycle behaviour.
 - **FR-006**: The upper region's content MUST be sized to the region's height so that, on the reference foldable at the
   default font size, the gauge, the dial and every string card are wholly visible without scrolling.
@@ -174,8 +215,14 @@ and the iPad Pro simulators are unchanged; on the foldable, flat and book postur
   they MUST scroll within it.
 - **FR-008**: Entering or leaving tabletop posture MUST change only the arrangement: listening, a playing reference tone,
   a running metronome click and every selection carry on unchanged.
-- **FR-009**: Outside tabletop posture both screens MUST keep their existing layouts on every window size and platform.
+- **FR-009**: Outside tabletop posture both screens MUST keep their existing layouts on every window size and platform,
+  except for the book-posture split of FR-011.
 - **FR-010**: Keyboard focus and screen-reader order in tabletop MUST read the upper region before the lower region.
+- **FR-011**: With a vertical fold that separates the screen (book posture), the Metronome's wide layout MUST place
+  its settings before the fold and the dial card, tap tempo and play after it, each a gutter clear of the fold's area,
+  measured from the fold's reported position (D1).
+- **FR-012**: The shell's top bar MUST keep clear of the status bar and of a display cutout on the top or the sides,
+  and MUST NOT grow by a cutout reported on the bottom edge (D1, a feature 002 defect).
 
 ### Key Entities
 

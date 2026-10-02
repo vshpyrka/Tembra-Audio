@@ -79,6 +79,9 @@ app/shared/ui/src/
 │   ├── posture/TabletopFold.kt                 # new: fold span + from(Posture) + currentTabletopFold()
 │   ├── designsystem/FoldSplit.kt               # new: two-slot layout around the fold
 │   ├── designsystem/FoldSplitGeometry.kt       # new: pure region arithmetic
+│   ├── designsystem/FoldSplitRow.kt            # D1: the split on its side, at a book-posture hinge
+│   ├── designsystem/TembraTopBar.kt            # D1: top and side insets only (feature 002 defect)
+│   ├── posture/VerticalFold.kt                 # D1: the book-posture hinge
 │   ├── tuner/TunerLayout.kt                    # + Tabletop, from(windowSizeClass, fold)
 │   ├── tuner/TunerScreen.kt                    # reads the fold, passes layout + fold
 │   ├── tuner/TunerScreenContent.kt             # Tabletop branch: FoldSplit(mode pane | settings card)
@@ -100,6 +103,13 @@ app/shared/ui/src/
 
 **Structure Decision**: everything stays in `:shared:ui` (Constitution VII feature packages); the fold type gets a
 small `posture` package because both features and the design system use it.
+
+## Design iteration D1 (2026-10-02)
+
+The user's review of the first build changed the lower regions (one metronome controls card, a stacked tuner column,
+centred headings), added the book-posture hinge split for the wide metronome and surfaced a top-bar inset defect;
+research R8 records the decisions, spec "Design iteration D1" and FR-011/FR-012 the behaviour, tasks T030–T036 the
+work. The Constitution Check is unchanged: no dependency, the hinge comes from the same common `windowPosture`.
 
 ## Complexity Tracking
 

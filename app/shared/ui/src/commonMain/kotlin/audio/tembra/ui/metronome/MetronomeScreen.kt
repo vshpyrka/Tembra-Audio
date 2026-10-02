@@ -10,6 +10,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import audio.tembra.ui.posture.currentTabletopFold
+import audio.tembra.ui.posture.currentVerticalFold
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 
 /**
@@ -60,6 +61,7 @@ fun MetronomeScreen(modifier: Modifier = Modifier, viewModel: MetronomeViewModel
             snackbarHostState = snackbarHostState,
             modifier = modifier,
             fold = fold,
+            verticalFold = currentVerticalFold(),
         )
     }
 }

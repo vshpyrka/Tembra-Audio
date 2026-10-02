@@ -18,6 +18,20 @@ The fold's vertical span in window pixels while the window is in tabletop postur
 - `currentTabletopFold(): TabletopFold?` — the composable read of `currentWindowAdaptiveInfo().windowPosture`.
 - Validation: `bottom >= top` (constructor `require`).
 
+## 1a. VerticalFold (`audio.tembra.ui.posture`, design iteration D1)
+
+The hinge of a window half-opened like a book, in window pixels.
+
+| Field | Type | Rule |
+|---|---|---|
+| `left` | `Float` | The hinge's left edge (`HingeInfo.bounds.left`) |
+| `right` | `Float` | Its right edge; equal to `left` for a zero-width fold |
+
+- `VerticalFold.from(posture)`: the first hinge with `isVertical && isSeparating`, else null. Validation:
+  `right >= left`.
+- `currentVerticalFold()`: the composable read. `FoldSplitRow(fold, …, start, end)` maps it into the layout by its own
+  left edge in the window and splits with `FoldSplitGeometry` on the x axis.
+
 ## 2. TunerLayout / MetronomeLayout (existing enums, one new entry each)
 
 | Entry | When |

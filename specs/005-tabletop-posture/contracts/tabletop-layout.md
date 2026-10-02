@@ -19,19 +19,25 @@ its content is taller than it (FR-007, SC-005).
 
 | Mode | Upper | Lower |
 |---|---|---|
-| Auto Listen | `tuner.autoListen` with `tuner.meter` (or the denied panel's button) | `tuner.settings` with the instrument control, the audio-state pill, the mode control |
-| By Ear | `tuner.byEar` with every string card | `tuner.settings` with the instrument and mode controls, the string count (guitar), the preset picker, the loop-tone toggle |
+| Auto Listen | `tuner.autoListen` with `tuner.meter` (or the denied panel's button) | `tuner.settings`: centred "TUNER CONTROLS" heading with the audio-state pill on its line, then `tuner.instrument` over `tuner.mode`, centred |
+| By Ear | `tuner.byEar` with every string card | `tuner.settings`: the same heading, then `tuner.instrument`, `tuner.mode`, `tuner.strings` (guitar), `tuner.preset.picker`, the loop-tone row, stacked in that order |
 
 ## Metronome (`screen.metronome` root unchanged)
 
 | Upper | Lower |
 |---|---|
-| `metronome.dialCard` with the tempo dial (readout, marking, − / +); `metronome.cells` with one cell per beat | `metronome.settings` with `metronome.bar` (signature menu, subdivision tiles, style row) and the sound pill; the tempo slider; tap tempo; play/pause |
+| `metronome.dialCard` with the tempo dial (readout, marking, − / +); `metronome.cells` with one cell per beat | `metronome.settings`, one card: centred "METRONOME CONTROLS" heading, then `metronome.signature`, `metronome.subdivision` and `metronome.sound` on one line, `metronome.style`, `metronome.slider`, `metronome.tap` and `metronome.play` |
 
 The slider is NOT in `metronome.dialCard` in this layout. The cells keep tap-to-cycle and lighting. From 600 dp of
-width (a book-style foldable) each half puts its two cards side by side; narrower (a flip-style foldable, ~412 dp) each
-half stacks them: the dial card over the accent card above the fold, the settings card over the slider and transport
-card below it (T029, found in the T027 review).
+width (a book-style foldable) the dial card and the accent card sit side by side above the fold; narrower (a
+flip-style foldable, ~412 dp) they stack, the dial card over the accent card (T029, found in the T027 review). The
+controls card below the fold is the same at every width; its rows wrap.
+
+## Book posture (design iteration D1)
+
+With `verticalFold` passed to `MetronomeScreenContent` in the `Wide` layout: `metronome.settings` ends at least
+`spacing.md` before the fold's left edge and `metronome.dialCard`, `metronome.tap` and `metronome.play` start at least
+`spacing.md` after its right edge (`MetronomeHingeLayoutTest`). Without it the column is the usual third (≥ 320 dp).
 
 ## Unchanged
 

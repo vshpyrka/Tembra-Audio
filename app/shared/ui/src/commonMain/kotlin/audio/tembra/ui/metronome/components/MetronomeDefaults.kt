@@ -180,7 +180,7 @@ internal object MetronomeDefaults {
     val TabletopCellBarMax: Dp = 160.dp
 
     /**
-     * Above and below a tabletop fold, the two cards of each half sit side by side from this width (a book-style
+     * Above a tabletop fold the dial card and the accent card sit side by side from this width (a book-style
      * foldable's inner screen) and stack under it (a flip-style foldable).
      */
     val TabletopSideBySideMinWidth: Dp = 600.dp

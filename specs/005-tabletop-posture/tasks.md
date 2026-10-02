@@ -92,6 +92,18 @@ description: "Task list for feature 005: tabletop posture"
 - [X] T027 Skill review of the diff (`using-chrisbanes-skills`), fixes applied
 - [X] T028 Stitch: three "Foldable Tabletop" screens from the captures uploaded to project `12040171611712589599`, placed on the canvas, export re-pulled into `design/stitch/screens/` and `screens.json` (research R7)
 
+---
+
+## Phase 8: Design iteration D1 (2026-10-02, the user's review on the emulator)
+
+- [X] T030 [US3] One metronome controls card below the fold: `TabletopControlDeck` in `commonMain/.../metronome/MetronomeScreenContent.kt` (centred "METRONOME CONTROLS" heading over a seam; signature, tiles and sound pill; style; slider; tap and play), tagged `metronome.settings` inside the `metronome.tabletop.lower` box; `MetronomeSettingsPanel` drops its tabletop card and treats `Tabletop` as `Stacked`; tests `onlyTheDialAndTheCellsAreAboveTheFold` (updated) and `theControlsCardIsHeadedAndReadsTopToBottom`
+- [X] T031 [US1] [US2] Stacked tuner controls: `TunerTabletopSettings` centres its heading with the pill at `CenterEnd` and stacks instrument, mode, string count, preset and loop tone in one column capped at `byEarGridMaxWidthWide`; test `theControlsStackUnderACentredHeading`
+- [X] T032 [P] `VerticalFold` (`commonMain/.../posture/VerticalFold.kt`) with `from(Posture)` and `currentVerticalFold()`; test `commonTest/.../posture/VerticalFoldTest.kt` (first vertical separating hinge; flat or horizontal hinges ignored; `require(right >= left)`)
+- [X] T033 [US5] `FoldSplitRow` (`commonMain/.../designsystem/FoldSplitRow.kt`, `FoldSplitGeometry` on the x axis) and the book-posture branch of `WideMetronome`; `MetronomeScreen` passes `currentVerticalFold()`; test `uiTest/.../metronome/MetronomeHingeLayoutTest.kt`
+- [X] T034 FR-012: `TembraTopBar` pads `statusBars ∪ displayCutout` on `Top + Horizontal` only (the emulator rotated 180° reports its cutout on the bottom edge)
+- [X] T035 Lanes: JVM, iPhone 17, iPad Pro, Android device on the Pixel 6 Pro and the fold emulator; captures `android-fold-d1-*.png` and NOTES
+- [X] T036 Spec, research R8, data model, contract and plan updated for D1 (Stitch screens not refreshed: the user asked for code and spec-kit documents only)
+
 ## Dependencies
 
 Phase 1 → Phase 2 → US1 → US2 (shares `TunerTabletopSettings`) ; US3 depends only on Phase 2 ; US4 after US1–US3 ; Polish last.
