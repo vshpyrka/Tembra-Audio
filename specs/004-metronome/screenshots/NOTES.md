@@ -966,6 +966,8 @@ Xcode 27.1 so the app fills the displays), closed pose, outer display 466 × 678
 | `ios-duo-closed-pocket.png` | The Pocket form: label-less accent bars, the dial card filling the height with the settings button at its top end, tap and play above the bar |
 | `ios-duo-closed-pocket-sheet.png` | The settings button opens a modal bottom sheet: signature, subdivision tiles, style row, click sound |
 | `ios-duo-closed-pocket-downbeat.png` | Downbeat chosen in the sheet; a tap on the scrim closes it back to the Pocket form |
+| `ios-duo-closed-pocket-end-rail.png` | 2026-10-04: the Pocket form beside the end-edge rail (LayoutMode.EndRail); the dial card gains the bottom bar's height |
+| `ios-duo-closed-landscape.png` | 2026-10-04: the closed Duo rotated to landscape takes the Landscape form beside the start rail, with Downbeat kept |
 
 Observed: the sheet's surfaceContainerLowest is close to the scrim, so its top edge is faint. checkIos on the Duo
 (660 tests) and checkAndroidHost (380) passed with the change.

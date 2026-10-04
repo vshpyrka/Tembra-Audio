@@ -64,6 +64,12 @@ and the iOS simulator across both thresholds in both directions (SC-004). `Windo
 The root of the app computes both inputs from the platform window-size API (research R3); the
 shell composable receives a `LayoutMode` parameter so UI tests can force each layout.
 
+`EndRail` (experiment, 2026-10-04, iPhone Duo only): where `from` gives `BottomBar` on the iPhone Duo (its closed
+outer display held upright), `from(windowSizeClass, iphoneDuo)` gives `EndRail` instead. iOS keeps the status bar
+and camera in a column at the end edge of that display and Apple's guidance puts tab bars in that column, so the rail
+fills it (at least 64 dp, as wide as the end safe-drawing inset) with its items at the bottom, and no bottom bar
+takes vertical space. Every other device keeps the table above. Background: docs/research/iphone-duo.md.
+
 `RailWithPanel` shows the supporting pane only for a destination whose `hasSupportingPane` is
 true; for the others the layout is visually identical to `Rail` (spec US3 scenario 3).
 
