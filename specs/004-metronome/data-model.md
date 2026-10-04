@@ -238,7 +238,9 @@ the engine; a sound selection while stopped previews one Click.
 
 `MetronomeLayout` (pure, unit-tested; same bands as `TunerLayout`): `Stacked` (width under 600 dp,
 or under 840 dp when the window is 480 dp or taller), `Wide` (840 dp or wider and 480 dp or
-taller), `Landscape` (600 dp or wider and shorter than 480 dp); `from(windowSizeClass)`.
+taller), `Landscape` (600 dp or wider and shorter than 480 dp); `from(windowSizeClass)`. Feature 005 added
+`Tabletop`; the 2026-10-03 experiment added `Pocket`, chosen by `from(windowSizeClass, fold, iphoneDuo)` in place of a
+compact-width `Stacked` on the iPhone Duo only (see contracts/metronome-screen.md).
 
 `TempoDialGeometry` (pure, unit-tested): ring radius 0.4 of the box, track from −90° (12 o'clock)
 clockwise over 275°, `sweepFor(tempo) = (bpm − 40) / 200 × 275°`, `tempoAt(angleFromTop) =

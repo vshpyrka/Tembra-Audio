@@ -53,4 +53,5 @@ Detailed mechanics for each rule: `docs/research/daw-internals.md` (graph, pan l
 - `reference/competitor-apps/` is about 720 MB of pulled APKs and extracted `.so` files, git-ignored and not present on a fresh clone. It contains over 8,000 files; scope any repository-wide search or listing to exclude it.
 - Diagrams in `docs/diagrams/` have an editable `.excalidraw` beside each `.png`. Edit the source and re-render; do not edit the PNG alone.
 - To refresh the Stitch export after design edits, follow the re-pull steps in `design/stitch/README.md` (Stitch project `12040171611712589599`, MCP server `stitch`). Screenshot URLs need the `=s0` suffix or you get 512px thumbnails.
+- The iPhone Duo simulator runs only with Xcode 27.1 beta and its iOS 27.1 runtime (the 27.2 beta runtime refuses the device); poses are Device Hub buttons, not `simctl`, and Compose Multiplatform reports no fold posture on iOS. Setup, fold APIs and Apple's guidance: `docs/research/iphone-duo.md`.
 - The NotebookLM notebooks behind the research are listed in `docs/README.md` and can be queried with the `notebooklm` CLI.

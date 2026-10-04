@@ -77,6 +77,19 @@ Column(testTag "screen.metronome", padding pageMargin)
 
 On a 411 × 891 dp phone (Pixel 6 Pro) and a 402 × 874 dp phone (iPhone 17) at the default font scale the dial card, its slider and the pinned row are all inside the viewport without scrolling; TimeSignatureChips and SubdivisionChips (with labels and the same note glyphs as icons) remain the Wide controls; Landscape uses the compact card too (revised 2026-10-01).
 
+Pocket (experiment, 2026-10-03, iPhone Duo closed outer display only; not yet a requirement of spec.md): the
+Stacked form does not fit the Duo's 466 × 678 pt outer display (the column scrolls and cuts the dial card at the
+viewport), so on that device (`isIphoneDuo`, model iPhone19,4) at compact width MetronomeScreen picks Pocket instead
+of Stacked; every other device and every test keep the bands above. Research and next steps: docs/research/iphone-duo.md.
+Column(testTag "screen.metronome", padding pageMargin × sm, gap sm)
+├── Card (surfaceContainerLow, medium corners, padding sm): AccentCells(form = BarOnly, gap 4 dp)      "metronome.cells"
+├── Box(weight 1)
+│   ├── TembraGradientCard(tempoDialCard, fills the box): TempoDial (ring up to 300 dp) + TempoSlider      "metronome.dialCard"
+│   └── settings button (TopEnd, inset xs): 44 dp round surfaceContainerHigh, TembraIcon.Settings, "Metronome settings"   "metronome.pocket.settings"
+└── Row(pinned, gap md): TapTempoButton + PlayPauseButton
+ModalBottomSheet (surfaceContainerLowest) while open, closed by the scrim or a drag: MetronomeSettingsPanel(layout = Pocket),
+scrolling: the bar-shape card without the cells (TimeSignatureMenu + SubdivisionTiles, StyleRow), then ClickSoundPicker(Dropdown)   "metronome.settings"
+
 Wide (840 dp or wider and 480 dp or taller):
 Row(testTag "screen.metronome", padding pageMargin, gap md)
 ├── Column(width max(1/3, wideSettingsMinWidth), verticalScroll): MetronomeSettingsPanel with ClickSoundPicker(layout = Tiles) in a "CLICK TIMBRE" card

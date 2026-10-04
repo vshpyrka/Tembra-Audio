@@ -951,3 +951,21 @@ menus instead: `MetronomeDefaults.MenuMaxHeight` (360 dp, seven entries plus pad
 the same sequence (landscape menus, play, tap, seven rotations, portrait signature and sound menus) ran with no
 exception. The two iOS landscape captures (`ios-landscape-stopped.png` at 4/4, `ios-landscape-7-8.png`) were retaken on
 the fixed build once the Mac was unlocked; the Pixel captures were unaffected.
+
+## iPhone Duo experiment, 2026-10-03
+
+**Device**: iPhone Duo simulator (iOS 27.1 beta runtime 24A94401, Xcode 27.1 beta 27A9269, Debug build made with
+Xcode 27.1 so the app fills the displays), closed pose, outer display 466 × 678 pt. Setup and findings:
+`docs/research/iphone-duo.md`. Not a requirement of spec.md yet; the form is described in
+`contracts/metronome-screen.md` (Pocket).
+
+| File | What it shows |
+|---|---|
+| `ios-duo-closed-stacked-cut.png` | Before: the Stacked form on the outer display; the column scrolls, the dial card is cut at the viewport ("Larghetto" sliced, slider out of view), and the bottom bar's Profile sits under the status column |
+| `ios-duo-closed-bar-insets.png` | The bottom bar after the inset fix: its six items end before the status and camera column |
+| `ios-duo-closed-pocket.png` | The Pocket form: label-less accent bars, the dial card filling the height with the settings button at its top end, tap and play above the bar |
+| `ios-duo-closed-pocket-sheet.png` | The settings button opens a modal bottom sheet: signature, subdivision tiles, style row, click sound |
+| `ios-duo-closed-pocket-downbeat.png` | Downbeat chosen in the sheet; a tap on the scrim closes it back to the Pocket form |
+
+Observed: the sheet's surfaceContainerLowest is close to the scrim, so its top edge is faint. checkIos on the Duo
+(660 tests) and checkAndroidHost (380) passed with the change.
