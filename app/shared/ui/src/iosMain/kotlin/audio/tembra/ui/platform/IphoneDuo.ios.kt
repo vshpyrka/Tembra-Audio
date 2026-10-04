@@ -1,4 +1,4 @@
-package audio.tembra.ui.metronome
+package audio.tembra.ui.platform
 
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.alloc

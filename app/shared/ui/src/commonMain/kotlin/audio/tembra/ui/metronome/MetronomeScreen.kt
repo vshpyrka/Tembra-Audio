@@ -9,6 +9,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import audio.tembra.ui.platform.isIphoneDuo
 import audio.tembra.ui.posture.currentTabletopFold
 import audio.tembra.ui.posture.currentVerticalFold
 import dev.zacsweers.metrox.viewmodel.metroViewModel

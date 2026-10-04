@@ -11,7 +11,14 @@ import audio.tembra.ui.theme.WindowWidth
 enum class LayoutMode {
     BottomBar,
     Rail,
-    RailWithPanel;
+    RailWithPanel,
+
+    /**
+     * Experiment (not in any spec): the iPhone Duo's closed outer display, where iOS keeps the status bar and camera in
+     * a column at the end edge and Apple's guidance puts the tab bar in that column too (docs/research/iphone-duo.md).
+     * The rail fills that column with its items at the bottom, and no bottom bar takes vertical space.
+     */
+    EndRail;
 
     companion object {
         fun from(width: WindowWidth, isShort: Boolean): LayoutMode = when (width) {
@@ -25,5 +32,11 @@ enum class LayoutMode {
             width = WindowWidth.from(windowSizeClass),
             isShort = !windowSizeClass.isHeightAtLeastBreakpoint(WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND),
         )
+
+        /** As [from], with [EndRail] in place of [BottomBar] on the iPhone Duo (the experiment). */
+        fun from(windowSizeClass: WindowSizeClass, iphoneDuo: Boolean): LayoutMode {
+            val mode = from(windowSizeClass)
+            return if (iphoneDuo && mode == BottomBar) EndRail else mode
+        }
     }
 }

@@ -134,3 +134,18 @@ The Debug build signed with the developer's personal team was installed on "Vict
 26.5.2) with `xcrun devicectl device install app` and launched with `devicectl device process launch`
 (bundle `audio.tembra.app<TEAM_ID>`); the process was still running ten seconds later. There is no CLI screenshot
 for a physical iPhone, so the on-device look was not captured.
+
+## iPhone Duo end-edge rail (experiment), 2026-10-04
+
+**Device**: iPhone Duo simulator (iOS 27.1 beta runtime 24A94401), Debug build made with Xcode 27.1 beta, closed
+pose, outer display 466 × 678 pt. Background: `docs/research/iphone-duo.md`; layout mode `EndRail` in data-model §3.
+
+| File | What it shows |
+|---|---|
+| `ios-duo-closed-end-rail-home.png` | Held upright: the rail fills the end-edge system column under the clock and Wi-Fi, items at the bottom; the content runs the full height with no bottom bar |
+| `ios-duo-closed-end-rail-tuner.png` | Tuner (By Ear) beside the end rail; the string grid scrolls inside its card as designed |
+| `ios-duo-closed-landscape-rail.png` | Rotated to landscape (678 pt wide, medium): the ordinary start rail, the system column hidden, the camera in the bottom end corner over empty content |
+
+Observed: "Metronome" fills its selected rail pill edge to edge; the rail's secondaryContainer highlight differs
+from the bottom bar's primaryContainer one, now visible on the same device. checkIos on the Duo (660) and
+checkAndroidHost (380) passed with the change.

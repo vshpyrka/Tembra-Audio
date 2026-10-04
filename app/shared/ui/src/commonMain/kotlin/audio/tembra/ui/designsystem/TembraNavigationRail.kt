@@ -9,6 +9,7 @@ import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -30,6 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
@@ -55,6 +57,8 @@ import audio.tembra.ui.theme.TembraTheme
  * content and a bold label, drawn behind the content without clipping; the fill fades between items over the motion
  * token. Hover or a press fills an inactive item with surfaceContainerHigh and raises its content to onSurface,
  * keyboard focus draws a primary ring, and every item is a tab with its label as description (spec FR-014, FR-015).
+ * [itemsAlignment] places the items in the rail's height: at the top by default, at the bottom in the iPhone Duo
+ * experiment's end-edge rail, below the status bar and camera that share its column.
  */
 @Composable
 fun TembraNavigationRail(
@@ -62,6 +66,7 @@ fun TembraNavigationRail(
     selectedId: String,
     onSelect: (String) -> Unit,
     modifier: Modifier = Modifier,
+    itemsAlignment: Alignment.Vertical = Alignment.Top,
 ) {
     val spacing = TembraTheme.spacing
     Surface(
@@ -72,17 +77,23 @@ fun TembraNavigationRail(
             .width(spacing.railWidth),
         color = TembraTheme.colors.surfaceContainerLowest,
     ) {
-        Column(
+        // The box holds the scrolling column at [itemsAlignment]: a scrolling column alone has no height to align in.
+        Box(
             modifier = Modifier
                 .fillMaxHeight()
-                .windowInsetsPadding(WindowInsets.navigationBars.only(WindowInsetsSides.Bottom))
-                .verticalScroll(rememberScrollState())
-                .padding(vertical = spacing.xs),
-            verticalArrangement = Arrangement.spacedBy(spacing.xs),
-            horizontalAlignment = Alignment.CenterHorizontally,
+                .windowInsetsPadding(WindowInsets.navigationBars.only(WindowInsetsSides.Bottom)),
+            contentAlignment = BiasAlignment(horizontalBias = 0f, verticalBias = if (itemsAlignment == Alignment.Bottom) 1f else -1f),
         ) {
-            for (item in items) {
-                NavigationRailItem(item = item, selected = item.id == selectedId, onSelect = onSelect)
+            Column(
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+                    .padding(vertical = spacing.xs),
+                verticalArrangement = Arrangement.spacedBy(spacing.xs),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                for (item in items) {
+                    NavigationRailItem(item = item, selected = item.id == selectedId, onSelect = onSelect)
+                }
             }
         }
     }
