@@ -93,7 +93,8 @@ data class NavigationItemSpec(val id: String, val label: String, val icon: Tembr
 // TembraNavigationBar.kt
 @Composable fun TembraNavigationBar(
     items: List<NavigationItemSpec>, selectedId: String, onSelect: (String) -> Unit, modifier: Modifier = Modifier)
-// 64 dp + bottom inset, items spaced evenly; each item: icon (20 dp) over label (labelSmall),
+// 64 dp + bottom inset, items spaced evenly inside the horizontal safe-drawing insets too (2026-10-03: the
+// iPhone Duo's closed display keeps a status column at the end edge, and the content already cleared it); each item: icon (20 dp) over label (labelSmall),
 // min 56 dp wide, 44 dp tall touch target, pill shape. Active: primaryContainer fill,
 // onPrimaryContainer content, clip glow; the fill animates between items over
 // TembraTheme.motion.effectiveDuration. Inactive: onSurfaceVariant; hover -> onSurface.
