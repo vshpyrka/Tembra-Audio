@@ -57,6 +57,8 @@ cd app
 ./gradlew checkAndroidHost     # JVM unit tests (domain, parser, ViewModel, theme.json parity)
 ./gradlew checkIos             # iOS simulator: all shared tests + Compose UI tests + native engine link
 # add -Ptembra.iosSimulator="iPad Pro 13-inch (M5)" (any simctl name or UDID) to run the iOS lane on another simulator
+# iPhone Duo (foldable): needs Xcode 27.1 beta beside the release Xcode and its iOS 27.1 runtime; build the app with
+# DEVELOPER_DIR=/Applications/Xcode-27.1-beta.app/Contents/Developer so it fills the displays (docs/research/iphone-duo.md)
 ./gradlew checkAndroidDevice   # connected Android device: Compose UI tests + native engine link + AppDirectories
 ./gradlew engineHostTest       # C++ engine Catch2 tests on the macOS host (no audio device)
 ```

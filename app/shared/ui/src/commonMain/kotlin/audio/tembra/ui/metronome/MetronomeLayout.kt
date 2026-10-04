@@ -15,7 +15,13 @@ enum class MetronomeLayout {
     Landscape,
 
     /** A foldable in tabletop posture: watched content above the fold, settings below it (feature 005, research R5). */
-    Tabletop;
+    Tabletop,
+
+    /**
+     * Experiment (not in any spec): the iPhone Duo's closed screen, too short for the [Stacked] card over the dial.
+     * Only the accent cells sit over the dial card, which fills the height; the other settings open in a sheet.
+     */
+    Pocket;
 
     companion object {
         fun from(width: WindowWidth, isShort: Boolean): MetronomeLayout = when (width) {
@@ -33,5 +39,12 @@ enum class MetronomeLayout {
         /** [Tabletop] whenever the window has a tabletop [fold], at any size class; otherwise the window's band. */
         fun from(windowSizeClass: WindowSizeClass, fold: TabletopFold?): MetronomeLayout =
             if (fold != null) Tabletop else from(windowSizeClass)
+
+        /** As [from], with [Pocket] in place of a compact-width [Stacked] form on the iPhone Duo (the experiment). */
+        fun from(windowSizeClass: WindowSizeClass, fold: TabletopFold?, iphoneDuo: Boolean): MetronomeLayout {
+            val layout = from(windowSizeClass, fold)
+            val compact = WindowWidth.from(windowSizeClass) == WindowWidth.Compact
+            return if (iphoneDuo && compact && layout == Stacked) Pocket else layout
+        }
     }
 }

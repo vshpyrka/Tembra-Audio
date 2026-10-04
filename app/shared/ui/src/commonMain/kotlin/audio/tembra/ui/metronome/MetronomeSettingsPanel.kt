@@ -60,6 +60,10 @@ internal fun MetronomeSettingsPanel(
                 BarShapeCard(state = state, callbacks = callbacks, telemetry = telemetry)
                 SoundPicker(state, callbacks, ClickSoundPickerLayout.Dropdown, Modifier.align(Alignment.CenterHorizontally))
             }
+            MetronomeLayout.Pocket -> {
+                PocketSettingsCard(state = state, callbacks = callbacks)
+                SoundPicker(state, callbacks, ClickSoundPickerLayout.Dropdown, Modifier.align(Alignment.CenterHorizontally))
+            }
             MetronomeLayout.Landscape -> {
                 LandscapeBarShapeCard(state = state, callbacks = callbacks, telemetry = telemetry)
                 SoundPicker(state, callbacks, ClickSoundPickerLayout.Dropdown, Modifier.align(Alignment.CenterHorizontally))
@@ -127,6 +131,29 @@ private fun LandscapeBarShapeCard(state: MetronomeUiState, callbacks: MetronomeC
             modifier = Modifier.fillMaxWidth(),
         )
         Cells(state, callbacks, telemetry, gap = spacing.xs, form = AccentCellsForm.BarOnly)
+    }
+}
+
+/**
+ * The iPhone Duo experiment's settings sheet card: [BarShapeCard] without the accent cells, which stay on the screen
+ * over the dial.
+ */
+@Composable
+private fun PocketSettingsCard(state: MetronomeUiState, callbacks: MetronomeCallbacks) {
+    val settings = state.settings
+    val spacing = TembraTheme.spacing
+    SectionCard(gap = spacing.sm, modifier = barShapeSemantics()) {
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+            verticalArrangement = Arrangement.spacedBy(spacing.xs),
+            itemVerticalAlignment = Alignment.CenterVertically,
+        ) {
+            TimeSignatureMenu(selected = settings.signature, onSelect = callbacks.onSignature)
+            Spacer(Modifier.weight(1f))
+            SubdivisionTiles(selected = settings.subdivision, unit = settings.signature.unit, onSelect = callbacks.onSubdivision)
+        }
+        StyleRow(selected = settings.style, onSelect = callbacks.onStyle, modifier = Modifier.fillMaxWidth())
     }
 }
 

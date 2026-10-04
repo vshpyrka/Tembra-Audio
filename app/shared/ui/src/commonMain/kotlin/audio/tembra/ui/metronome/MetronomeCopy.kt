@@ -14,6 +14,7 @@ internal object MetronomeCopy {
     const val clickTimbre = "Click timbre"
     const val barShape = "Bar shape"
     const val metronomeControls = "Metronome controls"
+    const val metronomeSettings = "Metronome settings"
 
     // A menu trigger's state (the signature pill, the sound pill).
     const val expanded = "Expanded"
