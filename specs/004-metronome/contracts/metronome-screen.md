@@ -86,7 +86,9 @@ Column(testTag "screen.metronome", padding pageMargin × sm, gap sm)
 ├── Box(weight 1)
 │   ├── TembraGradientCard(tempoDialCard, fills the box): TempoDial (ring up to 300 dp) + TempoSlider      "metronome.dialCard"
 │   └── settings button (TopEnd, inset xs): 44 dp round surfaceContainerHigh, TembraIcon.Settings, "Metronome settings"   "metronome.pocket.settings"
-└── Row(pinned, gap md): TapTempoButton + PlayPauseButton
+└── Row(pinned, gap md): TapTempoButton + PlayPauseButton (above the bottom edge; since 2026-10-04 the shell's
+    LayoutMode.EndRail puts the navigation in the end-edge column on the Duo, so no bottom bar sits under the row)
+Rotated to landscape the closed Duo is 678 dp wide, so it takes the Landscape form below, beside the start rail.
 ModalBottomSheet (surfaceContainerLowest) while open, closed by the scrim or a drag: MetronomeSettingsPanel(layout = Pocket),
 scrolling: the bar-shape card without the cells (TimeSignatureMenu + SubdivisionTiles, StyleRow), then ClickSoundPicker(Dropdown)   "metronome.settings"
 

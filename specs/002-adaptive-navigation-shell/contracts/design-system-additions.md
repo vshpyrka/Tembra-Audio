@@ -102,7 +102,10 @@ data class NavigationItemSpec(val id: String, val label: String, val icon: Tembr
 
 // TembraNavigationRail.kt
 @Composable fun TembraNavigationRail(
-    items: List<NavigationItemSpec>, selectedId: String, onSelect: (String) -> Unit, modifier: Modifier = Modifier)
+    items: List<NavigationItemSpec>, selectedId: String, onSelect: (String) -> Unit, modifier: Modifier = Modifier,
+    itemsAlignment: Alignment.Vertical = Alignment.Top)
+// itemsAlignment (2026-10-04): Alignment.Bottom for the iPhone Duo's end-edge rail (LayoutMode.EndRail), whose
+// column also holds the status bar and camera at the top; the items scroll when they do not fit either way.
 // 64 dp wide, fills height below the top bar; items 48 dp wide, icon (22 dp) over label,
 // 16 dp rounded square; active: secondaryContainer fill, onSecondaryContainer content, bold label;
 // hover: surfaceContainerHigh fill, onSurface content. testTag "chrome.rail"; items "nav.item.<id>".

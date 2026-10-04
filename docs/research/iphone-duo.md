@@ -85,6 +85,6 @@ the API reference pages linked below, and running Tembra Audio on the iPhone Duo
 
 1. A Swift bridge for the hinge status and the division region, so the feature 005 splits work on the Duo.
 2. A side rail instead of the bottom bar on the closed outer display (HIG vertical bars). Tried 2026-10-04 on
-   branch `experiment/duo-side-rail` (`LayoutMode.EndRail`): the rail fills the end-edge system column with its items
-   at the bottom, under the clock and camera, and the content gains the bar's height.
+   branch `experiment/duo-side-rail` (`LayoutMode.EndRail`) and merged to main: the rail fills the end-edge system
+   column with its items at the bottom, under the clock and camera, and the content gains the bar's height.
 3. If the Pocket metronome is kept, select it from a short compact window rather than the device model.
