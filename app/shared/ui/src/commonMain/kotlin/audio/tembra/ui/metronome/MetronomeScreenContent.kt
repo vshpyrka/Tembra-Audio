@@ -1,6 +1,7 @@
 package audio.tembra.ui.metronome
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -19,20 +20,32 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
@@ -44,6 +57,7 @@ import audio.tembra.ui.designsystem.FoldSplit
 import audio.tembra.ui.designsystem.FoldSplitRow
 import audio.tembra.ui.designsystem.TembraGradientCard
 import audio.tembra.ui.metronome.components.AccentCells
+import audio.tembra.ui.metronome.components.AccentCellsForm
 import audio.tembra.ui.metronome.components.ClickSoundPicker
 import audio.tembra.ui.metronome.components.ClickSoundPickerLayout
 import audio.tembra.ui.metronome.components.MetronomeDefaults
@@ -56,6 +70,8 @@ import audio.tembra.ui.metronome.components.TempoSlider
 import audio.tembra.ui.metronome.components.TimeSignatureMenu
 import audio.tembra.ui.posture.TabletopFold
 import audio.tembra.ui.posture.VerticalFold
+import audio.tembra.ui.theme.TembraIcon
+import audio.tembra.ui.theme.TembraIcons
 import audio.tembra.ui.theme.TembraShapes
 import audio.tembra.ui.theme.TembraTheme
 import kotlin.math.roundToInt
@@ -94,7 +110,7 @@ fun MetronomeScreenContent(
         // The tag sits inside the page margin, where the content starts, as the tuner's does.
         val margin = when (layout) {
             MetronomeLayout.Wide -> Modifier.padding(spacing.pageMargin)
-            MetronomeLayout.Stacked, MetronomeLayout.Landscape, MetronomeLayout.Tabletop -> Modifier.padding(horizontal = spacing.pageMargin, vertical = spacing.sm)
+            MetronomeLayout.Stacked, MetronomeLayout.Landscape, MetronomeLayout.Tabletop, MetronomeLayout.Pocket -> Modifier.padding(horizontal = spacing.pageMargin, vertical = spacing.sm)
         }
         val root = Modifier.fillMaxSize().then(margin).testTag("screen.metronome")
         when (layout) {
@@ -102,6 +118,7 @@ fun MetronomeScreenContent(
             MetronomeLayout.Wide -> WideMetronome(state = state, callbacks = callbacks, telemetry = telemetry, verticalFold = verticalFold, modifier = root)
             MetronomeLayout.Landscape -> LandscapeMetronome(state = state, callbacks = callbacks, telemetry = telemetry, modifier = root)
             MetronomeLayout.Tabletop -> TabletopMetronome(state = state, callbacks = callbacks, telemetry = telemetry, fold = fold, modifier = root)
+            MetronomeLayout.Pocket -> PocketMetronome(state = state, callbacks = callbacks, telemetry = telemetry, modifier = root)
         }
         SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
     }
@@ -142,6 +159,76 @@ private fun StackedMetronome(state: MetronomeUiState, callbacks: MetronomeCallba
             )
         }
         TransportRow(state = state, callbacks = callbacks, modifier = Modifier.fillMaxWidth())
+    }
+}
+
+/**
+ * The iPhone Duo experiment (not in any spec): the accent cells as bar boxes without labels (the phone-landscape form)
+ * in a card on top, the dial card filling the height under them with a settings button in its top end corner, and the
+ * tap and play row pinned above the navigation bar. The button opens the other settings (signature, subdivision, style
+ * and sound) in a modal bottom sheet; whether it is open is this form's own state.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PocketMetronome(state: MetronomeUiState, callbacks: MetronomeCallbacks, telemetry: BeatTelemetry, modifier: Modifier) {
+    val spacing = TembraTheme.spacing
+    var settingsOpen by rememberSaveable { mutableStateOf(false) }
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
+        Box(modifier = Modifier.fillMaxWidth().tabletopCard(TembraTheme.colors.surfaceContainerLow).padding(spacing.sm)) {
+            AccentCells(
+                pattern = state.settings.pattern,
+                running = state.running,
+                currentBeat = state.currentBeat,
+                telemetry = telemetry,
+                onCycle = callbacks.onCycleBeat,
+                modifier = Modifier.fillMaxWidth(),
+                gap = spacing.xs,
+                form = AccentCellsForm.BarOnly,
+            )
+        }
+        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            DialCard(state = state, callbacks = callbacks, discs = CardDiscs.None, modifier = Modifier.fillMaxSize()) {
+                DialInCard(state, callbacks, cap = MetronomeDefaults.CompactDialMax)
+            }
+            SettingsButton(onClick = { settingsOpen = true }, modifier = Modifier.align(Alignment.TopEnd).padding(spacing.xs))
+        }
+        TransportRow(state = state, callbacks = callbacks, modifier = Modifier.fillMaxWidth())
+    }
+    if (settingsOpen) {
+        ModalBottomSheet(
+            onDismissRequest = { settingsOpen = false },
+            containerColor = TembraTheme.colors.surfaceContainerLowest,
+        ) {
+            MetronomeSettingsPanel(
+                state = state,
+                callbacks = callbacks,
+                telemetry = telemetry,
+                layout = MetronomeLayout.Pocket,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(start = spacing.pageMargin, end = spacing.pageMargin, bottom = spacing.lg)
+                    .testTag(SETTINGS_TAG),
+            )
+        }
+    }
+}
+
+/** The Pocket form's settings button: the settings glyph in a 44 dp round `surfaceContainerHigh` button. */
+@Composable
+private fun SettingsButton(onClick: () -> Unit, modifier: Modifier) {
+    val colors = TembraTheme.colors
+    Box(
+        modifier = modifier
+            .size(TembraTheme.spacing.touchTargetMin)
+            .clip(CircleShape)
+            .background(colors.surfaceContainerHigh)
+            .clickable(role = Role.Button, onClickLabel = MetronomeCopy.metronomeSettings, onClick = onClick)
+            .semantics { contentDescription = MetronomeCopy.metronomeSettings }
+            .testTag(POCKET_SETTINGS_TAG),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(imageVector = TembraIcons.vector(TembraIcon.Settings), contentDescription = null, tint = colors.onSurfaceVariant)
     }
 }
 
@@ -650,3 +737,4 @@ private const val SETTINGS_TAG = "metronome.settings"
 private const val DECK_SEAM_ALPHA = 0.2f
 private const val TABLETOP_UPPER_TAG = "metronome.tabletop.upper"
 private const val TABLETOP_LOWER_TAG = "metronome.tabletop.lower"
+private const val POCKET_SETTINGS_TAG = "metronome.pocket.settings"

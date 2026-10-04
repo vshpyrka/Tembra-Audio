@@ -36,7 +36,7 @@ fun MetronomeScreen(modifier: Modifier = Modifier, viewModel: MetronomeViewModel
     }
     // A tabletop foldable splits the screen at its fold (feature 005); both are read from the window on every change.
     val fold = currentTabletopFold()
-    val layout = MetronomeLayout.from(currentWindowAdaptiveInfo().windowSizeClass, fold)
+    val layout = MetronomeLayout.from(currentWindowAdaptiveInfo().windowSizeClass, fold, isIphoneDuo)
     val callbacks = remember(viewModel) {
         MetronomeCallbacks.None.copy(
             onTempo = viewModel::setTempo,
