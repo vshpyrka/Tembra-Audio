@@ -1,3 +1,3 @@
-package audio.tembra.ui.metronome
+package audio.tembra.ui.platform
 
 internal actual val isIphoneDuo: Boolean = false

@@ -2,6 +2,7 @@ package audio.tembra.ui.navigation
 
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
+import audio.tembra.ui.platform.isIphoneDuo
 
 /**
  * The layout mode of the real window (research R3). `currentWindowAdaptiveInfo()` is state-backed, so this recomputes
@@ -9,4 +10,4 @@ import androidx.compose.runtime.Composable
  */
 @Composable
 fun rememberLayoutMode(): LayoutMode =
-    LayoutMode.from(currentWindowAdaptiveInfo(supportLargeAndXLargeWidth = false).windowSizeClass)
+    LayoutMode.from(currentWindowAdaptiveInfo(supportLargeAndXLargeWidth = false).windowSizeClass, isIphoneDuo)
