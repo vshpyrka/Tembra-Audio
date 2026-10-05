@@ -380,3 +380,75 @@ TEST_CASE("with no gate, and with a gate far under the sound, every reading is w
     REQUIRE(a[9].clarity > 0.99f);
     REQUIRE(a[39].has_pitch == 1);
 }
+
+// --- A ringing note stays on the meter (feature 006, User Story 2; research R3) ---
+
+TEST_CASE("a fading note is read without a gap until it is 3 dB under the gate", "[analyzer][gate][margin]") {
+    for (const float gate : kCheckLevels) {
+        TunerAnalyzer analyzer(config(), kRate, false, gate);
+        // Starts 15 dB above the gate and fades at 10 dB a second: at the gate after 1.5 s, 3 dB under it after 1.8 s.
+        const auto readings = feed(analyzer, fadedDbPerSecond(toneAt(82.41, gate + 15.0, 4.0), kRate, 10.0));
+        size_t first = readings.size();
+        size_t last = 0;
+        for (size_t i = 0; i < readings.size(); ++i) {
+            if (readings[i].has_pitch != 1) continue;
+            if (first == readings.size()) first = i;
+            last = i;
+        }
+        INFO("gate " << gate << " dB: read from hop " << first << " to hop " << last);
+        REQUIRE(first < readings.size());
+        REQUIRE((first + 1) * 1024 <= 12000);
+        for (size_t i = first; i <= last; ++i) {
+            INFO("hop " << i << " level " << readings[i].input_level_db);
+            REQUIRE(readings[i].has_pitch == 1);
+        }
+        // The level when the reading ended, counted from the fade: 3 dB under the gate, give or take 2 (SC-003). The
+        // smoother's hold is part of that, so the meter is at rest within half a second of the gate closing.
+        const double endedAt = static_cast<double>(last + 1) * 1024.0 / kRate;
+        const double underTheGate = 10.0 * endedAt - 15.0;
+        INFO("the reading ended at " << endedAt << " s, " << underTheGate << " dB under the gate");
+        REQUIRE(underTheGate >= 1.0);
+        REQUIRE(underTheGate <= 5.0);
+        REQUIRE(readings.back().has_pitch == 0);
+        REQUIRE(readings.back().gate_open == 0);
+
+        // Plucked again above the gate, the note is back within a quarter of a second (User Story 2, scenario 4).
+        const auto again = feed(analyzer, toneAt(82.41, gate + 6.0, 1.0));
+        const size_t frames = framesUntil(again, [](const tembra_pitch_reading& r) { return r.has_pitch == 1; });
+        REQUIRE(frames > 0);
+        REQUIRE(frames <= 12000);
+    }
+}
+
+TEST_CASE("a tone wavering a decibel either way around the gate changes state at most once", "[analyzer][gate][margin]") {
+    for (const float gate : kCheckLevels) {
+        for (const double hz : {55.0, 82.41, 196.0}) {
+            TunerAnalyzer analyzer(config(), kRate, false, gate);
+            const auto readings = feed(analyzer, wobbledDb(toneAt(hz, gate, 30.0), kRate, 1.0, 0.5));
+            int changes = 0;
+            for (size_t i = 1; i < readings.size(); ++i) {
+                if (readings[i].has_pitch != readings[i - 1].has_pitch) ++changes;
+            }
+            INFO("gate " << gate << " dB at " << hz << " Hz: " << changes << " changes between a reading and rest");
+            REQUIRE(changes <= 1);
+        }
+    }
+}
+
+TEST_CASE("a sustained note above the gate reads exactly as with no gate", "[analyzer][gate][margin]") {
+    const auto bowed = toneAt(65.41, -40.0, 10.0);  // a cello C2, 10 dB over the gate
+    TunerAnalyzer plain(config(), kRate);
+    TunerAnalyzer gated(config(), kRate, false, -50.0f);
+    const auto a = feed(plain, bowed);
+    const auto b = feed(gated, bowed);
+    REQUIRE(a.size() == b.size());
+    // The window fills in four hops; from then on the gate is open and nothing differs.
+    for (size_t i = 8; i < a.size(); ++i) {
+        INFO("hop " << i);
+        REQUIRE(b[i].gate_open == 1);
+        REQUIRE(a[i].has_pitch == b[i].has_pitch);
+        REQUIRE(a[i].frequency_hz == b[i].frequency_hz);
+    }
+    REQUIRE(a.back().has_pitch == 1);
+}
+

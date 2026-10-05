@@ -93,10 +93,10 @@ description: "Task list for feature 006: tuner noise gate"
 
 **Independent Test**: the fade and waver cases of `tuner_analyzer_test.cpp`.
 
-- [ ] T030 [P] [US2] Failing rows in `engine/tests/level_gate_test.cpp`: an open gate stays open while `level >= gate − 3` and closes under it; `kCloseMarginDb == 3.0f`; a value change still ignores the margin
-- [ ] T031 [P] [US2] Failing cases in `engine/tests/tuner_analyzer_test.cpp`: a tone that starts 15 dB above the gate and fades at 10 dB per second is read without a gap until it is 3 ± 2 dB under the gate, and the reading rests within 500 ms after that (SC-003); a tone wavering ±1 dB around the gate level for 30 s changes between a reading and rest at most once (SC-004, FR-008); a steady tone 10 dB above the gate gives the same readings as with no gate for 10 s (User Story 2.3); after the fade has rested, a new tone above the gate is read within 250 ms (User Story 2.4)
-- [ ] T032 [US2] The closing margin in `engine/src/tuner/level_gate.{h,cpp}`: `kCloseMarginDb = 3.0f`, open stays open while `level >= gate − kCloseMarginDb` (T030, T031 and every US1 case green; `engineHostTest`)
-- [ ] T033 [US2] `NoiseGateEndToEndTest` on the iPhone 17 simulator and the Pixel 6 Pro still passes its sixteen combinations (every signal is at least 5 dB from every gate it meets)
+- [X] T030 [P] [US2] Failing rows in `engine/tests/level_gate_test.cpp`: an open gate stays open while `level >= gate − 3` and closes under it; `kCloseMarginDb == 3.0f`; a value change still ignores the margin
+- [X] T031 [P] [US2] Failing cases in `engine/tests/tuner_analyzer_test.cpp`: a tone that starts 15 dB above the gate and fades at 10 dB per second is read without a gap until it is 3 ± 2 dB under the gate, and the reading rests within 500 ms after that (SC-003); a tone wavering ±1 dB around the gate level for 30 s changes between a reading and rest at most once (SC-004, FR-008); a steady tone 10 dB above the gate gives the same readings as with no gate for 10 s (User Story 2.3); after the fade has rested, a new tone above the gate is read within 250 ms (User Story 2.4)
+- [X] T032 [US2] The closing margin in `engine/src/tuner/level_gate.{h,cpp}`: `kCloseMarginDb = 3.0f`, open stays open while `level >= gate − kCloseMarginDb` (T030, T031 and every US1 case green; `engineHostTest`)
+- [X] T033 [US2] `NoiseGateEndToEndTest` on the iPhone 17 simulator and the Pixel 6 Pro still passes its sixteen combinations (every signal is at least 5 dB from every gate it meets)
 
 **Checkpoint**: both P1 stories hold in the engine and through the bridges.
 
