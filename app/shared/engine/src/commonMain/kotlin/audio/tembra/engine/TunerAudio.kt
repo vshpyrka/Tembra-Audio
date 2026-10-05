@@ -13,6 +13,14 @@ interface TunerAudio : AudioStatus {
     fun stopListening()
 
     /**
+     * The noise gate (feature 006): the level a sound must reach to be read, in dB below full scale; null means no
+     * gate. Allowed in every state and kept by the engine across stops and starts, so a value set before
+     * [startListening] gates its first hop, and a change while listening never restarts the stream. A level outside
+     * -120..0 is refused and the previous value stays.
+     */
+    fun setNoiseGate(openDb: Float?): AudioResult
+
+    /**
      * Lock-free; safe to call every frame. Fills [into] without allocating and is also the watchdog heartbeat. Call
      * it from the main thread only: the facades reuse one scratch buffer per engine, so two threads reading at once
      * would tear a snapshot.

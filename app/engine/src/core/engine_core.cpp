@@ -86,7 +86,7 @@ int32_t EngineCore::beginCapture(const tembra_tuner_config& config, AudioDevice&
         device.close();
         return opened;
     }
-    auto analyzer = std::make_shared<TunerAnalyzer>(config, device.sampleRate(), synthetic);
+    auto analyzer = std::make_shared<TunerAnalyzer>(config, device.sampleRate(), synthetic, gateDb_);
     std::atomic_store(&analyzer_, analyzer);
     activeInput_ = &device;
     callbackAnalyzer_.store(analyzer.get(), std::memory_order_release);
@@ -151,12 +151,22 @@ void EngineCore::stopListeningLocked() {
     syntheticDevice_.reset();
 }
 
+int32_t EngineCore::setGate(bool enabled, float openDb) {
+    std::lock_guard<std::mutex> lock(commands_);
+    gateDb_ = enabled ? openDb : TunerAnalyzer::kGateOff;
+    auto analyzer = std::atomic_load(&analyzer_);
+    if (analyzer) analyzer->setGate(gateDb_);
+    return TEMBRA_OK;
+}
+
 void EngineCore::read(tembra_pitch_reading& out) const {
     auto analyzer = std::atomic_load(&analyzer_);
     if (analyzer) {
         analyzer->read(out);
     } else {
         std::memset(&out, 0, sizeof(out));
+        out.input_level_db = TunerAnalyzer::kLevelFloorDb;
+        out.gate_open = 1;
     }
     out.state = state();
 }
@@ -515,6 +525,7 @@ void EngineCore::setDevice(std::unique_ptr<AudioDevice> device) {
     stopMetronomeLocked();
     stopToneLocked();
     std::atomic_store(&analyzer_, std::shared_ptr<TunerAnalyzer>());
+    gateDb_ = TunerAnalyzer::kGateOff;
     platformDevice_ = std::move(device);
     telemetryDevice_.store(platformDevice_.get(), std::memory_order_release);
     // Forget the metronome's telemetry and click tables so every test starts from "before any start". Tests read

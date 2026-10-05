@@ -1,6 +1,8 @@
 // Owns the capture-side pipeline (research R1, R4): the ring buffer the callback pushes into, the pre-filter, the
 // detector and the smoother the analysis thread runs every hop, and the seqlock that publishes the reading. The
-// heartbeat of every read feeds the privacy watchdog (research R7).
+// heartbeat of every read feeds the privacy watchdog (research R7). Feature 006 adds the input level every hop (the
+// RMS of the analysis window after the pre-filter, research R2) and the noise gate: while the gate is closed the
+// detector is not run and the smoother is fed a rejected estimate, so the reading is held, then rests (research R1).
 #ifndef TEMBRA_TUNER_TUNER_ANALYZER_H
 #define TEMBRA_TUNER_TUNER_ANALYZER_H
 
@@ -11,6 +13,7 @@
 
 #include "tembra_engine.h"
 #include "tuner/band_pass.h"
+#include "tuner/level_gate.h"
 #include "tuner/mcleod_pitch_detector.h"
 #include "tuner/pitch_smoother.h"
 #include "tuner/ring_buffer.h"
@@ -20,7 +23,13 @@ namespace tembra {
 
 class TunerAnalyzer {
 public:
-    TunerAnalyzer(const tembra_tuner_config& config, uint32_t sampleRate, bool synthetic = false);
+    /** A gate value under the level floor means "no gate"; this is the one the engine stores for it. */
+    static constexpr float kGateOff = LevelGate::kOff;
+
+    /** The lowest input level reported, in dB below full scale. */
+    static constexpr float kLevelFloorDb = LevelGate::kFloorDb;
+
+    TunerAnalyzer(const tembra_tuner_config& config, uint32_t sampleRate, bool synthetic = false, float gateDb = kGateOff);
 
     static bool validate(const tembra_tuner_config& config);
 
@@ -29,6 +38,9 @@ public:
 
     /** Consumer side, from the analysis thread: consumes one hop when available and publishes a reading. */
     bool analyseAvailable();
+
+    /** Any thread that is not the callback: the level a sound must reach to be read, or [kGateOff]; from the next hop. */
+    void setGate(float gateDb) { gateDb_.store(gateDb, std::memory_order_relaxed); }
 
     /** Any thread: the latest reading; also stamps the watchdog heartbeat. */
     void read(tembra_pitch_reading& out) const;
@@ -45,7 +57,9 @@ public:
     static int64_t nowNanos();
 
 private:
-    void publish(float hz, float clarity, float inputPeak, bool hasPitch);
+    /** Adds the filtered hop in [hop_] to the window's energy and returns the window's level in dB. */
+    float measureLevel(size_t hop);
+    void publish(float hz, float clarity, float inputPeak, float levelDb, bool gateOpen, bool hasPitch);
 
     const tembra_tuner_config config_;
     const uint32_t sampleRate_;
@@ -57,6 +71,11 @@ private:
     std::vector<float> hop_;
     std::vector<float> window_;
     size_t filled_ = 0;
+    std::vector<double> hopEnergies_;  // the energy of each of the window's hops, a ring
+    size_t hopEnergyNext_ = 0;
+    size_t hopEnergyCount_ = 0;
+    std::atomic<float> gateDb_;
+    LevelGate gate_;
     Seqlock<tembra_pitch_reading> reading_;
     std::atomic<uint64_t> sequence_{0};
     mutable std::atomic<int64_t> lastReadNanos_;

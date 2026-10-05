@@ -9,19 +9,35 @@ import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-/** The developer test-signal catalogue (data-model.md §9, spec FR-032). */
+/** The developer test-signal catalogue (data-model.md §9, spec FR-032; the four level entries are feature 006, FR-022). */
 class TestSignalsTest {
 
     private val expectedIds = listOf(
         "e2-in-tune", "e2-flat-20", "e2-sharp-20", "e2-flat-45", "a2-sharp-40", "d3-flat-5", "g3-in-tune", "b3-in-tune",
         "e4-in-tune", "c2-in-tune", "b1-in-tune", "a1-in-tune", "e5-in-tune", "out-of-range-2khz",
+        "e2-70db", "e2-55db", "e2-45db", "e2-30db",
     )
 
     @Test
-    fun fourteenUniqueIdsInOrder() {
-        assertEquals(14, TestSignals.catalogue.size)
+    fun eighteenUniqueIdsInOrder() {
+        assertEquals(18, TestSignals.catalogue.size)
         assertEquals(expectedIds, TestSignals.catalogue.map { it.id })
-        assertEquals(14, TestSignals.catalogue.map { it.id }.toSet().size)
+        assertEquals(18, TestSignals.catalogue.map { it.id }.toSet().size)
+    }
+
+    @Test
+    fun theLevelEntriesAreInTuneE2AtTheirLevels() {
+        val amplitudes = mapOf("e2-70db" to 0.00069f, "e2-55db" to 0.00388f, "e2-45db" to 0.01227f, "e2-30db" to 0.06899f)
+        for ((id, amplitude) in amplitudes) {
+            val entry = TestSignals.byId(id)!!
+            val signal = assertIs<TestSignal.Pitched>(entry.signal)
+            assertEquals(Note.parse("E2"), signal.note, id)
+            assertEquals(0.0, signal.cents, id)
+            assertTrue(abs(signal.amplitude - amplitude) < amplitude * 0.01f, "$id: amplitude ${signal.amplitude}")
+            assertEquals(5, signal.harmonics, id)
+            assertEquals(0.25f, signal.fundamentalGain, id)
+            assertEquals(ExpectedReading.Note(Note.parse("E2"), 0.0), entry.expected, id)
+        }
     }
 
     @Test
