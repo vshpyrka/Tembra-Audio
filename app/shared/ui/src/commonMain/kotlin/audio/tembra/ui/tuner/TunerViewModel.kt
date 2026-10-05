@@ -125,9 +125,13 @@ class TunerViewModel(
                     presets = presets,
                     mode = stored.mode,
                     loopTone = stored.loopTone,
+                    noiseGate = stored.noiseGate,
                     microphone = permission.status.value,
                 )
             }
+            // A remembered gate is in the engine before listening can start, so the first hop is gated (spec FR-015).
+            // The engine starts with no gate, so "off" needs no call.
+            if (!stored.noiseGate.isOff) audio.setNoiseGate(stored.noiseGate.levelDb?.toFloat())
             applyAudio()
             launch {
                 permission.status.collect { status ->
@@ -196,12 +200,18 @@ class TunerViewModel(
 
     /**
      * Every step the noise gate's handle reaches. The engine takes the level at once and keeps it across stops and
-     * starts, so listening is never restarted by a move; nothing is written here.
+     * starts, so listening is never restarted by a move; nothing is written until [noiseGateSettled].
      */
     fun setNoiseGate(gate: NoiseGate) {
         if (_uiState.value.noiseGate == gate) return
         _uiState.update { it.copy(noiseGate = gate) }
         audio.setNoiseGate(gate.levelDb?.toFloat())
+    }
+
+    /** The move of the handle has ended: the level is remembered, once per move (spec FR-014). */
+    fun noiseGateSettled() {
+        val gate = _uiState.value.noiseGate
+        persist { it.copy(noiseGate = gate) }
     }
 
     // --- Audition intents (spec FR-018 to FR-020) ------------------------------------------------------------------
@@ -383,6 +393,8 @@ class TunerViewModel(
         pollJob = null
         stopAudio(current)
         current = DesiredAudio.Idle
+        // The engine keeps a gate for the life of the process; one this ViewModel set must not outlive it.
+        if (!_uiState.value.noiseGate.isOff) audio.setNoiseGate(null)
         unloadSamples()
         super.onCleared()
     }

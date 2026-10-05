@@ -238,6 +238,32 @@ class NoiseGateSliderTest {
         assertEquals(emptyList(), reported)
     }
 
+    // --- The move has ended (User Story 4: the level is written once per move) ---
+
+    @Test
+    fun aDragSettlesOnceWhenTheFingerLifts() = runComposeUiTest {
+        setSlider()
+        onNodeWithTag("tuner.noiseGate.slider").performTouchInput {
+            down(Offset(stepX(0, width.toFloat()), centerY))
+            for (step in 1..12) moveTo(Offset(stepX(step, width.toFloat()), centerY))
+        }
+        waitForIdle()
+        assertTrue(reported.isNotEmpty(), "the drag reported no step")
+        assertEquals(0, settled, "the move settled while the finger was still down")
+        onNodeWithTag("tuner.noiseGate.slider").performTouchInput { up() }
+        waitForIdle()
+        assertEquals(1, settled)
+    }
+
+    @Test
+    fun aTouchOnTheTrackSettlesOnce() = runComposeUiTest {
+        val gate = setSlider()
+        onNodeWithTag("tuner.noiseGate.slider").performTouchInput { click(Offset(stepX(10, width.toFloat()), centerY)) }
+        waitForIdle()
+        assertEquals(NoiseGate.ofStep(10), gate())
+        assertEquals(1, settled)
+    }
+
     // --- The live level on the track (User Story 3) ---
 
     @Test

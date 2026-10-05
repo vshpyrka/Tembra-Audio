@@ -668,4 +668,49 @@ class TunerViewModelTest {
         val moved = audio.calls.lastIndexOf("setNoiseGate(-40.0)")
         assertTrue(audio.calls.drop(moved + 1).none { it.startsWith("setNoiseGate") }, "calls after the move: ${audio.calls.drop(moved + 1)}")
     }
+
+    @Test
+    fun aRememberedNoiseGateReachesTheEngineBeforeListeningStarts() = viewModelTest {
+        preferences = FakeTunerPreferences(TunerPreferencesSnapshot(noiseGate = NoiseGate.ofLevelDb(-50)!!))
+        val viewModel = viewModel()
+        enterAutoListen(viewModel)
+        assertEquals(NoiseGate.ofLevelDb(-50)!!, viewModel.uiState.value.noiseGate)
+        assertEquals(listOf("setNoiseGate(-50.0)", "startListening"), audio.calls)
+    }
+
+    @Test
+    fun aFreshInstallLoadsTheGateOffAndLeavesTheEngineAlone() = viewModelTest {
+        val viewModel = viewModel()
+        enterAutoListen(viewModel)
+        assertEquals(NoiseGate.Off, viewModel.uiState.value.noiseGate)
+        assertEquals(listOf("startListening"), audio.calls)
+    }
+
+    @Test
+    fun settlingWritesTheNoiseGateAndOnlyThen() = viewModelTest {
+        val viewModel = viewModel()
+        enterAutoListen(viewModel)
+        viewModel.setNoiseGate(NoiseGate.ofLevelDb(-60)!!)
+        viewModel.setNoiseGate(NoiseGate.ofLevelDb(-58)!!)
+        runCurrent()
+        assertEquals(NoiseGate.Off, preferences.snapshot.first().noiseGate)
+        viewModel.noiseGateSettled()
+        runCurrent()
+        assertEquals(-58, preferences.snapshot.first().noiseGate.levelDb)
+        // The other remembered choices are untouched by the write.
+        assertEquals(TunerPreferencesSnapshot().copy(noiseGate = NoiseGate.ofLevelDb(-58)!!), preferences.snapshot.first())
+    }
+
+    @Test
+    fun clearingTakesTheGateOutOfTheEngine() = viewModelTest {
+        // The gate lives in the engine for the life of the process, the ViewModel for the life of its entry: a gate
+        // this ViewModel set must not outlive it, or the next entry would show "Off" over a gated engine.
+        val viewModel = viewModel()
+        enterAutoListen(viewModel)
+        viewModel.setNoiseGate(NoiseGate.ofLevelDb(-50)!!)
+        viewModel.clear()
+        created = null
+        assertEquals(listOf("stopListening", "setNoiseGate(off)"), audio.calls.takeLast(2))
+        assertNull(audio.noiseGateDb)
+    }
 }

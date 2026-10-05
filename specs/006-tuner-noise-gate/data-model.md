@@ -96,7 +96,8 @@ Derived:
 
 | Moment | What happens, in order |
 |---|---|
-| Load (`start`) | Read the stored snapshot → pick the debug launch value if there is one → `audio.setNoiseGate(levelDb)` → state `loaded` → `applyAudio()` (listening may start) |
+| Load (`start`) | Read the stored snapshot → pick the debug launch value if there is one → if that gate is not off, `audio.setNoiseGate(levelDb)` (the engine starts with no gate, so "off" needs no call) → state `loaded` → `applyAudio()` (listening may start) |
+| ViewModel cleared | After the stream is stopped: if the gate is not off, `audio.setNoiseGate(null)`. The engine keeps a gate for the life of the process and the ViewModel for the life of its entry; a gate this ViewModel set must not outlive it, or the next entry could show "Off" over a gated engine |
 | `setNoiseGate(gate)` | No-op if unchanged → state → `audio.setNoiseGate(gate.levelDb)`; nothing is written |
 | `noiseGateSettled()` | `preferences.update { it.copy(noiseGate = state.noiseGate) }` through the existing `persist` launch site |
 | Poll (10 Hz) | `gateOpen = snapshot.gateOpen` beside the existing `audio` and `reading` |

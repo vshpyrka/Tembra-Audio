@@ -49,6 +49,7 @@ Android target can be chosen through the wrapper with a small launcher script na
 | 3, User Story 1, screen part (state, intent, slider, placement under the meter) | `checkAndroidHost`; UI tests on the iPhone 17; `checkAndroidDevice` on the Pixel 6 Pro (core 86, engine 67, data 39, ui 495) | all passed, zero warnings |
 | 4, User Story 2 (the 3 dB closing margin) | `engineHostTest` 128 of 128; the engine module's tests on the iPhone 17 and on the Pixel 6 Pro (67 of 67), each with `NoiseGateEndToEndTest` | all passed, zero warnings |
 | 5, User Story 3 (the live level on the track) | UI module host tests; UI tests on the iPhone 17; `NoiseGateSliderTest` (11 tests) on the Pixel 6 Pro | all passed, zero warnings |
+| 6, User Story 4 (remembered, off by default) | `checkAndroidHost`; `checkIos` on the iPhone 17; `checkAndroidDevice` on the Pixel 6 Pro (core 86, engine 67, data 45, ui 512) | all passed, zero warnings; every ViewModel test that existed before passes unedited |
 
 On the Pixel 6 Pro the app was launched with the test signal `e2-55db` (2026-10-05): with the handle at "Off" the meter
 read E2 in tune; a tap at the middle of the track (about −50 dB) rested it ("Listening", pill unlit); a tap back at the
@@ -65,6 +66,12 @@ On the Pixel 6 Pro with the test signal `e2-45db` (2026-10-05): with the handle 
 violet (`primary`) and runs past the handle to about 58% of the track, where −45 dB lies, and the meter reads 82.4 Hz;
 with the handle moved past it the fill turns grey (`outline`), ends short of the handle, and the meter shows
 "Listening".
+
+Remembered across launches on the Pixel 6 Pro (2026-10-05): the handle was set to the middle of the track with
+`e2-45db` playing, the app was force-stopped and started again with the quieter `e2-55db` and no gate argument. The
+handle stood where it had been left, the fill was grey and short of it, and the meter showed "Listening" from the
+start. The phone's gate was then put back to "Off". The same check on the iPhone 17 simulator follows in T061, where
+the launch argument makes the handle settable without touch.
 
 ## Findings
 
