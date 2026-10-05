@@ -139,7 +139,8 @@ app/shared/ui/src/
 │   ├── tuner/TunerSettingsColumn.kt, TunerTabletopSettings.kt       # autoListenControls slot
 │   ├── tuner/TunerScreenContent.kt, TunerScreen.kt                  # build the control once, place it per layout
 │   ├── tuner/TunerUiState.kt, TunerCallbacks.kt, TunerViewModel.kt, TunerCopy.kt, TunerTestSignalRequest.kt
-│   └── App.kt                                                       # tunerNoiseGate parameter and local
+│   ├── App.kt                                                       # tunerNoiseGate parameter and local
+│   └── navigation/NavigationShell.kt                                # a gate argument opens the Tuner
 ├── iosMain/kotlin/audio/tembra/ui/MainViewController.kt             # tunerNoiseGate argument
 ├── commonTest/kotlin/audio/tembra/ui/tuner/
 │   ├── TunerViewModelTest.kt, TunerUiStateTest.kt, TunerTestSignalRequestTest.kt

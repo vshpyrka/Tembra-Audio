@@ -121,7 +121,8 @@ write goes through the existing `persist` launch site.
 | `TunerTestSignalRequest.parse` | Also accepts the four new catalogue ids and `NOTE:CENTS@LEVEL` (level −120..0, converted with `TestSignalLevel.amplitudeFor`) |
 | `TunerNoiseGateRequest.parse(argument: String?): NoiseGate?` (new) | "off" → `NoiseGate.Off`; a whole number → `NoiseGate.ofLevelDb`; anything else → null |
 | `LocalTunerNoiseGate` (new) | `staticCompositionLocalOf<NoiseGate?> { null }`, provided by `App` |
-| `App(…, tunerNoiseGate: NoiseGate? = null)` | Provides the local; a non-null value opens the app on the Tuner in Auto Listen for that launch, as a test signal does |
+| `App(…, tunerNoiseGate: NoiseGate? = null)` | Provides the local |
+| `NavigationShell` | A non-null gate value opens the app on the Tuner, as a test signal does; the mode stays as stored (Auto Listen unless the user chose By Ear) |
 | `MainActivity` | In debug: `intent.getStringExtra("tembra.tuner.noiseGate")` |
 | `MainViewController(…, tunerNoiseGate: String? = null)` and `ContentView.swift` | In Debug: the value of `--tembra-tuner-noise-gate=` |
 
