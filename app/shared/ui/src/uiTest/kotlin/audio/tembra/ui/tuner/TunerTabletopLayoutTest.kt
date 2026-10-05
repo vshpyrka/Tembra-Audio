@@ -11,6 +11,7 @@ import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.v2.runComposeUiTest
@@ -100,6 +101,19 @@ class TunerTabletopLayoutTest {
             lowerTags = listOf("tuner.settings", "tuner.instrument", "tuner.pill", "tuner.mode"),
         )
         onNodeWithTag("tuner.preset.picker").assertDoesNotExist()
+    }
+
+    /** Feature 006: the noise gate is a setting, so it goes below the fold under the mode control; the gauge keeps the upper region. */
+    @Test
+    fun theNoiseGateSitsUnderTheModeControlBelowTheFold() = runComposeUiTest {
+        setScreen(autoListen)
+        assertRegions(upperTags = listOf("tuner.autoListen", "tuner.meter"), lowerTags = listOf("tuner.settings", "tuner.mode", "tuner.noiseGate"))
+        assertEquals(1, onAllNodesWithTag("tuner.noiseGate").fetchSemanticsNodes().size)
+        val gate = bounds("tuner.noiseGate")
+        assertTrue(bounds("tuner.settings").contains(gate), "the noise gate $gate is outside the settings card ${bounds("tuner.settings")}")
+        assertTrue(gate.top >= bounds("tuner.mode").bottom - 0.5.dp, "the noise gate $gate is not under the mode control ${bounds("tuner.mode")}")
+        setScreen(byEarSeven)
+        onNodeWithTag("tuner.noiseGate").assertDoesNotExist()
     }
 
     @Test

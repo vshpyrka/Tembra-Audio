@@ -23,6 +23,10 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.hideFromAccessibility
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextOverflow
 import audio.tembra.core.tuner.NoiseGate
 import audio.tembra.engine.PitchSnapshot
@@ -44,6 +48,12 @@ import kotlin.math.roundToInt
  * start to the input level on the handle's own scale, in `primary` while the sound is read and in `outline` while the
  * gate holds it back. The level comes from [telemetry] in the draw phase, every display frame, like the meter's
  * needle: the frame tick invalidates the drawing alone and nothing recomposes.
+ *
+ * To accessibility services it is one adjustable element (spec FR-019): the slider carries the label, the handle's
+ * place ("Off" or a percentage of the track) and, when [soundAboveGate] is not null, whether the sound is above or
+ * below the gate; Material's range and set-progress action stay, so the platform's adjust gestures move the handle.
+ * The drawn label and end labels are hidden from those services, and nothing is a live region: the level changes all
+ * the time and is never announced.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,6 +63,7 @@ internal fun NoiseGateSlider(
     onGateSettled: () -> Unit,
     telemetry: PitchTelemetry,
     listening: Boolean,
+    soundAboveGate: Boolean?,
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource? = null,
     testTag: String = "tuner.noiseGate",
@@ -70,6 +81,7 @@ internal fun NoiseGateSlider(
     val heldBackFill = colors.outline
     val currentGate by rememberUpdatedState(gate)
     val currentOnGate by rememberUpdatedState(onGate)
+    val announced = announcedState(gate, soundAboveGate)
 
     Column(modifier = modifier.testTag(testTag), verticalArrangement = Arrangement.spacedBy(spacing.xs)) {
         Text(
@@ -78,18 +90,22 @@ internal fun NoiseGateSlider(
             color = colors.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.semantics { hideFromAccessibility() },
         )
         // No gap between an end label and the slider: the handle's box already reaches 14 dp past each end of the
         // track, which is the distance the tempo slider keeps between its labels and its track.
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(text = TunerCopy.off, style = endLabelStyle, color = colors.outline)
+            Text(text = TunerCopy.off, style = endLabelStyle, color = colors.outline, modifier = Modifier.semantics { hideFromAccessibility() })
             Slider(
                 value = gate.step.toFloat(),
                 onValueChange = { value ->
                     val next = NoiseGate.ofStep(value.roundToInt())
                     if (next != currentGate) currentOnGate(next)
                 },
-                modifier = Modifier.weight(1f).testTag("$testTag.slider"),
+                modifier = Modifier.weight(1f).testTag("$testTag.slider").semantics {
+                    contentDescription = TunerCopy.noiseGate
+                    stateDescription = announced
+                },
                 valueRange = 0f..NoiseGate.STEPS.toFloat(),
                 steps = NoiseGate.STEPS - 1,
                 onValueChangeFinished = onGateSettled,
@@ -119,7 +135,17 @@ internal fun NoiseGateSlider(
                     )
                 },
             )
-            Text(text = TunerCopy.gateHigh, style = endLabelStyle, color = colors.outline)
+            Text(text = TunerCopy.gateHigh, style = endLabelStyle, color = colors.outline, modifier = Modifier.semantics { hideFromAccessibility() })
         }
+    }
+}
+
+/** The control's announced value: the handle's place, then whether the sound passes the gate when there is one to say. */
+private fun announcedState(gate: NoiseGate, soundAboveGate: Boolean?): String {
+    val place = if (gate.isOff) TunerCopy.off else TunerCopy.gatePercent(gate.percent)
+    return when (soundAboveGate) {
+        null -> place
+        true -> "$place, ${TunerCopy.soundAboveGate}"
+        false -> "$place, ${TunerCopy.soundBelowGate}"
     }
 }
