@@ -69,6 +69,9 @@ class TunerViewModel(
     private var current: DesiredAudio = DesiredAudio.Idle
     private var startJob: Job? = null
     private var pollJob: Job? = null
+
+    /** The debug launch value of the noise gate, if one was handed over ([useNoiseGate]). */
+    private var launchGate: NoiseGate? = null
     private var auditionJob: Job? = null
     private val snapshot = PitchSnapshot()
     private val sampleHandles = mutableMapOf<String, SampleHandle>()
@@ -105,6 +108,18 @@ class TunerViewModel(
     }
 
     /**
+     * The debug launch value of the noise gate (feature 006, data-model.md §8): it stands in for the stored gate for
+     * this launch and is never written; a later move of the handle is remembered as usual. The screen hands it over
+     * before it reports itself visible, so it is in force from the first sound. The same value handed over again
+     * (the screen's effect ran anew) changes nothing.
+     */
+    fun useNoiseGate(gate: NoiseGate?) {
+        if (gate == null || gate == launchGate) return
+        launchGate = gate
+        if (_uiState.value.loaded) setNoiseGate(gate)
+    }
+
+    /**
      * The one launch site: the stored preferences and the current permission first, then the permission and the
      * platform events for the rest of the ViewModel's life. [applyAudio] does nothing before [TunerUiState.loaded],
      * so intents that arrive earlier only change state, and the first policy decision never sees the placeholder
@@ -116,6 +131,7 @@ class TunerViewModel(
             val stored = preferences.snapshot.first()
             val presets = TuningPresets.forInstrument(stored.instrument, stored.guitarStrings)
             val preset = presets.firstOrNull { it.id == stored.presetId } ?: presets.first()
+            val gate = launchGate ?: stored.noiseGate
             _uiState.update {
                 it.copy(
                     loaded = true,
@@ -125,13 +141,13 @@ class TunerViewModel(
                     presets = presets,
                     mode = stored.mode,
                     loopTone = stored.loopTone,
-                    noiseGate = stored.noiseGate,
+                    noiseGate = gate,
                     microphone = permission.status.value,
                 )
             }
             // A remembered gate is in the engine before listening can start, so the first hop is gated (spec FR-015).
             // The engine starts with no gate, so "off" needs no call.
-            if (!stored.noiseGate.isOff) audio.setNoiseGate(stored.noiseGate.levelDb?.toFloat())
+            if (!gate.isOff) audio.setNoiseGate(gate.levelDb?.toFloat())
             applyAudio()
             launch {
                 permission.status.collect { status ->
