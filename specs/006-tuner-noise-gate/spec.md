@@ -67,6 +67,11 @@ nothing else.
   `DESIGN.md` and push the updated tuner screens to the Stitch project once the build is accepted? → A: Yes, after
   acceptance. Build and verify first; once the owner accepts the result, the slider is added to the design document
   and the Auto Listen screens in Stitch are updated from the app's captures, as for features 004 and 005.
+  (Correction from planning: the app already has a slider, the metronome's tempo slider of feature 004. What is new
+  is its entry in the design document and a slider on the tuner's screens. The answer stands.)
+- Q: (the owner's request when planning) What else must the check on every target show? → A: A change of screen
+  orientation on every target, and that the control is visible on the screen, not outside it, not cut and not
+  overlapping any other element, in every orientation and posture (FR-023, FR-024, SC-008).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -77,8 +82,8 @@ does not use the microphone and is not changed.
 
 Terms used below:
 
-- **Input level**: how loud the sound reaching the microphone is, counted only within the range of pitches the tuner
-  hears, in decibels below the loudest sound the device can capture (so every level is a negative number and a
+- **Input level**: how loud the sound reaching the microphone is after the tuner's own filtering to the range of
+  pitches it hears, in decibels below the loudest sound the device can capture (so every level is a negative number and a
   larger number is louder: −40 dB is louder than −60 dB).
 - **Gate level**: the input level a sound must reach before the meter reads it, set with the slider's handle. With
   the handle at the start of the track the gate is **off**: there is no gate.
@@ -161,7 +166,7 @@ across the end of the fill stops the reading on the way up and restores it on th
 **Acceptance Scenarios**:
 
 1. **Given** Auto Listen is listening, **When** the sound gets louder or quieter, **Then** the fill follows it
-   smoothly within a tenth of a second, while the rest of the screen stays steady.
+   smoothly within a fifth of a second, while the rest of the screen stays steady.
 2. **Given** a gate level is set, **When** the gate is closed, **Then** the fill is drawn in its muted look and ends
    short of the handle; **When** the gate is open, **Then** it is drawn in its active look. With the gate off the
    fill is always drawn in its active look.
@@ -243,9 +248,9 @@ the keyboard; read it and adjust it with the platform screen reader.
   handle; moving the handle a little further is the remedy.
 - **The gate is set higher than the instrument reaches.** The meter rests while the user plays. The track shows the
   fill ending short of the handle, which is the cue to bring the handle back.
-- **A loud sound outside the hearing range** (a rumble below the lowest string, a whistle or hiss above the highest
-  note) does not count towards the input level: it cannot open the gate or hold it open, and the fill does not rise
-  for it.
+- **A loud sound outside the hearing range** (a deep rumble, a high hiss) counts for much less towards the input
+  level than a sound inside it (FR-004), so it seldom opens the gate. When it does, the meter still rests: a pitch
+  outside the hearing range is never shown (feature 003, FR-010).
 - **Loud noise with no pitch** (applause, a fan close to the microphone) may open the gate; the meter still rests,
   because the existing check for a clear pitch applies whatever the gate does.
 - **A very loud, distorted note** opens the gate like any other; the reading follows feature 003's rules.
@@ -291,15 +296,16 @@ the keyboard; read it and adjust it with the platform screen reader.
 
 **What the gate does**
 
-- **FR-004**: The input level MUST be measured only over the range of pitches the tuner hears (feature 003, FR-011),
-  so that sound outside it cannot open the gate or hold it open. The gate and the fill of the track MUST use the same
-  measurement, so that what the user sees is what the gate acts on.
+- **FR-004**: The input level MUST be measured after the tuner's own filtering to the range of pitches it hears
+  (feature 003, FR-011), so that sound outside that range counts for less the further out it lies: two octaves
+  beyond either end it MUST count at least 20 dB less than its true loudness. The gate and the fill of the track MUST
+  use the same measurement, so that what the user sees is what the gate acts on.
 - **FR-005**: With a gate level set, the gate MUST open when the input level reaches the gate level, and once open
   MUST stay open until the input level has fallen 3 dB below the gate level, where it MUST close. While the gate is
   closed the meter MUST show the resting state of feature 003 (FR-010) however clear the sound is.
 - **FR-006**: A note that starts at or above the gate level MUST be shown within a quarter of a second of starting,
-  as feature 003 requires (FR-012): the gate MUST NOT add a delay. When the gate closes the meter MUST reach the
-  resting state within half a second.
+  as feature 003 requires (FR-012): the gate MUST NOT take a note past that limit. When the gate closes the meter
+  MUST reach the resting state within half a second.
 - **FR-007**: While the gate is open the reading (the note, its octave, the offset in cents, how smoothly the needle
   moves) MUST be the same as with the gate off. The gate decides whether a sound is read; it MUST NOT change how.
 - **FR-008**: A sound whose level wavers by up to 1 dB either way around the gate level MUST NOT make the meter
@@ -326,7 +332,7 @@ the keyboard; read it and adjust it with the platform screen reader.
 - **FR-014**: The gate level MUST be remembered across app launches together with the tuner's other remembered
   choices (feature 003, FR-005). The first-launch default, and the value after updating from a version without the
   gate, MUST be off. A remembered value that cannot be read or lies outside the scale MUST be treated as off; one
-  that falls between two steps MUST be moved to the nearer step.
+  that falls between two steps MUST be moved to the nearer step, the quieter one when it is exactly halfway.
 - **FR-015**: The gate level MUST stay as set through switching to By Ear and back, leaving and returning to the
   Tuner, the app going to the background and returning, an interruption, and a change of window size, rotation or
   fold posture; whenever listening starts or resumes the gate level MUST be in force from its first moment.
@@ -359,18 +365,18 @@ the keyboard; read it and adjust it with the platform screen reader.
   stable test identifier and, while listening behind a gate, a state that says "sound above the gate" or "sound below
   the gate". A screen-reader user MUST be able to move the handle with the platform's adjust gestures. The control
   MUST NOT announce every change of input level.
-- **FR-020**: The slider is the shared design system's first; every colour, type style, spacing and radius of it MUST
-  come from the shared design tokens, and its look MUST be reviewed against the Stitch drawing it comes from (a
-  rounded track, a filled part, a round handle). With the platform's reduce-motion setting on, the fill MUST still
-  move.
+- **FR-020**: The slider MUST look and respond like the app's existing slider, the metronome's tempo slider (the
+  same track, the same round handle, the same hover, press and focus feedback); every colour, type style, spacing
+  and radius of it MUST come from the shared design tokens, and its look MUST be reviewed against the tempo slider
+  and the Stitch drawing it comes from. With the platform's reduce-motion setting on, the fill MUST still move.
 
 **Quality and verification**
 
 - **FR-021**: Automated tests MUST cover, with synthetic sound played offline without a microphone: for each check
   level, steady tones below it (rest), at it and above it (read, with the accuracy of feature 003); a quiet pitched
   background alone (rest) and with a louder note over it (the note, then rest); a fading plucked note (User Story 2,
-  scenario 1); a tone wavering around the gate level (FR-008); a loud sound outside the hearing range with a quiet
-  note inside it (FR-004); noise with no pitch above the gate level (rest); a change of gate level while sound is
+  scenario 1); a tone wavering around the gate level (FR-008); a sound two octaves outside the hearing range, which
+  must measure at least 20 dB under its true loudness and must never be shown as a note (FR-004); noise with no pitch above the gate level (rest); a change of gate level while sound is
   playing (FR-003); and the gate off reproducing the readings of feature 003 unchanged. They MUST also cover: the
   remembered gate level, its default and the rules for a value that is unreadable, outside the scale or between two
   steps (FR-014); the screen's behaviour with a stand-in for the audio, including the control's presence and absence
@@ -382,12 +388,15 @@ the keyboard; read it and adjust it with the platform screen reader.
   in-tune E2, at −70, −55, −45 and −30 dB. An end-to-end test on each platform MUST feed each of the four through
   the real audio path with the gate off and at each check level, and assert a reading of E2 within 1 cent when the
   signal's level is at or above the gate level (always, when the gate is off) and the resting state otherwise. The
-  fourteen existing signals MUST keep reading as they do today with the gate off.
+  fourteen existing signals MUST keep reading as they do today with the gate off. Debug builds MUST also accept a
+  gate level as a launch argument, so that a capture or a check can start behind a gate without touching the
+  control; it lasts for that launch, is not remembered, and release builds MUST ignore it.
 - **FR-023**: Screenshots MUST be stored under the feature directory and reviewed before acceptance: Auto Listen with
   the control at a compact width, at an expanded width and in phone landscape, on Android and on iOS; on the
   foldable emulator, Auto Listen with the control in tabletop posture, in book posture and opened flat; and, on each
   target of FR-024, one pair that shows the gate at −50 dB with the test signal below it (meter resting, fill muted
-  and short of the handle) and above it (note shown, fill active and past the handle).
+  and short of the handle) and above it (note shown, fill active and past the handle). Every target MUST be captured
+  both upright and sideways.
 - **FR-024**: Verification MUST be carried out on every target attached to the workstation, and each target's result
   MUST be written into the feature's verification notes. On 2026-10-05 those are five: the Pixel 6 Pro (connected by
   USB), the Pixel 9 Pro Fold emulator, and the three running iOS simulators, iPhone 17, iPad Pro 13-inch (M5) and
@@ -395,8 +404,10 @@ the keyboard; read it and adjust it with the platform screen reader.
   MUST pass; and the app MUST be launched with the control exercised and captured (FR-023). On the foldable emulator
   the control MUST additionally be exercised in tabletop posture, in book posture and opened flat, and the device
   MUST be folded and unfolded while listening to confirm that listening continues and the gate level stays in force
-  (FR-015). A test that fails in the same way without this feature MUST be recorded as such with the evidence; it is
-  not a failure of this feature. A target, or a step on a target, that cannot be driven MUST be named in the notes
+  (FR-015). On every target the screen MUST also be turned between upright and sideways while listening behind a
+  gate: listening continues, the gate level stays in force, and in each orientation the control is wholly on the
+  screen, uncut and clear of every other element. A test that fails in the same way without this feature MUST be
+  recorded as such with the evidence; it is not a failure of this feature. A target, or a step on a target, that cannot be driven MUST be named in the notes
   with the reason and the command the owner can run instead; it MUST NOT be dropped silently.
 - **FR-025**: The gate MUST also be checked with live sound through the microphone on the Pixel 6 Pro and on each
   simulator, and the result recorded in the verification notes: a quiet pitched background played from a loudspeaker
@@ -420,8 +431,8 @@ the keyboard; read it and adjust it with the platform screen reader.
 - **Gate Level**: off, or a level on the scale in steps of 2 dB (FR-001, FR-002), set by the slider's handle. It is
   one of the remembered tuner preferences, beside the instrument, string count, preset, mode and loop toggle of
   feature 003.
-- **Input Level**: how loud the sound within the tuner's hearing range is at this moment (FR-004). Shown by the fill
-  of the track; never stored.
+- **Input Level**: how loud the sound is at this moment after the tuner's filtering to its hearing range (FR-004).
+  Shown by the fill of the track; never stored.
 - **Gate State**: open or closed, derived from the input level and the gate level with the 3 dB margin of FR-005;
   always open when the gate is off; never stored.
 - **Pitch Reading** (feature 003): unchanged, except that it is also "resting" whenever the gate is closed.
@@ -446,7 +457,8 @@ the keyboard; read it and adjust it with the platform screen reader.
   tone's level.
 - **SC-007**: The gate level survives closing and reopening the app in 100% of trials, and a fresh install shows the
   handle at "Off".
-- **SC-008**: Captures of Auto Listen in every form of FR-016 show zero clipped, overlapping or off-screen elements;
+- **SC-008**: Captures of Auto Listen in every form of FR-016, and on every target in both orientations, show zero
+  clipped, overlapping or off-screen elements;
   the handle's touch area measures at least 44 dp, the handle is reachable and movable from the keyboard, and the
   screen reader announces the control's label, value and state and can adjust it.
 - **SC-009**: The verification notes carry a result for 100% of the attached targets (Pixel 6 Pro, Pixel 9 Pro Fold
@@ -476,16 +488,17 @@ the keyboard; read it and adjust it with the platform screen reader.
 - **Shape of the control.** The brief offered two shapes: a few named levels in the tuner's existing selector style,
   or the slider of the Stitch screen. The owner chose the slider on 2026-10-05 (Clarifications): it can be set finely,
   it is set by eye against the live level and so does not depend on how one phone's microphone compares with
-  another's. Its cost is the design system's first slider, with its own pointer, keyboard and screen-reader
-  behaviour (FR-018 to FR-020).
+  another's. Its cost is a second slider beside the metronome's tempo slider, with a live fill the tempo slider
+  does not have (FR-018 to FR-020).
 - **Names.** The label is "Noise gate" (the owner's own words and the design's first title). The end labels are
   "Off" and "High", named for the gate, not for sensitivity: towards "High" the gate holds back more.
 - **The scale.** −80 dB to −20 dB in steps of 2 dB are starting values. The quiet end is where the tuner already
   treats sound as silence, so "Off" at the start of the track gives nothing up; the loud end is above where a phone
   microphone that applies no automatic gain is expected to capture an instrument at arm's length. That expectation
-  is unmeasured. The plan MUST measure a quiet room, a pitched background and an instrument-level tone on the Pixel 6
-  Pro and through the iPhone 17 simulator, and may move either end of the scale through `/speckit-clarify`, keeping
-  it at least 50 dB long. The check levels and the test signals of FR-022 are test points inside the scale and move
+  is unmeasured, and it cannot be measured before the gate's own measurement of the input exists (plan, research
+  R8). A quiet room, a pitched background and an instrument-level tone are therefore measured on the Pixel 6 Pro and
+  through the iPhone 17 simulator at a checkpoint in the build, before the scale is accepted; if the scale proves
+  wrong, either end is moved through `/speckit-clarify`, keeping it at least 50 dB long. The check levels and the test signals of FR-022 are test points inside the scale and move
   with it; every scenario and criterion above is written relative to the gate level so that it survives such a move.
 - **The 3 dB margin** between opening and closing (FR-005) is a starting value from the brief's "a few dB". A wider
   margin lets a fading note ring longer but lets a background just under the gate hold it open; the plan may settle
