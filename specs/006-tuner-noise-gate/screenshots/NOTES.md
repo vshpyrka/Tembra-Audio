@@ -47,6 +47,7 @@ Android target can be chosen through the wrapper with a small launcher script na
 | 2, foundational (level, gate value, revision 4, Kotlin seam, gate type, shared handle) | `engineHostTest` 112 of 112; `checkAndroidHost`; `checkIos` on the iPhone 17; `checkAndroidDevice` on the Pixel 6 Pro (core 86, engine 64, data 39, ui 485) | all passed, zero warnings |
 | 3, User Story 1, engine part (gate rule, gated analyzer) | `engineHostTest` 123 of 123; `:shared:engine` iOS tests with `NoiseGateEndToEndTest` on the iPhone 17 | all passed, zero warnings |
 | 3, User Story 1, screen part (state, intent, slider, placement under the meter) | `checkAndroidHost`; UI tests on the iPhone 17; `checkAndroidDevice` on the Pixel 6 Pro (core 86, engine 67, data 39, ui 495) | all passed, zero warnings |
+| 4, User Story 2 (the 3 dB closing margin) | `engineHostTest` 128 of 128; the engine module's tests on the iPhone 17 and on the Pixel 6 Pro (67 of 67), each with `NoiseGateEndToEndTest` | all passed, zero warnings |
 
 On the Pixel 6 Pro the app was launched with the test signal `e2-55db` (2026-10-05): with the handle at "Off" the meter
 read E2 in tune; a tap at the middle of the track (about −50 dB) rested it ("Listening", pill unlit); a tap back at the
@@ -60,6 +61,14 @@ the analyzer deliberately made to ignore the gate, its two gate cases failed on 
 line restored they pass.
 
 ## Findings
+
+- **"At the gate level" is known to about half a decibel (2026-10-05, engine tests).** After the filter a tone scaled
+  to exactly the gate level measures a few hundredths of a decibel under or over it, and the window's level ripples by
+  up to 0.8 dB on the lowest strings. The tests therefore read "at the gate level" as 1 dB above it; with the 3 dB
+  margin a tone wavering a decibel either way around the gate opens once and stays open.
+- **Without the margin the fade test still passed.** The smoother's own hold keeps a reading about 85 ms past the
+  gate's closing, which at 10 dB a second is already 1 dB under the gate, inside SC-003's 3 ± 2 dB. The margin is
+  proven by the gate rule's own tests and by the waver test, which fails without it.
 
 - **A drag trails the finger by the touch slop (2026-10-05, UI test).** Material's slider starts a drag once the
   platform's touch slop is passed, so a finger that travels twelve steps moves the handle about nine. The metronome's
