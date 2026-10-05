@@ -101,6 +101,20 @@ class TunerHingeLayoutTest {
         assertTrue(bounds("tuner.meter").left >= 438.dp - 1.dp, "the meter starts inside the hinge's gutter")
     }
 
+    /** Feature 006: beside a hinge the noise gate goes with the controls before it, under the mode control. */
+    @Test
+    fun theNoiseGateIsInTheControlsCardBeforeTheHinge() = runComposeUiTest {
+        setScreen(autoListen)
+        assertEquals(1, onAllNodesWithTag("tuner.noiseGate").fetchSemanticsNodes().size)
+        val gate = bounds("tuner.noiseGate")
+        val settings = bounds("tuner.settings")
+        assertTrue(gate.right <= 414.dp + 1.dp, "the noise gate $gate is not before the hinge")
+        assertTrue(gate.left >= settings.left && gate.right <= settings.right && gate.top >= settings.top && gate.bottom <= settings.bottom, "the noise gate $gate is outside the controls card $settings")
+        assertTrue(gate.top >= bounds("tuner.mode").bottom - 0.5.dp, "the noise gate $gate is not under the mode control ${bounds("tuner.mode")}")
+        setScreen(byEarSeven)
+        onNodeWithTag("tuner.noiseGate").assertDoesNotExist()
+    }
+
     /** In the narrow controls card the heading never overlaps the audio-state pill: the pill drops under it. */
     @Test
     fun theHeadingAndThePillDoNotOverlapInTheNarrowCard() = runComposeUiTest {

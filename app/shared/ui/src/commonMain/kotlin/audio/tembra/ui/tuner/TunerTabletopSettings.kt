@@ -33,7 +33,8 @@ import audio.tembra.ui.theme.TembraTheme
  * the string count (guitar only), the tuning preset picker and the loop toggle, each at the column's full width. The
  * card scrolls when the column is taller than the region (FR-007); otherwise it sits in the card's vertical middle,
  * within reach of hands resting on the table. It takes only the fields it renders, so the 10 Hz reading never
- * recomposes it.
+ * recomposes it. [autoListenControls] (the noise gate control, feature 006 FR-016) goes after the mode selector in the
+ * same column; null leaves no space.
  */
 @Composable
 internal fun TunerTabletopSettings(
@@ -46,6 +47,7 @@ internal fun TunerTabletopSettings(
     loopTone: Boolean,
     callbacks: TunerCallbacks,
     modifier: Modifier = Modifier,
+    autoListenControls: (@Composable () -> Unit)? = null,
 ) {
     val spacing = TembraTheme.spacing
     val colors = TembraTheme.colors
@@ -81,6 +83,7 @@ internal fun TunerTabletopSettings(
             ) {
                 InstrumentControl(instrument = instrument, onInstrument = callbacks.onInstrument, modifier = Modifier.fillMaxWidth(), widths = SegmentWidths.Equal)
                 ModeControl(mode = mode, onMode = callbacks.onMode, modifier = Modifier.fillMaxWidth(), widths = SegmentWidths.Equal)
+                autoListenControls?.invoke()
                 if (mode == TunerMode.ByEar) {
                     if (instrument.hasStringCount) {
                         StringCountControl(guitarStrings = guitarStrings, onGuitarStrings = callbacks.onGuitarStrings, modifier = Modifier.fillMaxWidth(), widths = SegmentWidths.Equal)

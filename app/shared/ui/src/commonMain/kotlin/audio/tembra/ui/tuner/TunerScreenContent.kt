@@ -28,7 +28,9 @@ import audio.tembra.ui.theme.TembraTheme
  * the same controls card before the hinge and the gauge or the string cards after it (design iteration D3). Root tag `screen.tuner` keeps the shell's convention. Each
  * child receives only the fields it renders, so the 10 Hz reading recomposes the meter and nothing beside it. The noise
  * gate control (feature 006, FR-016) is built once here, while [TunerUiState.showNoiseGate], and handed to the place
- * the layout gives it: the foot of the Auto Listen card in the stacked and wide layouts.
+ * the layout gives it: the foot of the Auto Listen card under the gauge in the stacked and wide layouts, and after the
+ * mode selector in the settings column (landscape) and in the controls card (tabletop, and beside a hinge). It is
+ * built from the fields it shows, so the 10 Hz reading does not rebuild it.
  */
 @Composable
 fun TunerScreenContent(
@@ -45,14 +47,18 @@ fun TunerScreenContent(
         .fillMaxSize()
         .padding(horizontal = spacing.pageMargin, vertical = spacing.sm)
         .testTag("screen.tuner")
+    val gate = state.noiseGate
+    val listening = state.audio == AudioState.Listening
+    val soundAboveGate = state.soundAboveGate
     val noiseGate: (@Composable () -> Unit)? = if (state.showNoiseGate) {
         {
             NoiseGateSlider(
-                gate = state.noiseGate,
+                gate = gate,
                 onGate = callbacks.onNoiseGate,
                 onGateSettled = callbacks.onNoiseGateSettled,
                 telemetry = telemetry,
-                listening = state.audio == AudioState.Listening,
+                listening = listening,
+                soundAboveGate = soundAboveGate,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
@@ -71,6 +77,7 @@ fun TunerScreenContent(
                 loopTone = state.loopTone,
                 callbacks = callbacks,
                 modifier = Modifier.fillMaxHeight(),
+                autoListenControls = noiseGate,
             )
             ModePane(state = state, callbacks = callbacks, telemetry = telemetry, layout = layout, modifier = Modifier.weight(1f).fillMaxHeight())
         }
@@ -94,6 +101,7 @@ fun TunerScreenContent(
                         loopTone = state.loopTone,
                         callbacks = callbacks,
                         modifier = Modifier.fillMaxSize(),
+                        autoListenControls = noiseGate,
                     )
                 }
             },
@@ -114,6 +122,7 @@ fun TunerScreenContent(
                     loopTone = state.loopTone,
                     callbacks = callbacks,
                     modifier = Modifier.fillMaxSize(),
+                    autoListenControls = noiseGate,
                 )
             },
             end = {

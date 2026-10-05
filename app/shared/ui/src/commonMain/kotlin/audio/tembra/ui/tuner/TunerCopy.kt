@@ -25,4 +25,9 @@ internal object TunerCopy {
     const val tunerControls = "Tuner controls"
     const val noiseGate = "Noise gate"
     const val gateHigh = "High"
+    const val soundAboveGate = "sound above the gate"
+    const val soundBelowGate = "sound below the gate"
+
+    /** The announced place of the noise gate's handle along its track (spec FR-019). */
+    fun gatePercent(percent: Int): String = "$percent percent"
 }

@@ -36,7 +36,8 @@ import kotlin.math.roundToInt
  * and a phone's landscape window under the top bar has about 295 dp, so the overlines would push the picker and the
  * toggle out of view (research R9). It is 36 % of the content width within the design's 224–280 dp, scaled by the
  * font scale up to half the width, and scrolls vertically when large fonts make it taller than the window. It takes
- * only the fields it renders, so the 10 Hz reading never recomposes it.
+ * only the fields it renders, so the 10 Hz reading never recomposes it. [autoListenControls] (the noise gate control,
+ * feature 006 FR-016) goes after the mode selector at the column's width; null leaves no space.
  */
 @Composable
 internal fun TunerSettingsColumn(
@@ -49,6 +50,7 @@ internal fun TunerSettingsColumn(
     loopTone: Boolean,
     callbacks: TunerCallbacks,
     modifier: Modifier = Modifier,
+    autoListenControls: (@Composable () -> Unit)? = null,
 ) {
     val spacing = TembraTheme.spacing
     val colors = TembraTheme.colors
@@ -83,6 +85,7 @@ internal fun TunerSettingsColumn(
             Box(modifier = Modifier.fillMaxWidth().height(spacing.seam).background(colors.outlineVariant.copy(alpha = SEAM_ALPHA)))
             InstrumentControl(instrument = instrument, onInstrument = callbacks.onInstrument, modifier = Modifier.fillMaxWidth(), widths = SegmentWidths.Equal)
             ModeControl(mode = mode, onMode = callbacks.onMode, modifier = Modifier.fillMaxWidth(), widths = SegmentWidths.Equal)
+            autoListenControls?.invoke()
             if (mode == TunerMode.ByEar) {
                 if (instrument.hasStringCount) {
                     StringCountControl(guitarStrings = guitarStrings, onGuitarStrings = callbacks.onGuitarStrings, modifier = Modifier.fillMaxWidth(), widths = SegmentWidths.Equal)

@@ -71,6 +71,18 @@ class TunerUiStateTest {
     }
 
     @Test
+    fun theAnnouncedGateStateFollowsTheEngineOnlyWhileListeningBehindAGate() {
+        val gated = TunerUiState(microphone = MicrophonePermissionStatus.Granted, audio = AudioState.Listening, noiseGate = NoiseGate.ofLevelDb(-50)!!)
+        assertTrue(gated.gateOpen)
+        assertEquals(true, gated.soundAboveGate)
+        assertEquals(false, gated.copy(gateOpen = false).soundAboveGate)
+        assertNull(gated.copy(audio = AudioState.Idle).soundAboveGate)
+        assertNull(gated.copy(noiseGate = NoiseGate.Off).soundAboveGate)
+        assertNull(gated.copy(noiseGate = NoiseGate.Off, gateOpen = false).soundAboveGate)
+        assertNull(gated.copy(mode = TunerMode.ByEar, audio = AudioState.Tone, gateOpen = false).soundAboveGate)
+    }
+
+    @Test
     fun theMeterAnnouncesNoteAndRoundedCents() {
         assertEquals("E2, 4 cents sharp", MeterReading(Note.parse("E2"), 3.6, PitchDirection.Sharp, false, 82.6, 82.41).stateDescription)
         assertEquals("F#3, 12 cents flat", MeterReading(Note.parse("F#3"), -12.4, PitchDirection.Flat, false, 183.7, 185.0).stateDescription)

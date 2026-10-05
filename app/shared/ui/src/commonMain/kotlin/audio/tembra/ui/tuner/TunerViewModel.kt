@@ -325,7 +325,7 @@ class TunerViewModel(
         } else {
             pollJob?.cancel()
             pollJob = null
-            if (_uiState.value.reading != null) _uiState.update { it.copy(reading = null) }
+            if (_uiState.value.reading != null || !_uiState.value.gateOpen) _uiState.update { it.copy(reading = null, gateOpen = true) }
         }
     }
 
@@ -334,7 +334,9 @@ class TunerViewModel(
         audio.readPitch(snapshot)
         val engineState = audio.audioState
         val reading = if (engineState == AudioState.Listening && snapshot.hasPitch) MeterReading.from(snapshot) else null
-        _uiState.update { it.copy(audio = engineState, reading = reading) }
+        // A gate is only ever closed while listening; any other state reads as open.
+        val gateOpen = engineState != AudioState.Listening || snapshot.gateOpen
+        _uiState.update { it.copy(audio = engineState, reading = reading, gateOpen = gateOpen) }
         if (engineState == AudioState.Idle && current != DesiredAudio.Idle) {
             val wasTone = current is DesiredAudio.Tone
             current = DesiredAudio.Idle

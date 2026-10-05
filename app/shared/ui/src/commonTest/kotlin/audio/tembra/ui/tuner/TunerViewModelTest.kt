@@ -713,4 +713,27 @@ class TunerViewModelTest {
         assertEquals(listOf("stopListening", "setNoiseGate(off)"), audio.calls.takeLast(2))
         assertNull(audio.noiseGateDb)
     }
+
+    @Test
+    fun thePollMirrorsWhetherTheGateIsOpen() = viewModelTest {
+        val viewModel = viewModel()
+        enterAutoListen(viewModel)
+        viewModel.setNoiseGate(NoiseGate.ofLevelDb(-50)!!)
+        audio.nextSnapshot.gateOpen = false
+        advanceTimeBy(150)
+        assertFalse(viewModel.uiState.value.gateOpen)
+        assertEquals(false, viewModel.uiState.value.soundAboveGate)
+        audio.nextSnapshot.gateOpen = true
+        advanceTimeBy(150)
+        assertTrue(viewModel.uiState.value.gateOpen)
+        assertEquals(true, viewModel.uiState.value.soundAboveGate)
+
+        // Not listening says nothing about the gate: the state falls back to open and the announcement goes.
+        audio.nextSnapshot.gateOpen = false
+        advanceTimeBy(150)
+        viewModel.screenVisible(false)
+        runCurrent()
+        assertTrue(viewModel.uiState.value.gateOpen)
+        assertNull(viewModel.uiState.value.soundAboveGate)
+    }
 }

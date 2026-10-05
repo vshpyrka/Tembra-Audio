@@ -1,8 +1,18 @@
 package audio.tembra.ui.tuner
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.FocusInteraction
+import androidx.compose.foundation.interaction.HoverInteraction
+import androidx.compose.foundation.interaction.Interaction
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -10,8 +20,25 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.input.InputModeManager
+import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalInputModeManager
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertContentDescriptionEquals
+import androidx.compose.ui.test.assertHeightIsAtLeast
+import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.performKeyInput
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.test.pressKey
+import androidx.compose.ui.test.requestFocus
+import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
@@ -26,9 +53,11 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.width
 import audio.tembra.core.tuner.NoiseGate
 import audio.tembra.ui.designsystem.distanceTo
+import audio.tembra.ui.designsystem.enterKeyboardMode
 import audio.tembra.ui.theme.LocalTembraMotion
 import audio.tembra.ui.theme.TembraMotion
 import audio.tembra.ui.theme.TembraTheme
@@ -38,7 +67,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-/** The noise gate slider on its own (feature 006, contracts/tuner-screen.md §2; spec FR-001, FR-002, FR-011, FR-012). */
+/** The noise gate slider on its own (feature 006, contracts/tuner-screen.md §2; spec FR-001, FR-002, FR-011, FR-012, FR-018, FR-019). */
 @OptIn(ExperimentalTestApi::class)
 class NoiseGateSliderTest {
 
@@ -56,13 +85,23 @@ class NoiseGateSliderTest {
      * centre and keeps some room of its own on each side of the node.
      */
     private var insetPx = 0f
+    private var inputModeManager: InputModeManager? = null
+    private val aboveGate = mutableStateOf<Boolean?>(null)
 
     /** Renders the slider 320 dp wide over an opaque surface and returns a reader of the hoisted value. */
-    private fun ComposeUiTest.setSlider(initial: NoiseGate = NoiseGate.Off, width: Dp = 320.dp): () -> NoiseGate {
+    private fun ComposeUiTest.setSlider(
+        initial: NoiseGate = NoiseGate.Off,
+        width: Dp = 320.dp,
+        interactionSource: MutableInteractionSource? = null,
+    ): () -> NoiseGate {
         var gate by mutableStateOf(initial)
         setContent {
+            inputModeManager = LocalInputModeManager.current
             TembraTheme {
                 pixelDensity = LocalDensity.current.density
+                primary = TembraTheme.colors.primary
+                val above by aboveGate
+                // An opaque surface: Android captures a transparent node over the activity's white window.
                 Box(Modifier.width(width).background(TembraTheme.colors.surface)) {
                     NoiseGateSlider(
                         gate = gate,
@@ -73,6 +112,8 @@ class NoiseGateSliderTest {
                         onGateSettled = { settled++ },
                         telemetry = telemetry,
                         listening = false,
+                        soundAboveGate = above,
+                        interactionSource = interactionSource,
                     )
                 }
             }
@@ -118,6 +159,7 @@ class NoiseGateSliderTest {
                             onGateSettled = { settled++ },
                             telemetry = telemetry,
                             listening = listening,
+                            soundAboveGate = null,
                         )
                     }
                 }
@@ -346,5 +388,164 @@ class NoiseGateSliderTest {
         frames(1)
         val target = trackX(NoiseGate.fractionOfLevel(-30f), nodeWidthPx)
         assertTrue(abs(fillEndPx(primary) - target) <= 2f * pixelDensity, "one frame after a rise the fill ends at ${fillEndPx(primary)} px, the level is at $target px")
+    }
+
+    // --- Pointer, keyboard and screen reader (User Story 5) ---
+
+    @Test
+    fun theSliderIsATouchTargetTallAndItsHandleIsOneInBothDirections() = runComposeUiTest {
+        setSlider()
+        onNodeWithTag("tuner.noiseGate.slider").assertHeightIsAtLeast(44.dp)
+        val handle = onNodeWithTag("tuner.noiseGate.handle", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        // A size in dp lands on whole pixels (44 dp is 107.25 px on the fold emulator), so the half dp that Compose's
+        // own size assertions allow is allowed here.
+        assertTrue(handle.width >= 44.dp - 0.5.dp && handle.height >= 44.dp - 0.5.dp, "the handle's touch box is $handle")
+        // The disc drawn in the box keeps its 16 dp and sits at the box's centre.
+        val slider = onNodeWithTag("tuner.noiseGate.slider").getUnclippedBoundsInRoot()
+        val pixels = onNodeWithTag("tuner.noiseGate.slider").captureToImage().toPixelMap()
+        val centreX = (((handle.left + handle.right).value / 2f - slider.left.value) * pixelDensity).roundToInt()
+        val centreY = pixels.height / 2
+        assertTrue(pixels[centreX, centreY].distanceTo(primary) < 0.1f, "no disc at the centre of the handle's box")
+        val outside = (14f * pixelDensity).roundToInt()
+        assertTrue(pixels[centreX - outside, centreY].distanceTo(primary) > 0.1f, "the disc is wider than 16 dp to the left")
+        assertTrue(pixels[centreX, centreY - outside].distanceTo(primary) > 0.1f, "the disc is taller than 16 dp")
+    }
+
+    @Test
+    fun theArrowKeysMoveTheHandleOneStepAndSettleEachTime() = runComposeUiTest {
+        val gate = setSlider(NoiseGate.ofStep(1))
+        // Declared per lane: the Android device lane has no keyboard input mode and skips by that declaration.
+        if (!enterKeyboardMode(inputModeManager)) return@runComposeUiTest
+        val slider = onNodeWithTag("tuner.noiseGate.slider")
+        slider.requestFocus()
+        slider.assertIsFocused()
+        slider.performKeyInput { pressKey(Key.DirectionRight) }
+        waitForIdle()
+        assertEquals(NoiseGate.ofStep(2), gate())
+        assertEquals(1, settled, "a key press must end its move")
+        slider.performKeyInput { pressKey(Key.DirectionLeft) }
+        slider.performKeyInput { pressKey(Key.DirectionLeft) }
+        waitForIdle()
+        assertEquals(NoiseGate.Off, gate())
+        slider.performKeyInput { pressKey(Key.DirectionLeft) }
+        waitForIdle()
+        assertEquals(NoiseGate.Off, gate(), "the handle must stop at the start")
+        assertEquals(listOf(2, 1, 0), reported.map { it.step })
+    }
+
+    @Test
+    fun theArrowKeysStopAtTheLoudEnd() = runComposeUiTest {
+        val gate = setSlider(NoiseGate.ofStep(NoiseGate.STEPS - 1))
+        if (!enterKeyboardMode(inputModeManager)) return@runComposeUiTest
+        val slider = onNodeWithTag("tuner.noiseGate.slider")
+        slider.requestFocus()
+        slider.performKeyInput { pressKey(Key.DirectionRight) }
+        slider.performKeyInput { pressKey(Key.DirectionRight) }
+        waitForIdle()
+        assertEquals(NoiseGate.ofStep(NoiseGate.STEPS), gate())
+        assertEquals(listOf(NoiseGate.STEPS), reported.map { it.step })
+    }
+
+    private fun ComposeUiTest.emit(source: MutableInteractionSource, interaction: Interaction) {
+        runOnIdle { source.tryEmit(interaction) }
+        repeat(2) { mainClock.advanceTimeByFrame() }
+    }
+
+    /** Pixels that changed between two captures of the slider and moved towards `primary`. */
+    private fun changedTowardsPrimary(before: ImageBitmap, after: ImageBitmap): Int {
+        val a = before.toPixelMap()
+        val b = after.toPixelMap()
+        var count = 0
+        for (y in 0 until a.height) for (x in 0 until a.width) {
+            if (a[x, y].distanceTo(b[x, y]) > 0.05f && b[x, y].distanceTo(primary) < a[x, y].distanceTo(primary)) count++
+        }
+        return count
+    }
+
+    @Test
+    fun theHandleShowsHoverPressAndFocus() = runComposeUiTest {
+        val source = MutableInteractionSource()
+        mainClock.autoAdvance = false
+        setSlider(NoiseGate.ofStep(10), interactionSource = source)
+        repeat(2) { mainClock.advanceTimeByFrame() }
+        fun capture() = onNodeWithTag("tuner.noiseGate.slider").captureToImage()
+        // A state layer is a ring of the disc's own diameter or more: at least a few hundred pixels.
+        val minimum = (60 * pixelDensity * pixelDensity).roundToInt()
+        val rest = capture()
+        val enter = HoverInteraction.Enter()
+        emit(source, enter)
+        val hovered = changedTowardsPrimary(rest, capture())
+        assertTrue(hovered > minimum, "hover drew no halo: $hovered pixels moved towards primary (want > $minimum)")
+        emit(source, HoverInteraction.Exit(enter))
+        val press = PressInteraction.Press(androidx.compose.ui.geometry.Offset.Zero)
+        emit(source, press)
+        val pressed = changedTowardsPrimary(rest, capture())
+        assertTrue(pressed > minimum, "press drew no halo: $pressed pixels moved towards primary (want > $minimum)")
+        emit(source, PressInteraction.Release(press))
+        emit(source, FocusInteraction.Focus())
+        val focused = changedTowardsPrimary(rest, capture())
+        assertTrue(focused > minimum, "focus drew no ring: $focused pixels moved towards primary (want > $minimum)")
+    }
+
+    @Test
+    fun theScreenReaderHearsTheLabelThePlaceAndWhetherTheSoundIsAboveTheGate() = runComposeUiTest {
+        val gate = setSlider(NoiseGate.Off)
+        val slider = onNodeWithTag("tuner.noiseGate.slider")
+        slider.assertContentDescriptionEquals("Noise gate")
+        slider.assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Off"))
+        slider.assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.LiveRegion))
+        // One element: the drawn label and end labels repeat what the slider says, so they are hidden from the reader.
+        for (text in listOf("NOISE GATE", "Off", "High")) {
+            onNode(hasText(text) and hasAnyAncestor(hasTestTag("tuner.noiseGate")), useUnmergedTree = true)
+                .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.HideFromAccessibility))
+        }
+        slider.assert(SemanticsMatcher.expectValue(SemanticsProperties.ProgressBarRangeInfo, ProgressBarRangeInfo(0f, 0f..NoiseGate.STEPS.toFloat(), NoiseGate.STEPS - 1)))
+
+        // The platform's adjust gestures arrive as the set-progress action.
+        slider.performSemanticsAction(SemanticsActions.SetProgress) { it(15f) }
+        waitForIdle()
+        assertEquals(NoiseGate.ofStep(15), gate())
+        slider.assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "50 percent"))
+
+        aboveGate.value = true
+        waitForIdle()
+        slider.assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "50 percent, sound above the gate"))
+        aboveGate.value = false
+        waitForIdle()
+        slider.assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "50 percent, sound below the gate"))
+        aboveGate.value = null
+        waitForIdle()
+        slider.assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "50 percent"))
+    }
+
+    @Test
+    fun anUpAndDownDragThatStartsOnTheSliderScrollsAndLeavesTheHandle() = runComposeUiTest {
+        val scroll = ScrollState(0)
+        var gate by mutableStateOf(NoiseGate.ofStep(10))
+        setContent {
+            TembraTheme {
+                Column(Modifier.width(320.dp).height(240.dp).verticalScroll(scroll).background(TembraTheme.colors.surface)) {
+                    Spacer(Modifier.height(120.dp))
+                    NoiseGateSlider(
+                        gate = gate,
+                        onGate = {
+                            reported += it
+                            gate = it
+                        },
+                        onGateSettled = { settled++ },
+                        telemetry = telemetry,
+                        listening = false,
+                        soundAboveGate = null,
+                    )
+                    Spacer(Modifier.height(400.dp))
+                }
+            }
+        }
+        waitForIdle()
+        onNodeWithTag("tuner.noiseGate.slider").performTouchInput { swipeUp(startY = centerY, endY = centerY - 100.dp.toPx()) }
+        waitForIdle()
+        assertTrue(scroll.value > 0, "the up-and-down drag did not scroll")
+        assertEquals(NoiseGate.ofStep(10), gate)
+        assertEquals(emptyList(), reported)
     }
 }
