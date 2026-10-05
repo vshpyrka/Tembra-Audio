@@ -386,3 +386,25 @@ upload as a new screen, patch the project's screen instances, hide the old versi
 | R11, `contracts/tuner-screen.md` §4, tasks T046, T053, spec FR-016 and Edge Cases | The gauge takes its compact rows before it shrinks | The regular rows leave a small arc in short upright windows |
 | R3, R8, spec Assumptions, tasks T065, T066 | The 3 dB margin stays unless the live check shows flicker or a held-open gate | The spec promised a setting "from the measurements" with no rule |
 | tasks T021, T035, T057, T069; spec Terms; checklist notes | No "dB" text on the control; reduce motion; selectors named for the on-screen check; pointers in the specs of features 003 and 005; "meter" is the spec's one word for the gauge; the checklist notes describe the slider | Smaller gaps |
+
+## What the implementation changed (2026-10-06)
+
+- **The launch value travels as a `:shared:ui` type.** `:androidApp` does not depend on `:shared:core`, so the root
+  composable cannot take a `NoiseGate`. `TunerNoiseGateRequest` holds it, as `MetronomeDebugRequest` holds the
+  metronome's value (contracts/tuner-screen.md §6).
+- **One element for accessibility means hiding the drawn labels.** The slider carries the label, the value and the
+  state; the drawn "NOISE GATE", "Off" and "High" carry `hideFromAccessibility()`, as the tempo readout's repeated
+  texts do, or a screen reader would read the label twice (FR-019).
+- **The fitted gauge is one subcomposing layout inside the card's scroll** (R11): the footer is measured, the form is
+  chosen, the gauge is composed in that form. The scroll container's own height reaches the layout as its minimum
+  height, so no second pass and no state written from layout are needed.
+- **The gauge's least width follows the font scale** (R11). The 200 dp of `meterMinWidth` is right at the standard
+  font size only; over the control the least width is 200 dp times the font scale, capped at the card's width. The
+  verification at the largest font size found the defect this fixes.
+- **A value handed over twice is taken once.** The screen's effect runs again when the screen is composed anew (a
+  rotation on Android), handing the same launch value to the same ViewModel; `useNoiseGate` ignores a value it
+  already took, so a level set by hand after the launch is not undone (seen on the Pixel 6 Pro).
+- **The capture tool has `--name`, `--label` and `--display`**, for postures and for targets with two displays, and
+  turns a sideways simulator capture only when the simulator stored it lying on its side (contracts/tuner-screen.md
+  §8).
+

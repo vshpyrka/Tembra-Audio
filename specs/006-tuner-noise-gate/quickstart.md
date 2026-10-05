@@ -81,7 +81,17 @@ the display and touches neither the gauge nor a selector.
 tools/capture-noise-gate.sh --android 19021FDEE001AH --orientation upright
 tools/capture-noise-gate.sh --android 19021FDEE001AH --orientation sideways
 tools/capture-noise-gate.sh --ios "iPhone 17" --orientation upright      # rotate the simulator first for sideways
+# The fold emulator has two displays: name the inner one, and label a posture (set it first, see the table)
+tools/capture-noise-gate.sh --android 127.0.0.1:5556 --display 4619827259835644672 --name pixel-9-pro-fold \
+  --orientation sideways --label tabletop
+# The iPhone Duo likewise: the display's UUID comes from `xcrun simctl io <id> enumerate` and changes with a reboot
+tools/capture-noise-gate.sh --ios EB59DDD2-6D13-4503-A77E-BDFB69BF8CCD --name iphone-duo --display <uuid> \
+  --orientation upright --label closed-upright
 ```
+
+The mode is remembered: a target left in By Ear shows no control and the tool says so. Choose Auto Listen on it once.
+The steps that go through the Simulator or Device Hub windows (turning, poses, the keyboard) need the Mac's screen
+unlocked; it locks after ten minutes without its owner.
 
 How each target is turned:
 
@@ -109,6 +119,24 @@ test signal:
 ```sh
 adb -s 19021FDEE001AH shell am start -n audio.tembra.app/audio.tembra.android.MainActivity --es tembra.tuner.noiseGate off
 xcrun simctl launch "iPhone 17" "$BUNDLE" --tembra-tuner-noise-gate=off
+```
+
+The tone for the loudspeaker (196 Hz with four harmonics, forty seconds), and how to play it:
+
+```sh
+python3 - <<'TONE'
+import math, os, struct, wave
+rate = 48000
+path = os.path.join(os.environ.get("TMPDIR", "/tmp"), "tembra-g3.wav")
+with wave.open(path, "wb") as out:
+    out.setnchannels(1); out.setsampwidth(2); out.setframerate(rate)
+    for n in range(rate * 40):
+        t = n / rate
+        s = sum(a * math.sin(2 * math.pi * 196 * k * t) for k, a in ((1, 0.25), (2, 1.0), (3, 0.5), (4, 0.3), (5, 0.2)))
+        out.writeframes(struct.pack("<h", int(12000 * s / 2.25)))
+print(path)
+TONE
+afplay -v 0.15 "$TMPDIR/tembra-g3.wav"   # a quiet background; -v 1 with the output at half volume is the stand-in of §6
 ```
 
 1. Play a quiet pitched background from a loudspeaker (a steady tone or a voice at low volume). With the gate off

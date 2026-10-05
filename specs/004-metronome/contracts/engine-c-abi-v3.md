@@ -1,5 +1,7 @@
 # Contract: Engine C ABI revision 3 (metronome)
 
+> Superseded by feature 006's revision 4 ([contract](../../006-tuner-noise-gate/contracts/engine-c-abi-v4.md)): every revision 3 function is unchanged; the reading gains the input level and the gate's state, and `tembra_tuner_set_gate` is new.
+
 **Header**: `app/engine/include/tembra_engine.h` | **Consumers**: `:shared:engine` (JNI shim, cinterop), Catch2 tests | **Supersedes**: feature 003's revision 2 (every revision 2 function unchanged)
 
 Rules unchanged: plain C, no C++ types, no callbacks into the host, safe to call from any
