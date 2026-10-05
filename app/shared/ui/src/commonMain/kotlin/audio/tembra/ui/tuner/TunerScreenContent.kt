@@ -51,6 +51,8 @@ fun TunerScreenContent(
                 gate = state.noiseGate,
                 onGate = callbacks.onNoiseGate,
                 onGateSettled = callbacks.onNoiseGateSettled,
+                telemetry = telemetry,
+                listening = state.audio == AudioState.Listening,
                 modifier = Modifier.fillMaxWidth(),
             )
         }

@@ -19,11 +19,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import audio.tembra.core.tuner.NoiseGate
+import audio.tembra.engine.PitchSnapshot
 import audio.tembra.ui.designsystem.TembraSliderDefaults
 import audio.tembra.ui.designsystem.TembraSliderThumb
+import audio.tembra.ui.designsystem.rememberFrameTick
 import audio.tembra.ui.theme.TembraTheme
 import kotlin.math.roundToInt
 
@@ -34,6 +39,11 @@ import kotlin.math.roundToInt
  * ([TembraSliderThumb]), here in a touch-target box in both directions (spec FR-018). [onGate] is raised for every
  * step the handle reaches and [onGateSettled] when the move has ended; dragging, a touch on the track and the arrow
  * keys all come from Material.
+ *
+ * The track is a live picture of the input (spec FR-011 to FR-013, research R10): while [listening] it fills from its
+ * start to the input level on the handle's own scale, in `primary` while the sound is read and in `outline` while the
+ * gate holds it back. The level comes from [telemetry] in the draw phase, every display frame, like the meter's
+ * needle: the frame tick invalidates the drawing alone and nothing recomposes.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,6 +51,8 @@ internal fun NoiseGateSlider(
     gate: NoiseGate,
     onGate: (NoiseGate) -> Unit,
     onGateSettled: () -> Unit,
+    telemetry: PitchTelemetry,
+    listening: Boolean,
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource? = null,
     testTag: String = "tuner.noiseGate",
@@ -49,6 +61,13 @@ internal fun NoiseGateSlider(
     val spacing = TembraTheme.spacing
     val source = interactionSource ?: remember { MutableInteractionSource() }
     val endLabelStyle = TembraTheme.typographyExtras.tabularParam
+    val reduceMotion = TembraTheme.motion.reduceMotion
+    val tick = rememberFrameTick(listening)
+    val snapshot = remember { PitchSnapshot() }
+    val smoother = remember { LevelSmoother() }
+    val emptyTrack = colors.surfaceContainerHighest
+    val readFill = colors.primary
+    val heldBackFill = colors.outline
     val currentGate by rememberUpdatedState(gate)
     val currentOnGate by rememberUpdatedState(onGate)
 
@@ -81,7 +100,22 @@ internal fun NoiseGateSlider(
                         Modifier
                             .fillMaxWidth()
                             .height(TembraSliderDefaults.TrackHeight)
-                            .background(colors.surfaceContainerHighest, CircleShape),
+                            .background(emptyTrack, CircleShape)
+                            .drawBehind {
+                                if (!listening) return@drawBehind
+                                // Reading the tick here redraws the fill every frame without recomposing anything.
+                                val frameNanos = tick.longValue
+                                telemetry.read(snapshot)
+                                // The fill is information, like the needle: reduce motion only drops the smoothing.
+                                val levelDb = if (reduceMotion) snapshot.inputLevelDb else smoother.advance(snapshot.inputLevelDb, frameNanos)
+                                val end = size.width * NoiseGate.fractionOfLevel(levelDb)
+                                if (end < 1f) return@drawBehind
+                                drawRoundRect(
+                                    color = if (snapshot.gateOpen) readFill else heldBackFill,
+                                    size = Size(end, size.height),
+                                    cornerRadius = CornerRadius(size.height / 2f),
+                                )
+                            },
                     )
                 },
             )

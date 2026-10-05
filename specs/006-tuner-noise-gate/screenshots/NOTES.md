@@ -48,6 +48,7 @@ Android target can be chosen through the wrapper with a small launcher script na
 | 3, User Story 1, engine part (gate rule, gated analyzer) | `engineHostTest` 123 of 123; `:shared:engine` iOS tests with `NoiseGateEndToEndTest` on the iPhone 17 | all passed, zero warnings |
 | 3, User Story 1, screen part (state, intent, slider, placement under the meter) | `checkAndroidHost`; UI tests on the iPhone 17; `checkAndroidDevice` on the Pixel 6 Pro (core 86, engine 67, data 39, ui 495) | all passed, zero warnings |
 | 4, User Story 2 (the 3 dB closing margin) | `engineHostTest` 128 of 128; the engine module's tests on the iPhone 17 and on the Pixel 6 Pro (67 of 67), each with `NoiseGateEndToEndTest` | all passed, zero warnings |
+| 5, User Story 3 (the live level on the track) | UI module host tests; UI tests on the iPhone 17; `NoiseGateSliderTest` (11 tests) on the Pixel 6 Pro | all passed, zero warnings |
 
 On the Pixel 6 Pro the app was launched with the test signal `e2-55db` (2026-10-05): with the handle at "Off" the meter
 read E2 in tune; a tap at the middle of the track (about −50 dB) rested it ("Listening", pill unlit); a tap back at the
@@ -60,7 +61,18 @@ of the missing state and intent. `NoiseGateEndToEndTest` was written after the a
 the analyzer deliberately made to ignore the gate, its two gate cases failed on the iPhone 17 simulator; with the
 line restored they pass.
 
+On the Pixel 6 Pro with the test signal `e2-45db` (2026-10-05): with the handle at the middle of the track the fill is
+violet (`primary`) and runs past the handle to about 58% of the track, where −45 dB lies, and the meter reads 82.4 Hz;
+with the handle moved past it the fill turns grey (`outline`), ends short of the handle, and the meter shows
+"Listening".
+
 ## Findings
+
+- **Material keeps 10 dp of its own on each side of a slider (2026-10-05, UI tests).** The slider's node is 20 dp
+  wider than the room the handle and the track use, so the track's ends are 32 dp inside the node with a 44 dp
+  handle, not 22 dp. On screen nothing changes (the handle's box starts where the "Off" label ends), but a test that
+  assumes the track's place is wrong away from the middle: the slider's tests measure it from the handle's real
+  position.
 
 - **"At the gate level" is known to about half a decibel (2026-10-05, engine tests).** After the filter a tone scaled
   to exactly the gate level measures a few hundredths of a decibel under or over it, and the window's level ripples by
