@@ -287,7 +287,10 @@ the denied panel and in By Ear by one derived flag (`TunerUiState.showNoiseGate`
   writes once. A test proves an arrow key and a tap on the track settle too; if Material does not report them, the
   control calls settle itself after those two inputs.
 - On load the ViewModel sets the engine's gate from the stored value **before** the first `applyAudio`, so the first
-  hop is gated (FR-015). `ListeningPolicy` and `DesiredAudio` do not change: the gate never starts or stops a
+  hop is gated (FR-015). A stored "off" sends nothing, because the engine starts with no gate; in return the
+  ViewModel takes a gate it set out of the engine when it is cleared, so the engine's gate and the screen's can never
+  disagree across entries. (Decided while implementing: sending "off" on every load would have changed the engine
+  call list that fifteen existing ViewModel assertions pin, against SC-002.) `ListeningPolicy` and `DesiredAudio` do not change: the gate never starts or stops a
   stream.
 - The preference is a sixth key, `tuner.noiseGateDb` (an `Int`; absent means off), decoded by
   `NoiseGate.fromStored` (`contracts/tuner-preferences.md`).

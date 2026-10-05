@@ -139,7 +139,7 @@ Release builds never read either argument.
 
 | File | Cases |
 |---|---|
-| `TunerViewModelTest` | on load the stored gate is sent to the audio seam before `startListening` (call order in `FakeAudioEngine.calls`); `setNoiseGate` sends the value at once and writes nothing; `noiseGateSettled` writes it; an unchanged value does nothing; the value survives By Ear and back, `screenVisible(false/true)`, `foreground(false/true)` and an interruption, and each restart of listening follows a gate already set; a debug launch value replaces the stored one and is not written; the poll mirrors `gateOpen` |
+| `TunerViewModelTest` | on load a stored gate is sent to the audio seam before `startListening` (call order in `FakeAudioEngine.calls`) and a stored "off" sends nothing; clearing the ViewModel takes a set gate out of the engine; `setNoiseGate` sends the value at once and writes nothing; `noiseGateSettled` writes it; an unchanged value does nothing; the value survives By Ear and back, `screenVisible(false/true)`, `foreground(false/true)` and an interruption, and each restart of listening follows a gate already set; a debug launch value replaces the stored one and is not written; the poll mirrors `gateOpen` |
 | `TunerUiStateTest` | `showNoiseGate` by mode and permission; `soundAboveGate` is null when idle, when the gate is off and in By Ear, and follows `gateOpen` otherwise |
 | `LevelSmootherTest` (new) | first value as given; within 2 dB of a 30 dB step after 100 ms; a long pause does not jump |
 | `TunerNoiseGateRequestTest` (new), `TunerTestSignalRequestTest` | the forms of §6 and their rejects |
