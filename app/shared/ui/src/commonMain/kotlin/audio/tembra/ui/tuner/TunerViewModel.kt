@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import audio.tembra.core.tuner.GuitarStringCount
 import audio.tembra.core.tuner.Instrument
+import audio.tembra.core.tuner.NoiseGate
 import audio.tembra.core.tuner.TunerMode
 import audio.tembra.core.tuner.TuningPresets
 import audio.tembra.data.tuner.TunerPreferences
@@ -189,6 +190,18 @@ class TunerViewModel(
         _uiState.update { state -> state.copy(loopTone = on, audition = state.audition?.copy(loop = on)) }
         persist { it.copy(loopTone = on) }
         applyAudio()
+    }
+
+    // --- Noise gate (feature 006, spec FR-003) ------------------------------------------------------------------------
+
+    /**
+     * Every step the noise gate's handle reaches. The engine takes the level at once and keeps it across stops and
+     * starts, so listening is never restarted by a move; nothing is written here.
+     */
+    fun setNoiseGate(gate: NoiseGate) {
+        if (_uiState.value.noiseGate == gate) return
+        _uiState.update { it.copy(noiseGate = gate) }
+        audio.setNoiseGate(gate.levelDb?.toFloat())
     }
 
     // --- Audition intents (spec FR-018 to FR-020) ------------------------------------------------------------------

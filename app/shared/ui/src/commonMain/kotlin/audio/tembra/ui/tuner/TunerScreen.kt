@@ -52,6 +52,8 @@ fun TunerScreen(modifier: Modifier = Modifier, viewModel: TunerViewModel = metro
             onAudition = viewModel::audition,
             onStopAudition = viewModel::stopAudition,
             onRequestMicrophone = viewModel::requestMicrophone,
+            onNoiseGate = viewModel::setNoiseGate,
+            onNoiseGateSettled = {},
         )
     }
     if (state.loaded) {

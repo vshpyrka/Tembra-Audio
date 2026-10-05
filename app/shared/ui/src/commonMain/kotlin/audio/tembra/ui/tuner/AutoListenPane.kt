@@ -2,6 +2,7 @@ package audio.tembra.ui.tuner
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -20,7 +21,9 @@ import audio.tembra.ui.theme.TembraTheme
  * Stacked and wide layouts cap the meter's width and scroll when it is taller than the card; phone landscape sizes
  * the compact meter from the card's height so it fits without scrolling (spec FR-023, research R9), as does the region
  * above the fold of a tabletop foldable (feature 005, FR-003). It takes only the
- * fields it renders, so the 10 Hz [reading] is the one input that recomposes it.
+ * fields it renders, so the 10 Hz [reading] is the one input that recomposes it. In the stacked and wide layouts an
+ * optional [footer] (the noise gate control, feature 006 FR-016) sits at the foot of the card under the meter, across
+ * the card on a phone and no wider than the wide meter otherwise; it is left out with the denied panel.
  */
 @Composable
 internal fun AutoListenPane(
@@ -31,6 +34,7 @@ internal fun AutoListenPane(
     layout: TunerLayout,
     onRequestMicrophone: () -> Unit,
     modifier: Modifier = Modifier,
+    footer: (@Composable () -> Unit)? = null,
 ) {
     val spacing = TembraTheme.spacing
     TembraGradientCard(glow = TembraTheme.gradients.meterCompact, modifier = modifier, testTag = "tuner.autoListen") {
@@ -42,23 +46,34 @@ internal fun AutoListenPane(
                 telemetry = telemetry,
                 onRequestMicrophone = onRequestMicrophone,
             )
-            TunerLayout.Stacked, TunerLayout.Wide -> Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = spacing.md, vertical = spacing.lg),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (showDeniedState) {
-                    MicrophoneDeniedState(onRequestMicrophone = onRequestMicrophone, modifier = Modifier.fillMaxWidth())
-                } else {
-                    TunerMeter(
-                        telemetry = telemetry,
-                        reading = reading,
-                        listening = listening,
-                        testTag = "tuner.meter",
-                        modifier = Modifier.widthIn(max = if (layout == TunerLayout.Wide) spacing.meterMaxWidthWide else spacing.meterMaxWidth).fillMaxWidth(),
-                    )
+            TunerLayout.Stacked, TunerLayout.Wide -> Column(modifier = Modifier.fillMaxSize()) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = spacing.md, vertical = spacing.lg),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (showDeniedState) {
+                        MicrophoneDeniedState(onRequestMicrophone = onRequestMicrophone, modifier = Modifier.fillMaxWidth())
+                    } else {
+                        TunerMeter(
+                            telemetry = telemetry,
+                            reading = reading,
+                            listening = listening,
+                            testTag = "tuner.meter",
+                            modifier = Modifier.widthIn(max = if (layout == TunerLayout.Wide) spacing.meterMaxWidthWide else spacing.meterMaxWidth).fillMaxWidth(),
+                        )
+                    }
+                }
+                if (footer != null && !showDeniedState) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(start = spacing.md, end = spacing.md, bottom = spacing.md),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Box(modifier = if (layout == TunerLayout.Wide) Modifier.widthIn(max = spacing.meterMaxWidthWide) else Modifier) { footer() }
+                    }
                 }
             }
         }

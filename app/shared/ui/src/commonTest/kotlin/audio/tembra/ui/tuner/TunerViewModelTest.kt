@@ -2,6 +2,7 @@ package audio.tembra.ui.tuner
 
 import audio.tembra.core.tuner.GuitarStringCount
 import audio.tembra.core.tuner.Instrument
+import audio.tembra.core.tuner.NoiseGate
 import audio.tembra.core.tuner.Note
 import audio.tembra.core.tuner.PitchDirection
 import audio.tembra.core.tuner.TunerMode
@@ -607,5 +608,64 @@ class TunerViewModelTest {
         audio.emit(AudioEvent.InterruptionEnded)
         runCurrent()
         assertEquals("stopTone", audio.calls.last())
+    }
+
+    // --- Noise gate (feature 006) ----------------------------------------------------------------------------------------
+
+    @Test
+    fun movingTheNoiseGateReachesTheEngineAtOnceAndWritesNothing() = viewModelTest {
+        val viewModel = viewModel()
+        enterAutoListen(viewModel)
+        val gate = NoiseGate.ofLevelDb(-50)!!
+        viewModel.setNoiseGate(gate)
+        assertEquals(gate, viewModel.uiState.value.noiseGate)
+        assertEquals("setNoiseGate(-50.0)", audio.calls.last())
+        assertEquals(-50f, audio.noiseGateDb)
+        runCurrent()
+        assertEquals(TunerPreferencesSnapshot(), preferences.snapshot.first(), "a move of the handle must not write")
+
+        // An unchanged value does nothing.
+        val calls = audio.calls.size
+        viewModel.setNoiseGate(gate)
+        assertEquals(calls, audio.calls.size)
+
+        // Listening was started once and never stopped or restarted by the moves (spec FR-003).
+        viewModel.setNoiseGate(NoiseGate.Off)
+        assertEquals("setNoiseGate(off)", audio.calls.last())
+        assertEquals(1, audio.calls.count { it == "startListening" })
+        assertEquals(0, audio.calls.count { it == "stopListening" })
+        assertEquals(AudioState.Listening, viewModel.uiState.value.audio)
+    }
+
+    @Test
+    fun theNoiseGateStaysThroughModesVisibilityBackgroundingAndInterruptions() = viewModelTest {
+        val viewModel = viewModel()
+        enterAutoListen(viewModel)
+        val gate = NoiseGate.ofLevelDb(-40)!!
+        viewModel.setNoiseGate(gate)
+        viewModel.selectMode(TunerMode.ByEar)
+        runCurrent()
+        viewModel.selectMode(TunerMode.AutoListen)
+        runCurrent()
+        viewModel.screenVisible(false)
+        runCurrent()
+        viewModel.screenVisible(true)
+        runCurrent()
+        viewModel.foreground(false)
+        runCurrent()
+        viewModel.foreground(true)
+        runCurrent()
+        audio.emit(AudioEvent.Interrupted)
+        runCurrent()
+        audio.emit(AudioEvent.InterruptionEnded)
+        runCurrent()
+
+        assertEquals(gate, viewModel.uiState.value.noiseGate)
+        assertEquals(-40f, audio.noiseGateDb)
+        assertEquals("startListening", audio.calls.last())
+        assertTrue(audio.calls.count { it == "startListening" } >= 5, "listening restarted ${audio.calls.count { it == "startListening" }} times")
+        // The engine keeps the gate across every stop and start: nothing after the move touches it again.
+        val moved = audio.calls.lastIndexOf("setNoiseGate(-40.0)")
+        assertTrue(audio.calls.drop(moved + 1).none { it.startsWith("setNoiseGate") }, "calls after the move: ${audio.calls.drop(moved + 1)}")
     }
 }

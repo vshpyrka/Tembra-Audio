@@ -46,13 +46,24 @@ Android target can be chosen through the wrapper with a small launcher script na
 |---|---|---|
 | 2, foundational (level, gate value, revision 4, Kotlin seam, gate type, shared handle) | `engineHostTest` 112 of 112; `checkAndroidHost`; `checkIos` on the iPhone 17; `checkAndroidDevice` on the Pixel 6 Pro (core 86, engine 64, data 39, ui 485) | all passed, zero warnings |
 | 3, User Story 1, engine part (gate rule, gated analyzer) | `engineHostTest` 123 of 123; `:shared:engine` iOS tests with `NoiseGateEndToEndTest` on the iPhone 17 | all passed, zero warnings |
+| 3, User Story 1, screen part (state, intent, slider, placement under the meter) | `checkAndroidHost`; UI tests on the iPhone 17; `checkAndroidDevice` on the Pixel 6 Pro (core 86, engine 67, data 39, ui 495) | all passed, zero warnings |
+
+On the Pixel 6 Pro the app was launched with the test signal `e2-55db` (2026-10-05): with the handle at "Off" the meter
+read E2 in tune; a tap at the middle of the track (about −50 dB) rested it ("Listening", pill unlit); a tap back at the
+start read E2 again. The "Test signal" pill stayed throughout. On the iPhone 17 simulator the same behaviour is covered
+in this phase by the slider's UI tests and the end-to-end test; the app run there follows with the launch argument (T061).
 
 Test-first notes: every new engine and Kotlin test was run and seen failing before its implementation.
-`NoiseGateEndToEndTest` was written after the analyzer applied the gate, so it was checked the other way round: with
+The UI tests of User Story 1 were written before the slider existed; their red step was the compile failure
+of the missing state and intent. `NoiseGateEndToEndTest` was written after the analyzer applied the gate, so it was checked the other way round: with
 the analyzer deliberately made to ignore the gate, its two gate cases failed on the iPhone 17 simulator; with the
 line restored they pass.
 
 ## Findings
+
+- **A drag trails the finger by the touch slop (2026-10-05, UI test).** Material's slider starts a drag once the
+  platform's touch slop is passed, so a finger that travels twelve steps moves the handle about nine. The metronome's
+  tempo slider behaves the same way. A touch on the track still puts the handle exactly where the finger is.
 
 - **The gate does not clean the sound (2026-10-05, engine test).** With a pitched background 12 dB under a note
   (G3 under E2), the reading of the note settles about 7 cents flat, with or without a gate: the detector hears the
