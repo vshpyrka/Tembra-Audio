@@ -28,8 +28,8 @@ ANDROID_SERIAL=127.0.0.1:5556 ./gradlew checkAndroidDevice            # Pixel 9 
 ```
 
 Expected: all green with zero warnings. `NoiseGateEndToEndTest` passes its sixteen combinations and the live change on
-both Android targets and all three simulators (SC-009). `TunerSignalEndToEndTest` passes with eighteen entries. Every
-tuner and metronome test that existed before passes unchanged (SC-002). On the fold emulator
+both Android targets and all three simulators (SC-009). `TunerSignalEndToEndTest` passes with eighteen entries. Every assertion the earlier tuner and metronome tests make about readings and screens still holds; only the tests that pin the engine's revision
+number, the number of test signals or the shape of the remembered choices were edited (SC-002). On the fold emulator
 `MetronomeTimingEndToEndTest` is expected to fail on the emulator's audio clock; confirm it fails the same way on
 `main` and record both runs (FR-024).
 
@@ -116,20 +116,31 @@ xcrun simctl launch "iPhone 17" "$BUNDLE" --tembra-tuner-noise-gate=off
 2. Relaunch with a gate level above it (find it with §6). The gauge rests for at least 95% of thirty seconds.
 3. Play a louder tone at an instrument's level over it. It is read within a quarter of a second, and the gauge rests
    again when it stops.
+4. While it listens through the microphone, move the handle several times. "Mic active" never disappears and the
+   platform's microphone indicator stays on (FR-003, SC-005).
+5. Watch for the gauge flickering on a steady sound near the gate, and for the background being named after a note
+   because it held the gate open. Write down either; they are the evidence about the 3 dB margin.
 
 Try the same on the fold emulator. If its microphone gets nothing from the workstation, write that down and note
 that §3 stands in there.
 
 ## 6. The scale checkpoint (research R8)
 
-Before the feature is accepted, on the Pixel 6 Pro and through the iPhone 17 simulator, find the level of three
-steady sounds by bisecting the gate argument (relaunch with `-70`, `-60`, … and read whether the sound is above or
-below the gate: the control's announced state in `uiautomator dump` on Android, the fill's look in a capture on the
-simulator): the quietest room you can get (Q), a pitched background across the room (B), a tone at arm's length as
-loud as a plucked guitar (I).
+Before the feature is accepted, on the Pixel 6 Pro and through the iPhone 17 simulator, launch with the gate off and
+the real microphone and read three steady sounds off the track. The track is the scale: −80 dB at "Off", −20 dB at
+"High"; the fill ends at the sound's level. Take three captures a second apart for each sound, then confirm the
+reading by relaunching with the gate one step under it (the fill is active) and one step over it (the fill is
+muted).
 
-Keep the scale if on both targets Q ≤ −60 dB and −50 dB ≤ I ≤ −20 dB. Otherwise stop, write the numbers into the
-notes and propose new ends through `/speckit-clarify`.
+| Sound | How |
+|---|---|
+| Q, the quietest room | Nothing playing |
+| B, a pitched background | A steady tone or a voice from a loudspeaker across the room, at low volume |
+| I, a stand-in for an instrument | A 196 Hz harmonic tone from the workstation's loudspeaker at half output volume, 30 cm from the target |
+
+Keep the scale if on both targets Q ≤ −60 dB and −50 dB ≤ I ≤ −20 dB. If only I is out of range, the loudspeaker is
+not proof: ask the owner for one pluck of a real guitar at arm's length and use that number. If Q fails, or the real
+instrument does, stop, write the numbers into the notes and propose new ends through `/speckit-clarify`.
 
 ## 7. Remembered across launches
 
