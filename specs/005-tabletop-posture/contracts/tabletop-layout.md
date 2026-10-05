@@ -1,5 +1,7 @@
 # Contract: Tabletop layouts
 
+> Extended by feature 006 ([contract](../../006-tuner-noise-gate/contracts/tuner-screen.md), §4): in tabletop and beside a book-posture hinge the tuner's controls card also holds the noise gate control, after the mode selector.
+
 UI tests drive the stateless content composables (`TunerScreenContent`, `MetronomeScreenContent`) with
 `layout = Tabletop` and a `fold` (null splits the screen in half). Tags below are the test surface.
 

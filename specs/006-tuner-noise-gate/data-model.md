@@ -100,7 +100,7 @@ Derived:
 | ViewModel cleared | After the stream is stopped: if the gate is not off, `audio.setNoiseGate(null)`. The engine keeps a gate for the life of the process and the ViewModel for the life of its entry; a gate this ViewModel set must not outlive it, or the next entry could show "Off" over a gated engine |
 | `setNoiseGate(gate)` | No-op if unchanged → state → `audio.setNoiseGate(gate.levelDb)`; nothing is written |
 | `noiseGateSettled()` | `preferences.update { it.copy(noiseGate = state.noiseGate) }` through the existing `persist` launch site |
-| Poll (10 Hz) | `gateOpen = snapshot.gateOpen` beside the existing `audio` and `reading` |
+| Poll (10 Hz) | `gateOpen = snapshot.gateOpen` while the engine is listening, `true` in any other state, beside the existing `audio` and `reading`; when the poll stops, `gateOpen` goes back to `true` |
 | Mode switch, leaving, backgrounding, interruption, rotation, fold | Nothing: the value stays in the state and in the engine; a later `startListening` is gated from its first hop |
 
 `ListeningPolicy`, `PolicyInputs` and `DesiredAudio` are unchanged.
@@ -138,7 +138,7 @@ Every signal is at least 5 dB from every gate value it is tested against, outsid
 | Argument | Android extra | iOS launch argument | Value | Parsed by |
 |---|---|---|---|---|
 | Test signal (feature 003), now with an optional level | `tembra.tuner.testSignal` | `--tembra-tuner-test-signal=` | a catalogue id, `NOTE:CENTS` or `NOTE:CENTS@LEVEL` (`E2:0@-55`; level −120..0) | `TunerTestSignalRequest.parse` |
-| Gate level for this launch | `tembra.tuner.noiseGate` | `--tembra-tuner-noise-gate=` | `off`, or a whole decibel number on the scale (`-50`) | `TunerNoiseGateRequest.parse` → `NoiseGate?` (anything else is ignored) |
+| Gate level for this launch | `tembra.tuner.noiseGate` | `--tembra-tuner-noise-gate=` | `off`, or a whole decibel number on the scale (`-50`) | `TunerNoiseGateRequest.parse` → `TunerNoiseGateRequest?`, which holds the `NoiseGate` (anything else is ignored) |
 
 The gate value reaches the ViewModel through `LocalTunerNoiseGate`, as the test signal does through
 `LocalTunerTestSignal`. It replaces the stored value for that launch, is never written, and a later move of the
@@ -148,9 +148,9 @@ handle in that launch is persisted normally.
 
 | Constant | Text | Used |
 |---|---|---|
-| `noiseGate` | "Noise gate" | The label (drawn in capitals, announced as written) |
-| `off` (exists) | "Off" | Start label; the announced value at step 0 |
-| `gateHigh` | "High" | End label |
+| `noiseGate` | "Noise gate" | The label, drawn in capitals; the slider's announced label, as written. The drawn text is hidden from accessibility so the control is one element (FR-019) |
+| `off` (exists) | "Off" | Start label (drawn, hidden from accessibility); the announced value at step 0 |
+| `gateHigh` | "High" | End label (drawn, hidden from accessibility) |
 | `gatePercent(n)` | "n percent" | The announced value at steps 1 to 30 |
 | `soundAboveGate` | "sound above the gate" | Announced state while listening behind an open gate |
 | `soundBelowGate` | "sound below the gate" | Announced state while listening behind a closed gate |

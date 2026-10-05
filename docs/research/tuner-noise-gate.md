@@ -5,6 +5,13 @@ threshold) in Auto Listen. Written 2026-09-29 against the built feature 003 (mer
 in d883141) and constitution v1.2.0. No code was changed; this is the evidence for a future
 `/speckit-specify`.
 
+**Status (2026-10-06):** specified and built as feature 006, `specs/006-tuner-noise-gate/` (spec, plan, contracts and
+verification notes are there and win over this note). Where the build departs from the recommendation below: the
+control is a slider drawn on the live input level, not a three-level "Sensitivity" selector (the owner's choice in
+clarification); the gate value is set through its own call, `tembra_tuner_set_gate`, and kept for the engine's life
+rather than carried in `tembra_tuner_config`; the level is measured over the analysis window after the band-pass,
+not per hop; and an open gate closes 3 dB under its level.
+
 > TL;DR — The engine already runs three fixed gates (a −80 dBFS silence floor, a clarity
 > threshold and a range check) and none of them rejects a pitched background sound above that
 > floor. A level gate fits as one more field in `tembra_tuner_config`, applied on the analysis

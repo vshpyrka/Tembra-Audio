@@ -69,7 +69,7 @@ Column(modifier, tag "tuner.noiseGate")
 | Settled | `onValueChangeFinished` → `onGateSettled()`. If a test shows Material does not report a key press or a track tap as finished, the component calls `onGateSettled()` after that input itself |
 | Fill | In `drawBehind`: read the frame tick, `telemetry.read(snapshot)`, `LevelSmoother.advance(snapshot.inputLevelDb, tick)`, then draw from 0 to `NoiseGate.fractionOfLevel(level) × width`. `primary` when `snapshot.gateOpen`, `outline` otherwise; nothing when `!listening`. No State is read in composition at frame rate |
 | Alignment | The fill's end and the handle's centre coincide when the level equals the gate level (SC-006); verified by a test |
-| Semantics | `contentDescription = "Noise gate"`; `stateDescription = "Off"` or "N percent", followed by ", sound above the gate" / ", sound below the gate" when `soundAboveGate` is not null. Material's range info and `setProgress` stay. No live region: a change of level is never announced |
+| Semantics | One adjustable element (FR-019): on the slider, `contentDescription = "Noise gate"`; `stateDescription = "Off"` or "N percent", followed by ", sound above the gate" / ", sound below the gate" when `soundAboveGate` is not null. Material's range info and `setProgress` stay. The drawn label and the two end labels repeat what the slider says, so they carry `hideFromAccessibility()`. No live region: a change of level is never announced |
 | Feedback | Hover, press, drag and focus through `TembraSliderThumb`; the focus ring of the design system |
 | Reduce motion | Unaffected: the fill is information |
 | Tokens | `TembraTheme.colors` (`primary`, `outline`, `onSurfaceVariant`, `surfaceContainerHighest`), `typography.labelSmall`, `typographyExtras.tabularParam`, `spacing.xs` / `sm` / `touchTargetMin`; no literal colour or size |
@@ -105,9 +105,19 @@ internal fun TunerTabletopSettings(…, modifier: Modifier = Modifier, autoListe
 `AutoListenPane` with a footer (research R11): the footer is measured first and the gauge gets the height that is
 left. If the regular gauge fits that height at its full cap (`meterMaxWidth` / `meterMaxWidthWide`) it is shown as
 today. Otherwise the gauge takes `MeterSize.Compact` and is sized with `MeterLayout.widthForHeight(…, Compact)` from
-the height left, capped at the same width, never under `meterMinWidth`. When even the compact gauge would be under
-`meterMinWidth`, the card's content scrolls as a whole with the footer last. With the denied panel the footer is not passed. Without a footer
+the height left, capped at the same width, never under its least width. When even the compact gauge would be under
+that, the card's content scrolls as a whole: the compact gauge at its least width, then the footer. The least
+width is `meterMinWidth` times the font scale (never less than 1), at most the full width: the gauge's text rows grow
+with the font, and at the largest font a narrower gauge draws "Flat" over "Sharp" (found on the Pixel 6 Pro,
+2026-10-06). With the denied panel the footer is not passed. Without a footer
 (landscape, tabletop, book) the pane behaves exactly as today.
+
+It is one `SubcomposeLayout` inside the card's vertical scroll (`MeterOverFooter`): the footer slot is measured, the
+form is chosen from the height left, the gauge slot is composed in that form and measured at its width. The scroll
+container hands its own height down as the minimum height, which is how the layout knows the viewport without a
+second measuring pass. The gauge is placed before the footer, which makes it come first for a screen reader. The
+reading reaches the gauge through State read inside its slot, so the 10 Hz reading recomposes the gauge and measures
+nothing.
 
 Order for the keyboard and the screen reader follows what is seen: after the gauge in `Stacked` and `Wide`, after
 the mode control in the three settings forms.
@@ -124,9 +134,9 @@ write goes through the existing `persist` launch site.
 | Piece | Change |
 |---|---|
 | `TunerTestSignalRequest.parse` | Also accepts the four new catalogue ids and `NOTE:CENTS@LEVEL` (level −120..0, converted with `TestSignalLevel.amplitudeFor`) |
-| `TunerNoiseGateRequest.parse(argument: String?): NoiseGate?` (new) | "off" → `NoiseGate.Off`; a whole number → `NoiseGate.ofLevelDb`; anything else → null |
+| `TunerNoiseGateRequest(val gate: NoiseGate)` with `parse(value: String?): TunerNoiseGateRequest?` (new) | "off" → `NoiseGate.Off`; a whole number → `NoiseGate.ofLevelDb`; anything else → null. A type of `:shared:ui`, like `MetronomeDebugRequest`: the Android app does not depend on `:shared:core`, so the shells hand the request on without seeing the gate inside |
 | `LocalTunerNoiseGate` (new) | `staticCompositionLocalOf<NoiseGate?> { null }`, provided by `App` |
-| `App(…, tunerNoiseGate: NoiseGate? = null)` | Provides the local |
+| `App(…, tunerNoiseGate: TunerNoiseGateRequest? = null)` | Provides the request's gate as the local |
 | `NavigationShell` | A non-null gate value opens the app on the Tuner, as a test signal does; the mode stays as stored (Auto Listen unless the user chose By Ear) |
 | `MainActivity` | In debug: `intent.getStringExtra("tembra.tuner.noiseGate")` |
 | `MainViewController(…, tunerNoiseGate: String? = null)` and `ContentView.swift` | In Debug: the value of `--tembra-tuner-noise-gate=` |
@@ -159,9 +169,15 @@ keyboard mode with `enterKeyboardMode`); none is skipped with a silent return.
 ## 8. Capture tool (`app/tools/capture-noise-gate.sh`)
 
 ```text
-capture-noise-gate.sh --android <serial> [--display <id>] | --ios "<simulator name>"
-                      --orientation upright|sideways [--out <dir>] [--settle <seconds>]
+capture-noise-gate.sh --android <serial> [--display <id>] | --ios "<simulator name or id>"
+                      --orientation upright|sideways [--name <target>] [--label <text>]
+                      [--out <dir>] [--settle <seconds>] [--no-turn]
 ```
+
+`--name` is the first part of the file names (default: the device's model, or the simulator's name); `--label`
+replaces the orientation in them, for a posture such as `tabletop` or `book` (the caller sets the posture; the tool
+still turns the screen as `--orientation` says). On Android the screen's rotation settings are put back when the
+tool exits.
 
 For the named target and orientation it launches the debug build three times and stores, under
 `specs/006-tuner-noise-gate/screenshots/`:
@@ -175,5 +191,7 @@ For the named target and orientation it launches the debug build three times and
 On Android it sets the rotation itself (`user_rotation`), and after each launch reads `uiautomator dump` and fails
 unless the node described "Noise gate" lies inside the display and intersects neither the node described "Tuner
 meter" nor a selector, that is a node whose text is "Guitar", "Cello", "Auto Listen" or "By Ear" (research R14,
-layer 2). On iOS it turns sideways captures upright with `sips`; the simulator
+layer 2). The dump holds the adjustable element only (the slider); the label drawn over it is hidden from
+accessibility, so its place is proven by the layout tests and by the captures. On iOS it turns sideways captures
+upright with `sips` (`--no-turn` keeps them as the simulator gives them); the simulator
 is rotated beforehand (quickstart §4). It prints one line per capture for the notes.
