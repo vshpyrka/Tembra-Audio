@@ -46,6 +46,15 @@ nothing else.
 | Live readout "SIGNAL LOCK (−42 dB)" | **Kept as an idea**: a level indication beside the control shows the input against the gate. No decibel figure is shown |
 | "Detected string / Auto-locked" row, "A4 calibration", the "Perfect pitch" caption, the algorithm and buffer line | **Excluded**, as in feature 003 (its FR-031) |
 
+## Clarifications
+
+### Session 2026-10-05
+
+- Q: Which targets must the verification cover? → A: Every target attached to the workstation: the Pixel 6 Pro, the
+  Pixel 9 Pro Fold emulator (the owner attached it after the first draft of this specification, so the tabletop and
+  book forms are verified on it and not by layout tests alone), and the iPhone 17, iPad Pro 13-inch (M5) and iPhone
+  Duo simulators. The owner's iPhone 14 is skipped for now; the iPhone 17 simulator stands in for an iPhone.
+
 ## User Scenarios & Testing *(mandatory)*
 
 The users are the guitarists and cellists of feature 003, tuning somewhere that is not silent: a living room with a
@@ -177,8 +186,9 @@ states, a keyboard user can reach and change the gate, and a screen-reader user 
 
 **Why this priority**: required by the constitution for every control; it does not change what the gate does.
 
-**Independent Test**: render Auto Listen with the control in each form and compare the captures; tab to the control
-and change it from the keyboard; read it with the platform screen reader.
+**Independent Test**: render Auto Listen with the control in each form and compare the captures, standing the
+foldable emulator in tabletop and in book posture for those two forms; tab to the control and change it from the
+keyboard; read it with the platform screen reader.
 
 **Acceptance Scenarios**:
 
@@ -343,19 +353,26 @@ and change it from the keyboard; read it with the platform screen reader.
   level (always, for "Off") and the resting state otherwise. The fourteen existing signals MUST keep reading as they
   do today with the gate "Off".
 - **FR-023**: Screenshots MUST be stored under the feature directory and reviewed before acceptance: Auto Listen with
-  the control at a compact width, at an expanded width and in phone landscape, on Android and on iOS; and, on each
+  the control at a compact width, at an expanded width and in phone landscape, on Android and on iOS; on the
+  foldable emulator, Auto Listen with the control in tabletop posture, in book posture and opened flat; and, on each
   target of FR-024, one pair that shows the gate at "Mid" with the test signal below it (meter resting, bar muted and
   short of the mark) and above it (note shown, bar active and past the mark).
 - **FR-024**: Verification MUST be carried out on every target attached to the workstation, and each target's result
-  MUST be written into the feature's verification notes. On 2026-10-05 those are the Pixel 6 Pro (connected by USB)
-  and the three running iOS simulators: iPhone 17, iPad Pro 13-inch (M5) and iPhone Duo. On each target: every
-  automated test suite that can run there MUST pass; the end-to-end test of FR-022 MUST pass; and the app MUST be
-  launched with the control exercised and captured (FR-023). A target that cannot be driven MUST be named in the
+  MUST be written into the feature's verification notes. On 2026-10-05 those are five: the Pixel 6 Pro (connected by
+  USB), the Pixel 9 Pro Fold emulator, and the three running iOS simulators, iPhone 17, iPad Pro 13-inch (M5) and
+  iPhone Duo. On each target: every automated test suite that can run there MUST pass; the end-to-end test of FR-022
+  MUST pass; and the app MUST be launched with the control exercised and captured (FR-023). On the foldable emulator
+  the control MUST additionally be exercised in tabletop posture, in book posture and opened flat, and the device
+  MUST be folded and unfolded while listening to confirm that listening continues and the selected level stays in
+  force (FR-015). A test that fails in the same way without this feature MUST be recorded as such with the evidence;
+  it is not a failure of this feature. A target, or a step on a target, that cannot be driven MUST be named in the
   notes with the reason and the command the owner can run instead; it MUST NOT be dropped silently.
 - **FR-025**: The gate MUST also be checked with live sound through the microphone on the Pixel 6 Pro and on each
   simulator, and the result recorded in the verification notes: a quiet pitched background played from a loudspeaker
   is named by the meter with the gate "Off" and rests the meter at a gate level above it, while a louder tone at an
-  instrument's level is still read.
+  instrument's level is still read. The same check MUST be attempted on the foldable emulator; if its microphone
+  cannot be fed with sound from the workstation, the notes MUST say so and the test signal of FR-022 stands in
+  there.
 - **FR-026**: The feature MUST NOT include: a continuous slider or any free-form level entry; a decibel readout;
   automatic measurement of the room or automatic choice of level; any cleaning, filtering or suppression of the
   sound the tuner hears (the gate only decides whether to read it); a gate in By Ear; a separate level per
@@ -395,14 +412,19 @@ and change it from the keyboard; read it with the platform screen reader.
 - **SC-008**: Captures of Auto Listen in every form of FR-016 show zero clipped, overlapping or off-screen elements;
   every choice measures at least 44 dp, is reachable and operable from the keyboard, and is announced with its label
   and state by the screen reader.
-- **SC-009**: The verification notes carry a result for 100% of the attached targets (Pixel 6 Pro, iPhone 17,
-  iPad Pro 13-inch (M5), iPhone Duo): automated tests passing with zero compiler and lint warnings, the end-to-end
-  test passing for all sixteen combinations of gate choice and signal level, and the captures of FR-023.
-- **SC-010**: In the live check on the Pixel 6 Pro and on each simulator, a quiet pitched background that the meter
-  names with the gate "Off" leaves the meter at rest for at least 95% of a 30-second observation once a gate level
-  above it is selected, and a louder tone played over it is still read within 250 ms.
+- **SC-009**: The verification notes carry a result for 100% of the attached targets (Pixel 6 Pro, Pixel 9 Pro Fold
+  emulator, iPhone 17, iPad Pro 13-inch (M5), iPhone Duo): automated tests passing with zero compiler and lint
+  warnings, the end-to-end test passing for all sixteen combinations of gate choice and signal level, and the
+  captures of FR-023.
+- **SC-010**: In the live check on the Pixel 6 Pro and on each simulator (and on the foldable emulator if its
+  microphone can be fed), a quiet pitched background that the meter names with the gate "Off" leaves the meter at
+  rest for at least 95% of a 30-second observation once a gate level above it is selected, and a louder tone played
+  over it is still read within 250 ms.
 - **SC-011**: A guitarist in a room with a television playing can, without instructions and within 30 seconds, find a
   choice at which the meter rests between plucks and still reads every open string.
+- **SC-012**: On the foldable emulator, through ten consecutive changes between flat, tabletop and book posture while
+  listening behind a gate, the selected choice stays selected and in force, listening is never interrupted, and in
+  each posture the control and its indication are whole and clear of the fold.
 
 ## Assumptions
 
@@ -424,7 +446,7 @@ and change it from the keyboard; read it with the platform screen reader.
   the upper two are lowered here because a phone microphone that applies no automatic gain is expected to capture
   an instrument at arm's length well below its loudest level, where a −30 dB gate would hold back most playing. That
   expectation is unmeasured. The plan MUST measure a quiet room, a pitched background and an instrument-level tone on
-  the Pixel 6 Pro and through a simulator, and may move the three values together, keeping their order and at least
+  the Pixel 6 Pro and through the iPhone 17 simulator, and may move the three values together, keeping their order and at least
   10 dB between neighbours, through `/speckit-clarify`. Every scenario and criterion above is written relative to the
   gate level so that it survives such a move.
 - **The 3 dB margin** between opening and closing (FR-005) is a starting value from the brief's "a few dB". A wider
@@ -443,10 +465,15 @@ and change it from the keyboard; read it with the platform screen reader.
 - **Simulators and live sound.** An iOS simulator listens through the workstation's microphone, so the live check of
   FR-025 runs there too, with levels that are the workstation's rather than an iPhone's. The check with a real
   instrument in a real room (SC-011) is the owner's, as the instrument checks of feature 003 were.
-- **Attached targets.** The list in FR-024 is what was attached on 2026-10-05. The owner's iPhone 14 was paired but
-  not connected and no Android emulator was running, so they are outside the required set; if one is attached when
-  the work is verified it is included. With no foldable attached, the tabletop and book forms are verified by the
-  automated layout tests and, if the Pixel 9 Pro Fold emulator is started, on it.
+- **Attached targets.** The five targets of FR-024 are what was attached on 2026-10-05 once the owner had started the
+  Pixel 9 Pro Fold emulator. The owner's iPhone 14 is skipped by the owner's decision of the same day; the iPhone 17
+  simulator stands in for an iPhone. No other Android emulator was running; a target attached later is included
+  when the work is verified.
+- **The foldable emulator's known limits.** Its audio clock has made the metronome's click-timing test fail there
+  since feature 005 (recorded in that feature's verification notes); that failure is expected, is re-checked against
+  `main`, and falls under the "fails in the same way without this feature" rule of FR-024. Its microphone hears the
+  workstation only when the emulator is set to use the host's audio input, which may not be possible to switch from
+  here; FR-025 says what happens then.
 - **The iPhone Duo simulator** is covered in the poses that can be driven on it; it reports no fold posture to the
   app, so it shows the upright or wide form, never the tabletop one.
 - **The Stitch project is not updated by this feature.** If the owner wants the control in the design, the tuner
