@@ -49,7 +49,8 @@ the handle reaches the analysis within one hop (21 ms); the fill is drawn every 
 recompositions; the control recomposes only when the handle moves or the gate opens or closes
 
 **Constraints**: nothing new on the audio callback (Constitution I); listening never restarts when the handle moves
-(FR-003); every reading unchanged with the gate off (FR-002); 44 dp touch height; no decibel figure on the control;
+(FR-003); every reading unchanged with the gate off (FR-002); the slider 44 dp tall and the handle's own touch box 44 × 44 dp
+(FR-018); no decibel figure on the control;
 zero compiler warnings
 
 **Scale/Scope**: one control in five forms of one screen; about 11 new source files and 30 touched; 5 targets, each
@@ -187,6 +188,13 @@ outside the range (FR-004), the slider is not the app's first (FR-020), the scal
 build, a debug launch argument for the gate (FR-022), orientation and on-screen proof on every target (FR-023,
 FR-024, SC-008), a rule for a stored value halfway between two steps (FR-014), and two wordings that follow from
 measuring the level over the analysis window (FR-006, User Story 3).
+
+## Changes after `/speckit-analyze` (2026-10-05)
+
+Eight remediations, listed with their findings at the end of [research.md](research.md). The ones that change the
+design: the handle's touch box is 44 × 44 dp (the owner's choice), the gauge takes its compact rows before it
+shrinks in a short window, and the scale checkpoint reads levels from the fill on a capture, with the loudspeaker
+stand-in unable to fail the scale by itself. The Constitution Check is unchanged.
 
 ## Complexity Tracking
 

@@ -89,8 +89,9 @@ tone, with no 3 dB linger, so what the user sees (the fill short of the handle) 
 **Rationale**: opening at the level and closing a little under it is the standard cure for chatter. 3 dB absorbs
 the window's own ripple (up to 0.8 dB, R2) together with the ±1 dB waver of FR-008; a wider one lets a background
 just under the gate hold it open after a note (spec, Edge Cases). The margin is a constant, not a parameter, because
-nothing in the spec lets the user change it (Constitution VI); the spec allows the build's measurements to settle it
-between 2 and 6 dB, which is a one-line change with its test.
+nothing in the spec lets the user change it (Constitution VI); it stays 3 dB unless the
+live check shows flicker or a background holding the gate open (tasks T065, T066); changing it, within the spec's 2
+to 6 dB, is a one-line change with its test.
 
 **Alternatives considered**: a hold time instead of a margin (a plucked note fades for seconds; a time long enough
 to help would also hold the background); a margin passed from Kotlin (a parameter with one caller and one value).
@@ -176,17 +177,25 @@ plan). A plucked guitar at arm's length is about 75 to 85 dB SPL, so roughly −
 the next room 20 to 30 dB under that. The brief's example top level of −30 dB would sit above most playing on such
 a phone, which is why the scale reaches down to −80 dB and the check levels are −60, −50 and −40.
 
-**How the checkpoint measures, with no extra code**: the control is the instrument. Launch the debug build with a
-gate level (`contracts/tuner-screen.md` §6), let a steady sound play, and read whether the sound is above or below
-the gate: from the control's announced state in a layout dump on Android, from the fill's look in a capture on the
-simulator. Bisecting the gate level finds the sound's level to one step (2 dB). Three sounds on each of the Pixel 6
-Pro and the iPhone 17 simulator: the room as quiet as it gets (Q), a quiet pitched background from a loudspeaker
-across the room (B), and a tone from a loudspeaker at arm's length set as loud as a plucked guitar (I).
+**How the checkpoint measures, with no extra code**: the control is the instrument. The track is the scale, so a
+capture of the app listening through the real microphone with the gate off shows a sound's level where the fill
+ends (−80 dB at "Off", −20 dB at "High"); three captures a second apart give it to about one step. It is confirmed
+by relaunching with a gate level one step under and one step over (`contracts/tuner-screen.md` §6): the fill is
+active, then muted. The same reading works on Android and on the simulator. (The first version of this paragraph
+read the control's announced state from `uiautomator dump`; that dump lists text and content descriptions, not the
+state description, so it was dropped after `/speckit-analyze`.)
+
+Three sounds on each of the Pixel 6 Pro and the iPhone 17 simulator: the room as quiet as it gets (Q), a quiet
+pitched background from a loudspeaker across the room (B), and a stand-in for an instrument (I): a 196 Hz harmonic
+tone from the workstation's loudspeaker at half output volume, 30 cm from the target.
 
 **Decision rule**: keep the scale if, on both targets, Q ≤ −60 dB and −50 dB ≤ I ≤ −20 dB, so that the working
-span between background and instrument lies inside the scale and covers at least a third of it. Otherwise propose
-new ends (kept at least 50 dB apart) through `/speckit-clarify`, change the three constants and re-run the lanes;
-nothing else moves. The same data settle the closing margin of R3.
+span between background and instrument lies inside the scale and covers at least a third of it. Q is a real
+measurement; I is a loudspeaker, not a guitar, so it can pass the scale but not fail it: if only I is out of range,
+the owner is asked for one pluck of a real guitar at arm's length and that number decides. If Q fails, or the real
+instrument does, propose new ends (kept at least 50 dB apart) through `/speckit-clarify`, change the three constants
+and re-run the lanes; nothing else moves. The closing margin of R3 is not derived from these numbers: it stays 3 dB
+unless the live check shows flicker or a background holding the gate open.
 
 ## R9 — The control
 
@@ -195,9 +204,15 @@ the metronome's `TempoSlider` is (same call shape, `material3` 1.9.0, already in
 `valueRange = 0f..30f`, `steps = 29`, a custom `track` slot and a custom `thumb` slot. A label row ("NOISE GATE",
 `labelSmall`) sits above a row of "Off", the slider and "High", as the tempo slider sits between "40" and "240".
 
-- **Shared handle.** The thumb `TempoSlider` draws (16 dp disc in a 44 dp tall box, `primary`, a 16 % halo on hover,
-  press, drag and focus, the focus ring) moves into the design system as `TembraSliderThumb` with its constants in
-  `TembraSliderDefaults`; `TempoSlider` uses it with no visual change. Two sliders, one handle (FR-020).
+- **Shared handle.** The thumb `TempoSlider` draws (a 16 dp `primary` disc, a 16 % halo on hover, press, drag and
+  focus, the focus ring) moves into the design system as `TembraSliderThumb` with its constants in
+  `TembraSliderDefaults`. The disc is always 16 dp and centred in its box; the box is 16 × 44 dp by default, which
+  is what `TempoSlider` keeps, with no visual change. The noise gate gives it a 44 × 44 dp box (the owner's decision
+  after `/speckit-analyze`, FR-018): Material lays the track out between the first and the last position of the
+  box's centre, so the gate's track starts and ends 22 dp inside the slider, 14 dp further in than the tempo
+  slider's, and the row's own gap to the end labels shrinks to keep the same look. A press anywhere on the slider,
+  the handle's box included, still moves the handle's centre to the press, as Material does; the wider box makes the
+  handle's own node, its hover and its focus area 44 dp. Two sliders, one handle (FR-020).
 - **What Material gives for free**: dragging, a tap on the track, the arrow keys in steps, the `setProgress` action
   for screen readers, and standing aside for a vertical scroll that starts on it. FR-018 is tested, not assumed.
 - **Semantics**: `contentDescription` "Noise gate"; `stateDescription` "Off", or the place as a whole percentage,
@@ -244,11 +259,18 @@ insets the track differently, the fill applies the same inset.
 | `Tabletop` | `TunerTabletopSettings`, after the mode control | The lower half scrolls when too tall (feature 005, FR-007); the upper half keeps only the gauge |
 | `Wide` with a book-posture hinge | `TunerTabletopSettings` before the hinge, after the mode control | Same card as tabletop |
 
-**Decision for the two card forms**: `AutoListenPane` stops centring the gauge in a scrolling box. It measures the
-card, gives the control its 64 dp at the foot, and sizes the gauge with the existing
-`MeterLayout.widthForHeight(…, MeterSize.Regular)` from the height that is left, capped at `meterMaxWidth` /
-`meterMaxWidthWide` and never under `meterMinWidth` (200 dp). Only when even that does not fit (a very short
-window, the largest fonts) does the card scroll, with the control still at the end of the content.
+**Decision for the two card forms**: `AutoListenPane` stops centring the gauge in a scrolling box. It measures the card and gives the control its 64 dp at the foot. If the regular gauge fits the height
+that is left at its full cap (`meterMaxWidth` / `meterMaxWidthWide`), it is used as today. Otherwise the gauge takes
+its compact rows (`MeterSize.Compact`, the form of phone landscape) and is sized with the existing
+`MeterLayout.widthForHeight` from the height left, capped at the same width and never under `meterMinWidth`
+(200 dp). Only when even the compact gauge does not fit (a very short window, the largest fonts) does the card
+scroll, with the control still at the end of the content.
+
+Why compact before shrinking: the regular gauge's four text rows are a fixed 188 dp and the compact ones 132 dp, and
+the arc is 1.8 times as wide as the height left over. For the same height the compact gauge is therefore about
+100 dp wider. On a short upright window the regular gauge would shrink to a small arc under large text (an estimated
+220 dp on the iPhone Duo's outer display) or scroll (a 360 × 740 phone); the compact one keeps an arc of about
+300 dp on both. These are estimates from `MeterLayout`'s constants and are checked by the layout test.
 
 **Rationale**: this is what FR-016 and the short-window edge case ask (the gauge shrinks, nothing is cut, scrolling
 is the last resort), and it is the fitting the landscape and tabletop gauges already use. The control is hidden with
@@ -292,7 +314,8 @@ needs nothing to survive a rotation or a fold; the tests and the device checks o
 
 **Rationale**: the levels sit 5 dB or more from every check level, well outside the 3 dB margin and the 1 dB the
 conversion can be off by, so each of the sixteen outcomes is unambiguous (`data-model.md` §7). The gate argument is
-what lets one command produce the FR-023 captures on five targets and what R8's measurement bisects with; without it
+what lets one command produce the FR-023 captures on five targets and what R8's measurement confirms its readings
+with; without it
 every capture would need the handle dragged by a script on five kinds of device.
 
 ## R14 — Proving it on five targets, in both orientations
@@ -347,3 +370,16 @@ upload as a new screen, patch the project's screen instances, hide the old versi
 | FR-023, FR-024, SC-008, Clarifications | Orientation change and on-screen proof on every target | The owner's planning request, R14 |
 | FR-014 | A stored value exactly halfway between two steps goes to the quieter one | R7: stored values are whole decibels, so "nearer" needed a tie rule |
 | FR-006; User Story 3, scenario 1 | The gate "must not take a note past" the quarter second (was "must not add a delay"); the fill follows within a fifth of a second (was a tenth) | R2: the level is measured over the 85 ms window |
+
+## What the analysis changed (2026-10-05, after `/speckit-analyze`)
+
+| Where | Change | Finding |
+|---|---|---|
+| tasks T008–T010 | The failing tests of the bridges come before the JNI shim | Constitution III order |
+| R9, `contracts/tuner-screen.md` §1–§2, tasks T015, T027, T048, spec Clarifications | The handle's touch box is 44 × 44 dp (the owner's choice); the disc stays 16 dp | FR-018 and SC-008 asked for it, the plan had 16 × 44 |
+| spec SC-002, quickstart §1 | "Passes unchanged" now means the assertions about readings and screens; tests that pin the revision, the catalogue size or the snapshot's shape are edited | Four tasks edit such tests |
+| `contracts/tuner-audio-kotlin.md`, tasks T019, T065 | The end-to-end test asserts that `sequence` never goes back across a live change and advances at least 20 times a second; the live check watches the platform's microphone indicator | FR-003, SC-005, SC-006 were only checked with a test signal |
+| R8, quickstart §6, task T066 | Levels are read from the fill on a capture, on both platforms; the instrument stand-in is defined and cannot fail the scale by itself | The layout dump does not show the announced state; "as loud as a guitar" was not calibrated |
+| R11, `contracts/tuner-screen.md` §4, tasks T046, T053, spec FR-016 and Edge Cases | The gauge takes its compact rows before it shrinks | The regular rows leave a small arc in short upright windows |
+| R3, R8, spec Assumptions, tasks T065, T066 | The 3 dB margin stays unless the live check shows flicker or a held-open gate | The spec promised a setting "from the measurements" with no rule |
+| tasks T021, T035, T057, T069; spec Terms; checklist notes | No "dB" text on the control; reduce motion; selectors named for the on-screen check; pointers in the specs of features 003 and 005; "meter" is the spec's one word for the gauge; the checklist notes describe the slider | Smaller gaps |

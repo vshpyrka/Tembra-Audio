@@ -16,14 +16,17 @@ internal object TembraSliderDefaults {
     const val THUMB_HALO_SCALE = 2f
 }
 
-// designsystem/TembraSliderThumb.kt — the thumb TempoSlider draws today, extracted unchanged
+// designsystem/TembraSliderThumb.kt — the thumb TempoSlider draws today, extracted
 @Composable
 internal fun TembraSliderThumb(interactionSource: MutableInteractionSource, modifier: Modifier = Modifier)
-//   a ThumbSize × touchTargetMin box; a `primary` disc; a halo on hover, press, drag and focus; the focus ring
+//   a `primary` disc, always ThumbSize across and centred in the box; a halo on hover, press, drag and focus; the
+//   focus ring. The box is ThumbSize × touchTargetMin (16 × 44 dp) unless the caller's modifier gives a larger one:
+//   `modifier` comes first on the root, so a caller's `Modifier.size(…)` wins over the default.
 ```
 
-`TempoSlider` calls `TembraSliderThumb` and reads the track height from `TembraSliderDefaults`; its look, its tests
-(`TempoDialTest`, `MetronomeControlsTest`, `MetronomeScreenTest`) and its captures do not change.
+`TempoSlider` calls `TembraSliderThumb` with the default box and reads the track height from `TembraSliderDefaults`;
+its look, its tests (`TempoDialTest`, `MetronomeControlsTest`, `MetronomeScreenTest`) and its captures do not change.
+The noise gate gives the handle a 44 × 44 dp box (§2).
 
 ## 2. `NoiseGateSlider`
 
@@ -52,7 +55,7 @@ Column(modifier, tag "tuner.noiseGate")
     ├── Text "Off"                          tabularParam, outline
     ├── Slider (weight 1, tag "tuner.noiseGate.slider")
     │     value = gate.step, valueRange 0f..30f, steps = 29
-    │     thumb = TembraSliderThumb
+    │     thumb = TembraSliderThumb(source, Modifier.size(touchTargetMin).testTag("tuner.noiseGate.handle"))
     │     track = Box(TrackHeight, CircleShape).drawBehind { track; live fill }
     └── Text "High"                         tabularParam, outline
 ```
@@ -60,6 +63,7 @@ Column(modifier, tag "tuner.noiseGate")
 | Aspect | Contract |
 |---|---|
 | Height | The label row plus `touchTargetMin` (44 dp) for the slider: about 64 dp at the default font size. Width is the caller's |
+| Handle | Its touch box is 44 × 44 dp (spec FR-018; the owner's decision after `/speckit-analyze`); the disc drawn in it is 16 dp, as on the tempo slider. Material places the track between the first and last position of the box's centre, so the track starts and ends 22 dp inside the slider; the row leaves no extra gap between an end label and the slider, so the label-to-track distance reads as on the tempo slider. A press inside the box moves the handle's centre to the press, as anywhere else on the slider |
 | Value | `onGate(NoiseGate.ofStep(round(value)))`, only when it differs from `gate`; the handle stops at 0 and 30 |
 | Input | Drag, tap or click on the track, Left/Right (and Up/Down) arrows one step: all from Material's `Slider`. A vertical drag that starts on it scrolls a scrolling parent and leaves the value alone (FR-018) |
 | Settled | `onValueChangeFinished` → `onGateSettled()`. If a test shows Material does not report a key press or a track tap as finished, the component calls `onGateSettled()` after that input itself |
@@ -98,10 +102,11 @@ internal fun TunerTabletopSettings(…, modifier: Modifier = Modifier, autoListe
 | `Tabletop` | `TunerTabletopSettings(autoListenControls = …)` | After `ModeControl`, in the centred column |
 | `Wide` with a vertical fold | `TunerTabletopSettings(autoListenControls = …)` | Same card, before the hinge |
 
-`AutoListenPane` with a footer (research R11): the footer is measured first; the gauge gets the height that is left
-and is sized from it with `MeterLayout.widthForHeight(…, MeterSize.Regular)`, capped at `meterMaxWidth` /
-`meterMaxWidthWide`, never under `meterMinWidth`. When the height left is under the smallest gauge, the card's
-content scrolls as a whole with the footer last. With the denied panel the footer is not passed. Without a footer
+`AutoListenPane` with a footer (research R11): the footer is measured first and the gauge gets the height that is
+left. If the regular gauge fits that height at its full cap (`meterMaxWidth` / `meterMaxWidthWide`) it is shown as
+today. Otherwise the gauge takes `MeterSize.Compact` and is sized with `MeterLayout.widthForHeight(…, Compact)` from
+the height left, capped at the same width, never under `meterMinWidth`. When even the compact gauge would be under
+`meterMinWidth`, the card's content scrolls as a whole with the footer last. With the denied panel the footer is not passed. Without a footer
 (landscape, tabletop, book) the pane behaves exactly as today.
 
 Order for the keyboard and the screen reader follows what is seen: after the gauge in `Stacked` and `Wide`, after
@@ -143,8 +148,8 @@ Release builds never read either argument.
 
 | File | Cases |
 |---|---|
-| `NoiseGateSliderTest` (new) | renders the label, "Off" and "High"; the slider node is at least 44 dp tall; Right and Left move one step and stop at the ends; a click at a third of the track reports step 10; a horizontal swipe reports rising steps and one settle; key and click also settle; hover, press and focus through an injected `MutableInteractionSource` show the halo and the ring (clock frozen); semantics: label, "Off", "50 percent", the two states, `setProgress`; with a scripted telemetry at −50 dB and the gate at −50 dB the fill ends under the handle's centre (± 2 dp) and is `primary`; at −60 dB it ends short and is `outline`; not listening draws no fill; inside a vertically scrolling parent a vertical swipe scrolls and leaves the step unchanged |
-| `TunerNoiseGateLayoutTest` (new) | **On screen in every form and orientation.** For window sizes 320×568, 360×740, 466×678 (iPhone Duo outer display), 800×360, 1024×1366 and 1366×1024, at font scales 1.0 and 2.0, with the form `TunerLayout` gives each: the control is displayed (after scrolling to it where the content scrolls); its unclipped bounds equal its bounds in the root and lie inside the root; it does not intersect `tuner.meter`, the selectors or the pill; it sits below the gauge in `Stacked` and `Wide` and inside `tuner.settings` otherwise; the gauge's bounds are whole. Tabletop and book with a scripted fold: the control is in the lower / start region and clear of the fold. **Orientation and posture change**: one composition whose layout parameter goes upright → sideways → upright and flat → tabletop → book → flat with the state unchanged: the control is present each time with the same step and the same announced value. **This device's window**: the same assertions with no forced size |
+| `NoiseGateSliderTest` (new) | renders the label, "Off" and "High" and no text containing "dB"; the slider node is at least 44 dp tall and the handle's box `tuner.noiseGate.handle` at least 44 dp in both dimensions with the 16 dp disc centred in it; Right and Left move one step and stop at the ends; a click at a third of the track reports step 10; a horizontal swipe reports rising steps and one settle; key and click also settle; hover, press and focus through an injected `MutableInteractionSource` show the halo and the ring (clock frozen); semantics: label, "Off", "50 percent", the two states, `setProgress`; with a scripted telemetry at −50 dB and the gate at −50 dB the fill ends under the handle's centre (± 2 dp) and is `primary`; at −60 dB it ends short and is `outline`; not listening draws no fill; with the motion duration scale at zero the fill still follows the level; inside a vertically scrolling parent a vertical swipe scrolls and leaves the step unchanged |
+| `TunerNoiseGateLayoutTest` (new) | **On screen in every form and orientation.** For window sizes 320×568, 360×740, 466×678 (iPhone Duo outer display), 800×360, 1024×1366 and 1366×1024, at font scales 1.0 and 2.0, with the form `TunerLayout` gives each: the control is displayed (after scrolling to it where the content scrolls); its unclipped bounds equal its bounds in the root and lie inside the root; it does not intersect `tuner.meter`, the selectors or the pill; it sits below the gauge in `Stacked` and `Wide` and inside `tuner.settings` otherwise; the gauge's bounds are whole. At 360×548 and 386×540 (the content area a 360×740 phone and the iPhone Duo's outer display leave under the shell's bars) the gauge is whole without scrolling and at least `meterMinWidth` wide. Tabletop and book with a scripted fold: the control is in the lower / start region and clear of the fold. **Orientation and posture change**: one composition whose layout parameter goes upright → sideways → upright and flat → tabletop → book → flat with the state unchanged: the control is present each time with the same step and the same announced value. **This device's window**: the same assertions with no forced size |
 | `TunerScreenLayoutTest`, `TunerTabletopLayoutTest`, `TunerHingeLayoutTest` | focus order includes the control at its place; every existing assertion still holds |
 | `TunerScreenByEarTest`, `TunerScreenDeniedTest` | no node tagged `tuner.noiseGate` |
 
@@ -169,5 +174,6 @@ For the named target and orientation it launches the debug build three times and
 
 On Android it sets the rotation itself (`user_rotation`), and after each launch reads `uiautomator dump` and fails
 unless the node described "Noise gate" lies inside the display and intersects neither the node described "Tuner
-meter" nor a selector (research R14, layer 2). On iOS it turns sideways captures upright with `sips`; the simulator
+meter" nor a selector, that is a node whose text is "Guitar", "Cello", "Auto Listen" or "By Ear" (research R14,
+layer 2). On iOS it turns sideways captures upright with `sips`; the simulator
 is rotated beforehand (quickstart §4). It prints one line per capture for the notes.

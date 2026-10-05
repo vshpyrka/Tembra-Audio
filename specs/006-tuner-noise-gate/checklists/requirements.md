@@ -31,23 +31,17 @@
 
 ## Notes
 
-- Two validation passes. The first found four gaps, all fixed in the spec: a change of gate choice while a sound sat
-  inside the 3 dB closing margin had no defined outcome (FR-003 now judges the change afresh); SC-003's 1 dB
-  tolerance was tighter than the half-second rest it sits beside allows (now 2 dB); the level indication had no
-  announced state while not listening (FR-019, "no input"); and FR-016's "the meter remains whole" contradicted the
-  short-window edge case (it now says the content scrolls instead of clipping).
-- No clarification markers. The research brief left one product choice to the spec, the shape of the control (named
-  levels or the Stitch slider). The named levels were chosen and the reasoning is in Assumptions, "Shape of the
-  control", with the requirements a change would touch (FR-001, FR-002, FR-026). It is the assumption most worth the
-  owner's look before `/speckit-plan`.
-- The decibel values (FR-002) and the 3 dB margin (FR-005) are starting values. Assumptions, "Gate levels", obliges the
-  plan to measure them on the Pixel 6 Pro and through a simulator; every scenario and criterion is written relative
-  to the gate level so a shift does not invalidate it.
+- Re-validated 2026-10-05 after `/speckit-clarify`, `/speckit-plan` and `/speckit-analyze`; all sixteen items pass.
+  Earlier notes described the first draft (four named levels); they are replaced by this summary.
+- The control is a slider on the live level track (the owner's clarification), placed under the meter upright and on
+  a tablet and in the settings card elsewhere. Its handle's touch box is 44 dp in both directions (the owner's
+  decision after the analysis).
+- The scale (−80 dB to −20 dB in 2 dB steps) and the 3 dB margin are starting values. The scale is checked at a
+  checkpoint in the build; every scenario and criterion is written relative to the gate level so a shift does not
+  invalidate it.
 - Decibels and dp are the units of the behaviour being specified, not technology choices. Device names (Pixel 6 Pro,
   Pixel 9 Pro Fold emulator, iPhone 17, iPad Pro 13-inch (M5), iPhone Duo) are the targets the owner asked to be
   tested on and appear only in Clarifications, FR-023 to FR-025, SC-009, SC-010, SC-012 and Assumptions.
-- Amended 2026-10-05 after the owner attached the Pixel 9 Pro Fold emulator and chose to skip the iPhone 14: the
-  target list is now five (Clarifications, FR-024), the foldable's tabletop, book and flat postures are verified on
-  the emulator (FR-023, FR-024, SC-012), and the emulator's two known limits are recorded in Assumptions. The
-  checklist was re-run against the amended spec; all items still pass.
-- The evidence section cites the research brief and the one Stitch screen by path; it names no code.
+- The evidence section cites the research brief and the one Stitch screen by path; it names no code. Debug launch
+  arguments appear in FR-022 as feature 003's FR-032 did.
+- Changes made by planning and by the analysis are listed at the end of `research.md`.

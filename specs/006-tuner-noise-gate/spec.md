@@ -72,6 +72,10 @@ nothing else.
 - Q: (the owner's request when planning) What else must the check on every target show? → A: A change of screen
   orientation on every target, and that the control is visible on the screen, not outside it, not cut and not
   overlapping any other element, in every orientation and posture (FR-023, FR-024, SC-008).
+- Q: (after `/speckit-analyze`) The plan's handle was a 16 dp disc in a box 16 dp wide and 44 dp tall, like the tempo
+  slider's, while FR-018 asks for 44 dp in both directions. Reword the requirement, or widen the box? → A: Widen the
+  handle's touch box to 44 dp in both directions, so it is easy to hit. The disc drawn in it keeps its size; the
+  tempo slider is not changed by this feature.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -90,6 +94,8 @@ Terms used below:
 - **The gate is open** when sound is being read and **closed** when it is being ignored.
 - **Check levels**: −60, −50 and −40 dB, used wherever a scenario or a test needs a particular gate level. The gate
   behaves the same at every position of the handle.
+- **Meter**: the Auto Listen display of feature 003 (the note, the needle on its arc, the readouts). The
+  clarification answers and the plan also call it the gauge; it is one thing.
 
 ### User Story 1 - Keep a quiet background off the meter (Priority: P1)
 
@@ -226,7 +232,7 @@ the keyboard; read it and adjust it with the platform screen reader.
    without scrolling.
 4. **Given** a foldable in tabletop posture or in book posture (feature 005), **When** Auto Listen shows, **Then**
    the control is in the "Tuner controls" card under the mode control; in tabletop the upper half still shows only
-   the gauge, and nothing crosses the fold.
+   the meter, and nothing crosses the fold.
 5. **Given** a pointer, **When** it hovers over the handle, **Then** the handle shows a hover state; **When** a place
    on the track is clicked, **Then** the handle moves there. **Given** a keyboard, **When** focus moves through the
    screen, **Then** the control receives a visible focus indicator in the order it is seen (after the meter where
@@ -266,8 +272,8 @@ the keyboard; read it and adjust it with the platform screen reader.
   not shown; the remembered gate level is kept and is in force once access is granted.
 - **The remembered gate level cannot be read** (damaged, or outside this version's scale): the gate is off. A value
   that falls between two steps is moved to the nearer one.
-- **A short window** (a small phone upright, the iPhone Duo's outer display): the control keeps its full touch height
-  and the meter shrinks to the height that is left; nothing is clipped, and if the two cannot both fit the content
+- **A short window** (a small phone upright, the iPhone Duo's outer display): the control keeps its full touch height; the meter takes its compact form (the one a phone held sideways shows)
+  and shrinks to the height that is left; nothing is clipped, and if the two still cannot both fit the content
   scrolls.
 - **The largest system font size**: the label and the two end labels stay readable and unclipped; a settings column
   or controls card that becomes too tall scrolls, as it does today.
@@ -348,15 +354,16 @@ the keyboard; read it and adjust it with the platform screen reader.
     font size;
   - tabletop posture and book posture (feature 005): in the "Tuner controls" card, under the mode control.
 
-  In every form the meter MUST remain whole (in a window too short for the meter and the control together, the
-  content scrolls instead of clipping), and nothing MUST clip, overlap, scroll horizontally or, on a foldable, cross
+  In every form the meter MUST remain whole (in a window too short for the meter and the control together the
+  meter first takes its compact form, and only if that is still too tall does the content scroll instead of
+  clipping), and nothing MUST clip, overlap, scroll horizontally or, on a foldable, cross
   the fold.
 - **FR-017**: Outside the control, the Auto Listen layouts MUST change only by the room the control takes; By Ear,
   the selectors, the audio-state pill and the denied state MUST be unchanged.
 - **FR-018**: The handle MUST show a hover state under a pointer and a visible focus indicator. With focus on the
   control, each press of an arrow key MUST move the handle one step towards the matching end. The handle's touch
-  area MUST measure at least 44 dp in both dimensions, and the track MUST accept touches over a height of at least
-  44 dp. A sideways drag on the control MUST move the handle and MUST NOT scroll the screen; an up-and-down drag
+  area MUST measure at least 44 dp in both dimensions (its own box, whatever the size of the disc drawn in it), and
+  the track MUST accept touches over a height of at least 44 dp. A sideways drag on the control MUST move the handle and MUST NOT scroll the screen; an up-and-down drag
   that starts on it MUST scroll the content (where it scrolls) and MUST NOT move the handle. In keyboard and
   screen-reader order the control MUST come where it is seen: after the meter in the forms that put it under the
   meter, after the mode control in the settings column and in the "Tuner controls" card.
@@ -444,8 +451,10 @@ the keyboard; read it and adjust it with the platform screen reader.
 - **SC-001**: With the gate at each of the three check levels, a clear steady tone 6 dB below the gate level, at
   every open-string pitch of feature 003's presets, produces no reading during 10 seconds; the same tone at the gate
   level or above it is shown within 250 ms with its offset within 1 cent.
-- **SC-002**: With the gate off, every automated tuner test that existed before this feature passes unchanged and all
-  fourteen existing test signals give the same readings.
+- **SC-002**: With the gate off, every assertion the existing automated tests make about the tuner's readings and
+  screens holds unchanged, and all fourteen existing test signals give the same readings. Only tests that pin
+  something this feature changes on purpose are edited: the revision number of the engine's interface, the number of
+  test signals, and the shape of the remembered choices.
 - **SC-003**: A note that starts 15 dB above the gate level and fades at 10 dB per second is read without a gap until
   it is 3 dB below the gate level (within 2 dB), and the meter rests within 500 ms after that.
 - **SC-004**: A tone wavering 1 dB either way around the gate level for 30 seconds causes at most one change between
@@ -498,19 +507,22 @@ the keyboard; read it and adjust it with the platform screen reader.
   is unmeasured, and it cannot be measured before the gate's own measurement of the input exists (plan, research
   R8). A quiet room, a pitched background and an instrument-level tone are therefore measured on the Pixel 6 Pro and
   through the iPhone 17 simulator at a checkpoint in the build, before the scale is accepted; if the scale proves
-  wrong, either end is moved through `/speckit-clarify`, keeping it at least 50 dB long. The check levels and the test signals of FR-022 are test points inside the scale and move
+  wrong, either end is moved through `/speckit-clarify`, keeping it at least 50 dB long. The instrument-level tone is
+  a loudspeaker standing in for an instrument; before the scale is changed on its account alone, the owner is asked
+  for one reading from a real guitar. The check levels and the test signals of FR-022 are test points inside the scale and move
   with it; every scenario and criterion above is written relative to the gate level so that it survives such a move.
 - **The 3 dB margin** between opening and closing (FR-005) is a starting value from the brief's "a few dB". A wider
-  margin lets a fading note ring longer but lets a background just under the gate hold it open; the plan may settle
-  it between 2 and 6 dB from the same measurements.
+  margin lets a fading note ring longer but lets a background just under the gate hold it open. It stays 3 dB unless
+  the live check of FR-025 shows the meter flickering on a steady sound near the gate, or a background holding the
+  gate open after a note; then it is changed, within 2 to 6 dB, through `/speckit-clarify`.
 - **Off by default.** A gate can cut a fading note short (User Story 2) and the right level differs from room to
   room, so nobody gets a gate they did not set.
 - **One gate level for everything.** It is not kept per instrument or per room. A cello is louder than a guitar, but
   the gate is set against the background, not the instrument.
-- **Placement.** Upright and on a tablet the control sits under the gauge, in the gauge's card (the owner's choice
+- **Placement.** Upright and on a tablet the control sits under the meter, in the meter's card (the owner's choice
   of 2026-10-05, Clarifications; the brief had proposed it under the selector bar). Sideways it is in the settings
   column, as the brief proposed, and the tabletop and book forms follow feature 005's rule that every setting lives
-  in the "Tuner controls" card, which also keeps the upper half of a tabletop screen for the gauge alone. The control
+  in the "Tuner controls" card, which also keeps the upper half of a tabletop screen for the meter alone. The control
   is hidden in the denied state because there is nothing to gate and that state should show one message and one
   action.
 - **The resting state does not change its wording.** A closed gate shows "Listening" like any other rest; the track,
