@@ -44,6 +44,10 @@
   plan to measure them on the Pixel 6 Pro and through a simulator; every scenario and criterion is written relative
   to the gate level so a shift does not invalidate it.
 - Decibels and dp are the units of the behaviour being specified, not technology choices. Device names (Pixel 6 Pro,
-  iPhone 17, iPad Pro 13-inch (M5), iPhone Duo) are the targets the owner asked to be tested on and appear only in
-  FR-024, FR-025, SC-009, SC-010 and Assumptions.
+  Pixel 9 Pro Fold emulator, iPhone 17, iPad Pro 13-inch (M5), iPhone Duo) are the targets the owner asked to be
+  tested on and appear only in Clarifications, FR-023 to FR-025, SC-009, SC-010, SC-012 and Assumptions.
+- Amended 2026-10-05 after the owner attached the Pixel 9 Pro Fold emulator and chose to skip the iPhone 14: the
+  target list is now five (Clarifications, FR-024), the foldable's tabletop, book and flat postures are verified on
+  the emulator (FR-023, FR-024, SC-012), and the emulator's two known limits are recorded in Assumptions. The
+  checklist was re-run against the amended spec; all items still pass.
 - The evidence section cites the research brief and the one Stitch screen by path; it names no code.
