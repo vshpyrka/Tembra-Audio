@@ -49,6 +49,8 @@ class TunerScreenDeniedTest {
         onNodeWithText("Allow microphone").assertIsDisplayed()
         onNodeWithTag("tuner.meter").assertDoesNotExist()
         onNodeWithTag("tuner.pill").assertDoesNotExist()
+        // Nothing to gate without the microphone: the noise gate control is not shown (feature 006, FR-001).
+        onNodeWithTag("tuner.noiseGate").assertDoesNotExist()
         onNodeWithText("Allow microphone").performClick()
         repeat(2) { mainClock.advanceTimeByFrame() }
         assertTrue(requested)
@@ -66,6 +68,7 @@ class TunerScreenDeniedTest {
         setScreen(denied.copy(testSignal = TestSignals.byId("e2-in-tune")!!.signal))
         onNodeWithTag("tuner.meter").assertExists()
         onNodeWithTag("tuner.denied").assertDoesNotExist()
+        onNodeWithTag("tuner.noiseGate").assertExists()
     }
 
     @Test

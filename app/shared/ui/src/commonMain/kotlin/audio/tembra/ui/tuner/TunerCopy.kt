@@ -23,4 +23,6 @@ internal object TunerCopy {
     const val deniedButton = "Allow microphone"
     const val hertz = "Hz"
     const val tunerControls = "Tuner controls"
+    const val noiseGate = "Noise gate"
+    const val gateHigh = "High"
 }

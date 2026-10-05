@@ -26,7 +26,9 @@ import audio.tembra.ui.theme.TembraTheme
  * it, [TunerTabletopSettings] below it (feature 005, FR-003, FR-004; a null [fold] splits in half, as the UI tests do),
  * the regions tagged `tuner.tabletop.upper` and `.lower`; [TunerLayout.Wide] with a book-posture [verticalFold] puts
  * the same controls card before the hinge and the gauge or the string cards after it (design iteration D3). Root tag `screen.tuner` keeps the shell's convention. Each
- * child receives only the fields it renders, so the 10 Hz reading recomposes the meter and nothing beside it.
+ * child receives only the fields it renders, so the 10 Hz reading recomposes the meter and nothing beside it. The noise
+ * gate control (feature 006, FR-016) is built once here, while [TunerUiState.showNoiseGate], and handed to the place
+ * the layout gives it: the foot of the Auto Listen card in the stacked and wide layouts.
  */
 @Composable
 fun TunerScreenContent(
@@ -43,6 +45,18 @@ fun TunerScreenContent(
         .fillMaxSize()
         .padding(horizontal = spacing.pageMargin, vertical = spacing.sm)
         .testTag("screen.tuner")
+    val noiseGate: (@Composable () -> Unit)? = if (state.showNoiseGate) {
+        {
+            NoiseGateSlider(
+                gate = state.noiseGate,
+                onGate = callbacks.onNoiseGate,
+                onGateSettled = callbacks.onNoiseGateSettled,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    } else {
+        null
+    }
     when (layout) {
         TunerLayout.Landscape -> Row(modifier = root, horizontalArrangement = Arrangement.spacedBy(spacing.md)) {
             TunerSettingsColumn(
@@ -120,14 +134,28 @@ fun TunerScreenContent(
                 callbacks = callbacks,
                 layout = layout,
             )
-            ModePane(state = state, callbacks = callbacks, telemetry = telemetry, layout = layout, modifier = Modifier.fillMaxWidth().weight(1f))
+            ModePane(
+                state = state,
+                callbacks = callbacks,
+                telemetry = telemetry,
+                layout = layout,
+                modifier = Modifier.fillMaxWidth().weight(1f),
+                autoListenFooter = noiseGate,
+            )
         }
     }
 }
 
-/** The Auto Listen card or the By Ear card for the current mode. */
+/** The Auto Listen card or the By Ear card for the current mode; [autoListenFooter] goes to the foot of the Auto Listen card. */
 @Composable
-private fun ModePane(state: TunerUiState, callbacks: TunerCallbacks, telemetry: PitchTelemetry, layout: TunerLayout, modifier: Modifier) {
+private fun ModePane(
+    state: TunerUiState,
+    callbacks: TunerCallbacks,
+    telemetry: PitchTelemetry,
+    layout: TunerLayout,
+    modifier: Modifier,
+    autoListenFooter: (@Composable () -> Unit)? = null,
+) {
     when (state.mode) {
         TunerMode.AutoListen -> AutoListenPane(
             reading = state.reading,
@@ -137,6 +165,7 @@ private fun ModePane(state: TunerUiState, callbacks: TunerCallbacks, telemetry: 
             layout = layout,
             onRequestMicrophone = callbacks.onRequestMicrophone,
             modifier = modifier,
+            footer = autoListenFooter,
         )
         TunerMode.ByEar -> ByEarPane(
             guitarStrings = state.guitarStrings.takeIf { state.instrument.hasStringCount },

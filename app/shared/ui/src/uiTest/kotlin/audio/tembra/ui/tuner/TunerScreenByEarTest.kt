@@ -147,6 +147,8 @@ class TunerScreenByEarTest {
         callbacks = TunerCallbacks.None.copy(onLoopTone = { loop = it })
         val update = setScreen(byEar)
         onNodeWithTag("tuner.loop").assertIsOn()
+        // By Ear does not listen, so it has no noise gate (feature 006, FR-001).
+        onNodeWithTag("tuner.noiseGate").assertDoesNotExist()
         onNode(hasText("LOOP TONE") and hasAnyAncestor(hasTestTag("tuner.byEar")), useUnmergedTree = true).assertExists()
         onNode(hasText("Active") and hasAnyAncestor(hasTestTag("tuner.byEar")), useUnmergedTree = true).assertExists()
         onNodeWithTag("tuner.loop").performClick()
