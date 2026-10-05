@@ -22,10 +22,13 @@ import dev.zacsweers.metrox.viewmodel.metroViewModel
 @Composable
 fun TunerScreen(modifier: Modifier = Modifier, viewModel: TunerViewModel = metroViewModel()) {
     // The test signal is handed over before the screen reports itself visible, so a debug launch never opens the
-    // microphone. The local is set once at the root for the process, so no separate effect follows it.
+    // microphone, and the launch value of the noise gate with it, so it is in force from the first sound (feature
+    // 006). The locals are set once at the root for the process, so no separate effect follows them.
     val testSignal = LocalTunerTestSignal.current
+    val noiseGate = LocalTunerNoiseGate.current
     DisposableEffect(viewModel) {
         viewModel.useTestSignal(testSignal)
+        viewModel.useNoiseGate(noiseGate)
         viewModel.screenVisible(true)
         onDispose { viewModel.screenVisible(false) }
     }
