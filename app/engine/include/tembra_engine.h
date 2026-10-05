@@ -1,5 +1,5 @@
 /*
- * Tembra Audio engine C ABI, revision 3.
+ * Tembra Audio engine C ABI, revision 4.
  *
  * This header is the only interface the Kotlin side ever sees (JNI shim on Android, cinterop on
  * iOS). Rules: plain C, no C++ types, no callbacks into the host, every returned pointer has static
@@ -8,7 +8,9 @@
  * specs/001-project-scaffold/contracts/engine-c-abi.md; revision 2 (the tuner) is
  * specs/003-instrument-tuner/contracts/engine-c-abi-v2.md; revision 3 (the metronome: TEMBRA_ERR_SILENT,
  * TEMBRA_AUDIO_METRONOME and the tembra_metronome_* functions; every revision 2 function unchanged) is
- * specs/004-metronome/contracts/engine-c-abi-v3.md.
+ * specs/004-metronome/contracts/engine-c-abi-v3.md; revision 4 (the tuner's noise gate: tembra_tuner_set_gate and
+ * the input_level_db and gate_open fields of tembra_pitch_reading; every revision 3 function unchanged) is
+ * specs/006-tuner-noise-gate/contracts/engine-c-abi-v4.md.
  */
 #ifndef TEMBRA_ENGINE_H
 #define TEMBRA_ENGINE_H
@@ -20,13 +22,13 @@ extern "C" {
 #endif
 
 /* ABI revision of this header. Incremented whenever a function is added, removed or changed. */
-#define TEMBRA_ENGINE_ABI_VERSION 3u
+#define TEMBRA_ENGINE_ABI_VERSION 4u
 uint32_t tembra_engine_abi_version(void);
 
 /* Human-readable engine name, e.g. "Tembra Engine". Static storage. */
 const char* tembra_engine_name(void);
 
-/* Engine semantic version "major.minor.patch", e.g. "0.3.0". Static storage. */
+/* Engine semantic version "major.minor.patch", e.g. "0.4.0". Static storage. */
 const char* tembra_engine_version(void);
 
 /*
@@ -76,11 +78,20 @@ typedef struct tembra_pitch_reading {
     uint32_t sample_rate;  /* actual input stream rate */
     float    frequency_hz; /* smoothed estimate; meaningful only when has_pitch */
     float    clarity;      /* NSDF peak height 0..1 */
-    float    input_peak;   /* linear peak of the last hop, 0..1 */
-    uint8_t  has_pitch;    /* 0 = resting (silence, noise, out of range, low clarity) */
+    float    input_peak;   /* linear peak of the last hop before the pre-filter, 0..1 */
+    float    input_level_db; /* RMS of the analysis window after the pre-filter, in dB below full scale; floor -120 */
+    uint8_t  has_pitch;    /* 0 = resting (silence, noise, out of range, low clarity, held back by the gate) */
     uint8_t  synthetic;    /* 1 while a test signal feeds the analyzer */
+    uint8_t  gate_open;    /* 1 while sound is being read (no gate, or the gate is open); 0 while it is held back */
 } tembra_pitch_reading;
 void    tembra_tuner_read(tembra_pitch_reading* out); /* lock-free seqlock read; also the watchdog heartbeat */
+
+/* --- Noise gate (feature 006, research R1-R5) --- */
+int32_t tembra_tuner_set_gate(uint32_t enabled, float open_db);
+        /* Allowed in every audio state. The value is kept for the life of the engine: a running analysis uses it from
+           its next hop, and every later tembra_tuner_start / tembra_tuner_start_test_signal from its first hop.
+           enabled == 0: no gate (open_db is ignored). enabled != 0: open_db must be finite and within -120..0,
+           otherwise TEMBRA_ERR_ARGUMENT and the previous value stays. Initially: no gate. */
 
 /* --- Test signal: a generated tone in place of the microphone (research R16; debug tooling, all builds) --- */
 typedef struct tembra_test_signal {

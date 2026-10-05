@@ -15,6 +15,7 @@ add_executable(tembra_engine_tests
     mpm_test.cpp
     band_pass_test.cpp
     tuner_analyzer_test.cpp
+    level_gate_test.cpp
     tone_generator_test.cpp
     sample_player_test.cpp
     recordings_on_pitch_test.cpp

@@ -135,14 +135,6 @@ internal object MetronomeDefaults {
     const val DASHED_BORDER_ALPHA = 0.3f
     val DashLength: Dp = 4.dp
 
-    // Slider (research R10): the 6 dp track and the 16 dp thumb.
-    val SliderTrackHeight: Dp = 6.dp
-    val SliderThumbSize: Dp = 16.dp
-
-    /** The thumb's state layer on hover, press, drag and focus: `primary` at 16 %, twice the thumb's diameter. */
-    const val THUMB_HALO_ALPHA = 0.16f
-    const val THUMB_HALO_SCALE = 2f
-
     // Wide and landscape layouts (contracts/metronome-screen.md, research R10).
     /** The expanded layout's tap and play row: `max-w-md` centred in its card. */
     val TransportMaxWidth: Dp = 448.dp

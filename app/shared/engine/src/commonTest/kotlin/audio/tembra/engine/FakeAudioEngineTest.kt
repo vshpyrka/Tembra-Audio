@@ -90,6 +90,8 @@ class FakeAudioEngineTest {
             frequencyHz = 83.37f
             clarity = 0.9f
             inputPeak = 0.4f
+            inputLevelDb = -42.5f
+            gateOpen = false
             hasPitch = true
         }
         val snapshot = PitchSnapshot()
@@ -100,10 +102,31 @@ class FakeAudioEngineTest {
         assertEquals(83.37f, snapshot.frequencyHz)
         assertEquals(0.9f, snapshot.clarity)
         assertEquals(0.4f, snapshot.inputPeak)
+        assertEquals(-42.5f, snapshot.inputLevelDb)
+        assertEquals(false, snapshot.gateOpen)
         assertTrue(snapshot.hasPitch)
         assertEquals(1, engine.readCount)
         engine.readPitch(snapshot)
         assertEquals(2, engine.readCount)
+    }
+
+    @Test
+    fun aFreshSnapshotRestsAtTheFloorLevelWithTheGateOpen() {
+        val snapshot = PitchSnapshot()
+        assertEquals(-120f, snapshot.inputLevelDb)
+        assertTrue(snapshot.gateOpen)
+    }
+
+    @Test
+    fun theNoiseGateIsRecordedWithItsValueAndChangesNoState() {
+        val engine = FakeAudioEngine()
+        assertNull(engine.noiseGateDb)
+        assertEquals(AudioResult.Ok, engine.setNoiseGate(-50f))
+        assertEquals(-50f, engine.noiseGateDb)
+        assertEquals(AudioResult.Ok, engine.setNoiseGate(null))
+        assertNull(engine.noiseGateDb)
+        assertEquals(listOf("setNoiseGate(-50.0)", "setNoiseGate(off)"), engine.calls)
+        assertEquals(AudioState.Idle, engine.audioState)
     }
 
     @Test
