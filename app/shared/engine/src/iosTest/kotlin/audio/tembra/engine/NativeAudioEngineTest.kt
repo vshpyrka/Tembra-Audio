@@ -25,14 +25,16 @@ class NativeAudioEngineTest {
         engine.stopMetronome()
         engine.stopTone()
         engine.stopListening()
+        // The gate value lives in the engine for the life of the process: leave none behind for the next test.
+        engine.setNoiseGate(null)
     }
 
     @Test
     fun reportsNameAndVersion() {
         val descriptor = engine.describe()
         assertEquals("Tembra Engine", descriptor.name)
-        assertEquals(SemanticVersion(0, 3, 0), descriptor.version)
-        assertEquals(3, engine.abiVersion())
+        assertEquals(SemanticVersion(0, 4, 0), descriptor.version)
+        assertEquals(4, engine.abiVersion())
     }
 
     @Test
@@ -58,6 +60,19 @@ class NativeAudioEngineTest {
         assertFalse(snapshot.synthetic)
         assertEquals(AudioState.Idle, snapshot.state)
         assertEquals(0L, snapshot.sequence)
+        assertEquals(-120f, snapshot.inputLevelDb)
+        assertTrue(snapshot.gateOpen)
+    }
+
+    @Test
+    fun theNoiseGateIsAcceptedOrRefusedByItsRange() {
+        assertEquals(AudioResult.Ok, engine.setNoiseGate(null))
+        assertEquals(AudioResult.Ok, engine.setNoiseGate(-50f))
+        assertEquals(AudioResult.Ok, engine.setNoiseGate(0f))
+        assertEquals(AudioResult.Error(-3), engine.setNoiseGate(1f))
+        assertEquals(AudioResult.Error(-3), engine.setNoiseGate(-121f))
+        assertEquals(AudioResult.Ok, engine.setNoiseGate(null))
+        assertEquals(AudioState.Idle, engine.audioState)
     }
 
     @Test

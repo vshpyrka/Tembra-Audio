@@ -9,9 +9,13 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Constraints
 import audio.tembra.ui.designsystem.TembraGradientCard
 import audio.tembra.ui.theme.TembraTheme
 
@@ -20,7 +24,9 @@ import audio.tembra.ui.theme.TembraTheme
  * Stacked and wide layouts cap the meter's width and scroll when it is taller than the card; phone landscape sizes
  * the compact meter from the card's height so it fits without scrolling (spec FR-023, research R9), as does the region
  * above the fold of a tabletop foldable (feature 005, FR-003). It takes only the
- * fields it renders, so the 10 Hz [reading] is the one input that recomposes it.
+ * fields it renders, so the 10 Hz [reading] is the one input that recomposes it. In the stacked and wide layouts an
+ * optional [footer] (the noise gate control, feature 006 FR-016) keeps the foot of the card and the meter is fitted
+ * to the height above it ([MeterOverFooter]); it is left out with the denied panel.
  */
 @Composable
 internal fun AutoListenPane(
@@ -31,18 +37,26 @@ internal fun AutoListenPane(
     layout: TunerLayout,
     onRequestMicrophone: () -> Unit,
     modifier: Modifier = Modifier,
+    footer: (@Composable () -> Unit)? = null,
 ) {
     val spacing = TembraTheme.spacing
     TembraGradientCard(glow = TembraTheme.gradients.meterCompact, modifier = modifier, testTag = "tuner.autoListen") {
-        when (layout) {
-            TunerLayout.Landscape, TunerLayout.Tabletop -> FittedMeter(
+        when {
+            layout == TunerLayout.Landscape || layout == TunerLayout.Tabletop -> FittedMeter(
                 reading = reading,
                 listening = listening,
                 showDeniedState = showDeniedState,
                 telemetry = telemetry,
                 onRequestMicrophone = onRequestMicrophone,
             )
-            TunerLayout.Stacked, TunerLayout.Wide -> Box(
+            footer != null && !showDeniedState -> MeterOverFooter(
+                reading = reading,
+                listening = listening,
+                telemetry = telemetry,
+                wide = layout == TunerLayout.Wide,
+                footer = footer,
+            )
+            else -> Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
@@ -64,6 +78,82 @@ internal fun AutoListenPane(
         }
     }
 }
+
+/**
+ * The meter over a [footer] (feature 006, spec FR-016, research R11). The footer is measured first and keeps the foot
+ * of the card, across the card on a phone and no wider than the wide meter otherwise; the meter gets the height that
+ * is left and sits in its middle. The regular meter is used when it fits that height at its full width. Otherwise the
+ * meter takes its compact rows, as wide as the height allows; and only when even that would be narrower than its
+ * least width does the content scroll: the compact meter at that width, then the footer. The least width is
+ * `meterMinWidth` times the font scale, at most the full width: at large fonts a narrower meter would draw "Flat"
+ * over "Sharp".
+ *
+ * The form is chosen while measuring, in a subcomposition, so nothing is measured twice or written back. The reading
+ * reaches the meter through State read inside its slot: a new reading recomposes the meter and measures nothing.
+ */
+@Composable
+private fun MeterOverFooter(
+    reading: MeterReading?,
+    listening: Boolean,
+    telemetry: PitchTelemetry,
+    wide: Boolean,
+    footer: @Composable () -> Unit,
+) {
+    val spacing = TembraTheme.spacing
+    val currentReading by rememberUpdatedState(reading)
+    val currentListening by rememberUpdatedState(listening)
+    val currentFooter by rememberUpdatedState(footer)
+    SubcomposeLayout(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) { constraints ->
+        val width = constraints.maxWidth
+        // A scroll container hands its own height down as the minimum height: the viewport this content should fill.
+        val viewport = constraints.minHeight
+        val margin = spacing.md.roundToPx()
+        val footerPlaceable = subcompose(MeterSlot.Footer) {
+            Box(
+                modifier = Modifier.padding(start = spacing.md, end = spacing.md, bottom = spacing.md),
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(modifier = if (wide) Modifier.widthIn(max = spacing.meterMaxWidthWide) else Modifier) { currentFooter() }
+            }
+        }.first().measure(Constraints.fixedWidth(width))
+
+        // The height left for the meter, a margin above it and a margin between it and the footer.
+        val room = viewport - footerPlaceable.height - margin * 2
+        val widest = minOf((if (wide) spacing.meterMaxWidthWide else spacing.meterMaxWidth).roundToPx(), width - margin * 2).coerceAtLeast(0)
+        // The meter's rows grow with the font, so the least width that keeps its labels apart grows with it.
+        val narrowest = minOf((spacing.meterMinWidth * fontScale.coerceAtLeast(1f)).roundToPx(), widest)
+        val regularHeight = MeterLayout.textRowsHeight(density, fontScale) + widest / MeterLayout.ARC_ASPECT
+        val compactWidth = minOf(MeterLayout.widthForHeight(room.toFloat(), density, fontScale, MeterSize.Compact).toInt(), widest)
+        val scrolls = regularHeight > room && compactWidth < narrowest
+        val size = if (regularHeight <= room) MeterSize.Regular else MeterSize.Compact
+        val meterWidth = when {
+            size == MeterSize.Regular -> widest
+            scrolls -> narrowest
+            else -> compactWidth
+        }
+        val meterPlaceable = subcompose(MeterSlot.Meter) {
+            TunerMeter(telemetry = telemetry, reading = currentReading, listening = currentListening, testTag = "tuner.meter", size = size)
+        }.first().measure(Constraints.fixedWidth(meterWidth))
+
+        // The meter is placed first: the order of placing is the order a screen reader meets the two in (FR-018).
+        val meterX = (width - meterPlaceable.width) / 2
+        if (scrolls) {
+            val footerY = margin + meterPlaceable.height + margin
+            layout(width, maxOf(viewport, footerY + footerPlaceable.height)) {
+                meterPlaceable.placeRelative(meterX, margin)
+                footerPlaceable.placeRelative(0, footerY)
+            }
+        } else {
+            val footerY = viewport - footerPlaceable.height
+            layout(width, viewport) {
+                meterPlaceable.placeRelative(meterX, (footerY - meterPlaceable.height) / 2)
+                footerPlaceable.placeRelative(0, footerY)
+            }
+        }
+    }
+}
+
+private enum class MeterSlot { Footer, Meter }
 
 /**
  * The landscape meter: its width is the one whose compact meter is exactly as tall as the card's inner height, kept

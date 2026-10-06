@@ -24,6 +24,7 @@ import audio.tembra.engine.cinterop.tembra_tone_start
 import audio.tembra.engine.cinterop.tembra_tone_stop
 import audio.tembra.engine.cinterop.tembra_tuner_config
 import audio.tembra.engine.cinterop.tembra_tuner_read
+import audio.tembra.engine.cinterop.tembra_tuner_set_gate
 import audio.tembra.engine.cinterop.tembra_tuner_start
 import audio.tembra.engine.cinterop.tembra_tuner_start_test_signal
 import audio.tembra.engine.cinterop.tembra_tuner_stop
@@ -123,6 +124,10 @@ actual class NativeAudioEngine internal constructor(
         releaseSessionUnlessOwnedBy(AudioState.Tone, AudioState.Metronome)
     }
 
+    /** The engine keeps the value; the audio session is not touched, so a change while listening interrupts nothing. */
+    override fun setNoiseGate(openDb: Float?): AudioResult =
+        AudioResult.fromNative(tembra_tuner_set_gate(if (openDb != null) 1u else 0u, openDb ?: 0f))
+
     /**
      * Deactivates the session unless the engine is (still) in one of [owners], whose own stop releases it. Also cancels
      * a pending preview check, so the session is never deactivated twice.
@@ -143,6 +148,8 @@ actual class NativeAudioEngine internal constructor(
         into.inputPeak = reading.input_peak
         into.hasPitch = reading.has_pitch.toInt() != 0
         into.synthetic = reading.synthetic.toInt() != 0
+        into.inputLevelDb = reading.input_level_db
+        into.gateOpen = reading.gate_open.toInt() != 0
     }
 
     override fun startTone(frequencyHz: Double, durationMs: Int): AudioResult =

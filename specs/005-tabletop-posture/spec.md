@@ -243,6 +243,7 @@ and the iPad Pro simulators are unchanged; on the foldable, flat and book postur
   heading, the microphone status on the heading's line, and the instrument control over the mode control in one
   centred column (D1). When microphone access is refused, the refusal message and its action replace the gauge in the
   upper region.
+  *Extended by feature 006 ([tuner noise gate](../006-tuner-noise-gate/spec.md), FR-016): the noise gate control goes with the settings below the fold, after the mode control; the upper region still shows only the gauge.*
 - **FR-004**: Tuner, By Ear, in tabletop: the upper region MUST show only the string cards; the lower region MUST show
   the instrument control, the mode control, the string count (when the instrument has one), the tuning preset picker
   and the loop-tone switch, stacked in that order in the same centred column (D1). The cards keep their tap-to-play behaviour.

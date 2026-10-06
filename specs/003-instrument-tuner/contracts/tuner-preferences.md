@@ -1,5 +1,7 @@
 # Contract: Tuner preferences (`:shared:data`)
 
+> Extended by feature 006 ([contract](../../006-tuner-noise-gate/contracts/tuner-preferences.md)): the remembered noise gate level, key `tuner.noiseGateDb`.
+
 **Package**: `audio.tembra.data.tuner` | **Depends on**: `:shared:core`, DataStore Preferences 1.2.1 (research R10) | **Consumers**: `TunerViewModel`
 
 ```kotlin

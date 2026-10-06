@@ -104,6 +104,8 @@ TEST_CASE("reading an idle engine yields the resting state", "[engine][state]") 
     REQUIRE(reading.synthetic == 0);
     REQUIRE(reading.state == TEMBRA_AUDIO_IDLE);
     REQUIRE(reading.sequence == 0);
+    REQUIRE(reading.input_level_db == -120.0f);
+    REQUIRE(reading.gate_open == 1);
     tembra_tuner_read(nullptr);  // tolerated
 }
 
@@ -525,3 +527,87 @@ TEST_CASE("the latency read by the beat light is a cache refreshed on request", 
     REQUIRE(difference <= 9'000'000);
     tembra_metronome_stop();
 }
+
+// --- The noise gate value (feature 006, contracts/engine-c-abi-v4.md) ---
+
+#include <limits>
+
+TEST_CASE("the noise gate value is validated and accepted in every state", "[engine][gate]") {
+    installFake();
+    REQUIRE(tembra_tuner_set_gate(1, -50.0f) == TEMBRA_OK);
+    REQUIRE(tembra_tuner_set_gate(1, std::numeric_limits<float>::quiet_NaN()) == TEMBRA_ERR_ARGUMENT);
+    REQUIRE(tembra_tuner_set_gate(1, std::numeric_limits<float>::infinity()) == TEMBRA_ERR_ARGUMENT);
+    REQUIRE(tembra_tuner_set_gate(1, 1.0f) == TEMBRA_ERR_ARGUMENT);
+    REQUIRE(tembra_tuner_set_gate(1, -121.0f) == TEMBRA_ERR_ARGUMENT);
+    REQUIRE(tembra_tuner_set_gate(1, -120.0f) == TEMBRA_OK);
+    REQUIRE(tembra_tuner_set_gate(1, 0.0f) == TEMBRA_OK);
+    REQUIRE(tembra_tuner_set_gate(0, 999.0f) == TEMBRA_OK);  // no gate: the level is ignored
+
+    tembra_tuner_config config{};
+    tembra_tuner_default_config(&config);
+    REQUIRE(tembra_tuner_start(&config) == TEMBRA_OK);
+    REQUIRE(tembra_tuner_set_gate(1, -50.0f) == TEMBRA_OK);
+    REQUIRE(tembra_audio_state() == TEMBRA_AUDIO_LISTENING);
+    tembra_tuner_stop();
+
+    REQUIRE(tembra_tone_start(440.0, 0) == TEMBRA_OK);
+    REQUIRE(tembra_tuner_set_gate(0, 0.0f) == TEMBRA_OK);
+    REQUIRE(tembra_audio_state() == TEMBRA_AUDIO_TONE);
+    tembra_tone_stop();
+
+    tembra_metronome_grid grid = validGrid();
+    REQUIRE(tembra_metronome_set_grid(&grid) == TEMBRA_OK);
+    REQUIRE(tembra_metronome_start() == TEMBRA_OK);
+    REQUIRE(tembra_tuner_set_gate(1, -40.0f) == TEMBRA_OK);
+    REQUIRE(tembra_audio_state() == TEMBRA_AUDIO_METRONOME);
+    tembra_metronome_stop();
+    REQUIRE(tembra_tuner_set_gate(0, 0.0f) == TEMBRA_OK);
+}
+
+TEST_CASE("a gate set while idle holds back a test signal from its first hop, and a live change needs no restart", "[engine][gate]") {
+    installFake();
+    tembra_tuner_config config{};
+    tembra_tuner_default_config(&config);
+    // An in-tune E2 whose level is about -55 dB: a peak of 0.00388 (the crest of the five-partial mix is 2.18).
+    tembra_test_signal quiet{82.41, 0.00388f, 5, 0.25f};
+
+    REQUIRE(tembra_tuner_set_gate(1, -50.0f) == TEMBRA_OK);
+    REQUIRE(tembra_tuner_set_gate(1, 5.0f) == TEMBRA_ERR_ARGUMENT);  // refused: -50 dB stays in force
+    REQUIRE(tembra_tuner_start_test_signal(&config, &quiet) == TEMBRA_OK);
+
+    bool everRead = false;
+    tembra_pitch_reading reading = pollUntil(2000, [&everRead](const tembra_pitch_reading& r) {
+        if (r.has_pitch == 1) everRead = true;
+        return r.sequence >= 20;
+    });
+    REQUIRE(reading.sequence >= 20);
+    REQUIRE_FALSE(everRead);
+    REQUIRE(reading.has_pitch == 0);
+    REQUIRE(reading.gate_open == 0);
+    REQUIRE(std::abs(reading.input_level_db - (-55.0f)) < 1.0f);
+
+    // The handle moves under the sound: it is read, and the stream was not restarted (the sequence only rises).
+    const uint64_t before = reading.sequence;
+    REQUIRE(tembra_tuner_set_gate(1, -60.0f) == TEMBRA_OK);
+    reading = pollUntil(500, [](const tembra_pitch_reading& r) { return r.has_pitch == 1; });
+    REQUIRE(reading.has_pitch == 1);
+    REQUIRE(reading.gate_open == 1);
+    REQUIRE(reading.sequence > before);
+    REQUIRE(std::abs(cents(82.41, reading.frequency_hz)) < 1.0);
+    REQUIRE(tembra_audio_state() == TEMBRA_AUDIO_LISTENING);
+    tembra_tuner_stop();
+
+    // The value outlives the stop: with the gate back over the sound, the next start is held back again.
+    REQUIRE(tembra_tuner_set_gate(1, -50.0f) == TEMBRA_OK);
+    REQUIRE(tembra_tuner_start_test_signal(&config, &quiet) == TEMBRA_OK);
+    everRead = false;
+    reading = pollUntil(2000, [&everRead](const tembra_pitch_reading& r) {
+        if (r.has_pitch == 1) everRead = true;
+        return r.sequence >= 20;
+    });
+    REQUIRE_FALSE(everRead);
+    REQUIRE(reading.gate_open == 0);
+    tembra_tuner_stop();
+    REQUIRE(tembra_tuner_set_gate(0, 0.0f) == TEMBRA_OK);
+}
+

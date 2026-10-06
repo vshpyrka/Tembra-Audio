@@ -26,7 +26,7 @@ class FakeAudioEngine(
     /**
      * Every command in order, e.g. `startListening`, `startTone(82.41, 0)`, `playSample(1, true)`,
      * `setGrid(bpm=120, ticks=4, levels=ACCC)`, `selectSound(Rim808)`, `loadCustomSound(/x.wav)`, `startMetronome`,
-     * `previewClick(Click)`, `reportOutputLatencyNanos(5000000)`.
+     * `previewClick(Click)`, `reportOutputLatencyNanos(5000000)`, `setNoiseGate(-50.0)`, `setNoiseGate(off)`.
      */
     val calls: List<String> get() = _calls
 
@@ -57,6 +57,10 @@ class FakeAudioEngine(
     var failNextStart: AudioResult.Error? = null
 
     var lastTestSignal: TestSignal? = null
+        private set
+
+    /** The last value given to [setNoiseGate]; null is no gate, which is also where the engine starts. */
+    var noiseGateDb: Float? = null
         private set
 
     private var nextHandle = 1
@@ -95,6 +99,12 @@ class FakeAudioEngine(
     override fun stopListening() {
         _calls += "stopListening"
         if (audioState == AudioState.Listening) audioState = AudioState.Idle
+    }
+
+    override fun setNoiseGate(openDb: Float?): AudioResult {
+        _calls += if (openDb == null) "setNoiseGate(off)" else "setNoiseGate($openDb)"
+        noiseGateDb = openDb
+        return AudioResult.Ok
     }
 
     override fun readPitch(into: PitchSnapshot) {

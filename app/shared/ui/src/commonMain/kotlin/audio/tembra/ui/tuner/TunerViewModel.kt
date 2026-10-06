@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import audio.tembra.core.tuner.GuitarStringCount
 import audio.tembra.core.tuner.Instrument
+import audio.tembra.core.tuner.NoiseGate
 import audio.tembra.core.tuner.TunerMode
 import audio.tembra.core.tuner.TuningPresets
 import audio.tembra.data.tuner.TunerPreferences
@@ -68,6 +69,9 @@ class TunerViewModel(
     private var current: DesiredAudio = DesiredAudio.Idle
     private var startJob: Job? = null
     private var pollJob: Job? = null
+
+    /** The debug launch value of the noise gate, if one was handed over ([useNoiseGate]). */
+    private var launchGate: NoiseGate? = null
     private var auditionJob: Job? = null
     private val snapshot = PitchSnapshot()
     private val sampleHandles = mutableMapOf<String, SampleHandle>()
@@ -104,6 +108,18 @@ class TunerViewModel(
     }
 
     /**
+     * The debug launch value of the noise gate (feature 006, data-model.md §8): it stands in for the stored gate for
+     * this launch and is never written; a later move of the handle is remembered as usual. The screen hands it over
+     * before it reports itself visible, so it is in force from the first sound. The same value handed over again
+     * (the screen's effect ran anew) changes nothing.
+     */
+    fun useNoiseGate(gate: NoiseGate?) {
+        if (gate == null || gate == launchGate) return
+        launchGate = gate
+        if (_uiState.value.loaded) setNoiseGate(gate)
+    }
+
+    /**
      * The one launch site: the stored preferences and the current permission first, then the permission and the
      * platform events for the rest of the ViewModel's life. [applyAudio] does nothing before [TunerUiState.loaded],
      * so intents that arrive earlier only change state, and the first policy decision never sees the placeholder
@@ -115,6 +131,7 @@ class TunerViewModel(
             val stored = preferences.snapshot.first()
             val presets = TuningPresets.forInstrument(stored.instrument, stored.guitarStrings)
             val preset = presets.firstOrNull { it.id == stored.presetId } ?: presets.first()
+            val gate = launchGate ?: stored.noiseGate
             _uiState.update {
                 it.copy(
                     loaded = true,
@@ -124,9 +141,13 @@ class TunerViewModel(
                     presets = presets,
                     mode = stored.mode,
                     loopTone = stored.loopTone,
+                    noiseGate = gate,
                     microphone = permission.status.value,
                 )
             }
+            // A remembered gate is in the engine before listening can start, so the first hop is gated (spec FR-015).
+            // The engine starts with no gate, so "off" needs no call.
+            if (!gate.isOff) audio.setNoiseGate(gate.levelDb?.toFloat())
             applyAudio()
             launch {
                 permission.status.collect { status ->
@@ -189,6 +210,24 @@ class TunerViewModel(
         _uiState.update { state -> state.copy(loopTone = on, audition = state.audition?.copy(loop = on)) }
         persist { it.copy(loopTone = on) }
         applyAudio()
+    }
+
+    // --- Noise gate (feature 006, spec FR-003) ------------------------------------------------------------------------
+
+    /**
+     * Every step the noise gate's handle reaches. The engine takes the level at once and keeps it across stops and
+     * starts, so listening is never restarted by a move; nothing is written until [noiseGateSettled].
+     */
+    fun setNoiseGate(gate: NoiseGate) {
+        if (_uiState.value.noiseGate == gate) return
+        _uiState.update { it.copy(noiseGate = gate) }
+        audio.setNoiseGate(gate.levelDb?.toFloat())
+    }
+
+    /** The move of the handle has ended: the level is remembered, once per move (spec FR-014). */
+    fun noiseGateSettled() {
+        val gate = _uiState.value.noiseGate
+        persist { it.copy(noiseGate = gate) }
     }
 
     // --- Audition intents (spec FR-018 to FR-020) ------------------------------------------------------------------
@@ -302,7 +341,7 @@ class TunerViewModel(
         } else {
             pollJob?.cancel()
             pollJob = null
-            if (_uiState.value.reading != null) _uiState.update { it.copy(reading = null) }
+            if (_uiState.value.reading != null || !_uiState.value.gateOpen) _uiState.update { it.copy(reading = null, gateOpen = true) }
         }
     }
 
@@ -311,7 +350,9 @@ class TunerViewModel(
         audio.readPitch(snapshot)
         val engineState = audio.audioState
         val reading = if (engineState == AudioState.Listening && snapshot.hasPitch) MeterReading.from(snapshot) else null
-        _uiState.update { it.copy(audio = engineState, reading = reading) }
+        // A gate is only ever closed while listening; any other state reads as open.
+        val gateOpen = engineState != AudioState.Listening || snapshot.gateOpen
+        _uiState.update { it.copy(audio = engineState, reading = reading, gateOpen = gateOpen) }
         if (engineState == AudioState.Idle && current != DesiredAudio.Idle) {
             val wasTone = current is DesiredAudio.Tone
             current = DesiredAudio.Idle
@@ -370,6 +411,8 @@ class TunerViewModel(
         pollJob = null
         stopAudio(current)
         current = DesiredAudio.Idle
+        // The engine keeps a gate for the life of the process; one this ViewModel set must not outlive it.
+        if (!_uiState.value.noiseGate.isOff) audio.setNoiseGate(null)
         unloadSamples()
         super.onCleared()
     }

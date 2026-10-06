@@ -1,5 +1,7 @@
 # Contract: Tuner screen (`:shared:ui`)
 
+> Extended by feature 006 ([contract](../../006-tuner-noise-gate/contracts/tuner-screen.md)): the noise gate control, its place in each layout, its state and intents, and two more debug launch arguments.
+
 **Package**: `audio.tembra.ui.tuner` | **Entry**: `DestinationContent(Destination.Tuner)` → `TunerScreen()` | **Depends on**: contracts/tuner-audio-kotlin.md, tuner-domain.md, tuner-preferences.md, microphone-permission.md, reference-sounds.md, design-system-additions.md, data-model.md §3–§8
 
 ```kotlin

@@ -40,6 +40,9 @@ public:
     int32_t startTestSignal(const tembra_tuner_config& config, const tembra_test_signal& signal);
     void stopListening();
 
+    /** The noise gate (feature 006, research R4): kept for the engine's life and handed to a live analyzer at once. */
+    int32_t setGate(bool enabled, float openDb);
+
     int32_t startTone(double frequencyHz, uint32_t durationMs);
     int32_t loadSample(const uint8_t* bytes, uint32_t length);
     int32_t playSample(int32_t handle, bool loop);
@@ -62,7 +65,7 @@ public:
     static void defaultConfig(tembra_tuner_config& out);
 
 #ifdef TEMBRA_BUILD_TESTS
-    /** Test hook: replaces the platform device (the engine owns it). Stops any open stream and forgets the last reading. */
+    /** Test hook: replaces the platform device (the engine owns it). Stops any open stream and forgets the last reading and the noise gate. */
     void setDevice(std::unique_ptr<AudioDevice> device);
 #endif
 
@@ -101,6 +104,7 @@ private:
     std::atomic<TunerAnalyzer*> callbackAnalyzer_{nullptr};
     std::thread analysisThread_;
     std::atomic<bool> running_{false};
+    float gateDb_ = TunerAnalyzer::kGateOff;  // guarded by commands_
 
     // Output side: created when the output opens, at the stream's rate; the callback only reads the atomics.
     bool outputOpen_ = false;
