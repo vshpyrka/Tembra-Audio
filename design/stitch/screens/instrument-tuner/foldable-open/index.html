@@ -1,0 +1,129 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=852, initial-scale=1.0">
+<title>Tembra Audio - Tuner Auto Listen (Foldable Open)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,300..400,0..1,0" rel="stylesheet">
+<script>
+tailwind.config={darkMode:"class",theme:{extend:{colors:{
+  "background":"#131316","surface":"#131316","surface-container-lowest":"#0e0e11","surface-container-low":"#1b1b1e",
+  "surface-container":"#1f1f22","surface-container-high":"#2a2a2d","surface-container-highest":"#353438",
+  "on-surface":"#e4e1e6","on-surface-variant":"#cac4d4","outline":"#948e9d","outline-variant":"#494552",
+  "primary":"#cebdff","primary-container":"#a78bfa","on-primary-container":"#3c1989",
+  "secondary":"#ffafd3","secondary-container":"#85145a","on-secondary-container":"#ff93c8"},
+  fontFamily:{headline:["Space Grotesk"],label:["Space Grotesk"],body:["Inter"]}}}}
+</script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:852px;height:883px;overflow:hidden}
+body{background:#0e0e11;color:#e4e1e6;font-family:'Space Grotesk',sans-serif;position:relative}
+.material-symbols-outlined{font-family:'Material Symbols Outlined';font-weight:300;font-style:normal;font-size:24px;line-height:1;display:inline-block;white-space:nowrap;-webkit-font-smoothing:antialiased;font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 24}
+.material-symbols-outlined.fill{font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24}
+.header{position:absolute;left:16px;top:64px}
+.brand{font-size:10px;font-weight:600;letter-spacing:.04em;color:#cebdff;text-transform:uppercase;line-height:14px}
+.title{font-size:18px;font-weight:500;line-height:24px;color:#e4e1e6}
+.rail{position:absolute;left:0;top:110px;width:64px;bottom:0;background:#0e0e11;display:flex;flex-direction:column;align-items:center;padding-top:9px}
+.ritem{width:48px;height:47px;margin-bottom:4px;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#cac4d4}
+.ritem .material-symbols-outlined{font-size:22px}
+.ritem.sel{background:#85145a;color:#ff93c8}
+.ritem.sel .rlabel{font-weight:600}
+.rlabel{font-size:10px;font-weight:500;letter-spacing:.04em;line-height:12px}
+.content{position:absolute;left:64px;top:110px;right:0;bottom:0;background:#131316}
+.panel{position:absolute;left:79px;width:740px;top:177px;height:648px;border-radius:24px;border:1px solid #1f1a24;
+  background:radial-gradient(120% 110% at 50% 50%,#1a1622 0%,#151219 55%,#120e13 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.02)}
+.scard{position:absolute;width:172px;height:172px;background:#0e0e11;border:1px solid #1f1e24;border-radius:16px;padding:14px 13px 16px 13px;display:flex;flex-direction:column;justify-content:space-between}
+.roman{font-size:11px;font-weight:500;color:#948e9d;letter-spacing:.02em}
+.hz{font-size:11.5px;font-weight:500;color:#cac4d4;letter-spacing:.02em;font-feature-settings:"tnum" 1}
+.note{font-size:34px;font-weight:700;line-height:34px;color:#e4e1e6;margin-top:6px}
+.note sub{font-size:18px;font-weight:600;color:#cebdff;vertical-align:-6px;margin-left:3px}
+.aud{height:35px;width:100%;background:#1f1f22;border:1px solid #2a2a2d;border-radius:10px;color:#e4e1e6;font-family:'Space Grotesk';font-size:12.5px;font-weight:600;letter-spacing:.03em;display:flex;align-items:center;justify-content:center;gap:4px}
+.seg{position:absolute;display:flex;border-radius:12px;padding:4px}
+.seg button{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;border-radius:9px;font-family:'Space Grotesk';font-size:13px;font-weight:500;letter-spacing:.03em;color:#e4e1e6;background:transparent;border:0}
+.seg svg{width:16px;height:16px}
+.box{position:absolute;border:1px solid #2a2a2d;background:#1b1b1e;border-radius:14px}
+</style>
+</head>
+<body>
+  <div class="header"><div class="brand">Tembra Audio</div><div class="title">Tuner</div></div>
+  <nav class="rail" aria-label="Primary">
+      <div class="ritem"><span class="material-symbols-outlined">home</span><span class="rlabel">Home</span></div>
+      <div class="ritem"><span class="material-symbols-outlined">graphic_eq</span><span class="rlabel">Timeline</span></div>
+      <div class="ritem sel"><span class="material-symbols-outlined fill">music_note</span><span class="rlabel">Tuner</span></div>
+      <div class="ritem"><span class="material-symbols-outlined">timer</span><span class="rlabel">Metronome</span></div>
+      <div class="ritem"><span class="material-symbols-outlined">folder</span><span class="rlabel">Projects</span></div>
+      <div class="ritem"><span class="material-symbols-outlined">person</span><span class="rlabel">Profile</span></div>
+  </nav>
+  <div class="content"></div>
+
+  <!-- Selector row -->
+  <div class="seg" style="left:79px;top:122px;width:165px;height:39px;background:#0e0e11">
+    <button style="background:#85145a;color:#ff93c8;font-size:13px"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 4.41c-.78-.78-2.05-.78-2.83 0l-1.34 1.34 2.83 2.83 1.34-1.34c.78-.78.78-2.05 0-2.83zM3 18.25V21h2.75L17.5 9.25l-2.75-2.75L3 18.25z"/></svg>Guitar</button>
+    <button><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a2 2 0 0 0-2 2c0 .74.4 1.39 1 1.73V8.5C9.5 9 8 11 8 13.5c0 1.6 1 3 2 4v2.5a2 2 0 1 0 4 0V17.5c1-1 2-2.4 2-4 0-2.5-1.5-4.5-3-5V5.73c.6-.34 1-.99 1-1.73a2 2 0 0 0-2-2z"/></svg>Cello</button>
+  </div>
+  <!-- Audio-state pill -->
+  <div style="position:absolute;left:252px;top:130px;height:24px;border-radius:12px;background:#1b1b1e;display:flex;align-items:center;padding:0 11px 0 10px;gap:7px;">
+    <span style="width:6px;height:6px;border-radius:3px;background:#cebdff;"></span>
+    <span class="material-symbols-outlined" style="font-size:15px;color:#cebdff;">mic</span>
+    <span style="font-size:12px;font-weight:500;letter-spacing:.03em;color:#cebdff;">MIC ACTIVE</span>
+  </div>
+  <div class="seg" style="left:640px;top:126px;width:178px;height:31px;background:#1b1b1e;padding:0;border-radius:9px">
+    <button style="flex:1.5;background:#a78bfa;color:#3c1989;font-size:12px;border-radius:5px;gap:6px"><span class="material-symbols-outlined" style="font-size:16px">mic</span>Auto Listen</button>
+    <button style="font-size:12px;gap:5px"><span class="material-symbols-outlined" style="font-size:16px">hearing</span>By Ear</button>
+  </div>
+
+
+  <!-- Auto Listen card -->
+  <section class="panel" aria-label="Auto Listen">
+    <!-- Gauge, regular form, 480 x 455, centred in the room above the control -->
+    <div style="position:absolute;left:130px;top:65px;width:480px;height:455px;">
+      <div style="position:absolute;left:186px;top:6px;width:108px;height:24px;border-radius:12px;background:#28262b;border:1px solid #3a3840;display:flex;align-items:center;padding-left:12px;gap:6px;box-sizing:border-box;">
+        <span style="width:6px;height:6px;border-radius:3px;background:#cebdff;"></span>
+        <span style="font-size:10px;font-weight:600;letter-spacing:.06em;color:#cebdff;">IN TUNE</span>
+      </div>
+      <div style="position:absolute;left:0;width:480px;top:36px;height:76px;text-align:center;line-height:76px;">
+        <span style="font-size:52px;font-weight:600;color:#e4e1e6;">E</span><span style="font-size:30px;font-weight:600;color:#cebdff;position:relative;top:10px;margin-left:2px;">2</span>
+      </div>
+      <svg style="position:absolute;left:0;top:112px;" width="480" height="267" viewBox="0 0 480 267" aria-label="Pitch meter, in tune">
+        <circle cx="240" cy="236" r="130" fill="none" stroke="#3a3542" stroke-width="1.2" stroke-dasharray="2 4"/>
+        <path d="M 60 236 A 180 180 0 0 1 420 236" fill="none" stroke="#3d3b44" stroke-width="3"/>
+        <line x1="40" y1="236" x2="60" y2="236" stroke="#5a5664" stroke-width="2.5"/>
+        <line x1="420" y1="236" x2="440" y2="236" stroke="#5a5664" stroke-width="2.5"/>
+        <line x1="112.7" y1="108.7" x2="102.6" y2="98.6" stroke="#4a4652" stroke-width="2"/>
+        <line x1="367.3" y1="108.7" x2="377.4" y2="98.6" stroke="#4a4652" stroke-width="2"/>
+        <line x1="222" y1="56" x2="258" y2="56" stroke="#cebdff" stroke-width="7" stroke-linecap="round" opacity="0.9"/>
+        <path d="M 140 236 A 100 100 0 0 1 340 236" fill="none" stroke="#2f2d35" stroke-width="9" stroke-linecap="round"/>
+        <path d="M 165 150 A 110 110 0 0 1 315 150" fill="none" stroke="#85145a" stroke-width="4" stroke-dasharray="3 5"/>
+        <line x1="240" y1="236" x2="240" y2="48" stroke="#a8487e" stroke-width="10" stroke-linecap="round" opacity="0.6"/>
+        <line x1="240" y1="236" x2="240" y2="48" stroke="#F472B6" stroke-width="3.5" stroke-linecap="round"/>
+        <circle cx="240" cy="236" r="12" fill="#3a1630" stroke="#F472B6" stroke-width="3.5"/>
+        <circle cx="240" cy="236" r="5" fill="#cebdff"/>
+      </svg>
+      <div style="position:absolute;left:0;width:480px;top:379px;height:40px;display:flex;align-items:center;justify-content:center;gap:14px;">
+        <span style="font-size:22px;font-weight:600;color:#e4e1e6;letter-spacing:.02em;font-feature-settings:'tnum' 1;">82.4 Hz</span>
+        <span style="width:5px;height:5px;border-radius:3px;background:#5a5664;"></span>
+        <div style="height:26px;border-radius:13px;background:#221d2b;display:flex;align-items:center;padding:0 13px;gap:8px;">
+          <span style="width:6px;height:6px;border-radius:3px;background:#F472B6;"></span>
+          <span style="font-size:12.5px;font-weight:500;letter-spacing:.02em;color:#F472B6;font-feature-settings:'tnum' 1;">REFERENCE 82.4 HZ</span>
+        </div>
+      </div>
+      <div style="position:absolute;left:0;width:480px;top:419px;height:36px;border-top:1px solid #2a2a2d;display:flex;align-items:center;justify-content:space-between;padding:0 24px;box-sizing:border-box;color:#cac4d4;font-size:14px;font-weight:500;">
+        <span style="display:flex;align-items:center;gap:4px;"><span class="material-symbols-outlined fill" style="font-size:18px;color:#948e9d;">arrow_left</span>Flat</span>
+        <span style="display:flex;align-items:center;gap:4px;">Sharp<span class="material-symbols-outlined fill" style="font-size:18px;color:#948e9d;">arrow_right</span></span>
+      </div>
+    </div>
+    <!-- Noise gate (feature 006): at the foot of the card, centred, 480 wide; the handle is the gate level, the fill the live input level -->
+    <div data-purpose="noise-gate" aria-label="Noise gate" style="position:absolute;left:130px;width:480px;bottom:12px;display:flex;flex-direction:column;gap:4px;">
+      <span style="font-family:'Space Grotesk',sans-serif;font-size:10px;font-weight:600;letter-spacing:0.05em;color:#cac4d4;text-transform:uppercase;line-height:14px;">NOISE GATE</span>
+      <div style="height:44px;display:flex;align-items:center;">
+        <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:500;color:#948e9d;font-feature-settings:'tnum' 1;line-height:16px;">Off</span>
+        <div style="position:relative;flex:1;height:44px;">
+          <div style="position:absolute;left:32px;right:32px;top:20.0px;height:4px;border-radius:2px;background:#353438;"></div>
+          <div style="position:absolute;left:32px;top:20.0px;height:4px;border-radius:2px;background:#cebdff;width:calc((100% - 64px) * 0.583);"></div>
+          <div style="position:absolute;top:14.0px;width:16px;height:16px;border-radius:8px;background:#cebdff;left:calc(32px + (100% - 64px) * 0.5 - 8.0px);"></div>
+        </div>
+        <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:500;color:#948e9d;font-feature-settings:'tnum' 1;line-height:16px;">High</span>
+      </div>
+    </div>
+  </section>
+</body></html>

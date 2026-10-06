@@ -2,7 +2,7 @@
 <html class="dark" lang="en"><head>
 <meta charset="utf-8"/>
 <meta content="width=883, initial-scale=1.0" name="viewport"/>
-<title>Tembra Audio - Tuner Auto Listen (Foldable Tabletop) v2</title>
+<title>Tembra Audio - Tuner Auto Listen (Foldable Tabletop) v3</title>
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
@@ -164,7 +164,7 @@
 <!-- BEGIN: ControlsCard (lower half, below the fold) -->
 <section class="card card-controls" data-purpose="tuner-controls" style="top:438px;height:374px;">
   <!-- Header row: centred heading, TEST SIGNAL pill at the right end -->
-  <div class="abs" style="left:12px;right:12px;top:111px;height:22px;display:flex;align-items:center;justify-content:center;">
+  <div class="abs" style="left:12px;right:12px;top:70px;height:22px;display:flex;align-items:center;justify-content:center;">
     <span class="font-label" style="font-size:10px;font-weight:600;letter-spacing:0.05em;color:#cac4d4;">TUNER CONTROLS</span>
     <div style="position:absolute;right:0;top:0;height:22px;border-radius:11px;background:#1b1b1e;display:flex;align-items:center;padding:0 10px 0 9px;gap:6px;">
       <span style="width:6px;height:6px;border-radius:3px;background:#cebdff;"></span>
@@ -173,9 +173,9 @@
     </div>
   </div>
   <!-- Seam -->
-  <div class="abs" style="left:12px;right:12px;top:145px;height:1px;background:#231d27;"></div>
+  <div class="abs" style="left:12px;right:12px;top:104px;height:1px;background:#231d27;"></div>
   <!-- Stacked controls column (centred, max 576 px) -->
-  <div class="abs" style="left:105px;width:576px;top:162px;display:flex;flex-direction:column;gap:21px;">
+  <div class="abs" style="left:105px;width:576px;top:121px;display:flex;flex-direction:column;gap:21px;">
     <!-- Instrument -->
     <div role="radiogroup" aria-label="Instrument" style="height:40px;box-sizing:border-box;background:#0e0e11;border-radius:10px;padding:4px;display:grid;grid-template-columns:1fr 1fr;gap:4px;">
       <button role="radio" aria-checked="false" style="border-radius:7px;display:flex;align-items:center;justify-content:center;gap:8px;color:#e4e1e6;">
@@ -197,6 +197,19 @@
         <span class="material-symbols-outlined" style="font-size:15px;">hearing</span>
         <span class="font-headline" style="font-size:12px;font-weight:500;letter-spacing:0.05em;">By Ear</span>
       </button>
+    </div>
+    <!-- Noise gate (feature 006): the handle is the gate level, the fill the live input level -->
+    <div data-purpose="noise-gate" aria-label="Noise gate" style="display:flex;flex-direction:column;gap:4px;">
+    <span style="font-family:'Space Grotesk',sans-serif;font-size:10px;font-weight:600;letter-spacing:0.05em;color:#cac4d4;text-transform:uppercase;line-height:14px;">NOISE GATE</span>
+    <div style="height:44px;display:flex;align-items:center;">
+    <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:500;color:#948e9d;font-feature-settings:'tnum' 1;line-height:16px;">Off</span>
+    <div style="position:relative;flex:1;height:44px;">
+    <div style="position:absolute;left:32px;right:32px;top:20.0px;height:4px;border-radius:2.0px;background:#353438;"></div>
+    <div style="position:absolute;left:32px;top:20.0px;height:4px;border-radius:2.0px;background:#cebdff;width:calc((100% - 64px) * 0.583);"></div>
+    <div style="position:absolute;top:14.0px;width:16px;height:16px;border-radius:8.0px;background:#cebdff;left:calc(32px + (100% - 64px) * 0.5 - 8.0px);"></div>
+    </div>
+    <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:500;color:#948e9d;font-feature-settings:'tnum' 1;line-height:16px;">High</span>
+    </div>
     </div>
   </div>
 </section>

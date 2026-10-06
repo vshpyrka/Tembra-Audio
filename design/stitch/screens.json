@@ -2,7 +2,7 @@
   "project": "projects/12040171611712589599",
   "projectUrl": "https://stitch.withgoogle.com/projects/12040171611712589599",
   "title": "Tembra Audio DAW Design",
-  "fetchedAt": "2026-09-17",
+  "fetchedAt": "2026-10-06T08:08:26Z",
   "screens": [
     {
       "slug": "sign-in/phone",
@@ -106,13 +106,13 @@
     },
     {
       "slug": "instrument-tuner/phone",
-      "screenId": "15727b3f84dd4eb3a25934be40060f34",
-      "title": "Tembra Audio - Instrument Tuner",
+      "screenId": "16012322295817620737",
+      "title": "Tembra Audio - Instrument Tuner v2",
       "device": "MOBILE",
-      "width": 780,
-      "height": 1768,
-      "html": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1YmFjYmU3OGNmMzcwMmQzYzdkMTNmMTAxNTdkEgsSBxCpxtiRkRMYAZIBJAoKcHJvamVjdF9pZBIWQhQxMjA0MDE3MTYxMTcxMjU4OTU5OQ&filename=&opi=89354086",
-      "screenshot": "https://lh3.googleusercontent.com/aida/AEtjO1UuIXmO8oCQASg4k4VvecHxmsisvNzLBCp-Ee_Q9c-AFoifyB-khk8XWRkc_EbBUPXwzHGTlL_LUlJNr6-Sa8S5LElUI2YQtd53k6L3yHpQGKEtJkb1xEl1EP3FVxoZUrIp9OMO09nyrsBQB1VBUCQj0xDVcWpXWP3klUi8HVhFDRAMgKRU9g6PlipVeIu1f-y0g56EGahSiSnsCeiHfUqUtXZvhpH9I1MRjcFHUWtLQ0u0zTNS2xvh8_sD"
+      "width": "2560",
+      "height": "1600",
+      "html": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBKOARIhYXBwX2NvbXBhbmlvbl91c2VyX3VwbG9hZGVkX2ZpbGVzGmkKM3VzZXJfdXBsb2FkZWRfaHRtbF8wMDA2NWQyNzY4ZTg5OTczMDQ3OWY0MTZiZjA5NzRjMxILEgcQqcbYkZETGAGSASQKCnByb2plY3RfaWQSFkIUMTIwNDAxNzE2MTE3MTI1ODk1OTk&filename=&opi=96797242",
+      "screenshot": "https://lh3.googleusercontent.com/aida/AEtjO1WsiWPQZ1g7eDWAdp7sDv66ValYY6MB4aHSaGe9LJa5saKO7cYmKDop6WWPb-QQvpLE1KDnMbdCiQjT1s-QJHfTK5iel8Y5329of3N2BzZr_85UBxO8wLsB-8xkFeKQUNeXbCPJKeJR4_1lz0V3TbhD5ddXYEHJCueVWvnT1ib4qh5aaRNL0HqgVnr2_FD7dnXhyhPDumbXNIPLyKmrrHzwDD-r82-wCXsxSqzm77gzKdcqvEHSQWFzh7Ktk98el_f2mAMr1kXtsgo"
     },
     {
       "slug": "instrument-tuner/tablet",
@@ -226,13 +226,33 @@
     },
     {
       "slug": "instrument-tuner/foldable-tabletop",
-      "screenId": "13960272211985517803",
-      "title": "Tembra Audio - Tuner Auto Listen (Foldable Tabletop) v2",
+      "screenId": "13578995328590836174",
+      "title": "Tembra Audio - Tuner Auto Listen (Foldable Tabletop) v3",
       "device": "DESKTOP",
       "width": "2560",
       "height": "1704",
-      "html": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBKOARIhYXBwX2NvbXBhbmlvbl91c2VyX3VwbG9hZGVkX2ZpbGVzGmkKM3VzZXJfdXBsb2FkZWRfaHRtbF8wMDA2NWNlMGM0YmU1ZTY3MDk2ODkwMzVmOTBlOTIzOBILEgcQqcbYkZETGAGSASQKCnByb2plY3RfaWQSFkIUMTIwNDAxNzE2MTE3MTI1ODk1OTk&filename=&opi=96797242",
-      "screenshot": "https://lh3.googleusercontent.com/aida/AEtjO1X6hp3F54SM9M5DdonJaGQioB9WXy97ZwHjUNCRV5SfaJiKdWavwlKpbRcC7d3ZIw_nrSmJ3S-Oo3Ss6IeWA-6wDbaxdtQ18LMaUoVpU05FkJQP3ah_6UIVcaom11hK45zuI1uUd4OtCg0bh2VQ1BuroEzvI--BNjVK00AA-jBhnvCqnZC7kmF4VQS1ooaDbr59ffwRznn7AY_VZIvGabcfCA0fORsHEyPqRXIHwY9NuaJp9_G_DouMmg9TLGbdVHOkmcfiJtgeAUc"
+      "html": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBKOARIhYXBwX2NvbXBhbmlvbl91c2VyX3VwbG9hZGVkX2ZpbGVzGmkKM3VzZXJfdXBsb2FkZWRfaHRtbF8wMDA2NWQyNzY5ZjUyZDBhMDVmMTE1NjBhNzAyMWM1NhILEgcQqcbYkZETGAGSASQKCnByb2plY3RfaWQSFkIUMTIwNDAxNzE2MTE3MTI1ODk1OTk&filename=&opi=96797242",
+      "screenshot": "https://lh3.googleusercontent.com/aida/AEtjO1Vd4resxKBwEQod9HXWcOAHG6boWi_YH9bFNPpMRfALTJkLyOWIjlkpuDK9AaXkMI51d6ycd3C2HQsffDutb17DNh-IUWft5p9aqMfTx3QWvUfiberhw0F4shPZ8A5QhUuqdkyCdmeluWp0pwFoI5y_JK7He7WoOFdofbO7fmDmEuzJvSsR5BXcEAt-lrETMhUgYzNKrK5RIa6aEQ90w-6VaqrzQUFjl9MnxgeWwlu6nYCCQPmrz3yMU-FfQUPIcn-Qcq7XVKSvx3M"
+    },
+    {
+      "slug": "instrument-tuner/foldable-open",
+      "screenId": "2990089014843534122",
+      "title": "Tembra Audio - Tuner Auto Listen (Foldable Open)",
+      "device": "DESKTOP",
+      "width": "2560",
+      "height": "1766",
+      "html": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBKOARIhYXBwX2NvbXBhbmlvbl91c2VyX3VwbG9hZGVkX2ZpbGVzGmkKM3VzZXJfdXBsb2FkZWRfaHRtbF8wMDA2NWQyNzZhN2JmMTZiMDk2ODkwYzlmMDAxMWE5YRILEgcQqcbYkZETGAGSASQKCnByb2plY3RfaWQSFkIUMTIwNDAxNzE2MTE3MTI1ODk1OTk&filename=&opi=96797242",
+      "screenshot": "https://lh3.googleusercontent.com/aida/AEtjO1UR-KnIz6si4GKdtJADcoullUzpPEP87J6_jjkxMzqJqaKIU7JqpG4GocxylgciTnTb6MWzQ5Nw3omb5Mly_W-E1k0mWgKGm4God45IvWecg4-AZB-Hbx_jUnnyf1Pl2LjrJTDIUB_wUkxJRX9-x9wDASqXyDX1wEJ7yjPEj2sy13Q_jI5ZC5hDgOV3CxKpYFeF5waFb4psWAge3UzFeRzrUfHJCxQra0I2sR2v0WgMgkqt0vLUc_wu5guo7_YYI_FtC1QO7NRorA"
+    },
+    {
+      "slug": "instrument-tuner/phone-landscape",
+      "screenId": "11360104581083438971",
+      "title": "Tembra Audio - Tuner (Auto Listen) v2",
+      "device": "DESKTOP",
+      "width": "2560",
+      "height": "1600",
+      "html": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBKOARIhYXBwX2NvbXBhbmlvbl91c2VyX3VwbG9hZGVkX2ZpbGVzGmkKM3VzZXJfdXBsb2FkZWRfaHRtbF8wMDA2NWQyNzY5NmQwY2Y0MDIzYmVmODcwMDIzYmM2ZBILEgcQqcbYkZETGAGSASQKCnByb2plY3RfaWQSFkIUMTIwNDAxNzE2MTE3MTI1ODk1OTk&filename=&opi=96797242",
+      "screenshot": "https://lh3.googleusercontent.com/aida/AEtjO1UKGnbyugf_8ll83nkg1vHs561gmLFIsrCASkjL_KxwiAMGnpOtSHZaUByI-EH-Fdv04fUKDcIEXnO081qGN8vaNpDX6T9qC_T9xW7_NtzEhL_xERT_DKC6-2oNUDIBU4ZRq7rzz4-9HjQ8Vna26acYeuK-za0H65bcNuC-ihwLipGLmw46pJMegFS6PBQwKY-LtnidhVn9fasbbJvHg01yRIlfkW2M5rJpRj87r3vy7fYBOu0D5V2fhWv8TGCphZLDKdh7tt9jLA"
     },
     {
       "slug": "metronome/foldable-book",
