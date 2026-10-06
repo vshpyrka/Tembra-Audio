@@ -1,4 +1,7 @@
-// The revision-2 C ABI functions: thin forwarders to the EngineCore singleton (core/engine_core.h) with argument checks.
+// The tuner's C ABI functions (revision 2, and tembra_tuner_set_gate of revision 4): thin forwarders to the EngineCore
+// singleton (core/engine_core.h) with argument checks.
+#include <cmath>
+
 #include "tembra_engine.h"
 #include "core/engine_core.h"
 
@@ -30,6 +33,11 @@ void tembra_tuner_read(tembra_pitch_reading* out) {
 int32_t tembra_tuner_start_test_signal(const tembra_tuner_config* config, const tembra_test_signal* signal) {
     if (config == nullptr || signal == nullptr) return TEMBRA_ERR_ARGUMENT;
     return tembra::EngineCore::instance().startTestSignal(*config, *signal);
+}
+
+int32_t tembra_tuner_set_gate(uint32_t enabled, float open_db) {
+    if (enabled != 0 && !(std::isfinite(open_db) && open_db >= -120.0f && open_db <= 0.0f)) return TEMBRA_ERR_ARGUMENT;
+    return tembra::EngineCore::instance().setGate(enabled != 0, open_db);
 }
 
 int32_t tembra_tone_start(double frequency_hz, uint32_t duration_ms) {

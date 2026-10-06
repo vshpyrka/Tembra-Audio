@@ -35,7 +35,7 @@ actual class NativeAudioEngine(context: Context) : AudioEngine {
     /** The pending check that releases a preview's focus; null when none is scheduled. */
     private var previewRelease: Runnable? = null
 
-    /** Reused by every [readPitch]: [state, sampleRate, frequencyHz, clarity, inputPeak, hasPitch, synthetic]. */
+    /** Reused by every [readPitch]: [state, sampleRate, frequencyHz, clarity, inputPeak, hasPitch, synthetic, inputLevelDb, gateOpen]. */
     private val reading = FloatArray(READING_FIELDS)
 
     /** Reused by every [readTick]: [tickIndex, beatIndex, level, audibleInNs, beatPeriodNs, running, sampleRate]. */
@@ -65,6 +65,8 @@ actual class NativeAudioEngine(context: Context) : AudioEngine {
         nativeTunerStop()
     }
 
+    override fun setNoiseGate(openDb: Float?): AudioResult = AudioResult.fromNative(nativeTunerSetGate(openDb != null, openDb ?: 0f))
+
     override fun readPitch(into: PitchSnapshot) {
         val sequence = nativeTunerRead(reading)
         into.sequence = sequence
@@ -75,6 +77,8 @@ actual class NativeAudioEngine(context: Context) : AudioEngine {
         into.inputPeak = reading[4]
         into.hasPitch = reading[5] != 0f
         into.synthetic = reading[6] != 0f
+        into.inputLevelDb = reading[7]
+        into.gateOpen = reading[8] != 0f
     }
 
     override fun startTone(frequencyHz: Double, durationMs: Int): AudioResult = sound { nativeToneStart(frequencyHz, durationMs) }
@@ -247,6 +251,7 @@ actual class NativeAudioEngine(context: Context) : AudioEngine {
         window: Int, hop: Int, minHz: Float, maxHz: Float, clarity: Float, peakRatio: Float, median: Int, watchdog: Float,
     ): Int
     private external fun nativeTunerStop()
+    private external fun nativeTunerSetGate(enabled: Boolean, openDb: Float): Int
     private external fun nativeTunerRead(out: FloatArray): Long
     private external fun nativeToneStart(hz: Double, durationMs: Int): Int
     private external fun nativeSampleLoadWav(bytes: ByteArray): Int
@@ -265,7 +270,7 @@ actual class NativeAudioEngine(context: Context) : AudioEngine {
     private external fun nativeMetronomeRead(out: LongArray)
 
     private companion object {
-        const val READING_FIELDS = 7
+        const val READING_FIELDS = 9
         const val TICK_FIELDS = 7
         const val CUSTOM_INFO_FIELDS = 4
         const val CUSTOM_MS_FIELDS = 2

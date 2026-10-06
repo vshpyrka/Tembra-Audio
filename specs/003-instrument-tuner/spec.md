@@ -364,6 +364,7 @@ cards with the platform screen reader.
 - **FR-005**: The instrument, string count, preset, mode and loop-toggle choices MUST be
   remembered across app launches. On the first launch the defaults are Guitar, 6-String,
   Standard, Auto Listen, and Loop Tone on.
+  *Extended by feature 006 ([tuner noise gate](../006-tuner-noise-gate/spec.md), FR-014): the noise gate level is remembered with these choices.*
 - **FR-006**: The audio-state pill MUST read "Mic active" while the microphone is being
   listened to and "Tone out" while a reference tone sounds, and MUST be hidden otherwise. The
   pill MAY draw its text in capitals but MUST announce the sentence-case label to accessibility
@@ -396,6 +397,7 @@ cards with the platform screen reader.
   "Listening" in place of a note, no frequency and no reference chip, the needle at the centre
   without the in-tune styling, the "In tune" pill unlit and neither end label highlighted. The
   meter MUST return to the resting state within half a second of the note ending.
+  *Extended by feature 006 ([tuner noise gate](../006-tuner-noise-gate/spec.md), FR-004 to FR-008): a sound under the level the user set also rests the meter.*
 - **FR-011**: The tuner MUST hear and correctly name every semitone from A1 (55.0 Hz), the
   lowest string of any preset in FR-003, to at least E5 (659.3 Hz), one octave above the highest
   string, and MUST show the correct octave on plucked and bowed strings whose overtones are
@@ -472,6 +474,7 @@ cards with the platform screen reader.
   column beside the content without scrolling at the default font size; the meter MUST fit the remaining height without scrolling; and the cards
   MUST form two rows (two, three or four columns for four, six or seven strings). Nothing MUST
   clip, overlap or scroll horizontally at any width, including at the largest system font size.
+  *Extended by feature 006 ([tuner noise gate](../006-tuner-noise-gate/spec.md), FR-016): the noise gate control has its place in each of these forms.*
 - **FR-024**: Every selector segment, the preset picker, the loop toggle, the settings control of
   the denied state and every card button MUST show a hover state under a pointer, a visible
   focus indicator, MUST be operable from the keyboard, and MUST measure at least 44 dp in both

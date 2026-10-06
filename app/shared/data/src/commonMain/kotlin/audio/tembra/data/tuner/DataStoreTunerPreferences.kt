@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -16,6 +17,7 @@ class DataStoreTunerPreferences(private val dataStore: DataStore<Preferences>) :
     private val presetId = stringPreferencesKey(TunerPreferenceKeys.PRESET_ID)
     private val mode = stringPreferencesKey(TunerPreferenceKeys.MODE)
     private val loopTone = booleanPreferencesKey(TunerPreferenceKeys.LOOP_TONE)
+    private val noiseGateDb = intPreferencesKey(TunerPreferenceKeys.NOISE_GATE_DB)
 
     override val snapshot: Flow<TunerPreferencesSnapshot> = dataStore.data.map(::decode)
 
@@ -27,6 +29,9 @@ class DataStoreTunerPreferences(private val dataStore: DataStore<Preferences>) :
             preferences[presetId] = next.presetId
             preferences[mode] = next.mode.id
             preferences[loopTone] = next.loopTone
+            // The gate's key holds a level or is absent: off is the absence, so a file from before the gate reads off.
+            val gateDb = next.noiseGate.levelDb
+            if (gateDb == null) preferences.remove(noiseGateDb) else preferences[noiseGateDb] = gateDb
         }
     }
 
@@ -38,5 +43,6 @@ class DataStoreTunerPreferences(private val dataStore: DataStore<Preferences>) :
             TunerPreferenceKeys.MODE to preferences[mode],
         ),
         preferences[loopTone],
+        preferences[noiseGateDb],
     )
 }

@@ -2,16 +2,11 @@ package audio.tembra.ui.metronome.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsDraggedAsState
-import androidx.compose.foundation.interaction.collectIsFocusedAsState
-import androidx.compose.foundation.interaction.collectIsHoveredAsState
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Slider
@@ -22,8 +17,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -34,15 +27,19 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import audio.tembra.core.metronome.Tempo
 import audio.tembra.core.metronome.TempoMarking
+import audio.tembra.ui.designsystem.TembraSliderDefaults
+import audio.tembra.ui.designsystem.TembraSliderThumb
 import audio.tembra.ui.metronome.MetronomeCopy
 import audio.tembra.ui.theme.TembraTheme
 import kotlin.math.roundToInt
 
 /**
  * The tempo slider under the dial (research R8, R10): a Material [Slider] over 40–240 in whole numbers, restyled with
- * the design's 6 dp `surfaceContainerHighest` track and a 16 dp `primary` thumb, between the end labels "40" and
- * "240"; the thumb's box is 44 dp tall, so the slider is a whole touch target. The arrows come from Material; the page keys move the tempo by ten, as on the dial. The custom thumb keeps
- * Material's feedback: a `primary` state layer on hover, press, drag and focus, and the focus ring.
+ * the design's 6 dp `surfaceContainerHighest` track and the design system's 16 dp `primary` handle
+ * ([TembraSliderThumb], shared with the tuner's noise gate since feature 006), between the end labels "40" and "240";
+ * the handle's box is 44 dp tall, so the slider is a whole touch target. The arrows come from Material; the page keys
+ * move the tempo by ten, as on the dial. The handle keeps Material's feedback: a `primary` state layer on hover,
+ * press, drag and focus, and the focus ring.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,13 +53,6 @@ internal fun TempoSlider(
     val colors = TembraTheme.colors
     val spacing = TembraTheme.spacing
     val source = interactionSource ?: remember { MutableInteractionSource() }
-    val hovered by source.collectIsHoveredAsState()
-    val pressed by source.collectIsPressedAsState()
-    val dragged by source.collectIsDraggedAsState()
-    val focused by source.collectIsFocusedAsState()
-    val halo = hovered || pressed || dragged || focused
-    val thumbColor = colors.primary
-    val ring = spacing.focusRingWidth
     val labelStyle = TembraTheme.typographyExtras.tabularParam
     val announcement = MetronomeCopy.dialState(tempo, TempoMarking.of(tempo))
     val currentTempo by rememberUpdatedState(tempo)
@@ -99,27 +89,13 @@ internal fun TempoSlider(
             valueRange = Tempo.MIN.toFloat()..Tempo.MAX.toFloat(),
             steps = Tempo.MAX - Tempo.MIN - 1,
             interactionSource = source,
-            thumb = {
-                // The drawn thumb is 16 dp; its box is a touch target tall, which makes the slider (and its node) 44 dp.
-                Box(
-                    Modifier
-                        .size(width = MetronomeDefaults.SliderThumbSize, height = spacing.touchTargetMin)
-                        .drawBehind {
-                            val radius = size.width / 2
-                            // Hover, press, drag and focus show a state layer around the thumb; focus adds the ring.
-                            if (halo) drawCircle(thumbColor.copy(alpha = MetronomeDefaults.THUMB_HALO_ALPHA), radius * MetronomeDefaults.THUMB_HALO_SCALE)
-                            if (focused) {
-                                drawCircle(thumbColor, radius + ring.toPx() * 2, style = Stroke(width = ring.toPx()))
-                            }
-                            drawCircle(thumbColor, radius)
-                        },
-                )
-            },
+            // The drawn handle is 16 dp; its box is a touch target tall, which makes the slider (and its node) 44 dp.
+            thumb = { TembraSliderThumb(source) },
             track = {
                 Box(
                     Modifier
                         .fillMaxWidth()
-                        .height(MetronomeDefaults.SliderTrackHeight)
+                        .height(TembraSliderDefaults.TrackHeight)
                         .background(colors.surfaceContainerHighest, CircleShape),
                 )
             },

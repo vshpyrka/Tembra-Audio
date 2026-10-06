@@ -2,6 +2,7 @@ package audio.tembra.ui.tuner
 
 import audio.tembra.core.tuner.GuitarStringCount
 import audio.tembra.core.tuner.Instrument
+import audio.tembra.core.tuner.NoiseGate
 import audio.tembra.core.tuner.Note
 import audio.tembra.core.tuner.PitchDirection
 import audio.tembra.core.tuner.TunerMode
@@ -607,5 +608,189 @@ class TunerViewModelTest {
         audio.emit(AudioEvent.InterruptionEnded)
         runCurrent()
         assertEquals("stopTone", audio.calls.last())
+    }
+
+    // --- Noise gate (feature 006) ----------------------------------------------------------------------------------------
+
+    @Test
+    fun movingTheNoiseGateReachesTheEngineAtOnceAndWritesNothing() = viewModelTest {
+        val viewModel = viewModel()
+        enterAutoListen(viewModel)
+        val gate = NoiseGate.ofLevelDb(-50)!!
+        viewModel.setNoiseGate(gate)
+        assertEquals(gate, viewModel.uiState.value.noiseGate)
+        assertEquals("setNoiseGate(-50.0)", audio.calls.last())
+        assertEquals(-50f, audio.noiseGateDb)
+        runCurrent()
+        assertEquals(TunerPreferencesSnapshot(), preferences.snapshot.first(), "a move of the handle must not write")
+
+        // An unchanged value does nothing.
+        val calls = audio.calls.size
+        viewModel.setNoiseGate(gate)
+        assertEquals(calls, audio.calls.size)
+
+        // Listening was started once and never stopped or restarted by the moves (spec FR-003).
+        viewModel.setNoiseGate(NoiseGate.Off)
+        assertEquals("setNoiseGate(off)", audio.calls.last())
+        assertEquals(1, audio.calls.count { it == "startListening" })
+        assertEquals(0, audio.calls.count { it == "stopListening" })
+        assertEquals(AudioState.Listening, viewModel.uiState.value.audio)
+    }
+
+    @Test
+    fun theNoiseGateStaysThroughModesVisibilityBackgroundingAndInterruptions() = viewModelTest {
+        val viewModel = viewModel()
+        enterAutoListen(viewModel)
+        val gate = NoiseGate.ofLevelDb(-40)!!
+        viewModel.setNoiseGate(gate)
+        viewModel.selectMode(TunerMode.ByEar)
+        runCurrent()
+        viewModel.selectMode(TunerMode.AutoListen)
+        runCurrent()
+        viewModel.screenVisible(false)
+        runCurrent()
+        viewModel.screenVisible(true)
+        runCurrent()
+        viewModel.foreground(false)
+        runCurrent()
+        viewModel.foreground(true)
+        runCurrent()
+        audio.emit(AudioEvent.Interrupted)
+        runCurrent()
+        audio.emit(AudioEvent.InterruptionEnded)
+        runCurrent()
+
+        assertEquals(gate, viewModel.uiState.value.noiseGate)
+        assertEquals(-40f, audio.noiseGateDb)
+        assertEquals("startListening", audio.calls.last())
+        assertTrue(audio.calls.count { it == "startListening" } >= 5, "listening restarted ${audio.calls.count { it == "startListening" }} times")
+        // The engine keeps the gate across every stop and start: nothing after the move touches it again.
+        val moved = audio.calls.lastIndexOf("setNoiseGate(-40.0)")
+        assertTrue(audio.calls.drop(moved + 1).none { it.startsWith("setNoiseGate") }, "calls after the move: ${audio.calls.drop(moved + 1)}")
+    }
+
+    @Test
+    fun aRememberedNoiseGateReachesTheEngineBeforeListeningStarts() = viewModelTest {
+        preferences = FakeTunerPreferences(TunerPreferencesSnapshot(noiseGate = NoiseGate.ofLevelDb(-50)!!))
+        val viewModel = viewModel()
+        enterAutoListen(viewModel)
+        assertEquals(NoiseGate.ofLevelDb(-50)!!, viewModel.uiState.value.noiseGate)
+        assertEquals(listOf("setNoiseGate(-50.0)", "startListening"), audio.calls)
+    }
+
+    @Test
+    fun aFreshInstallLoadsTheGateOffAndLeavesTheEngineAlone() = viewModelTest {
+        val viewModel = viewModel()
+        enterAutoListen(viewModel)
+        assertEquals(NoiseGate.Off, viewModel.uiState.value.noiseGate)
+        assertEquals(listOf("startListening"), audio.calls)
+    }
+
+    @Test
+    fun settlingWritesTheNoiseGateAndOnlyThen() = viewModelTest {
+        val viewModel = viewModel()
+        enterAutoListen(viewModel)
+        viewModel.setNoiseGate(NoiseGate.ofLevelDb(-60)!!)
+        viewModel.setNoiseGate(NoiseGate.ofLevelDb(-58)!!)
+        runCurrent()
+        assertEquals(NoiseGate.Off, preferences.snapshot.first().noiseGate)
+        viewModel.noiseGateSettled()
+        runCurrent()
+        assertEquals(-58, preferences.snapshot.first().noiseGate.levelDb)
+        // The other remembered choices are untouched by the write.
+        assertEquals(TunerPreferencesSnapshot().copy(noiseGate = NoiseGate.ofLevelDb(-58)!!), preferences.snapshot.first())
+    }
+
+    @Test
+    fun clearingTakesTheGateOutOfTheEngine() = viewModelTest {
+        // The gate lives in the engine for the life of the process, the ViewModel for the life of its entry: a gate
+        // this ViewModel set must not outlive it, or the next entry would show "Off" over a gated engine.
+        val viewModel = viewModel()
+        enterAutoListen(viewModel)
+        viewModel.setNoiseGate(NoiseGate.ofLevelDb(-50)!!)
+        viewModel.clear()
+        created = null
+        assertEquals(listOf("stopListening", "setNoiseGate(off)"), audio.calls.takeLast(2))
+        assertNull(audio.noiseGateDb)
+    }
+
+    @Test
+    fun thePollMirrorsWhetherTheGateIsOpen() = viewModelTest {
+        val viewModel = viewModel()
+        enterAutoListen(viewModel)
+        viewModel.setNoiseGate(NoiseGate.ofLevelDb(-50)!!)
+        audio.nextSnapshot.gateOpen = false
+        advanceTimeBy(150)
+        assertFalse(viewModel.uiState.value.gateOpen)
+        assertEquals(false, viewModel.uiState.value.soundAboveGate)
+        audio.nextSnapshot.gateOpen = true
+        advanceTimeBy(150)
+        assertTrue(viewModel.uiState.value.gateOpen)
+        assertEquals(true, viewModel.uiState.value.soundAboveGate)
+
+        // Not listening says nothing about the gate: the state falls back to open and the announcement goes.
+        audio.nextSnapshot.gateOpen = false
+        advanceTimeBy(150)
+        viewModel.screenVisible(false)
+        runCurrent()
+        assertTrue(viewModel.uiState.value.gateOpen)
+        assertNull(viewModel.uiState.value.soundAboveGate)
+    }
+
+    // --- The debug launch value (feature 006, data-model.md §8) -----------------------------------------------------
+
+    @Test
+    fun aLaunchGateReplacesTheStoredOneAndIsNotWritten() = viewModelTest {
+        preferences = FakeTunerPreferences(TunerPreferencesSnapshot(noiseGate = NoiseGate.ofLevelDb(-60)!!))
+        val viewModel = viewModel()
+        viewModel.useNoiseGate(NoiseGate.ofLevelDb(-40)!!)
+        enterAutoListen(viewModel)
+        assertEquals(-40, viewModel.uiState.value.noiseGate.levelDb)
+        // In the engine before listening starts, like a remembered gate.
+        assertEquals(listOf("setNoiseGate(-40.0)", "startListening"), audio.calls)
+        assertEquals(-60, preferences.snapshot.first().noiseGate.levelDb)
+
+        // A later move of the handle in the same launch is remembered as usual.
+        viewModel.setNoiseGate(NoiseGate.ofLevelDb(-30)!!)
+        viewModel.noiseGateSettled()
+        runCurrent()
+        assertEquals(-30, preferences.snapshot.first().noiseGate.levelDb)
+
+        // The screen hands the same launch value over again whenever its effect runs anew; that undoes nothing.
+        viewModel.useNoiseGate(NoiseGate.ofLevelDb(-40)!!)
+        assertEquals(-30, viewModel.uiState.value.noiseGate.levelDb)
+        assertEquals(-30f, audio.noiseGateDb)
+    }
+
+    @Test
+    fun aLaunchGateOfOffSetsARememberedGateAsideForTheLaunch() = viewModelTest {
+        preferences = FakeTunerPreferences(TunerPreferencesSnapshot(noiseGate = NoiseGate.ofLevelDb(-60)!!))
+        val viewModel = viewModel()
+        viewModel.useNoiseGate(NoiseGate.Off)
+        enterAutoListen(viewModel)
+        assertEquals(NoiseGate.Off, viewModel.uiState.value.noiseGate)
+        // The engine starts with no gate, so "off" needs no call.
+        assertEquals(listOf("startListening"), audio.calls)
+        assertEquals(-60, preferences.snapshot.first().noiseGate.levelDb)
+    }
+
+    @Test
+    fun noLaunchGateLeavesTheStoredOneInForce() = viewModelTest {
+        preferences = FakeTunerPreferences(TunerPreferencesSnapshot(noiseGate = NoiseGate.ofLevelDb(-60)!!))
+        val viewModel = viewModel()
+        viewModel.useNoiseGate(null)
+        enterAutoListen(viewModel)
+        assertEquals(-60, viewModel.uiState.value.noiseGate.levelDb)
+    }
+
+    @Test
+    fun aLaunchGateHandedOverAfterLoadingAppliesAtOnce() = viewModelTest {
+        val viewModel = viewModel()
+        enterAutoListen(viewModel)
+        viewModel.useNoiseGate(NoiseGate.ofLevelDb(-50)!!)
+        assertEquals(-50, viewModel.uiState.value.noiseGate.levelDb)
+        assertEquals(-50f, audio.noiseGateDb)
+        runCurrent()
+        assertEquals(NoiseGate.Off, preferences.snapshot.first().noiseGate)
     }
 }

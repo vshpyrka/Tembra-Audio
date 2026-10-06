@@ -1,8 +1,9 @@
 // Test-only signal generators shared by the DSP tests: harmonic tones with a weak fundamental (a plucked or bowed
-// string), sines, silence, white noise, hard clipping and cent arithmetic.
+// string), sines, silence, white noise, hard clipping, levels, fades, mixes and cent arithmetic.
 #ifndef TEMBRA_TESTS_SIGNAL_FIXTURES_H
 #define TEMBRA_TESTS_SIGNAL_FIXTURES_H
 
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -69,6 +70,50 @@ inline std::vector<float> clipped(std::vector<float> signal, float threshold) {
     for (float& s : signal) {
         if (s > threshold) s = threshold;
         if (s < -threshold) s = -threshold;
+    }
+    return signal;
+}
+
+/** The root mean square of [signal]. */
+inline double rmsOf(const std::vector<float>& signal) {
+    if (signal.empty()) return 0.0;
+    double sum = 0.0;
+    for (float s : signal) sum += static_cast<double>(s) * static_cast<double>(s);
+    return std::sqrt(sum / static_cast<double>(signal.size()));
+}
+
+/** [signal] scaled so that its RMS is [db] decibels below full scale (the noise gate's measure, feature 006). */
+inline std::vector<float> scaledToRmsDb(std::vector<float> signal, double db) {
+    const double rms = rmsOf(signal);
+    if (rms <= 0.0) return signal;
+    const double gain = std::pow(10.0, db / 20.0) / rms;
+    for (float& s : signal) s = static_cast<float>(static_cast<double>(s) * gain);
+    return signal;
+}
+
+/** [signal] fading steadily by [dbPerSecond], as a plucked string does. */
+inline std::vector<float> fadedDbPerSecond(std::vector<float> signal, double sampleRate, double dbPerSecond) {
+    for (size_t i = 0; i < signal.size(); ++i) {
+        const double seconds = static_cast<double>(i) / sampleRate;
+        signal[i] = static_cast<float>(static_cast<double>(signal[i]) * std::pow(10.0, -dbPerSecond * seconds / 20.0));
+    }
+    return signal;
+}
+
+/** The sample-wise sum of [a] and [b]; the result is as long as the longer one. */
+inline std::vector<float> mixed(const std::vector<float>& a, const std::vector<float>& b) {
+    std::vector<float> out(std::max(a.size(), b.size()), 0.0f);
+    for (size_t i = 0; i < a.size(); ++i) out[i] += a[i];
+    for (size_t i = 0; i < b.size(); ++i) out[i] += b[i];
+    return out;
+}
+
+/** [signal] with its level moving [depthDb] up and down, [hz] times a second. */
+inline std::vector<float> wobbledDb(std::vector<float> signal, double sampleRate, double depthDb, double hz) {
+    for (size_t i = 0; i < signal.size(); ++i) {
+        const double seconds = static_cast<double>(i) / sampleRate;
+        const double db = depthDb * std::sin(2.0 * kPi * hz * seconds);
+        signal[i] = static_cast<float>(static_cast<double>(signal[i]) * std::pow(10.0, db / 20.0));
     }
     return signal;
 }

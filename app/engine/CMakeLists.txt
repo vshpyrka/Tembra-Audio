@@ -19,6 +19,7 @@ add_library(tembra_engine_core STATIC
     src/tuner/band_pass.cpp
     src/tuner/mcleod_pitch_detector.cpp
     src/tuner/pitch_smoother.cpp
+    src/tuner/level_gate.cpp
     src/tuner/tuner_analyzer.cpp
     src/tuner/tone_generator.cpp
     src/tuner/wav_decoder.cpp

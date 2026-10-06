@@ -7,4 +7,7 @@ object TunerPreferenceKeys {
     const val PRESET_ID = "tuner.presetId"
     const val MODE = "tuner.mode"
     const val LOOP_TONE = "tuner.loopTone"
+
+    /** The noise gate's level in decibels (feature 006); the key is absent while the gate is off. */
+    const val NOISE_GATE_DB = "tuner.noiseGateDb"
 }

@@ -2,6 +2,7 @@ package audio.tembra.ui.tuner
 
 import audio.tembra.core.tuner.GuitarStringCount
 import audio.tembra.core.tuner.Instrument
+import audio.tembra.core.tuner.NoiseGate
 import audio.tembra.core.tuner.Note
 import audio.tembra.core.tuner.PitchDirection
 import audio.tembra.core.tuner.TunerMode
@@ -55,6 +56,30 @@ class TunerUiStateTest {
         assertFalse(TunerUiState(microphone = MicrophonePermissionStatus.Granted).showDeniedState)
         assertFalse(TunerUiState(microphone = MicrophonePermissionStatus.DeniedOpenSettings, mode = TunerMode.ByEar).showDeniedState)
         assertFalse(TunerUiState(microphone = MicrophonePermissionStatus.DeniedOpenSettings, testSignal = TestSignals.byId("e2-in-tune")!!.signal).showDeniedState)
+    }
+
+    @Test
+    fun theNoiseGateIsOffByDefaultAndShownOnlyWhereTheMeterIs() {
+        assertEquals(NoiseGate.Off, TunerUiState().noiseGate)
+        assertTrue(TunerUiState().showNoiseGate)
+        assertTrue(TunerUiState(microphone = MicrophonePermissionStatus.Granted, audio = AudioState.Listening).showNoiseGate)
+        assertTrue(TunerUiState(microphone = MicrophonePermissionStatus.Granted, interrupted = true).showNoiseGate)
+        assertTrue(TunerUiState(microphone = MicrophonePermissionStatus.DeniedOpenSettings, testSignal = TestSignals.byId("e2-in-tune")!!.signal).showNoiseGate)
+        assertFalse(TunerUiState(mode = TunerMode.ByEar).showNoiseGate)
+        assertFalse(TunerUiState(microphone = MicrophonePermissionStatus.DeniedOpenSettings).showNoiseGate)
+        assertFalse(TunerUiState(microphone = MicrophonePermissionStatus.DeniedCanAsk).showNoiseGate)
+    }
+
+    @Test
+    fun theAnnouncedGateStateFollowsTheEngineOnlyWhileListeningBehindAGate() {
+        val gated = TunerUiState(microphone = MicrophonePermissionStatus.Granted, audio = AudioState.Listening, noiseGate = NoiseGate.ofLevelDb(-50)!!)
+        assertTrue(gated.gateOpen)
+        assertEquals(true, gated.soundAboveGate)
+        assertEquals(false, gated.copy(gateOpen = false).soundAboveGate)
+        assertNull(gated.copy(audio = AudioState.Idle).soundAboveGate)
+        assertNull(gated.copy(noiseGate = NoiseGate.Off).soundAboveGate)
+        assertNull(gated.copy(noiseGate = NoiseGate.Off, gateOpen = false).soundAboveGate)
+        assertNull(gated.copy(mode = TunerMode.ByEar, audio = AudioState.Tone, gateOpen = false).soundAboveGate)
     }
 
     @Test

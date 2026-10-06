@@ -72,12 +72,17 @@ Java_audio_tembra_engine_NativeAudioEngine_nativeTunerStop(JNIEnv*, jobject) {
     tembra_tuner_stop();
 }
 
+JNIEXPORT jint JNICALL
+Java_audio_tembra_engine_NativeAudioEngine_nativeTunerSetGate(JNIEnv*, jobject, jboolean enabled, jfloat openDb) {
+    return static_cast<jint>(tembra_tuner_set_gate(enabled == JNI_TRUE ? 1u : 0u, openDb));
+}
+
 JNIEXPORT jlong JNICALL
 Java_audio_tembra_engine_NativeAudioEngine_nativeTunerRead(JNIEnv* env, jobject, jfloatArray out) {
     tembra_pitch_reading reading{};
     tembra_tuner_read(&reading);
-    if (out != nullptr && env->GetArrayLength(out) >= 7) {
-        const jfloat fields[7] = {
+    if (out != nullptr && env->GetArrayLength(out) >= 9) {
+        const jfloat fields[9] = {
             static_cast<jfloat>(reading.state),
             static_cast<jfloat>(reading.sample_rate),
             reading.frequency_hz,
@@ -85,8 +90,10 @@ Java_audio_tembra_engine_NativeAudioEngine_nativeTunerRead(JNIEnv* env, jobject,
             reading.input_peak,
             static_cast<jfloat>(reading.has_pitch),
             static_cast<jfloat>(reading.synthetic),
+            reading.input_level_db,
+            static_cast<jfloat>(reading.gate_open),
         };
-        env->SetFloatArrayRegion(out, 0, 7, fields);
+        env->SetFloatArrayRegion(out, 0, 9, fields);
     }
     return static_cast<jlong>(reading.sequence);
 }

@@ -1,5 +1,7 @@
 # Contract: `TunerAudio` (Kotlin engine facade)
 
+> Extended by feature 006 ([contract](../../006-tuner-noise-gate/contracts/tuner-audio-kotlin.md)): `TunerAudio.setNoiseGate`, and the input level and the gate's state in `PitchSnapshot`.
+
 **Module**: `:shared:engine`, package `audio.tembra.engine` | **Depends on**: contracts/engine-c-abi-v2.md | **Consumers**: `TunerViewModel`, tests
 
 ```kotlin

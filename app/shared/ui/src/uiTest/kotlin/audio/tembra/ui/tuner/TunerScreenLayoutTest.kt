@@ -318,6 +318,31 @@ class TunerScreenLayoutTest {
         }
     }
 
+    /**
+     * Feature 006: the noise gate is the next stop after the mode selector in every form. In the stacked and wide
+     * forms that is its place under the gauge (the gauge itself takes no focus); sideways it follows the mode
+     * selector in the settings column.
+     */
+    @Test
+    fun keyboardReachesTheNoiseGateAtItsPlace() = runComposeUiTest {
+        setScreen(autoListen, TunerLayout.Stacked)
+        if (!enterKeyboardMode(inputModeManager)) return@runComposeUiTest
+        for ((layout, size) in listOf(TunerLayout.Stacked to null, TunerLayout.Wide to null, TunerLayout.Landscape to phoneLandscape)) {
+            setScreen(autoListen, layout, size = size)
+            onNodeWithTag("tuner.mode.byEar").requestFocus()
+            onNodeWithTag("tuner.mode.byEar").assertIsFocused()
+            onNode(isFocused()).performKeyInput { pressKey(Key.Tab) }
+            repeat(2) { mainClock.advanceTimeByFrame() }
+            onNodeWithTag("tuner.noiseGate.slider").assertIsFocused()
+            val gate = bounds("tuner.noiseGate")
+            if (layout == TunerLayout.Landscape) {
+                assertTrue(gate.top >= bounds("tuner.mode").bottom, "$layout: the noise gate $gate is not after the mode selector")
+            } else {
+                assertTrue(gate.top >= bounds("tuner.meter").bottom, "$layout: the noise gate $gate is not after the gauge")
+            }
+        }
+    }
+
     @Test
     fun allTargetsAtLeast44dp() = runComposeUiTest {
         for ((layout, size) in listOf(TunerLayout.Stacked to null, TunerLayout.Landscape to phoneLandscape)) {
