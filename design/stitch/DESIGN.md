@@ -218,3 +218,9 @@ The geometric architecture balances soft tactile radii with clean, rectilinear w
 
 ### Scrubber & Playhead
 - **Global Playhead:** Full-height vertical line (`#C084FC`) anchored by a circular indicator node, cutting cleanly through all track lanes and automation zones to indicate live time position.
+
+### Sliders
+- **Shared anatomy (tempo slider, noise gate slider):** a 6px track with full radius in `surface-container-highest` (`#353438`), a 16px `primary` (`#CEBDFF`) disc as the handle, and small end labels in `tabular-param` with the `outline` tone (`#948E9D`): `40` / `240` on the tempo slider, `Off` / `High` on the noise gate. A press anywhere on the track moves the handle to the finger; the arrow keys move it one step. The handle's touch box is at least 44px tall; the noise gate's is 44×44px, so the track starts and ends 22px inside the row (Material adds 10px of its own).
+- **States:** hover, press, drag and keyboard focus draw a state layer around the handle, `primary` at 16% and twice the disc's diameter; focus adds a 2px `primary` ring. No value bubble, no tick marks.
+- **Noise gate (tuner, Auto Listen):** the row sits under a `label-sm` caption `NOISE GATE` in `on-surface-variant`, uppercase. The handle is the gate level and the track is the live input level: from the start of the track to the input's level, in `primary` while the sound is read and in `outline` while the gate holds it back, empty while not listening. The scale is never printed; the start of the track means off. It goes at the foot of the Auto Listen card under the gauge (upright phone, tablet), and after the mode selector in the settings column (phone sideways) and in the Tuner controls card (foldable tabletop and book).
+
