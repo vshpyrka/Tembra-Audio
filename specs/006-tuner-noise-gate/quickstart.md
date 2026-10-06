@@ -141,7 +141,9 @@ afplay -v 0.15 "$TMPDIR/tembra-g3.wav"   # a quiet background; -v 1 with the out
 
 1. Play a quiet pitched background from a loudspeaker (a steady tone or a voice at low volume). With the gate off
    the gauge names it.
-2. Relaunch with a gate level above it (find it with §6). The gauge rests for at least 95% of thirty seconds.
+2. Relaunch with a gate level more than 3 dB above the background's highest reading (find it with §6): a gate within
+   the closing margin of a wobbling background is opened by its peaks and then held open. The gauge rests for at
+   least 95% of thirty seconds.
 3. Play a louder tone at an instrument's level over it. It is read within a quarter of a second, and the gauge rests
    again when it stops.
 4. While it listens through the microphone, move the handle several times. "Mic active" never disappears and the
@@ -185,4 +187,6 @@ captures of §4, and re-pull the export (`design/stitch/README.md`).
 
 - A real guitar and a real cello in a room with a television on (SC-011).
 - VoiceOver and TalkBack reading and adjusting the control on a physical device.
+- A Magic Keyboard and a trackpad on a real iPad (Tab to the control, arrows one step, the hover halo): from a script,
+  the simulator forwards neither to the app.
 - The owner's iPhone 14 (skipped for now) and a physical foldable.
