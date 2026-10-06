@@ -137,6 +137,14 @@ behave that way; they stay as guards. The two launch-argument parsers and `useNo
 - **The Mac locks itself in the middle of a long run (2026-10-06).** Its display sleeps after ten minutes without
   the owner and the session locks; scripted clicks and keystrokes do not count as the owner. Every step that needs
   the Simulator or Device Hub window has to be done before that, or with the owner at the machine.
+- **A gate within its margin of a wobbling background is held open (2026-10-06, iPhone 17 simulator, loudspeaker).**
+  With the gate 1 dB over a background that moves by a decibel, one peak opens it and the background keeps it
+  open; 3.5 dB over, it stays shut (29 of 30) and shuts again after a peak. The handle has to go more than the
+  3 dB margin above the background; the margin itself behaved as designed and stays at 3 dB.
+- **Hardware keys do not reach Compose in the iOS simulator from a script (2026-10-06).** Tab and the arrows, sent
+  through System Events or as HID events, with the Simulator's keyboard forwarding on, moved nothing; a forwarded
+  pointer drew no hover. The earlier note that Tab moved the shell's focus (2026-09-25) could not be reproduced. On
+  iOS the keyboard and pointer contract rests on the UI tests of the iOS lane.
 - **On a large tablet the control is far from the gauge (2026-10-06, iPad Pro capture).** It sits at the foot of the
   card, as decided in clarification, and the gauge is centred in the room above it; on the 13-inch iPad that leaves
   about a third of the card empty between them. Nothing is cut or overlapped. It is a matter of taste for the owner:
@@ -161,7 +169,7 @@ warnings.
 | `checkIos` | iPad Pro 13-inch (M5) | passed, zero warnings |
 | `checkIos` | iPhone Duo | passed, zero warnings |
 | `checkAndroidDevice` | Pixel 6 Pro | core 86, data 45, ui 540: all passed, zero warnings. engine: 66 of 67; `NativeAudioEngineTest.theStreamProbeSeesAnOpenOutput` ("the probe did not see the tone's output stream") failed once. The engine module was run again at once on the same build and passed 67 of 67. The test is feature 004's, no engine source has changed since User Story 2, and it had passed in every earlier run of this feature on this phone; the cause of the one failure was not found |
-| `checkAndroidDevice` | fold emulator | not run in the final state: the emulator was offline. Its last run is the first pass of User Story 5 above |
+| `checkAndroidDevice` | fold emulator | run on 2026-10-06 at 10:17 once the emulator was back: core 86, data 45, ui 540 (the corrected handle-size case among them): all passed; engine 66 of 67, the known `MetronomeTimingEndToEndTest` (spacings 488 to 515 ms), as in the baseline. Zero warnings |
 
 SC-002: no assertion of an earlier test about a reading or a screen was edited in this phase; the three layout test
 files of the tuner gained cases and kept every existing one.
@@ -250,14 +258,26 @@ selectors to the slider, the handle showed its halo and the focus ring (`pixel-6
 three presses of Right moved the handle from "Off" to the third step (−74 dB by the probe) and one of Left moved it
 back one (−76 dB). The level was then put back to "Off" with two more.
 
-Not driven: the pointer's hover on Android (`adb shell input` cannot make one; the halo under an injected hover is
-asserted by `NoiseGateSliderTest.theHandleShowsHoverPressAndFocus` on every target), and the keyboard and the pointer
-on the iPad simulator and on the fold emulator opened flat; see "Not driven".
+Fold emulator opened flat (2026-10-06, 10:40), the same key events: Tab took the focus to the slider, the handle showed
+its halo and ring (`pixel-9-pro-fold-keyboard-focus.png`), Right moved it two steps for three presses (the first press
+seems to have completed the move of focus into the slider) and Left one step back.
+
+iPad simulator: a hardware keyboard does not reach the app from a script. With the Simulator's "Connect Hardware
+Keyboard" on, and also with "Send Keyboard Input to Device" on, Tab pressed up to fourteen times (through System
+Events and as HID-level events) moved no focus anywhere in the app and arrows moved nothing; the same on the
+iPhone 17. A pointer sent to the device ("Send Pointer to Device") and moved over the handle drew no halo. These two
+checks are therefore proven on iOS by the UI tests of the iOS lane (`NoiseGateSliderTest`: arrows, hover, press,
+focus; `TunerScreenLayoutTest`: focus order), which ran on the iPad Pro and the iPhone Duo, and by the Pixel's and
+the emulator's real runs on Android; a person with a Magic Keyboard and a trackpad on a real iPad can confirm them
+(quickstart §9). The pointer's hover on Android cannot be made with `adb shell input` either.
 
 ### Live sound through the real microphone
 
-It was after midnight at the workstation (00:38 EEST) and its output volume stood at 13 %. No test tone was played:
-the loudspeaker checks are under "Not driven". What needs no deliberate sound was done.
+The checks that need no deliberate sound were done at night (00:38 EEST, output at 13 %, no tone played); the
+loudspeaker checks followed on the morning of 2026-10-06 with the owner at the machine. The tone is quickstart §5's
+(196 Hz with four harmonics) from the MacBook's own loudspeaker; the Pixel 6 Pro lay where the owner had left it,
+and the iPhone 17 simulator hears the MacBook's microphone, which also hears its own loudspeaker from a few
+centimetres. The output volume was put back to 13 % after every run.
 
 | Target | Check | Result |
 |---|---|---|
@@ -269,53 +289,64 @@ the loudspeaker checks are under "Not driven". What needs no deliberate sound wa
 | iPhone 17 simulator | relaunched with the gate at −64 dB (at the room's level) | fill active in all three captures while the level moved between −59.8 and −66.1 dB: once open, the gate stayed open down to 3 dB under its level, with no flicker in those captures |
 | iPhone 17 simulator | relaunched with the gate at −58 dB (over the room) | fill muted in all three captures (−60.3 to −62.9 dB) |
 
-### The scale checkpoint (research R8, quickstart §6): not finished
+**The loudspeaker checks (quickstart §5, FR-025, SC-010), 2026-10-06 morning.** The levels are read off the track in
+captures a second apart; "named" means the gauge shows a note.
+
+| Step | Pixel 6 Pro (its microphone) | iPhone 17 simulator (the Mac's microphone) |
+|---|---|---|
+| B, the quiet background, gate off | −71.9 to −70.9 dB, named (output 50 %, `afplay -v 0.25`) | −49.8 to −49.0 dB, named (output 13 %, `-v 1`; the daytime room alone reads −50 here) |
+| behind a gate above B for 30 s | gate −68 dB (3 dB over B's top): resting in 30 of 30 captures, never named; level −76 to −70.6 dB | first with the gate at −48 dB, 1 dB over B's top: named in 30 of 30, see the margin note. Then with the gate at −46 dB: resting in 29 of 30, named once |
+| a louder tone over B | resting at the first capture (about a second; the tone starts late), named at the second and third, −61.6 dB | named at the first capture, −23.6 dB |
+| the louder tone stopped | the first capture a second later still showed the note with the fill already muted; resting from the second | resting from the first capture |
+
+**The margin, seen on the simulator.** A gate 1 dB above a background that wobbles by 1 dB is opened by the
+background's own peak and then held open for as long as the background stays within 3 dB under the gate: the gauge
+named it for the whole thirty seconds. Set 3.5 dB above the background's top, the gate stayed closed in 29 of 30
+captures and the one opening (a peak of the room) closed again at once. The margin does what it is for, on the
+condition that the user puts the handle more than the margin above the background; quickstart §5 now says so. No
+flicker was seen on a steady sound near the gate on either target.
+
+### The scale checkpoint (research R8, quickstart §6)
 
 | Sound | Pixel 6 Pro | iPhone 17 simulator (the Mac's microphone) |
 |---|---|---|
-| Q, the quietest room | under −80 dB | −60.5 to −66 dB |
-| B, a pitched background | not measured | not measured |
-| I, the instrument's stand-in | not measured | not measured |
+| Q, the quietest room | under −80 dB (night and morning) | −60.5 to −66 dB at night; about −50 dB in the morning |
+| B, a pitched background | −71 dB | −49.5 dB |
+| I, the stand-in for an instrument (half output volume, full gain) | −63.4 to −63.7 dB; with the gate one step under (−66 dB) the fill was active and the note named, one step over (−62 dB) muted and resting | −27.2 dB; one step under (−30 dB) active and named, one step over (−26 dB) muted and resting |
 
-Q is within the rule (at most −60 dB) on both, by a wide margin on the phone and by a narrow one through the Mac's
-microphone, whose own noise and input gain are not a phone's. The instrument's level decides whether the scale's
-ends are kept, and it was not measured; the checkpoint stays open for the owner.
+Against the rule (keep the scale if Q ≤ −60 dB and −50 dB ≤ I ≤ −20 dB on both targets): the Pixel's Q passes by a
+wide margin and its I fails (−63.5 dB, under −50 dB): the tone came from the MacBook's loudspeaker at whatever
+distance the phone lay, not 30 cm, so by the rule the stand-in is not proof and **one pluck of a real guitar at
+arm's length on the Pixel 6 Pro is needed from the owner**: launch with `tembra.tuner.noiseGate off`, pluck, read the
+fill's end (or capture and run the probe). Through the Mac's microphone I is in range and Q passes at night and
+fails by day; that microphone, with its input at 76 % and the laptop's own fans, is not a phone's. Everything heard
+on both targets lies on the scale (from under −80 dB to −24 dB), so nothing so far asks for new ends.
 
 ### Remembered across launches
 
 | Target | Result |
 |---|---|
 | Pixel 6 Pro | done on 2026-10-05 (above); again today the level set by the keyboard was at "Off" after a relaunch with no gate argument |
-| iPhone 17, iPad Pro, iPhone Duo | launched with a test signal and no gate argument on builds updated over ones that never had the setting: the handle is at "Off" and the −45 dB signal is read (FR-014's default). Setting a level and reading it back after a restart was not driven (it needs input into the simulator window); the stored value itself is covered on each simulator by `DataStoreTunerPreferencesTest` in its `checkIos` run |
-| Fold emulator | not driven: it went offline |
+| iPhone 17, iPad Pro, iPhone Duo | at night, launched with a test signal and no gate argument on builds updated over ones that never had the setting: the handle at "Off" and the −45 dB signal read (FR-014's default). In the morning, a level set by a real click into the simulator window (the iPhone 17 at 30 % of the track, −62 dB; the iPad at the middle; the Duo at 30 % through Device Hub), the app closed and opened again with the quieter signal and no gate argument: the handle where it was left each time, the −55 dB signal held back where the level was above it (`iphone-17-remembered.png`, `ipad-pro-13-remembered.png`, `iphone-duo-remembered-devicehub.png`). When the morning began, the iPhone 17 and the Duo already held −50 dB and the emulator −54 dB, set between the night and the owner's "proceed"; the checks above start from a different level for that reason |
+| Fold emulator | opened flat: a tap at the middle, the app closed and reopened with the quieter signal: the handle at the middle and the signal held back (`pixel-9-pro-fold-remembered.png`); a tap at "Off" and a restart: "Off" |
 
 A fresh install was not made on any target: uninstalling would have removed the owner's remembered choices from that
 target. The default on a device that has no stored value is what the three simulator launches above show.
 
-### Not driven, why, and how to finish
+### Not driven, and why
 
-1. **The Mac's screen locked at about 00:43** (its display sleeps after ten minutes without the owner). From then on
-   AppleScript and System Events could not reach the Simulator or Device Hub windows, and the lock was not worked
-   around. Waiting for an unlocked screen:
-   - keyboard and pointer on the iPad Pro simulator (T064): Tab to the slider, arrows one step, the focus ring; then
-     I/O ▸ Input ▸ Send Pointer to Device and a move over the handle for the halo;
-   - a level set by the keyboard on the iPhone 17, the iPad Pro and the iPhone Duo, the app closed and opened again
-     with no gate argument (T067);
-   - the handle moved while the simulator listens through the microphone, with "Mic active" and the Mac's own
-     microphone indicator watched (T065).
-2. **The fold emulator went offline at about the same time** (`adb: device offline`, then nothing listening on
-   127.0.0.1:5556; it does not run on this Mac, so it could not be started again from here). Before that it had run
-   its lanes, its four forms of captures and the ten fold cycles. Waiting for it: the corrected handle-size test
-   (it measured 43.9 dp there in the first pass; `:shared:ui:connectedAndroidDeviceTest` with
-   `-Pandroid.testInstrumentationRunnerArguments.class=audio.tembra.ui.tuner.NoiseGateSliderTest`), a level
-   remembered across a restart (T067), and the keyboard on its inner display opened flat (T064).
-3. **Loudspeaker tones were not played at night** (T065, T066): the pitched background named with the gate off and
-   resting the gauge for 95 % of thirty seconds behind a gate above it; a louder tone read within a quarter of a
-   second; the levels B and I. Quickstart §5 now has the command that writes the tone; with it and
-   `afplay -v <volume>` the two tasks take about ten minutes.
-4. **For a person**, as in quickstart §9: a real guitar and cello with a television on; VoiceOver and TalkBack
-   reading and adjusting the control on a physical device; the owner's iPhone 14 (skipped by the owner's decision);
-   a physical foldable.
+1. The hardware keyboard and the pointer inside the iOS simulators' app (above): proven by the UI tests of the iOS
+   lane and by the Android targets; a person with a Magic Keyboard and a trackpad on a real iPad can confirm them.
+2. The pointer's hover on Android: `adb shell input` cannot make one; proven by `theHandleShowsHoverPressAndFocus`.
+3. The instrument's level on the Pixel 6 Pro with a real guitar (the scale checkpoint above): the owner's pluck.
+4. For a person, as in quickstart §9: a real guitar and cello with a television on; VoiceOver and TalkBack reading
+   and adjusting the control on a physical device; the owner's iPhone 14 (skipped by the owner's decision); a
+   physical foldable.
+
+Two things stopped the night's session and were finished in the morning with the owner at the machine: the Mac's
+screen had locked (its display sleeps after ten minutes without the owner; nothing that goes through the Simulator
+or Device Hub windows works then, and the lock was not worked around) and the fold emulator had gone offline (it
+does not run on this Mac).
 
 ## Verification matrix (data-model.md §10)
 
@@ -324,16 +355,16 @@ that run. Captures are named under "Captures and the layout check".
 
 | Target | Orientation / posture | Lanes | End-to-end | Structural check | Captures | Live sound | Not driven, and why |
 |---|---|---|---|---|---|---|---|
-| Pixel 6 Pro | upright | final state: core 86, data 45, ui 540 passed; engine 66 of 67, then 67 of 67 on the rerun (see "Final lanes") | pass | pass | 3, reviewed; turn, largest font, keyboard | microphone: quiet room under −80 dB; six moves of the handle, the stream never restarted | loudspeaker tones (night) |
+| Pixel 6 Pro | upright | final state: core 86, data 45, ui 540 passed; engine 66 of 67, then 67 of 67 on the rerun (see "Final lanes") | pass | pass | 3, reviewed; turn, largest font, keyboard | quiet room under −80 dB; six moves of the handle, the stream never restarted; background rested 30 of 30 behind the gate; louder tone read; I −63.5 dB | a real guitar's level (the owner) |
 | Pixel 6 Pro | sideways | the same run | pass | pass | 3, reviewed; largest font | as upright | as upright |
-| Fold emulator | flat, upright | first pass: core 86, data 45, engine 66 of 67 (metronome timing, as the baseline), ui 529 of 530 (handle size by rounding, since corrected) | pass | pass | 3, reviewed | not attempted | second pass, remembered level, keyboard: the emulator went offline |
-| Fold emulator | flat, sideways | the same run | pass | pass | 3, reviewed | not attempted | the same |
-| Fold emulator | tabletop | the same run | pass | pass | 3, reviewed; ten fold cycles | not attempted | the same |
-| Fold emulator | book | the same run | pass | pass | 3, reviewed; ten fold cycles | not attempted | the same |
-| iPhone 17 | upright | `checkIos` passed in the final state | pass | layout tests | 3, reviewed; turn, largest font | the Mac's microphone: quiet room −60.5 to −66 dB; gate under and over it | loudspeaker tones (night); keyboard, remembered level, handle moved while listening (screen locked) |
+| Fold emulator | flat, upright | final state: core 86, data 45, ui 540 passed; engine 66 of 67 (metronome timing, as the baseline) | pass | pass | 3, reviewed; remembered level; keyboard focus | not attempted: no microphone from the workstation reaches it, and §3 stands in | pointer hover (adb cannot make one) |
+| Fold emulator | flat, sideways | the same run | pass | pass | 3, reviewed | the same | the same |
+| Fold emulator | tabletop | the same run | pass | pass | 3, reviewed; ten fold cycles | the same | the same |
+| Fold emulator | book | the same run | pass | pass | 3, reviewed; ten fold cycles | the same | the same |
+| iPhone 17 | upright | `checkIos` passed in the final state | pass | layout tests | 3, reviewed; turn, largest font; remembered level | the Mac's microphone: quiet room −61 to −66 dB (night), −50 dB (day); background behind the gate 29 of 30; louder tone read at once; I −27 dB | keyboard and pointer in the simulator app (UI tests stand in) |
 | iPhone 17 | sideways | the same run | pass | layout tests | 3, reviewed | as upright | as upright |
-| iPad Pro 13-inch (M5) | upright | `checkIos` passed in the final state | pass | layout tests | 3, reviewed; turn | not attempted | keyboard, pointer, remembered level (screen locked); loudspeaker tones |
-| iPad Pro 13-inch (M5) | sideways | the same run | pass | layout tests | 3, reviewed | not attempted | the same |
-| iPhone Duo | closed, upright | `checkIos` passed in the final state | pass | layout tests | 3, reviewed | not attempted | remembered level (screen locked); loudspeaker tones |
-| iPhone Duo | open, upright | the same run | pass | layout tests | 3, reviewed | not attempted | the same |
-| iPhone Duo | open, sideways | the same run | pass | layout tests | 3, reviewed | not attempted | the same |
+| iPad Pro 13-inch (M5) | upright | `checkIos` passed in the final state | pass | layout tests | 3, reviewed; turn; remembered level | not attempted (the same microphone as the iPhone 17) | keyboard and pointer in the simulator app (UI tests stand in) |
+| iPad Pro 13-inch (M5) | sideways | the same run | pass | layout tests | 3, reviewed | the same | the same |
+| iPhone Duo | closed, upright | `checkIos` passed in the final state | pass | layout tests | 3, reviewed; remembered level | not attempted (the same microphone) | the same |
+| iPhone Duo | open, upright | the same run | pass | layout tests | 3, reviewed | the same | the same |
+| iPhone Duo | open, sideways | the same run | pass | layout tests | 3, reviewed | the same | the same |
