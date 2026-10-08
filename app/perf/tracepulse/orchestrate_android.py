@@ -19,7 +19,7 @@ from typing import Any, Dict, List, Optional, Sequence
 from .collect_android import CollectedRound, CollectError, apk_size, collect_round
 from .config import Config
 from .devices import Device
-from .records import JourneyResult
+from .records import JourneyResult, MetricResult
 from .runner import Clock, Completed, Runner
 
 logger = logging.getLogger("tracepulse.orchestrate_android")
@@ -542,6 +542,8 @@ def _run_round_inner(cfg: Config, device: Device, runner: Runner, clock: Clock, 
         app_apk, test_apk = build(cfg, runner, options.build_type, log_path, java_home)
         artifacts.append({"kind": "gradle_log", "path": log_path})
     install(cfg, device, runner, app_apk, test_apk)
+    # Read at install time: the APK on disk may be rebuilt while the journeys run.
+    app_size_bytes = apk_size(app_apk)
     warm_up(cfg, device, runner, clock)
 
     journeys = list(options.journeys)
@@ -575,7 +577,35 @@ def _run_round_inner(cfg: Config, device: Device, runner: Runner, clock: Clock, 
                                artifacts=artifacts, failure_reason=f"collection: {exc}", build_type=options.build_type)
         raise JourneyFailed("collection", str(exc), outcome) from exc
     by_name = {j.journey: j for j in collected.journeys}
+    if "stress" in by_name:
+        by_name["stress"] = _with_audio_counters(by_name["stress"], round_dir)
     wanted_journeys = [by_name[j] for j in journeys if j in by_name]
     return RoundOutcome(status="succeeded", checks=check_records, fingerprint=fp, journeys=wanted_journeys,
-                        badges=collected.badges, artifacts=artifacts, app_size_bytes=apk_size(app_apk),
+                        badges=collected.badges, artifacts=artifacts, app_size_bytes=app_size_bytes,
                         thermal_seconds=collected.thermal_seconds, build_type=options.build_type)
+
+
+def _with_audio_counters(stress: JourneyResult, round_dir: str) -> JourneyResult:
+    """The audio-health series (feature 007, US5): the last value of each counter
+    track in every iteration's trace of the stress journey, one sample per
+    iteration; absent tracks (a build without the ticker) add nothing."""
+    from .traces_android import AUDIO_COUNTER_KEYS, counter_series
+    from .catalogue import lookup
+    traces = sorted(glob.glob(os.path.join(round_dir, BENCHMARK_CLASS_OF["stress"], "**", "*.perfetto-trace"), recursive=True))
+    if not traces:
+        return stress
+    per_key: Dict[str, List[float]] = {}
+    for trace in traces:
+        try:
+            values = counter_series(trace, list(AUDIO_COUNTER_KEYS))
+        except Exception as exc:  # a corrupt trace must not fail the round; the series is simply absent
+            logger.warning("counter tracks unreadable in %s: %s", trace, exc)
+            continue
+        for name, value in values.items():
+            per_key.setdefault(AUDIO_COUNTER_KEYS[name], []).append(value)
+    if not per_key:
+        return stress
+    metrics = dict(stress.metrics)
+    for key, samples in per_key.items():
+        metrics[key] = MetricResult(unit=lookup("android", key).unit, samples=samples, source="perfetto")
+    return JourneyResult(journey="stress", iterations=stress.iterations, metrics=metrics)

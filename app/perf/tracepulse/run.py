@@ -146,15 +146,20 @@ def assemble_record(cfg: Config, device: Device, outcome: RoundOutcome, label: s
 RoundFn = Callable[[Config, Device, Runner, Clock, str, RoundOptions], RoundOutcome]
 
 
+PrepareFn = Callable[[Config, Device, Runner, str, Any], Any]
+
+
 @dataclass
 class SessionDeps:
-    """The seams `run_command` wires to the real platform round, history and report."""
+    """The seams `run_command` wires to the real platform round, history and report.
+    `prepare_fn` builds once per session and returns the per-round options that reuse the build."""
     round_fn: RoundFn
     history: Any
     report_fn: Callable[[Store, Config, str, int], str]
     detect_fn: Callable[[Store, Config], Dict[str, Any]]
     gate_fn: Optional[Callable[[Store, Config, Device, RoundRecord], List[Dict[str, Any]]]] = None
     injected_fn: Optional[Callable[[], List[str]]] = None
+    prepare_fn: Optional[PrepareFn] = None
 
 
 @dataclass
@@ -190,8 +195,22 @@ def run_session(cfg: Config, paths, device: Device, label: str, rounds: int, opt
         store = Store.rebuild(paths.db_path, records)
         build = git_info(_repo_root(cfg), runner)
         injected = deps.injected_fn() if deps.injected_fn else []
+        if deps.prepare_fn is not None:
+            session_dir = os.path.join(paths.data_dir, "sessions", make_round_id(datetime.fromtimestamp(clock.now(), tz=timezone.utc), label))
+            try:
+                options = deps.prepare_fn(cfg, device, runner, session_dir, options)
+            except BuildError as exc:
+                result.failed = str(exc)
+                result.exit_status = EXIT_FAILED
+                print(f"  build failed: {exc}")
+                return result
+        last_started: Optional[int] = None
         for index in range(1, rounds + 1):
             started_ts = clock.now()
+            if last_started is not None and started_ts <= last_started:
+                clock.sleep(1)  # round ids carry the start second; never reuse one
+                started_ts = clock.now()
+            last_started = started_ts
             started_at = _now_iso(started_ts)
             round_id = make_round_id(datetime.fromtimestamp(started_ts, tz=timezone.utc), label)
             round_dir = os.path.join(paths.data_dir, "rounds", round_id)
@@ -343,14 +362,16 @@ def run_command(args, cfg: Config, paths, runner: Runner, clock: Clock) -> Tuple
             options = RoundOptions(journeys=journeys, iterations=iterations, no_build=args.no_build, apk=args.apk,
                                    test_apk=args.test_apk, build_type=args.build_type or cfg.android.build_type,
                                    keep_build=args.keep_build)
+            prepare_fn = _prepare_android
         else:
             from .orchestrate_ios import run_round as round_fn
             from .orchestrate_ios import IosRoundOptions
             options = IosRoundOptions(journeys=journeys, iterations=iterations, no_build=args.no_build,
                                       xctestrun=args.xctestrun, configuration=args.configuration or cfg.ios.configuration,
                                       size=args.size, keep_build=args.keep_build)
+            prepare_fn = _prepare_ios
         deps = SessionDeps(round_fn=round_fn, history=history, report_fn=generate_report, detect_fn=detect_fn,
-                           gate_fn=_safe(gate_fn), injected_fn=_safe_list(injected_fn))
+                           gate_fn=_safe(gate_fn), injected_fn=_safe_list(injected_fn), prepare_fn=prepare_fn)
         result = run_session(cfg, paths, device, args.label, rounds, options, runner, clock, deps,
                              publish=not args.no_publish)
         payload["sessions"].append({
@@ -400,3 +421,31 @@ def size_command(args, cfg: Config, paths, device: Device, runner: Runner) -> Tu
     result = measure_size(cfg, paths, device, runner)
     print(f"app.size_bytes: {result['app_size_bytes']}   app.size_uncompressed_bytes: {result['app_size_uncompressed_bytes']}")
     return EXIT_OK, dict(result, device=device.device_id)
+
+
+def _prepare_android(cfg: Config, device: Device, runner: Runner, session_dir: str, options: RoundOptions) -> RoundOptions:
+    """One measurement build per session; every round then installs the same artifacts."""
+    if options.no_build:
+        return options
+    from .orchestrate_android import build
+    os.makedirs(session_dir, exist_ok=True)
+    log = os.path.join(session_dir, "gradle.log")
+    print(f"building {options.build_type} artifacts (./gradlew --console=plain -Ptembra.perf=true), log in {log}")
+    app_apk, test_apk = build(cfg, runner, options.build_type, log, java_home=None)
+    return RoundOptions(journeys=options.journeys, iterations=options.iterations, no_build=True, apk=app_apk,
+                        test_apk=test_apk, build_type=options.build_type, keep_build=options.keep_build)
+
+
+def _prepare_ios(cfg: Config, device: Device, runner: Runner, session_dir: str, options):
+    """One `xcodebuild build-for-testing` per session; every round reuses its xctestrun."""
+    if options.no_build or options.xctestrun:
+        return options
+    from .orchestrate_ios import IosRoundOptions, build_for_testing
+    os.makedirs(session_dir, exist_ok=True)
+    derived = os.path.join(session_dir, "DerivedData")
+    log = os.path.join(session_dir, "xcodebuild-build.log")
+    print(f"building for testing (xcodebuild build-for-testing -configuration {options.configuration}), log in {log}")
+    xctestrun = build_for_testing(cfg, device, runner, derived, options.configuration, log)
+    return IosRoundOptions(journeys=options.journeys, iterations=options.iterations, no_build=True, xctestrun=xctestrun,
+                           configuration=options.configuration, size=options.size, keep_build=options.keep_build,
+                           audio_trace=options.audio_trace)

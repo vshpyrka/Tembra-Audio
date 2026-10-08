@@ -2,6 +2,8 @@
 #include "tembra_trace.h"
 
 #if defined(TEMBRA_TRACING) && TEMBRA_TRACING
+// minSdk is 26: ATrace_setCounter (API 29) is weak-linked and guarded with __builtin_available below.
+#define __ANDROID_UNAVAILABLE_SYMBOLS_ARE_WEAK__
 #include <android/trace.h>
 
 extern "C" {

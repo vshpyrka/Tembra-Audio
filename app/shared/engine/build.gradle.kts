@@ -36,6 +36,8 @@ fun registerEngineBuild(target: String, sysroot: String): TaskProvider<Exec> {
     return tasks.register<Exec>("buildEngine${target.replaceFirstChar { it.uppercase() }}") {
         group = "build"
         description = "Builds libtembra_engine.a for $target with CMake"
+        // The generated names header lives in include/ (feature 007).
+        dependsOn("generateTraceNames")
         inputs.property("tembraTracing", tracing)
         inputs.dir("$source/include")
         inputs.dir("$source/src")
@@ -66,6 +68,7 @@ val engineIosSimulatorArm64 = registerEngineBuild("iosSimulatorArm64", "iphonesi
 tasks.register<Exec>("engineHostTest") {
     group = "verification"
     description = "Configures, builds and runs the C++ engine's Catch2 tests on the macOS host"
+    dependsOn("generateTraceNames")
     val cmake = cmakeBin.absolutePath
     val ninja = ninjaBin.absolutePath
     val ctest = ctestBin.absolutePath
