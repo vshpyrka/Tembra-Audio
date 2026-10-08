@@ -82,7 +82,7 @@ Clean round (spec US3 scenario 3): `status == succeeded` and no `noisy`/`thermal
 
 ## Section catalogue (code, not data)
 
-`PerfSection` enum in `:shared:engine` (families `startup`, `tuner`, `metronome`, `timeline`, `engine`) and the C header's name list generated from it (`tembra_trace_names.h`, checked by a unit test that the two lists are identical). `PerfCounter` enum: `AUDIO_CALLBACKS`, `AUDIO_LAST_US`, `AUDIO_MAX_US`, `AUDIO_OVER_BUDGET`, `AUDIO_XRUNS`, `AUDIO_REALTIME`.
+`PerfSection` enum in `:shared:engine` (families `tuner`, `metronome`, `timeline`, `engine`; entries carry no strings) and `PerfCounter` enum (`AUDIO_CALLBACKS`, `AUDIO_LAST_US`, `AUDIO_MAX_US`, `AUDIO_OVER_BUDGET`, `AUDIO_XRUNS`, `AUDIO_REALTIME`); the signpost names live in `app/shared/engine/perf-catalogue.txt`, from which `PerfNames.kt` (measurement builds only) and the C header `tembra_trace_names.h` are generated; a unit test keeps enum, catalogue and header identical. Startup has no sections: it is measured by the platforms' launch metrics.
 
 ## Metric catalogue (config + code)
 

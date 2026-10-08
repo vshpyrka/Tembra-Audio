@@ -5,34 +5,31 @@ One catalogue of names, one call shape, two platform bindings. Lives in `:shared
 ## Kotlin (commonMain, `:shared:engine`)
 
 ```kotlin
-// PerfSection.kt — the catalogue; the only legal source of section names (FR-012, US4 scenario 5)
-enum class PerfSection(val family: PerfFamily, val signpostName: String) {
-    STARTUP_FIRST_FRAME(STARTUP, "startup.firstFrame"),
-    STARTUP_FULLY_DRAWN(STARTUP, "startup.fullyDrawn"),
-    TUNER_SCREEN(TUNER, "tuner.screen"), TUNER_FRAME(TUNER, "tuner.frame"), TUNER_MODE_SWITCH(TUNER, "tuner.modeSwitch"),
-    METRONOME_SCREEN(METRONOME, "metronome.screen"), METRONOME_TICK(METRONOME, "metronome.tick"), METRONOME_TEMPO_CHANGE(METRONOME, "metronome.tempoChange"),
-    TIMELINE_SCROLL(TIMELINE, "timeline.scroll"), TIMELINE_ZOOM(TIMELINE, "timeline.zoom"),   // reserved for the timeline feature
-    ENGINE_LOAD_CLIP(ENGINE, "engine.loadClip"), ENGINE_GRAPH_SWAP(ENGINE, "engine.graphSwap"),
+// PerfSection.kt — the catalogue entries; no string literals here (see "Names" below)
+enum class PerfSection(val family: PerfFamily) {
+    TUNER_LOAD(TUNER), TUNER_FRAME(TUNER), TUNER_MODE_SWITCH(TUNER),
+    METRONOME_LOAD(METRONOME), METRONOME_TICK(METRONOME), METRONOME_TEMPO_CHANGE(METRONOME),
+    TIMELINE_SCROLL(TIMELINE), TIMELINE_ZOOM(TIMELINE),          // reserved for the timeline feature
+    ENGINE_LOAD_CLIP(ENGINE), ENGINE_GRAPH_SWAP(ENGINE),
 }
-enum class PerfFamily { STARTUP, TUNER, METRONOME, TIMELINE, ENGINE }
-enum class PerfCounter(val signpostName: String) {
-    AUDIO_CALLBACKS("audio.callbacks"), AUDIO_LAST_US("audio.lastUs"), AUDIO_MAX_US("audio.maxUs"),
-    AUDIO_OVER_BUDGET("audio.overBudget"), AUDIO_XRUNS("audio.xruns"), AUDIO_REALTIME("audio.realtime"),
-}
+enum class PerfFamily { TUNER, METRONOME, TIMELINE, ENGINE }
+enum class PerfCounter { AUDIO_CALLBACKS, AUDIO_LAST_US, AUDIO_MAX_US, AUDIO_OVER_BUDGET, AUDIO_XRUNS, AUDIO_REALTIME }
 
 // PerfTrace.kt — expect object; every function is a no-op when !PerfBuild.PERF_ENABLED
 expect object PerfTrace {
-    inline fun <T> section(section: PerfSection, block: () -> T): T      // begin/end around block
+    inline fun <T> section(section: PerfSection, block: () -> T): T      // begin/end around block (non-composable work only)
     inline fun <T> animation(section: PerfSection, block: () -> T): T    // iOS: animation signpost; Android: plain section
     fun counter(counter: PerfCounter, value: Long)
 }
 ```
 
-Rules: never called from the audio callback (the callback is C++ and never includes `tembra_trace.h`, see below); `section` and `animation` are `inline` so the lambda allocates nothing; `PerfBuild.PERF_ENABLED` is a `const val` generated into `build/generated/perf/commonMain/kotlin/audio/tembra/engine/perf/PerfBuild.kt` by a Gradle task from the `tembra.perf` property (false when absent). Skill contracts (Principle VIII): `kotlin-api-design` for the `expect` boundary (platform detail behind a common binding), `kotlin-control-flow` for the exhaustive `when` over `PerfSection` in the name test.
+**Names.** `app/shared/engine/perf-catalogue.txt` is the single source of signpost names, one line per entry: `<ENUM_NAME> <family> <signpost.name>` (e.g. `TUNER_MODE_SWITCH tuner tuner.modeSwitch`, `AUDIO_XRUNS counter audio.xruns`). The Gradle task `generatePerfBuild` generates `PerfBuild.kt` (`const val PERF_ENABLED`) and `PerfNames.kt` (`internal fun PerfSection.signpostName(): String`, `internal fun PerfCounter.signpostName(): String`) into `build/generated/perf/commonMain/kotlin/audio/tembra/engine/perf/`; with `tembra.perf` present the functions return the catalogue strings, otherwise every one returns `""`. `generateTraceNames` generates `app/engine/include/tembra_trace_names.h` from the same file. Consequence: measurement builds carry the names, release and debug builds carry none of the catalogue strings (FR-014, SC-007); enum identifiers such as `TUNER_FRAME` may remain in an unshrunk release dex and are not instrumentation names. A `commonTest` asserts enum ↔ catalogue ↔ header parity.
+
+Rules: sections wrap **non-composable** work only — ViewModel intents, draw-lambda computations, loaders, engine paths — never a composable lambda or composition itself (`section` is a plain inline function; routing composition through it would also violate Principle II); never called from the audio callback (the callback is C++ and never includes `tembra_trace.h`, see below); `section` and `animation` are `inline` so the lambda allocates nothing; startup is measured by the platforms' launch metrics, not by a section. Skill contracts (Principle VIII): `kotlin-api-design` for the `expect` boundary (platform detail behind a common binding), `kotlin-control-flow` for the exhaustive `when` over `PerfFamily` in the parity test.
 
 ## Android actual (`androidMain`)
 
-`android.os.Trace.beginSection(section.signpostName)` / `endSection()`; `animation` = `section`; `counter` → `android.os.Trace.setCounter(name, value)` on API ≥ 29, no-op below (minSdk 26). Sections appear to Macrobenchmark as `TraceSectionMetric(section.signpostName, Mode.Sum)` and to trace_processor in the `slice` table; counters in the `counter` table with the same names.
+`android.os.Trace.beginSection(section.signpostName())` / `endSection()`; `animation` = `section`; `counter` → `android.os.Trace.setCounter(name, value)` on API ≥ 29, no-op below (minSdk 26). Sections appear to Macrobenchmark as `TraceSectionMetric(<signpost name>, Mode.Sum)` and to trace_processor in the `slice` table; counters in the `counter` table with the same names.
 
 ## iOS actual (`iosMain`)
 
@@ -67,6 +64,6 @@ Android C++ binding: `ATrace_beginSection`/`ATrace_endSection`/`ATrace_setCounte
 
 ## Tests
 
-- `commonTest`: a `PerfTraceSink` test double records calls; `section` returns the block's value and always ends on exceptions; names are unique and match the C header list (`tembra_trace_names.h` generated from the enum, compared as text).
+- `commonTest`: a `PerfTraceSink` test double (`PerfTraceSink.kt`, its own file) records calls; `section` returns the block's value and always ends on exceptions; names are unique and match the catalogue file and the C header list (both generated from `perf-catalogue.txt`, compared as text); with `PERF_ENABLED == false` every `signpostName()` is `""`.
 - Android instrumented (`checkAndroidDevice` lane): one section appears in a Perfetto trace captured around the call (`record_android_trace`), asserted through trace_processor in the Python suite with a committed fixture.
 - iOS: an XCUITest in `TembraPerfTests` measures a known section with `XCTOSSignpostMetric` and asserts `measurements.count == iterations` (part of task 1 on the device).

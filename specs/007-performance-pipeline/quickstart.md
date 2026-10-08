@@ -27,9 +27,9 @@ uv run tracepulse doctor --device pixel6                     # exit 0, or exit 2
 uv run tracepulse run --device pixel6 --label 007-performance-pipeline
 ```
 
-Expected within 20 minutes: progress lines for build (`-Ptembra.perf=true`), fresh install, warm-up, the four journeys × 20 iterations, collection, publish, sync, analyze, report; a final block as in `contracts/cli.md`; `app/perf/data/rounds/<round_id>/` holds `benchmarkData.json` and 80 `.perfetto-trace` files; `git log perf-history -1` shows the record; `app/perf/reports/report.html` opens with the Pixel card.
+Expected within 20 minutes: progress lines for build (`./gradlew --console=plain -Ptembra.perf=true`, log in the round directory), fresh install, warm-up, the four journeys × 20 iterations, collection, publish, sync, analyze, report; a final block as in `contracts/cli.md`; `app/perf/data/rounds/<round_id>/` holds `benchmarkData.json`, `gradle.log` and 80 `.perfetto-trace` files; `git log perf-history -1` shows the record; `app/perf/reports/report.html` opens with the Pixel card.
 
-Refusal check: heat the phone or drop it below 50 % → `run` exits 2 before building, names the check; no record published. Two Android devices attached and no `--device` → exit 4.
+Refusal check: heat the phone or drop it below 50 % → `run` exits 2 before building, names the check; no record published. Two Android devices attached and no `--device` → exit 4. A second `run` on the same device while one is in progress → exit 4 naming the holder. From an agent session: build through the `gradle-run` wrapper, then `uv run tracepulse run --device pixel6 --label … --no-build --apk <app.apk> --test-apk <benchmarks.apk>`.
 
 ## 3. iOS round (User Story 2, SC-002)
 
@@ -37,7 +37,7 @@ Refusal check: heat the phone or drop it below 50 % → `run` exits 2 before bui
 uv run tracepulse run --device iphone14 --label 007-performance-pipeline
 ```
 
-Expected: `xcodebuild build-for-testing` once, then per round fresh install, warm-up launch, `test-without-building` with the `TembraPerfTests` plan; `perf.xcresult` under the round directory; `xcresulttool get test-results metrics` output converted to samples (20 per metric); `engine-health.json` pulled from the app container (zeros today); an `audio.trace` from the attached Audio System Trace recording during the stress journey; the record published; the iPhone card appears in the grid; network state shown on the round ("wifi" if you left it on; the round is not refused).
+Expected: `xcodebuild build-for-testing` once, then per round fresh install, warm-up launch, `test-without-building` with the `TembraPerfTests` plan; `perf.xcresult` under the round directory; `xcresulttool get test-results metrics` output converted to samples (20 per metric); the record published; the iPhone card appears in the grid; network state shown on the round ("wifi" if you left it on; the round is not refused); `size: skipped` in the summary unless `--size` was given (`uv run tracepulse size --device iphone14` measures it separately; archive + export takes minutes). After User Story 5: `engine-health.json` pulled from the app container (zeros today) and an `audio.trace` from the attached Audio System Trace recording during the stress journey.
 
 Simulators: `uv run tracepulse run --simulators --label 007-performance-pipeline` runs every booted simulator; their cards carry the `simulator` and `non-reference` badges; gates show `inactive (simulator series)`.
 
@@ -45,12 +45,12 @@ Simulators: `uv run tracepulse run --simulators --label 007-performance-pipeline
 
 - Open `app/perf/reports/report.html`: grid → click a device → charts with label boundaries → click a chart → metric page. Verify zero network requests (browser dev tools) and that the page works offline.
 - Gate: in `app/tracepulse.yml` set `gate.limits_pct.journey.duration_ms: 1`, run one more round; the command still exits 0, prints `gate: 1 above limit …`, the report flags the round and lists it near the top. Restore the limit.
-- Injection self-test (SC-004): `uv run tracepulse inject R1` (startup delay in `Application.onCreate` / `iOSApp` init) → 6 rounds → `analyze` shows a confirmed `startup.*` onset at the injection round; `revert R1`.
+- Injection self-test (SC-004): `uv run tracepulse inject R1` (startup delay in `Application.onCreate` / `iOSApp` init) → six rounds on the Pixel **and** six on the iPhone → `analyze` shows a confirmed `startup.*` onset at the injection round on both series, no false confirmations on the clean spans; `revert R1`.
 
 ## 5. Instrumentation (User Story 4, SC-006, SC-007)
 
 - Add `PerfTrace.section(PerfSection.TUNER_MODE_SWITCH) { … }` around the By Ear switch (it is in the journey) and run one round per platform: `section.tuner.modeSwitch.sum_ms` appears on both device pages.
-- Release build check: `cd app && ./gradlew :androidApp:assembleRelease` then `strings` on the APK's `libtembra_engine.so` and the dex (via `apkanalyzer dex packages`) contain no `tuner.modeSwitch`; `xcodebuild -configuration Release` of `iosApp` and `strings` on the app binary likewise. Measurement build startup median within 5 % of release (compare two rounds).
+- Release build check: `app/perf/tools/check-release-strings.sh` builds the Android release APK and the iOS Release app and fails if any signpost name from `app/shared/engine/perf-catalogue.txt` (e.g. `tuner.modeSwitch`) appears in the native libraries, the dex or the iOS binary (enum identifiers may remain). Measurement-build startup median within 5 % of a release round: `uv run tracepulse run --device pixel6 --label release-baseline --build-type release` and `… --device iphone14 --label release-baseline --configuration Release`, then compare medians in the report.
 
 ## 6. Audio health plumbing (User Story 5, SC-010)
 
@@ -63,3 +63,7 @@ From the 2015 Mac over SSH: `ssh <mac2> 'cd …/app/perf && uv run tracepulse ru
 ## 8. Lanes unaffected (FR-020, SC-008)
 
 Time `./gradlew checkAndroidHost` and `checkIos` before and after; `:perf-benchmarks` is absent from `./gradlew projects` unless `-Ptembra.perf=true`; `--warning-mode all` shows nothing new.
+
+## 9. Noise baseline (SC-003)
+
+`uv run tracepulse run --device pixel6 --label noise-baseline --rounds 10` and the same on `iphone14` with an unchanged build; `uv run tracepulse status --json` reports, per series, the coefficient of variation of the round medians: `startup.*` and `memory.*` at or below 3 % on each device. Record the numbers in `app/perf/README.md`; they calibrate the gate limits.
