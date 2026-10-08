@@ -1,15 +1,26 @@
-"""Perfetto trace extraction: top main-thread slices and before/after deltas.
+"""Perfetto trace extraction (Android): top main-thread slices for the report's
+drill-down, before/after deltas, and the counter tracks that carry the engine's
+audio-health values (feature 007, US5).
 
-Each call to `top_main_thread_slices` spawns exactly one `TraceProcessor`
-against the given trace file and closes it before returning — TraceProcessor
-spawn is ~1-2s, so v1 deliberately does not pool instances across calls (see
-task-7 brief).
+Each call spawns exactly one `TraceProcessor` against the given trace file and
+closes it before returning (spawn is ~1-2 s; no pooling across calls).
 """
 
 from dataclasses import dataclass
-from typing import List
+from typing import Dict, List, Sequence
 
 from perfetto.trace_processor import TraceProcessor
+
+# Signpost (counter-track) name -> catalogue key; the names are the PerfCounter
+# entries of app/shared/engine/perf-catalogue.txt.
+AUDIO_COUNTER_KEYS: Dict[str, str] = {
+    "audio.callbacks": "audio.callbacks",
+    "audio.lastUs": "audio.last_callback_us",
+    "audio.maxUs": "audio.max_callback_us",
+    "audio.overBudget": "audio.over_budget",
+    "audio.xruns": "audio.xruns",
+    "audio.realtime": "audio.realtime",
+}
 
 
 @dataclass(frozen=True)
@@ -103,3 +114,23 @@ def slice_deltas(before: List[SliceStat], after: List[SliceStat], top_n: int) ->
 
     deltas.sort(key=lambda d: (-d.delta_ms, d.name))
     return deltas[:top_n]
+
+
+def counter_series(trace_path: str, names: Sequence[str]) -> Dict[str, float]:
+    """The last value of every counter track in `names` present in the trace
+    (`counter` joined to `counter_track` by name). Absent tracks are absent
+    from the result: a round without audio counters yields no audio series."""
+    if not names:
+        return {}
+    quoted = ", ".join("'" + _escape_glob(n) + "'" for n in names)
+    query = f"""
+    SELECT t.name AS name, c.value AS value, c.ts AS ts
+    FROM counter c JOIN counter_track t ON c.track_id = t.id
+    WHERE t.name IN ({quoted})
+    ORDER BY c.ts ASC
+    """
+    last: Dict[str, float] = {}
+    with TraceProcessor(trace=trace_path) as tp:
+        for row in tp.query(query):
+            last[row.name] = float(row.value)
+    return last

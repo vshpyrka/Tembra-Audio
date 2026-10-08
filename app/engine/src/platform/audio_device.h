@@ -46,6 +46,15 @@ public:
 
     /** Latency measured by the host (iOS: AVAudioSession.outputLatency + ioBufferDuration); ignored where the device measures it. */
     virtual void setReportedLatencyNanos(int64_t /*nanos*/) {}
+
+    /** True when the open stream's audio thread holds real-time status (Oboe low-latency granted; RemoteIO always). */
+    virtual bool realtime() const { return false; }
+
+    /**
+     * Underruns and overruns the platform stream counted since it opened (feature 007). Host threads only: Oboe's
+     * getXRunCount() is not for the callback; the health getter samples it off the audio thread.
+     */
+    virtual uint32_t xrunCount() const { return 0; }
 };
 
 }  // namespace tembra

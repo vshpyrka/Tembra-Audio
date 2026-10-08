@@ -4,12 +4,15 @@ import os
 
 import pytest
 
-from tracepulse.traces import SliceStat, SliceDelta, top_main_thread_slices, slice_deltas
+from tracepulse.traces_android import (
+    AUDIO_COUNTER_KEYS, SliceStat, SliceDelta, counter_series, top_main_thread_slices, slice_deltas,
+)
 
 
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
 FIXTURE = os.path.join(FIXTURES_DIR, "fixture.perfetto-trace")
-PROCESS_GLOB = "com.google.samples.apps.nowinandroid.demo*"
+PROCESS_GLOB = "audio.tembra.app*"
+COUNTERS_FIXTURE = os.path.join(FIXTURES_DIR, "perfetto-audio-counters.perfetto-trace")
 
 
 def _load_gen_trace():
@@ -98,3 +101,31 @@ def test_gen_trace_is_deterministic(tmp_path):
     with open(FIXTURE, "rb") as f:
         committed = f.read()
     assert bytes1 == committed
+
+
+# --- counter tracks: the audio-health series (feature 007, US5) -----------------
+
+def test_counter_series_reads_the_last_value_of_every_audio_counter():
+    series = counter_series(COUNTERS_FIXTURE, list(AUDIO_COUNTER_KEYS))
+    assert series == {
+        "audio.callbacks": 1200.0, "audio.lastUs": 850.0, "audio.maxUs": 1900.0,
+        "audio.overBudget": 0.0, "audio.xruns": 0.0, "audio.realtime": 1.0,
+    }
+
+
+def test_counter_series_is_empty_without_counter_tracks():
+    assert counter_series(FIXTURE, list(AUDIO_COUNTER_KEYS)) == {}
+
+
+def test_audio_counter_keys_map_signpost_names_to_catalogue_keys():
+    assert AUDIO_COUNTER_KEYS == {
+        "audio.callbacks": "audio.callbacks", "audio.lastUs": "audio.last_callback_us",
+        "audio.maxUs": "audio.max_callback_us", "audio.overBudget": "audio.over_budget",
+        "audio.xruns": "audio.xruns", "audio.realtime": "audio.realtime",
+    }
+
+
+def test_counters_fixture_is_deterministic():
+    gen = _load_gen_trace()
+    with open(COUNTERS_FIXTURE, "rb") as fh:
+        assert fh.read() == gen.build_trace(with_counters=True)

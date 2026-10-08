@@ -24,6 +24,9 @@ tracepulse = "tracepulse.__main__:main"
 [tool.setuptools.packages.find]
 include = ["tracepulse*"]
 
+[tool.setuptools.package-data]
+tracepulse = ["schema/*.json", "templates/*.j2", "static/*"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = ["device: needs an attached device and a full build; skipped unless TRACEPULSE_FULL=1"]

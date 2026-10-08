@@ -59,6 +59,14 @@ if(ANDROID)
     find_package(oboe REQUIRED CONFIG)
     target_link_libraries(tembra_engine_core PUBLIC oboe::oboe)
     target_sources(tembra_engine_core PRIVATE src/platform/android/oboe_audio_device.cpp)
+    # The tracing facade's ATrace binding (feature 007): inert stubs unless TEMBRA_TRACING is on.
+    target_sources(tembra_engine_core PRIVATE src/platform/trace_android.cpp)
+    if(TEMBRA_TRACING)
+        target_link_libraries(tembra_engine_core PUBLIC android)
+    endif()
+else()
+    # The os_signpost binding (iOS and the macOS host test build); inert stubs unless TEMBRA_TRACING is on.
+    target_sources(tembra_engine_core PRIVATE src/platform/trace_apple.c)
 endif()
 
 if(IOS)

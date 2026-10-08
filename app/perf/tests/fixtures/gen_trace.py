@@ -12,8 +12,12 @@ Proto classes come from the perfetto pip package's bundled protos (verified
 against perfetto==0.57.2 / protobuf==6.33.6):
     from perfetto.protos.perfetto.trace.perfetto_trace_pb2 import Trace, TracePacket, TrackEvent
 
-Regenerate the committed fixture with:
-    cd cli && .venv/bin/python tests/fixtures/gen_trace.py
+A second fixture (`perfetto-audio-counters.perfetto-trace`) adds the six audio-health
+counter tracks the measurement build publishes through `PerfTrace.counter`, each
+with three values; the collector reads the last one (feature 007, US5).
+
+Regenerate the committed fixtures with:
+    cd app/perf && uv run python tests/fixtures/gen_trace.py
 """
 
 import os
@@ -22,7 +26,7 @@ from perfetto.protos.perfetto.trace.perfetto_trace_pb2 import Trace, TracePacket
 
 
 PROCESS_PID = 1234
-PROCESS_NAME = "com.google.samples.apps.nowinandroid.demo"
+PROCESS_NAME = "audio.tembra.app"
 PROCESS_TRACK_UUID = 1
 THREAD_TRACK_UUID = 2
 SEQUENCE_ID = 1
@@ -38,13 +42,26 @@ SLICES = [
 ]
 
 
-def build_trace() -> bytes:
+# Counter tracks of the audio-health fixture: (signpost name, values); the last value is the one recorded.
+COUNTERS = [
+    ("audio.callbacks", [400, 800, 1200]),
+    ("audio.lastUs", [700, 900, 850]),
+    ("audio.maxUs", [1200, 1900, 1900]),
+    ("audio.overBudget", [0, 0, 0]),
+    ("audio.xruns", [0, 0, 0]),
+    ("audio.realtime", [1, 1, 1]),
+]
+COUNTER_TRACK_UUID_BASE = 100
+
+
+def build_trace(with_counters: bool = False) -> bytes:
     """Build the synthetic trace and return its serialized bytes.
 
     Pure function: no I/O, no clock reads, no randomness. `deterministic=True`
     pins canonical field/map ordering so repeated calls (and repeated
     `gen_trace.py` invocations, possibly in different processes) always
-    produce identical bytes.
+    produce identical bytes. With `with_counters` the six audio-health counter
+    tracks are added under the process.
     """
     trace = Trace()
 
@@ -83,19 +100,36 @@ def build_trace() -> bytes:
         end.track_event.type = TrackEvent.TYPE_SLICE_END
         end.track_event.track_uuid = THREAD_TRACK_UUID
 
+    if with_counters:
+        for i, (name, values) in enumerate(COUNTERS):
+            uuid = COUNTER_TRACK_UUID_BASE + i
+            descriptor = trace.packet.add()
+            descriptor.track_descriptor.uuid = uuid
+            descriptor.track_descriptor.parent_uuid = PROCESS_TRACK_UUID
+            descriptor.track_descriptor.name = name
+            descriptor.track_descriptor.counter.SetInParent()
+            for k, value in enumerate(values):
+                packet = trace.packet.add()
+                packet.timestamp = START_TS_NS + (k + 1) * 10_000_000 + i
+                packet.trusted_packet_sequence_id = SEQUENCE_ID
+                packet.track_event.type = TrackEvent.TYPE_COUNTER
+                packet.track_event.track_uuid = uuid
+                packet.track_event.counter_value = value
+
     return trace.SerializeToString(deterministic=True)
 
 
-def generate(output_path: str) -> None:
+def generate(output_path: str, with_counters: bool = False) -> None:
     """Build the synthetic trace and write it to `output_path`."""
     with open(output_path, "wb") as f:
-        f.write(build_trace())
+        f.write(build_trace(with_counters))
 
 
 def main() -> None:
-    fixture_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fixture.perfetto-trace")
-    generate(fixture_path)
-    print(f"wrote {fixture_path}")
+    here = os.path.dirname(os.path.abspath(__file__))
+    generate(os.path.join(here, "fixture.perfetto-trace"))
+    generate(os.path.join(here, "perfetto-audio-counters.perfetto-trace"), with_counters=True)
+    print(f"wrote fixtures under {here}")
 
 
 if __name__ == "__main__":
