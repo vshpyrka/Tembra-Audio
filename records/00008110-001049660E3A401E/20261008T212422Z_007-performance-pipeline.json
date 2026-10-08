@@ -1,0 +1,67 @@
+{
+ "artifacts": [
+  {
+   "kind": "xcresult",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/app/perf/data/rounds/20261008T212422Z_007-performance-pipeline/perf.xcresult"
+  },
+  {
+   "kind": "xcodebuild_log",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/app/perf/data/rounds/20261008T212422Z_007-performance-pipeline/xcodebuild-test.log"
+  }
+ ],
+ "badges": [],
+ "build": {
+  "branch": "007-performance-pipeline",
+  "commit": "700af39771aa14900f641263a1b25664ff3d527b",
+  "dirty": true
+ },
+ "checks": [
+  {
+   "limit": null,
+   "name": "xcode",
+   "passed": true,
+   "value": null
+  },
+  {
+   "limit": null,
+   "name": "device_attached",
+   "passed": true,
+   "value": null
+  },
+  {
+   "limit": null,
+   "name": "unlocked",
+   "passed": true,
+   "value": null
+  }
+ ],
+ "device": {
+  "device_id": "00008110-001049660E3A401E",
+  "kind": "device",
+  "model": "iPhone 14",
+  "platform": "ios",
+  "reference": true
+ },
+ "failure_reason": "1: Failed to install or launch the test runner. (Underlying Error: The application could not be launched because the Developer App Certificate is not trusted. Verify that the Developer App certificate for your account is trusted on your device. Open Settings on the device and navigate to General -> VPN & Device Management, then select your Developer App certificate to trust it. (Underlying Error: The application failed to launch. (Underlying Error: The request to open \"audio.tembra.appP5QJJ5Y5V7.perftests.xctrunner\" failed. The request was denied by service delegate (SBMainWorkspace) for reason: Security (\"Unable to launch audio.tembra.appP5QJJ5Y5V7.perftests.xctrunner because it has an invalid code signature, inadequate entitlements or its profile has not been explicitly trusted by the user\"). (Underlying Error: The operation couldn\u2019t be completed. Unable to launch audio.tembra.appP5QJJ5Y5V7.perftests.xctrunner because it has an invalid code signature, inadequate entitlements or its profile has not been explicitly trusted by the user.))))",
+ "fingerprint": {
+  "os_build": "24A446",
+  "os_version": "27.0.1"
+ },
+ "finished_at": "2026-10-08T21:24:38Z",
+ "gate": [],
+ "journeys": [],
+ "label": "007-performance-pipeline",
+ "machine": {
+  "hostname": "Victors-MacBook-Pro-M4.local",
+  "os": "Darwin 25.6.0",
+  "tool_version": "0.2.0"
+ },
+ "round_id": "20261008T212422Z_007-performance-pipeline",
+ "schema_version": 1,
+ "session": {
+  "index": 1,
+  "size": 1
+ },
+ "started_at": "2026-10-08T21:24:22Z",
+ "status": "failed"
+}
