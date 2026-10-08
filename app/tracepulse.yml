@@ -1,0 +1,49 @@
+# Tembra Audio performance pipeline configuration (feature 007).
+# Read by `uv run tracepulse …` from app/perf/. Contract: specs/007-performance-pipeline/contracts/cli.md.
+# Unknown keys are an error (exit 4). Device entries are added automatically on first run.
+
+# Detection parameters: the validated trace-pulse defaults, unchanged.
+# Screening gates per metric come from the catalogue (app/perf/tracepulse/catalogue.py);
+# override one here under detection.screening_gates.min_delta_pct / min_delta_abs.
+detection: { width: 5, threshold: 15, min_sd: 0.001, min_history: 11 }
+confirm:   { rounds_per_side: 2, q: 0.05 }
+apk:       { min_delta_pct: 0.5 }
+ab:        { p_different: 0.05, p_same: 0.10, max_baseline_rounds: 2 }
+quality:
+  cov_max: 0.15
+  # Honestly noisy within a round while their round medians stay stable (measured on the Pixels):
+  cov_max_overrides: { timeToFullDisplayMs: 0.45, memoryHeapSizeLastKb: 0.30 }
+  battery_temp_max_c: 35.0
+  battery_min_level: 50
+suite_spike: { min_dimensions: 3 }
+collection: { iterations: 20, session_rounds: 5 }
+history:   { branch: perf-history, remote: origin, worktree: perf/.history }
+
+gate:
+  clean_rounds: 5
+  # Overrides of the catalogue's per-metric defaults (startup 15, memory 15, app size 2,
+  # sections 20, frames 25, audio 50). A key must exist in the catalogue.
+  limits_pct: { startup.ttid_ms: 15, memory.peak_kb: 15, app.size_bytes: 2 }
+  simulators: inactive
+
+devices:
+  19021FDEE001AH: { platform: android, model: Pixel 6 Pro, alias: pixel6, overrides: { battery_temp_max_c: 40.0 } }
+  00008110-001049660E3A401E: { platform: ios, model: iPhone 14, alias: iphone14 }
+
+android:
+  package: audio.tembra.app
+  activity: audio.tembra.android.MainActivity
+  build_type: perf
+  benchmarks_module: ":perf-benchmarks"
+  test_package: audio.tembra.perf
+  adb: adb
+
+ios:
+  project: iosApp/iosApp.xcodeproj
+  scheme: TembraPerf
+  configuration: Perf
+  bundle_id: audio.tembra.app          # team suffix appended from Config.xcconfig at run time
+  test_target: TembraPerfTests
+  size_variant: iPhone14,7
+
+journeys: [startup, tuner, metronome, stress]

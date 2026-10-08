@@ -1,0 +1,33 @@
+R1:
+  title: Startup — blocking work + sync disk I/O in Application.onCreate (~300 ms)
+  patch_file: r1-startup-oncreate.patch
+  expected_metrics:
+    - [startup.ttid_ms, up]
+    - [startup.ttfd_ms, up]
+  tolerated_side_effects: [apk.size_bytes]     # few-KB rebuild delta, absorbed by 0.5% gate
+  notes: busy-spin 250 ms + 512 KiB write/fsync/read on the main thread before super.onCreate returns control
+R2:
+  title: Frames — recomposition storm in feed items, gated on scroll offset > 0
+  patch_file: r2-frames-storm.patch
+  expected_metrics:
+    - [frames.p50_ms, up]
+    - [frames.p90_ms, up]
+    - [frames.p99_ms, up]
+    - [frames.overrun_p90_ms, up]
+  tolerated_side_effects: []
+  notes: frame-tick invalidation of visible feed items while grid offset > 0; inert at rest (critique C6)
+R3:
+  title: Memory — deterministic ~40 MiB retained allocation during feed bind+scroll
+  patch_file: r3-memory-ballast.patch
+  expected_metrics:
+    - [memory.rss_anon_max_kb, up]
+    - [memory.heap_last_kb, up]
+  tolerated_side_effects: []
+  notes: per-item 2 MiB touched ByteArray retained in a 20-slot map (critique C2 — no network images)
+R4:
+  title: APK — 1 MiB incompressible bundled asset
+  patch_file: r4-apk-asset.patch
+  expected_metrics:
+    - [apk.size_bytes, up]
+  tolerated_side_effects: []
+  notes: shrinkResources already absent at pin; asset never loaded at runtime
