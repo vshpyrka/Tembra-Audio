@@ -43,7 +43,8 @@ The plan input adds two things to the spec: simulator rounds (recorded as FR-002
 | V. Document model in beats | PASS (n/a) | No document changes. |
 | VI. Simplicity | PASS with two justified choices | No new shipped dependency (`android.os.Trace`, `os_signpost` are platform; Macrobenchmark is test-only). Own facade instead of Compose's `trace()` and a conditional test module — see Complexity Tracking. `init` scaffolder and `module/benchmarks-template` are deleted from the copied tool. |
 | VII. Code organisation | PASS | One type per file (`PerfTrace.kt`, `PerfSection.kt`, `PerfFamily.kt`, `PerfCounter.kt`, `PerfBuild.kt` (generated), `AudioHealth.kt`, `PerfAnchors.kt`); feature packages `engine/perf`, `ui/perf`; no TODOs without issues. |
-| VIII. Skill-guided Kotlin/Compose | PASS | `kotlin-api-design` for the `expect` facade and the `AudioHealth` value type; `kotlin-control-flow` for the exhaustive `when` in the catalogue test; `compose-state-and-effects` for placing `ReportDrawnWhen` in the wiring composables keyed by the first-content state; `compose-ui-testing-patterns` for the anchor semantics; `gradle-run` for every Gradle invocation (the pipeline shells out through it); `dataviz` before any report chart code. Routed through `using-chrisbanes-skills` at task time. |
+| VIII. Skill-guided Kotlin/Compose | PASS | `kotlin-api-design` for the `expect` facade and the `AudioHealth` value type; `kotlin-control-flow` for the exhaustive `when` in the catalogue test; `compose-state-and-effects` for placing `ReportDrawnWhen` in the wiring composables keyed by the first-content state; `compose-ui-testing-patterns` for the anchor semantics; `gradle-run` for every agent-initiated Gradle command (building the app, running lanes, producing the artifacts an agent passes to `run --no-build`); the pipeline itself is user tooling and calls `./gradlew --console=plain` directly with the log captured per round; `dataviz` before any report chart code. Routed through `using-chrisbanes-skills` at task time. |
+| Workflow: continuous integration | PASS (known repository gap, outside scope) | The constitution expects CI lanes on every push; the repository has none today and the owner excluded CI from this feature (FR-018). Nothing here worsens that; the commands are shaped for a future CI job. |
 | Workflow & gates | PASS | Build order unchanged (tooling); definition of done per task (failing test first, lanes green, zero warnings, no forbidden dependency); constitution's CI expectations are untouched (no CI exists yet; out of scope by the owner's decision). |
 
 **Post-design re-check (after Phase 1)**: unchanged — the contracts added no shipped dependency, no new module beyond `:perf-benchmarks`, no path from the callback to the facade.
@@ -98,12 +99,13 @@ app/
 │   ├── iosApp/iOSApp.swift                # enableTraceOSLog() under PERF_ENABLED; engine-health.json writer hook (measurement build)
 │   └── iosApp.xcodeproj                   # + Perf configuration, TembraPerf scheme, TembraPerfTests target, run-script passes -Ptembra.perf
 ├── shared/engine/
-│   ├── build.gradle.kts                   # generates PerfBuild.kt from -Ptembra.perf; cinterop def includes tembra_trace.h
+│   ├── build.gradle.kts                   # generatePerfBuild (PerfBuild.kt + PerfNames.kt from -Ptembra.perf and perf-catalogue.txt); generateTraceNames; cinterop def includes tembra_trace.h
+│   ├── perf-catalogue.txt                 # single source of signpost names: <ENUM_NAME> <family> <signpost.name>
 │   └── src/{commonMain,androidMain,iosMain,commonTest}/kotlin/audio/tembra/engine/perf/
-│       ├── PerfTrace.kt (expect)  PerfTrace.android.kt  PerfTrace.ios.kt  PerfSection.kt  PerfFamily.kt  PerfCounter.kt
-│       ├── AudioHealth.kt  (+ AudioEngine.audioHealth(), FakeAudioEngine.scriptAudioHealth)
-│       └── commonTest: PerfTraceTest.kt  PerfSectionCatalogueTest.kt  AudioHealthTelemetryTest.kt
-├── shared/ui/src/commonMain/kotlin/audio/tembra/ui/perf/PerfAnchors.kt   # testTag constants; ReportDrawnWhen in Home/Tuner/Metronome wiring composables
+│       ├── PerfTrace.kt (expect)  PerfTrace.android.kt  PerfTrace.ios.kt  PerfTraceSink.kt  PerfSection.kt  PerfFamily.kt  PerfCounter.kt
+│       ├── AudioHealth.kt  AudioHealthPublisher.kt  (+ AudioEngine.audioHealth(), FakeAudioEngine.scriptAudioHealth)
+│       └── commonTest: PerfBuildTest.kt  PerfTraceTest.kt  PerfSectionCatalogueTest.kt  AudioHealthTelemetryTest.kt
+├── shared/ui/src/commonMain/kotlin/audio/tembra/ui/perf/PerfAnchors.kt  AudioHealthTicker.kt   # testTag constants; the one-second ticker (measurement builds); ReportDrawnWhen in Home/Tuner/Metronome wiring composables; devtools "write engine health" action in ui/devtools/
 ├── engine/
 │   ├── include/tembra_engine.h            # + tembra_audio_health, tembra_engine_audio_health()
 │   ├── include/tembra_trace.h             # facade C API + macros; poison mode
@@ -121,14 +123,16 @@ app/
 
 ## Implementation order (for `/speckit-tasks`)
 
-1. **Foundation + device spike close-out**: copy trace-pulse into `app/perf/` with `uv`, suite green; `tracepulse.yml` registry and `devices`; Xcode `Perf` configuration, `TembraPerf` scheme, `TembraPerfTests` target with one `measure` self-check; run it on the iPhone 14 (closes spike 1 on device), check `testTag`→`accessibilityIdentifier` on 1.12.1 (spike 5) and the animation-signpost columns (spike 7).
-2. **Instrumentation**: `PerfBuild` generation, `PerfSection`/`PerfCounter`/`PerfTrace` with tests, C shim + `tembra_trace.h` + poison test, Android `perf` build type and CMake option, `enableTraceOSLog()`; release-binary `strings` check.
-3. **Audio health**: ABI struct/getter, callback atomics, Catch2 tests, Kotlin `AudioHealth` + fake, drain counters.
-4. **Anchors and journeys**: `PerfAnchors`, `ReportDrawnWhen`, `:perf-benchmarks` with four journeys, `TembraPerfTests` four journeys + preflight + health readout.
-5. **Collectors**: Android de-templated; iOS collector (`devicectl`, `xcodebuild`, `xcresulttool`, attachments, `xctrace --attach`, thinning report, simulators).
-6. **History, gate, sessions**: records + schema validation, `perf-history` worktree publish/sync, `gate.py`, `--rounds`/`--label`, store/detect integration (`label_at_onset`).
-7. **Report**: grid/device/metric views, human text, golden; `dataviz` skill.
-8. **Self-test and docs**: regression injections R1–R4 ported, `app/perf/README.md`, `app/README.md` row, quickstart run end to end on both platforms.
+The phases in `tasks.md` govern; this is the summary of their order.
+
+1. **Setup and foundation** (tasks Phases 1–2): copy trace-pulse into `app/perf/` with `uv`, suite green; catalogue, round records and the `perf-history` branch, device registry, derived store; `PerfBuild`/`PerfNames` generation, Android `perf` build type, CMake option, gated `:perf-benchmarks`; `PerfAnchors` and `ReportDrawnWhen`; CLI skeleton.
+2. **US1 Android round** (MVP): `:perf-benchmarks` with four journeys, Android collectors, `run.py` with the per-device lock, first rounds on the Pixel.
+3. **US2 iOS round**: Xcode `Perf` configuration, `TembraPerf` scheme, `TembraPerfTests` with preflight and journeys; iOS collectors, size as an opt-in step, simulators; the device run closes spike 1 on the device and spike 5.
+4. **US3 report and gate**: `gate.py`, plain-language text, grid/device/metric views, golden.
+5. **US4 instrumentation**: `perf-catalogue.txt`, `PerfSection`/`PerfCounter`/`PerfTrace`, C shim + `tembra_trace.h` + poison test, `enableTraceOSLog()`, instrumentation points (non-composable work only), release-binary signpost-string check; spike 7 closes here.
+6. **US5 audio health**: ABI struct/getter, callback atomics, Catch2, Kotlin `AudioHealth` + fake, the one-second ticker in the root wiring composable, devtools readout, iOS pull and Audio System Trace.
+7. **US6 sessions**: `--rounds`/`--label`, label boundaries and attribution in the report.
+8. **Polish**: regression injections R1–R4 ported (incl. the iOS confirmation), docs, lane timing (SC-008), the ten-round noise baseline (SC-003), quickstart end to end.
 
 ## Complexity Tracking
 
@@ -136,4 +140,4 @@ app/
 |-----------|------------|-------------------------------------|
 | `:perf-benchmarks`, a `com.android.test` module outside the fixed module graph (Principle II) | Jetpack Macrobenchmark can only run from a separate test module targeting the app; it is the Android measurement harness the owner's tool is built on | Benchmarks inside `:androidApp` are not supported by Macrobenchmark; an external project would break "tests live with the app" (owner's decision). Mitigation: included only with `-Ptembra.perf=true`, depends on nothing, nothing depends on it. |
 | Own tracing facade instead of the already-present `androidx.compose.ui.util.trace` (Principle VI "prefer the decided libraries") | Compose's iOS mapping emits one fixed signpost name with the section as a message, so a single section cannot be measured by `XCTOSSignpostMetric(name:)`; the catalogue must be the only source of names (FR-012) | Using Compose's `trace()` on Android and a parallel iOS mechanism would be two facades; patching Compose is not an option. Compose's own `trace()` stays enabled for its frame phases. |
-| Generated `PerfBuild.kt` constant from a Gradle property (a small build-time code generator) | FR-014/SC-007 require instrumentation and names absent from release binaries; only a compile-time constant lets Kotlin/Native and R8 remove them | A runtime flag keeps the strings in the binary; a separate source set per build type would duplicate the facade. |
+| Generated `PerfBuild.kt` constant and `PerfNames.kt` name table from a Gradle property (a small build-time code generator) | FR-014/SC-007 require instrumentation names absent from release binaries; the Android release build does not shrink, so dead-code elimination cannot be relied on to drop strings; generating the names only into measurement builds is the one way to keep them out | A runtime flag keeps the strings in the binary; enabling R8 for release is a product-wide change outside this feature; a separate source set per build type would duplicate the facade. |
