@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import audio.tembra.ui.perf.ReportFirstContentDrawn
 import audio.tembra.ui.posture.currentTabletopFold
 import audio.tembra.ui.posture.currentVerticalFold
 import dev.zacsweers.metrox.viewmodel.metroViewModel
@@ -42,6 +43,8 @@ fun TunerScreen(modifier: Modifier = Modifier, viewModel: TunerViewModel = metro
     }
 
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    // Fully drawn once the preferences are in and the first content composes (feature 007, FR-017).
+    ReportFirstContentDrawn(state.isFirstContentReady)
     // A tabletop foldable splits the screen at its fold (feature 005); both are read from the window on every change.
     val fold = currentTabletopFold()
     val layout = TunerLayout.from(currentWindowAdaptiveInfo().windowSizeClass, fold)

@@ -30,6 +30,10 @@ kotlin {
             implementation(libs.compose.material3.adaptive)
             implementation(libs.compose.material3.adaptive.navigation.suite)
         }
+        androidMain.dependencies {
+            // ReportFirstContentDrawn's Android actual is activity-compose's ReportDrawnWhen (feature 007).
+            implementation(libs.androidx.activity.compose)
+        }
         getByName("androidHostTest").dependencies {
             implementation(libs.kotlinx.serialization.json)
         }
