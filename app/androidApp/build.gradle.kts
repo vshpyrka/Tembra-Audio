@@ -18,6 +18,15 @@ android {
         release {
             isMinifyEnabled = false
         }
+        // Measurement build (feature 007, D3): release optimisations, profileable, debug signing so the
+        // pipeline can install it fresh. Macrobenchmark (:perf-benchmarks) targets this type; build it with
+        // `-Ptembra.perf=true` so the generated PerfBuild/PerfNames and the engine's TEMBRA_TRACING match.
+        create("perf") {
+            initWith(getByName("release"))
+            isProfileable = true
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += listOf("release")
+        }
     }
 }
 

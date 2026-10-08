@@ -7,6 +7,10 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 option(TEMBRA_BUILD_TESTS "Build the Catch2 test target" OFF)
+# Tracing facade (feature 007): compiled only into measurement builds (-Ptembra.perf=true passes
+# -DTEMBRA_TRACING=ON from both the Android and the iOS engine builds); off, the macros in
+# include/tembra_trace.h expand to nothing and no signpost name exists in the binary (FR-014).
+option(TEMBRA_TRACING "Compile the tracing facade" OFF)
 # Directory of drop-in reference recordings checked on pitch by recordings_on_pitch_test (feature 003, research R5).
 set(TEMBRA_TUNER_RECORDINGS_DIR "" CACHE PATH "Directory scanned for <instrument>-<note>.wav recordings by the tests")
 
@@ -42,6 +46,8 @@ target_include_directories(tembra_engine_core PRIVATE
 )
 # The test hook that swaps the platform device exists only in test builds.
 target_compile_definitions(tembra_engine_core PRIVATE $<$<BOOL:${TEMBRA_BUILD_TESTS}>:TEMBRA_BUILD_TESTS>)
+# PUBLIC: the cinterop and JNI consumers see the same TEMBRA_TRACING value as the engine.
+target_compile_definitions(tembra_engine_core PUBLIC $<$<BOOL:${TEMBRA_TRACING}>:TEMBRA_TRACING=1>)
 # miniaudio contributes only its resampler to the engine: no device, decoding, encoding or generation (research R16).
 target_compile_definitions(tembra_engine_core PRIVATE MA_NO_DEVICE_IO MA_NO_DECODING MA_NO_ENCODING MA_NO_GENERATION)
 # The analysis thread and the synthetic device use std::thread.

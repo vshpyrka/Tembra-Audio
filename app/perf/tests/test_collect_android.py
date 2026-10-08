@@ -142,7 +142,7 @@ def test_parse_benchmark_json_file_not_found_raises_collect_error(tmp_path):
 
 def test_quality_flags_scroll_fixture_is_thermal_not_noisy(startup_file, scroll_file, cfg):
     flags, thermal_total = quality_flags([startup_file, scroll_file], cfg)
-    assert flags == ["THERMAL"]
+    assert flags == ["thermal"]
     assert math.isclose(thermal_total, 2.5, rel_tol=1e-9)
 
 
@@ -185,7 +185,7 @@ def test_quality_flags_noisy_when_mapped_single_metric_cov_exceeds_threshold(cfg
         ],
     )
     flags, _ = quality_flags([noisy], cfg)
-    assert "NOISY" in flags
+    assert "noisy" in flags
     assert cfg.quality.cov_max == 0.15  # sanity: 0.2 > 0.15
 
 
@@ -209,7 +209,7 @@ def test_quality_flags_checks_unmapped_single_metrics_too(cfg):
         ],
     )
     flags, _ = quality_flags([unmapped], cfg)
-    assert "NOISY" in flags
+    assert "noisy" in flags
 
 
 def test_quality_flags_honors_per_metric_cov_overrides(cfg):
@@ -231,7 +231,7 @@ def test_quality_flags_honors_per_metric_cov_overrides(cfg):
     flags_ttfd, _ = quality_flags([one("timeToFullDisplayMs")], cfg)
     assert flags_ttfd == []          # 0.38 <= 0.45 allowance
     flags_other, _ = quality_flags([one("timeToInitialDisplayMs")], cfg)
-    assert "NOISY" in flags_other    # 0.38 > 0.15 default
+    assert "noisy" in flags_other    # 0.38 > 0.15 default
 
 
 def test_shipped_yml_carries_the_measured_overrides():
@@ -252,7 +252,7 @@ def test_quality_flags_thermal_seconds_total_sums_across_benchmarks(cfg):
         ],
     )
     flags, thermal_total = quality_flags([f], cfg)
-    assert "THERMAL" in flags
+    assert "thermal" in flags
     assert math.isclose(thermal_total, 3.5, rel_tol=1e-9)
 
 

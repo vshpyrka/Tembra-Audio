@@ -9,6 +9,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import audio.tembra.ui.perf.ReportFirstContentDrawn
 import audio.tembra.ui.platform.isIphoneDuo
 import audio.tembra.ui.posture.currentTabletopFold
 import audio.tembra.ui.posture.currentVerticalFold
@@ -31,6 +32,8 @@ fun MetronomeScreen(modifier: Modifier = Modifier, viewModel: MetronomeViewModel
         onDispose { viewModel.screenVisible(false) }
     }
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    // Fully drawn once the stored settings are in and the first content composes (feature 007, FR-017).
+    ReportFirstContentDrawn(state.isFirstContentReady)
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(viewModel, snackbarHostState) {
         viewModel.messages.collect { snackbarHostState.showSnackbar(MetronomeCopy.of(it)) }

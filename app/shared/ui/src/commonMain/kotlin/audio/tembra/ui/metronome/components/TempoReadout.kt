@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.hideFromAccessibility
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -19,6 +20,7 @@ import androidx.compose.ui.text.style.TextAlign
 import audio.tembra.core.metronome.Tempo
 import audio.tembra.core.metronome.TempoMarking
 import audio.tembra.ui.metronome.MetronomeCopy
+import audio.tembra.ui.perf.PerfAnchors
 import audio.tembra.ui.theme.TembraTheme
 
 /**
@@ -36,7 +38,11 @@ internal fun TempoReadout(tempo: Tempo, marking: TempoMarking, modifier: Modifie
     val colors = TembraTheme.colors
     val typography = TembraTheme.typography
     val spacing = TembraTheme.spacing
-    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(spacing.xs / 2)) {
+    Column(
+        modifier = modifier.testTag(PerfAnchors.METRONOME_TEMPO_READOUT),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(spacing.xs / 2),
+    ) {
         NumberLine(tempo)
         MarkingLine(marking)
     }

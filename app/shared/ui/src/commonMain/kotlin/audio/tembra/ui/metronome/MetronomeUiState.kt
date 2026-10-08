@@ -25,6 +25,9 @@ data class MetronomeUiState(
     /** Debug builds only (research R14). */
     val syncopationReading: SyncopationReading = SyncopationReading.EvenBeats,
 ) {
+    /** The first content is on screen: what `ReportFirstContentDrawn` reports (feature 007). */
+    val isFirstContentReady: Boolean get() = loaded
+
     val marking: TempoMarking get() = TempoMarking.of(settings.tempo)
 
     /** The subdivision chips' labels in display order, for the signature's beat unit. */

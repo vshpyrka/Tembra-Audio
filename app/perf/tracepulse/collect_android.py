@@ -11,11 +11,13 @@ import re
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Sequence, Tuple
 
+from .catalogue import lookup
 from .config import Config
+from .records import JourneyResult, MetricResult
 from .summary import percentile
 
 
-logger = logging.getLogger("tracepulse.collect")
+logger = logging.getLogger("tracepulse.collect_android")
 
 
 class CollectError(Exception):
@@ -48,18 +50,13 @@ class BenchmarkResult:
     single: Dict[str, SingleMetric]
     sampled: Dict[str, SampledMetric]
     thermal_throttle_sleep_s: float
+    class_name: str = ""
 
 
 @dataclass(frozen=True)
 class BenchmarkFile:
     context: Dict
     benchmarks: List[BenchmarkResult]
-
-
-@dataclass(frozen=True)
-class MetricSample:
-    trend_value: float
-    iterations: List[float]
 
 
 def parse_benchmark_json(path: str) -> BenchmarkFile:
@@ -116,6 +113,7 @@ def _parse_benchmark(b: Dict) -> BenchmarkResult:
         single=single,
         sampled=sampled,
         thermal_throttle_sleep_s=b.get("thermalThrottleSleepSeconds", 0.0),
+        class_name=b.get("className", ""),
     )
 
 
@@ -124,7 +122,7 @@ def _parse_benchmark(b: Dict) -> BenchmarkResult:
 def quality_flags(files: List[BenchmarkFile], cfg: Config) -> Tuple[List[str], float]:
     """Per-round quality badges.
 
-    NOISY: ANY single metric's `coefficientOfVariation` exceeds its allowance --
+    `noisy`: ANY single metric's `coefficientOfVariation` exceeds its allowance --
     `cfg.quality.cov_max_overrides.get(<raw JSON key>, cfg.quality.cov_max)`.
     Phase 3 calibration (measured, A52 clean baselines): the check covers all
     single metrics, mapped or not, because an unmapped metric's instability is
@@ -133,7 +131,7 @@ def quality_flags(files: List[BenchmarkFile], cfg: Config) -> Tuple[List[str], f
     `timeToFullDisplayMs` (~0.29-0.38) and `memoryHeapSizeLastKb` (~0.20) are
     honestly noisy within-round on this device while their round medians stay
     stable to +-2%, so they carry higher allowances in tracepulse.yml.
-    THERMAL: any benchmark's `thermalThrottleSleepSeconds > 0`.
+    `thermal`: any benchmark's `thermalThrottleSleepSeconds > 0`.
 
     Returns (flags, thermal_seconds_total) — the total summed across every benchmark
     in every file (not just those that are individually throttled).
@@ -151,9 +149,9 @@ def quality_flags(files: List[BenchmarkFile], cfg: Config) -> Tuple[List[str], f
 
     flags = []
     if noisy:
-        flags.append("NOISY")
+        flags.append("noisy")
     if thermal_total > 0:
-        flags.append("THERMAL")
+        flags.append("thermal")
     return flags, thermal_total
 
 
@@ -162,3 +160,112 @@ def quality_flags(files: List[BenchmarkFile], cfg: Config) -> Tuple[List[str], f
 def apk_size(path: str) -> int:
     """Byte size of the built APK at `path`."""
     return os.path.getsize(path)
+
+
+# -- catalogue mapping ----------------------------------------------------------------
+
+_JOURNEY_OF_CLASS = {
+    "StartupBenchmark": "startup",
+    "TunerJourneyBenchmark": "tuner",
+    "MetronomeJourneyBenchmark": "metronome",
+    "StressJourneyBenchmark": "stress",
+}
+# Families every journey class must deliver (per the catalogue's journey column).
+_REQUIRED = {
+    "startup": ("startup.ttid_ms", "startup.ttfd_ms"),
+    "tuner": ("frames.p50_ms", "frames.p90_ms", "frames.p99_ms", "frames.overrun_p90_ms",
+              "memory.peak_kb", "memory.end_kb", "journey.duration_ms"),
+    "metronome": ("frames.p50_ms", "frames.p90_ms", "frames.p99_ms", "frames.overrun_p90_ms",
+                  "memory.peak_kb", "memory.end_kb", "journey.duration_ms"),
+    "stress": ("frames.p50_ms", "frames.p90_ms", "frames.p99_ms", "frames.overrun_p90_ms",
+               "memory.peak_kb", "memory.end_kb", "journey.duration_ms"),
+}
+_RSS_ANON_RE = re.compile(r"^memory.*rssanon.*$", re.IGNORECASE)
+_HEAP_SIZE_RE = re.compile(r"^memory.*heapsize.*$", re.IGNORECASE)
+# Catalogue section names are dotted (`tuner.modeSwitch`), which keeps Macrobenchmark's own
+# un-dotted keys (`frameCount`) out of the section family.
+_SECTION_SUM_RE = re.compile(r"^(?P<name>[a-z][A-Za-z0-9_]*\.[A-Za-z0-9_.]+?)SumMs$")
+_SECTION_COUNT_RE = re.compile(r"^(?P<name>[a-z][A-Za-z0-9_]*\.[A-Za-z0-9_.]+?)Count$")
+
+
+@dataclass(frozen=True)
+class CollectedRound:
+    """What one round's benchmarkData.json files amount to: one journey per benchmark class."""
+    journeys: List[JourneyResult]
+    badges: List[str]
+    thermal_seconds: float
+
+
+def journey_of(class_name: str) -> str:
+    """The journey a benchmark class measures, from its simple name."""
+    simple = class_name.rsplit(".", 1)[-1]
+    try:
+        return _JOURNEY_OF_CLASS[simple]
+    except KeyError:
+        raise CollectError(f"benchmark class {class_name!r} is not one of {sorted(_JOURNEY_OF_CLASS)}") from None
+
+
+def _classify_single_key(key: str, journey: str) -> Optional[str]:
+    """A single-metric JSON key to its catalogue key (None when not a catalogue metric)."""
+    if key == "timeToInitialDisplayMs":
+        return "startup.ttid_ms"
+    if key == "timeToFullDisplayMs":
+        return "startup.ttfd_ms"
+    if _RSS_ANON_RE.match(key):
+        return "memory.peak_kb"
+    if _HEAP_SIZE_RE.match(key):
+        return "memory.end_kb"
+    m = _SECTION_SUM_RE.match(key)
+    if m:
+        name = m.group("name")
+        return "journey.duration_ms" if name == f"journey.{journey}" else f"section.{name}.sum_ms"
+    m = _SECTION_COUNT_RE.match(key)
+    if m:
+        name = m.group("name")
+        return None if name == f"journey.{journey}" else f"section.{name}.count"
+    return None
+
+
+def map_benchmark(benchmark: BenchmarkResult, cfg: Config) -> JourneyResult:
+    """One benchmark class -> one JourneyResult with catalogue keys and per-iteration samples."""
+    journey = journey_of(benchmark.class_name or benchmark.name)
+    metrics: Dict[str, MetricResult] = {}
+    for key, metric in benchmark.single.items():
+        target = _classify_single_key(key, journey)
+        if target is None:
+            logger.warning("benchmark %s: single metric %r is not a catalogue metric; not recorded",
+                           benchmark.name, key)
+            continue
+        entry = lookup("android", target, cfg.catalogue)
+        metrics[target] = MetricResult(unit=entry.unit, samples=list(metric.runs), source="macrobenchmark")
+    for key, sampled_metric in benchmark.sampled.items():
+        if key == "frameDurationCpuMs":
+            for pct, target in ((50, "frames.p50_ms"), (90, "frames.p90_ms"), (99, "frames.p99_ms")):
+                metrics[target] = MetricResult(unit="ms", samples=[percentile(run, pct) for run in sampled_metric.runs],
+                                               source="macrobenchmark")
+        elif key == "frameOverrunMs":
+            metrics["frames.overrun_p90_ms"] = MetricResult(
+                unit="ms", samples=[percentile(run, 90) for run in sampled_metric.runs], source="macrobenchmark")
+        else:
+            logger.warning("benchmark %s: sampled metric %r is not a catalogue metric; not recorded",
+                           benchmark.name, key)
+    missing = [k for k in _REQUIRED[journey] if k not in metrics]
+    if missing:
+        raise CollectError(f"journey {journey} ({benchmark.name}) is missing catalogue metrics: {missing}")
+    iterations = max((len(m.samples) for m in metrics.values()), default=0)
+    return JourneyResult(journey=journey, iterations=iterations, metrics=metrics)
+
+
+def collect_round(json_paths: Sequence[str], cfg: Config) -> CollectedRound:
+    """Parse every benchmarkData.json of a round into journeys, badges and thermal seconds."""
+    files = [parse_benchmark_json(p) for p in json_paths]
+    journeys: List[JourneyResult] = []
+    for f in files:
+        for b in f.benchmarks:
+            journeys.append(map_benchmark(b, cfg))
+    seen = [j.journey for j in journeys]
+    duplicates = sorted({j for j in seen if seen.count(j) > 1})
+    if duplicates:
+        raise CollectError(f"more than one benchmark class per journey: {duplicates}")
+    badges, thermal = quality_flags(files, cfg)
+    return CollectedRound(journeys=journeys, badges=badges, thermal_seconds=thermal)
