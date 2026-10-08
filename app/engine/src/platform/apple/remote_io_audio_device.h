@@ -24,6 +24,8 @@ public:
     void close() override;
     uint32_t sampleRate() const override;
     bool deviceLost() const override;
+    /** The RemoteIO I/O thread is real-time by construction (feature 007). */
+    bool realtime() const override { return true; }
     /** The latency the host reported (AVAudioSession.outputLatency + ioBufferDuration, research R7); 0 until then. */
     int64_t outputLatencyNanos() const override;
     void setReportedLatencyNanos(int64_t nanos) override;

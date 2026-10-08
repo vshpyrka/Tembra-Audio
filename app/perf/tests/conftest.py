@@ -104,3 +104,36 @@ class FakeClock:
 @pytest.fixture
 def clock() -> FakeClock:
     return FakeClock()
+
+
+class TableRunner:
+    """A lenient stand-in for the Runner: every call is answered by the first rule
+    whose matcher accepts it (rules are reusable, so polling loops need one rule),
+    recorded in `.calls`, and an unmatched command raises. A rule's response may
+    be a `Completed` or a callable `(cmd) -> Completed`."""
+
+    def __init__(self, rules: List[Tuple[Matcher, Union[Completed, Callable[[List[str]], Completed]]]]):
+        self.rules = list(rules)
+        self.calls: List[Dict] = []
+
+    def run(self, cmd: List[str], env: Optional[Dict[str, str]] = None,
+            timeout: Optional[int] = None, cwd: Optional[str] = None) -> Completed:
+        self.calls.append({"cmd": cmd, "env": env, "timeout": timeout, "cwd": cwd})
+        for matcher, response in self.rules:
+            if _matches(matcher, cmd):
+                return response(cmd) if callable(response) else response
+        raise AssertionError(f"TableRunner: no rule for command {cmd!r}")
+
+    def commands(self) -> List[List[str]]:
+        return [c["cmd"] for c in self.calls]
+
+    def index_of(self, *needles: str) -> int:
+        """Position of the first call whose argv contains every needle, or -1."""
+        for i, c in enumerate(self.calls):
+            joined = " ".join(c["cmd"])
+            if all(n in joined for n in needles):
+                return i
+        return -1
+
+    def count(self, *needles: str) -> int:
+        return sum(1 for c in self.calls if all(n in " ".join(c["cmd"]) for n in needles))

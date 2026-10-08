@@ -231,6 +231,8 @@ def map_benchmark(benchmark: BenchmarkResult, cfg: Config) -> JourneyResult:
     journey = journey_of(benchmark.class_name or benchmark.name)
     metrics: Dict[str, MetricResult] = {}
     for key, metric in benchmark.single.items():
+        if key == f"journey.{journey}Count":
+            continue  # the journey section runs once per iteration by construction
         target = _classify_single_key(key, journey)
         if target is None:
             logger.warning("benchmark %s: single metric %r is not a catalogue metric; not recorded",

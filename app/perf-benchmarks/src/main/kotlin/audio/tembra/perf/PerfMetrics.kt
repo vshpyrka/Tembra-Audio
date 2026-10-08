@@ -1,0 +1,38 @@
+@file:OptIn(ExperimentalMetricApi::class)
+
+package audio.tembra.perf
+
+import androidx.benchmark.macro.ExperimentalMetricApi
+import androidx.benchmark.macro.FrameTimingMetric
+import androidx.benchmark.macro.MemoryUsageMetric
+import androidx.benchmark.macro.Metric
+import androidx.benchmark.macro.TraceSectionMetric
+
+/**
+ * The metrics every journey benchmark collects (contracts/metric-catalogue.md): frame timing, memory (peak RSS anon,
+ * last heap size), the journey's own trace section (`journey.<name>`, emitted by the test process, hence not
+ * target-package only) and the catalogue sections the journey exercises (`TraceSectionMetric(name, Sum)`).
+ * Section names are the signpost names of `app/shared/engine/perf-catalogue.txt`.
+ */
+object PerfMetrics {
+    const val PACKAGE = "audio.tembra.app"
+    const val ITERATIONS = 20
+
+    private val tunerSections = listOf("tuner.load", "tuner.modeSwitch", "tuner.frame")
+    private val metronomeSections = listOf("metronome.load", "metronome.tempoChange")
+    private val stressSections = tunerSections + metronomeSections
+
+    fun journey(name: String): List<Metric> = listOf(
+        FrameTimingMetric(),
+        MemoryUsageMetric(MemoryUsageMetric.Mode.Max, listOf(MemoryUsageMetric.SubMetric.RssAnon)),
+        MemoryUsageMetric(MemoryUsageMetric.Mode.Last, listOf(MemoryUsageMetric.SubMetric.HeapSize)),
+        TraceSectionMetric("journey.$name", TraceSectionMetric.Mode.Sum, targetPackageOnly = false),
+    ) + sectionsOf(name).map { TraceSectionMetric(it, TraceSectionMetric.Mode.Sum) }
+
+    private fun sectionsOf(name: String): List<String> = when (name) {
+        "tuner" -> tunerSections
+        "metronome" -> metronomeSections
+        "stress" -> stressSections
+        else -> emptyList()
+    }
+}

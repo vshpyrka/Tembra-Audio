@@ -27,6 +27,10 @@ public:
     bool deviceLost() const override;
     int64_t outputLatencyNanos() const override;
     void refreshOutputLatency() override;
+    /** Low-latency performance mode granted by Oboe on the open stream (feature 007). Host threads only. */
+    bool realtime() const override;
+    /** Oboe's getXRunCount() on the open stream, sampled off the callback (feature 007). Host threads only. */
+    uint32_t xrunCount() const override;
 
 private:
     /** Oboe keeps its callbacks as shared pointers; this bridge forwards to the device that owns it. */

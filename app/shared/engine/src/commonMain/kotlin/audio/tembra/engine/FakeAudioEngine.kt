@@ -1,5 +1,7 @@
 package audio.tembra.engine
 
+import audio.tembra.engine.perf.AudioHealth
+
 import audio.tembra.core.version.SemanticVersion
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -183,6 +185,15 @@ class FakeAudioEngine(
     override fun reportOutputLatencyNanos(nanos: Long) {
         _calls += "reportOutputLatencyNanos($nanos)"
     }
+
+    private var scriptedHealth: AudioHealth? = null
+
+    /** Scripts what [audioHealth] returns (SC-010: the plumbing is proven without the real engine). */
+    fun scriptAudioHealth(health: AudioHealth?) {
+        scriptedHealth = health
+    }
+
+    override fun audioHealth(): AudioHealth? = scriptedHealth
 
     override fun readTick(into: TickSnapshot) {
         into.copyFrom(nextTick)

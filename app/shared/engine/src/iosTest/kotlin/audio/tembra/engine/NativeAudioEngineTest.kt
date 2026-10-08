@@ -34,7 +34,7 @@ class NativeAudioEngineTest {
         val descriptor = engine.describe()
         assertEquals("Tembra Engine", descriptor.name)
         assertEquals(SemanticVersion(0, 4, 0), descriptor.version)
-        assertEquals(4, engine.abiVersion())
+        assertEquals(5, engine.abiVersion())
     }
 
     @Test

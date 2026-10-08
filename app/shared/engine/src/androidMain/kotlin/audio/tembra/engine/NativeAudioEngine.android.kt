@@ -1,5 +1,7 @@
 package audio.tembra.engine
 
+import audio.tembra.engine.perf.AudioHealth
+
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
@@ -237,6 +239,21 @@ actual class NativeAudioEngine(context: Context) : AudioEngine {
     override val audioState: AudioState
         get() = AudioState.fromNative(nativeAudioState())
 
+    /** Reused by every [audioHealth]: [callbacks, lastUs, maxUs, overBudget, xruns, realtime]. */
+    private val healthFields = LongArray(6)
+
+    override fun audioHealth(): AudioHealth? {
+        if (nativeAudioHealth(healthFields) != 0) return null
+        return AudioHealth(
+            callbacks = healthFields[0],
+            lastMicros = healthFields[1].toInt(),
+            maxMicros = healthFields[2].toInt(),
+            overBudget = healthFields[3].toInt(),
+            xruns = healthFields[4].toInt(),
+            realtime = healthFields[5] != 0L,
+        )
+    }
+
     override val events: Flow<AudioEvent> = merge(focus.events, routeEvents)
 
     private external fun nativeAbiVersion(): Int
@@ -259,6 +276,7 @@ actual class NativeAudioEngine(context: Context) : AudioEngine {
     private external fun nativeSampleUnload(handle: Int)
     private external fun nativeToneStop()
     private external fun nativeAudioState(): Int
+    private external fun nativeAudioHealth(out: LongArray): Int
     private external fun nativeMetronomeSetGrid(bpm: Double, ticksPerBeat: Int, ticksPerBar: Int, levels: ByteArray): Int
     private external fun nativeMetronomeSelectSound(sound: Int): Int
     private external fun nativeMetronomeLoadCustomSound(path: String, info: IntArray, ms: FloatArray): Int
