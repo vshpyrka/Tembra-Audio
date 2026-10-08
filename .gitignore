@@ -28,3 +28,15 @@ app/iosApp/build-duo/
 app/iosApp/**/xcuserdata/
 app/iosApp/**/DerivedData/
 *.xcuserstate
+
+# Performance pipeline (007): derived history cache, raw round artifacts, rendered reports,
+# the perf-history worktree and the uv virtualenv stay on the producing machine
+app/perf/data/*
+!app/perf/data/.gitkeep
+app/perf/reports/
+app/perf/.history/
+app/perf/.venv/
+app/perf/**/__pycache__/
+app/perf/**/*.pyc
+app/perf/.pytest_cache/
+app/perf/*.egg-info/
