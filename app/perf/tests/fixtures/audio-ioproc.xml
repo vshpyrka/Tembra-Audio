@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<trace-query-result>
+<node xpath='/trace-toc/run[@number="1"]/data/table[@schema="audio-hal-client-io-cycle-ioproc"]'>
+<schema name="audio-hal-client-io-cycle-ioproc"><col><mnemonic>start</mnemonic><name>Start</name><engineering-type>start-time</engineering-type></col><col><mnemonic>duration</mnemonic><name>Duration</name><engineering-type>duration</engineering-type></col><col><mnemonic>process</mnemonic><name>Process</name><engineering-type>process</engineering-type></col><col><mnemonic>thread</mnemonic><name>Thread</name><engineering-type>thread</engineering-type></col><col><mnemonic>name</mnemonic><name>Name</name><engineering-type>string</engineering-type></col></schema>
+<row><start-time id="100" fmt="00:00.100">100000000</start-time><duration id="200" fmt="1.18 ms">1180000</duration><process id="3" fmt="Tembra Audio (1234)"><pid id="4" fmt="1234">1234</pid><device-session id="5" fmt="x">x</device-session></process><thread id="6" fmt="Tembra Audio (1234) io thread"><tid id="7" fmt="0x1a2b">6699</tid><process ref="3"/></thread><string id="8">AURemoteIO::IOThread</string></row>
+<row><start-time id="101" fmt="00:00.102">102666666</start-time><duration id="201" fmt="1.21 ms">1210000</duration><process ref="3"/><thread ref="6"/><string ref="8"/></row>
+<row><start-time id="102" fmt="00:00.105">105333332</start-time><duration id="202" fmt="1.20 ms">1195000</duration><process ref="3"/><thread ref="6"/><string ref="8"/></row>
+<row><start-time id="103" fmt="00:00.107">107999998</start-time><duration id="203" fmt="1.24 ms">1240000</duration><process ref="3"/><thread ref="6"/><string ref="8"/></row>
+<row><start-time id="104" fmt="00:00.110">110666664</start-time><duration id="204" fmt="1.90 ms">1900000</duration><process ref="3"/><thread ref="6"/><string ref="8"/></row>
+<row><start-time id="105" fmt="00:00.113">113333330</start-time><duration id="205" fmt="1.21 ms">1205000</duration><process ref="3"/><thread ref="6"/><string ref="8"/></row>
+<row><start-time id="106" fmt="00:00.115">115999996</start-time><duration id="206" fmt="1.19 ms">1188000</duration><process ref="3"/><thread ref="6"/><string ref="8"/></row>
+<row><start-time id="107" fmt="00:00.118">118666662</start-time><duration id="207" fmt="1.23 ms">1230000</duration><process ref="3"/><thread ref="6"/><string ref="8"/></row>
+<row><start-time id="108" fmt="00:00.121">121333328</start-time><duration id="208" fmt="1.22 ms">1215000</duration><process ref="3"/><thread ref="6"/><string ref="8"/></row>
+<row><start-time id="109" fmt="00:00.123">123999994</start-time><duration id="209" fmt="1.20 ms">1199000</duration><process ref="3"/><thread ref="6"/><string ref="8"/></row>
+<row><start-time id="110" fmt="00:00.126">126666660</start-time><duration id="210" fmt="1.30 ms">1300000</duration><process ref="3"/><thread ref="6"/><string ref="8"/></row>
+<row><start-time id="111" fmt="00:00.129">129333326</start-time><duration id="211" fmt="1.21 ms">1210000</duration><process ref="3"/><thread ref="6"/><string ref="8"/></row>
+<row><start-time id="112" fmt="00:00.131">131999992</start-time><duration id="212" fmt="1.20 ms">1198000</duration><process ref="3"/><thread ref="6"/><string ref="8"/></row>
+<row><start-time id="113" fmt="00:00.134">134666658</start-time><duration id="213" fmt="1.23 ms">1225000</duration><process ref="3"/><thread ref="6"/><string ref="8"/></row>
+<row><start-time id="114" fmt="00:00.137">137333324</start-time><duration id="214" fmt="1.21 ms">1207000</duration><process ref="3"/><thread ref="6"/><string ref="8"/></row>
+<row><start-time id="115" fmt="00:00.139">139999990</start-time><duration id="215" fmt="1.19 ms">1193000</duration><process ref="3"/><thread ref="6"/><string ref="8"/></row>
+<row><start-time id="116" fmt="00:00.142">142666656</start-time><duration id="216" fmt="2.10 ms">2100000</duration><process ref="3"/><thread ref="6"/><string ref="8"/></row>
+<row><start-time id="117" fmt="00:00.145">145333322</start-time><duration id="217" fmt="1.21 ms">1211000</duration><process ref="3"/><thread ref="6"/><string ref="8"/></row>
+<row><start-time id="118" fmt="00:00.147">147999988</start-time><duration id="218" fmt="1.20 ms">1204000</duration><process ref="3"/><thread ref="6"/><string ref="8"/></row>
+<row><start-time id="119" fmt="00:00.150">150666654</start-time><duration id="219" fmt="1.22 ms">1219000</duration><process ref="3"/><thread ref="6"/><string ref="8"/></row>
+</node>
+</trace-query-result>

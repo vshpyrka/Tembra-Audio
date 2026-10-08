@@ -6,8 +6,8 @@ import audio.tembra.perf.journeys.Anchors.tap
 
 /**
  * The stress journey (spec FR-007, placeholder until the audio spine): the metronome keeps clicking while the tuner
- * listens, then the metronome stops. Its last step, a tap on the devtools "write engine health" action that dumps
- * the audio-health counters (feature 007, US5), is appended with that action.
+ * listens, then the metronome stops; the last tap, the "write engine health" control of the measurement build,
+ * dumps the audio-health counters (feature 007, US5).
  */
 class StressJourney {
     fun run(device: UiDevice) {
@@ -23,5 +23,7 @@ class StressJourney {
         device.anchor(Anchors.TUNER_NOTE_READOUT)
         device.tap(Anchors.NAV_METRONOME)
         device.tap(Anchors.METRONOME_START_STOP)
+        // Last step: the measurement build dumps the audio-health counters (feature 007, US5).
+        device.tap(Anchors.DEVTOOLS_WRITE_HEALTH)
     }
 }

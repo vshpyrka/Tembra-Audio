@@ -11,7 +11,37 @@
 		058557D9273AAEEB004C7B11 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 058557D8273AAEEB004C7B11 /* Preview Assets.xcassets */; };
 		2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2152FB032600AC8F00CF470E /* iOSApp.swift */; };
 		7555FF83242A565900829871 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7555FF82242A565900829871 /* ContentView.swift */; };
+		7E5F000000000000000000C8 /* Anchors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F00000000000000000064 /* Anchors.swift */; };
+		7E5F000000000000000000C9 /* Metrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F00000000000000000065 /* Metrics.swift */; };
+		7E5F000000000000000000CA /* Preflight.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F00000000000000000066 /* Preflight.swift */; };
+		7E5F000000000000000000CB /* PerfJourneyTestCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F00000000000000000067 /* PerfJourneyTestCase.swift */; };
+		7E5F000000000000000000CC /* StartupPerfTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F00000000000000000068 /* StartupPerfTests.swift */; };
+		7E5F000000000000000000CD /* TunerPerfTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F00000000000000000069 /* TunerPerfTests.swift */; };
+		7E5F000000000000000000CE /* MetronomePerfTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F0000000000000000006A /* MetronomePerfTests.swift */; };
+		7E5F000000000000000000CF /* StressPerfTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F0000000000000000006B /* StressPerfTests.swift */; };
+		7E5F000000000000000000D0 /* FacadeSelfCheckTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F0000000000000000006C /* FacadeSelfCheckTests.swift */; };
+		7E5F000000000000000000D1 /* TunerJourney.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F0000000000000000006D /* TunerJourney.swift */; };
+		7E5F000000000000000000D2 /* MetronomeJourney.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F0000000000000000006E /* MetronomeJourney.swift */; };
+		7E5F000000000000000000D3 /* StressJourney.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F0000000000000000006F /* StressJourney.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		7E5F0000000000000000000F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 7555FF73242A565900829871 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7555FF7A242A565900829871;
+			remoteInfo = iosApp;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		7E5F0000000000000000000E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7555FF7A242A565900829871 /* iosApp */;
+			targetProxy = 7E5F0000000000000000000F /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXFileReference section */
 		058557BA273AAA24004C7B11 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -21,10 +51,30 @@
 		7555FF82242A565900829871 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		7555FF8C242A565B00829871 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AB3632DC29227652001CCB65 /* Config.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
+		7E5F00000000000000000064 /* Anchors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Anchors.swift; sourceTree = "<group>"; };
+		7E5F00000000000000000065 /* Metrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Metrics.swift; sourceTree = "<group>"; };
+		7E5F00000000000000000066 /* Preflight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Preflight.swift; sourceTree = "<group>"; };
+		7E5F00000000000000000067 /* PerfJourneyTestCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerfJourneyTestCase.swift; sourceTree = "<group>"; };
+		7E5F00000000000000000068 /* StartupPerfTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupPerfTests.swift; sourceTree = "<group>"; };
+		7E5F00000000000000000069 /* TunerPerfTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunerPerfTests.swift; sourceTree = "<group>"; };
+		7E5F0000000000000000006A /* MetronomePerfTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetronomePerfTests.swift; sourceTree = "<group>"; };
+		7E5F0000000000000000006B /* StressPerfTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StressPerfTests.swift; sourceTree = "<group>"; };
+		7E5F0000000000000000006C /* FacadeSelfCheckTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FacadeSelfCheckTests.swift; sourceTree = "<group>"; };
+		7E5F0000000000000000006D /* TunerJourney.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunerJourney.swift; sourceTree = "<group>"; };
+		7E5F0000000000000000006E /* MetronomeJourney.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetronomeJourney.swift; sourceTree = "<group>"; };
+		7E5F0000000000000000006F /* StressJourney.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StressJourney.swift; sourceTree = "<group>"; };
+		7E5F00000000000000000004 /* TembraPerfTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TembraPerfTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		B92378962B6B1156000C7307 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7E5F00000000000000000006 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -54,6 +104,7 @@
 			children = (
 				AB1DB47929225F7C00F7AF9C /* Configuration */,
 				7555FF7D242A565900829871 /* iosApp */,
+				7E5F0000000000000000000C /* TembraPerfTests */,
 				7555FF7C242A565900829871 /* Products */,
 				42799AB246E5F90AF97AA0EF /* Frameworks */,
 			);
@@ -63,6 +114,7 @@
 			isa = PBXGroup;
 			children = (
 				7555FF7B242A565900829871 /* KMP App.app */,
+				7E5F00000000000000000004 /* TembraPerfTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -85,6 +137,33 @@
 				AB3632DC29227652001CCB65 /* Config.xcconfig */,
 			);
 			path = Configuration;
+			sourceTree = "<group>";
+		};
+		7E5F0000000000000000000C /* TembraPerfTests */ = {
+			isa = PBXGroup;
+			children = (
+				7E5F00000000000000000064 /* Anchors.swift */,
+				7E5F00000000000000000065 /* Metrics.swift */,
+				7E5F00000000000000000066 /* Preflight.swift */,
+				7E5F00000000000000000067 /* PerfJourneyTestCase.swift */,
+				7E5F00000000000000000068 /* StartupPerfTests.swift */,
+				7E5F00000000000000000069 /* TunerPerfTests.swift */,
+				7E5F0000000000000000006A /* MetronomePerfTests.swift */,
+				7E5F0000000000000000006B /* StressPerfTests.swift */,
+				7E5F0000000000000000006C /* FacadeSelfCheckTests.swift */,
+				7E5F0000000000000000000D /* Journeys */,
+			);
+			path = TembraPerfTests;
+			sourceTree = "<group>";
+		};
+		7E5F0000000000000000000D /* Journeys */ = {
+			isa = PBXGroup;
+			children = (
+				7E5F0000000000000000006D /* TunerJourney.swift */,
+				7E5F0000000000000000006E /* MetronomeJourney.swift */,
+				7E5F0000000000000000006F /* StressJourney.swift */,
+			);
+			path = Journeys;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -110,6 +189,26 @@
 			productReference = 7555FF7B242A565900829871 /* KMP App.app */;
 			productType = "com.apple.product-type.application";
 		};
+		7E5F00000000000000000003 /* TembraPerfTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7E5F00000000000000000008 /* Build configuration list for PBXNativeTarget "TembraPerfTests" */;
+			buildPhases = (
+				7E5F00000000000000000005 /* Sources */,
+				7E5F00000000000000000006 /* Frameworks */,
+				7E5F00000000000000000007 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				7E5F0000000000000000000E /* PBXTargetDependency */,
+			);
+			name = TembraPerfTests;
+			packageProductDependencies = (
+			);
+			productName = TembraPerfTests;
+			productReference = 7E5F00000000000000000004 /* TembraPerfTests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -123,6 +222,10 @@
 				TargetAttributes = {
 					7555FF7A242A565900829871 = {
 						CreatedOnToolsVersion = 11.3.1;
+					};
+					7E5F00000000000000000003 = {
+						CreatedOnToolsVersion = 26.6;
+						TestTargetID = 7555FF7A242A565900829871;
 					};
 				};
 			};
@@ -142,6 +245,7 @@
 			projectRoot = "";
 			targets = (
 				7555FF7A242A565900829871 /* iosApp */,
+				7E5F00000000000000000003 /* TembraPerfTests */,
 			);
 		};
 /* End PBXProject section */
@@ -153,6 +257,13 @@
 			files = (
 				058557D9273AAEEB004C7B11 /* Preview Assets.xcassets in Resources */,
 				058557BB273AAA24004C7B11 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7E5F00000000000000000007 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -176,7 +287,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [ \"YES\" = \"$OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED\" ]; then\n  echo \"Skipping Gradle build task invocation due to OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED environment variable set to \\\"YES\\\"\"\n  exit 0\nfi\ncd \"$SRCROOT/..\"\n./gradlew :shared:ui:embedAndSignAppleFrameworkForXcode\n";
+			shellScript = "if [ \"YES\" = \"$OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED\" ]; then\n  echo \"Skipping Gradle build task invocation due to OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED environment variable set to \\\"YES\\\"\"\n  exit 0\nfi\ncd \"$SRCROOT/..\"\n# Measurement builds (feature 007): the Perf configuration carries PerfBuild.PERF_ENABLED = true and the tracing shim.\n./gradlew :shared:ui:embedAndSignAppleFrameworkForXcode $( [ \"$CONFIGURATION\" = Perf ] && echo -Ptembra.perf=true )\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -187,6 +298,25 @@
 			files = (
 				2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */,
 				7555FF83242A565900829871 /* ContentView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7E5F00000000000000000005 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7E5F000000000000000000C8 /* Anchors.swift in Sources */,
+				7E5F000000000000000000C9 /* Metrics.swift in Sources */,
+				7E5F000000000000000000CA /* Preflight.swift in Sources */,
+				7E5F000000000000000000CB /* PerfJourneyTestCase.swift in Sources */,
+				7E5F000000000000000000CC /* StartupPerfTests.swift in Sources */,
+				7E5F000000000000000000CD /* TunerPerfTests.swift in Sources */,
+				7E5F000000000000000000CE /* MetronomePerfTests.swift in Sources */,
+				7E5F000000000000000000CF /* StressPerfTests.swift in Sources */,
+				7E5F000000000000000000D0 /* FacadeSelfCheckTests.swift in Sources */,
+				7E5F000000000000000000D1 /* TunerJourney.swift in Sources */,
+				7E5F000000000000000000D2 /* MetronomeJourney.swift in Sources */,
+				7E5F000000000000000000D3 /* StressJourney.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -367,6 +497,157 @@
 			};
 			name = Release;
 		};
+		7E5F00000000000000000001 /* Perf */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = AB3632DC29227652001CCB65 /* Config.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				KOTLIN_FRAMEWORK_BUILD_TYPE = release;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Perf;
+		};
+		7E5F00000000000000000002 /* Perf */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
+				DEVELOPMENT_TEAM = "${TEAM_ID}";
+				ENABLE_PREVIEWS = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../shared/ui/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",
+				);
+				INFOPLIST_FILE = iosApp/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				KOTLIN_FRAMEWORK_BUILD_TYPE = release;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "${BUNDLE_ID}${TEAM_ID}";
+				PRODUCT_NAME = "${APP_NAME}";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Perf;
+		};
+		7E5F00000000000000000009 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = AB3632DC29227652001CCB65 /* Config.xcconfig */;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "${TEAM_ID}";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "${BUNDLE_ID}${TEAM_ID}.perftests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = iosApp;
+			};
+			name = Debug;
+		};
+		7E5F0000000000000000000A /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = AB3632DC29227652001CCB65 /* Config.xcconfig */;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "${TEAM_ID}";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "${BUNDLE_ID}${TEAM_ID}.perftests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = iosApp;
+			};
+			name = Release;
+		};
+		7E5F0000000000000000000B /* Perf */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = AB3632DC29227652001CCB65 /* Config.xcconfig */;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "${TEAM_ID}";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "${BUNDLE_ID}${TEAM_ID}.perftests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = iosApp;
+			};
+			name = Perf;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -375,6 +656,7 @@
 			buildConfigurations = (
 				7555FFA3242A565B00829871 /* Debug */,
 				7555FFA4242A565B00829871 /* Release */,
+				7E5F00000000000000000001 /* Perf */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -384,6 +666,17 @@
 			buildConfigurations = (
 				7555FFA6242A565B00829871 /* Debug */,
 				7555FFA7242A565B00829871 /* Release */,
+				7E5F00000000000000000002 /* Perf */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		7E5F00000000000000000008 /* Build configuration list for PBXNativeTarget "TembraPerfTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7E5F00000000000000000009 /* Debug */,
+				7E5F0000000000000000000A /* Release */,
+				7E5F0000000000000000000B /* Perf */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
