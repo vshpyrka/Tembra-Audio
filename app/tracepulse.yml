@@ -31,6 +31,7 @@ gate:
 devices:
   19021FDEE001AH: { platform: android, model: Pixel 6 Pro, alias: pixel6, overrides: { battery_temp_max_c: 40.0 } }
   00008110-001049660E3A401E: { platform: ios, model: iPhone 14, alias: iphone14 }
+  4CD6879C-8FBA-4CEF-B4EC-31968D0144B0: { platform: ios, model: "iPhone 17 (simulator)", kind: simulator, reference: false }
 
 android:
   package: audio.tembra.app

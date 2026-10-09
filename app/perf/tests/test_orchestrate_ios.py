@@ -15,7 +15,7 @@ from tracepulse.config import DEFAULT_CONFIG_PATH, load_config
 from tracepulse.devices import Device
 from tracepulse.orchestrate_android import JourneyFailed, Refused
 from tracepulse.orchestrate_ios import (
-    IosRoundOptions, bundle_id_with_team, build_for_testing, doctor, run_round, xctestrun_path,
+    IosRoundOptions, bundle_id_with_team, build_for_testing, doctor, find_attachment, run_round, xctestrun_path,
 )
 
 FIXTURES = os.path.join(os.path.dirname(__file__), "fixtures")
@@ -204,3 +204,18 @@ def test_doctor_checks_pairing_and_lock_state_only(cfg, tmp_path):
     assert all(c.ok for c in checks)
     sim_checks = doctor(cfg, SIM, TableRunner(_xcode_rules(cfg, str(tmp_path / "s"))))
     assert [c.name for c in sim_checks] == ["xcode", "simulator_booted"]
+
+
+def test_find_attachment_resolves_through_the_export_manifest(tmp_path):
+    """The real export layout: UUID file names, the human name only in manifest.json."""
+    shutil.copy(os.path.join(FIXTURES, "attachments-manifest.json"), tmp_path / "manifest.json")
+    with open(os.path.join(FIXTURES, "attachments-manifest.json")) as fh:
+        entries = json.load(fh)
+    newest = max((a for e in entries for a in e["attachments"]), key=lambda a: a["timestamp"])
+    for e in entries:
+        for a in e["attachments"]:
+            (tmp_path / a["exportedFileName"]).write_text('{"schema":1,"thermal_state":"nominal","battery_level":1,"network_state":"wifi","simulator":true,"refusal":null}')
+    found = find_attachment(str(tmp_path), "preflight.json")
+    assert found == str(tmp_path / newest["exportedFileName"])
+    assert find_attachment(str(tmp_path), "engine-health.json") is None
+    assert find_attachment(str(tmp_path / "missing"), "preflight.json") is None

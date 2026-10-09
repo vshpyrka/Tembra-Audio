@@ -84,25 +84,48 @@ def test_register_adds_unknown_devices_with_reference_from_kind(tmp_path):
     with open(DEFAULT_CONFIG_PATH) as src, open(path, "w") as dst:
         dst.write(src.read())
     cfg = load_config(path)
+    # ids no registry carries: a new Pixel and a simulator seen for the first time
     new = [Device(device_id="2B091FDH3004QL", platform="android", kind="device", model="Pixel 7 Pro"),
-           Device(device_id="4CD6879C-8FBA-4CEF-B4EC-31968D0144B0", platform="ios", kind="simulator",
+           Device(device_id="00000000-0000-0000-0000-00000000SIM1", platform="ios", kind="simulator",
                   model="iPhone 17 (simulator)"),
            Device(device_id="19021FDEE001AH", platform="android", kind="device", model="Pixel 6 Pro")]
     added = register(cfg, new)
-    assert added == ["2B091FDH3004QL", "4CD6879C-8FBA-4CEF-B4EC-31968D0144B0"]
+    assert added == ["2B091FDH3004QL", "00000000-0000-0000-0000-00000000SIM1"]
     with open(path) as fh:
         raw = yaml.safe_load(fh)
     assert raw["devices"]["2B091FDH3004QL"] == {"platform": "android", "model": "Pixel 7 Pro", "kind": "device",
                                                 "reference": True}
-    sim = raw["devices"]["4CD6879C-8FBA-4CEF-B4EC-31968D0144B0"]
+    sim = raw["devices"]["00000000-0000-0000-0000-00000000SIM1"]
     assert sim["kind"] == "simulator" and sim["reference"] is False
     # the known Pixel entry keeps its alias and overrides untouched
     assert raw["devices"]["19021FDEE001AH"]["alias"] == "pixel6"
     assert raw["devices"]["19021FDEE001AH"]["overrides"] == {"battery_temp_max_c": 40.0}
     reloaded = load_config(path)
     assert reloaded.devices["2B091FDH3004QL"].reference is True
-    assert reloaded.devices["4CD6879C-8FBA-4CEF-B4EC-31968D0144B0"].reference is False
+    assert reloaded.devices["00000000-0000-0000-0000-00000000SIM1"].reference is False
     assert register(reloaded, new) == []
+    # the file is edited in place: comments and the existing entries' layout survive
+    text = open(path).read()
+    assert "# Tembra Audio performance pipeline configuration" in text
+    assert "alias: pixel6" in text and "Unknown keys are an error" in text
+
+
+def test_register_keeps_comments_and_appends_under_devices(tmp_path):
+    path = tmp_path / "tracepulse.yml"
+    path.write_text("# keep me\ndevices:\n  AAA: { platform: android, model: Pixel, alias: p }   # known\n\nandroid:\n  package: a.b\n")
+    cfg = load_config(str(path))
+    assert register(cfg, [Device(device_id="BBB", platform="ios", kind="simulator", model="iPhone 17 (simulator)")]) == ["BBB"]
+    text = path.read_text()
+    assert text.startswith("# keep me\n") and "# known" in text and "package: a.b" in text
+    assert load_config(str(path)).devices["BBB"].model == "iPhone 17 (simulator)"
+
+
+def test_register_creates_the_devices_section_when_missing(tmp_path):
+    path = tmp_path / "tracepulse.yml"
+    path.write_text("android:\n  package: a.b\n")
+    cfg = load_config(str(path))
+    register(cfg, [Device(device_id="CCC", platform="android", kind="device", model="Pixel 7 Pro")])
+    assert load_config(str(path)).devices["CCC"].reference is True
 
 
 def test_resolve_alias_id_and_single_attached():

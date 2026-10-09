@@ -270,7 +270,7 @@ def run_round(cfg: Config, device: Device, runner: Runner, clock: Clock, round_d
     fingerprint: Dict[str, Any] = {"os_version": device.os_version or "unknown"}
     if device.os_build:
         fingerprint["os_build"] = device.os_build
-    preflight = _find_attachment(attachments_dir, "preflight.json")
+    preflight = find_attachment(attachments_dir, "preflight.json")
     if preflight:
         fingerprint.update(parse_preflight(preflight))
     check_records = [c.as_record() for c in checks]
@@ -336,11 +336,30 @@ def _unit_of(key: str) -> str:
     return lookup("ios", key).unit
 
 
-def _find_attachment(directory: str, name: str) -> Optional[str]:
+def find_attachment(directory: str, name: str) -> Optional[str]:
+    """`xcresulttool export attachments` writes `<uuid>.<ext>` files and a `manifest.json`
+    whose `suggestedHumanReadableName` is `<name>_<index>_<uuid>.<ext>` (verified on the
+    iPhone 17 simulator, round 20261008T212602Z): resolve through the manifest, newest
+    attachment first; fall back to a file literally named `name`."""
     if not os.path.isdir(directory):
         return None
+    stem, _ext = os.path.splitext(name)
+    manifest = os.path.join(directory, "manifest.json")
+    if os.path.isfile(manifest):
+        try:
+            with open(manifest) as fh:
+                entries = json.load(fh)
+        except ValueError:
+            entries = []
+        candidates = []
+        for entry in entries:
+            for att in entry.get("attachments", []):
+                human = att.get("suggestedHumanReadableName", "")
+                if human == name or human.startswith(stem + "_") or human.startswith(stem + "."):
+                    candidates.append((att.get("timestamp", 0), att.get("exportedFileName", "")))
+        for _ts, exported in sorted(candidates, reverse=True):
+            path = os.path.join(directory, exported)
+            if os.path.isfile(path):
+                return path
     direct = os.path.join(directory, name)
-    if os.path.isfile(direct):
-        return direct
-    matches = sorted(glob.glob(os.path.join(directory, "**", f"*{name}*"), recursive=True))
-    return matches[0] if matches else None
+    return direct if os.path.isfile(direct) else None

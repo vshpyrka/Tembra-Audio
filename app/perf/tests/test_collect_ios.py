@@ -70,6 +70,25 @@ def test_simulator_rounds_carry_the_flag_and_no_frames_family(cfg):
         assert not any(k.startswith("frames.") for k in j.metrics), j.journey
 
 
+def test_signpost_identifier_form_from_xcresulttool(cfg, tmp_path):
+    """The real form seen on the simulator: identifier `XCTMetric_OSSignpost-tuner.modeSwitch.duration`,
+    display name `Duration (tuner.modeSwitch)`, unit s, 20 measurements."""
+    entry = {"testIdentifier": "TembraPerfTests/TunerPerfTests/testTunerJourney()", "testRuns": [{"device": {}, "metrics": [
+        {"displayName": "Duration (tuner.modeSwitch)", "identifier": "com.apple.dt.XCTMetric_OSSignpost-tuner.modeSwitch.duration",
+         "unitOfMeasurement": "s", "measurements": [0.145, 0.143] * 10},
+        {"displayName": "Clock Monotonic Time", "identifier": "com.apple.dt.XCTMetric_Clock.time.monotonic",
+         "unitOfMeasurement": "s", "measurements": [4.3] * 20},
+        {"displayName": "CPU Time", "identifier": "com.apple.dt.XCTMetric_CPU.time", "unitOfMeasurement": "s", "measurements": [0.9] * 20},
+        {"displayName": "CPU Instructions Retired", "identifier": "com.apple.dt.XCTMetric_CPU.instructions_retired", "unitOfMeasurement": "kI", "measurements": [2.0] * 20},
+        {"displayName": "Memory Peak Physical", "identifier": "com.apple.dt.XCTMetric_Memory.physical_peak", "unitOfMeasurement": "kB", "measurements": [9.0] * 20},
+        {"displayName": "Memory Physical", "identifier": "com.apple.dt.XCTMetric_Memory.physical", "unitOfMeasurement": "kB", "measurements": [1.0] * 20},
+    ]}]}
+    path = tmp_path / "m.json"
+    path.write_text(json.dumps([entry]))
+    tuner = collect_round(str(path), cfg, simulator=True).journeys[0].metrics
+    assert tuner["section.tuner.modeSwitch.sum_ms"].summary["median"] == pytest.approx(144.0)
+
+
 def test_cpu_cycles_and_unknown_metrics_are_skipped_not_fatal(cfg, caplog):
     with caplog.at_level("INFO", logger="tracepulse.collect_ios"):
         result = collect_round(METRICS, cfg, simulator=False)

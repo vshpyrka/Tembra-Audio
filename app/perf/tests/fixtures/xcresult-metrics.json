@@ -281,8 +281,8 @@
       "maxPercentRelativeStandardDeviation": 10
      },
      {
-      "displayName": "Duration",
-      "identifier": "com.apple.dt.XCTMetric_OSSignpost.audio.tembra.ui.tuner.load.duration",
+      "displayName": "Duration (tuner.load)",
+      "identifier": "com.apple.dt.XCTMetric_OSSignpost-tuner.load.duration",
       "unitOfMeasurement": "s",
       "measurements": [
        0.01506,
@@ -311,8 +311,8 @@
       "maxPercentRelativeStandardDeviation": 10
      },
      {
-      "displayName": "Duration",
-      "identifier": "com.apple.dt.XCTMetric_OSSignpost.audio.tembra.ui.tuner.modeSwitch.duration",
+      "displayName": "Duration (tuner.modeSwitch)",
+      "identifier": "com.apple.dt.XCTMetric_OSSignpost-tuner.modeSwitch.duration",
       "unitOfMeasurement": "s",
       "measurements": [
        0.01204,
@@ -341,8 +341,8 @@
       "maxPercentRelativeStandardDeviation": 10
      },
      {
-      "displayName": "Duration",
-      "identifier": "com.apple.dt.XCTMetric_OSSignpost.audio.tembra.ui.tuner.frame.duration",
+      "displayName": "Duration (tuner.frame)",
+      "identifier": "com.apple.dt.XCTMetric_OSSignpost-tuner.frame.duration",
       "unitOfMeasurement": "s",
       "measurements": [
        0.01443,
@@ -566,8 +566,8 @@
       "maxPercentRelativeStandardDeviation": 10
      },
      {
-      "displayName": "Duration",
-      "identifier": "com.apple.dt.XCTMetric_OSSignpost.audio.tembra.ui.metronome.load.duration",
+      "displayName": "Duration (metronome.load)",
+      "identifier": "com.apple.dt.XCTMetric_OSSignpost-metronome.load.duration",
       "unitOfMeasurement": "s",
       "measurements": [
        0.0159,
@@ -596,8 +596,8 @@
       "maxPercentRelativeStandardDeviation": 10
      },
      {
-      "displayName": "Duration",
-      "identifier": "com.apple.dt.XCTMetric_OSSignpost.audio.tembra.ui.metronome.tempoChange.duration",
+      "displayName": "Duration (metronome.tempoChange)",
+      "identifier": "com.apple.dt.XCTMetric_OSSignpost-metronome.tempoChange.duration",
       "unitOfMeasurement": "s",
       "measurements": [
        0.03185,
@@ -626,8 +626,8 @@
       "maxPercentRelativeStandardDeviation": 10
      },
      {
-      "displayName": "Hitch Time Ratio",
-      "identifier": "com.apple.dt.XCTMetric_OSSignpost.audio.tembra.ui.metronome.tempoChange.hitchTimeRatio",
+      "displayName": "Hitch Time Ratio (metronome.tempoChange)",
+      "identifier": "com.apple.dt.XCTMetric_OSSignpost-metronome.tempoChange.hitchTimeRatio",
       "unitOfMeasurement": "ms per s",
       "measurements": [
        3.173,
@@ -656,8 +656,8 @@
       "maxPercentRelativeStandardDeviation": 10
      },
      {
-      "displayName": "Hitches Total Duration",
-      "identifier": "com.apple.dt.XCTMetric_OSSignpost.audio.tembra.ui.metronome.tempoChange.hitchesTotalDuration",
+      "displayName": "Hitches Total Duration (metronome.tempoChange)",
+      "identifier": "com.apple.dt.XCTMetric_OSSignpost-metronome.tempoChange.hitchesTotalDuration",
       "unitOfMeasurement": "ms",
       "measurements": [
        8.108,
@@ -686,8 +686,8 @@
       "maxPercentRelativeStandardDeviation": 10
      },
      {
-      "displayName": "Frame Rate",
-      "identifier": "com.apple.dt.XCTMetric_OSSignpost.audio.tembra.ui.metronome.tempoChange.frameRate",
+      "displayName": "Frame Rate (metronome.tempoChange)",
+      "identifier": "com.apple.dt.XCTMetric_OSSignpost-metronome.tempoChange.frameRate",
       "unitOfMeasurement": "fps",
       "measurements": [
        59.436,
@@ -716,8 +716,8 @@
       "maxPercentRelativeStandardDeviation": 10
      },
      {
-      "displayName": "Frame Count",
-      "identifier": "com.apple.dt.XCTMetric_OSSignpost.audio.tembra.ui.metronome.tempoChange.frameCount",
+      "displayName": "Frame Count (metronome.tempoChange)",
+      "identifier": "com.apple.dt.XCTMetric_OSSignpost-metronome.tempoChange.frameCount",
       "unitOfMeasurement": "frames",
       "measurements": [
        167.0,
@@ -746,8 +746,8 @@
       "maxPercentRelativeStandardDeviation": 10
      },
      {
-      "displayName": "Hitch Count",
-      "identifier": "com.apple.dt.XCTMetric_OSSignpost.audio.tembra.ui.metronome.tempoChange.hitchCount",
+      "displayName": "Hitch Count (metronome.tempoChange)",
+      "identifier": "com.apple.dt.XCTMetric_OSSignpost-metronome.tempoChange.hitchCount",
       "unitOfMeasurement": "hitches",
       "measurements": [
        0.0,
@@ -971,8 +971,8 @@
       "maxPercentRelativeStandardDeviation": 10
      },
      {
-      "displayName": "Duration",
-      "identifier": "com.apple.dt.XCTMetric_OSSignpost.audio.tembra.ui.tuner.load.duration",
+      "displayName": "Duration (tuner.load)",
+      "identifier": "com.apple.dt.XCTMetric_OSSignpost-tuner.load.duration",
       "unitOfMeasurement": "s",
       "measurements": [
        0.01274,
@@ -1001,8 +1001,8 @@
       "maxPercentRelativeStandardDeviation": 10
      },
      {
-      "displayName": "Duration",
-      "identifier": "com.apple.dt.XCTMetric_OSSignpost.audio.tembra.ui.tuner.modeSwitch.duration",
+      "displayName": "Duration (tuner.modeSwitch)",
+      "identifier": "com.apple.dt.XCTMetric_OSSignpost-tuner.modeSwitch.duration",
       "unitOfMeasurement": "s",
       "measurements": [
        0.01513,
@@ -1031,8 +1031,8 @@
       "maxPercentRelativeStandardDeviation": 10
      },
      {
-      "displayName": "Duration",
-      "identifier": "com.apple.dt.XCTMetric_OSSignpost.audio.tembra.ui.tuner.frame.duration",
+      "displayName": "Duration (tuner.frame)",
+      "identifier": "com.apple.dt.XCTMetric_OSSignpost-tuner.frame.duration",
       "unitOfMeasurement": "s",
       "measurements": [
        0.01211,
@@ -1061,8 +1061,8 @@
       "maxPercentRelativeStandardDeviation": 10
      },
      {
-      "displayName": "Duration",
-      "identifier": "com.apple.dt.XCTMetric_OSSignpost.audio.tembra.ui.metronome.load.duration",
+      "displayName": "Duration (metronome.load)",
+      "identifier": "com.apple.dt.XCTMetric_OSSignpost-metronome.load.duration",
       "unitOfMeasurement": "s",
       "measurements": [
        0.0145,
