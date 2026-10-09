@@ -115,26 +115,49 @@ def attached(runner: Runner, adb: str = "adb", devicectl_output: str = "") -> Li
     return devices
 
 
+_DEVICES_LINE = re.compile(r"^devices:\s*(#.*)?$", re.MULTILINE)
+
+
+def _entry_line(dev: Device) -> str:
+    model = dev.model.replace('"', "'")
+    return (f'  {dev.device_id}: {{ platform: {dev.platform}, model: "{model}", kind: {dev.kind}, '
+            f"reference: {'true' if dev.kind == 'device' else 'false'} }}\n")
+
+
 def register(cfg: Config, devices: List[Device]) -> List[str]:
     """Add every unknown device to `cfg.path`'s `devices:` map (model from the
-    tool, `reference = kind == device`), keeping known entries byte-for-byte in
-    meaning. Returns the ids added."""
-    added: List[str] = []
+    tool, `reference = kind == device`) by inserting one line per device under the
+    `devices:` key, so the file's comments and layout stay as the owner wrote them.
+    Returns the ids added."""
     with open(cfg.path) as fh:
-        raw = yaml.safe_load(fh) or {}
-    registry = raw.setdefault("devices", {}) or {}
-    raw["devices"] = registry
-    for dev in devices:
-        if dev.device_id in registry:
+        text = fh.read()
+    known = set(cfg.devices) | set((yaml.safe_load(text) or {}).get("devices") or {})
+    new_devices = [d for d in devices if d.device_id not in known]
+    added: List[str] = []
+    for dev in new_devices:
+        if dev.device_id in added:
             continue
-        registry[dev.device_id] = {"platform": dev.platform, "model": dev.model, "kind": dev.kind,
-                                   "reference": dev.kind == "device"}
+        added.append(dev.device_id)
+    if not added:
+        return []
+    lines = "".join(_entry_line(d) for d in new_devices if d.device_id in added)
+    match = _DEVICES_LINE.search(text)
+    if match is None:
+        if not text.endswith("\n"):
+            text += "\n"
+        text += "\ndevices:\n" + lines
+    else:
+        insert_at = match.end()
+        text = text[:insert_at] + "\n" + lines.rstrip("\n") + text[insert_at:]
+    try:
+        yaml.safe_load(text)
+    except yaml.YAMLError as exc:
+        raise ValueError(f"could not register {added} in {cfg.path}: {exc}") from exc
+    with open(cfg.path, "w") as fh:
+        fh.write(text)
+    for dev in new_devices:
         cfg.devices[dev.device_id] = DeviceEntry(platform=dev.platform, model=dev.model, kind=dev.kind,
                                                  reference=dev.kind == "device")
-        added.append(dev.device_id)
-    if added:
-        with open(cfg.path, "w") as fh:
-            yaml.safe_dump(raw, fh, sort_keys=False, allow_unicode=True)
     return added
 
 

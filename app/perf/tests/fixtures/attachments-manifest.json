@@ -1,0 +1,32 @@
+[
+ {
+  "attachments": [
+   {
+    "configurationName": "Perf",
+    "deviceId": "4CD6879C-8FBA-4CEF-B4EC-31968D0144B0",
+    "deviceName": "iPhone 17",
+    "exportedFileName": "BBA1276A-5751-46B4-8CE3-5D19BF22E3E9.txt",
+    "isAssociatedWithFailure": false,
+    "suggestedHumanReadableName": "preflight_0_56E2998D-57AF-43DA-83ED-AC7AB284CA76.json",
+    "timestamp": 1791494773.946
+   }
+  ],
+  "testIdentifier": "StressPerfTests/testStressJourney()",
+  "testIdentifierURL": "test://com.apple.xcode/iosApp/TembraPerfTests/StressPerfTests/testStressJourney"
+ },
+ {
+  "attachments": [
+   {
+    "configurationName": "Perf",
+    "deviceId": "4CD6879C-8FBA-4CEF-B4EC-31968D0144B0",
+    "deviceName": "iPhone 17",
+    "exportedFileName": "49054E78-604E-45B8-9922-8B9AE980644F.txt",
+    "isAssociatedWithFailure": false,
+    "suggestedHumanReadableName": "preflight_0_122D93CB-AE82-4A23-9EAB-06C973E9477A.json",
+    "timestamp": 1791495365.925
+   }
+  ],
+  "testIdentifier": "StartupPerfTests/testColdLaunchToResponsive()",
+  "testIdentifierURL": "test://com.apple.xcode/iosApp/TembraPerfTests/StartupPerfTests/testColdLaunchToResponsive"
+ }
+]

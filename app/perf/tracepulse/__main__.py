@@ -199,11 +199,19 @@ def _handle_sync(args, cfg: Config, paths: Paths) -> Tuple[int, Payload]:
 
 def _handle_analyze(args, cfg: Config, paths: Paths) -> Tuple[int, Payload]:
     from .analysis import analyze_all
+    from .gate import record_all_gates
+    from .inject import applied_injections, expected_lookup_factory, load_registry
     store, _count = _rebuild(cfg, paths)
     with store:
-        summary = analyze_all(store, cfg, paths)
+        expected = None
+        if os.path.isfile(paths.registry_path):
+            registry = load_registry(paths.registry_path)
+            expected = expected_lookup_factory(registry, lambda round_id: store.injected(round_id))
+        summary = analyze_all(store, cfg, paths, expected_lookup=expected)
+        summary["gate_decisions"] = record_all_gates(store, cfg)
     for line in summary["lines"]:
         print(line)
+    print(f"gate decisions recorded: {summary['gate_decisions']}; injections applied now: {applied_injections(paths.data_dir) or '—'}")
     return EXIT_OK, summary
 
 

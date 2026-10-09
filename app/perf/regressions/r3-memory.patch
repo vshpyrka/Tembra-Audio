@@ -1,0 +1,19 @@
+diff --git a/app/shared/ui/src/commonMain/kotlin/audio/tembra/ui/metronome/MetronomeViewModel.kt b/app/shared/ui/src/commonMain/kotlin/audio/tembra/ui/metronome/MetronomeViewModel.kt
+index 960cce0..0de434f 100644
+--- a/app/shared/ui/src/commonMain/kotlin/audio/tembra/ui/metronome/MetronomeViewModel.kt
++++ b/app/shared/ui/src/commonMain/kotlin/audio/tembra/ui/metronome/MetronomeViewModel.kt
+@@ -229,9 +229,14 @@ class MetronomeViewModel(
+ 
+     // --- Tempo (spec FR-002 to FR-005) --------------------------------------------------------------------------------
+ 
++    // tracepulse R3: deliberate memory regression: each tempo change retains a touched 2 MiB block, 20 slots (40 MiB).
++    private val tracepulseBallast = ArrayDeque<ByteArray>()
++
+     fun setTempo(tempo: Tempo) {
+         val state = _uiState.value
+         if (!state.loaded || state.settings.tempo == tempo) return
++        tracepulseBallast.addLast(ByteArray(2 * 1024 * 1024) { it.toByte() })
++        if (tracepulseBallast.size > 20) tracepulseBallast.removeFirst()
+         // The metronome.tempoChange section in its animation variant (feature 007): iOS attributes the dial's frame
+         // health to it; the interval is the intent's own work.
+         PerfTrace.animation(PerfSection.METRONOME_TEMPO_CHANGE) {

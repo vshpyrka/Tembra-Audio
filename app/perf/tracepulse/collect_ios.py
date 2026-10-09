@@ -24,7 +24,10 @@ _TEST_JOURNEYS = {
     "StressPerfTests": "stress",
 }
 _STARTUP_TESTS = {"testColdLaunchToFirstFrame": "ttid", "testColdLaunchToResponsive": "ttfd"}
-_SECTION_RE = re.compile(r"audio\.tembra\.[a-z]+\.(?P<name>[a-z]+\.[A-Za-z0-9]+)(?:\.|$)")
+# `XCTMetric_OSSignpost-<family>.<camelCase>.<suffix>` is how xcresulttool names a signpost metric
+# (verified on the iPhone 17 simulator, FacadeSelfCheckTests, 2026-10-08); the display name is
+# "<Column> (<name>)".
+_SECTION_RE = re.compile(r"XCTMetric_OSSignpost-(?P<name>[a-z]+\.[A-Za-z0-9]+)(?:\.|$)")
 _HEALTH_KEYS = {
     "callbacks": "audio.callbacks", "last_us": "audio.last_callback_us", "max_us": "audio.max_callback_us",
     "over_budget": "audio.over_budget", "xruns": "audio.xruns", "realtime": "audio.realtime",

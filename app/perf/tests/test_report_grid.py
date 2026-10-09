@@ -141,3 +141,27 @@ def test_points_are_compact_and_catalogue_notes_present(data, html_text):
 def test_report_data_is_json_serialisable_and_sorted(data):
     text = json.dumps(data, sort_keys=True)
     assert "19021FDEE001AH" in text
+
+
+# --- labels (User Story 6): boundaries on every series, onsets attributed to the label --------------------
+
+def test_label_boundaries_are_drawn_once_per_label_change(data, html_text):
+    pixel = next(d for d in data["devices"] if d["device_id"] == PIXEL)
+    iphone = next(d for d in data["devices"] if d["device_id"] == IPHONE)
+    sim = next(d for d in data["devices"] if d["device_id"] == SIM)
+    assert [b["label"] for b in pixel["label_boundaries"]] == ["007-performance-pipeline"]
+    assert [b["label"] for b in iphone["label_boundaries"]] == ["007-performance-pipeline"]
+    assert sim["label_boundaries"] == [], "one label, no boundary"
+    assert pixel["labels"] == ["006-tuner-noise-gate", "007-performance-pipeline"]
+    # the chart code draws one dashed marker and one label per boundary of the device, on every chart
+    assert "dev.label_boundaries.forEach" in html_text and 'class="boundary"' in html_text and 'class="boundary-label"' in html_text
+
+
+def test_onset_with_a_label_is_described_in_that_label_on_the_device_and_in_changes(data):
+    pixel = next(d for d in data["devices"] if d["device_id"] == PIXEL)
+    startup = next(s for f in pixel["families"] for s in f["series"] if s["key"] == "startup/startup.ttid_ms")
+    assert "in 007-performance-pipeline" in startup["sentence"]
+    assert "in 007-performance-pipeline" in pixel["headline"]
+    change = next(c for c in data["changes"] if c["device_id"] == PIXEL and c["metric"] == "startup/startup.ttid_ms")
+    assert change["label_at_onset"] == "007-performance-pipeline" and "in 007-performance-pipeline" in change["sentence"]
+    assert data["summary"]["text"].startswith("3 devices, 32 rounds")
