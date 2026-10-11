@@ -92,6 +92,22 @@ def _xcode_rules(cfg, round_dir, refused=False, simulator=False, fail_journey=Fa
         shutil.copy(os.path.join(FIXTURES, "engine-health.json"), os.path.join(d, "engine-health.json"))
         return _ok(os.path.join(round_dir, "container") + "\n")
 
+    def launch(cmd):
+        # `--json-output <file>` (the audio-trace pass) gets the pid the real tool writes
+        if "--json-output" in cmd:
+            with open(cmd[cmd.index("--json-output") + 1], "w") as fh:
+                json.dump({"result": {"process": {"processIdentifier": 4242}}}, fh)
+        return _ok()
+
+    def xctrace_record(cmd):
+        assert "--attach" in cmd and "4242" in cmd and "--launch" not in cmd, "attach to the launched pid, never --launch"
+        os.makedirs(cmd[cmd.index("--output") + 1], exist_ok=True)
+        return _ok()
+
+    def xctrace_export(cmd):
+        with open(os.path.join(FIXTURES, "audio-ioproc.xml")) as fh:
+            return _ok(fh.read())
+
     def devicectl_list(cmd):
         out = cmd[cmd.index("--json-output") + 1]
         with open(os.path.join(FIXTURES, "devicectl-list.json")) as fh, open(out, "w") as dst:
@@ -111,7 +127,7 @@ def _xcode_rules(cfg, round_dir, refused=False, simulator=False, fail_journey=Fa
         (lambda cmd: cmd[:5] == ["xcrun", "devicectl", "device", "copy", "from"], copy_health),
         (lambda cmd: cmd[:4] == ["xcrun", "devicectl", "device", "uninstall"], _ok()),
         (lambda cmd: cmd[:4] == ["xcrun", "devicectl", "device", "install"], _ok()),
-        (lambda cmd: cmd[:5] == ["xcrun", "devicectl", "device", "process", "launch"], _ok()),
+        (lambda cmd: cmd[:5] == ["xcrun", "devicectl", "device", "process", "launch"], launch),
         (lambda cmd: cmd[:5] == ["xcrun", "devicectl", "device", "process", "terminate"], _ok()),
         (lambda cmd: cmd[:4] == ["xcrun", "devicectl", "device", "info"], _ok(json.dumps({"result": {"lockState": {"passcodeRequired": False}}}))),
         (lambda cmd: cmd[:3] == ["xcrun", "simctl", "get_app_container"], container),
@@ -120,7 +136,8 @@ def _xcode_rules(cfg, round_dir, refused=False, simulator=False, fail_journey=Fa
         (lambda cmd: cmd[:3] == ["xcrun", "simctl", "privacy"], _ok()),
         (lambda cmd: cmd[:3] == ["xcrun", "simctl", "launch"], _ok()),
         (lambda cmd: cmd[:3] == ["xcrun", "simctl", "terminate"], _ok()),
-        (lambda cmd: cmd[:2] == ["xcrun", "xctrace"], _ok()),
+        (lambda cmd: cmd[:3] == ["xcrun", "xctrace", "record"], xctrace_record),
+        (lambda cmd: cmd[:3] == ["xcrun", "xctrace", "export"], xctrace_export),
     ]
 
 
@@ -164,10 +181,18 @@ def test_round_runs_install_warm_up_test_and_collects(cfg, tmp_path):
     assert outcome.fingerprint["thermal_state"] == "nominal" and outcome.fingerprint["network_state"] == "none"
     assert outcome.fingerprint["os_version"] == "27.0.1" and outcome.fingerprint["battery_level"] == 0.83
     assert outcome.checks and all(c["passed"] for c in outcome.checks)
-    assert {a["kind"] for a in outcome.artifacts} >= {"xcresult", "engine_health"}
+    assert {a["kind"] for a in outcome.artifacts} >= {"xcresult", "engine_health", "audio_trace"}
     stress = next(j for j in outcome.journeys if j.journey == "stress")
     assert stress.metrics["audio.callbacks"].summary["median"] == 1200.0 and stress.metrics["audio.callbacks"].source == "engine-health"
     assert outcome.app_size_bytes is None, "size is opt-in on iOS"
+    # the audio-trace pass: the measured run skips AudioTracePass, the pass runs it alone while xctrace is attached
+    assert any("-skip-testing:TembraPerfTests/AudioTracePass" in c for c in cmds if c[:2] == ["xcodebuild", "test-without-building"])
+    audio_pass = runner.index_of("xcodebuild", "test-without-building", "-only-testing:TembraPerfTests/AudioTracePass")
+    record = runner.index_of("xctrace", "record", "Audio System Trace", f"--device {UDID}")
+    launch_for_trace = runner.index_of("devicectl", "device", "process", "launch", "--json-output")
+    assert test < launch_for_trace < audio_pass and record > launch_for_trace
+    assert cmds[audio_pass][cmds[audio_pass].index("-resultBundlePath") + 1] == os.path.join(round_dir, "audio-pass.xcresult")
+    assert stress.metrics["audio.ioproc_p99_us"].source == "xctrace" and stress.metrics["audio.ioproc_p99_us"].summary["median"] > 0
 
 
 def test_refusal_inside_the_runner_refuses_the_round(cfg, tmp_path):
@@ -210,6 +235,7 @@ def test_simulator_round_uses_simctl_and_the_simulator_destination(cfg, tmp_path
     assert runner.index_of("simctl", "get_app_container", SIM_UDID, "audio.tembra.appP5QJJ5Y5V7", "data") >= 0
     assert outcome.badges == ["simulator"]
     assert not any(k.startswith("frames.") for j in outcome.journeys for k in j.metrics)
+    assert runner.index_of("xctrace", "record") == -1, "a simulator has no HAL to trace"
 
 
 def test_doctor_checks_pairing_xcode_support_and_lock_state_only(cfg, tmp_path):

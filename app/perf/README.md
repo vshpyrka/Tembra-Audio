@@ -117,8 +117,21 @@ What each platform can and cannot check: Android enforces the whole device proto
 (battery, temperature, 60 Hz, airplane mode, awake, unlocked); iOS checks thermal state and battery
 inside the runner, cannot pin the refresh rate or set airplane mode, and records the network state
 instead of refusing. Android frames are per-frame percentiles (Macrobenchmark); iOS frames are
-hitch-based (`XCTOSSignpostMetric` animation intervals). `startup.ttfd_ms` is app-declared on Android
-(`ReportFirstContentDrawn`) and OS-defined on iOS.
+hitch-based (`XCTOSSignpostMetric` animation intervals) and exist only while the interval holds
+frames: the metronome's `tempoChange` is a 0.1 ms state update with no drawn animation on iOS, so its
+hitch columns report zero frames in every iteration and the collector drops the family with a warning
+instead of publishing a 60 fps "deficit" (the first phone round, `20261011T165432Z`, carries that
+artefact; records are never rewritten). The family returns when a journey's interval spans a real
+animation. `startup.ttfd_ms` is app-declared on Android (`ReportFirstContentDrawn`) and OS-defined on
+iOS. An iOS journey's `journey.duration_ms` is mostly XCUITest's own cost (about a second per element
+query on a Compose tree), which is why the metronome journey reads 22 s on the phone against 1.9 s on
+the Pixel; it is stable, and comparable only with itself.
+
+On a phone a round ends with the audio-trace pass: the app is launched with `devicectl`, `xctrace
+record --template 'Audio System Trace' --attach <pid>` records for 75 s (never `--launch`, which
+hung in spike 3), and `AudioTracePass` drives one unmeasured stress journey on the running process;
+`audio.trace` and `audio-ioproc.xml` land under the round and `audio.ioproc_p99_us` (advisory) joins
+the stress journey. The measured run skips that class.
 
 Known Macrobenchmark behaviour (seen on the Pixel, round `20261008T175034Z`): single metrics (memory,
 trace sections, frame count) come back with fewer runs than iterations (15 of 20) while the sampled
