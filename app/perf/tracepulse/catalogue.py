@@ -34,6 +34,7 @@ class Metric:
     single_valued: bool = False
     enabled: bool = True
     note: str = ""
+    since: str = ""  # ISO instant from which the source applies; earlier rounds' values are not loaded
 
     @property
     def higher_is_worse(self) -> bool:
@@ -62,9 +63,10 @@ _ANDROID: List[Metric] = [
        note="per-frame percentiles on Android; hitch-based on iOS"),
     _m("android", "memory.peak_kb", "memory", "macrobenchmark MemoryUsageMetric(Max, RssAnon)",
        "kB", JOURNEYS_MEASURED, gate_limit_pct=15, screening_pct=3),
-    _m("android", "memory.end_kb", "memory", "macrobenchmark MemoryUsageMetric(Last, HeapSize)",
-       "kB", JOURNEYS_MEASURED, gate_limit_pct=15, screening_pct=5,
-       note="heap size on Android; physical-memory delta on iOS"),
+    _m("android", "memory.end_kb", "memory", "macrobenchmark MemoryUsageMetric(Last, RssAnon)",
+       "kB", JOURNEYS_MEASURED, gate_limit_pct=15, screening_pct=5, since="2026-10-11T20:10:00Z",
+       note="resident anonymous memory at the end of the journey on Android (heap size before 2026-10-11, "
+            "which varied 4-16 % between rounds); physical-memory delta on iOS"),
     _m("android", "journey.duration_ms", "journey", "macrobenchmark TraceSectionMetric around the journey",
        "ms", JOURNEYS_MEASURED, gate_limit_pct=20, screening_pct=5),
     _m("android", "app.size_bytes", "app", "apk", "bytes", (),
@@ -88,7 +90,7 @@ _IOS: List[Metric] = [
        "kB", JOURNEYS_MEASURED, gate_limit_pct=15, screening_pct=3),
     _m("ios", "memory.end_kb", "memory", "xcresult XCTMemoryMetric Memory Physical (delta)",
        "kB", JOURNEYS_MEASURED, gate_limit_pct=15, screening_pct=5,
-       note="physical-memory delta on iOS; heap size on Android"),
+       note="physical-memory delta on iOS; resident anonymous memory at the end of the journey on Android"),
     _m("ios", "cpu.time_ms", "cpu", "xcresult XCTCPUMetric CPU Time",
        "ms", JOURNEYS_MEASURED, gate_limit_pct=20, screening_pct=5),
     _m("ios", "cpu.instructions_k", "cpu", "xcresult XCTCPUMetric CPU Instructions Retired",

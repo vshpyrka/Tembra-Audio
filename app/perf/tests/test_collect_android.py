@@ -84,7 +84,7 @@ def test_parse_scroll_single_metrics_exact(scroll_file):
         minimum=190000, maximum=210000, median=200000, cov=0.02,
         runs=[190000, 200000, 210000],
     )
-    assert b.single["memoryHeapSizeLastKb"] == SingleMetric(
+    assert b.single["memoryRssAnonLastKb"] == SingleMetric(
         minimum=50000, maximum=54000, median=52000, cov=0.025,
         runs=[50000, 52000, 54000],
     )
@@ -241,7 +241,6 @@ def test_shipped_yml_carries_the_measured_overrides():
     # Calibrated on the Pixel 6 Pro's first rounds (tracepulse.yml comments); revisited at the noise baseline.
     assert shipped.quality.cov_max_overrides == {
         "timeToFullDisplayMs": 0.45,
-        "memoryHeapSizeLastKb": 0.55,
         "frameCount": 0.75,
         "journey.tunerSumMs": 0.25,
     }

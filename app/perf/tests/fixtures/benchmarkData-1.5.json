@@ -121,7 +121,7 @@
       185274.0
      ]
     },
-    "memoryHeapSizeLastKb": {
+    "memoryRssAnonLastKb": {
      "minimum": 48044.0,
      "maximum": 51916.0,
      "median": 49170.0,
@@ -2854,7 +2854,7 @@
       181844.0
      ]
     },
-    "memoryHeapSizeLastKb": {
+    "memoryRssAnonLastKb": {
      "minimum": 47672.0,
      "maximum": 50996.0,
      "median": 49476.0,
@@ -5531,7 +5531,7 @@
       195160.0
      ]
     },
-    "memoryHeapSizeLastKb": {
+    "memoryRssAnonLastKb": {
      "minimum": 52112.0,
      "maximum": 55844.0,
      "median": 54180.0,

@@ -140,6 +140,16 @@ def _round_level(platform: str, metric: str) -> bool:
         return False
 
 
+def _before_source(platform: str, metric: str, started_at: str) -> bool:
+    """True when the round predates the catalogue entry's current source (`since`):
+    its values measured something else and stay out of the cache. The record keeps them."""
+    try:
+        since = lookup(platform, metric).since
+    except CatalogueError:
+        return False
+    return bool(since) and _epoch(started_at) < _epoch(since)
+
+
 def _epoch(iso: str) -> int:
     """ISO-8601 UTC (`...Z` or with offset) to epoch seconds."""
     text = iso.replace("Z", "+00:00")
@@ -224,6 +234,8 @@ class Store:
         if not failed:
             for journey in record.journeys:
                 for metric, result in journey.metrics.items():
+                    if _before_source(record.device.platform, metric, record.started_at):
+                        continue
                     key = series_key(None if _round_level(record.device.platform, metric) else journey.journey,
                                      metric)
                     values = result.samples or [result.summary["median"]]

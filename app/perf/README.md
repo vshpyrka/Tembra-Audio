@@ -133,7 +133,12 @@ artefact; records are never rewritten). The family returns when a journey's inte
 animation. `startup.ttfd_ms` is app-declared on Android (`ReportFirstContentDrawn`) and OS-defined on
 iOS. An iOS journey's `journey.duration_ms` is mostly XCUITest's own cost (about a second per element
 query on a Compose tree), which is why the metronome journey reads 22 s on the phone against 1.9 s on
-the Pixel; it is stable, and comparable only with itself.
+the Pixel; it is stable, and comparable only with itself. End-of-journey memory (`memory.end_kb`) is
+resident anonymous memory on Android (`MemoryUsageMetric(Last, RssAnon)`) and the physical-memory
+delta on iOS. It was the ART heap size until 2026-10-11: the noise baseline showed that value swinging
+9–46 MB inside a round and 4–16 % between round medians — it measures when GC last ran, not the app —
+so the catalogue entry carries `since: 2026-10-11T20:10:00Z` and the cache loads the Pixel's series from
+there (the records keep the old values; a `since` is how a source change avoids showing as a step).
 
 On a phone a round ends with the audio-trace pass: the app is launched with `devicectl`, `xctrace
 record --template 'Audio System Trace' --attach <pid>` records for 75 s (never `--launch`, which
@@ -163,7 +168,11 @@ clean rounds (N = `gate.clean_rounds`, 5) in the worse direction, against the ca
 (overridable in `tracepulse.yml`). `above_limit` is a notice in the output and the report, never a
 failure; `inactive` names its reason (fewer than N clean rounds, simulator series, disabled); improvements
 are never flagged; a clean round succeeded without a `noisy`/`thermal` badge and outside an
-environment-suspect group — a gate flag does not make a round unclean.
+environment-suspect group — a gate flag does not make a round unclean. A flag reads in its limit's own
+terms: `+18 % (limit 15 %)` for a percentage limit, `+2.5 ms (limit 2 ms)` for an absolute one (frame
+overrun, hitches, audio flags); the percentage is taken against the magnitude of the baseline, so a
+rise from −0.5 ms to +2 ms is positive. The first live flag was exactly that: Pixel `noise-baseline`
+round 8, stress `frames.overrun_p90_ms` +2.5 ms over its 2 ms limit, back within limits in round 9.
 
 ## Adding a journey, a section, a counter
 
@@ -232,10 +241,12 @@ Run-to-run spread on this machine is about ±15 %; the feature's extra tests and
   journey 1.84 s; frames P50 7.2 ms (tuner), peak RSS 88 MB (tuner) / 109 MB (stress); APK 14.9 MB.
 - With the instrumented build (round `20261008T175034Z`): `tuner.load` 70 ms, `tuner.modeSwitch` 206 ms
   for two switches, `metronome.tempoChange` 1.7 ms for ten steps, `tuner.frame` 17 frames per journey.
-- Quality allowances calibrated on these rounds and the five below: `memoryHeapSizeLastKb` 0.55,
+- Quality allowances calibrated on these rounds and the five below: `timeToFullDisplayMs` 0.45,
   `frameCount` 0.75, `journey.tunerSumMs` 0.25 (the tuner journey waits on anchors); section keys are
   outside the `noisy` badge (see `quality_flags`). The first eight Pixel rounds were published with the
   badge under the old rule and so never count as gate baselines; the `noise-baseline` session does.
+  `memoryHeapSizeLastKb` carried 0.55 until the end-of-journey memory source changed (see "What a round
+  measures").
 - iOS: the facade self-check passed on the iPhone 17 simulator (20 measurements of `tuner.modeSwitch`,
   average 127 ms).
 

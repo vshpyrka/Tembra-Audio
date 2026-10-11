@@ -17,7 +17,7 @@
           "coefficientOfVariation": 0.02,
           "runs": [190000, 200000, 210000]
         },
-        "memoryHeapSizeLastKb": {
+        "memoryRssAnonLastKb": {
           "minimum": 50000,
           "maximum": 54000,
           "median": 52000,

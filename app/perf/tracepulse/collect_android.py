@@ -128,9 +128,12 @@ def quality_flags(files: List[BenchmarkFile], cfg: Config) -> Tuple[List[str], f
     single metrics, mapped or not, because an unmapped metric's instability is
     still round-quality signal (the wifi-contaminated round announced itself
     via `frameCount` cov 0.27 -- an unmapped, advisory metric); meanwhile
-    `timeToFullDisplayMs` (~0.29-0.38) and `memoryHeapSizeLastKb` (~0.20) are
-    honestly noisy within-round on this device while their round medians stay
-    stable to +-2%, so they carry higher allowances in tracepulse.yml.
+    `timeToFullDisplayMs` (~0.29-0.38) is honestly noisy within-round on this
+    device while its round median stays stable to +-2%, so it carries a higher
+    allowance in tracepulse.yml. (`memoryHeapSizeLastKb` carried one too until
+    the noise baseline showed its round medians swing 4-16 %: the heap size at
+    the end of a journey is whatever GC left, so the end-of-journey memory is
+    `memoryRssAnonLastKb` since 2026-10-11.)
     `thermal`: any benchmark's `thermalThrottleSleepSeconds > 0`.
 
     Section keys (`tuner.frameSumMs`, `metronome.loadCount`, …; feature 007) are
@@ -188,8 +191,8 @@ _REQUIRED = {
     "stress": ("frames.p50_ms", "frames.p90_ms", "frames.p99_ms", "frames.overrun_p90_ms",
                "memory.peak_kb", "memory.end_kb", "journey.duration_ms"),
 }
-_RSS_ANON_RE = re.compile(r"^memory.*rssanon.*$", re.IGNORECASE)
-_HEAP_SIZE_RE = re.compile(r"^memory.*heapsize.*$", re.IGNORECASE)
+_RSS_ANON_MAX_RE = re.compile(r"^memoryRssAnonMaxKb$", re.IGNORECASE)
+_RSS_ANON_LAST_RE = re.compile(r"^memoryRssAnonLastKb$", re.IGNORECASE)
 # Catalogue section names are dotted (`tuner.modeSwitch`), which keeps Macrobenchmark's own
 # un-dotted keys (`frameCount`) out of the section family.
 # Macrobenchmark keys the quality checks read (`cov_max_overrides`) that are no series of their own.
@@ -225,9 +228,9 @@ def _classify_single_key(key: str, journey: str) -> Optional[str]:
         return "startup.ttid_ms"
     if key == "timeToFullDisplayMs":
         return "startup.ttfd_ms"
-    if _RSS_ANON_RE.match(key):
+    if _RSS_ANON_MAX_RE.match(key):
         return "memory.peak_kb"
-    if _HEAP_SIZE_RE.match(key):
+    if _RSS_ANON_LAST_RE.match(key):
         return "memory.end_kb"
     m = _SECTION_SUM_RE.match(key)
     if m:
