@@ -18,7 +18,7 @@ from .config import Config
 from .devices import Device, DeviceError, attached, register, resolve
 from .history import PublishError
 from .orchestrate_android import BuildError, JourneyFailed, Refused, RoundOptions, RoundOutcome
-from .records import DeviceInfo, JourneyResult, MetricResult, RoundRecord, make_round_id
+from .records import DeviceInfo, JourneyResult, MetricResult, RoundRecord, instrumented_build, make_round_id
 from .runner import Clock, Runner
 from .store import Store, split_series_key
 from .text import gate_limit, gate_observed
@@ -107,7 +107,12 @@ def assemble_record(cfg: Config, device: Device, outcome: RoundOutcome, label: s
                     started_at: str, finished_at: str, session: Dict[str, int], build: Dict[str, Any],
                     injected: Optional[List[str]] = None) -> RoundRecord:
     journeys = list(outcome.journeys)
-    build = dict(build)
+    build = dict(build, type=outcome.build_type)
+    if not instrumented_build(outcome.build_type):
+        # the facade is compiled out: macrobenchmark would report every section as 0, which is not a value
+        journeys = [JourneyResult(journey=j.journey, iterations=j.iterations,
+                                  metrics={k: v for k, v in j.metrics.items() if not k.startswith("section.")})
+                    for j in journeys]
     if outcome.app_size_bytes is not None and outcome.status == "succeeded":
         build["app_size_bytes"] = outcome.app_size_bytes
         size = MetricResult(unit="bytes", samples=[], source="apk" if device.platform == "android" else "thinning-report",

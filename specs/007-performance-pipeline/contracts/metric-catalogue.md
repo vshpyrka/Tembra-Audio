@@ -9,7 +9,7 @@ Code in `app/perf/tracepulse/catalogue.py`; `tracepulse.yml` may override `gate_
 | `startup.ttid_ms` | ios | `XCTApplicationLaunchMetric(waitUntilResponsive: false)` | ms | startup | 15 | 3 % | no |
 | `startup.ttfd_ms` | ios | `XCTApplicationLaunchMetric(waitUntilResponsive: true)` | ms | startup | 15 | 3 % | no |
 | `frames.p50_ms`, `frames.p90_ms`, `frames.p99_ms` | android | `FrameTimingMetric.frameDurationCpuMs` P50/P90/P99 | ms | tuner, metronome, stress | 25 | 3 / 5 / 8 % | no |
-| `frames.overrun_p90_ms` | android | `frameOverrunMs` P90 (API 31+) | ms | same | abs 2.0 ms | abs 2.0 ms | no |
+| `frames.overrun_p90_ms` | android | `frameOverrunMs` P90 (API 31+) | ms | same | abs 2.0 ms, or 25 % of the baseline when that is larger | abs 2.0 ms | no |
 | `frames.hitch_ratio_ms_per_s` | ios | animation `XCTOSSignpostMetric` (or `XCTHitchMetric`) hitch time ratio | ms/s | tuner, metronome, stress | abs 5 ms/s | abs 2 ms/s | no |
 | `frames.hitch_count` | ios | same | count | same | 25 | 25 % | no |
 | `frames.fps` | ios | same, frame rate (lower is worse → stored as `frames.fps_deficit` = max(0, 60 − fps)) | fps | same | abs 5 | abs 2 | no |
@@ -20,7 +20,7 @@ Code in `app/perf/tracepulse/catalogue.py`; `tracepulse.yml` may override `gate_
 | `cpu.time_ms` | ios | `XCTCPUMetric` CPU Time | ms | tuner, metronome, stress | 20 | 5 % | no |
 | `cpu.instructions_k` | ios | CPU Instructions Retired | kI | same | 20 | 5 % | no |
 | `journey.duration_ms` | both | Android: trace section around the journey (`TraceSectionMetric`); iOS: `XCTClockMetric` | ms | tuner, metronome, stress | 20 | 5 % | no |
-| `section.<name>.sum_ms` | both | Android `TraceSectionMetric(name, Sum)`; iOS `XCTOSSignpostMetric(subsystem: audio.tembra, category: ui|engine, name:)` duration | ms | journey that exercises it | 20 | 5 % | **yes** (same instrumentation, same name) |
+| `section.<name>.sum_ms` | both | Android `TraceSectionMetric(name, Sum)`; iOS `XCTOSSignpostMetric(subsystem: audio.tembra, category: ui|engine, name:)` duration | ms | journey that exercises it | 20, and at least 1 ms | 5 % | **yes** (same instrumentation, same name) |
 | `section.<name>.count` | both | same | count | same | 20 | 10 % | yes |
 | `app.size_bytes` | android | perf APK bytes (`os.path.getsize`) | bytes | — (n=1) | 2 (threshold detector, 0.5 %) | — | no |
 | `app.size_bytes` | ios | thinning report, compressed size of `iPhone14,7` variant | bytes | — (n=1) | 2 | — | no |
@@ -29,6 +29,10 @@ Code in `app/perf/tracepulse/catalogue.py`; `tracepulse.yml` may override `gate_
 | `audio.ioproc_p99_us` | ios | `xctrace` Audio System Trace `audio-hal-client-io-cycle-ioproc` | µs | stress | 50 | 10 % | no (advisory) |
 
 Simulator series: same keys, `kind: simulator`; gates inactive by default; `frames.*` and `audio.ioproc_*` absent (not produced on simulators); report marks the series as non-reference.
+
+A gate limit is one of a percentage or an absolute value per key (`tracepulse.yml` chooses which). A percentage limit may carry a floor (`gate_floor_abs`): a change under the floor never flags, however large the percentage of a tiny baseline (sections: 1 ms). An absolute limit may scale (`gate_scale_pct`): it grows to that share of the baseline's magnitude when the baseline is large (frame overrun: 25 %, so ±5 ms of noise on the tuner journey's ~50 ms mode-switch frame is not a flag while +2 ms on a quiet series is); the record's `limit_abs` is the limit that applied.
+
+A round's `build.type` names the build measured (`perf`/`release` on Android, `Perf`/`Release` on iOS). Only the measurement build compiles the tracing facade in, so a round of any other build publishes no `section.*` series (macrobenchmark reports an absent section as 0, which is not a value); the cache also ignores the sections of a record from before `build.type` existed in which not one section was hit.
 
 A catalogue entry may carry `since` (an ISO instant): the first round its current source applies to. Values of that key from earlier rounds stay in their records but are not loaded into the cache, so a source change never shows as a step in the series.
 

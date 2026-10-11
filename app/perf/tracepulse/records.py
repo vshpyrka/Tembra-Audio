@@ -192,6 +192,24 @@ def _schema() -> Dict[str, Any]:
     return _SCHEMA_CACHE
 
 
+def instrumented_build(build_type: str) -> bool:
+    """Whether a build type (`build.type`: Android `perf`/`release`, iOS `Perf`/`Release`) compiles the
+    tracing facade in. Only the measurement build does; any other build measures no section."""
+    return build_type.lower() == "perf"
+
+
+def sections_unmeasured(record: "RoundRecord") -> bool:
+    """A round built without the facade measured no section: macrobenchmark reports an absent
+    trace section as 0, which is not a value. `build.type` says so; a record from before the type
+    was written says so by having sections and not one section hit."""
+    build_type = record.build.get("type")
+    if build_type is not None:
+        return not instrumented_build(build_type)
+    counts = [result.summary["median"] for journey in record.journeys
+              for key, result in journey.metrics.items() if key.startswith("section.") and key.endswith(".count")]
+    return bool(counts) and not any(counts)
+
+
 def make_round_id(started_at: datetime, label: str) -> str:
     """`<utc-timestamp>_<label>` with the label reduced to the schema's safe characters."""
     stamp = started_at.strftime("%Y%m%dT%H%M%SZ")

@@ -21,7 +21,7 @@ from datetime import datetime, timezone
 from typing import Iterable, List, Optional, Tuple
 
 from .catalogue import CatalogueError, lookup
-from .records import RoundRecord
+from .records import RoundRecord, sections_unmeasured
 from .summary import percentile
 
 
@@ -232,10 +232,13 @@ class Store:
             session=record.session, fingerprint=record.fingerprint,
         )
         if not failed:
+            unmeasured = sections_unmeasured(record)
             for journey in record.journeys:
                 for metric, result in journey.metrics.items():
                     if _before_source(record.device.platform, metric, record.started_at):
                         continue
+                    if unmeasured and metric.startswith("section."):
+                        continue  # a build without the facade (the release baseline) measured no section
                     key = series_key(None if _round_level(record.device.platform, metric) else journey.journey,
                                      metric)
                     values = result.samples or [result.summary["median"]]

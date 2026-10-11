@@ -135,6 +135,41 @@ def test_decide_against_a_negative_baseline_keeps_the_sign_of_the_change():
     assert "limit_pct" not in d
 
 
+def test_a_percentage_limit_with_a_floor_ignores_changes_under_the_floor():
+    # a 0.03 ms section swings by tens of percent; sections flag only a change of at least 1 ms
+    tiny = decide([0.03] * 5, 0.037, limit_pct=20, limit_abs=None, ids=["a"] * 5, floor_abs=1.0)
+    assert tiny["state"] == "within_limit" and tiny["observed_pct"] == pytest.approx(23.33, abs=0.01)
+    real = decide([70.0] * 5, 90.0, limit_pct=20, limit_abs=None, ids=["a"] * 5, floor_abs=1.0)
+    assert real["state"] == "above_limit"
+
+
+def test_an_absolute_limit_scales_with_a_large_baseline():
+    # frame overrun P90 is ~51 ms in the tuner journey (the mode-switch frame) with ±5 ms of noise:
+    # the 2 ms limit grows to 25 % of the baseline there and stays 2 ms on a quiet series
+    noisy = decide([51.0] * 5, 56.0, limit_pct=None, limit_abs=2.0, ids=["a"] * 5, scale_pct=25)
+    assert noisy["state"] == "within_limit" and noisy["limit_abs"] == pytest.approx(12.75)
+    worse = decide([51.0] * 5, 64.0, limit_pct=None, limit_abs=2.0, ids=["a"] * 5, scale_pct=25)
+    assert worse["state"] == "above_limit" and worse["observed_abs"] == pytest.approx(13.0)
+    quiet = decide([-0.5] * 5, 2.04, limit_pct=None, limit_abs=2.0, ids=["a"] * 5, scale_pct=25)
+    assert quiet["state"] == "above_limit" and quiet["limit_abs"] == 2.0
+
+
+def test_the_catalogue_floor_and_scale_reach_the_round_decisions(cfg, tmp_path):
+    def with_series(round_id, started, overrun, section):
+        rec = _rec(PIXEL, round_id, 300, started)
+        tuner = rec.journeys[1]
+        tuner.metrics["frames.overrun_p90_ms"] = MetricResult(unit="ms", samples=[overrun] * 3, source="macrobenchmark")
+        tuner.metrics["section.tuner.load.sum_ms"] = MetricResult(unit="ms", samples=[section] * 3, source="macrobenchmark")
+        return rec
+    history = [with_series(f"20261008T1{i}0000Z_a", f"2026-10-08T1{i}:00:00Z", 51.0, 0.03) for i in range(6)]
+    with Store.rebuild(str(tmp_path / "db"), history) as store:
+        new = with_series("20261008T200000Z_b", "2026-10-08T20:00:00Z", 56.0, 0.037)
+        decisions = {d["metric"]: d for d in decide_round(store, cfg, PIXEL, new)}
+    assert decisions["tuner/frames.overrun_p90_ms"]["state"] == "within_limit"
+    assert decisions["tuner/frames.overrun_p90_ms"]["limit_abs"] == pytest.approx(12.75)
+    assert decisions["tuner/section.tuner.load.sum_ms"]["state"] == "within_limit"
+
+
 def test_record_all_gates_writes_decisions_for_every_round_in_order(cfg, tmp_path):
     history = _history(PIXEL, [300, 300, 300, 300, 300, 300, 360, 300])
     with Store.rebuild(str(tmp_path / "db"), history) as store:
