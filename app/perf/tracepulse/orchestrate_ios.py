@@ -16,6 +16,7 @@ import glob
 import json
 import logging
 import os
+import threading
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Sequence
 
@@ -32,6 +33,9 @@ logger = logging.getLogger("tracepulse.orchestrate_ios")
 BUILD_TIMEOUT_S = 3600
 TEST_TIMEOUT_S = 3600
 TOOL_TIMEOUT_S = 300
+# One unmeasured stress journey (~25 s of taps) plus the runner's attach and set-up; xctrace stops by itself.
+AUDIO_TRACE_SECONDS = 75
+AUDIO_TRACE_TEST = "AudioTracePass"
 
 
 @dataclass(frozen=True)
@@ -210,9 +214,14 @@ def warm_up(cfg: Config, device: Device, runner: Runner, clock: Clock) -> None:
 
 
 def test_without_building(cfg: Config, device: Device, runner: Runner, xctestrun: str, result_bundle: str,
-                          log_path: str) -> Completed:
+                          log_path: str, only: Optional[str] = None) -> Completed:
+    """The measured run (`only=None`: the whole target minus the audio-trace pass) or one named test."""
     cmd = ["xcodebuild", "test-without-building", "-xctestrun", xctestrun, "-destination", _destination(device),
-           "-resultBundlePath", result_bundle, f"-only-testing:{cfg.ios.test_target}"]
+           "-resultBundlePath", result_bundle]
+    if only is None:
+        cmd += [f"-only-testing:{cfg.ios.test_target}", f"-skip-testing:{cfg.ios.test_target}/{AUDIO_TRACE_TEST}"]
+    else:
+        cmd += [f"-only-testing:{only}"]
     res = runner.run(cmd, cwd=_ios_dir(cfg), timeout=TEST_TIMEOUT_S)
     with open(log_path, "w") as fh:
         fh.write(f"# {' '.join(cmd)}\n# rc={res.returncode}\n\n{res.stdout}\n--- stderr ---\n{res.stderr}")
@@ -252,13 +261,48 @@ def _pull_engine_health(cfg: Config, device: Device, runner: Runner, round_dir: 
     return dest if res.returncode == 0 and os.path.isfile(dest) else None
 
 
-def _audio_trace(cfg: Config, device: Device, runner: Runner, round_dir: str) -> Optional[str]:
-    """`xctrace record --template 'Audio System Trace' --attach` for the stress journey is started by the
-    orchestrator around the test run on physical devices; the p99 of the I/O-proc duration is read by traces_ios."""
+def _launched_pid(launch_json: str) -> Optional[int]:
+    try:
+        with open(launch_json) as fh:
+            return int(json.load(fh)["result"]["process"]["processIdentifier"])
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+
+
+def _audio_trace(cfg: Config, device: Device, runner: Runner, clock: Clock, round_dir: str,
+                 xctestrun: str) -> Optional[str]:
+    """The audio-trace pass (research spike 3, US5), after the measured runs on a phone: launch the app with
+    `devicectl`, attach `xctrace record --template 'Audio System Trace'` to its pid for a fixed time limit (never
+    `--launch`, which hung) and drive one unmeasured stress journey through `AudioTracePass`, which attaches to the
+    running process instead of relaunching it (a relaunch would leave the trace's pid behind). The trace lands under
+    the round as `audio.trace`; `traces_ios` reads the I/O-proc p99 from it. Simulators have no HAL: nothing to trace.
+    A pass that fails costs the round nothing but the series."""
     if device.kind == "simulator":
         return None
+    bundle = bundle_id_with_team(cfg)
+    launch_json = os.path.join(round_dir, "audio-trace-launch.json")
+    res = _devicectl(cfg, device, runner, "process", "launch", "--terminate-existing", "--json-output", launch_json, bundle)
+    pid = _launched_pid(launch_json) if res.returncode == 0 else None
+    if pid is None:
+        logger.warning("audio-trace pass: the app did not launch (%s); no audio.trace this round", res.stderr.strip())
+        return None
     path = os.path.join(round_dir, "audio.trace")
-    return path if os.path.isdir(path) else None
+    record = ["xcrun", "xctrace", "record", "--template", "Audio System Trace", "--device", device.device_id,
+              "--attach", str(pid), "--time-limit", f"{AUDIO_TRACE_SECONDS}s", "--no-prompt", "--output", path]
+    outcome: Dict[str, Completed] = {}
+    recorder = threading.Thread(target=lambda: outcome.update(record=runner.run(record, timeout=AUDIO_TRACE_SECONDS + TOOL_TIMEOUT_S)))
+    recorder.start()
+    clock.sleep(5)  # xctrace is attached before the journey's first tap
+    log = os.path.join(round_dir, "xcodebuild-audio-pass.log")
+    test_without_building(cfg, device, runner, xctestrun, os.path.join(round_dir, "audio-pass.xcresult"), log,
+                          only=f"{cfg.ios.test_target}/{AUDIO_TRACE_TEST}")
+    recorder.join()
+    recorded = outcome.get("record")
+    if recorded is None or recorded.returncode != 0 or not os.path.isdir(path):
+        logger.warning("audio-trace pass: xctrace did not record (%s); no audio.trace this round",
+                       (recorded.stderr.strip() if recorded else "no result"))
+        return None
+    return path
 
 
 # ============================================================
@@ -351,7 +395,7 @@ def run_round(cfg: Config, device: Device, runner: Runner, clock: Clock, round_d
             for key, value in values.items():
                 merged[key] = MetricResult(unit=_unit_of(key), samples=[value] * stress.iterations, source="engine-health")
             journeys[journeys.index(stress)] = JourneyResult(journey="stress", iterations=stress.iterations, metrics=merged)
-    trace = _audio_trace(cfg, device, runner, round_dir)
+    trace = _audio_trace(cfg, device, runner, clock, round_dir, xctestrun) if options.audio_trace else None
     if trace:
         artifacts.append({"kind": "audio_trace", "path": trace})
         from .traces_ios import ioproc_p99_from_trace
