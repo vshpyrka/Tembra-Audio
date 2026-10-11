@@ -81,8 +81,9 @@ def _xcode_rules(cfg, round_dir, refused=False, simulator=False, fail_journey=Fa
 
     def copy_health(cmd):
         dest = cmd[cmd.index("--destination") + 1]
-        os.makedirs(dest, exist_ok=True)
-        shutil.copy(os.path.join(FIXTURES, "engine-health.json"), os.path.join(dest, "engine-health.json"))
+        assert dest.endswith("engine-health.json"), "devicectl copy wants the destination file, not its directory"
+        os.makedirs(os.path.dirname(dest), exist_ok=True)
+        shutil.copy(os.path.join(FIXTURES, "engine-health.json"), dest)
         return _ok()
 
     def container(cmd):

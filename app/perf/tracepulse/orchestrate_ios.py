@@ -246,8 +246,9 @@ def _pull_engine_health(cfg: Config, device: Device, runner: Runner, round_dir: 
                 out.write(fh.read())
             return dest
         return None
+    # `--destination` names the file to write; a directory fails with "Is a directory" (verified on iOS 27.0.1).
     res = _devicectl(cfg, device, runner, "copy", "from", "--source", "Documents/engine-health.json",
-                     "--domain-type", "appDataContainer", "--domain-identifier", bundle, "--destination", round_dir)
+                     "--domain-type", "appDataContainer", "--domain-identifier", bundle, "--destination", dest)
     return dest if res.returncode == 0 and os.path.isfile(dest) else None
 
 
