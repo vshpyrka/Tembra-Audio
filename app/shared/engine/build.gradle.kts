@@ -31,8 +31,9 @@ fun registerEngineBuild(target: String, sysroot: String): TaskProvider<Exec> {
     val source = engineSourceDir.absolutePath
     val sdk = sdkDir.absolutePath
     val version = cmakeVersion
-    // Measurement builds (feature 007) compile the tracing facade into the engine.
-    val tracing = if (providers.gradleProperty("tembra.perf").isPresent) "ON" else "OFF"
+    // Measurement builds (feature 007) compile the tracing facade into the engine; `-Ptembra.perf=release`
+    // (the SC-007 baseline) keeps the measurement build type without it.
+    val tracing = if (providers.gradleProperty("tembra.perf").orNull == "true") "ON" else "OFF"
     return tasks.register<Exec>("buildEngine${target.replaceFirstChar { it.uppercase() }}") {
         group = "build"
         description = "Builds libtembra_engine.a for $target with CMake"
@@ -97,9 +98,10 @@ tasks.register<Exec>("engineHostTest") {
 
 // --- Measurement build switch (feature 007) -------------------------------------------------------
 // `-Ptembra.perf=true` generates PerfBuild.PERF_ENABLED = true and the signpost-name table
-// (PerfNames.kt) from perf-catalogue.txt; without it the constant is false and every name is "",
-// so release and debug binaries carry none of the catalogue strings (FR-014, SC-007).
-val perfEnabled: Boolean = providers.gradleProperty("tembra.perf").isPresent
+// (PerfNames.kt) from perf-catalogue.txt; without it (or with any other value, such as the
+// `release` of the SC-007 baseline) the constant is false and every name is "", so release and
+// debug binaries carry none of the catalogue strings (FR-014, SC-007).
+val perfEnabled: Boolean = providers.gradleProperty("tembra.perf").orNull == "true"
 val perfCatalogueFile: File = layout.projectDirectory.file("perf-catalogue.txt").asFile
 val perfGeneratedMain = layout.buildDirectory.dir("generated/perf/commonMain/kotlin")
 val perfGeneratedTest = layout.buildDirectory.dir("generated/perf/commonTest/kotlin")
