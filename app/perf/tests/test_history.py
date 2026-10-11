@@ -142,3 +142,29 @@ def test_publish_refuses_to_overwrite_an_existing_record(tmp_path, origin):
     h.publish(rec)
     with pytest.raises(PublishError, match="already"):
         h.publish(rec)
+
+
+def test_concurrent_sessions_on_one_machine_serialise_through_the_history_lock(tmp_path, origin):
+    """Two sessions (Pixel and iPhone) share the worktree: their publishes run
+    in parallel threads without an index.lock collision, and every record lands."""
+    import threading
+    repo = _repo(tmp_path, "mac1", origin)
+    h = _history(repo, tmp_path / "data1")
+    h.publish(_record("PIXEL", "android", "20261008T090000Z_007"))  # worktree exists before the race
+    errors = []
+
+    def publish(device, platform, hour):
+        try:
+            for minute in range(3):
+                h.publish(_record(device, platform, f"20261008T{hour}{minute:02d}00Z_007"))
+        except Exception as exc:  # noqa: BLE001 - the test reports any failure
+            errors.append(exc)
+    threads = [threading.Thread(target=publish, args=("PIXEL", "android", "10")),
+               threading.Thread(target=publish, args=("IPHONE", "ios", "11"))]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert errors == []
+    assert len(h.sync()) == 7
+    assert (tmp_path / "data1" / "locks" / "history").is_file()

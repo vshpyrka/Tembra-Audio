@@ -38,7 +38,7 @@ def cfg(tmp_path):
     return load_config(str(root / "tracepulse.yml"))
 
 
-def _xcode_rules(cfg, round_dir, refused=False, simulator=False, fail_journey=False):
+def _xcode_rules(cfg, round_dir, refused=False, simulator=False, fail_journey=False, sdk="27.1"):
     """The tool calls a round makes and the files they leave behind."""
     derived = os.path.join(round_dir, "DerivedData")
 
@@ -99,6 +99,7 @@ def _xcode_rules(cfg, round_dir, refused=False, simulator=False, fail_journey=Fa
 
     return [
         (["xcrun", "xcodebuild", "-version"], _ok("Xcode 26.6\nBuild version 17F60\n")),
+        (["xcrun", "--sdk", "iphoneos", "--show-sdk-version"], _ok(sdk + "\n")),
         (lambda cmd: cmd[:4] == ["xcrun", "devicectl", "list", "devices"], devicectl_list),
         (["xcrun", "simctl", "list", "devices", "booted", "-j"], _ok(json.dumps({"devices": {"com.apple.CoreSimulator.SimRuntime.iOS-26-5": [{"udid": SIM_UDID, "name": "iPhone 17", "state": "Booted"}]}}))),
         (lambda cmd: cmd[:2] == ["xcodebuild", "build-for-testing"], bft),
@@ -207,11 +208,11 @@ def test_simulator_round_uses_simctl_and_the_simulator_destination(cfg, tmp_path
     assert not any(k.startswith("frames.") for j in outcome.journeys for k in j.metrics)
 
 
-def test_doctor_checks_pairing_and_lock_state_only(cfg, tmp_path):
+def test_doctor_checks_pairing_xcode_support_and_lock_state_only(cfg, tmp_path):
     runner = TableRunner(_xcode_rules(cfg, str(tmp_path / "r")))
     checks = doctor(cfg, IPHONE, runner)
     names = [c.name for c in checks]
-    assert names == ["xcode", "device_attached", "unlocked"]
+    assert names == ["xcode", "device_attached", "xcode_supports_device", "unlocked"]
     assert all(c.ok for c in checks)
     sim_checks = doctor(cfg, SIM, TableRunner(_xcode_rules(cfg, str(tmp_path / "s"))))
     assert [c.name for c in sim_checks] == ["xcode", "simulator_booted"]
@@ -230,3 +231,16 @@ def test_find_attachment_resolves_through_the_export_manifest(tmp_path):
     assert found == str(tmp_path / newest["exportedFileName"])
     assert find_attachment(str(tmp_path), "engine-health.json") is None
     assert find_attachment(str(tmp_path / "missing"), "preflight.json") is None
+
+
+def test_doctor_refuses_an_xcode_older_than_the_phones_ios(cfg, tmp_path):
+    """iOS 27.0.1 on the phone with a 26.5 SDK: XCUITest launches die with CoreDevice
+    10004 although devicectl works, so the check names the DEVELOPER_DIR fix."""
+    checks = doctor(cfg, IPHONE, TableRunner(_xcode_rules(cfg, str(tmp_path / "r"), sdk="26.5")), scratch_dir=str(tmp_path))
+    support = next(c for c in checks if c.name == "xcode_supports_device")
+    assert not support.ok and "DEVELOPER_DIR" in support.detail and "27.0.1" in support.detail and "26.5" in support.detail
+    ok = doctor(cfg, IPHONE, TableRunner(_xcode_rules(cfg, str(tmp_path / "r2"), sdk="27.1")), scratch_dir=str(tmp_path))
+    assert next(c for c in ok if c.name == "xcode_supports_device").ok
+    with pytest.raises(Refused):
+        run_round(cfg, IPHONE, TableRunner(_xcode_rules(cfg, str(tmp_path / "r3"), sdk="26.5")), FakeClock(),
+                  str(tmp_path / "r3"), IosRoundOptions(journeys=cfg.journeys, xctestrun="x.xctestrun"))

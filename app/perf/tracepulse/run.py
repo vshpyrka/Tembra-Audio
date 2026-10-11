@@ -199,6 +199,11 @@ def run_session(cfg: Config, paths, device: Device, label: str, rounds: int, opt
             session_dir = os.path.join(paths.data_dir, "sessions", make_round_id(datetime.fromtimestamp(clock.now(), tz=timezone.utc), label))
             try:
                 options = deps.prepare_fn(cfg, device, runner, session_dir, options)
+            except Refused as exc:
+                result.refused = str(exc)
+                result.exit_status = EXIT_REFUSED
+                print(f"  refused: {exc}")
+                return result
             except BuildError as exc:
                 result.failed = str(exc)
                 result.exit_status = EXIT_FAILED
@@ -357,18 +362,12 @@ def run_command(args, cfg: Config, paths, runner: Runner, clock: Clock) -> Tuple
     payload: Dict[str, Any] = {"sessions": []}
     worst = EXIT_OK
     for device in targets:
+        options = round_options(args, cfg, device.platform, journeys, iterations)
         if device.platform == "android":
             from .orchestrate_android import run_round as round_fn
-            options = RoundOptions(journeys=journeys, iterations=iterations, no_build=args.no_build, apk=args.apk,
-                                   test_apk=args.test_apk, build_type=args.build_type or cfg.android.build_type,
-                                   keep_build=args.keep_build)
             prepare_fn = _prepare_android
         else:
             from .orchestrate_ios import run_round as round_fn
-            from .orchestrate_ios import IosRoundOptions
-            options = IosRoundOptions(journeys=journeys, iterations=iterations, no_build=args.no_build,
-                                      xctestrun=args.xctestrun, configuration=args.configuration or cfg.ios.configuration,
-                                      size=args.size, keep_build=args.keep_build)
             prepare_fn = _prepare_ios
         deps = SessionDeps(round_fn=round_fn, history=history, report_fn=generate_report, detect_fn=detect_fn,
                            gate_fn=_safe(gate_fn), injected_fn=_safe_list(injected_fn), prepare_fn=prepare_fn)
@@ -423,6 +422,26 @@ def size_command(args, cfg: Config, paths, device: Device, runner: Runner) -> Tu
     return EXIT_OK, dict(result, device=device.device_id)
 
 
+def _absolute(path: Optional[str]) -> Optional[str]:
+    return os.path.abspath(path) if path else path
+
+
+def round_options(args, cfg: Config, platform: str, journeys: List[str], iterations: int):
+    """The round options for one platform from the `run` arguments. Prebuilt
+    artifacts (`--apk`, `--test-apk`, `--xctestrun`) are given relative to the
+    caller's cwd while the tools run from the app directories, so they are made
+    absolute here."""
+    if platform == "android":
+        return RoundOptions(journeys=journeys, iterations=iterations, no_build=args.no_build,
+                            apk=_absolute(args.apk), test_apk=_absolute(args.test_apk),
+                            build_type=args.build_type or cfg.android.build_type, keep_build=args.keep_build)
+    from .orchestrate_ios import IosRoundOptions
+    return IosRoundOptions(journeys=journeys, iterations=iterations, no_build=args.no_build,
+                           xctestrun=_absolute(args.xctestrun),
+                           configuration=args.configuration or cfg.ios.configuration,
+                           size=args.size, keep_build=args.keep_build)
+
+
 def _prepare_android(cfg: Config, device: Device, runner: Runner, session_dir: str, options: RoundOptions) -> RoundOptions:
     """One measurement build per session; every round then installs the same artifacts."""
     if options.no_build:
@@ -440,8 +459,11 @@ def _prepare_ios(cfg: Config, device: Device, runner: Runner, session_dir: str, 
     """One `xcodebuild build-for-testing` per session; every round reuses its xctestrun."""
     if options.no_build or options.xctestrun:
         return options
-    from .orchestrate_ios import IosRoundOptions, build_for_testing
+    from .orchestrate_ios import IosRoundOptions, build_for_testing, doctor
     os.makedirs(session_dir, exist_ok=True)
+    checks = doctor(cfg, device, runner, scratch_dir=session_dir)
+    if any(not c.ok for c in checks):
+        raise Refused(checks)  # a device precondition is cheaper to learn before the build
     derived = os.path.join(session_dir, "DerivedData")
     log = os.path.join(session_dir, "xcodebuild-build.log")
     print(f"building for testing (xcodebuild build-for-testing -configuration {options.configuration}), log in {log}")

@@ -8,13 +8,19 @@ conflicts) and retried; a push that still fails parks the record under
 `data/unpublished/` for `publish_pending` (exit status 5 at the CLI). `sync`
 fast-forwards the worktree and returns every record. The branch is append-only:
 never rebase or rewrite it.
+
+Sessions on different devices run side by side and share the worktree, so the
+commit/push and the fast-forward hold an exclusive file lock
+(`data/locks/history`); the per-device lock in `run.py` does not cover this.
 """
 
+import contextlib
+import fcntl
 import glob
 import os
 import shutil
 import subprocess
-from typing import List, Optional
+from typing import Iterator, List, Optional
 
 from .records import RoundRecord, record_path
 
@@ -87,6 +93,18 @@ class History:
             self._git("worktree", "add", "--quiet", self.worktree, self.branch)
         return self.worktree
 
+    @contextlib.contextmanager
+    def _exclusive(self) -> Iterator[None]:
+        """Serialise worktree writes across concurrent sessions on this machine."""
+        locks = os.path.join(self.data_dir, "locks")
+        os.makedirs(locks, exist_ok=True)
+        with open(os.path.join(locks, "history"), "w") as fh:
+            fcntl.flock(fh, fcntl.LOCK_EX)
+            try:
+                yield
+            finally:
+                fcntl.flock(fh, fcntl.LOCK_UN)
+
     # -- publish ----------------------------------------------------------
 
     def _unpublished_path(self, record: RoundRecord) -> str:
@@ -121,19 +139,20 @@ class History:
         """Write, validate, commit and push one record. Returns its branch path.
         A record whose file already exists on the branch is refused (append-only)."""
         RoundRecord.validate(record.to_dict())
-        self.ensure_worktree()
-        rel = record_path(record.device.device_id, record.round_id)
-        target = os.path.join(self.worktree, rel)
-        if os.path.exists(target):
-            raise PublishError(f"{rel} already exists on {self.branch}; records are never rewritten")
-        os.makedirs(os.path.dirname(target), exist_ok=True)
-        with open(target, "w") as fh:
-            fh.write(record.to_json())
-        self._git("add", "--", rel, cwd=self.worktree)
-        self._git("-c", "user.name=tracepulse", "-c", "user.email=tracepulse@tembra.audio",
-                  "commit", "--quiet", "-m", f"perf: {record.device.device_id} {record.round_id}",
-                  cwd=self.worktree)
-        error = self._push()
+        with self._exclusive():
+            self.ensure_worktree()
+            rel = record_path(record.device.device_id, record.round_id)
+            target = os.path.join(self.worktree, rel)
+            if os.path.exists(target):
+                raise PublishError(f"{rel} already exists on {self.branch}; records are never rewritten")
+            os.makedirs(os.path.dirname(target), exist_ok=True)
+            with open(target, "w") as fh:
+                fh.write(record.to_json())
+            self._git("add", "--", rel, cwd=self.worktree)
+            self._git("-c", "user.name=tracepulse", "-c", "user.email=tracepulse@tembra.audio",
+                      "commit", "--quiet", "-m", f"perf: {record.device.device_id} {record.round_id}",
+                      cwd=self.worktree)
+            error = self._push()
         if error is not None:
             if not _parked:
                 self._park(record)
@@ -171,12 +190,13 @@ class History:
         """Fast-forward the worktree to the remote branch and return every record."""
         if not self._fetch() and not self._ref_exists(f"refs/heads/{self.branch}"):
             return []
-        self.ensure_worktree()
-        if self._ref_exists(self._remote_ref()):
-            merge = self._git("merge", "--quiet", "--ff-only", self._remote_ref(), cwd=self.worktree, check=False)
-            if merge.returncode != 0:
-                raise HistoryError(f"{self.branch} diverged from {self.remote}: {merge.stderr.strip()}")
-        return self.records()
+        with self._exclusive():
+            self.ensure_worktree()
+            if self._ref_exists(self._remote_ref()):
+                merge = self._git("merge", "--quiet", "--ff-only", self._remote_ref(), cwd=self.worktree, check=False)
+                if merge.returncode != 0:
+                    raise HistoryError(f"{self.branch} diverged from {self.remote}: {merge.stderr.strip()}")
+            return self.records()
 
     def records(self) -> List[RoundRecord]:
         """Every record in the worktree, sorted by path (device id, then round id)."""
