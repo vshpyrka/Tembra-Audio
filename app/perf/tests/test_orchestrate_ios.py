@@ -175,6 +175,17 @@ def test_refusal_inside_the_runner_refuses_the_round(cfg, tmp_path):
     assert "thermal_state" in str(exc.value)
 
 
+def test_untrusted_runner_profile_refuses_the_round(cfg, tmp_path):
+    round_dir = str(tmp_path / "r1")
+    rules = _xcode_rules(cfg, round_dir)
+    rules.insert(0, (lambda cmd: cmd[:2] == ["xcodebuild", "test-without-building"], Completed(
+        65, "Failed to install or launch the test runner. (Underlying Error: The application could not be launched because "
+            "the Developer App Certificate is not trusted ... its profile has not been explicitly trusted by the user.)")))
+    with pytest.raises(Refused) as exc:
+        run_round(cfg, IPHONE, TableRunner(rules), FakeClock(), round_dir, IosRoundOptions(journeys=cfg.journeys, xctestrun="x.xctestrun"))
+    assert "runner_trusted" in str(exc.value) and "VPN & Device Management" in str(exc.value)
+
+
 def test_anchor_failure_is_a_failed_round(cfg, tmp_path):
     round_dir = str(tmp_path / "r1")
     runner = TableRunner(_xcode_rules(cfg, round_dir, fail_journey=True))

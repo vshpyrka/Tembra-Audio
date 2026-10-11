@@ -264,6 +264,12 @@ def run_round(cfg: Config, device: Device, runner: Runner, clock: Clock, round_d
     artifacts.append({"kind": "xcresult", "path": result_bundle})
     artifacts.append({"kind": "xcodebuild_log", "path": log})
 
+    # A runner the phone will not launch is a device precondition, not a measurement: refuse, publish nothing.
+    trust_markers = ("not been explicitly trusted", "Developer App Certificate is not trusted", "Developer App certificate is not trusted")
+    if res.returncode != 0 and any(m in res.stdout or m in res.stderr for m in trust_markers):
+        raise Refused(checks + [Check("runner_trusted", False,
+                                      "the TembraPerfTests runner's profile is not trusted on the phone: Settings → General → "
+                                      "VPN & Device Management → trust the developer profile, then rerun")])
     failures = _failures(runner, result_bundle)
     attachments_dir = os.path.join(round_dir, "attachments")
     _xcresulttool(runner, "export", "attachments", "--path", result_bundle, "--output-path", attachments_dir)
