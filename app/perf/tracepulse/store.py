@@ -110,10 +110,15 @@ CREATE TABLE IF NOT EXISTS gate_decisions (
     reason TEXT NOT NULL DEFAULT '',
     limit_pct REAL,
     observed_pct REAL,
-    baseline_rounds TEXT NOT NULL DEFAULT '[]'
+    baseline_rounds TEXT NOT NULL DEFAULT '[]',
+    limit_abs REAL,
+    observed_abs REAL
 );
 CREATE INDEX IF NOT EXISTS idx_gate_round ON gate_decisions(round_id);
 """
+
+# columns added after the first caches were written; an older cache gets them on open
+_LATER_COLUMNS = {"gate_decisions": ("limit_abs REAL", "observed_abs REAL")}
 
 
 def series_key(journey: Optional[str], metric: str) -> str:
@@ -164,6 +169,11 @@ class Store:
         self._conn.execute("PRAGMA journal_mode=WAL")
         self._conn.execute("PRAGMA foreign_keys=ON")
         self._conn.executescript(_SCHEMA)
+        for table, columns in _LATER_COLUMNS.items():
+            present = {row["name"] for row in self._conn.execute(f"PRAGMA table_info({table})")}
+            for column in columns:
+                if column.split()[0] not in present:
+                    self._conn.execute(f"ALTER TABLE {table} ADD COLUMN {column}")
         self._conn.commit()
 
     def __enter__(self) -> "Store":
@@ -222,7 +232,8 @@ class Store:
         for decision in record.gate:
             self.add_gate_decision(round_id, decision["metric"], decision["state"],
                                    decision.get("reason", ""), decision.get("limit_pct"),
-                                   decision.get("observed_pct"), decision.get("baseline_rounds", []))
+                                   decision.get("observed_pct"), decision.get("baseline_rounds", []),
+                                   limit_abs=decision.get("limit_abs"), observed_abs=decision.get("observed_abs"))
         for artifact in record.artifacts:
             self.add_artifact(round_id, artifact["kind"], artifact["path"])
         return round_id
@@ -391,12 +402,13 @@ class Store:
 
     def add_gate_decision(self, round_id: int, metric: str, state: str, reason: str = "",
                           limit_pct: Optional[float] = None, observed_pct: Optional[float] = None,
-                          baseline_rounds: Optional[List[str]] = None) -> None:
+                          baseline_rounds: Optional[List[str]] = None, limit_abs: Optional[float] = None,
+                          observed_abs: Optional[float] = None) -> None:
         self._conn.execute(
             "INSERT INTO gate_decisions (round_id, metric, state, reason, limit_pct, observed_pct, "
-            "baseline_rounds) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "baseline_rounds, limit_abs, observed_abs) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (round_id, metric, state, reason or "", limit_pct, observed_pct,
-             json.dumps(list(baseline_rounds or []))),
+             json.dumps(list(baseline_rounds or [])), limit_abs, observed_abs),
         )
         self._conn.commit()
 

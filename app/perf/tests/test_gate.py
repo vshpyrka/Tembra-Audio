@@ -126,6 +126,15 @@ def test_absolute_limits_and_disabled_metrics(cfg, tmp_path):
     assert decide([1.0] * 5, 2.5, limit_pct=None, limit_abs=2.0, ids=["a"] * 5)["state"] == "within_limit"
 
 
+def test_decide_against_a_negative_baseline_keeps_the_sign_of_the_change():
+    # frame overrun P90 sits below zero on a quiet device; a rise to +2 ms is a
+    # +2.5 ms change over the 2 ms limit, reported as a positive percentage
+    d = decide([-0.5] * 5, 2.04, limit_pct=None, limit_abs=2.0, ids=["a"] * 5)
+    assert d["state"] == "above_limit" and d["limit_abs"] == 2.0
+    assert d["observed_abs"] == pytest.approx(2.54) and d["observed_pct"] == pytest.approx(508.0)
+    assert "limit_pct" not in d
+
+
 def test_record_all_gates_writes_decisions_for_every_round_in_order(cfg, tmp_path):
     history = _history(PIXEL, [300, 300, 300, 300, 300, 300, 360, 300])
     with Store.rebuild(str(tmp_path / "db"), history) as store:

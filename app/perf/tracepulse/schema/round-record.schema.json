@@ -106,6 +106,8 @@
           "reason": { "type": "string" },
           "limit_pct": { "type": "number" },
           "observed_pct": { "type": "number" },
+          "limit_abs": { "type": "number" },
+          "observed_abs": { "type": "number" },
           "baseline_rounds": { "type": "array", "items": { "type": "string" } }
         }
       }

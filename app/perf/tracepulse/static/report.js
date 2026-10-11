@@ -16,6 +16,10 @@
     return s + (unit ? " " + unit : "");
   }
   function pct(v) { return v == null ? "—" : (v > 0 ? "+" : "") + v.toFixed(1) + " %"; }
+  function gateObserved(g, unit) { return g.limit_pct != null ? pct(g.observed_pct) : (g.observed_abs > 0 ? "+" : "") + fmt(g.observed_abs, unit); }
+  function gateLimit(g, unit) { return g.limit_pct != null ? g.limit_pct + " %" : g.limit_abs + (unit ? " " + unit : ""); }
+  function gateText(g, unit) { return g.state.replace("_", " ") + (g.state === "inactive" ? "" : " " + gateObserved(g, unit) + " vs limit " + gateLimit(g, unit)) + (g.reason ? " (" + g.reason + ")" : ""); }
+  function limitValue(g, p) { return g.limit_pct != null ? p / (1 + g.observed_pct / 100) * (1 + g.limit_pct / 100) : p - g.observed_abs + g.limit_abs; }
   function device(id) { for (var i = 0; i < DATA.devices.length; i++) if (DATA.devices[i].device_id === id) return DATA.devices[i]; return null; }
   function seriesOf(dev, key) { for (var f = 0; f < dev.families.length; f++) for (var s = 0; s < dev.families[f].series.length; s++) if (dev.families[f].series[s].key === key) return dev.families[f].series[s]; return null; }
   function badges(list) { return list.map(function (b) { return '<span class="badge ' + esc(b) + '">' + esc(b) + "</span>"; }).join(" "); }
@@ -44,7 +48,7 @@
     var w = big ? 980 : W, h = big ? 340 : H, pad = PAD;
     var n = dev.rounds.length, pts = s.points;
     var limitLines = [];
-    s.gate.forEach(function (g) { if (g.state === "above_limit" && g.limit_pct != null && pts[g.round_index]) { limitLines.push(pts[g.round_index][0] / (1 + g.observed_pct / 100) * (1 + g.limit_pct / 100)); } });
+    s.gate.forEach(function (g) { if (g.state === "above_limit" && pts[g.round_index]) { limitLines.push(limitValue(g, pts[g.round_index][0])); } });
     var sc = scale(pts, limitLines);
     var x = function (i) { return n <= 1 ? pad.l + (w - pad.l - pad.r) / 2 : pad.l + (w - pad.l - pad.r) * i / (n - 1); };
     var y = function (v) { return pad.t + (h - pad.t - pad.b) * (1 - (v - sc.lo) / (sc.hi - sc.lo)); };
@@ -85,10 +89,10 @@
     s.gate.forEach(function (g) {
       if (g.state !== "above_limit" || !pts[g.round_index]) return;
       var gx = x(g.round_index), gy = y(pts[g.round_index][0]);
-      var lv = pts[g.round_index][0] / (1 + g.observed_pct / 100) * (1 + g.limit_pct / 100);
+      var lv = limitValue(g, pts[g.round_index][0]);
       var x0 = x(Math.max(0, g.round_index - DATA.config.clean_rounds));
       out.push('<line class="limit" x1="' + x0.toFixed(1) + '" x2="' + gx.toFixed(1) + '" y1="' + y(lv).toFixed(1) + '" y2="' + y(lv).toFixed(1) + '"/>');
-      out.push('<path class="gate-flag" d="M' + gx.toFixed(1) + " " + (gy - 9).toFixed(1) + " l7 9 l-7 9 l-7 -9 z\"><title>" + esc("above limit: " + pct(g.observed_pct) + " (limit " + g.limit_pct + " %)") + "</title></path>");
+      out.push('<path class="gate-flag" d="M' + gx.toFixed(1) + " " + (gy - 9).toFixed(1) + " l7 9 l-7 9 l-7 -9 z\"><title>" + esc("above limit: " + gateObserved(g, s.unit) + " (limit " + gateLimit(g, s.unit) + ")") + "</title></path>");
     });
     s.detections.forEach(function (d) {
       var p = pts[d.onset_round_index]; if (!p) return;
@@ -102,7 +106,7 @@
       var p = pts[k], r = dev.rounds[k], gate = null;
       s.gate.forEach(function (g) { if (g.round_index === k) gate = g; });
       var text = r.date + " · " + r.label + (p ? "\n" + s.title + ": " + fmt(p[0], s.unit) + " (IQR " + fmt(p[1], "") + "–" + fmt(p[2], s.unit) + ")" : "\nno value") +
-        (gate ? "\ngate: " + gate.state.replace("_", " ") + (gate.observed_pct != null ? " " + pct(gate.observed_pct) : "") + (gate.reason ? " (" + gate.reason + ")" : "") : "") +
+        (gate ? "\ngate: " + gateText(gate, s.unit) : "") +
         (r.badges.length ? "\nbadges: " + r.badges.join(", ") : "") + "\ncommit " + r.commit;
       var cw = n > 1 ? (w - pad.l - pad.r) / (n - 1) : w - pad.l - pad.r;
       out.push('<rect class="hit" x="' + (x(k) - cw / 2).toFixed(1) + '" y="' + pad.t + '" width="' + cw.toFixed(1) + '" height="' + (h - pad.t - pad.b) + '" data-tip="' + esc(text) + '"/>');
@@ -119,7 +123,7 @@
     var h = ['<section class="grid-view"><p class="summary">' + esc(DATA.summary.text) + "</p>"];
     if (DATA.flagged.length) {
       h.push("<h2>Flagged</h2><ul class=\"list\">");
-      DATA.flagged.forEach(function (f) { h.push('<li class="above_limit"><a href="#/device/' + esc(f.device_id) + "/" + encodeURIComponent(f.metric) + '">' + esc(f.device_model + ": " + f.title) + "</a> " + esc(pct(f.observed_pct)) + " against the limit of " + esc(f.limit_pct) + " % in round " + esc(f.round_key) + "</li>"); });
+      DATA.flagged.forEach(function (f) { h.push('<li class="above_limit"><a href="#/device/' + esc(f.device_id) + "/" + encodeURIComponent(f.metric) + '">' + esc(f.device_model + ": " + f.title) + "</a> " + esc(gateObserved(f, f.unit)) + " against the limit of " + esc(gateLimit(f, f.unit)) + " in round " + esc(f.round_key) + "</li>"); });
       h.push("</ul>");
     }
     if (DATA.changes.length) {
@@ -180,7 +184,7 @@
     d.rounds.forEach(function (r, i) {
       var p = s.points[i]; if (!p) return;
       var gate = null; s.gate.forEach(function (g) { if (g.round_index === i) gate = g; });
-      h.push("<tr><td>" + esc(r.date) + "</td><td>" + esc(r.label) + '</td><td class="num">' + esc(fmt(p[0], s.unit)) + '</td><td class="num">' + esc(fmt(p[1], "") + " – " + fmt(p[2], s.unit)) + "</td><td>" + (gate ? esc(gate.state.replace("_", " ") + (gate.observed_pct != null ? " " + pct(gate.observed_pct) + " vs limit " + (gate.limit_pct != null ? gate.limit_pct + " %" : "") : "") + (gate.reason ? " (" + gate.reason + ")" : "")) : "—") + "</td></tr>");
+      h.push("<tr><td>" + esc(r.date) + "</td><td>" + esc(r.label) + '</td><td class="num">' + esc(fmt(p[0], s.unit)) + '</td><td class="num">' + esc(fmt(p[1], "") + " – " + fmt(p[2], s.unit)) + "</td><td>" + (gate ? esc(gateText(gate, s.unit)) : "—") + "</td></tr>");
     });
     h.push("</table><h2>Detections</h2>");
     if (!s.detections.length) h.push('<p class="muted">No detection on this series.</p>');
