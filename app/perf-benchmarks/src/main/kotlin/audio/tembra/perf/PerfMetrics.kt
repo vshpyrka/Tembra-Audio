@@ -25,7 +25,7 @@ object PerfMetrics {
     fun journey(name: String): List<Metric> = listOf(
         FrameTimingMetric(),
         MemoryUsageMetric(MemoryUsageMetric.Mode.Max, listOf(MemoryUsageMetric.SubMetric.RssAnon)),
-        MemoryUsageMetric(MemoryUsageMetric.Mode.Last, listOf(MemoryUsageMetric.SubMetric.HeapSize)),
+        MemoryUsageMetric(MemoryUsageMetric.Mode.Last, listOf(MemoryUsageMetric.SubMetric.RssAnon)),
         TraceSectionMetric("journey.$name", TraceSectionMetric.Mode.Sum, targetPackageOnly = false),
     ) + sectionsOf(name).map { TraceSectionMetric(it, TraceSectionMetric.Mode.Sum) }
 

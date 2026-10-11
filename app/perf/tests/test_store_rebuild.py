@@ -181,3 +181,20 @@ def test_add_round_defaults_keep_the_old_single_device_call_shape(tmp_path):
         assert row["kind"] == "device" and row["reference"] == 1 and row["status"] == "succeeded"
         assert store.rounds("SERIAL")[0]["id"] == 1 and store.rounds("OTHER") == []
         assert isinstance(row, sqlite3.Row)
+
+
+def test_values_from_before_a_source_change_stay_out_of_the_cache(tmp_path):
+    """A catalogue entry's `since` marks the first round its current source applies to
+    (android memory.end_kb: heap size until 2026-10-11, resident anonymous memory after).
+    Earlier values measured something else; the record keeps them, the series does not."""
+    def with_memory(round_id, started, value):
+        rec = _rec("PIXEL", "android", round_id, "a", started, 300.0)
+        rec.journeys[1].metrics["memory.end_kb"] = MetricResult(unit="kB", samples=[value, value, value],
+                                                                source="macrobenchmark")
+        return rec
+    before = with_memory("20261011T100000Z_a", "2026-10-11T10:00:00Z", 25000.0)
+    after = with_memory("20261011T210000Z_a", "2026-10-11T21:00:00Z", 98000.0)
+    with Store.rebuild(str(tmp_path / "db"), [before, after]) as store:
+        points = store.series("tuner/memory.end_kb", "PIXEL")
+        assert [v for _rid, v in points] == [98000.0]
+        assert len(store.series("tuner/frames.p90_ms", "PIXEL")) == 2, "other series keep both rounds"

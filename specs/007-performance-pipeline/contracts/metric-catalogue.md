@@ -14,7 +14,7 @@ Code in `app/perf/tracepulse/catalogue.py`; `tracepulse.yml` may override `gate_
 | `frames.hitch_count` | ios | same | count | same | 25 | 25 % | no |
 | `frames.fps` | ios | same, frame rate (lower is worse → stored as `frames.fps_deficit` = max(0, 60 − fps)) | fps | same | abs 5 | abs 2 | no |
 | `memory.peak_kb` | android | `MemoryUsageMetric(Max, RssAnon)` | kB | tuner, metronome, stress | 15 | 3 % | no |
-| `memory.end_kb` | android | `MemoryUsageMetric(Last, HeapSize)` | kB | same | 15 | 5 % | no |
+| `memory.end_kb` | android | `MemoryUsageMetric(Last, RssAnon)` (heap size until 2026-10-11; its round medians varied 4–16 %) | kB | same | 15 | 5 % | no |
 | `memory.peak_kb` | ios | `XCTMemoryMetric` Memory Peak Physical | kB | same | 15 | 3 % | no |
 | `memory.end_kb` | ios | `XCTMemoryMetric` Memory Physical (delta) | kB | same | 15 | 5 % | no |
 | `cpu.time_ms` | ios | `XCTCPUMetric` CPU Time | ms | tuner, metronome, stress | 20 | 5 % | no |
@@ -30,4 +30,6 @@ Code in `app/perf/tracepulse/catalogue.py`; `tracepulse.yml` may override `gate_
 
 Simulator series: same keys, `kind: simulator`; gates inactive by default; `frames.*` and `audio.ioproc_*` absent (not produced on simulators); report marks the series as non-reference.
 
-Known mismatches recorded for the report's per-platform notes (spec FR-008): TTFD is app-declared on Android and OS-defined on iOS; frames are percentiles on Android and hitch-based on iOS; `memory.end_kb` is heap size on Android and a physical delta on iOS; app size is an APK on Android and a thinned IPA variant on iOS.
+A catalogue entry may carry `since` (an ISO instant): the first round its current source applies to. Values of that key from earlier rounds stay in their records but are not loaded into the cache, so a source change never shows as a step in the series.
+
+Known mismatches recorded for the report's per-platform notes (spec FR-008): TTFD is app-declared on Android and OS-defined on iOS; frames are percentiles on Android and hitch-based on iOS; `memory.end_kb` is resident anonymous memory at the end of the journey on Android and a physical delta on iOS; app size is an APK on Android and a thinned IPA variant on iOS.
