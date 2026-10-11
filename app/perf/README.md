@@ -202,6 +202,21 @@ iteration's trace (`audio.*` series, one sample per iteration), on iOS the stres
 writes `engine-health.json`, which the collector pulls from the app container. Zeros with the current
 engine; the audio spine fills them.
 
+## Lane times (SC-008)
+
+Measured on 2026-10-11 on the Apple Silicon Mac through `gradle-run`, `--rerun-tasks --warning-mode all`,
+configuration cache reused, main (`bc3a7d7`, before this feature, in a detached worktree) against this
+branch, both with zero warnings; the second of two steady-state runs each, the first in brackets:
+
+| Lane | Before | After | Tests |
+|---|---|---|---|
+| `engineHostTest` | 39 s (test time 32.3 s) | 35 s (test time 32.6 s) | 128 → 137 Catch2 cases |
+| `checkAndroidHost` | 5.9 s (11.2 s) | 5.3 s (17.7 s with a cold configuration cache) | + perf facade tests |
+| `checkIos` | 29.7 s (25.6 s) | 29.2 s (29.4 s) | + perf facade and anchor tests |
+
+Run-to-run spread on this machine is about ±15 %; the feature's extra tests and the two generator tasks
+(`generatePerfBuild`, `generateTraceNames`) do not show above it.
+
 ## Measurements so far (Pixel 6 Pro, 2026-10-08)
 
 - A round takes 13 m 40 s of device time with `--no-build` (SC-001); the measurement build adds a few
@@ -209,8 +224,52 @@ engine; the audio spine fills them.
   journey 1.84 s; frames P50 7.2 ms (tuner), peak RSS 88 MB (tuner) / 109 MB (stress); APK 14.9 MB.
 - With the instrumented build (round `20261008T175034Z`): `tuner.load` 70 ms, `tuner.modeSwitch` 206 ms
   for two switches, `metronome.tempoChange` 1.7 ms for ten steps, `tuner.frame` 17 frames per journey.
-- Quality allowances calibrated on these rounds: `memoryHeapSizeLastKb` 0.45, `frameCount` 0.6 (the
-  tuner journey waits on anchors). Revisit at the noise baseline (SC-003, `noise-baseline` sessions).
+- Quality allowances calibrated on these rounds and the five below: `memoryHeapSizeLastKb` 0.55,
+  `frameCount` 0.75, `journey.tunerSumMs` 0.25 (the tuner journey waits on anchors); section keys are
+  outside the `noisy` badge (see `quality_flags`). The first eight Pixel rounds were published with the
+  badge under the old rule and so never count as gate baselines; the `noise-baseline` session does.
 - iOS: the facade self-check passed on the iPhone 17 simulator (20 measurements of `tuner.modeSwitch`,
-  average 127 ms); the iPhone 14 round builds and installs, and waits for the runner profile to be
-  trusted on the phone.
+  average 127 ms).
+
+## Measurements so far (five-round session, Pixel 6 Pro, 2026-10-11)
+
+`run --device pixel6 --label 007-performance-pipeline --rounds 5`: one build, five rounds of 14 m 30 s,
+all succeeded, 20 iterations each, published as they finished (session `20261011T162444Z`). Round
+medians across the five rounds, with their spread (coefficient of variation):
+
+| Series | Medians | Spread |
+|---|---|---|
+| `startup/startup.ttid_ms` | 252.7, 254.3, 254.5, 252.9, 251.8 | 0.4 % |
+| `tuner/journey.duration_ms` | 1423, 1422, 1410, 1384, 1389 | 1.1 % |
+| `metronome/journey.duration_ms` | 1870, 1772, 1816, 1773, 1886 | 2.6 % |
+| `stress/journey.duration_ms` | 4701, 4505, 4575, 4561, 4454 | 1.8 % |
+| `tuner/frames.p50_ms` | 6.9, 7.2, 7.2, 7.2, 7.5 | 2.9 % |
+| `tuner/memory.peak_kb` | 89 298, 88 864, 89 328, 85 876, 89 928 | 1.6 % |
+| `tuner/section.tuner.load.sum_ms` | 72.4, 71.7, 72.3, 71.1, 71.3 | 0.7 % |
+| `tuner/section.tuner.modeSwitch.sum_ms` | 207.5, 205.3, 208.3, 204.0, 204.5 | 0.8 % |
+| `stress/audio.callbacks` | 152, 210, 201, 166, 156 | 13 % (how many callbacks fell inside the iteration) |
+| `stress/audio.max_callback_us` | 14, 18, 12, 13, 17 | — (the slowest callback of the iteration; budget 5 333 µs at 256 frames) |
+
+`audio.xruns` 0 and `audio.realtime` 1 in every iteration; the Android audio counters flow from the
+engine through the Perfetto counter tracks (quickstart §6, Android half). APK 14 922 467 bytes in
+every round. The SSH half of the cadence (quickstart §7) was not run: the second Mac is not
+provisioned; the five-round session ran locally.
+
+## Measurements so far (iPhone 14, iOS 27.0.1, Xcode 27.1, 2026-10-11)
+
+The first complete phone round (`20261011T165432Z_007-performance-pipeline`) took 37 minutes: every
+journey, 20 measurements per metric in the result bundle (spike 1 closed on the device), every anchor
+found (spike 5 closed: Compose Multiplatform 1.12.1 maps `testTag` to the accessibility identifier on a
+phone with the default `accessibilitySyncOptions`), thermal `nominal`, battery 100 %, Wi-Fi on
+(recorded, not refused). Medians: cold launch to first frame 523 ms and to responsive 524 ms;
+`tuner.load` 111 ms, `tuner.modeSwitch` 135 ms for two switches, `metronome.tempoChange` 0.12 ms for
+ten steps; peak physical memory 131 MB in the stress journey and 125 MB in the metronome journey
+(in the bundle; the `memory.*` series start with the next round, see the collector note above);
+engine health at the end of the stress journey: 304 callbacks, slowest 17 µs, no over-budget
+callbacks, no xruns, real-time thread. Journey durations (tuner 7.8 s, metronome 22.3 s, stress 21.8 s)
+are XCUITest's element-query cost on the Compose tree, stable and comparable with themselves only.
+
+Getting there took four rounds that are on the branch as failed records: two launch failures under
+Xcode 26.6 (CoreDevice 10004; the phone runs iOS 27.0.1, `doctor` now refuses the pairing) and two
+rounds lost to the microphone alert that iOS shows once per install (now answered by the runner before
+anything is measured).
