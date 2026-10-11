@@ -32,13 +32,17 @@ def analyze_all(store: Store, cfg: Config, paths=None,
     return {"devices": per_device, "lines": lines}
 
 
-def series_variation(store: Store) -> List[Dict[str, Any]]:
+def series_variation(store: Store, label: Optional[str] = None) -> List[Dict[str, Any]]:
     """Coefficient of variation of the round medians per (device, series), for
-    the noise baseline (SC-003): startup.* and memory.* at or below 3 %."""
+    the noise baseline (SC-003): startup.* and memory.* at or below 3 %. With
+    `label`, only that label's rounds count (one session of an unchanged build)."""
     rows: List[Dict[str, Any]] = []
     for device in store.devices():
+        wanted = None
+        if label is not None:
+            wanted = {row["id"] for row in store.rounds(device["device_id"]) if row["label"] == label}
         for metric in store.metrics(device["device_id"]):
-            medians = [v for _, v in store.series(metric, device["device_id"])]
+            medians = [v for rid, v in store.series(metric, device["device_id"]) if wanted is None or rid in wanted]
             if len(medians) < 2:
                 continue
             mean = sum(medians) / len(medians)

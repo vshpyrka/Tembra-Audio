@@ -116,6 +116,7 @@ def _xcode_rules(cfg, round_dir, refused=False, simulator=False, fail_journey=Fa
         (lambda cmd: cmd[:3] == ["xcrun", "simctl", "get_app_container"], container),
         (lambda cmd: cmd[:3] == ["xcrun", "simctl", "uninstall"], _ok()),
         (lambda cmd: cmd[:3] == ["xcrun", "simctl", "install"], _ok()),
+        (lambda cmd: cmd[:3] == ["xcrun", "simctl", "privacy"], _ok()),
         (lambda cmd: cmd[:3] == ["xcrun", "simctl", "launch"], _ok()),
         (lambda cmd: cmd[:3] == ["xcrun", "simctl", "terminate"], _ok()),
         (lambda cmd: cmd[:2] == ["xcrun", "xctrace"], _ok()),
@@ -202,6 +203,8 @@ def test_simulator_round_uses_simctl_and_the_simulator_destination(cfg, tmp_path
     assert runner.calls[0]["cmd"][runner.calls[0]["cmd"].index("-destination") + 1] == f"platform=iOS Simulator,id={SIM_UDID}"
     outcome = run_round(cfg, SIM, runner, FakeClock(), round_dir, IosRoundOptions(journeys=cfg.journeys, xctestrun=xctestrun))
     assert runner.index_of("simctl", "install", SIM_UDID) >= 0 and runner.index_of("simctl", "launch", SIM_UDID) >= 0
+    assert runner.index_of("simctl", "privacy", SIM_UDID, "grant", "microphone", "audio.tembra.appP5QJJ5Y5V7") > \
+        runner.index_of("simctl", "install", SIM_UDID), "a fresh install is granted the microphone before the run"
     assert runner.index_of("devicectl", "device", "install") == -1
     assert runner.index_of("simctl", "get_app_container", SIM_UDID, "audio.tembra.appP5QJJ5Y5V7", "data") >= 0
     assert outcome.badges == ["simulator"]

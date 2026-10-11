@@ -71,11 +71,15 @@ def test_frames_memory_journey_and_sections_map_to_catalogue_keys(cfg):
 def test_unknown_single_metric_keys_are_reported_not_silently_dropped(cfg, caplog):
     with open(FIXTURE) as fh:
         raw = json.load(fh)
-    raw["benchmarks"][0]["metrics"]["frameCount"] = raw["benchmarks"][0]["metrics"]["timeToInitialDisplayMs"]
+    ttid = raw["benchmarks"][0]["metrics"]["timeToInitialDisplayMs"]
+    raw["benchmarks"][0]["metrics"]["somethingNewMs"] = ttid
+    raw["benchmarks"][0]["metrics"]["frameCount"] = ttid  # advisory: read by the quality checks, never a series
     with caplog.at_level("WARNING", logger="tracepulse.collect_android"):
         mapped = map_benchmark(_benchmark(raw["benchmarks"][0]), cfg)
-    assert "startup.ttid_ms" in mapped.metrics and "frameCount" not in mapped.metrics
-    assert any("frameCount" in r.message for r in caplog.records)
+    assert "startup.ttid_ms" in mapped.metrics and "somethingNewMs" not in mapped.metrics
+    assert "frameCount" not in mapped.metrics
+    assert any("somethingNewMs" in r.message for r in caplog.records)
+    assert not any("frameCount" in r.message for r in caplog.records), "an advisory key is not noise in the session log"
 
 
 def test_noisy_badge_above_cov_max_with_raw_key_overrides(cfg, tmp_path):
