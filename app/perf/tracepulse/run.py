@@ -460,10 +460,11 @@ def _prepare_android(cfg: Config, device: Device, runner: Runner, session_dir: s
     """One measurement build per session; every round then installs the same artifacts."""
     if options.no_build:
         return options
-    from .orchestrate_android import build
+    from .orchestrate_android import build, perf_property
     os.makedirs(session_dir, exist_ok=True)
     log = os.path.join(session_dir, "gradle.log")
-    print(f"building {options.build_type} artifacts (./gradlew --console=plain -Ptembra.perf=true), log in {log}")
+    print(f"building {options.build_type} artifacts (./gradlew --console=plain {perf_property(options.build_type)}), "
+          f"log in {log}")
     app_apk, test_apk = build(cfg, runner, options.build_type, log, java_home=None)
     return RoundOptions(journeys=options.journeys, iterations=options.iterations, no_build=True, apk=app_apk,
                         test_apk=test_apk, build_type=options.build_type, keep_build=options.keep_build)

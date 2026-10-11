@@ -144,7 +144,7 @@ description: "Task list for feature 007: performance pipeline"
 - [X] T052 [US3] Extend `app/perf/tracepulse/detect.py` output with `label_at_onset` (the onset round's label) and expose detections, gate decisions and fingerprint changes per device for the report, with a test in `app/perf/tests/test_detect_labels.py`
 - [X] T053 [US3] Implement the report under the `dataviz` skill: `app/perf/tracepulse/templates/report.html.j2`, `static/report.css` (tokens from `design/stitch/DESIGN.md`, light and dark), `static/report.js` (hash router `#/`, `#/device/<id>`, `#/device/<id>/<metric>`; grid cards; charts as inline SVG with median line, IQR band, label boundaries, onset markers by status, gate marks and limit line; rounds table; flagged and changes lists) and `report.py` embedding the data as JSON; make T049 pass
 - [X] T054 [US3] Add `tracepulse report --open` (opens the file with the OS default browser) and the per-metric catalogue notes (unit, source, mismatch text) on the metric page; re-run T049
-- [ ] T055 [US3] Run quickstart §4 against the real history (Pixel + iPhone + simulators): navigation, offline check in the browser, the 1 % gate experiment, restore the limit; record the report size in `app/perf/README.md`
+- [X] T055 [US3] Run quickstart §4 against the real history (Pixel + iPhone + simulators): navigation, offline check in the browser, the 1 % gate experiment, restore the limit; record the report size in `app/perf/README.md`
 
 **Checkpoint**: the report is the single place to read both platforms; gates flag without failing.
 

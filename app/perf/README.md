@@ -71,7 +71,7 @@ uv run tracepulse publish [--device <id>]              # push records a failed p
 uv run tracepulse sync                                 # pull perf-history, rebuild data/tracepulse.db
 uv run tracepulse analyze                              # detections (ratchet) + gate decisions over the rebuilt history
 uv run tracepulse report [--open] [--out <file>]       # reports/report.html, self-contained
-uv run tracepulse status [--series [--label <label>]]  # cache, unpublished records, branch state (+ CoV per series, one label)
+uv run tracepulse status [--series [--label <label>] [--last N]]  # cache, unpublished records, branch state (+ CoV per series: one label, last N rounds)
 uv run tracepulse inject R1 | revert R1 | revert --all  # the regression-injection self-test
 ```
 
@@ -162,6 +162,12 @@ suspect ○, first hint ◌, improved ▼, environment-suspect band), gate flags
 their comparison window, fingerprint changes (OS version, network state) as dashed lines, one sentence
 under each chart, the rounds table and "What changed". A chart's "open" goes to
 `#/device/<id>/<series>`: the per-round distributions, the detection record and the catalogue note.
+The report is one self-contained file (771 314 bytes at 32 rounds across three devices, about 24 kB per
+round: per-round aggregates and decisions, never samples) that makes zero network requests and works
+from `file://` with the network off (checked in Chrome's developer tools, quickstart §4). The 1 % gate
+experiment on 2026-10-11 (`gate.limits_pct` journey.duration_ms and memory.peak_kb at 1 for one round,
+`20261011T201444Z`) exited 0, printed `gate: 3 above limit — …` and put the three flags at the top of
+the grid; the limits went back to the catalogue defaults afterwards.
 
 The gate (`gate.py`): per metric, the change of the round's median against the median of the last N
 clean rounds (N = `gate.clean_rounds`, 5) in the worse direction, against the catalogue limit

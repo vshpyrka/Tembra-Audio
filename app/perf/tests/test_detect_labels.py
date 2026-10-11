@@ -60,8 +60,11 @@ def test_series_variation_can_be_limited_to_one_label(tmp_path):
         everything = series_variation(store)
         baseline = series_variation(store, "noise-baseline")
         nothing = series_variation(store, "no-such-label")
+        latest = series_variation(store, "noise-baseline", last=3)
     row = next(r for r in everything if r["metric"] == "startup/startup.ttid_ms")
     assert row["rounds"] == 14 and row["cov_pct"] > 10, "the step between labels dominates"
     row = next(r for r in baseline if r["metric"] == "startup/startup.ttid_ms")
     assert row["rounds"] == 10 and row["cov_pct"] < 0.01, "an unchanged build is flat"
     assert nothing == []
+    row = next(r for r in latest if r["metric"] == "startup/startup.ttid_ms")
+    assert row["rounds"] == 3, "--last keeps one session apart from an earlier one under the same label"

@@ -40,4 +40,11 @@ object Anchors {
         anchor(tag).click()
         waitForIdle()
     }
+
+    /** Tap an anchor the build may not have (devtools in the release baseline); a short wait, never a failure. */
+    fun UiDevice.tapIfPresent(tag: String, timeoutMs: Long = 2_000L) {
+        val target = wait(Until.findObject(selector(tag)), timeoutMs) ?: return
+        target.click()
+        waitForIdle()
+    }
 }

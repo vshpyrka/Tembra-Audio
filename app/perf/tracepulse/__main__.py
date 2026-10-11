@@ -249,7 +249,7 @@ def _handle_status(args, cfg: Config, paths: Paths) -> Tuple[int, Payload]:
     if getattr(args, "series", False):
         from .analysis import series_variation
         with Store(paths.db_path) as store:
-            variation = series_variation(store, getattr(args, "label", None))
+            variation = series_variation(store, getattr(args, "label", None), getattr(args, "last", None))
         payload["series"] = variation
         for row in variation:
             print(f"  {row['device_id']:28} {row['metric']:40} rounds={row['rounds']} cov_pct={row['cov_pct']:.2f}")
@@ -331,6 +331,7 @@ def build_parser() -> argparse.ArgumentParser:
     status.add_argument("--series", action="store_true",
                         help="also print the coefficient of variation of round medians per series")
     status.add_argument("--label", help="with --series: only rounds of this label (one session)")
+    status.add_argument("--last", type=int, help="with --series: only the most recent N rounds per device")
 
     inject = sub.add_parser("inject", help="apply a regression-injection patch (self-test)")
     inject.add_argument("regression", help="regression id from regressions/registry.yaml (R1..R4)")
