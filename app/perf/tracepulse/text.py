@@ -81,6 +81,26 @@ def _pct(value: Optional[float]) -> str:
     return f"{abs(value or 0):.0f} %"
 
 
+def _abs(value: Optional[float], unit: str) -> str:
+    text = f"{value or 0:+.1f}" if abs(value or 0) < 100 else f"{value or 0:+.0f}"
+    return f"{text} {unit}".rstrip()
+
+
+def gate_observed(flag: Dict[str, Any], unit: str = "") -> str:
+    """A flag's change in the terms of its limit: "+18 %" for a percentage limit,
+    "+2.5 ms" for an absolute one."""
+    if flag.get("limit_pct") is not None:
+        return f"{flag.get('observed_pct') or 0:+.0f} %"
+    return _abs(flag.get("observed_abs"), unit or flag.get("unit", ""))
+
+
+def gate_limit(flag: Dict[str, Any], unit: str = "") -> str:
+    """A flag's limit: "15 %" or "2 ms"."""
+    if flag.get("limit_pct") is not None:
+        return f"{flag['limit_pct']:.0f} %"
+    return f"{flag.get('limit_abs') or 0:g} {unit or flag.get('unit', '')}".rstrip()
+
+
 def device_headline(rounds: int, min_history: int, detections: Sequence[Dict[str, Any]],
                     flagged: Sequence[Dict[str, Any]], window: int) -> str:
     """The one-line state of a device: preliminary-only, the worst current onset,
@@ -88,10 +108,9 @@ def device_headline(rounds: int, min_history: int, detections: Sequence[Dict[str
     if rounds < min_history:
         return f"Preliminary only: {rounds} of {min_history} rounds needed for a verdict."
     if flagged:
-        items = ", ".join(f"{f['metric']} (+{f.get('observed_pct', 0):.0f} %, limit {f.get('limit_pct', 0):.0f} %)"
-                          for f in flagged)
-        noun = "metric" if len(flagged) == 1 else "metrics"
-        return f"{len(flagged)} {noun} above their limit in the latest round: {items}."
+        items = ", ".join(f"{f['metric']} ({gate_observed(f)}, limit {gate_limit(f)})" for f in flagged)
+        noun = "metric above its" if len(flagged) == 1 else "metrics above their"
+        return f"{len(flagged)} {noun} limit in the latest round: {items}."
     worst = max((d for d in detections if d.get("status") in _RANK and d.get("status") != "IMPROVED"),
                 key=lambda d: _RANK[d["status"]], default=None)
     if worst is not None:
@@ -127,5 +146,5 @@ def chart_sentence(detection: Optional[Dict[str, Any]], series: str) -> str:
 def flagged_summary(flagged: Sequence[Dict[str, Any]]) -> List[str]:
     """One line per gate flag for the report's "Flagged" list."""
     return [f"{f.get('device_model', f.get('device_id', ''))}: {plain_series(f['metric'])} "
-            f"+{f.get('observed_pct', 0):.0f} % against the limit of {f.get('limit_pct', 0):.0f} % "
+            f"{gate_observed(f)} against the limit of {gate_limit(f)} "
             f"in round {f.get('round_key', '')}" for f in flagged]

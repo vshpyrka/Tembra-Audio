@@ -129,7 +129,7 @@ def test_gate_decisions_table_and_badges(tmp_path, records):
     with Store.rebuild(db, records) as store:
         cols = [r["name"] for r in store._conn.execute("PRAGMA table_info(gate_decisions)")]
         assert cols == ["round_id", "metric", "state", "reason", "limit_pct", "observed_pct",
-                        "baseline_rounds"]
+                        "baseline_rounds", "limit_abs", "observed_abs"]
         decisions = store.gate_decisions(3)
         assert len(decisions) == 1
         d = decisions[0]

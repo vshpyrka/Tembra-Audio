@@ -32,13 +32,15 @@ def decide(baseline: Sequence[float], value: float, limit_pct: Optional[float], 
            ids: Sequence[str]) -> Dict[str, Any]:
     """One decision from a clean baseline (medians of the N clean rounds) and the round's median."""
     base = _median(baseline)
-    if limit_pct is not None:
-        observed = ((value - base) / base * 100.0) if base else 0.0
-        state = "above_limit" if observed > limit_pct else "within_limit"
-        return {"state": state, "limit_pct": float(limit_pct), "observed_pct": observed, "baseline_rounds": list(ids)}
     observed_abs = value - base
+    # against |base| so the sign is the direction even when the baseline is negative
+    # (frame overrun P90 sits below zero on a quiet device)
+    observed_pct = (observed_abs / abs(base) * 100.0) if base else 0.0
+    if limit_pct is not None:
+        state = "above_limit" if observed_pct > limit_pct else "within_limit"
+        return {"state": state, "limit_pct": float(limit_pct), "observed_pct": observed_pct,
+                "baseline_rounds": list(ids)}
     state = "above_limit" if observed_abs > float(limit_abs or 0.0) else "within_limit"
-    observed_pct = ((value - base) / base * 100.0) if base else 0.0
     return {"state": state, "limit_abs": float(limit_abs or 0.0), "observed_abs": observed_abs,
             "observed_pct": observed_pct, "baseline_rounds": list(ids)}
 
@@ -124,7 +126,9 @@ def record_all_gates(store: Store, cfg: Config) -> int:
                 except CatalogueError:
                     continue
                 store.add_gate_decision(row["id"], series, decision["state"], decision.get("reason", ""),
-                                        decision.get("limit_pct", decision.get("limit_abs")),
-                                        decision.get("observed_pct"), decision.get("baseline_rounds", []))
+                                        decision.get("limit_pct"), decision.get("observed_pct"),
+                                        decision.get("baseline_rounds", []),
+                                        limit_abs=decision.get("limit_abs"),
+                                        observed_abs=decision.get("observed_abs"))
                 written += 1
     return written

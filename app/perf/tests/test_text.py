@@ -3,7 +3,8 @@ headlines for the four states, per-chart sentences per detection status naming
 the label at onset, and the metric names in everyday words."""
 
 from tracepulse.text import (
-    PLAIN_METRIC, PLAIN_STATUS, chart_sentence, device_headline, plain_metric, plain_series, status_ladder,
+    PLAIN_METRIC, PLAIN_STATUS, chart_sentence, device_headline, flagged_summary, gate_limit, gate_observed,
+    plain_metric, plain_series, status_ladder,
 )
 
 
@@ -60,6 +61,19 @@ def test_device_headline_lists_gate_flags_of_the_latest_round():
     text = device_headline(rounds=12, min_history=11, detections=[], flagged=flagged, window=5)
     assert text == ("2 metrics above their limit in the latest round: startup/startup.ttid_ms (+18 %, limit 15 %), "
                     "tuner/memory.peak_kb (+16 %, limit 15 %).")
+
+
+def test_gate_texts_use_the_limit_s_own_terms():
+    pct = {"metric": "startup/startup.ttid_ms", "observed_pct": 18.4, "limit_pct": 15}
+    abs_ = {"metric": "stress/frames.overrun_p90_ms", "observed_pct": -527.7, "observed_abs": 2.52, "limit_abs": 2.0,
+            "unit": "ms", "device_model": "Pixel 6 Pro", "round_key": "r8"}
+    assert gate_observed(pct) == "+18 %" and gate_limit(pct) == "15 %"
+    assert gate_observed(abs_) == "+2.5 ms" and gate_limit(abs_) == "2 ms"
+    assert gate_observed(abs_, "") == "+2.5 ms", "the flag's own unit is the fallback"
+    text = device_headline(rounds=12, min_history=11, detections=[], flagged=[abs_], window=5)
+    assert text == "1 metric above its limit in the latest round: stress/frames.overrun_p90_ms (+2.5 ms, limit 2 ms)."
+    assert flagged_summary([abs_]) == ["Pixel 6 Pro: Frames missing their deadline during the stress journey "
+                                       "+2.5 ms against the limit of 2 ms in round r8"]
 
 
 def test_chart_sentence_per_status():

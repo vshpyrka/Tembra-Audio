@@ -40,6 +40,13 @@ def _round(value: Optional[float]) -> Optional[float]:
     return float(f"{value:.5g}")
 
 
+def _unit_of(platform: str, series: str, cfg: Config) -> str:
+    try:
+        return lookup(platform, split_series_key(series)[1], cfg.catalogue).unit
+    except CatalogueError:
+        return ""
+
+
 def _date(ts: int) -> str:
     return datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d %H:%M")
 
@@ -110,6 +117,7 @@ def _device_entry(store: Store, cfg: Config, row) -> Dict[str, Any]:
                 baseline = json.loads(d["baseline_rounds"] or "[]")
                 gate.append({"round_index": index_of[r["id"]], "state": d["state"], "reason": d["reason"],
                              "limit_pct": d["limit_pct"], "observed_pct": _round(d["observed_pct"]),
+                             "limit_abs": d["limit_abs"], "observed_abs": _round(d["observed_abs"]),
                              "baseline_round_keys": baseline})
         series_detections = sorted(detections_by_series.get(series, []), key=lambda d: d["onset_round_index"])
         worst = max((d for d in series_detections), key=lambda d: Store.STATUS_RANK[d["status"]], default=None)
@@ -134,6 +142,8 @@ def _device_entry(store: Store, cfg: Config, row) -> Dict[str, Any]:
         for d in store.gate_decisions(rounds_rows[-1]["id"]):
             if d["state"] == "above_limit":
                 latest_flags.append({"metric": d["metric"], "observed_pct": d["observed_pct"], "limit_pct": d["limit_pct"],
+                                     "observed_abs": d["observed_abs"], "limit_abs": d["limit_abs"],
+                                     "unit": _unit_of(platform, d["metric"], cfg),
                                      "round_key": latest["round_key"]})
     succeeded = sum(1 for r in rounds if r["status"] == "succeeded")
     headline = device_headline(rounds=succeeded, min_history=cfg.detection.min_history, detections=detections,
@@ -177,7 +187,9 @@ def report_data(store: Store, cfg: Config) -> Dict[str, Any]:
                         if g["round_index"] == latest["index"] and g["state"] == "above_limit":
                             flagged.append({"device_id": d["device_id"], "device_model": d["model"], "metric": s["key"],
                                             "title": s["title"], "observed_pct": g["observed_pct"],
-                                            "limit_pct": g["limit_pct"], "round_key": latest["round_key"]})
+                                            "limit_pct": g["limit_pct"], "observed_abs": g["observed_abs"],
+                                            "limit_abs": g["limit_abs"], "unit": s["unit"],
+                                            "round_key": latest["round_key"]})
         for det in d["detections"]:
             if det["status"] in ("SUSPECT", "CONFIRMED"):
                 changes.append({"device_id": d["device_id"], "device_model": d["model"], "metric": det["metric"],

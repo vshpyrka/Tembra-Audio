@@ -20,7 +20,8 @@ from .history import PublishError
 from .orchestrate_android import BuildError, JourneyFailed, Refused, RoundOptions, RoundOutcome
 from .records import DeviceInfo, JourneyResult, MetricResult, RoundRecord, make_round_id
 from .runner import Clock, Runner
-from .store import Store
+from .store import Store, split_series_key
+from .text import gate_limit, gate_observed
 
 EXIT_OK = 0
 EXIT_REFUSED = 2
@@ -243,7 +244,8 @@ def run_session(cfg: Config, paths, device: Device, label: str, rounds: int, opt
                                      session, build, injected)
             if deps.gate_fn is not None and record.status == "succeeded":
                 record.gate = deps.gate_fn(store, cfg, device, record)
-                result.flagged += [dict(g, round_id=round_id) for g in record.gate if g.get("state") == "above_limit"]
+                result.flagged += [dict(g, round_id=round_id, unit=_unit(device.platform, g["metric"]))
+                                   for g in record.gate if g.get("state") == "above_limit"]
             _save_local(paths.data_dir, record)
             if publish:
                 try:
@@ -295,6 +297,18 @@ def _repo_root(cfg: Config) -> str:
         path = parent
 
 
+def _unit(platform: str, series: str) -> str:
+    from .catalogue import CatalogueError, lookup
+    try:
+        return lookup(platform, split_series_key(series)[1]).unit
+    except CatalogueError:
+        return ""
+
+
+def _flag_text(flag: Dict[str, Any], unit: str) -> str:
+    return f"{flag['metric']} {gate_observed(flag, unit)} (limit {gate_limit(flag, unit)})"
+
+
 def _print_round(record: RoundRecord, result: SessionResult) -> None:
     journeys = " ".join(f"{j.journey} ✓" for j in record.journeys if j.journey != "startup" or "startup.ttid_ms" in j.metrics)
     iterations = max((j.iterations for j in record.journeys), default=0)
@@ -308,7 +322,7 @@ def _print_round(record: RoundRecord, result: SessionResult) -> None:
     flagged = [g for g in record.gate if g.get("state") == "above_limit"]
     if flagged:
         print("  gate: %d above limit — %s" % (len(flagged), ", ".join(
-            f"{g['metric']} {g.get('observed_pct', 0):+.1f}% (limit {g.get('limit_pct')}%)" for g in flagged)))
+            _flag_text(g, _unit(record.device.platform, g["metric"])) for g in flagged)))
     else:
         inactive = [g for g in record.gate if g.get("state") == "inactive"]
         if record.gate:
@@ -381,7 +395,7 @@ def run_command(args, cfg: Config, paths, runner: Runner, clock: Clock) -> Tuple
         })
         if result.flagged:
             print(f"gate: {len(result.flagged)} above limit across the session — " + ", ".join(
-                f"{g['round_id']} {g['metric']} {g.get('observed_pct', 0):+.1f}% (limit {g.get('limit_pct')}%)" for g in result.flagged))
+                f"{g['round_id']} {_flag_text(g, g.get('unit', ''))}" for g in result.flagged))
         worst = max(worst, result.exit_status) if result.exit_status != EXIT_OK else worst
         if result.exit_status in (EXIT_REFUSED, EXIT_FAILED) and not args.simulators:
             break
