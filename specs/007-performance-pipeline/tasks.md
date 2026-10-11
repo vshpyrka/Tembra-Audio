@@ -92,7 +92,7 @@ description: "Task list for feature 007: performance pipeline"
 - [X] T032 [US1] Implement `app/perf/tracepulse/orchestrate_android.py` (de-templated from `orchestrate.py`; `doctor` with the per-device overrides; `./gradlew --console=plain` invoked directly by the tool with the log captured to the round directory — the `gradle-run` wrapper binds agent-run Gradle, not this user tooling; `--no-build`/`--apk`/`--test-apk` and `--build-type`; `am instrument` per class; `adb pull`; APK size from `app/androidApp/build/outputs/apk/<buildType>/`) to make T026 pass
 - [X] T033 [US1] Implement the shared `run` pipeline in `app/perf/tracepulse/run.py` (platform dispatch, record assembly, per-device lock file, publish → sync → rebuild → detect → report, exit statuses) and wire `__main__.py` to make T027 pass
 - [X] T034 [US1] Adapt `app/perf/tracepulse/traces_android.py` (from `traces.py`): per-iteration Perfetto traces → main-thread top slices for the drill-down and the counter tracks table read (used by US5), with a fixture test in `app/perf/tests/test_traces_android.py`
-- [ ] T035 [US1] Run quickstart §2 on the Pixel 6 Pro twice (`--label 007-performance-pipeline`), confirm two records on `perf-history`, `report.html` renders the Pixel series, exit statuses 0/2/4 behave as specified; record the round duration in `app/perf/README.md`
+- [X] T035 [US1] Run quickstart §2 on the Pixel 6 Pro twice (`--label 007-performance-pipeline`), confirm two records on `perf-history`, `report.html` renders the Pixel series, exit statuses 0/2/4 behave as specified; record the round duration in `app/perf/README.md`
 
 **Checkpoint**: User Story 1 works end to end on a Pixel from one command; the SQLite cache is rebuilt from the branch.
 
@@ -229,7 +229,7 @@ description: "Task list for feature 007: performance pipeline"
 - [X] T082 [P] Add `docs/README.md` and `CLAUDE.md` pointers: `app/perf/` commands under "Commands", the `perf-history` branch under "Things that bite" (never rebase it; records are append-only)
 - [ ] T083 Verify SC-008: time `./gradlew checkAndroidHost`, `checkIos`, `engineHostTest` (through `gradle-run`, `--warning-mode all`) before and after the feature on this Mac; confirm within 5 % and zero warnings; record in `app/perf/README.md`
 - [ ] T084 Run the full quickstart (§1–§9) end to end on the Pixel 6 Pro, the iPhone 14 and the booted simulators under the label `007-performance-pipeline`, including the iOS half of SC-004 (`inject R1`, six iPhone rounds, a confirmed `startup.*` onset at the injection round, `revert R1`); fix anything found; final `uv run pytest`, `checkAndroidHost`, `checkIos`, `engineHostTest` green
-- [ ] T085 Remove anything copied from trace-pulse that this repository does not use (NIA patches, A52/Pixel chain scripts, `compare.py` if folded into `report.py`), keep `app/perf/` free of commented-out code and TODOs without issue references (Principle VII)
+- [X] T085 Remove anything copied from trace-pulse that this repository does not use (NIA patches, A52/Pixel chain scripts, `compare.py` if folded into `report.py`), keep `app/perf/` free of commented-out code and TODOs without issue references (Principle VII)
 - [ ] T086 Verify SC-003: run a ten-round session of an unchanged build on the Pixel 6 Pro and on the iPhone 14 under the label `noise-baseline`, compute the coefficient of variation of the round medians per `startup.*` and `memory.*` series from the records (`uv run tracepulse status --json`), confirm ≤ 3 %, and record the measured values in `app/perf/README.md` (quickstart §9)
 
 ---

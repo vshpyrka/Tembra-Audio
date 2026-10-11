@@ -36,9 +36,15 @@ downloads on first use), Jinja2, jsonschema. None of it ships in the app.
 - **iOS (iPhone 14)**: USB to the Apple Silicon Mac, paired, Developer Mode on, unlocked and awake. The
   first run installs two apps (the measurement build and the `TembraPerfTests` runner); the runner's
   profile must be trusted once on the phone (Settings → General → VPN & Device Management) or the round
-  fails with "Developer App certificate is not trusted". Thermal state (must be `nominal`) and battery
-  (≥ 50 %) are checked inside the runner, because the host cannot read them; the network state is
-  recorded on the round and never refused (turn Wi-Fi off before a session anyway).
+  is refused with "not been explicitly trusted" (exit 2). The selected Xcode's iOS SDK must be at
+  least as new as the phone's iOS: Xcode 26.6 (SDK 26.5) installs and launches the app on an iOS
+  27.0.1 phone through `devicectl` but every XCUITest launch dies with CoreDevice error 10004 ("the
+  process identifier of the launched application could not be determined"); `doctor` refuses the
+  pairing (`xcode_supports_device`) and the fix is `DEVELOPER_DIR=/Applications/Xcode-27.1-beta.app/
+  Contents/Developer uv run tracepulse run …` (the Xcode version lands in the round's fingerprint).
+  Thermal state (must be `nominal`) and battery (≥ 50 %) are checked inside the runner, because the
+  host cannot read them; the network state is recorded on the round and never refused (turn Wi-Fi off
+  before a session anyway).
 - **Simulators**: every booted iOS simulator can run the same journeys (`--simulators`); their series
   are marked `simulator` and non-reference, gates stay inactive, and they produce no frames family.
   Android emulators are listed but discouraged (Google: "strongly discouraged" for benchmarks).
@@ -65,7 +71,7 @@ uv run tracepulse publish [--device <id>]              # push records a failed p
 uv run tracepulse sync                                 # pull perf-history, rebuild data/tracepulse.db
 uv run tracepulse analyze                              # detections (ratchet) + gate decisions over the rebuilt history
 uv run tracepulse report [--open] [--out <file>]       # reports/report.html, self-contained
-uv run tracepulse status [--series]                    # cache, unpublished records, branch state (+ CoV per series)
+uv run tracepulse status [--series [--label <label>]]  # cache, unpublished records, branch state (+ CoV per series, one label)
 uv run tracepulse inject R1 | revert R1 | revert --all  # the regression-injection self-test
 ```
 

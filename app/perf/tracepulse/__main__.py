@@ -249,7 +249,7 @@ def _handle_status(args, cfg: Config, paths: Paths) -> Tuple[int, Payload]:
     if getattr(args, "series", False):
         from .analysis import series_variation
         with Store(paths.db_path) as store:
-            variation = series_variation(store)
+            variation = series_variation(store, getattr(args, "label", None))
         payload["series"] = variation
         for row in variation:
             print(f"  {row['device_id']:28} {row['metric']:40} rounds={row['rounds']} cov_pct={row['cov_pct']:.2f}")
@@ -330,6 +330,7 @@ def build_parser() -> argparse.ArgumentParser:
     status = sub.add_parser("status", help="local rounds, unpublished records, history branch state")
     status.add_argument("--series", action="store_true",
                         help="also print the coefficient of variation of round medians per series")
+    status.add_argument("--label", help="with --series: only rounds of this label (one session)")
 
     inject = sub.add_parser("inject", help="apply a regression-injection patch (self-test)")
     inject.add_argument("regression", help="regression id from regressions/registry.yaml (R1..R4)")
@@ -344,6 +345,10 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Optional[List[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+    # Rounds take minutes; a log file or an SSH pipe should show each line as it happens.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(line_buffering=True)
     try:
         cfg = load_config(args.config)
     except (ConfigError, FileNotFoundError, OSError) as exc:

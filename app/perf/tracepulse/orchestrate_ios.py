@@ -191,6 +191,10 @@ def install(cfg: Config, device: Device, runner: Runner, app_path: str) -> None:
         res = _devicectl(cfg, device, runner, "install", "app", app_path, timeout=600)
     if res.returncode != 0:
         raise BuildError(f"install of {app_path} failed (rc={res.returncode}): {res.stderr.strip() or res.stdout.strip()}")
+    if device.kind == "simulator":
+        # The tuner listens; a fresh install would ask for the microphone over the first journey.
+        # A phone has no such switch: the runner answers the alert once per round (PerfJourneyTestCase).
+        runner.run(["xcrun", "simctl", "privacy", device.device_id, "grant", "microphone", bundle], timeout=TOOL_TIMEOUT_S)
 
 
 def warm_up(cfg: Config, device: Device, runner: Runner, clock: Clock) -> None:

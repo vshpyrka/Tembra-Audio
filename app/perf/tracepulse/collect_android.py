@@ -184,6 +184,8 @@ _RSS_ANON_RE = re.compile(r"^memory.*rssanon.*$", re.IGNORECASE)
 _HEAP_SIZE_RE = re.compile(r"^memory.*heapsize.*$", re.IGNORECASE)
 # Catalogue section names are dotted (`tuner.modeSwitch`), which keeps Macrobenchmark's own
 # un-dotted keys (`frameCount`) out of the section family.
+# Macrobenchmark keys the quality checks read (`cov_max_overrides`) that are no series of their own.
+_ADVISORY_KEYS = frozenset({"frameCount"})
 _SECTION_SUM_RE = re.compile(r"^(?P<name>[a-z][A-Za-z0-9_]*\.[A-Za-z0-9_.]+?)SumMs$")
 _SECTION_COUNT_RE = re.compile(r"^(?P<name>[a-z][A-Za-z0-9_]*\.[A-Za-z0-9_.]+?)Count$")
 
@@ -231,8 +233,8 @@ def map_benchmark(benchmark: BenchmarkResult, cfg: Config) -> JourneyResult:
     journey = journey_of(benchmark.class_name or benchmark.name)
     metrics: Dict[str, MetricResult] = {}
     for key, metric in benchmark.single.items():
-        if key == f"journey.{journey}Count":
-            continue  # the journey section runs once per iteration by construction
+        if key == f"journey.{journey}Count" or key in _ADVISORY_KEYS:
+            continue  # the journey section runs once per iteration by construction; advisory keys feed quality only
         target = _classify_single_key(key, journey)
         if target is None:
             logger.warning("benchmark %s: single metric %r is not a catalogue metric; not recorded",

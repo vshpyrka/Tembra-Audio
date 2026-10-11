@@ -48,3 +48,20 @@ def test_fingerprint_changes_are_marked_on_the_series(tmp_path):
         changes = fingerprint_changes(store, "PIXEL")
     assert changes == [{"round_index": 3, "round_key": "20261008T030000Z_a", "field": "os_version",
                         "before": "16", "after": "17"}]
+
+
+def test_series_variation_can_be_limited_to_one_label(tmp_path):
+    """The noise baseline (SC-003) is the coefficient of variation inside one
+    session of an unchanged build, not across the whole history with its steps."""
+    from tracepulse.analysis import series_variation
+    records = [_rec(i, 300.0, "007-performance-pipeline") for i in range(4)] + \
+              [_rec(i, 390.0, "noise-baseline") for i in range(4, 14)]
+    with Store.rebuild(str(tmp_path / "db"), records) as store:
+        everything = series_variation(store)
+        baseline = series_variation(store, "noise-baseline")
+        nothing = series_variation(store, "no-such-label")
+    row = next(r for r in everything if r["metric"] == "startup/startup.ttid_ms")
+    assert row["rounds"] == 14 and row["cov_pct"] > 10, "the step between labels dominates"
+    row = next(r for r in baseline if r["metric"] == "startup/startup.ttid_ms")
+    assert row["rounds"] == 10 and row["cov_pct"] < 0.01, "an unchanged build is flat"
+    assert nothing == []
