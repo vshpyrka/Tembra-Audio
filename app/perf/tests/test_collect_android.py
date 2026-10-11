@@ -192,7 +192,8 @@ def test_quality_flags_noisy_when_mapped_single_metric_cov_exceeds_threshold(cfg
 def test_quality_flags_checks_unmapped_single_metrics_too(cfg):
     # Phase 3 calibration flip: ANY single metric's instability is round-quality
     # signal -- the wifi-contaminated live round announced itself only via the
-    # unmapped, advisory `frameCount` (cov 0.72, above its 0.6 allowance). Unmapped keys still flag.
+    # unmapped, advisory `frameCount` (cov 0.72, above its then 0.6 allowance; 0.75 since the
+    # tuner journey's anchor waits were measured, so 0.9 here). Unmapped keys still flag.
     unmapped = BenchmarkFile(
         context={},
         benchmarks=[
@@ -200,7 +201,7 @@ def test_quality_flags_checks_unmapped_single_metrics_too(cfg):
                 name="unrelated",
                 single={
                     "frameCount": SingleMetric(
-                        minimum=1.0, maximum=9.0, median=5.0, cov=0.72, runs=[1.0, 5.0, 9.0]
+                        minimum=1.0, maximum=9.0, median=5.0, cov=0.9, runs=[1.0, 5.0, 9.0]
                     )
                 },
                 sampled={},
@@ -240,8 +241,9 @@ def test_shipped_yml_carries_the_measured_overrides():
     # Calibrated on the Pixel 6 Pro's first rounds (tracepulse.yml comments); revisited at the noise baseline.
     assert shipped.quality.cov_max_overrides == {
         "timeToFullDisplayMs": 0.45,
-        "memoryHeapSizeLastKb": 0.45,
-        "frameCount": 0.6,
+        "memoryHeapSizeLastKb": 0.55,
+        "frameCount": 0.75,
+        "journey.tunerSumMs": 0.25,
     }
 
 
@@ -270,3 +272,22 @@ def test_apk_size_zero_byte_file(tmp_path):
     p = tmp_path / "empty.apk"
     p.write_bytes(b"")
     assert apk_size(str(p)) == 0
+
+
+
+def test_quality_flags_ignore_section_keys_but_not_the_journey_section(cfg):
+    """Sub-millisecond sections jitter by their own size within a round; the journey
+    section is the journey's duration and keeps its allowance."""
+    def single(cov):
+        return SingleMetric(minimum=1.0, maximum=1.0, median=1.0, cov=cov, runs=[1.0, 1.0, 1.0])
+
+    def benchmark(single_metrics):
+        return BenchmarkResult(name="tunerJourney", single=single_metrics, sampled={}, thermal_throttle_sleep_s=0)
+    sections = {"tuner.frameSumMs": single(0.98), "tuner.frameCount": single(0.76), "metronome.loadSumMs": single(0.56),
+                "tuner.modeSwitchSumMs": single(0.3), "tuner.modeSwitchCount": single(0.0),
+                "timeToInitialDisplayMs": single(0.05)}
+    flags, _ = quality_flags([BenchmarkFile(context={}, benchmarks=[benchmark(sections)])], cfg)
+    assert flags == []
+    journey = {"journey.tunerSumMs": single(0.3), "timeToInitialDisplayMs": single(0.05)}
+    flags, _ = quality_flags([BenchmarkFile(context={}, benchmarks=[benchmark(journey)])], cfg)
+    assert flags == ["noisy"], "the journey section (0.3 > its 0.25 allowance) still counts"

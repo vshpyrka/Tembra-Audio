@@ -125,3 +125,21 @@ def test_engine_health_json_yields_the_six_audio_series():
     series = engine_health(os.path.join(FIXTURES, "engine-health.json"))
     assert series == {"audio.callbacks": 1200.0, "audio.last_callback_us": 850.0, "audio.max_callback_us": 1900.0,
                       "audio.over_budget": 0.0, "audio.xruns": 0.0, "audio.realtime": 1.0}
+
+
+def test_phone_identifier_forms_and_a_frameless_animation_interval(cfg, caplog):
+    """The first iPhone 14 round (iOS 27.0.1, Xcode 27.1): memory and CPU carry the bundle id
+    (`XCTMetric_Memory-audio.tembra.appP5QJJ5Y5V7.physical_peak`), `physical_absolute` and
+    `cycles` are skipped, and the tempo change's animation interval held no frame in any
+    iteration, so the hitch columns are dropped instead of publishing a 60 fps deficit."""
+    with caplog.at_level("WARNING", logger="tracepulse.collect_ios"):
+        result = collect_round(os.path.join(FIXTURES, "xcresult-metrics-iphone14.json"), cfg, simulator=False)
+    journeys = {j.journey: j.metrics for j in result.journeys}
+    tuner, metronome = journeys["tuner"], journeys["metronome"]
+    assert 120_000 < tuner["memory.peak_kb"].summary["median"] < 140_000
+    assert 110_000 < tuner["memory.end_kb"].summary["median"] < 140_000
+    assert 2_000 < tuner["cpu.time_ms"].summary["median"] < 4_000 and "cpu.instructions_k" in tuner
+    assert not any(k.startswith("frames.") for k in metronome), "no frames in the interval, no frames family"
+    assert "frames._count" not in metronome
+    assert 0.1 < metronome["section.metronome.tempoChange.sum_ms"].summary["median"] < 0.2
+    assert any("contained no frames" in r.message for r in caplog.records)

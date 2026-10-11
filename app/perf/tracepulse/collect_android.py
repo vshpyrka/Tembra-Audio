@@ -133,6 +133,12 @@ def quality_flags(files: List[BenchmarkFile], cfg: Config) -> Tuple[List[str], f
     stable to +-2%, so they carry higher allowances in tracepulse.yml.
     `thermal`: any benchmark's `thermalThrottleSleepSeconds > 0`.
 
+    Section keys (`tuner.frameSumMs`, `metronome.loadCount`, …; feature 007) are
+    left out: a 0.03 ms loader or a 17-frame draw sum varies by 30-100 % within a
+    round on a clean Pixel 6 Pro (seven rounds, 2026-10-08/11) because scheduling
+    jitter is the size of the work itself, which says nothing about the round. The
+    journey section (`journey.<x>SumMs`) is the journey's duration and stays in.
+
     Returns (flags, thermal_seconds_total) — the total summed across every benchmark
     in every file (not just those that are individually throttled).
     """
@@ -143,6 +149,8 @@ def quality_flags(files: List[BenchmarkFile], cfg: Config) -> Tuple[List[str], f
         for b in f.benchmarks:
             thermal_total += b.thermal_throttle_sleep_s
             for key, metric in b.single.items():
+                if _is_section_key(key) and not key.startswith("journey."):
+                    continue
                 allowance = cfg.quality.cov_max_overrides.get(key, cfg.quality.cov_max)
                 if metric.cov > allowance:
                     noisy = True
@@ -205,6 +213,10 @@ def journey_of(class_name: str) -> str:
         return _JOURNEY_OF_CLASS[simple]
     except KeyError:
         raise CollectError(f"benchmark class {class_name!r} is not one of {sorted(_JOURNEY_OF_CLASS)}") from None
+
+
+def _is_section_key(key: str) -> bool:
+    return bool(_SECTION_SUM_RE.match(key) or _SECTION_COUNT_RE.match(key))
 
 
 def _classify_single_key(key: str, journey: str) -> Optional[str]:

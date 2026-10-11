@@ -26,8 +26,18 @@ _TEST_JOURNEYS = {
 _STARTUP_TESTS = {"testColdLaunchToFirstFrame": "ttid", "testColdLaunchToResponsive": "ttfd"}
 # `XCTMetric_OSSignpost-<family>.<camelCase>.<suffix>` is how xcresulttool names a signpost metric
 # (verified on the iPhone 17 simulator, FacadeSelfCheckTests, 2026-10-08); the display name is
-# "<Column> (<name>)".
-_SECTION_RE = re.compile(r"XCTMetric_OSSignpost-(?P<name>[a-z]+\.[A-Za-z0-9]+)(?:\.|$)")
+# "<Column> (<name>)". An animation interval adds `.animation.frame.rate`, `.animation.frame.count`,
+# `.animation.hitch.number`, `.animation.hitch.time.ratio` and `.animation.hitches.total.duration`
+# (iPhone 14, iOS 27.0.1, Xcode 27.1, 2026-10-11). Memory and CPU carry the bundle id on a phone
+# (`XCTMetric_Memory-audio.tembra.appP5QJJ5Y5V7.physical_peak`) and not on the simulator
+# (`XCTMetric_Memory.physical_peak`), so they are told by their last component.
+_SECTION_RE = re.compile(r"XCTMetric_OSSignpost-(?P<name>[a-z]+\.[A-Za-z0-9]+)(?P<rest>(?:\.[A-Za-z0-9_]+)*)$")
+_ANIMATION_COLUMNS = {
+    ".animation.hitch.time.ratio": ("frames.hitch_ratio_ms_per_s", "ms/s", None),
+    ".animation.hitch.number": ("frames.hitch_count", "count", None),
+    ".animation.frame.rate": ("frames.fps_deficit", "fps", "fps_deficit"),
+}
+FRAME_COUNT = "frames._count"  # advisory: an interval without frames has no frames family
 _HEALTH_KEYS = {
     "callbacks": "audio.callbacks", "last_us": "audio.last_callback_us", "max_us": "audio.max_callback_us",
     "over_budget": "audio.over_budget", "xruns": "audio.xruns", "realtime": "audio.realtime",
@@ -74,26 +84,32 @@ def _classify(identifier: str, display: str, unit: str, startup_variant: Optiona
         return (f"startup.{startup_variant}_ms", "ms", "ms")
     if "clock.time.monotonic" in ident:
         return ("journey.duration_ms", "ms", "ms")
-    if "cpu.time" in ident:
-        return ("cpu.time_ms", "ms", "ms")
-    if "cpu.instructions_retired" in ident:
-        return ("cpu.instructions_k", "kI", None)
-    if "memory.physical_peak" in ident:
-        return ("memory.peak_kb", "kB", None)
-    if "memory.physical" in ident:
-        return ("memory.end_kb", "kB", None)
+    last = ident.rsplit(".", 1)[-1]
+    if "xctmetric_cpu" in ident:
+        if last == "time":
+            return ("cpu.time_ms", "ms", "ms")
+        if last == "instructions_retired":
+            return ("cpu.instructions_k", "kI", None)
+        return None
+    if "xctmetric_memory" in ident:
+        if last == "physical_peak":
+            return ("memory.peak_kb", "kB", None)
+        if last == "physical":
+            return ("memory.end_kb", "kB", None)
+        return (None, None, None) if last == "physical_absolute" else None
     section = _SECTION_RE.search(identifier)
     if section:
-        name = section.group("name")
-        if "hitch time ratio" in disp:
-            return (None, None, None) if simulator else ("frames.hitch_ratio_ms_per_s", "ms/s", None)
-        if "hitch count" in disp or disp.startswith("hitches") and "count" in disp:
-            return (None, None, None) if simulator else ("frames.hitch_count", "count", None)
-        if "frame rate" in disp:
-            return (None, None, None) if simulator else ("frames.fps_deficit", "fps", "fps_deficit")
-        if "duration" in disp and "hitches" not in disp:
+        name, rest = section.group("name"), section.group("rest")
+        if rest == ".duration":
             return (f"section.{name}.sum_ms", "ms", "ms")
+        if rest == ".animation.frame.count":
+            return (None, None, None) if simulator else (FRAME_COUNT, "frames", None)
+        if rest in _ANIMATION_COLUMNS:
+            return (None, None, None) if simulator else _ANIMATION_COLUMNS[rest]
+        if rest == ".animation.hitches.total.duration":
+            return (None, None, None)
         return None
+    _ = disp
     return None
 
 
@@ -140,8 +156,13 @@ def collect_round(metrics_json_path: str, cfg: Config, simulator: bool,
                     values = _to_ms(values, metric.get("unitOfMeasurement", ""))
                 elif conversion == "fps_deficit":
                     values = [max(0.0, 60.0 - v) for v in values]
+                if key == FRAME_COUNT:
+                    metrics[key] = MetricResult(unit="frames", samples=values, source="xcresult")
+                    continue
                 entry_meta = lookup("ios", key, cfg.catalogue)
                 metrics[key] = MetricResult(unit=entry_meta.unit, samples=values, source="xcresult")
+    for journey, metrics in journeys.items():
+        _drop_frames_without_frames(journey, metrics)
     if not journeys:
         raise CollectError(f"no journey test with metrics in {metrics_json_path}")
     results = [JourneyResult(journey=j, iterations=max(len(m.samples) for m in ms.values()), metrics=ms)
@@ -149,6 +170,22 @@ def collect_round(metrics_json_path: str, cfg: Config, simulator: bool,
     order = {"startup": 0, "tuner": 1, "metronome": 2, "stress": 3}
     results.sort(key=lambda r: order.get(r.journey, 9))
     return CollectedRound(journeys=results, badges=["simulator"] if simulator else [], thermal_seconds=0.0)
+
+
+def _drop_frames_without_frames(journey: str, metrics: Dict[str, MetricResult]) -> None:
+    """The hitch columns describe the frames inside the animation interval; an interval
+    that contained no frame in any iteration (the metronome's tempo change is a state
+    update of ~0.1 ms, not a drawn animation) would report a 60 fps "deficit" and no
+    hitches, which is not a measurement. Drop the family and say so."""
+    count = metrics.pop(FRAME_COUNT, None)
+    frames = [k for k in metrics if k.startswith("frames.")]
+    if not frames:
+        return
+    if count is None or all(v == 0 for v in count.samples):
+        for key in frames:
+            del metrics[key]
+        logger.warning("%s: the animation interval contained no frames in any iteration; the frames family "
+                       "is not recorded (give the interval a drawn animation to measure hitches)", journey)
 
 
 def parse_preflight(path: str) -> Dict[str, Any]:
