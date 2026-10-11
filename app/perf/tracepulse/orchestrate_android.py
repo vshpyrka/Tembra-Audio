@@ -309,22 +309,33 @@ def fingerprint(cfg: Config, device: Device, runner: Runner) -> Dict[str, Any]:
 # build, install, warm-up
 # ============================================================
 
+# `--build-type release` (the SC-007 baseline) is the `perf` Gradle build type -- release
+# optimisations, profileable, debug signing: what Macrobenchmark can install and trace -- built with
+# `-Ptembra.perf=release`, which compiles the instrumentation out (PerfBuild.PERF_ENABLED false, no
+# TEMBRA_TRACING). The plain `release` type is unsigned and not profileable, so it cannot be measured.
+_GRADLE_BUILD_TYPE = {"release": "perf"}
+_PERF_PROPERTY = {"release": "release"}
+
+
 def gradle_tasks(cfg: Config, build_type: str) -> List[str]:
-    suffix = build_type[:1].upper() + build_type[1:]
+    gradle_type = _GRADLE_BUILD_TYPE.get(build_type, build_type)
+    suffix = gradle_type[:1].upper() + gradle_type[1:]
     return [f":androidApp:assemble{suffix}", f"{cfg.android.benchmarks_module}:assemble{suffix}"]
 
 
 def apk_paths(cfg: Config, build_type: str) -> "tuple[str, str]":
+    gradle_type = _GRADLE_BUILD_TYPE.get(build_type, build_type)
     module = cfg.android.benchmarks_module.lstrip(":")
-    app = os.path.join(cfg.root, "androidApp", "build", "outputs", "apk", build_type, f"androidApp-{build_type}.apk")
-    test = os.path.join(cfg.root, module, "build", "outputs", "apk", build_type, f"{module}-{build_type}.apk")
+    app = os.path.join(cfg.root, "androidApp", "build", "outputs", "apk", gradle_type, f"androidApp-{gradle_type}.apk")
+    test = os.path.join(cfg.root, module, "build", "outputs", "apk", gradle_type, f"{module}-{gradle_type}.apk")
     return app, test
 
 
 def build(cfg: Config, runner: Runner, build_type: str, log_path: str, java_home: Optional[str]) -> "tuple[str, str]":
-    """`./gradlew --console=plain -Ptembra.perf=true <assemble tasks>` from the Gradle
+    """`./gradlew --console=plain -Ptembra.perf=<true|release> <assemble tasks>` from the Gradle
     root; stdout and stderr go to `log_path`, never to the console in full."""
-    cmd = ["./gradlew", "--console=plain", "-Ptembra.perf=true", *gradle_tasks(cfg, build_type)]
+    prop = f"-Ptembra.perf={_PERF_PROPERTY.get(build_type, 'true')}"
+    cmd = ["./gradlew", "--console=plain", prop, *gradle_tasks(cfg, build_type)]
     env = {"JAVA_HOME": java_home} if java_home else None
     res = runner.run(cmd, cwd=cfg.root, env=env, timeout=BUILD_TIMEOUT_S)
     os.makedirs(os.path.dirname(log_path), exist_ok=True)

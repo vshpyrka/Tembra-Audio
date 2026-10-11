@@ -255,13 +255,18 @@ def test_no_build_installs_the_given_artifacts(cfg, tmp_path):
 
 
 def test_release_build_type_for_the_sc007_comparison(cfg, tmp_path):
+    """The baseline is the perf build type (installable, profileable) with the instrumentation
+    compiled out through `-Ptembra.perf=release`; the plain release APK is unsigned and
+    Macrobenchmark refuses a non-profileable target."""
     _state, rules = _device_rules(tmp_path)
-    app_apk, test_apk = _apks(cfg, "release")
+    app_apk, test_apk = _apks(cfg, "perf")
     runner = TableRunner([_gradle_rule(cfg, app_apk, test_apk)] + rules)
-    run_round(cfg, PIXEL, runner, FakeClock(), str(tmp_path / "r"),
-              RoundOptions(journeys=["startup"], build_type="release"))
-    assert runner.index_of("./gradlew", ":androidApp:assembleRelease", ":perf-benchmarks:assembleRelease") >= 0
+    outcome = run_round(cfg, PIXEL, runner, FakeClock(), str(tmp_path / "r"),
+                        RoundOptions(journeys=["startup"], build_type="release"))
+    assert runner.index_of("./gradlew", "-Ptembra.perf=release", ":androidApp:assemblePerf", ":perf-benchmarks:assemblePerf") >= 0
+    assert runner.index_of("-Ptembra.perf=true") == -1
     assert runner.index_of("install", app_apk) >= 0
+    assert outcome.build_type == "release"
 
 
 def test_round_enforces_and_restores_airplane_mode_and_refresh_rate(cfg, tmp_path):

@@ -77,6 +77,14 @@ uv run tracepulse inject R1 | revert R1 | revert --all  # the regression-injecti
 
 `--json` on any command prints one JSON object on stdout (progress lines go to stderr) for a future CI job.
 
+`--build-type release` on Android is the `perf` Gradle build type (release optimisations, profileable,
+debug signing — what Macrobenchmark can install and trace) built with `-Ptembra.perf=release`, which
+compiles the instrumentation out (`PerfBuild.PERF_ENABLED` false, no `TEMBRA_TRACING`); the plain
+`release` type is unsigned and not profileable, so it cannot be measured. The round's record says
+`build_type: release`. On iOS `--configuration Release` is the Release configuration itself (its
+Gradle phase passes no `tembra.perf`), and the stress journey skips the absent "write engine health"
+control.
+
 ### Exit statuses
 
 | Code | Meaning |
