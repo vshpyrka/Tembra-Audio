@@ -9,7 +9,7 @@ import sqlite3
 
 import pytest
 
-from tracepulse.records import DeviceInfo, JourneyResult, MetricResult, RoundRecord
+from tracepulse.records import DeviceInfo, JourneyResult, MetricResult, RoundRecord, sections_unmeasured
 from tracepulse.store import Store, series_key, split_series_key
 
 
@@ -198,3 +198,24 @@ def test_values_from_before_a_source_change_stay_out_of_the_cache(tmp_path):
         points = store.series("tuner/memory.end_kb", "PIXEL")
         assert [v for _rid, v in points] == [98000.0]
         assert len(store.series("tuner/frames.p90_ms", "PIXEL")) == 2, "other series keep both rounds"
+
+
+def test_a_round_built_without_the_facade_adds_no_section_values(tmp_path):
+    """The release baseline compiles the tracing facade out; macrobenchmark reports an absent
+    section as 0, which is not a value. A record saying `build.type: release` keeps its sections
+    out of the cache, and so does an older record (no type) in which not one section was hit."""
+    measured = _rec("PIXEL", "android", "20261011T100000Z_a", "a", "2026-10-11T10:00:00Z", 300.0)
+    measured.journeys[1].metrics["section.tuner.load.count"] = MetricResult(unit="count", samples=[1.0, 1.0, 1.0],
+                                                                            source="macrobenchmark")
+    release = _rec("PIXEL", "android", "20261011T110000Z_r", "release-baseline", "2026-10-11T11:00:00Z", 290.0)
+    release.build["type"] = "release"
+    legacy_release = _rec("PIXEL", "android", "20261011T120000Z_r", "release-baseline", "2026-10-11T12:00:00Z", 291.0)
+    for rec in (release, legacy_release):
+        rec.journeys[1].metrics["section.tuner.modeSwitch.sum_ms"] = MetricResult(unit="ms", samples=[0.0, 0.0, 0.0],
+                                                                                  source="macrobenchmark")
+        rec.journeys[1].metrics["section.tuner.load.count"] = MetricResult(unit="count", samples=[0.0, 0.0, 0.0],
+                                                                           source="macrobenchmark")
+    assert not sections_unmeasured(measured) and sections_unmeasured(release) and sections_unmeasured(legacy_release)
+    with Store.rebuild(str(tmp_path / "db"), [measured, release, legacy_release]) as store:
+        assert len(store.series("tuner/section.tuner.modeSwitch.sum_ms", "PIXEL")) == 1
+        assert len(store.series("tuner/frames.p90_ms", "PIXEL")) == 3, "the other series keep every round"

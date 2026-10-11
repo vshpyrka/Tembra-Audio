@@ -5,7 +5,11 @@ the last N clean rounds' medians on the same series (N = `gate.clean_rounds`,
 default 5): `above_limit` when the change exceeds the metric's limit in the
 worse direction (every metric is higher-is-worse), `within_limit` otherwise,
 `inactive` with a reason below N clean rounds, for simulator series (unless
-`gate.simulators: active`) and for disabled metrics. Decisions ride the round
+`gate.simulators: active`) and for disabled metrics. A percentage limit may carry
+a floor (`gate_floor_abs`: a change under it never flags, however large the
+percentage of a tiny baseline); an absolute limit may scale (`gate_scale_pct`:
+the limit grows to that share of the baseline when the baseline is large, so a
+2 ms overrun limit does not flag ±5 ms of noise on a 50 ms series). Decisions ride the round
 record (`gate[]`) and the cache (`gate_decisions`); they never change an exit
 status. A clean round succeeded, carries no `noisy`/`thermal` badge and is not in
 an environment-suspect group; a gate flag does not make a round unclean.
@@ -29,19 +33,23 @@ def _median(values: Sequence[float]) -> float:
 
 
 def decide(baseline: Sequence[float], value: float, limit_pct: Optional[float], limit_abs: Optional[float],
-           ids: Sequence[str]) -> Dict[str, Any]:
-    """One decision from a clean baseline (medians of the N clean rounds) and the round's median."""
+           ids: Sequence[str], floor_abs: Optional[float] = None, scale_pct: Optional[float] = None) -> Dict[str, Any]:
+    """One decision from a clean baseline (medians of the N clean rounds) and the round's median.
+    An absolute limit is recorded as the value that applied (scaled when the baseline was large)."""
     base = _median(baseline)
     observed_abs = value - base
     # against |base| so the sign is the direction even when the baseline is negative
     # (frame overrun P90 sits below zero on a quiet device)
     observed_pct = (observed_abs / abs(base) * 100.0) if base else 0.0
     if limit_pct is not None:
-        state = "above_limit" if observed_pct > limit_pct else "within_limit"
-        return {"state": state, "limit_pct": float(limit_pct), "observed_pct": observed_pct,
-                "baseline_rounds": list(ids)}
-    state = "above_limit" if observed_abs > float(limit_abs or 0.0) else "within_limit"
-    return {"state": state, "limit_abs": float(limit_abs or 0.0), "observed_abs": observed_abs,
+        above = observed_pct > limit_pct and (floor_abs is None or observed_abs > floor_abs)
+        return {"state": "above_limit" if above else "within_limit", "limit_pct": float(limit_pct),
+                "observed_pct": observed_pct, "baseline_rounds": list(ids)}
+    limit = float(limit_abs or 0.0)
+    if scale_pct:
+        limit = max(limit, abs(base) * scale_pct / 100.0)
+    state = "above_limit" if observed_abs > limit else "within_limit"
+    return {"state": state, "limit_abs": limit, "observed_abs": observed_abs,
             "observed_pct": observed_pct, "baseline_rounds": list(ids)}
 
 
@@ -92,7 +100,8 @@ def _decide_series(store: Store, cfg: Config, device: Device, series: str, value
         return dict(base, state="inactive", reason=f"fewer than {n} clean rounds ({len(baseline_ids)})", **limit_field)
     keys = {row["id"]: row["round_key"] for row in store.rounds(device.device_id)}
     decision = decide([points[rid] for rid in baseline_ids], value, entry.gate_limit_pct, entry.gate_limit_abs,
-                      [keys[rid] for rid in baseline_ids])
+                      [keys[rid] for rid in baseline_ids], floor_abs=entry.gate_floor_abs,
+                      scale_pct=entry.gate_scale_pct)
     return dict(base, **decision)
 
 

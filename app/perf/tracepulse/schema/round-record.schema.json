@@ -29,6 +29,7 @@
         "commit": { "type": "string" },
         "branch": { "type": "string" },
         "dirty": { "type": "boolean" },
+        "type": { "type": "string" },
         "app_version": { "type": "string" },
         "app_size_bytes": { "type": "integer" },
         "app_size_uncompressed_bytes": { "type": "integer" }

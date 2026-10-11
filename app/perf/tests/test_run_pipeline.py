@@ -116,7 +116,7 @@ def test_session_builds_the_record_and_runs_publish_sync_rebuild_detect_report(c
     RoundRecord.validate(rec.to_dict())
     assert rec.device.device_id == "PIXEL" and rec.label == "007-performance-pipeline"
     assert rec.build["commit"] == "c0ffee1234" and rec.build["dirty"] is True and rec.build["branch"] == "007-performance-pipeline"
-    assert rec.build["app_size_bytes"] == 4321
+    assert rec.build["app_size_bytes"] == 4321 and rec.build["type"] == "perf"
     assert rec.machine["hostname"] and rec.machine["tool_version"]
     assert rec.checks == [{"name": "battery", "passed": True, "value": 87, "limit": 50}]
     assert rec.badges == ["noisy"] and rec.status == "succeeded"
@@ -127,6 +127,24 @@ def test_session_builds_the_record_and_runs_publish_sync_rebuild_detect_report(c
     assert os.path.isfile(paths.db_path) and os.path.isfile(result.report_path)
     assert result.records[0].round_id == rec.round_id
     assert not os.path.exists(os.path.join(paths.data_dir, "locks", "PIXEL")), "the lock is released"
+
+
+def test_a_release_round_records_its_type_and_no_section(cfg, paths):
+    def outcome(*_a, **_k):
+        out = _outcome()
+        out.journeys[1].metrics["section.tuner.load.sum_ms"] = MetricResult(unit="ms", samples=[0.0] * 20,
+                                                                            source="macrobenchmark")
+        out.build_type = "release"
+        return out
+    deps, history, _calls = _deps(outcome)
+    result = run_session(cfg, paths, PIXEL, "release-baseline", 1, RoundOptions(journeys=cfg.journeys, build_type="release"),
+                         _git_runner(dirty=False), FakeClock(), deps)
+    assert result.exit_status == EXIT_OK
+    rec: RoundRecord = history.published[0]
+    RoundRecord.validate(rec.to_dict())
+    assert rec.build["type"] == "release"
+    assert not any(k.startswith("section.") for j in rec.journeys for k in j.metrics), "the facade is compiled out"
+    assert "frames.p90_ms" in rec.journeys[1].metrics
 
 
 def test_refusal_exits_2_and_publishes_nothing(cfg, paths):

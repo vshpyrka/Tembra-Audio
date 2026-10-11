@@ -140,6 +140,14 @@ delta on iOS. It was the ART heap size until 2026-10-11: the noise baseline show
 so the catalogue entry carries `since: 2026-10-11T20:10:00Z` and the cache loads the Pixel's series from
 there (the records keep the old values; a `since` is how a source change avoids showing as a step).
 
+A record's `build.type` names the build measured (`perf` / `release`; `Perf` / `Release` on iOS). Only
+the measurement build compiles the tracing facade in, so a `release-baseline` round publishes no
+`section.*` series: Macrobenchmark reports an absent trace section as 0, and the first two release
+rounds on the Pixel (`20261011T204339Z`, `20261011T205838Z`, before the type was recorded) carry those
+zeros in their records; the cache ignores the sections of a record without a type in which not one
+section was hit, so they never reach a chart or a gate baseline (they did once: the +65 % stress
+`modeSwitch` flag on the first round of the second noise session was measured against them).
+
 On a phone a round ends with the audio-trace pass: the app is launched with `devicectl`, `xctrace
 record --template 'Audio System Trace' --attach <pid>` records for 75 s (never `--launch`, which
 hung in spike 3), and `AudioTracePass` drives one unmeasured stress journey on the running process;
@@ -179,6 +187,12 @@ terms: `+18 % (limit 15 %)` for a percentage limit, `+2.5 ms (limit 2 ms)` for a
 overrun, hitches, audio flags); the percentage is taken against the magnitude of the baseline, so a
 rise from −0.5 ms to +2 ms is positive. The first live flag was exactly that: Pixel `noise-baseline`
 round 8, stress `frames.overrun_p90_ms` +2.5 ms over its 2 ms limit, back within limits in round 9.
+Two refinements came out of the noise sessions (catalogue `gate_floor_abs`, `gate_scale_pct`): a
+percentage limit on a section flags only a change of at least 1 ms (the stress journey's `tuner.load`
+section is 0.03 ms on the iPhone and swung +22 % between rounds), and the absolute overrun limit grows
+to 25 % of the baseline when the baseline is large (the tuner journey's overrun P90 is the mode-switch
+frame, 48–59 ms across 23 Pixel rounds, which the 2 ms limit flagged every third round); the record's
+`limit_abs` is the limit that applied, so the chart's limit line is still the real one.
 
 ## Adding a journey, a section, a counter
 

@@ -29,6 +29,8 @@ class Metric:
     comparable: bool = False
     gate_limit_pct: Optional[float] = None
     gate_limit_abs: Optional[float] = None
+    gate_floor_abs: Optional[float] = None  # a percentage limit flags only a change of at least this much
+    gate_scale_pct: Optional[float] = None  # an absolute limit grows to this share of a large baseline
     screening_pct: Optional[float] = None
     screening_abs: Optional[float] = None
     single_valued: bool = False
@@ -59,7 +61,7 @@ _ANDROID: List[Metric] = [
     _m("android", "frames.p99_ms", "frames", "macrobenchmark FrameTimingMetric.frameDurationCpuMs P99",
        "ms", JOURNEYS_MEASURED, gate_limit_pct=25, screening_pct=8),
     _m("android", "frames.overrun_p90_ms", "frames", "macrobenchmark FrameTimingMetric.frameOverrunMs P90",
-       "ms", JOURNEYS_MEASURED, gate_limit_abs=2.0, screening_abs=2.0,
+       "ms", JOURNEYS_MEASURED, gate_limit_abs=2.0, screening_abs=2.0, gate_scale_pct=25,
        note="per-frame percentiles on Android; hitch-based on iOS"),
     _m("android", "memory.peak_kb", "memory", "macrobenchmark MemoryUsageMetric(Max, RssAnon)",
        "kB", JOURNEYS_MEASURED, gate_limit_pct=15, screening_pct=3),
@@ -125,7 +127,8 @@ CATALOGUE: Dict[Tuple[str, str], Metric] = {
 }
 
 _SECTION_SUFFIXES = {
-    "sum_ms": ("ms", dict(gate_limit_pct=20, screening_pct=5)),
+    # a section of a few hundredths of a millisecond swings by tens of percent; under a millisecond is not a change
+    "sum_ms": ("ms", dict(gate_limit_pct=20, screening_pct=5, gate_floor_abs=1.0)),
     "count": ("count", dict(gate_limit_pct=20, screening_pct=10)),
 }
 _SECTION_SOURCE = {
