@@ -155,3 +155,21 @@ def test_session_lists_gate_flags_across_rounds_and_still_succeeds(cfg, paths):
 def test_run_requires_a_label(capsys):
     assert main(["run", "--device", "pixel6", "--rounds", "5"]) == 4
     assert "--label" in capsys.readouterr().err
+
+
+def test_prebuilt_artifact_paths_are_made_absolute(cfg, tmp_path, monkeypatch):
+    """`--apk`, `--test-apk` and `--xctestrun` are typed relative to the caller's
+    cwd; xcodebuild and adb run from the app directories, so the options carry
+    absolute paths."""
+    from tracepulse.__main__ import build_parser
+    from tracepulse.run import round_options
+    monkeypatch.chdir(tmp_path)
+    args = build_parser().parse_args(["run", "--device", "iphone14", "--label", "007", "--no-build",
+                                      "--xctestrun", "data/sessions/s1/DerivedData/Build/Products/x.xctestrun"])
+    ios = round_options(args, cfg, "ios", list(cfg.journeys), 20)
+    assert ios.xctestrun == str(tmp_path / "data/sessions/s1/DerivedData/Build/Products/x.xctestrun")
+    args = build_parser().parse_args(["run", "--device", "pixel6", "--label", "007", "--no-build",
+                                      "--apk", "out/app.apk", "--test-apk", "out/bench.apk"])
+    android = round_options(args, cfg, "android", list(cfg.journeys), 20)
+    assert android.apk == str(tmp_path / "out/app.apk") and android.test_apk == str(tmp_path / "out/bench.apk")
+    assert round_options(args, cfg, "ios", list(cfg.journeys), 20).xctestrun is None, "absent stays absent"

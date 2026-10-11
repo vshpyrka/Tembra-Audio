@@ -119,6 +119,7 @@ def doctor(cfg: Config, device: Device, runner: Runner, scratch_dir: Optional[st
     res = runner.run(["xcrun", "devicectl", "list", "devices", "--json-output", out, "--quiet"], timeout=TOOL_TIMEOUT_S)
     attached = res.returncode == 0 and os.path.isfile(out) and device.device_id in open(out).read()
     checks.append(Check("device_attached", attached, f"{device.device_id} {'paired and attached' if attached else 'not found by devicectl'}"))
+    checks.append(_xcode_supports_device(device, runner))
     res = runner.run(["xcrun", "devicectl", "device", "info", "lockState", "--device", device.device_id, "--json-output", "-"], timeout=TOOL_TIMEOUT_S)
     locked = None
     try:
@@ -131,6 +132,30 @@ def doctor(cfg: Config, device: Device, runner: Runner, scratch_dir: Optional[st
     else:
         checks.append(Check("unlocked", not locked, "unlocked" if not locked else "locked: unlock the iPhone and keep it awake"))
     return checks
+
+
+def _major(version: str) -> int:
+    try:
+        return int(version.split(".")[0])
+    except ValueError:
+        return 0
+
+
+def _xcode_supports_device(device: Device, runner: Runner) -> Check:
+    """XCUITest launches through CoreDevice fail with "process identifier could
+    not be determined" (10004) when the phone's iOS is newer than the selected
+    Xcode's SDK, although `devicectl` still installs and launches the app. Point
+    DEVELOPER_DIR at an Xcode whose SDK major is at least the phone's iOS major."""
+    res = runner.run(["xcrun", "--sdk", "iphoneos", "--show-sdk-version"], timeout=TOOL_TIMEOUT_S)
+    sdk = res.stdout.strip() if res.returncode == 0 else ""
+    if not sdk or not device.os_version:
+        return Check("xcode_supports_device", True, "SDK or device iOS version unknown; the test launch decides")
+    supported = _major(device.os_version) <= _major(sdk)
+    detail = f"iOS {device.os_version} on the phone, SDK {sdk} in the selected Xcode"
+    if not supported:
+        detail += (": this Xcode cannot launch XCUITests on the phone; select a newer one, e.g. "
+                   "DEVELOPER_DIR=/Applications/Xcode-<version>.app/Contents/Developer uv run tracepulse run …")
+    return Check("xcode_supports_device", supported, detail)
 
 
 # ============================================================
