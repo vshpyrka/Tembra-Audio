@@ -3,6 +3,7 @@ package audio.tembra.perf.journeys
 import androidx.test.uiautomator.UiDevice
 import audio.tembra.perf.journeys.Anchors.anchor
 import audio.tembra.perf.journeys.Anchors.tap
+import audio.tembra.perf.journeys.Anchors.tapIfPresent
 
 /**
  * The stress journey (spec FR-007, placeholder until the audio spine): the metronome keeps clicking while the tuner
@@ -23,7 +24,8 @@ class StressJourney {
         device.anchor(Anchors.TUNER_NOTE_READOUT)
         device.tap(Anchors.NAV_METRONOME)
         device.tap(Anchors.METRONOME_START_STOP)
-        // Last step: the measurement build dumps the audio-health counters (feature 007, US5).
-        device.tap(Anchors.DEVTOOLS_WRITE_HEALTH)
+        // Last step: the measurement build dumps the audio-health counters (feature 007, US5); the release
+        // baseline (-Ptembra.perf=release) has no devtools, so the control is tapped only when it exists.
+        device.tapIfPresent(Anchors.DEVTOOLS_WRITE_HEALTH)
     }
 }

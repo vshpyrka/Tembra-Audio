@@ -317,6 +317,12 @@ _GRADLE_BUILD_TYPE = {"release": "perf"}
 _PERF_PROPERTY = {"release": "release"}
 
 
+def perf_property(build_type: str) -> str:
+    """The Gradle property that selects the measurement build (`true`) or the uninstrumented
+    release baseline (`release`)."""
+    return f"-Ptembra.perf={_PERF_PROPERTY.get(build_type, 'true')}"
+
+
 def gradle_tasks(cfg: Config, build_type: str) -> List[str]:
     gradle_type = _GRADLE_BUILD_TYPE.get(build_type, build_type)
     suffix = gradle_type[:1].upper() + gradle_type[1:]
@@ -334,7 +340,7 @@ def apk_paths(cfg: Config, build_type: str) -> "tuple[str, str]":
 def build(cfg: Config, runner: Runner, build_type: str, log_path: str, java_home: Optional[str]) -> "tuple[str, str]":
     """`./gradlew --console=plain -Ptembra.perf=<true|release> <assemble tasks>` from the Gradle
     root; stdout and stderr go to `log_path`, never to the console in full."""
-    prop = f"-Ptembra.perf={_PERF_PROPERTY.get(build_type, 'true')}"
+    prop = perf_property(build_type)
     cmd = ["./gradlew", "--console=plain", prop, *gradle_tasks(cfg, build_type)]
     env = {"JAVA_HOME": java_home} if java_home else None
     res = runner.run(cmd, cwd=cfg.root, env=env, timeout=BUILD_TIMEOUT_S)
