@@ -1,0 +1,82 @@
+{
+ "artifacts": [
+  {
+   "kind": "xcresult",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/app/perf/data/rounds/20261011T161956Z_007-performance-pipeline/perf.xcresult"
+  },
+  {
+   "kind": "xcodebuild_log",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/app/perf/data/rounds/20261011T161956Z_007-performance-pipeline/xcodebuild-test.log"
+  }
+ ],
+ "badges": [],
+ "build": {
+  "branch": "007-performance-pipeline",
+  "commit": "aa3c4ce2c1e804889e980b74fb87bc86d08f7b2a",
+  "dirty": true
+ },
+ "checks": [
+  {
+   "limit": null,
+   "name": "xcode",
+   "passed": true,
+   "value": null
+  },
+  {
+   "limit": null,
+   "name": "device_attached",
+   "passed": true,
+   "value": null
+  },
+  {
+   "limit": null,
+   "name": "unlocked",
+   "passed": true,
+   "value": null
+  },
+  {
+   "limit": "nominal",
+   "name": "thermal_state",
+   "passed": true,
+   "value": "nominal"
+  },
+  {
+   "limit": 0.5,
+   "name": "battery_level",
+   "passed": true,
+   "value": 1.0
+  }
+ ],
+ "device": {
+  "device_id": "00008110-001049660E3A401E",
+  "kind": "device",
+  "model": "iPhone 14",
+  "platform": "ios",
+  "reference": true
+ },
+ "failure_reason": "4: Failed to get launch progress for <XCUIApplicationImpl: 0x12e28ffc0 audio.tembra.appP5QJJ5Y5V7 at /Users/university/Workspace/Dev/Tembra Audio/app/perf/data/sessions/20261011T161314Z_007-performance-pipeline/DerivedData/Build/Products/Perf-iphoneos/Tembra Audio.app>: The process identifier of the launched application could not be determined. It may have already terminated.",
+ "fingerprint": {
+  "battery_level": 1.0,
+  "network_state": "wifi",
+  "os_build": "24A446",
+  "os_version": "27.0.1",
+  "thermal_state": "nominal"
+ },
+ "finished_at": "2026-10-11T16:20:18Z",
+ "gate": [],
+ "journeys": [],
+ "label": "007-performance-pipeline",
+ "machine": {
+  "hostname": "Victors-MacBook-Pro-M4.local",
+  "os": "Darwin 25.6.0",
+  "tool_version": "0.2.0"
+ },
+ "round_id": "20261011T161956Z_007-performance-pipeline",
+ "schema_version": 1,
+ "session": {
+  "index": 1,
+  "size": 1
+ },
+ "started_at": "2026-10-11T16:19:56Z",
+ "status": "failed"
+}
