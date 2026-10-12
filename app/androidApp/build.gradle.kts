@@ -67,6 +67,16 @@ val checkBaselineProfileCommitted = tasks.register("checkBaselineProfileCommitte
     }
 }
 
+// The coverage test reads these two files at run time; without them as inputs Gradle serves the test from the
+// cache when only a rule or the profile changed (seen 2026-10-12: a rule pointed at a missing class and the lane
+// stayed green), which would make the check a no-op in the lane and in `profile generate`.
+tasks.withType<Test>().matching { it.name == "testDebugUnitTest" }.configureEach {
+    inputs.files(
+        layout.projectDirectory.file("baseline-profile-coverage.txt"),
+        layout.projectDirectory.file("src/main/generated/baselineProfiles/baseline-prof.txt"),
+    ).withPropertyName("baselineProfileCoverageInputs").withPathSensitivity(PathSensitivity.RELATIVE)
+}
+
 androidComponents {
     beforeVariants { variant ->
         // The plugin adds nonMinified<Type> and benchmark<Type> for every non-debuggable type. Only
