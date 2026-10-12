@@ -36,7 +36,11 @@ downloads on first use), Jinja2, jsonschema. None of it ships in the app.
 - **iOS (iPhone 14)**: USB to the Apple Silicon Mac, paired, Developer Mode on, unlocked and awake. The
   first run installs two apps (the measurement build and the `TembraPerfTests` runner); the runner's
   profile must be trusted once on the phone (Settings → General → VPN & Device Management) or the round
-  is refused with "not been explicitly trusted" (exit 2). The selected Xcode's iOS SDK must be at
+  is refused with "not been explicitly trusted" (exit 2). A trusted phone denies a runner launch the
+  same way for minutes at a time (2026-10-12: the same products denied at 11:37, launched at 11:41;
+  denied at 12:14 and 12:15, launched at 12:21), so a round retries the measured run twice, two
+  minutes apart, before it refuses; the denied attempts' logs stay under the round as
+  `xcodebuild-test-attempt<n>.log`. The selected Xcode's iOS SDK must be at
   least as new as the phone's iOS: Xcode 26.6 (SDK 26.5) installs and launches the app on an iOS
   27.0.1 phone through `devicectl` but every XCUITest launch dies with CoreDevice error 10004 ("the
   process identifier of the launched application could not be determined"); `doctor` refuses the
@@ -149,10 +153,21 @@ section was hit, so they never reach a chart or a gate baseline (they did once: 
 `modeSwitch` flag on the first round of the second noise session was measured against them).
 
 On a phone a round ends with the audio-trace pass: the app is launched with `devicectl`, `xctrace
-record --template 'Audio System Trace' --attach <pid>` records for 75 s (never `--launch`, which
-hung in spike 3), and `AudioTracePass` drives one unmeasured stress journey on the running process;
-`audio.trace` and `audio-ioproc.xml` land under the round and `audio.ioproc_p99_us` (advisory) joins
-the stress journey. The measured run skips that class. Until 2026-10-12 every `devicectl … process
+record --instrument 'Audio Client' --instrument 'Audio Server' --all-processes` records the HAL
+system-wide for 75 s (never `--launch`, which hung in spike 3), and `AudioTracePass` drives one
+unmeasured stress journey on the running process; `audio.trace`, `audio-ioproc.xml` and
+`audio-io-cycle-client.xml` land under the round and `audio.ioproc_p99_us` (advisory) joins the
+stress journey. The measured run skips that class. System-wide rather than `--attach <pid>`, the
+spike-3 design: the Xcode 27.1 beta's xctrace finds no process on the iOS 27.0.1 phone by pid or by
+name ("Cannot find process for provided pid", every R1 round of 2026-10-12), and an attached
+recording with Xcode 26.6's xctrace (which does attach) reaches only the first 10 s of the HAL's
+stream. Neither fills the client-side `audio-hal-client-io-cycle-ioproc` table under the real
+journey, so the series comes from the HAL server's `audio-hal-io-cycle-client` view of the same
+interval (the client I/O-proc as audiomxd times it, ~100 cycles/s). That table names no client on
+iOS 27 ("Unknown"), so the pass trusts that the app is the phone's only HAL client — the phone is
+otherwise idle during a round. The two audio instruments alone make 35 MB of 75 s; the
+`Audio System Trace` template's kernel instruments made 0.5 GB and a full disk refused to save it.
+Until 2026-10-12 every `devicectl … process
 launch` on the phone was refused — `--device` came after the bundle id, where devicectl reads
 arguments for the app — and `process terminate` was given `--pid-or-name`, which this devicectl does
 not have; both failed silently, so no phone round before the R1 session had a warm-up launch (the

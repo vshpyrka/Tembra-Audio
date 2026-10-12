@@ -218,15 +218,41 @@ def test_refusal_inside_the_runner_refuses_the_round(cfg, tmp_path):
     assert "thermal_state" in str(exc.value)
 
 
-def test_untrusted_runner_profile_refuses_the_round(cfg, tmp_path):
+UNTRUSTED = Completed(65, "Failed to install or launch the test runner. (Underlying Error: The application could not be launched "
+                          "because the Developer App Certificate is not trusted ... its profile has not been explicitly trusted by the user.)")
+
+
+def test_untrusted_runner_profile_refuses_the_round_after_waiting_it_out(cfg, tmp_path):
     round_dir = str(tmp_path / "r1")
     rules = _xcode_rules(cfg, round_dir)
-    rules.insert(0, (lambda cmd: cmd[:2] == ["xcodebuild", "test-without-building"], Completed(
-        65, "Failed to install or launch the test runner. (Underlying Error: The application could not be launched because "
-            "the Developer App Certificate is not trusted ... its profile has not been explicitly trusted by the user.)")))
+    rules.insert(0, (lambda cmd: cmd[:2] == ["xcodebuild", "test-without-building"], UNTRUSTED))
+    runner, clock = TableRunner(rules), FakeClock()
     with pytest.raises(Refused) as exc:
-        run_round(cfg, IPHONE, TableRunner(rules), FakeClock(), round_dir, IosRoundOptions(journeys=cfg.journeys, xctestrun="x.xctestrun"))
+        run_round(cfg, IPHONE, runner, clock, round_dir, IosRoundOptions(journeys=cfg.journeys, xctestrun="x.xctestrun"))
     assert "runner_trusted" in str(exc.value) and "VPN & Device Management" in str(exc.value)
+    assert sum(1 for c in runner.commands() if c[:2] == ["xcodebuild", "test-without-building"]) == 3
+    assert clock.sleeps.count(120) == 2, "two waits between the three attempts"
+    assert os.path.isfile(os.path.join(round_dir, "xcodebuild-test-attempt1.log")) and \
+        os.path.isfile(os.path.join(round_dir, "xcodebuild-test-attempt2.log"))
+
+
+def test_a_passing_denial_of_the_runner_costs_the_round_one_wait(cfg, tmp_path):
+    """SpringBoard denied trusted runner products for minutes at a time on 2026-10-12; the second attempt measures."""
+    round_dir = str(tmp_path / "r1")
+    rules = _xcode_rules(cfg, round_dir)
+    real_twb = next(resp for match, resp in rules if callable(match) and match(["xcodebuild", "test-without-building"]))
+    attempts = []
+
+    def flaky(cmd):
+        attempts.append(cmd)
+        return UNTRUSTED if len(attempts) == 1 else real_twb(cmd)
+
+    rules.insert(0, (lambda cmd: cmd[:2] == ["xcodebuild", "test-without-building"], flaky))
+    runner, clock = TableRunner(rules), FakeClock()
+    outcome = run_round(cfg, IPHONE, runner, clock, round_dir, IosRoundOptions(journeys=cfg.journeys, xctestrun="x.xctestrun"))
+    assert outcome.status == "succeeded" and clock.sleeps.count(120) == 1
+    assert os.path.isfile(os.path.join(round_dir, "xcodebuild-test-attempt1.log"))
+    assert os.path.isfile(os.path.join(round_dir, "xcodebuild-test.log")) and os.path.isdir(os.path.join(round_dir, "perf.xcresult"))
 
 
 def test_anchor_failure_is_a_failed_round(cfg, tmp_path):
