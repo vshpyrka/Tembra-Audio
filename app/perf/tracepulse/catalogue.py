@@ -104,7 +104,7 @@ _IOS: List[Metric] = [
        note="thinned IPA variant on iOS; perf APK bytes on Android"),
     _m("ios", "app.size_uncompressed_bytes", "app", "thinning-report uncompressed size (advisory)",
        "bytes", (), gate_limit_pct=2, single_valued=True),
-    _m("ios", "audio.ioproc_p99_us", "audio", "xctrace Audio System Trace audio-hal-client-io-cycle-ioproc p99 duration",
+    _m("ios", "audio.ioproc_p99_us", "audio", "xctrace Audio Client/Server instruments, client I/O-proc duration p99 (audio-hal-io-cycle-client)",
        "us", ("stress",), gate_limit_pct=50, screening_pct=10, note="advisory; iOS only"),
 ]
 
