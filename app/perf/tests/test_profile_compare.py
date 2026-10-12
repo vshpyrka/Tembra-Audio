@@ -326,3 +326,20 @@ def test_no_build_uses_the_given_artifacts(cfg, paths, tmp_path):
     assert _comparison(payload)["build"]["apk"] == str(app)
     installed = [c["cmd"][-1] for c in device.runner.calls if c["cmd"][3:4] == ["install"]]
     assert installed[:2] == [str(app), str(test)]
+
+
+def test_direction_and_change_follow_the_raw_difference_when_the_baseline_median_is_negative(cfg):
+    """frames.overrun_p90_ms is negative when frames finish before the deadline: −1.4 → −3.6 ms is less overrun,
+    so it is `better` with a negative change, not `worse` with +157 % (the first real comparison, 2026-10-12)."""
+    from tracepulse.profile_compare import compare_metrics
+    from tracepulse.records import JourneyResult, MetricResult
+    def journey(values):
+        return {"tuner": JourneyResult(journey="tuner", iterations=len(values), metrics={
+            "frames.overrun_p90_ms": MetricResult(unit="ms", samples=values, source="macrobenchmark")})}
+    results = {"none": journey([-1.0, -1.4, -1.6, -1.2, -1.5, -1.3, -1.4, -1.1]),
+               "profile": journey([-3.4, -3.6, -3.8, -3.5, -3.7, -3.6, -3.9, -3.5])}
+    m = compare_metrics(results, ["tuner"], ["none", "profile"], cfg)["tuner/frames.overrun_p90_ms"]
+    assert m.direction == "better"
+    assert m.change_pct < 0
+    assert m.change_pct == pytest.approx((-3.6 - -1.35) / abs(-1.35) * 100, abs=0.5)
+    assert m.confirmed is True

@@ -132,10 +132,12 @@ class MetricComparison:
         return data
 
 
-def _direction(change_pct: float, higher_is_worse: bool) -> str:
-    if change_pct == 0:
+def _direction(difference: float, higher_is_worse: bool) -> str:
+    """From the raw difference `profile − none`, never from a percentage: a negative baseline (frame overrun
+    before the deadline) would flip the sign of a ratio."""
+    if difference == 0:
         return "none"
-    worse = change_pct > 0 if higher_is_worse else change_pct < 0
+    worse = difference > 0 if higher_is_worse else difference < 0
     return "worse" if worse else "better"
 
 
@@ -156,7 +158,10 @@ def compare_metrics(results: Dict[str, Dict[str, JourneyResult]], journeys: Sequ
             medians = {s: float(statistics.median(v)) for s, v in samples.items()}
             higher_is_worse = lookup("android", metric, cfg.catalogue).higher_is_worse
             base = medians["none"]
-            change = (medians["profile"] - base) / base * 100 if base else 0.0
+            difference = medians["profile"] - base
+            # Signed by the difference, scaled by the magnitude of the baseline (frames.overrun_p90_ms is negative
+            # when frames finish early; dividing by it would flip the sign).
+            change = difference / abs(base) * 100 if base else 0.0
             p = mw_two_sided_p(samples["none"], samples["profile"])
             gap: Optional[float] = None
             if with_full and FULL_STATE in medians:
@@ -166,7 +171,7 @@ def compare_metrics(results: Dict[str, Dict[str, JourneyResult]], journeys: Sequ
                 key=f"{journey}/{metric}", journey=journey, unit=none[metric].unit,
                 higher_is_worse=higher_is_worse,
                 by_state={s: {"samples": samples[s], "median": medians[s]} for s in samples},
-                change_pct=round(change, 3), direction=_direction(change, higher_is_worse),
+                change_pct=round(change, 3), direction=_direction(difference, higher_is_worse),
                 p_value=float(p), confirmed=bool(p < ALPHA), gap_closed_pct=None if gap is None else round(gap, 3),
                 with_full=with_full,
             )
