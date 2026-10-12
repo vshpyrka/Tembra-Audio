@@ -6,8 +6,8 @@ default 5): `above_limit` when the change exceeds the metric's limit in the
 worse direction (every metric is higher-is-worse), `within_limit` otherwise,
 `inactive` with a reason below N clean rounds, for simulator series (unless
 `gate.simulators: active`) and for disabled metrics. A percentage limit may carry
-a floor (`gate_floor_abs`: a change under it never flags, however large the
-percentage of a tiny baseline); an absolute limit may scale (`gate_scale_pct`:
+a floor (the catalogue's `floor_abs`, shared with the detector's screening: a change
+under it never flags, however large the percentage of a tiny baseline); an absolute limit may scale (`gate_scale_pct`:
 the limit grows to that share of the baseline when the baseline is large, so a
 2 ms overrun limit does not flag ±5 ms of noise on a 50 ms series). Decisions ride the round
 record (`gate[]`) and the cache (`gate_decisions`); they never change an exit
@@ -106,7 +106,7 @@ def _decide_series(store: Store, cfg: Config, device: Device, series: str, value
         return dict(base, state="inactive", reason=f"fewer than {n} clean rounds ({len(baseline_ids)})", **limit_field)
     keys = {row["id"]: row["round_key"] for row in store.rounds(device.device_id)}
     decision = decide([points[rid] for rid in baseline_ids], value, entry.gate_limit_pct, entry.gate_limit_abs,
-                      [keys[rid] for rid in baseline_ids], floor_abs=entry.gate_floor_abs,
+                      [keys[rid] for rid in baseline_ids], floor_abs=entry.floor_abs,
                       scale_pct=entry.gate_scale_pct)
     return dict(base, **decision)
 
