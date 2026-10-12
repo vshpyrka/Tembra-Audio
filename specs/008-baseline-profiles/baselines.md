@@ -188,3 +188,20 @@ module in the lane, not test work.
 Lanes after the feature: `checkAndroidHost checkIos --warning-mode all` green in 39 s with zero warnings;
 `engineHostTest` green (up to date, unchanged engine); `uv run pytest` 346 passed, 1 skipped;
 `git diff --stat main...HEAD -- app/iosApp app/shared` empty (FR-014).
+
+## T048 — quickstart on a clean checkout (detached worktree of 1b073c8, fresh `uv sync`, Gradle daemon stopped first; 2026-10-12)
+
+| Step | Outcome |
+|---|---|
+| §1 `uv run pytest` | 347 passed, 1 skipped (31 s on the fresh venv) |
+| §1 `:androidApp:testDebugUnitTest --tests "*BaselineProfileCoverageTest"` | green, zero warnings, fresh daemon (8.4 s) |
+| §2 `profile generate --device pixel6` | exit 0 in 3 min 46 s; 21 223 / 14 610 rules; six labels; the regenerated files differ by noise only and were restored, not committed |
+| §3 shrunk build | zero warnings; `assets/dexopt/baseline.prof` 8 443 bytes, `classes.dex` 1 363 376, `classes2.dex` 1 268 068 — the same bytes as the main checkout's APK (the APK itself differs by 1.1 KB of packaging metadata) |
+| §3 gate script, debug dry run | `assembleRelease` refuses without the profile, `assembleNonMinifiedRelease` builds; the debug dry run lists no profile, minify, R8 or check task |
+| §3 round, §5 comparison | **not repeated** on the clean checkout: identical commit and identical DEX/profile bytes; run from this checkout once (round) and three times (comparison), recorded above |
+| §4 `profile verify --device pixel6` | present (8443 bytes, 0.1 %); recognised (result 1); optimised (speed-profile); 10.2 s |
+| §6 negative lane check | fails naming `home (Laudio/tembra/ui/home/MissingScreenKt;)`, passes once restored |
+| §7 `checkAndroidHost checkIos --warning-mode all` | green in 40 s, zero warnings |
+| §7 `engineHostTest`, `assembleRelease --warning-mode all` | 137/137 Catch2 cases, release built under R8, zero warnings |
+
+No quickstart step needed a correction; the worktree was removed afterwards.
