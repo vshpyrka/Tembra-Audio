@@ -7,6 +7,8 @@ The app UI design, exported from Google Stitch (project 12040171611712589599). `
 ## `brand/`
 
 - `logo/` — current logo candidates (`logo-v1.jpeg`, `logo-v2.jpeg`).
+- `logo/source/` — the squirrel-with-headphones logo chosen as the app icon base: `logo-v3-violet-dark.jpeg` (the icon source) and `logo-v3-amber-light.jpeg`.
+- `app-icon/` — Android adaptive icon, Google Play icon and feature graphic, and iOS `AppIcon.appiconset` / `AppIcon.icon` plus the App Store icon, all generated from the violet logo by `generate_app_icons.py`. See `app-icon/README.md`.
 - `logo-concepts/generate-all.sh` — prompt script that generates further logo concepts with the Antigravity image CLI. Outputs land next to the script. Run it from a terminal inside the Antigravity IDE (see the header comment).
 
 ## `mockups/`

@@ -12,7 +12,7 @@ state in `:shared:ui` (`audio.tembra.ui.tuner`). Evidence for design values is
 
 | Type | Fields | Rules |
 |---|---|---|
-| `enum class Instrument` | `Guitar("guitar", "Guitar")`, `Cello("cello", "Cello")`; `id`, `label`, `icon` name (`guitar`, `cello`), `hasStringCount` (Guitar only) | order is display order (spec FR-002) |
+| `enum class Instrument` | `Guitar("guitar", "Guitar")`, `Cello("cello", "Cello")`; `id`, `label`, `hasStringCount` (Guitar only) | order is display order (spec FR-002) |
 | `enum class GuitarStringCount` | `Six(6, "6-String")`, `Seven(7, "7-String")` | shown for Guitar only |
 | `enum class PitchClass` | `C, CSharp, D, DSharp, E, F, FSharp, G, GSharp, A, ASharp, B`; `label` uses `#` (`C#`) | sharp spelling everywhere (spec FR-009) |
 | `data class Note(pitchClass, octave)` | `midi` (C4 = 60), `name` (`"E2"`, `"F#3"`), `frequencyHz(a4 = 440.0) = 440 · 2^((midi − 69)/12)`, `fromMidi(midi)`, `parse("F#3")`, `resourceName` (`"Fsharp3"`) | octave = midi / 12 − 1 |
@@ -196,7 +196,7 @@ Tokens added to the theme (data, tested for parity with research R9 in `TunerTok
 | `TembraGradients.needleGlow` | `#FFAFD3` 70 %, 8 dp |
 | `TembraGradients.playingGlow` | `#85145A` 40 %, 18 dp |
 
-`TembraIcon` gains `Mic, MicOff, Hearing, PlayArrow, Pause, VolumeUp, ExpandMore, ArrowLeft, ArrowRight, Settings, Guitar, Cello`.
+`TembraIcon` gains `Mic, MicOff, Hearing, PlayArrow, Pause, VolumeUp, ExpandMore, ArrowLeft, ArrowRight, Settings` (the `Guitar` and `Cello` glyphs were removed on 2026-10-12; the instrument selector is text only).
 
 ## 9. Test signal (`:shared:engine`, `:shared:ui`; research R16)
 

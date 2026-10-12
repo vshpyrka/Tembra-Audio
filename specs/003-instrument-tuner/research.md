@@ -441,6 +441,10 @@ Symbols is unchanged; the two design glyphs are the project's own artwork.
 **Rationale**: spec FR-026 and the user's instruction to follow the design and hand-make missing
 icons; Material Symbols has no guitar or cello glyph.
 
+**Superseded 2026-10-12** (spec Clarifications, Session 2026-10-12): the instrument selector is
+text only. `ic_guitar_24.xml`, `ic_cello_24.xml`, `TembraIcon.Guitar` and `TembraIcon.Cello` are
+deleted, and `IconAssetsTest` no longer has a design-glyph check; the ten Material Symbols stay.
+
 ## R15. Engine version, ABI revision and build changes
 
 - `TEMBRA_ENGINE_ABI_VERSION` 1 → 2; `TEMBRA_ENGINE_VERSION` 0.1.0 → 0.2.0;
