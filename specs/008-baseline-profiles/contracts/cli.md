@@ -52,5 +52,5 @@ uv run tracepulse profile verify --device <serial|alias> [--apk <app.apk>] [--bu
 ## Shared behaviour
 
 - `--device` resolves through the registry exactly as `run` (serial, UDID or alias); with two Android devices attached and no `--device`, exit 4 with the list.
-- Every host and device command goes through `Runner`, so pytest drives all three with scripted outputs (fixtures under `app/perf/fixtures/profile/`).
+- Every host and device command goes through `Runner`, so pytest drives all three with scripted outputs (fixtures under `app/perf/tests/fixtures/profile/`, where the pipeline keeps its fixtures).
 - The commands print nothing interactive and read no stdin.

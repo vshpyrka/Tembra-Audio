@@ -43,7 +43,7 @@ Parsing is owned by `CompareState.parse(argument)`; an unknown value fails the t
 
 ## Comparison (file, schema [contracts/comparison.schema.json](contracts/comparison.schema.json))
 
-- **Identity**: `comparison_id` in the round-id shape (`<yyyymmdd-hhmmss>-<device_id>`), directory `app/perf/data/comparisons/<comparison_id>/`.
+- **Identity**: `comparison_id` in exactly the round-id shape of `records.py` (`<yyyymmdd>T<hhmmss>Z_<device_id>`, pattern `^[0-9]{8}T[0-9]{6}Z_[A-Za-z0-9._-]+$`), directory `app/perf/data/comparisons/<comparison_id>/`, so comparison and round artefacts sort identically under `data/`.
 - **Build**: `commit`, `dirty`, `build_type` (`perf`), the APK and test APK paths used.
 - **Device**: `device_id`, `model`, `fingerprint` (as the round record), `driver` (host name, metadata only).
 - **States measured**: ordered list of `none`, `profile`, optionally `full`; `iterations`; `journeys`.

@@ -16,7 +16,7 @@ Add Android baseline and startup profiles to the app with the Baseline Profile G
 
 **Storage**: committed text files `app/androidApp/src/main/generated/baselineProfiles/baseline-prof.txt` and `startup-prof.txt`; the coverage rule `app/androidApp/baseline-profile-coverage.txt`; keep rules `app/androidApp/proguard-rules.pro`; comparison and verification outputs under `app/perf/data/comparisons/<id>/` (git-ignored, like rounds); nothing in `tracepulse.db`, the records directory or the `perf-history` branch.
 
-**Testing**: pytest in `app/perf/tests` (the three commands against the fake `Runner`, the comparison statistics and file writer, the collector's method-keyed mapping, exit statuses); `kotlin.test` JVM unit test in `:androidApp` (`BaselineProfileCoverageTest`, joins `checkAndroidHost`); the generator and comparison are device tests run by the commands, each with a self-check (the generator asserts the written profile is non-empty, the comparison asserts a result per journey and state); on-device verification of the shrunk build: one `tracepulse run` round on the Pixel 6 Pro and screenshots of every primary destination at compact and expanded widths; the existing lanes stay green with zero warnings.
+**Testing**: pytest in `app/perf/tests` (the three commands against the fake `Runner`, the comparison statistics and file writer, the collector's method-keyed mapping, exit statuses; fixtures under `app/perf/tests/fixtures/profile/`); `kotlin.test` JVM unit test in `:androidApp` (`BaselineProfileCoverageTest`, joins `checkAndroidHost`); the generator and comparison are device tests run by the commands — `BaselineProfileRule.collect` fails the generator when no rules were collected, and the comparison class fails on a missing or unknown state argument, with `profile compare` checking that every requested journey produced a result; on-device verification of the shrunk build: one `tracepulse run` round on the Pixel 6 Pro and screenshots of every primary destination at compact and expanded widths; the existing lanes stay green with zero warnings. Gradle wiring (plugins, build types, R8) is verified by dry-run and build-log assertions after the change, as feature 007 did for its build types; keep rules get their red from the failing device run.
 
 **Target Platform**: Android (minSdk 26); profile generation on a non-rooted device needs API 33+ (the owner's Pixel 6 Pro reports API 37; the Pixel 7 Pro is on the same release); comparison and verification on the Pixel 6 Pro (Pixel 7 Pro optional). iOS untouched.
 
@@ -62,7 +62,10 @@ specs/008-baseline-profiles/
 │   ├── comparison.schema.json     # comparison.json written by `profile compare`
 │   ├── coverage-rule.md           # baseline-profile-coverage.txt format and the test's contract
 │   └── build-config.md            # Gradle wiring: plugin, build types, disabled variants, file locations, keep rules, presence check, lane
-└── tasks.md             # Phase 2 output (/speckit-tasks — not created here)
+├── tasks.md             # Phase 2 output (/speckit-tasks)
+├── baselines.md         # written during implementation: before/after timings, sizes, device-step outcomes (T001, T008, T019, …)
+├── evidence/            # comparison summaries, verification output, the evidence README for the pull request (T040, T041, T047)
+└── screenshots/         # shrunk-build vs debug pairs at compact and expanded widths (T028)
 ```
 
 ### Source Code (repository root)
@@ -97,10 +100,12 @@ app/
 │   │   ├── profile_generate.py                # doctor + eligibility, backup, generateBaselineProfile with ANDROID_SERIAL, coverage test, restore
 │   │   ├── profile_compare.py                 # per-state fresh install + instrument, medians, Mann–Whitney, comparison.json/.md
 │   │   ├── profile_verify.py                  # APK asset check, install, launch, INSTALL_PROFILE broadcast, bg-dexopt, dumpsys
-│   │   └── collect_android.py                 # + journey_of_method() for the comparison class
-│   ├── tests/                                 # test_profile_generate.py test_profile_compare.py test_profile_verify.py (+ fixtures)
-│   ├── fixtures/                              # comparison benchmarkData.json per state, dumpsys dexopt samples, broadcast outputs
+│   │   ├── collect_android.py                 # + journey_of_method() for the comparison class
+│   │   └── schema/comparison.schema.json      # copy of contracts/comparison.schema.json (the round-record precedent)
+│   ├── tests/                                 # test_profile_generate.py test_profile_compare.py test_profile_verify.py; test_cli.py and test_collect_android.py extended
+│   ├── tests/fixtures/profile/                # comparison benchmarkData.json per state, dumpsys dexopt samples, broadcast and unzip outputs, getprop
 │   └── README.md                              # "Baseline profiles" section; regeneration sentence in "Every feature instruments itself"
+├── tools/check-baseline-profile-gate.sh       # FR-006 check: assembleRelease fails without the committed profile, the generation variant still builds
 └── README.md                                  # "where does X go" rows for the profile files, the coverage rule and the keep rules
 CLAUDE.md                                      # one command line for the three profile commands
 ```
