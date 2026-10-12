@@ -165,3 +165,26 @@ A result of 2 ("already installed") was expected on the repeat and did not appea
 forces the write anyway (a manual repeat of the broadcast within one install also answered 1), so 2 can only come
 from the app's own first-launch write, which the broadcast does not observe. 1 and 2 both pass, as the contract
 says. `dumpsys package dexopt` after the forced pass: `arm64: [status=speed-profile] [reason=cmdline]`.
+
+## T042/T046 — lane and default-build timings after the feature (SC-006, SC-007; 2026-10-12)
+
+Negative lane check (quickstart §6): with `home` pointing at `Laudio/tembra/ui/home/MissingScreenKt;`,
+`./gradlew checkAndroidHost` fails with `baseline profile does not cover: home (Laudio/tembra/ui/home/MissingScreenKt;)`;
+restored, it passes again and `testDebugUnitTest` re-executes (it had come FROM-CACHE before the rule file and the
+profile were declared as its inputs, commit 96067b3).
+
+| Measure | Before | After | Change |
+|---|---|---|---|
+| `checkAndroidHost --rerun-tasks --warning-mode all`, steady-state second run (feature 007's lane protocol, ±15 % spread) | **4.35 s** (main c71a190, detached worktree; 11.2 s cold) | **4.46 s** (5.17 s first) | **+2.4 %** |
+| `checkAndroidHost`, every host test task `--rerun` (the app's test included after) | 0.93 s (T001) | 1.011 / 0.993 s → 1.00 s | +7.5 % (70 ms: one more JVM test task executes) |
+| `checkAndroidHost`, up to date | 0.41 s (T001) | 0.524 / 0.456 / 0.488 s → 0.49 s | +19 % (78 ms: 104 instead of 53 tasks to check — the app module's debug compile chain feeds its unit test; no native task joins the lane) |
+| `:androidApp:assembleDebug`, up to date | 0.423 s (T001); 0.447 s same-daemon A/B (T008) | 0.594 / 0.444 / 0.458 s → 0.46 s | +2.5 % vs the same-daemon before; the debug task graph is unchanged (dry run) |
+| `:androidApp:assembleRelease --warning-mode all` (R8; recorded, not budgeted) | — | 15.6 s, zero warnings | — |
+
+Under the project's lane protocol the host lane is within the 5 % budget (+2.4 %), so the JVM coverage test stays
+(no D8 fallback). The up-to-date figures are sub-second task-graph checks; their relative change is the new
+module in the lane, not test work.
+
+Lanes after the feature: `checkAndroidHost checkIos --warning-mode all` green in 39 s with zero warnings;
+`engineHostTest` green (up to date, unchanged engine); `uv run pytest` 346 passed, 1 skipped;
+`git diff --stat main...HEAD -- app/iosApp app/shared` empty (FR-014).
