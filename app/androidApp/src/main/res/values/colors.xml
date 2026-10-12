@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- design/stitch/theme.json: dawSemanticColors.canvas_level0 / namedColors.background -->
-    <color name="ic_launcher_background">#0F0F12</color>
+    <!-- The app icon artwork's own background (design/brand/app-icon, generated from design/brand/logo/source/logo-v3-violet-dark.jpeg). -->
+    <color name="ic_launcher_background">#141416</color>
     <color name="window_background">#131316</color>
 </resources>

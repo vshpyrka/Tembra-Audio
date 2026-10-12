@@ -24,18 +24,13 @@ The mark is sized by the circle that encloses it. That circle is 78 % of the vis
 
 `minSdk` is 26, so the adaptive icon covers every device and no legacy `ic_launcher.png` bitmaps are needed.
 
-To adopt the icon in `app/androidApp/src/main/res/`:
-
-1. Copy the `mipmap-*` folders and both XML files.
-2. Delete the placeholder `drawable/ic_launcher_foreground.xml`.
-3. Change `ic_launcher_background` in `values/colors.xml` from `#0F0F12` to `#141416`. Don't copy `ic_launcher_background.xml` alongside it, because two definitions of the same colour fail the build.
-4. Add `android:roundIcon="@mipmap/ic_launcher_round"` to the manifest.
+Applied to the app on branch `brand/app-icons`: the `mipmap-*` folders and both XML files are in `app/androidApp/src/main/res/`, the placeholder `drawable/ic_launcher_foreground.xml` is gone, `ic_launcher_background` in `values/colors.xml` is `#141416` (so `res/values/ic_launcher_background.xml` here is not copied: two definitions of the colour would fail the build), and the manifest sets `android:roundIcon`.
 
 ## iOS (`ios/`)
 
 | File | Size | Use |
 |------|------|-----|
-| `AppIcon.appiconset/` | 1024 × 1024 ×3 | Asset-catalog icon: light (opaque RGB), dark (transparent background) and tinted (opaque greyscale). Works on every iOS version; iOS 18+ uses the dark and tinted variants. Drop-in replacement for `app/iosApp/iosApp/Assets.xcassets/AppIcon.appiconset` |
+| `AppIcon.appiconset/` | 1024 × 1024 ×3 | Asset-catalog icon: light (opaque RGB), dark (transparent background) and tinted (opaque greyscale). Works on every iOS version; iOS 18+ uses the dark and tinted variants. Applied as `app/iosApp/iosApp/Assets.xcassets/AppIcon.appiconset` |
 | `AppIcon.icon/` | 1024 layer | Icon Composer document for iOS 26+ Liquid Glass: the squirrel as one glass layer on a solid `#141416` fill. Xcode builds the pre-iOS 26 fallback PNGs from it. Open it in Icon Composer to adjust the glass, shadow or per-appearance settings |
 | `app-store/app-store-icon-1024.png` | 1024 × 1024, RGB, no alpha | App Store Connect marketing icon |
 
