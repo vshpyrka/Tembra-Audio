@@ -86,3 +86,18 @@ does the same per class) so stale dated files of an earlier run are never merged
 | screen off (`KEYCODE_SLEEP`, `mWakefulness=Dozing`, keyguard showing) | the doctor wakes the screen and `wm dismiss-keyguard` unlocks it (the Pixel has no lock credential), so the command proceeds exactly as a round would; the "locked → 2" refusal needs a PIN-protected device and is covered by the fake-runner test (`test_a_failed_doctor_check_refuses_before_any_gradle_command`) |
 | `Anchors.TUNER_ROOT` renamed to `screen.tuner.broken` | exit 3 in 1 min 33 s (`generateBaselineProfile did not complete; committed profile files restored`); `git diff --stat -- androidApp/src/main/generated` empty; rename reverted |
 | second generation on the unchanged build (4 min 05 s) | `baseline-prof.txt`: 21 203 rules common, 41 only committed / 45 only regenerated (0.2 %; 14 own-code rules, timing-reached animation and draw helpers); `startup-prof.txt`: 14 503 common, 107 / 113 (0.75 %); the six descriptors present in both; discarded as noise-only (not committed), as the rule says |
+
+## T025 — the shrunk measurement build (R8 on `release`, inherited by `perf`)
+
+`./gradlew -Ptembra.perf=true :androidApp:assemblePerf :perf-benchmarks:assemblePerf --warning-mode all`: BUILD
+SUCCESSFUL in 19 s, **zero** lines matching `warning` in the log (compiler and R8), no keep rule needed so far
+(`proguard-rules.pro` holds only its policy header).
+
+| Measure | Value |
+|---|---|
+| `androidApp-perf.apk` | **6 966 412 bytes** (vs 14 922 467 unshrunk: −53 %) |
+| `assets/dexopt/baseline.prof` | **8 443 bytes = 0.12 %** of the APK (FR-013 budget 3 %); `baseline.profm` 538 bytes |
+| profile rules through the pipeline | 24 274 merged (`mergePerfArtProfile`: the committed 21 244 plus the libraries' own) → 50 388 after wildcard expansion → **12 550 rewritten by R8** to obfuscated names (`minifyPerfWithR8`), 31 of them still naming `tembra` (kept names) → compiled to the 8 443-byte binary |
+| startup profile (FR-005) | `mergePerfStartupProfile` **executed** (not skipped, not NO-SOURCE), merged output `intermediates/merged_startup_profile/perf/…/startup-prof.txt` = **14 609 rules**; `minifyPerfWithR8` ran after it |
+| DEX layout | `classes.dex` 1 363 376 bytes, 1 559 classes, 10 427 method ids, holds `MainActivity`; `classes2.dex` 1 268 068 bytes, 1 577 classes, 9 819 method ids, no `MainActivity` |
+| `resources.arsc` | 130 724 bytes (resource shrinking on) |

@@ -8,7 +8,9 @@
 # Exit 0 when both expectations hold, 1 otherwise. Never run it while `tracepulse profile generate` is running.
 set -u
 
-APP_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+# Resolve a symlinked launcher (an agent runs this through a gradlew-named link) to the real script.
+SCRIPT="$(readlink -f "$0" 2>/dev/null || echo "$0")"
+APP_DIR="$(cd "$(dirname "$SCRIPT")/.." && pwd)"
 PROFILE_DIR="$APP_DIR/androidApp/src/main/generated/baselineProfiles"
 FILES=(baseline-prof.txt startup-prof.txt)
 ASIDE="$(mktemp -d "${TMPDIR:-/tmp}/baseline-profile-gate.XXXXXX")"
