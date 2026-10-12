@@ -167,6 +167,13 @@ interval (the client I/O-proc as audiomxd times it, ~100 cycles/s). That table n
 iOS 27 ("Unknown"), so the pass trusts that the app is the phone's only HAL client — the phone is
 otherwise idle during a round. The two audio instruments alone make 35 MB of 75 s; the
 `Audio System Trace` template's kernel instruments made 0.5 GB and a full disk refused to save it.
+The first rounds with the pass in this shape (`20261012T093131Z` and `20261012T101350Z`, the last two
+R1 rounds): `AudioTracePass` passed under the recording both times, 37.4 and 36.5 MB traces, an empty
+client table beside 10 230 and 8 452 server cycles, cycle medians 772 µs and p99 1 547 and 1 976 µs
+(max 3.2 ms). The HAL cycles every 5.0 ms on this phone (240 frames at 48 kHz, from the table's
+`start` column), so the I/O proc takes 15 % of its budget typically and 30–40 % at the p99 while the
+stress journey runs the tuner and the metronome together. Two values make no baseline yet: the gate
+reports the series `inactive` until five clean rounds carry it.
 Until 2026-10-12 every `devicectl … process
 launch` on the phone was refused — `--device` came after the bundle id, where devicectl reads
 arguments for the app — and `process terminate` was given `--pid-or-name`, which this devicectl does
@@ -384,6 +391,22 @@ reports the jump truthfully and the tuner's owner has the series. The first flag
 session (+65 %) was also measured against the two release rounds' zero sections, which the cache now
 ignores.
 
+## Release baseline (SC-007), both devices, 2026-10-11/12
+
+One round of the uninstrumented build under the label `release-baseline`, compared with the
+measurement build's noise-baseline medians above. Pixel 6 Pro (`--build-type release`, rounds
+`20261011T204339Z` and `20261011T205838Z`): cold start 238.8 and 241.8 ms against 248.4 / 248.9 ms,
+the measurement build **+2.9…+4.2 %** slower depending on the pairing. iPhone 14
+(`--configuration Release`, round `20261012T110450Z`, session `20261012T110213Z`): first frame 515.5 ms
+and responsive 524.2 ms against 517.5 / 528.4 ms, the measurement build **+0.4 % / +0.8 %**; the rest
+of the round reads like a Perf round (tuner journey 7.84 s, peak memory 127.9 / 125.6 / 131.1 MB,
+I/O-proc p99 1 708 µs). Both inside the 5 % of SC-007. The Release records carry no `section.*`
+series; the two Pixel rounds predate the `build.type` field (see "What a round measures"), the
+iPhone's says `Release`. `tools/check-release-strings.sh` passed on 2026-10-11 (tree `264f440`), and the iOS Release
+binary of round `20261012T110450Z` (tree `6155d43`, the catalogue unchanged since 2026-10-08) was
+scanned again by hand with the script's `strings -a | grep -xF` loop: none of the 16 names. The
+first iPhone Release round (`20261012T091328Z`) never measured — the transient trust denial below.
+
 ## The injection self-test on the phones (SC-004), 2026-10-12
 
 `inject R1` (a 250 ms spin and a 512 KiB write at launch, `regressions/r1-startup.patch`) on a clean
@@ -392,11 +415,25 @@ rounds (session `20261011T233930Z`): cold start 502.2, 497.6, 498.7, 503.9, 502.
 the 248.9 ms baseline, the gate flagging `startup.ttid_ms`/`startup.ttfd_ms` +102 % on the first three
 rounds (then the injected rounds became its baseline, as designed); `analyze` reports both startup
 series **CONFIRMED +101.4 %** with the onset at the injection round `20261011T233937Z` and the
-ground-truth match set, and no other confirmed or suspect event on any series of either device. iPhone
-14: the first injected round (`20261011T235708Z`) measured 753.1 / 761.8 ms against 517.5 / 528.4
-(+45 %, gate flag, preliminary onset); the next two rounds failed before measuring with "The test
-runner failed to initialize for UI testing (Timed out while enabling automation mode)" — the device-side
-`testmanagerd` stopped enabling automation after 22 rounds, the host logs being identical to a healthy
-round — and a `devicectl device reboot` left the phone waiting at its lock screen (no USB enumeration
-until the first swipe after boot). The remaining five iPhone rounds, the confirmation of its onset and
-the iOS release baseline below wait for the phone to come back; the rounds are on the branch.
+ground-truth match set, and no other confirmed or suspect event on any series of the Pixel.
+
+iPhone 14, six rounds over four sessions: `20261011T235708Z` 753.1 / 761.8 ms, then `20261012T063936Z`
+740.1 / 752.8, `071850Z` 742.1 / 748.4, `075728Z` 749.0 / 756.3, `093131Z` 743.8 / 750.5 and
+`101350Z` 747.2 / 763.1 (`startup.ttid_ms` / `startup.ttfd_ms`) against the 517.5 / 528.4 ms
+baseline; the gate flagged both series +40…+46 % on the first three rounds and nothing from the
+fourth, as on the Pixel. `analyze` after `revert R1`: **`startup.ttid_ms` CONFIRMED +44.3 %,
+`startup.ttfd_ms` CONFIRMED +42.8 %**, onset at the injection round `20261011T235708Z`, ground-truth
+match set. The detector also confirmed `tuner`, `metronome` and `stress/cpu.instructions_k` +27.5,
++23.0 and +18.4 % at the same onset — about 2.5 G retired instructions more per journey, the spin's
+own cost: every iPhone journey iteration relaunches the app before `startMeasuring`, and
+`XCTCPUMetric(application:)` still counts them. R1 lists those three series under
+`tolerated_side_effects` in the registry, which the ground-truth lookup now honours (no verdict,
+neither a hit nor a false alarm); nothing else on either device rose above PRELIMINARY.
+
+What the six rounds cost: after the first one the phone's `testmanagerd` stopped enabling automation
+("The test runner failed to initialize for UI testing (Timed out while enabling automation mode)",
+two failed rounds, host logs identical to a healthy round) and a `devicectl device reboot` left it at
+the lock screen until the user swiped; then round `20261012T083611Z` (unpublished) and the first
+Release round were refused `runner_trusted` by a phone that *had* trusted the developer — the denial is
+transient, which is why a round now retries it twice two minutes apart; the audio-trace pass of the
+first four rounds found no process to attach to, which is why it records system-wide (above).
