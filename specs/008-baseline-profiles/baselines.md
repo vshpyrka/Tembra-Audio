@@ -101,3 +101,15 @@ SUCCESSFUL in 19 s, **zero** lines matching `warning` in the log (compiler and R
 | startup profile (FR-005) | `mergePerfStartupProfile` **executed** (not skipped, not NO-SOURCE), merged output `intermediates/merged_startup_profile/perf/…/startup-prof.txt` = **14 609 rules**; `minifyPerfWithR8` ran after it |
 | DEX layout | `classes.dex` 1 363 376 bytes, 1 559 classes, 10 427 method ids, holds `MainActivity`; `classes2.dex` 1 268 068 bytes, 1 577 classes, 9 819 method ids, no `MainActivity` |
 | `resources.arsc` | 130 724 bytes (resource shrinking on) |
+
+## T031 — the debug build after shrinking (2026-10-12)
+
+`./gradlew :androidApp:assembleDebug --dry-run --warning-mode all --no-configuration-cache`: zero lines matching
+`artprofile|baselineprofile|minify|r8|checkBaselineProfileCommitted`, zero deprecations (the first dry run
+surfaced "`val name by registering { }` … deprecated, removed in Gradle 10" from the new check task; it is
+`tasks.register("checkBaselineProfileCommitted")` now).
+
+| Measure | Runs | Median |
+|---|---|---|
+| `:androidApp:assembleDebug`, up to date (a round was polling the Pixel over adb at the time) | 0.652 / 0.499 / 0.471 s | 0.50 s — re-measured quietly in T046 |
+| `:androidApp:assembleRelease --warning-mode all`, R8 (recorded, not budgeted) | one run | **15.6 s**, zero warnings; `androidApp-release-unsigned.apk` 6 952 244 bytes with `assets/dexopt/baseline.prof` 8 436 bytes, `classes.dex` 1 357 464, `classes2.dex` 1 263 188 |
