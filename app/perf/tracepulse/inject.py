@@ -7,7 +7,8 @@ records the touched paths in `data/injections.json`; `revert R#` reverses one
 patch; `revert --all` restores every tracked path from HEAD, removes generated
 files and must land on a clean tree. `expected_lookup_factory` gives the detector
 its ground truth: a detection at a round whose injections expect that series and
-direction is a true positive.
+direction is a true positive; one on a series the entry lists as a tolerated side
+effect gets no verdict (the injection does move it, the self-test does not score it).
 """
 
 import json
@@ -43,7 +44,7 @@ class Regression:
     notes: str
 
 
-def _validate_series(key: str, r_id: str) -> None:
+def _validate_series(key: str, r_id: str, field: str = "expected_metrics") -> None:
     _journey, metric = split_series_key(key)
     for platform in ("android", "ios"):
         try:
@@ -51,7 +52,7 @@ def _validate_series(key: str, r_id: str) -> None:
             return
         except CatalogueError:
             continue
-    raise ValueError(f"{r_id}: unknown metric key {key!r} in expected_metrics")
+    raise ValueError(f"{r_id}: unknown metric key {key!r} in {field}")
 
 
 def load_registry(path: str) -> Dict[str, Regression]:
@@ -65,10 +66,13 @@ def load_registry(path: str) -> Dict[str, Regression]:
             if direction not in _VALID_DIRECTIONS:
                 raise ValueError(f"{r_id}: invalid direction {direction!r} for {metric!r} (expected one of {_VALID_DIRECTIONS})")
             expected.append((metric, direction))
+        tolerated = list(entry.get("tolerated_side_effects", []))
+        for metric in tolerated:
+            _validate_series(metric, r_id, "tolerated_side_effects")
         registry[r_id] = Regression(
             id=r_id, title=entry.get("title", ""), patch_file=entry.get("patch_file", ""),
             generate=entry.get("generate", ""), generated_paths=list(entry.get("generated_paths", [])),
-            expected_metrics=expected, tolerated_side_effects=list(entry.get("tolerated_side_effects", [])),
+            expected_metrics=expected, tolerated_side_effects=tolerated,
             notes=entry.get("notes", ""))
     return registry
 
@@ -236,11 +240,17 @@ def revert(cfg, runner: Runner, target: str, data_dir: str, registry_path: str) 
 
 def expected_lookup_factory(registry: Dict[str, Regression],
                             applied_at_round: Callable[[int], List[str]]) -> Callable[[int, str, str], Optional[bool]]:
-    """True when the round's injections expect (series, direction); False when it has
-    injections that do not; None for a round without injections."""
+    """True when the round's injections expect (series, direction); None for a round
+    without injections or when one of them lists the series as a tolerated side
+    effect; False when the round has injections and none of them accounts for it."""
     def lookup_fn(onset_round_id: int, metric: str, direction: str) -> Optional[bool]:
         ids = applied_at_round(onset_round_id)
         if not ids:
             return None
-        return any((metric, direction) in registry[r].expected_metrics for r in ids if r in registry)
+        entries = [registry[r] for r in ids if r in registry]
+        if any((metric, direction) in e.expected_metrics for e in entries):
+            return True
+        if any(metric in e.tolerated_side_effects for e in entries):
+            return None
+        return False
     return lookup_fn

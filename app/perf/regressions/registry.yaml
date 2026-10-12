@@ -7,8 +7,12 @@ R1:
   expected_metrics:
     - [startup/startup.ttid_ms, up]
     - [startup/startup.ttfd_ms, up]
-  tolerated_side_effects: [app.size_bytes]
-  notes: both platforms; the iOS half confirms the 30 % startup slowdown of SC-004
+  tolerated_side_effects: [app.size_bytes, tuner/cpu.instructions_k, metronome/cpu.instructions_k, stress/cpu.instructions_k]
+  notes: >-
+    both platforms; the iOS half confirms the 30 % startup slowdown of SC-004. On the iPhone every journey
+    iteration relaunches the app before startMeasuring, and the spin's ~2.5 G retired instructions still land in
+    each journey's XCTCPUMetric(application:) count (+18…+27 % in all six injected rounds of 2026-10-12):
+    the injection's footprint, not a detector error.
 R2:
   title: Frames — per-frame invalidation of the tuner's Auto Listen pane with ~4 ms of work, while listening
   patch_file: r2-frames.patch
