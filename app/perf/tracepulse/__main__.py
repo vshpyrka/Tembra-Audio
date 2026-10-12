@@ -291,12 +291,12 @@ def _handle_profile(args, cfg: Config, paths: Paths) -> Tuple[int, Payload]:
     runner, clock = SystemRunner(), SystemClock()
     if args.profile_command == "generate":
         from .profile_generate import main as generate
-        return generate(args, cfg, runner)
+        return generate(args, cfg, paths, runner, clock)
     if args.profile_command == "compare":
         from .profile_compare import main as compare
         return compare(args, cfg, paths, runner, clock)
     from .profile_verify import main as verify
-    return verify(args, cfg, runner, clock)
+    return verify(args, cfg, paths, runner, clock)
 
 
 HANDLERS: Dict[str, Callable[[Any, Config, Paths], Tuple[int, Payload]]] = {

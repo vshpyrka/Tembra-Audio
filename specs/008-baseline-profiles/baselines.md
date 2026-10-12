@@ -61,3 +61,18 @@ The nominal `assembleDebug` excess prompted a matched A/B on the same daemon (wi
 
 Difference +0.2 %: the earlier gap was daemon state (T001 ran on a fresher daemon), not the plugin. The
 unconditional consumer plugin (D1's primary setup) is in force; the D1 fallback is not needed.
+
+## T019/T020 — first generation on the Pixel 6 Pro (2026-10-12)
+
+Three runs of `uv run tracepulse profile generate --device pixel6` (wall clock from `time`):
+
+| Run | Result | Wall | What it taught |
+|---|---|---|---|
+| 1 | exit 0, `baseline-prof.txt` 21 157 rules / 2 274 679 bytes, **no `startup-prof.txt`** | 3 min 46 s | The plugin finds a test's profile files through the per-test `additionaltestoutput.benchmark.message_<class>.<method>.txt` link; a second `collect` in the same `@Test` overwrites it, so only the second collect's (dated) baseline file was merged and the device's `-startup-prof.txt` (14 735 lines) was dropped. D2's "one test, two collects" shape was wrong: the generator now has `startup()` and `journeys()`. |
+| 2 | exit 3, files restored byte for byte | 2 min 02 s | `journeys` failed: `perf anchor 'screen.tuner' not found within 10000 ms` — the microphone permission dialog (`GrantPermissionsActivity`) covered the tuner. AGP's connected-test task installs the app itself and uninstalls it afterwards; run 1 had inherited the pipeline's earlier install, which carried `pm grant RECORD_AUDIO`. The generator now grants `RECORD_AUDIO` in a `@Before` through UiAutomator's shell command. The failed run also exercised the restore path: `baseline-prof.txt` came back identical. |
+| 3 | exit 0 | **3 min 00 s** (SC-003 ≤ 15 min) | `baseline-prof.txt` 21 244 rules / 2 284 586 bytes (2 781 own rules, 13 196 `Landroidx/compose/`); `startup-prof.txt` 14 610 rules / 1 474 576 bytes; all six coverage labels found; the startup profile names `TembraApplication`, `MainActivity`, `NavigationShellKt`, `HomeScreenKt` and not the tuner or metronome screens. |
+
+Also found: `profile generate` now clears the device's `additional_test_output` directory before the task (a round
+does the same per class) so stale dated files of an earlier run are never merged.
+
+`./gradlew checkAndroidHost --warning-mode all` with the committed profile: green, zero warnings (T020).

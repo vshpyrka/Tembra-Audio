@@ -43,7 +43,7 @@
     "journeys": { "type": "array", "items": { "enum": ["startup", "tuner", "metronome", "stress"] }, "minItems": 1 },
     "metrics": {
       "type": "object",
-      "description": "keyed by catalogue metric key, e.g. startup.ttid_ms",
+      "description": "keyed by series key `<journey>/<metric>` (the store's convention, e.g. startup/startup.ttid_ms), because the frames and memory keys repeat across the three journeys",
       "additionalProperties": {
         "type": "object",
         "required": ["journey", "unit", "higher_is_worse", "by_state", "change_pct", "direction", "p_value", "confirmed"],
