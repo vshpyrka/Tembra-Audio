@@ -1,10 +1,13 @@
 """`tracepulse` command line (specs/007-performance-pipeline/contracts/cli.md).
 
 Subcommands: devices, doctor, run, size, publish, sync, analyze, report, status,
-inject, revert. Exit statuses: 0 ok (gate flags never change it); 2 refused (a
-device check failed before measuring); 3 round failed (measurement started and
-did not complete); 4 usage or configuration error; 5 publish failed (the record
-is kept locally; `tracepulse publish` retries). `--json` prints one object.
+inject, revert, and the baseline-profile tools `profile generate | compare | verify`
+(feature 008, specs/008-baseline-profiles/contracts/cli.md), which share the device
+registry, the device protocol and the build step and never write to the history.
+Exit statuses: 0 ok (gate flags never change it); 2 refused (a device check failed
+before measuring); 3 round failed (measurement started and did not complete); 4
+usage or configuration error; 5 publish failed (the record is kept locally;
+`tracepulse publish` retries). `--json` prints one object.
 """
 
 import argparse
@@ -271,11 +274,36 @@ def _handle_revert(args, cfg: Config, paths: Paths) -> Tuple[int, Payload]:
     return EXIT_OK, {"reverted": target}
 
 
+_PROFILE_BUILD_TYPES = ("perf", "release")
+
+
+def _handle_profile(args, cfg: Config, paths: Paths) -> Tuple[int, Payload]:
+    """`profile generate | compare | verify` (feature 008): argument checks that need only the
+    configuration happen here, as `run` does for `--label`; the commands own the rest."""
+    if args.profile_command == "compare" and args.journeys:
+        journeys = [j.strip() for j in args.journeys.split(",")]
+        unknown = [j for j in journeys if j not in cfg.journeys]
+        if unknown:
+            raise DeviceError(f"unknown journey {unknown[0]!r} (configured: {', '.join(cfg.journeys)})")
+    if args.profile_command == "verify" and args.build_type not in _PROFILE_BUILD_TYPES:
+        raise DeviceError(f"profile verify inspects a release-like build: --build-type must be one of "
+                          f"{', '.join(_PROFILE_BUILD_TYPES)}, not {args.build_type!r}")
+    runner, clock = SystemRunner(), SystemClock()
+    if args.profile_command == "generate":
+        from .profile_generate import main as generate
+        return generate(args, cfg, runner)
+    if args.profile_command == "compare":
+        from .profile_compare import main as compare
+        return compare(args, cfg, paths, runner, clock)
+    from .profile_verify import main as verify
+    return verify(args, cfg, runner, clock)
+
+
 HANDLERS: Dict[str, Callable[[Any, Config, Paths], Tuple[int, Payload]]] = {
     "devices": _handle_devices, "doctor": _handle_doctor, "run": _handle_run, "size": _handle_size,
     "publish": _handle_publish, "sync": _handle_sync, "analyze": _handle_analyze,
     "report": _handle_report, "status": _handle_status, "inject": _handle_inject,
-    "revert": _handle_revert,
+    "revert": _handle_revert, "profile": _handle_profile,
 }
 
 
@@ -340,6 +368,26 @@ def build_parser() -> argparse.ArgumentParser:
     group = revert.add_mutually_exclusive_group(required=True)
     group.add_argument("target", nargs="?", help="regression id")
     group.add_argument("--all", action="store_true", help="revert every applied injection")
+
+    profile = sub.add_parser("profile", help="baseline profiles: generate, compare, verify (never a round)")
+    profile_sub = profile.add_subparsers(dest="profile_command", required=True,
+                                         metavar="{generate,compare,verify}")
+    generate = profile_sub.add_parser("generate", help="generate baseline-prof.txt and startup-prof.txt on a device")
+    generate.add_argument("--device", help="serial or registry alias of an Android device (API 33+)")
+    generate.add_argument("--keep-build", action="store_true", help="keep the generation build directory")
+    compare = profile_sub.add_parser("compare", help="measure one build with no profile vs the shipped profile")
+    compare.add_argument("--device", help="serial or registry alias of an Android device")
+    compare.add_argument("--with-full", action="store_true", help="also measure the fully optimised state")
+    compare.add_argument("--iterations", type=int, help="iterations per journey and state (default from tracepulse.yml)")
+    compare.add_argument("--journeys", help="comma-separated subset of the configured journeys")
+    compare.add_argument("--no-build", action="store_true", help="reuse artifacts: --apk and --test-apk")
+    compare.add_argument("--apk", help="Android app APK built elsewhere (with --no-build)")
+    compare.add_argument("--test-apk", help="Android benchmarks APK built elsewhere (with --no-build)")
+    compare.add_argument("--keep-build", action="store_true", help="keep the build directory after the comparison")
+    verify = profile_sub.add_parser("verify", help="check an installed build recognises and compiles its profile")
+    verify.add_argument("--device", help="serial or registry alias of an Android device")
+    verify.add_argument("--apk", help="app APK to verify instead of building one")
+    verify.add_argument("--build-type", default="perf", help="perf (default, installable) or release (APK inspection only)")
     return parser
 
 

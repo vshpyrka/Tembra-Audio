@@ -74,3 +74,44 @@ def test_json_status_prints_one_object(tmp_path, capsys, monkeypatch):
     out = capsys.readouterr().out
     data = json.loads(out)
     assert data["command"] == "status" and "rounds" in data and "unpublished" in data
+
+
+# ---------------------------------------------------------------------------
+# `tracepulse profile generate | compare | verify` (feature 008, contracts/cli.md)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("argv", [
+    ["profile", "generate", "--device", "pixel6"],
+    ["profile", "generate", "--device", "pixel6", "--keep-build"],
+    ["profile", "compare", "--device", "pixel6"],
+    ["profile", "compare", "--device", "pixel6", "--with-full", "--iterations", "5", "--journeys", "startup,tuner",
+     "--keep-build"],
+    ["profile", "compare", "--device", "pixel6", "--no-build", "--apk", "a.apk", "--test-apk", "b.apk"],
+    ["profile", "verify", "--device", "pixel6"],
+    ["profile", "verify", "--device", "pixel6", "--apk", "a.apk"],
+    ["profile", "verify", "--device", "pixel6", "--build-type", "release"],
+    ["--json", "profile", "verify", "--device", "pixel6"],
+])
+def test_every_documented_profile_invocation_parses(argv):
+    args = build_parser().parse_args(argv)
+    assert args.command == "profile" and args.profile_command in ("generate", "compare", "verify")
+
+
+def test_profile_without_subcommand_exits_usage_listing_the_three(capsys):
+    with pytest.raises(SystemExit) as exc:
+        main(["profile"])
+    assert exc.value.code in (2, EXIT_USAGE)
+    err = capsys.readouterr().err
+    assert "generate" in err and "compare" in err and "verify" in err
+
+
+def test_profile_compare_unknown_journey_exits_usage(capsys):
+    code = main(["profile", "compare", "--device", "pixel6", "--journeys", "nope"])
+    assert code == EXIT_USAGE
+    assert "nope" in capsys.readouterr().err
+
+
+def test_profile_verify_rejects_the_debug_build_type(capsys):
+    code = main(["profile", "verify", "--device", "pixel6", "--build-type", "debug"])
+    assert code == EXIT_USAGE
+    assert "debug" in capsys.readouterr().err
