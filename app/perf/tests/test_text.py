@@ -53,6 +53,13 @@ def test_device_headline_names_the_worst_onset_and_its_label():
     confirmed = [dict(detections[0], status="CONFIRMED")]
     text = device_headline(rounds=12, min_history=11, detections=confirmed, flagged=[], window=5)
     assert text == "App start time (first picture on screen) got 18 % slower in 007-performance-pipeline (confirmed)."
+    # among equal statuses the largest step leads, whatever the listing order (a side effect confirmed
+    # alongside the injected regression on the iPhone, 2026-10-12)
+    side_effect = {"metric": "tuner/cpu.instructions_k", "status": "CONFIRMED", "delta_pct": 27.5,
+                   "label_at_onset": "007-performance-pipeline"}
+    startup = dict(confirmed[0], delta_pct=44.3)
+    text = device_headline(rounds=12, min_history=11, detections=[side_effect, startup], flagged=[], window=5)
+    assert text.startswith("App start time (first picture on screen) got 44 % slower")
 
 
 def test_device_headline_lists_gate_flags_of_the_latest_round():
