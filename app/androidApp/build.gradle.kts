@@ -71,6 +71,10 @@ dependencies {
     // AndroidBackgroundPlaybackHostTest (feature 004): ServiceTestRule binds the metronome foreground service.
     androidTestImplementation(libs.androidx.test.rules)
     androidTestImplementation(libs.kotlinx.coroutines.core)
+    // BaselineProfileCoverageTest (feature 008, FR-011): a JVM test over two text files of this module. The JUnit 4
+    // variant is named because the Kotlin plugin's framework inference covers KMP commonTest, not a plain Android
+    // module's unit tests (`kotlin.test.Test` stayed unresolved with `kotlin-test` alone).
+    testImplementation(libs.kotlin.test.junit)
     // The producer of the profile is the Macrobenchmark module, which joins the build only for measurement
     // runs (settings.gradle.kts); the generation task exists only then (feature 008, D1).
     if (providers.gradleProperty("tembra.perf").isPresent) {

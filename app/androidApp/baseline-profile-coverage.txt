@@ -1,0 +1,13 @@
+# What the committed baseline profile must cover (feature 008, FR-011; contracts/coverage-rule.md).
+# One entry per line: <label> <JVM class descriptor as the profile writes it>. Read by BaselineProfileCoverageTest
+# in the host lane and, through it, by `uv run tracepulse profile generate`. A later feature that adds a primary
+# destination the journeys visit appends a line here and regenerates the profile in the same feature.
+
+# Startup path (app start, the activity, the navigation shell)
+app.start    Laudio/tembra/android/TembraApplication;
+app.activity Laudio/tembra/android/MainActivity;
+shell        Laudio/tembra/ui/navigation/NavigationShellKt;
+# Primary destinations the journeys visit
+home         Laudio/tembra/ui/home/HomeScreenKt;
+tuner        Laudio/tembra/ui/tuner/TunerScreenKt;
+metronome    Laudio/tembra/ui/metronome/MetronomeScreenKt;

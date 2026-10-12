@@ -28,3 +28,12 @@ android {
         resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
     }
 }
+
+// The app module's host lane (feature 008, FR-011): its JVM unit tests, which hold the baseline-profile coverage
+// check; the root `checkAndroidHost` aggregates it beside the shared modules'. Matched by pattern like the KMP
+// convention's registration, so the documented command survives a task rename.
+tasks.register("checkAndroidHost") {
+    group = "verification"
+    description = "Runs this module's Android host (JVM) unit tests"
+    dependsOn(tasks.withType<Test>().matching { it.name == "testDebugUnitTest" })
+}
