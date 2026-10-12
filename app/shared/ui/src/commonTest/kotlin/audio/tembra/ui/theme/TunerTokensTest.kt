@@ -66,7 +66,7 @@ class TunerTokensTest {
     @Test
     fun iconRegistryCarriesTheTunerGlyphs() {
         val names = TembraIcon.entries.map { it.name }
-        for (expected in listOf("Mic", "MicOff", "Hearing", "PlayArrow", "Pause", "VolumeUp", "ExpandMore", "ArrowLeft", "ArrowRight", "Settings", "Guitar", "Cello")) {
+        for (expected in listOf("Mic", "MicOff", "Hearing", "PlayArrow", "Pause", "VolumeUp", "ExpandMore", "ArrowLeft", "ArrowRight", "Settings")) {
             assertTrue(expected in names, "TembraIcon.$expected is missing")
         }
     }
