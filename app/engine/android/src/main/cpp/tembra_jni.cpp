@@ -130,6 +130,21 @@ Java_audio_tembra_engine_NativeAudioEngine_nativeToneStop(JNIEnv*, jobject) {
 }
 
 JNIEXPORT jint JNICALL
+Java_audio_tembra_engine_NativeAudioEngine_nativeAudioHealth(JNIEnv* env, jobject, jlongArray out) {
+    // Feature 007: fills [callbacks, lastUs, maxUs, overBudget, xruns, realtime]; -1 while no stream is open.
+    if (out == nullptr || env->GetArrayLength(out) < 6) return TEMBRA_ERR_ARGUMENT;
+    tembra_audio_health health{};
+    const int32_t result = tembra_engine_audio_health(&health);
+    if (result != 0) return result;
+    const jlong fields[6] = {
+        static_cast<jlong>(health.callbacks), static_cast<jlong>(health.last_us), static_cast<jlong>(health.max_us),
+        static_cast<jlong>(health.over_budget), static_cast<jlong>(health.xruns), static_cast<jlong>(health.realtime),
+    };
+    env->SetLongArrayRegion(out, 0, 6, fields);
+    return 0;
+}
+
+JNIEXPORT jint JNICALL
 Java_audio_tembra_engine_NativeAudioEngine_nativeAudioState(JNIEnv*, jobject) {
     return static_cast<jint>(tembra_audio_state());
 }

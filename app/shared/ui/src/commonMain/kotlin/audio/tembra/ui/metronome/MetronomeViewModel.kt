@@ -23,6 +23,8 @@ import audio.tembra.engine.CustomSoundResult
 import audio.tembra.engine.MetronomeAudio
 import audio.tembra.engine.MetronomeGrid
 import audio.tembra.engine.TickSnapshot
+import audio.tembra.engine.perf.PerfSection
+import audio.tembra.engine.perf.PerfTrace
 import audio.tembra.ui.platform.BackgroundPlaybackHost
 import audio.tembra.ui.platform.SoundFilePicker
 import audio.tembra.ui.platform.SoundPickFailure
@@ -31,6 +33,7 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metrox.viewmodel.ViewModelKey
+import kotlin.math.min
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -46,7 +49,6 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlin.math.min
 
 /**
  * The Metronome destination's ViewModel (contracts/metronome-screen.md, research R12). The click runs in the engine;
@@ -136,8 +138,11 @@ class MetronomeViewModel(
     private suspend fun observePreferences() {
         if (!_uiState.value.loaded) {
             val stored = preferences.snapshot.first().settings
-            _uiState.update { it.copy(loaded = true, settings = stored) }
-            sendGrid()
+            // From the stored settings to the first content and the engine's grid: the metronome.load section (feature 007).
+            PerfTrace.section(PerfSection.METRONOME_LOAD) {
+                _uiState.update { it.copy(loaded = true, settings = stored) }
+                sendGrid()
+            }
             val sound = stored.sound
             audio.selectSound(if (sound is ClickSound.Custom) ClickSoundId.ClassicWood else soundIdOf(sound))
         }
@@ -227,9 +232,13 @@ class MetronomeViewModel(
     fun setTempo(tempo: Tempo) {
         val state = _uiState.value
         if (!state.loaded || state.settings.tempo == tempo) return
-        _uiState.update { it.copy(settings = it.settings.copy(tempo = tempo)) }
-        sendGrid()
-        persist { it.copy(tempo = tempo) }
+        // The metronome.tempoChange section in its animation variant (feature 007): iOS attributes the dial's frame
+        // health to it; the interval is the intent's own work.
+        PerfTrace.animation(PerfSection.METRONOME_TEMPO_CHANGE) {
+            _uiState.update { it.copy(settings = it.settings.copy(tempo = tempo)) }
+            sendGrid()
+            persist { it.copy(tempo = tempo) }
+        }
     }
 
     /** Moves the tempo by [delta], held inside 40–240; at an end nothing changes and nothing is written. */

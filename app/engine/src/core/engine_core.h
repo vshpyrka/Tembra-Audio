@@ -13,6 +13,7 @@
 #include <thread>
 #include <vector>
 
+#include "core/audio_health.h"
 #include "metronome/click_set.h"
 #include "metronome/metronome_grid.h"
 #include "metronome/metronome_renderer.h"
@@ -62,6 +63,9 @@ public:
     uint32_t state() const { return state_.load(std::memory_order_acquire); }
     void read(tembra_pitch_reading& out) const;
 
+    /** Audio-thread health (feature 007): false while no stream is open. Host threads only. */
+    bool readAudioHealth(tembra_audio_health& out);
+
     static void defaultConfig(tembra_tuner_config& out);
 
 #ifdef TEMBRA_BUILD_TESTS
@@ -97,6 +101,9 @@ private:
 
     std::mutex commands_;
     std::atomic<uint32_t> state_{TEMBRA_AUDIO_IDLE};
+    // The callback times itself into these atomics (feature 007); callbackRate_ is set before the stream opens.
+    AudioHealth health_;
+    std::atomic<uint32_t> callbackRate_{kPreferredRate};
     std::unique_ptr<AudioDevice> platformDevice_;
     std::unique_ptr<AudioDevice> syntheticDevice_;
     AudioDevice* activeInput_ = nullptr;

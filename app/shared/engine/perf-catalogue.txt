@@ -1,0 +1,20 @@
+# Tembra Audio performance catalogue (feature 007, spec FR-012): the single source of signpost names.
+# One line per PerfSection / PerfCounter entry: <ENUM_NAME> <family> <signpost.name>.
+# generatePerfBuild turns it into PerfNames.kt (measurement builds only); generateTraceNames into
+# app/engine/include/tembra_trace_names.h. A new feature adds its sections here and in PerfSection.
+TUNER_LOAD tuner tuner.load
+TUNER_FRAME tuner tuner.frame
+TUNER_MODE_SWITCH tuner tuner.modeSwitch
+METRONOME_LOAD metronome metronome.load
+METRONOME_TICK metronome metronome.tick
+METRONOME_TEMPO_CHANGE metronome metronome.tempoChange
+TIMELINE_SCROLL timeline timeline.scroll
+TIMELINE_ZOOM timeline timeline.zoom
+ENGINE_LOAD_CLIP engine engine.loadClip
+ENGINE_GRAPH_SWAP engine engine.graphSwap
+AUDIO_CALLBACKS counter audio.callbacks
+AUDIO_LAST_US counter audio.lastUs
+AUDIO_MAX_US counter audio.maxUs
+AUDIO_OVER_BUDGET counter audio.overBudget
+AUDIO_XRUNS counter audio.xruns
+AUDIO_REALTIME counter audio.realtime

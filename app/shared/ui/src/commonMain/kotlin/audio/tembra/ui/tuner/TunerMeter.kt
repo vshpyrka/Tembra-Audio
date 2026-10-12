@@ -31,6 +31,8 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import audio.tembra.core.tuner.PitchDirection
 import audio.tembra.engine.PitchSnapshot
+import audio.tembra.engine.perf.PerfSection
+import audio.tembra.engine.perf.PerfTrace
 import audio.tembra.ui.designsystem.rememberFrameTick
 import audio.tembra.ui.theme.TembraIcon
 import audio.tembra.ui.theme.TembraIcons
@@ -123,17 +125,22 @@ fun TunerMeter(
             },
     ) {
         val frameNanos = tick.longValue
-        val shown: MeterReading? = if (listening) {
-            telemetry.read(snapshot)
-            if (snapshot.hasPitch && snapshot.frequencyHz > 0f) MeterReading.from(snapshot) else null
-        } else {
-            reading
-        }
         // `size` is the meter size; the canvas size is the draw scope's.
         val layout = MeterLayout(this.size.width, pixelDensity, fontScale, size)
-        val targetAngle = layout.geometry.needleAngleDegrees(shown?.cents ?: 0.0)
-        val angle = if (reduceMotion || !listening) targetAngle else needle.advance(targetAngle, frameNanos)
-        drawMeter(layout, shown, angle, palette, styles, textMeasurer, arrowLeft, arrowRight, arrowSize.toPx(), listening && !reduceMotion, frameNanos)
+        // The per-frame pitch-to-needle computation is the tuner.frame section of the performance catalogue
+        // (feature 007): a draw-lambda computation, never composition.
+        val frame = PerfTrace.section(PerfSection.TUNER_FRAME) {
+            val shown: MeterReading? = if (listening) {
+                telemetry.read(snapshot)
+                if (snapshot.hasPitch && snapshot.frequencyHz > 0f) MeterReading.from(snapshot) else null
+            } else {
+                reading
+            }
+            val targetAngle = layout.geometry.needleAngleDegrees(shown?.cents ?: 0.0)
+            val angle = if (reduceMotion || !listening) targetAngle else needle.advance(targetAngle, frameNanos)
+            MeterFrame(shown, angle)
+        }
+        drawMeter(layout, frame.reading, frame.angle, palette, styles, textMeasurer, arrowLeft, arrowRight, arrowSize.toPx(), listening && !reduceMotion, frameNanos)
     }
 }
 

@@ -34,3 +34,9 @@ include(":shared:data")
 include(":shared:ui")
 include(":engine:android")
 include(":androidApp")
+// The Macrobenchmark module (feature 007) joins the build only for measurement runs so the default
+// build and the test lanes never configure it: `./gradlew -Ptembra.perf=true :perf-benchmarks:assemblePerf`
+// (`-Ptembra.perf=release` builds the same type with the instrumentation compiled out: the SC-007 baseline).
+if (providers.gradleProperty("tembra.perf").isPresent) {
+    include(":perf-benchmarks")
+}

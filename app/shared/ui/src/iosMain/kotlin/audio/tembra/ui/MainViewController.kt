@@ -1,6 +1,8 @@
 package audio.tembra.ui
 
+import androidx.compose.ui.util.enableTraceOSLog
 import androidx.compose.ui.window.ComposeUIViewController
+import audio.tembra.engine.perf.PerfBuild
 import audio.tembra.ui.devtools.DeveloperViewRequest
 import audio.tembra.ui.metronome.MetronomeDebugRequest
 import audio.tembra.ui.tuner.TunerNoiseGateRequest
@@ -25,7 +27,10 @@ fun MainViewController(
     tunerNoiseGate: String? = null,
     metronomeSyncopation: String? = null,
 ): UIViewController =
-    ComposeUIViewController {
+    ComposeUIViewController(configure = {
+        // Measurement builds (feature 007, FR-016): Compose's own frame phases become os_signpost intervals.
+        if (PerfBuild.PERF_ENABLED) enableTraceOSLog()
+    }) {
         App(
             appGraph = appGraph,
             developerView = DeveloperViewRequest.parse(developerView),

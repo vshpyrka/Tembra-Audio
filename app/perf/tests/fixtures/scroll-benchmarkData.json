@@ -1,0 +1,49 @@
+{
+  "context": {
+    "build": {"device": "a52q"},
+    "cpuLocked": false,
+    "compilationMode": "Full",
+    "osCodenameAbbreviated": "U"
+  },
+  "benchmarks": [
+    {
+      "name": "scrollFeed",
+      "className": "io.tracepulse.benchmarks.ScrollJankBenchmark",
+      "metrics": {
+        "memoryRssAnonMaxKb": {
+          "minimum": 190000,
+          "maximum": 210000,
+          "median": 200000,
+          "coefficientOfVariation": 0.02,
+          "runs": [190000, 200000, 210000]
+        },
+        "memoryRssAnonLastKb": {
+          "minimum": 50000,
+          "maximum": 54000,
+          "median": 52000,
+          "coefficientOfVariation": 0.025,
+          "runs": [50000, 52000, 54000]
+        }
+      },
+      "sampledMetrics": {
+        "frameDurationCpuMs": {
+          "P50": 8.2,
+          "P90": 14.9,
+          "P95": 18.0,
+          "P99": 26.4,
+          "runs": [[6, 7, 8, 9, 30], [7, 8, 8, 10, 25], [6, 8, 9, 11, 28]]
+        },
+        "frameOverrunMs": {
+          "P50": -4.0,
+          "P90": 1.5,
+          "P95": 3.0,
+          "P99": 9.9,
+          "runs": [[-8, -5, -4, 0, 2], [-7, -5, -3, 1, 2], [-9, -6, -4, 0, 3]]
+        }
+      },
+      "warmupIterations": 0,
+      "repeatIterations": 3,
+      "thermalThrottleSleepSeconds": 2.5
+    }
+  ]
+}

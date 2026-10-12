@@ -54,6 +54,13 @@ Four Google NotebookLM notebooks hold the research (Google account of the projec
 
 All four can be queried from the terminal with the `notebooklm` CLI, for example `notebooklm ask "..." -n 9f3644d4-a948-4cde-a956-9fe95d7823f7`.
 
+## Performance pipeline
+
+The round, history, detection and report tooling of feature 007 lives in `app/perf/` (`app/perf/README.md`:
+install with `uv`, device setup, every command, exit statuses, where data lives, how to add a journey or a
+section, and the standing rule that every feature instruments itself). The research behind it is
+`research/performance-profiling.md`; the per-round records sit on the `perf-history` branch.
+
 ## Related
 
 - App UI design from Stitch (design system, 16 screens): `../design/stitch/`

@@ -1,0 +1,72 @@
+package audio.tembra.engine.perf
+
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
+
+/**
+ * The catalogue (`app/shared/engine/perf-catalogue.txt`) is the single source of signpost names (spec FR-012):
+ * every [PerfSection] and [PerfCounter] entry has exactly one line, names are unique and of the form
+ * `<family>.<camelCase>` with the family matching the entry's [PerfFamily] (`counter` for counters), and outside a
+ * measurement build every generated `signpostName()` is `""` (FR-014). The Gradle task `generatePerfBuild` writes
+ * [PerfCatalogueExpectation] from the same file for this test run; `generateTraceNames` keeps the C header in step.
+ */
+class PerfSectionCatalogueTest {
+
+    private val lines = PerfCatalogueExpectation.LINES.map { line ->
+        val fields = line.split(' ')
+        assertEquals(3, fields.size, "catalogue line '$line' must be <ENUM_NAME> <family> <signpost.name>")
+        Triple(fields[0], fields[1], fields[2])
+    }
+
+    @Test
+    fun everySectionHasExactlyOneLineWithItsFamily() {
+        for (section in PerfSection.entries) {
+            val matching = lines.filter { it.first == section.name }
+            assertEquals(1, matching.size, "${section.name} must have exactly one catalogue line")
+            val (_, family, name) = matching.single()
+            assertEquals(familyKeyword(section.family), family, "${section.name} family")
+            assertTrue(name.startsWith("$family."), "${section.name}: '$name' must start with '$family.'")
+            assertTrue(Regex("[a-z]+\\.[a-z][A-Za-z0-9]*").matches(name), "${section.name}: '$name' is not <family>.<camelCase>")
+        }
+    }
+
+    @Test
+    fun everyCounterHasExactlyOneLineInTheCounterFamily() {
+        for (counter in PerfCounter.entries) {
+            val matching = lines.filter { it.first == counter.name }
+            assertEquals(1, matching.size, "${counter.name} must have exactly one catalogue line")
+            val (_, family, name) = matching.single()
+            assertEquals("counter", family)
+            assertTrue(name.startsWith("audio."), "${counter.name}: '$name' must start with 'audio.'")
+        }
+    }
+
+    @Test
+    fun catalogueHasNoStrayLinesAndUniqueNames() {
+        val known = PerfSection.entries.map { it.name } + PerfCounter.entries.map { it.name }
+        assertEquals(known.sorted(), lines.map { it.first }.sorted(), "every catalogue line names an enum entry")
+        val names = lines.map { it.third }
+        assertEquals(names.size, names.toSet().size, "signpost names are unique")
+    }
+
+    @Test
+    fun signpostNamesFollowTheBuild() {
+        for (section in PerfSection.entries) {
+            val expected = if (PerfBuild.PERF_ENABLED) lines.single { it.first == section.name }.third else ""
+            assertEquals(expected, section.signpostName(), section.name)
+        }
+        for (counter in PerfCounter.entries) {
+            val expected = if (PerfBuild.PERF_ENABLED) lines.single { it.first == counter.name }.third else ""
+            assertEquals(expected, counter.signpostName(), counter.name)
+        }
+    }
+
+    /** Exhaustive by construction: a new family must choose its catalogue keyword here. */
+    private fun familyKeyword(family: PerfFamily): String = when (family) {
+        PerfFamily.TUNER -> "tuner"
+        PerfFamily.METRONOME -> "metronome"
+        PerfFamily.TIMELINE -> "timeline"
+        PerfFamily.ENGINE -> "engine"
+    }
+}

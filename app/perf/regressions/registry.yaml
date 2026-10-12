@@ -1,0 +1,41 @@
+# Regression-injection self-test (spec SC-004, FR-019): deliberate regressions the detector must confirm at their
+# onset round. `patch_file` applies to this repository with `git apply`; `generate` (R4) runs a script instead.
+# Expected metrics name store series keys (<journey>/<metric>).
+R1:
+  title: Startup — 250 ms busy-spin + 512 KiB write/sync/read before the first frame (Android MainActivity, iOS App init)
+  patch_file: r1-startup.patch
+  expected_metrics:
+    - [startup/startup.ttid_ms, up]
+    - [startup/startup.ttfd_ms, up]
+  tolerated_side_effects: [app.size_bytes, tuner/cpu.instructions_k, metronome/cpu.instructions_k, stress/cpu.instructions_k]
+  notes: >-
+    both platforms; the iOS half confirms the 30 % startup slowdown of SC-004. On the iPhone every journey
+    iteration relaunches the app before startMeasuring, and the spin's ~2.5 G retired instructions still land in
+    each journey's XCTCPUMetric(application:) count (+18…+27 % in all six injected rounds of 2026-10-12):
+    the injection's footprint, not a detector error.
+R2:
+  title: Frames — per-frame invalidation of the tuner's Auto Listen pane with ~4 ms of work, while listening
+  patch_file: r2-frames.patch
+  expected_metrics:
+    - [tuner/frames.p50_ms, up]
+    - [tuner/frames.p90_ms, up]
+    - [tuner/frames.p99_ms, up]
+    - [stress/frames.p90_ms, up]
+  tolerated_side_effects: [tuner/journey.duration_ms, stress/journey.duration_ms]
+  notes: gated on listening, inert at rest (Android frames family; the iOS hitch family reacts to the same storm)
+R3:
+  title: Memory — 40 MiB of touched byte arrays retained across tempo changes
+  patch_file: r3-memory.patch
+  expected_metrics:
+    - [metronome/memory.peak_kb, up]
+    - [metronome/memory.end_kb, up]
+  tolerated_side_effects: []
+  notes: 2 MiB per tempo change, 20 slots; the metronome journey steps the tempo ten times
+R4:
+  title: App size — 2 MiB incompressible asset bundled into the Android app
+  generate: gen_ballast.py
+  generated_paths: [app/androidApp/src/main/assets/tracepulse-ballast.bin]
+  expected_metrics:
+    - [app.size_bytes, up]
+  tolerated_side_effects: []
+  notes: never read at runtime; Android only (the iOS size is an opt-in archive measurement)

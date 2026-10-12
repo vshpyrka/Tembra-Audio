@@ -1,0 +1,6 @@
+List of devices attached
+19021FDEE001AH         device usb:34603008X product:raven model:Pixel_6_Pro device:raven transport_id:31
+2B091FDH3004QL         device usb:34603009X product:cheetah model:Pixel_7_Pro device:cheetah transport_id:33
+127.0.0.1:5556         device product:sdk_gphone64_arm64 model:sdk_gphone64_arm64 device:emu64a transport_id:32
+XYZ123                 unauthorized usb:1-2 transport_id:40
+

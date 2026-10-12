@@ -1,0 +1,33 @@
+{
+  "configurations" : [
+    {
+      "id" : "7E5F0000-0000-0000-0000-000000000020",
+      "name" : "Perf",
+      "options" : {
+        "codeCoverage" : false,
+        "testExecutionOrdering" : "random",
+        "testTimeoutsEnabled" : true,
+        "defaultTestExecutionTimeAllowance" : 1800,
+        "maximumTestExecutionTimeAllowance" : 1800
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "codeCoverage" : false,
+    "addressSanitizer" : { "enabled" : false },
+    "threadSanitizer" : { "enabled" : false },
+    "undefinedBehaviorSanitizer" : { "enabled" : false },
+    "testTimeoutsEnabled" : true
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : false,
+      "target" : {
+        "containerPath" : "container:iosApp.xcodeproj",
+        "identifier" : "7E5F00000000000000000003",
+        "name" : "TembraPerfTests"
+      }
+    }
+  ],
+  "version" : 1
+}

@@ -14,7 +14,7 @@ using Catch::Matchers::StartsWith;
 
 TEST_CASE("abi version matches the header constant", "[abi]") {
     REQUIRE(tembra_engine_abi_version() == TEMBRA_ENGINE_ABI_VERSION);
-    REQUIRE(TEMBRA_ENGINE_ABI_VERSION == 4u);
+    REQUIRE(TEMBRA_ENGINE_ABI_VERSION == 5u);
 }
 
 TEST_CASE("name is Tembra Engine", "[descriptor]") {

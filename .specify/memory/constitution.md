@@ -212,10 +212,21 @@ specifications technology-free and the test-first loop of Principle III intact.
   grow from them. The metronome follows the tuner (amended 2026-09-29): it is the second feature
   to produce sound and the first to schedule it sample-accurately, and its click path MUST obey
   Principle I so the audio spine and the transport can grow from it.
+- Every feature instruments itself (amended 2026-10-08): every feature after the performance
+  pipeline (feature 007) that adds a user-facing interaction or an engine path MUST add, in the
+  same feature, its performance instrumentation: catalogue sections for its main interactions,
+  journey anchors, a benchmark journey (new or an extension of an existing one) on both
+  platforms, and any audio-thread health counters it needs. Its specification MUST declare which
+  journeys and sections it adds; its plan and tasks MUST include them; after it merges it MUST
+  be measured with a labelled performance session on each available device, and the session's
+  report is part of the pull request evidence. A feature that changes only documentation,
+  tooling or tests is exempt.
 - Definition of done for any task: failing test written first; tests green on the JVM and, for
   shared code, on the iOS simulator; engine changes green in the C++ test target; UI changes
   screenshot-verified at compact and expanded widths on Android and on the iOS simulator; no
-  new lint or compiler warnings; one type per file; no forbidden dependency.
+  new lint or compiler warnings; one type per file; no forbidden dependency; for a feature that
+  adds an interaction or an engine path, its performance instrumentation is present and a
+  labelled session has been run.
 - Pull requests MUST state which principle each non-obvious decision serves and MUST include
   the screenshots used for UI verification.
 - A plan or pull request that adds a public composable or a class that owns a coroutine MUST
@@ -240,4 +251,4 @@ specifications technology-free and the test-first loop of Principle III intact.
 - `CLAUDE.md` is the runtime guidance file for agents working in this repository; it MUST point
   at this constitution and MUST NOT restate rules in a way that drifts from it.
 
-**Version**: 1.2.0 | **Ratified**: 2026-09-19 | **Last Amended**: 2026-09-29
+**Version**: 1.3.0 | **Ratified**: 2026-09-19 | **Last Amended**: 2026-10-08

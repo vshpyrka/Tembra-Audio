@@ -89,6 +89,8 @@ int32_t EngineCore::beginCapture(const tembra_tuner_config& config, AudioDevice&
     auto analyzer = std::make_shared<TunerAnalyzer>(config, device.sampleRate(), synthetic, gateDb_);
     std::atomic_store(&analyzer_, analyzer);
     activeInput_ = &device;
+    callbackRate_.store(device.sampleRate(), std::memory_order_relaxed);
+    health_.streamOpened(device.realtime());
     callbackAnalyzer_.store(analyzer.get(), std::memory_order_release);
     running_.store(true);
     state_.store(TEMBRA_AUDIO_LISTENING, std::memory_order_release);
@@ -98,8 +100,10 @@ int32_t EngineCore::beginCapture(const tembra_tuner_config& config, AudioDevice&
 
 void EngineCore::onInput(void* context, const float* mono, uint32_t frames) {
     auto* engine = static_cast<EngineCore*>(context);
+    const uint64_t started = AudioHealth::nowMicros();
     TunerAnalyzer* analyzer = engine->callbackAnalyzer_.load(std::memory_order_acquire);
     if (analyzer != nullptr) analyzer->push(mono, frames);
+    engine->health_.record(started, AudioHealth::nowMicros(), frames, engine->callbackRate_.load(std::memory_order_relaxed));
 }
 
 void EngineCore::analysisLoop() {
@@ -124,6 +128,7 @@ void EngineCore::finishCaptureFromThread() {
     if (!commands_.try_lock()) return;
     if (state() == TEMBRA_AUDIO_LISTENING) {
         if (activeInput_ != nullptr) activeInput_->close();
+        health_.streamClosed();
         callbackAnalyzer_.store(nullptr, std::memory_order_release);
         auto analyzer = std::atomic_load(&analyzer_);
         if (analyzer) analyzer->publishResting();
@@ -142,6 +147,7 @@ void EngineCore::stopListeningLocked() {
     if (analysisThread_.joinable()) analysisThread_.join();
     if (state() == TEMBRA_AUDIO_LISTENING) {
         if (activeInput_ != nullptr) activeInput_->close();
+        health_.streamClosed();
         state_.store(TEMBRA_AUDIO_IDLE, std::memory_order_release);
     }
     callbackAnalyzer_.store(nullptr, std::memory_order_release);
@@ -184,6 +190,8 @@ int32_t EngineCore::ensureOutputOpen() {
     generator_ = std::make_unique<ToneGenerator>(rate);
     player_ = std::make_unique<SamplePlayer>(rate);
     if (scratch_.size() < kScratchFrames * 2) scratch_.assign(kScratchFrames * 2, 0.0f);
+    callbackRate_.store(rate, std::memory_order_relaxed);
+    health_.streamOpened(platformDevice_->realtime());
     onOutputOpened(rate);
     callbackGenerator_.store(generator_.get(), std::memory_order_release);
     callbackPlayer_.store(player_.get(), std::memory_order_release);
@@ -233,6 +241,7 @@ void EngineCore::closeOutputLocked() {
     callbackPlayer_.store(nullptr, std::memory_order_release);
     callbackMetronome_.store(nullptr, std::memory_order_release);
     platformDevice_->close();  // returns after the last callback
+    health_.streamClosed();
     outputOpen_ = false;
     playingHandle_ = -1;
     if (metronome_) metronome_->silence();
@@ -323,7 +332,17 @@ void EngineCore::stopToneLocked() {
 }
 
 void EngineCore::onRender(void* context, float* interleavedStereo, uint32_t frames) {
-    static_cast<EngineCore*>(context)->render(interleavedStereo, frames);
+    auto* engine = static_cast<EngineCore*>(context);
+    const uint64_t started = AudioHealth::nowMicros();
+    engine->render(interleavedStereo, frames);
+    engine->health_.record(started, AudioHealth::nowMicros(), frames, engine->callbackRate_.load(std::memory_order_relaxed));
+}
+
+bool EngineCore::readAudioHealth(tembra_audio_health& out) {
+    // Host thread: the platform stream's own xrun counter is sampled here, never on the callback (Oboe's rule).
+    AudioDevice* device = telemetryDevice_.load(std::memory_order_acquire);
+    if (device != nullptr) health_.setXruns(device->xrunCount());
+    return health_.read(out);
 }
 
 void EngineCore::render(float* out, uint32_t frames) {

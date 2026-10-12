@@ -1,5 +1,5 @@
 /*
- * Tembra Audio engine C ABI, revision 4.
+ * Tembra Audio engine C ABI, revision 5.
  *
  * This header is the only interface the Kotlin side ever sees (JNI shim on Android, cinterop on
  * iOS). Rules: plain C, no C++ types, no callbacks into the host, every returned pointer has static
@@ -10,7 +10,9 @@
  * TEMBRA_AUDIO_METRONOME and the tembra_metronome_* functions; every revision 2 function unchanged) is
  * specs/004-metronome/contracts/engine-c-abi-v3.md; revision 4 (the tuner's noise gate: tembra_tuner_set_gate and
  * the input_level_db and gate_open fields of tembra_pitch_reading; every revision 3 function unchanged) is
- * specs/006-tuner-noise-gate/contracts/engine-c-abi-v4.md.
+ * specs/006-tuner-noise-gate/contracts/engine-c-abi-v4.md; revision 5 (the audio-thread health counters:
+ * tembra_audio_health and tembra_engine_audio_health; every revision 4 function unchanged) is
+ * specs/007-performance-pipeline/contracts/engine-audio-health.md.
  */
 #ifndef TEMBRA_ENGINE_H
 #define TEMBRA_ENGINE_H
@@ -22,7 +24,7 @@ extern "C" {
 #endif
 
 /* ABI revision of this header. Incremented whenever a function is added, removed or changed. */
-#define TEMBRA_ENGINE_ABI_VERSION 4u
+#define TEMBRA_ENGINE_ABI_VERSION 5u
 uint32_t tembra_engine_abi_version(void);
 
 /* Human-readable engine name, e.g. "Tembra Engine". Static storage. */
@@ -160,6 +162,21 @@ typedef struct tembra_metronome_tick {
     uint32_t sample_rate;     /* stream rate */
 } tembra_metronome_tick;
 void    tembra_metronome_read(tembra_metronome_tick* out);  /* lock-free seqlock read; computes audible_in_ns against the monotonic clock at call time */
+
+/* --- Audio-thread health (feature 007, contracts/engine-audio-health.md) --- */
+typedef struct tembra_audio_health {
+    uint64_t callbacks;     /* total render and capture callbacks since stream start      */
+    uint32_t last_us;       /* duration of the most recent callback, microseconds         */
+    uint32_t max_us;        /* maximum callback duration since stream start               */
+    uint32_t over_budget;   /* callbacks whose duration exceeded the buffer period        */
+    uint32_t xruns;         /* underruns + overruns reported by the platform stream       */
+    uint8_t  realtime;      /* 1 when the audio thread holds real-time status             */
+    uint8_t  _reserved[3];
+} tembra_audio_health;
+/* Non-real-time. Copies the counters into *out (the callback writes them with atomic stores; the xrun count is
+   sampled from the platform stream on the calling thread). Returns 0, -1 when no stream is open, or
+   TEMBRA_ERR_ARGUMENT for a null pointer. The engine is process-wide, hence no handle argument. */
+int32_t tembra_engine_audio_health(tembra_audio_health* out);
 
 #ifdef __cplusplus
 }

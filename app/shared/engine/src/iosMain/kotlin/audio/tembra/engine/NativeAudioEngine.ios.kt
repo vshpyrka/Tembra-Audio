@@ -1,6 +1,10 @@
 package audio.tembra.engine
 
+import audio.tembra.engine.perf.AudioHealth
+
+import audio.tembra.engine.cinterop.tembra_audio_health
 import audio.tembra.engine.cinterop.tembra_audio_state
+import audio.tembra.engine.cinterop.tembra_engine_audio_health
 import audio.tembra.engine.cinterop.tembra_custom_sound_info
 import audio.tembra.engine.cinterop.tembra_engine_abi_version
 import audio.tembra.engine.cinterop.tembra_engine_describe
@@ -32,6 +36,7 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.alloc
 import kotlinx.cinterop.get
+import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.nativeHeap
 import kotlinx.cinterop.ptr
 import kotlinx.cinterop.reinterpret
@@ -314,6 +319,19 @@ actual class NativeAudioEngine internal constructor(
 
     override val audioState: AudioState
         get() = AudioState.fromNative(tembra_audio_state().toInt())
+
+    override fun audioHealth(): AudioHealth? = memScoped {
+        val health = alloc<tembra_audio_health>()
+        if (tembra_engine_audio_health(health.ptr) != 0) return null
+        AudioHealth(
+            callbacks = health.callbacks.toLong(),
+            lastMicros = health.last_us.toInt(),
+            maxMicros = health.max_us.toInt(),
+            overBudget = health.over_budget.toInt(),
+            xruns = health.xruns.toInt(),
+            realtime = health.realtime.toInt() != 0,
+        )
+    }
 
     override val events: Flow<AudioEvent> = IosAudioSession.events
 
