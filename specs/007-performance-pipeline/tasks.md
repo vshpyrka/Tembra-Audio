@@ -230,7 +230,7 @@ description: "Task list for feature 007: performance pipeline"
 - [X] T083 Verify SC-008: time `./gradlew checkAndroidHost`, `checkIos`, `engineHostTest` (through `gradle-run`, `--warning-mode all`) before and after the feature on this Mac; confirm within 5 % and zero warnings; record in `app/perf/README.md`
 - [ ] T084 Run the full quickstart (§1–§9) end to end on the Pixel 6 Pro, the iPhone 14 and the booted simulators under the label `007-performance-pipeline`, including the iOS half of SC-004 (`inject R1`, six iPhone rounds, a confirmed `startup.*` onset at the injection round, `revert R1`); fix anything found; final `uv run pytest`, `checkAndroidHost`, `checkIos`, `engineHostTest` green
 - [X] T085 Remove anything copied from trace-pulse that this repository does not use (NIA patches, A52/Pixel chain scripts, `compare.py` if folded into `report.py`), keep `app/perf/` free of commented-out code and TODOs without issue references (Principle VII)
-- [ ] T086 Verify SC-003: run a ten-round session of an unchanged build on the Pixel 6 Pro and on the iPhone 14 under the label `noise-baseline`, compute the coefficient of variation of the round medians per `startup.*` and `memory.*` series from the records (`uv run tracepulse status --json`), confirm ≤ 3 %, and record the measured values in `app/perf/README.md` (quickstart §9)
+- [X] T086 Verify SC-003: run a ten-round session of an unchanged build on the Pixel 6 Pro and on the iPhone 14 under the label `noise-baseline`, compute the coefficient of variation of the round medians per `startup.*` and `memory.*` series from the records (`uv run tracepulse status --json`), confirm ≤ 3 %, and record the measured values in `app/perf/README.md` (quickstart §9)
 
 ---
 
