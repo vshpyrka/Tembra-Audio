@@ -76,3 +76,13 @@ Also found: `profile generate` now clears the device's `additional_test_output` 
 does the same per class) so stale dated files of an earlier run are never merged.
 
 `./gradlew checkAndroidHost --warning-mode all` with the committed profile: green, zero warnings (T020).
+
+## T021 — negative paths of quickstart §2 on the Pixel 6 Pro
+
+| Case | Outcome |
+|---|---|
+| no `--device`, three devices attached (Pixel, iPhone 14, iPhone Duo simulator) | exit 4: `3 devices attached; name one with --device: …` |
+| `--device iphone14` | exit 4: `profile generation is Android-only; iPhone 14 (…) is ios` |
+| screen off (`KEYCODE_SLEEP`, `mWakefulness=Dozing`, keyguard showing) | the doctor wakes the screen and `wm dismiss-keyguard` unlocks it (the Pixel has no lock credential), so the command proceeds exactly as a round would; the "locked → 2" refusal needs a PIN-protected device and is covered by the fake-runner test (`test_a_failed_doctor_check_refuses_before_any_gradle_command`) |
+| `Anchors.TUNER_ROOT` renamed to `screen.tuner.broken` | exit 3 in 1 min 33 s (`generateBaselineProfile did not complete; committed profile files restored`); `git diff --stat -- androidApp/src/main/generated` empty; rename reverted |
+| second generation on the unchanged build (4 min 05 s) | `baseline-prof.txt`: 21 203 rules common, 41 only committed / 45 only regenerated (0.2 %; 14 own-code rules, timing-reached animation and draw helpers); `startup-prof.txt`: 14 503 common, 107 / 113 (0.75 %); the six descriptors present in both; discarded as noise-only (not committed), as the rule says |
