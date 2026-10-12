@@ -1,0 +1,77 @@
+{
+ "artifacts": [
+  {
+   "kind": "xcresult",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/app/perf/data/rounds/20261012T003509Z_007-performance-pipeline/perf.xcresult"
+  },
+  {
+   "kind": "xcodebuild_log",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/app/perf/data/rounds/20261012T003509Z_007-performance-pipeline/xcodebuild-test.log"
+  }
+ ],
+ "badges": [],
+ "build": {
+  "branch": "007-performance-pipeline",
+  "commit": "397d53b1455fb42200e2abc5451af9a245417c7c",
+  "dirty": true,
+  "injected": [
+   "R1"
+  ],
+  "type": "Perf"
+ },
+ "checks": [
+  {
+   "limit": null,
+   "name": "xcode",
+   "passed": true,
+   "value": null
+  },
+  {
+   "limit": null,
+   "name": "device_attached",
+   "passed": true,
+   "value": null
+  },
+  {
+   "limit": null,
+   "name": "xcode_supports_device",
+   "passed": true,
+   "value": null
+  },
+  {
+   "limit": null,
+   "name": "unlocked",
+   "passed": true,
+   "value": null
+  }
+ ],
+ "device": {
+  "device_id": "00008110-001049660E3A401E",
+  "kind": "device",
+  "model": "iPhone 14",
+  "platform": "ios",
+  "reference": true
+ },
+ "failure_reason": "1: The test runner failed to initialize for UI testing. (Underlying Error: Timed out while enabling automation mode.)",
+ "fingerprint": {
+  "os_build": "24A446",
+  "os_version": "27.0.1"
+ },
+ "finished_at": "2026-10-12T00:36:24Z",
+ "gate": [],
+ "journeys": [],
+ "label": "007-performance-pipeline",
+ "machine": {
+  "hostname": "Victors-MacBook-Pro-M4.local",
+  "os": "Darwin 25.6.0",
+  "tool_version": "0.2.0"
+ },
+ "round_id": "20261012T003509Z_007-performance-pipeline",
+ "schema_version": 1,
+ "session": {
+  "index": 2,
+  "size": 6
+ },
+ "started_at": "2026-10-12T00:35:09Z",
+ "status": "failed"
+}
