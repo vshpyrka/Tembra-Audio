@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "tembra://perf/profile-comparison/1",
+  "title": "Baseline profile comparison (feature 008)",
+  "description": "Written by `tracepulse profile compare` to app/perf/data/comparisons/<comparison_id>/comparison.json. Never enters the history.",
+  "type": "object",
+  "required": ["schema_version", "comparison_id", "started_at", "build", "device", "driver", "states", "iterations", "journeys", "metrics", "artifacts"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": 1 },
+    "comparison_id": { "type": "string", "pattern": "^[0-9]{8}T[0-9]{6}Z_[A-Za-z0-9._-]+$", "description": "the round-id shape of records.py" },
+    "started_at": { "type": "string", "format": "date-time" },
+    "build": {
+      "type": "object",
+      "required": ["commit", "dirty", "build_type", "apk", "test_apk"],
+      "additionalProperties": false,
+      "properties": {
+        "commit": { "type": "string" },
+        "dirty": { "type": "boolean" },
+        "build_type": { "const": "perf" },
+        "apk": { "type": "string" },
+        "test_apk": { "type": "string" }
+      }
+    },
+    "device": {
+      "type": "object",
+      "required": ["device_id", "model", "fingerprint"],
+      "additionalProperties": false,
+      "properties": {
+        "device_id": { "type": "string" },
+        "model": { "type": "string" },
+        "fingerprint": { "type": "object", "description": "the round record's fingerprint object, unchanged" }
+      }
+    },
+    "driver": { "type": "string", "description": "host name; metadata only" },
+    "states": {
+      "type": "array",
+      "minItems": 2,
+      "items": { "enum": ["none", "profile", "full"] },
+      "description": "in measurement order; `full` present only with --with-full"
+    },
+    "iterations": { "type": "integer", "minimum": 1 },
+    "journeys": { "type": "array", "items": { "enum": ["startup", "tuner", "metronome", "stress"] }, "minItems": 1 },
+    "metrics": {
+      "type": "object",
+      "description": "keyed by catalogue metric key, e.g. startup.ttid_ms",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["journey", "unit", "higher_is_worse", "by_state", "change_pct", "direction", "p_value", "confirmed"],
+        "additionalProperties": false,
+        "properties": {
+          "journey": { "enum": ["startup", "tuner", "metronome", "stress"] },
+          "unit": { "type": "string" },
+          "higher_is_worse": { "type": "boolean" },
+          "by_state": {
+            "type": "object",
+            "propertyNames": { "enum": ["none", "profile", "full"] },
+            "additionalProperties": {
+              "type": "object",
+              "required": ["samples", "median"],
+              "additionalProperties": false,
+              "properties": {
+                "samples": { "type": "array", "items": { "type": "number" }, "minItems": 1 },
+                "median": { "type": "number" }
+              }
+            }
+          },
+          "change_pct": { "type": "number", "description": "(median_profile - median_none) / median_none * 100, signed" },
+          "direction": { "enum": ["better", "worse", "none"] },
+          "p_value": { "type": "number", "minimum": 0, "maximum": 1 },
+          "confirmed": { "type": "boolean", "description": "Mann-Whitney U two-sided, p < 0.01" },
+          "gap_closed_pct": { "type": ["number", "null"], "description": "present only when `full` was measured; null when none and full medians are equal" }
+        }
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "propertyNames": { "enum": ["none", "profile", "full"] },
+      "additionalProperties": {
+        "type": "object",
+        "required": ["benchmark_json", "instrument_log"],
+        "additionalProperties": false,
+        "properties": {
+          "benchmark_json": { "type": "string" },
+          "instrument_log": { "type": "string" }
+        }
+      }
+    }
+  }
+}

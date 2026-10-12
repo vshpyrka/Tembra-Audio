@@ -1,0 +1,7 @@
+Dexopt state:
+  [audio.tembra.app]
+    path: /data/app/~~Qx1yLkZmP0Qq9t8bT4KzLw==/audio.tembra.app-3Vn7cO2hZ8rJm1Yk5sWdXg==/base.apk
+      arm64: [status=verify] [reason=install] [primary-abi]
+  [com.android.chrome]
+    path: /product/app/Chrome/Chrome.apk
+      arm64: [status=speed-profile] [reason=prebuilt] [primary-abi]
