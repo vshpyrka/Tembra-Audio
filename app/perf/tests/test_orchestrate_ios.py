@@ -170,6 +170,12 @@ def test_round_runs_install_warm_up_test_and_collects(cfg, tmp_path):
     launch = runner.index_of("devicectl", "device", "process", "launch", "--terminate-existing", "audio.tembra.appP5QJJ5Y5V7")
     test = runner.index_of("xcodebuild", "test-without-building")
     assert 0 <= uninstall < install < launch < test
+    # `--device` goes before the bundle id: `process launch` hands everything after the bundle to the app
+    assert cmds[launch][:7] == ["xcrun", "devicectl", "device", "process", "launch", "--device", UDID]
+    assert cmds[launch][-1] == "audio.tembra.appP5QJJ5Y5V7"
+    # the warm-up ends the launched process by the pid devicectl reported (terminate takes a pid only)
+    terminate = runner.index_of("devicectl", "device", "process", "terminate", "--pid", "4242")
+    assert launch < terminate < test
     twb = cmds[test]
     assert twb[twb.index("-xctestrun") + 1] == xctestrun
     assert twb[twb.index("-destination") + 1] == f"platform=iOS,id={UDID}"
@@ -189,7 +195,8 @@ def test_round_runs_install_warm_up_test_and_collects(cfg, tmp_path):
     assert any("-skip-testing:TembraPerfTests/AudioTracePass" in c for c in cmds if c[:2] == ["xcodebuild", "test-without-building"])
     audio_pass = runner.index_of("xcodebuild", "test-without-building", "-only-testing:TembraPerfTests/AudioTracePass")
     record = runner.index_of("xctrace", "record", "Audio System Trace", f"--device {UDID}")
-    launch_for_trace = runner.index_of("devicectl", "device", "process", "launch", "--json-output")
+    launch_for_trace = runner.index_of("devicectl", "device", "process", "launch", "--json-output",
+                                       os.path.join(round_dir, "audio-trace-launch.json"))
     assert test < launch_for_trace < audio_pass and record > launch_for_trace
     assert cmds[audio_pass][cmds[audio_pass].index("-resultBundlePath") + 1] == os.path.join(round_dir, "audio-pass.xcresult")
     assert stress.metrics["audio.ioproc_p99_us"].source == "xctrace" and stress.metrics["audio.ioproc_p99_us"].summary["median"] > 0

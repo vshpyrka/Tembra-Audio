@@ -143,6 +143,17 @@ def test_a_percentage_limit_with_a_floor_ignores_changes_under_the_floor():
     assert real["state"] == "above_limit"
 
 
+def test_a_percentage_limit_on_a_zero_baseline_flags_any_rise_past_the_floor():
+    # xruns and over-budget callbacks sit at 0: a percentage of nothing is no limit, so the
+    # first xrun flags, decided and recorded in absolute terms
+    first = decide([0.0] * 5, 1.0, limit_pct=50, limit_abs=None, ids=["a"] * 5)
+    assert first["state"] == "above_limit" and first["limit_abs"] == 0.0 and first["observed_abs"] == 1.0
+    assert "limit_pct" not in first
+    assert decide([0.0] * 5, 0.0, limit_pct=50, limit_abs=None, ids=["a"] * 5)["state"] == "within_limit"
+    # the floor still applies: a 0.6 ms section appearing where there was none is under 1 ms
+    assert decide([0.0] * 5, 0.6, limit_pct=20, limit_abs=None, ids=["a"] * 5, floor_abs=1.0)["state"] == "within_limit"
+
+
 def test_an_absolute_limit_scales_with_a_large_baseline():
     # frame overrun P90 is ~51 ms in the tuner journey (the mode-switch frame) with ±5 ms of noise:
     # the 2 ms limit grows to 25 % of the baseline there and stays 2 ms on a quiet series

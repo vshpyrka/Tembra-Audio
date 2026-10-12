@@ -110,8 +110,9 @@ _IOS: List[Metric] = [
 
 _AUDIO = (
     ("audio.callbacks", "count", dict(gate_limit_pct=50, screening_pct=10)),
-    ("audio.last_callback_us", "us", dict(gate_limit_pct=50, screening_pct=10)),
-    ("audio.max_callback_us", "us", dict(gate_limit_pct=50, screening_pct=10)),
+    # an empty engine renders in 2-17 us; under 100 us (2 % of the 5 333 us budget at 256 frames) is not a change
+    ("audio.last_callback_us", "us", dict(gate_limit_pct=50, screening_pct=10, gate_floor_abs=100.0)),
+    ("audio.max_callback_us", "us", dict(gate_limit_pct=50, screening_pct=10, gate_floor_abs=100.0)),
     ("audio.over_budget", "count", dict(gate_limit_pct=50, screening_pct=10)),
     ("audio.xruns", "count", dict(gate_limit_pct=50, screening_pct=10)),
     ("audio.realtime", "flag", dict(gate_limit_abs=0.5, screening_abs=0.5)),

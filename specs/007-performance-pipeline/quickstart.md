@@ -66,4 +66,4 @@ Time `./gradlew checkAndroidHost` and `checkIos` before and after; `:perf-benchm
 
 ## 9. Noise baseline (SC-003)
 
-`uv run tracepulse run --device pixel6 --label noise-baseline --rounds 10` and the same on `iphone14` with an unchanged build; `uv run tracepulse status --json` reports, per series, the coefficient of variation of the round medians: `startup.*` and `memory.*` at or below 3 % on each device. Record the numbers in `app/perf/README.md`; they calibrate the gate limits.
+`uv run tracepulse run --device pixel6 --label noise-baseline --rounds 10` and the same on `iphone14` with an unchanged build; `uv run tracepulse --json status --series --label noise-baseline --last 10` reports, per series, the coefficient of variation of the round medians: `startup.*` and `memory.*` at or below 3 % on each device. Record the numbers in `app/perf/README.md`; they calibrate the gate limits.

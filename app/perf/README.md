@@ -152,7 +152,12 @@ On a phone a round ends with the audio-trace pass: the app is launched with `dev
 record --template 'Audio System Trace' --attach <pid>` records for 75 s (never `--launch`, which
 hung in spike 3), and `AudioTracePass` drives one unmeasured stress journey on the running process;
 `audio.trace` and `audio-ioproc.xml` land under the round and `audio.ioproc_p99_us` (advisory) joins
-the stress journey. The measured run skips that class.
+the stress journey. The measured run skips that class. Until 2026-10-12 every `devicectl … process
+launch` on the phone was refused — `--device` came after the bundle id, where devicectl reads
+arguments for the app — and `process terminate` was given `--pid-or-name`, which this devicectl does
+not have; both failed silently, so no phone round before the R1 session had a warm-up launch (the
+startup median of 20 launches did not notice) and the first R1 round's audio-trace pass could not
+start. `--device` now precedes the positionals and the warm-up terminates the pid devicectl reported.
 
 Known Macrobenchmark behaviour (seen on the Pixel, round `20261008T175034Z`): single metrics (memory,
 trace sections, frame count) come back with fewer runs than iterations (15 of 20) while the sampled
@@ -192,7 +197,11 @@ percentage limit on a section flags only a change of at least 1 ms (the stress j
 section is 0.03 ms on the iPhone and swung +22 % between rounds), and the absolute overrun limit grows
 to 25 % of the baseline when the baseline is large (the tuner journey's overrun P90 is the mode-switch
 frame, 48–59 ms across 23 Pixel rounds, which the 2 ms limit flagged every third round); the record's
-`limit_abs` is the limit that applied, so the chart's limit line is still the real one.
+`limit_abs` is the limit that applied, so the chart's limit line is still the real one. The iPhone
+session added two more: the audio callback durations (2–17 µs in an engine that renders nothing yet;
+`last_callback_us` swung +175 % between rounds) flag only a change of at least 100 µs, 2 % of the 5 333 µs
+budget at 256 frames; and a percentage of a zero baseline was no limit at all — from 0 the gate could
+never flag the first xrun — so from 0 any rise past the floor flags, in absolute terms.
 
 ## Adding a journey, a section, a counter
 
@@ -312,3 +321,65 @@ Getting there took four rounds that are on the branch as failed records: two lau
 Xcode 26.6 (CoreDevice 10004; the phone runs iOS 27.0.1, `doctor` now refuses the pairing) and two
 rounds lost to the microphone alert that iOS shows once per install (now answered by the runner before
 anything is measured).
+
+## Noise baseline (SC-003), both devices, 2026-10-11/12
+
+Ten rounds of an unchanged build under the label `noise-baseline`, twice on the Pixel 6 Pro (session
+`20261011T174045Z`, end-of-journey memory still the heap size; session `20261011T211432Z`, resident
+anonymous memory) and once on the iPhone 14 (`20261011T174054Z`); all thirty rounds succeeded with
+no badge, the Pixel at 32 °C and 100 % battery, the iPhone `nominal` at 100 %, both while the host
+ran Gradle lanes and Xcode builds (neither device's series moved with host load). Spread = coefficient
+of variation of the ten round medians (`uv run tracepulse --json status --series --label noise-baseline
+--last 10`, the global `--json` before the command; the Pixel's first session is reconstructed from the
+records because its heap-size values are no longer loaded). The threshold is 3 %.
+
+| Series | Pixel, session 1 | Pixel, session 2 | iPhone |
+|---|---|---|---|
+| `startup.ttid_ms` | 248.4 ms, 0.75 % | 248.9 ms, 1.06 % | 517.5 ms, 0.36 % |
+| `startup.ttfd_ms` | 248.4 ms, 0.75 % | 248.9 ms, 1.06 % | 528.4 ms, 0.56 % |
+| `tuner/memory.peak_kb` | 90.5 MB, 1.59 % | 88.9 MB, 2.68 % | 128.0 MB, 2.09 % |
+| `metronome/memory.peak_kb` | 98.8 MB, **3.17 %** | 97.5 MB, 2.82 % | 125.1 MB, 0.26 % |
+| `stress/memory.peak_kb` | 107.6 MB, 1.71 % | 101.9 MB, 2.49 % | 131.1 MB, 1.47 % |
+| `tuner/memory.end_kb` | heap 21.5 MB, **3.87 %** | 86.4 MB, 1.78 % | 125.6 MB, 2.47 % |
+| `metronome/memory.end_kb` | heap 32.2 MB, **5.35 %** | 91.9 MB, 2.02 % | 121.4 MB, 0.54 % |
+| `stress/memory.end_kb` | heap 26.4 MB, **16.30 %** | 94.4 MB, 1.24 % | 129.4 MB, 1.62 % |
+
+The first Pixel session failed the threshold on every end-of-journey memory series and sat on it for
+the metronome's peak: the heap size measures when ART last collected, not the app (see "What a round
+measures"), which is why the source changed; with resident anonymous memory every `startup.*` and
+`memory.*` series on both devices is under 3 % (worst 2.82 % on the Pixel, 2.47 % on the iPhone). The
+journeys themselves: Pixel 1.1–2.6 %, iPhone 0.06–0.07 % (XCUITest's own cost dominates and is very
+steady). The iPhone rounds carry no frames family: the only animation interval in the app today
+(`metronome.tempoChange`) draws nothing, and the tuner's needle is a per-frame draw-lambda section
+(`tuner.frame`), not an interval — the family appears when a feature wraps a drawn animation
+(spec US3 scenario 3; a tuner follow-up, not a pipeline one).
+
+What the gate flagged in thirty clean rounds, and what became of it: stress `section.tuner.load.sum_ms`
++22 % twice on the iPhone (a 0.03 ms section → the 1 ms floor); `metronome.tempoChange` +23 % once
+(0.12 ms → same floor); `audio.last_callback_us` +175 % once (4 → 11 µs → the 100 µs floor); tuner
+`frames.overrun_p90_ms` +2.7…+7.3 ms four times on the Pixel (the mode-switch frame at 48–59 ms → the
+limit scales to 25 %); stress `section.tuner.modeSwitch.sum_ms` +28…+65 % five times on the Pixel. That
+last one is real and stays: the stress journey's six mode switches sum to one of three plateaus —
+280–294, 373–375 or 459–473 ms in all 26 measurement rounds — so the round median jumps by a plateau
+depending on how many of the twenty iterations took the slow path; the tuner journey's two switches
+(205 ms, 0.8 %) never do. Something in the switch costs about 90 ms more while the metronome is running; the gate
+reports the jump truthfully and the tuner's owner has the series. The first flag of the second Pixel
+session (+65 %) was also measured against the two release rounds' zero sections, which the cache now
+ignores.
+
+## The injection self-test on the phones (SC-004), 2026-10-12
+
+`inject R1` (a 250 ms spin and a 512 KiB write at launch, `regressions/r1-startup.patch`) on a clean
+tree, then `run --label 007-performance-pipeline` on both devices, then `revert R1`. Pixel 6 Pro, six
+rounds (session `20261011T233930Z`): cold start 502.2, 497.6, 498.7, 503.9, 502.6, 500.1 ms against
+the 248.9 ms baseline, the gate flagging `startup.ttid_ms`/`startup.ttfd_ms` +102 % on the first three
+rounds (then the injected rounds became its baseline, as designed); `analyze` reports both startup
+series **CONFIRMED +101.4 %** with the onset at the injection round `20261011T233937Z` and the
+ground-truth match set, and no other confirmed or suspect event on any series of either device. iPhone
+14: the first injected round (`20261011T235708Z`) measured 753.1 / 761.8 ms against 517.5 / 528.4
+(+45 %, gate flag, preliminary onset); the next two rounds failed before measuring with "The test
+runner failed to initialize for UI testing (Timed out while enabling automation mode)" — the device-side
+`testmanagerd` stopped enabling automation after 22 rounds, the host logs being identical to a healthy
+round — and a `devicectl device reboot` left the phone waiting at its lock screen (no USB enumeration
+until the first swipe after boot). The remaining five iPhone rounds, the confirmation of its onset and
+the iOS release baseline below wait for the phone to come back; the rounds are on the branch.

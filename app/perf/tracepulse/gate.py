@@ -41,6 +41,12 @@ def decide(baseline: Sequence[float], value: float, limit_pct: Optional[float], 
     # against |base| so the sign is the direction even when the baseline is negative
     # (frame overrun P90 sits below zero on a quiet device)
     observed_pct = (observed_abs / abs(base) * 100.0) if base else 0.0
+    if limit_pct is not None and not base:
+        # a percentage of nothing: from a zero baseline (xruns, over-budget callbacks) any rise
+        # past the floor is the flag, decided and recorded in absolute terms
+        limit = float(floor_abs or 0.0)
+        return {"state": "above_limit" if observed_abs > limit else "within_limit", "limit_abs": limit,
+                "observed_abs": observed_abs, "observed_pct": 0.0, "baseline_rounds": list(ids)}
     if limit_pct is not None:
         above = observed_pct > limit_pct and (floor_abs is None or observed_abs > floor_abs)
         return {"state": "above_limit" if above else "within_limit", "limit_pct": float(limit_pct),
