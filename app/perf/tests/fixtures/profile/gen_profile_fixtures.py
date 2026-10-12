@@ -88,6 +88,8 @@ METRONOME_JOURNEY = {"none": 6400.0, "profile": 6250.0, "full": 6230.0}
 METRONOME_LOAD = {"none": 58.0, "profile": 41.0, "full": 38.0}
 STRESS_JOURNEY = {"none": 9500.0, "profile": 9260.0, "full": 9240.0}
 STRESS_PEAK_KB = {"none": 207500.0, "profile": 206000.0, "full": 207500.0}  # none == full → gap undefined
+# `none` and `full` draw the stress peak from the same seed so their medians are identical, not merely close.
+STRESS_PEAK_SEED = {"none": 99, "profile": 23, "full": 99}
 
 
 def build(state):
@@ -125,7 +127,7 @@ def build(state):
         "frameOverrunMs": _sampled(gen, -4.0, 2.0),
     })
     stress = _benchmark("stress", {
-        "memoryRssAnonMaxKb": _single(_samples(gen, STRESS_PEAK_KB[state], 300.0, nd=0)),
+        "memoryRssAnonMaxKb": _single(_samples(_lcg(STRESS_PEAK_SEED[state]), STRESS_PEAK_KB[state], 300.0, nd=0)),
         "memoryRssAnonLastKb": _single(_samples(gen, 54200.0, 400.0, nd=0)),
         "journey.stressSumMs": _single(_samples(gen, STRESS_JOURNEY[state], 40.0)),
         "journey.stressCount": _single([1.0] * ITERATIONS),
