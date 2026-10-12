@@ -113,3 +113,55 @@ surfaced "`val name by registering { }` … deprecated, removed in Gradle 10" fr
 |---|---|---|
 | `:androidApp:assembleDebug`, up to date (a round was polling the Pixel over adb at the time) | 0.652 / 0.499 / 0.471 s | 0.50 s — re-measured quietly in T046 |
 | `:androidApp:assembleRelease --warning-mode all`, R8 (recorded, not budgeted) | one run | **15.6 s**, zero warnings; `androidApp-release-unsigned.apk` 6 952 244 bytes with `assets/dexopt/baseline.prof` 8 436 bytes, `classes.dex` 1 357 464, `classes2.dex` 1 263 188 |
+
+## T027 — one round on the shrunk `perf` build (Pixel 6 Pro, 2026-10-12)
+
+`uv run tracepulse run --device pixel6 --label baseline-profiles-shrink-check --no-publish --no-build --apk … --test-apk …`:
+exit 0, status **succeeded**, all four journeys, 20 iterations, no quality badge, 13 min 35 s wall (14.4 min before),
+app size 6 966 412 bytes. No keep rule was needed: `proguard-rules.pro` still holds only its policy header.
+
+| Series (round median) | last five published rounds | shrunk build | change |
+|---|---|---|---|
+| startup/startup.ttid_ms | 500.1 ms | **176.7 ms** | −64.7 % |
+| tuner/journey.duration_ms | 1355 ms | 1385 ms | +2.2 % |
+| tuner/section.tuner.load.sum_ms | 71.5 | 71.2 | −0.5 % |
+| tuner/section.tuner.modeSwitch.sum_ms | 205.5 | 205.3 | −0.1 % |
+| tuner/frames.p50_ms | 7.34 | 7.01 | −4.5 % |
+| tuner/memory.peak_kb | 88 786 | 85 036 | −4.2 % |
+| metronome/journey.duration_ms | 1834 | 1805 | −1.6 % |
+| stress/journey.duration_ms | 4408 | 4468 | +1.4 % |
+| stress/frames.p99_ms | 24.6 | 21.9 | −11.1 % |
+| stress/memory.peak_kb | 100 962 | 99 076 | −1.9 % |
+| stress/section.tuner.modeSwitch.sum_ms | 278.4 | 457.4 | **+64.3 % — gate flag, see below** |
+
+The one gate flag is not a slowdown: that section is **bimodal in both builds**. Per iteration the six switches cost
+either ≈275 ms or ≈478 ms (published round: 471, 278, 282, 276, 272, 479, 483, …; shrunk: 479, 281, 478, 286, 479,
+278, …) — the two mode values are identical before and after shrinking; the published round had 6 of 20 iterations
+in the slow mode (median in the fast mode, 278), this round 11 of 20 (median in the slow mode, 457). The same
+section in the tuner journey is unchanged (205 ms). It is a finding to watch in the labelled session after the merge
+(SC-008): a persistent shift of the slow-mode frequency would be a real change, one round cannot say.
+
+## T028 — screenshots of every primary destination, shrunk `perf` build vs debug build (Pixel 6 Pro)
+
+`specs/008-baseline-profiles/screenshots/<width>-<destination>-<build>.png`, 14 pairs. Compact = portrait (412 dp
+wide, bottom bar); expanded = the same phone in landscape (≈891 dp wide, the expanded window class: left rail,
+two panes) because the fold/tablet AVD of feature 005 no longer exists on this Mac and the layouts are driven by
+window size, not device type. Effects and Pads are not navigation destinations yet (the enum holds Home, Timeline,
+Tuner, Metronome, Projects, Profile), so the set is: home, timeline, tuner-autoListen, tuner-byEar-tone (string VI
+auditioned), metronome-running-settings (running, settings open), projects, profile.
+
+Pixel difference per pair (status bar excluded, threshold 40/255): every pair ≤ 0.13 % except the two Auto Listen
+pairs at 0.81 % / 0.96 % — the live meter reacting to room noise. Nothing missing in the shrunk build: text, icons,
+fonts, the audition tone pill, the metronome's settings and sound name, the rail. (A first Auto Listen capture of the
+debug build showed By Ear: the tuner remembers its last mode across the two installs, which share the package's
+data; the script now selects Auto Listen explicitly.)
+
+## T030 — `uv run tracepulse profile verify --device pixel6` (Pixel 6 Pro, 2026-10-12)
+
+Run 1 (builds `assemblePerf` itself, up to date): `profile present (8443 bytes, 0.1 %); recognised (result 1);
+optimised (speed-profile)`, exit 0, **10.1 s** wall for the whole command (SC-005 ≤ 2 min). Run 2: identical, exit 0.
+A result of 2 ("already installed") was expected on the repeat and did not appear: `verify` reinstalls with
+`adb install -r` by contract, which renews the package's update time, and the receiver's `INSTALL_PROFILE` path
+forces the write anyway (a manual repeat of the broadcast within one install also answered 1), so 2 can only come
+from the app's own first-launch write, which the broadcast does not observe. 1 and 2 both pass, as the contract
+says. `dumpsys package dexopt` after the forced pass: `arm64: [status=speed-profile] [reason=cmdline]`.
