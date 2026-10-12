@@ -121,3 +121,14 @@ def test_expected_lookup_uses_the_registry_and_the_round_injections():
     assert lookup(5, "startup/startup.ttid_ms", "up") is True
     assert lookup(5, "tuner/frames.p90_ms", "up") is False
     assert lookup(2, "startup/startup.ttid_ms", "up") is None
+    # a tolerated side effect of an applied injection is neither a hit nor a false alarm
+    assert lookup(5, "tuner/cpu.instructions_k", "up") is None
+    assert lookup(5, "app.size_bytes", "up") is None
+
+
+def test_registry_rejects_an_unknown_tolerated_side_effect(tmp_path):
+    bad = tmp_path / "registry.yaml"
+    bad.write_text("R9:\n  patch_file: r9.patch\n  expected_metrics: [[startup/startup.ttid_ms, up]]\n"
+                   "  tolerated_side_effects: [tuner/no.such_metric]\n")
+    with pytest.raises(ValueError, match="tolerated_side_effects"):
+        load_registry(str(bad))
