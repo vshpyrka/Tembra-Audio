@@ -15,10 +15,9 @@
   `byEarCompact`, `byEarWide`, `discTopStart`, `discBottomEnd`; `needleGlow`, `playingGlow`
   (`Glow(color, radius)`). Drawn with `Brush.radialGradient`; never `Modifier.blur`.
 - `TembraIcon`: `Mic, MicOff, Hearing, PlayArrow, Pause, VolumeUp, ExpandMore, ArrowLeft, ArrowRight, Settings`
-  (fetched by `tools/fetch-material-symbols.sh`) and `Guitar, Cello` (`ic_guitar_24.xml`,
-  `ic_cello_24.xml`, path data from the Stitch instrument selector, header
-  `<!-- Tembra design glyph "guitar" from design/stitch/screens/instrument-tuner/phone/index.html; hand-converted, do not edit -->`).
-  `IconAssetsTest` accepts both headers and asserts no `@` / `?attr` in any file.
+  (fetched by `tools/fetch-material-symbols.sh`). The `Guitar, Cello` design glyphs were removed on 2026-10-12: the
+  instrument selector is text only (spec Clarifications, Session 2026-10-12). `IconAssetsTest` asserts no `@` / `?attr`
+  in any file.
 
 ## Components (`designsystem`)
 

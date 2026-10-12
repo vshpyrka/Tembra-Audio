@@ -31,14 +31,13 @@ class IconAssetsTest {
             "ic_volume_up_24.xml", "ic_expand_more_24.xml", "ic_arrow_left_24.xml", "ic_arrow_right_24.xml", "ic_settings_24.xml",
         ) + metronomeGlyphs
         ).distinct()
-    private val designGlyphs = listOf("ic_guitar_24.xml", "ic_cello_24.xml")
 
     /** Feature 004 D1: the subdivision note figures, hand-authored by `tools/make-note-glyphs.py`. */
     private val noteGlyphs = listOf(
         "ic_note_quarter_24.xml", "ic_note_eighth_pair_24.xml", "ic_note_sixteenth_quad_24.xml", "ic_note_eighth_triplet_24.xml",
         "ic_note_eighth_24.xml", "ic_note_sixteenth_pair_24.xml", "ic_note_thirty_second_quad_24.xml", "ic_note_sixteenth_triplet_24.xml",
     )
-    private val glyphFiles = materialGlyphs + designGlyphs + noteGlyphs
+    private val glyphFiles = materialGlyphs + noteGlyphs
 
     /** The header comment names the source; the vector body must not reference any platform resource. */
     private fun bodyWithoutHeader(text: String): String = text.lines().filterNot { it.trimStart().startsWith("<!--") }.joinToString("\n")
@@ -85,16 +84,6 @@ class IconAssetsTest {
             assertTrue(text.lineSequence().first().contains("(filled)"), "$name header does not say it is the filled variant")
             val outlined = File(drawable, name.replace("_fill_24", "_24")).readText()
             assertFalse(bodyWithoutHeader(text) == bodyWithoutHeader(outlined), "$name has the outlined glyph's path")
-        }
-    }
-
-    @Test
-    fun designGlyphsNameTheStitchScreenAndUseALiteralFill() {
-        for (name in designGlyphs) {
-            val text = File(drawable, name).readText()
-            assertTrue(text.lineSequence().first().startsWith("<!-- Tembra design glyph"), "$name does not start with the design-glyph header")
-            assertTrue(text.contains("design/stitch/screens/instrument-tuner/phone/index.html"), "$name header does not name the Stitch screen")
-            assertTrue(text.contains("android:fillColor=\"#FFFFFFFF\""), "$name has no literal white fill")
         }
     }
 

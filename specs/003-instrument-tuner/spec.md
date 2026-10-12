@@ -21,7 +21,7 @@ time and pitch range used in the success criteria.
 
 | Element | Where it appears | Verdict |
 |---|---|---|
-| Instrument selector with two segments, "Guitar" and "Cello", each with an icon | All four screens | **Kept** |
+| Instrument selector with two segments, "Guitar" and "Cello", each with an icon | All four screens | **Kept** as text only (clarified 2026-10-12: the icons are removed) |
 | String-count selector "6-String" / "7-String" | Both guitar screens | **Kept**, shown for Guitar in By Ear only, beside the tuning preset (clarified 2026-09-28: Auto Listen is chromatic and does not use it) |
 | Second selector on the cello screen reading "4-String" / "Cello Std" | Cello phone screen only | **Excluded**: a cello always has four strings and "Cello Std" has no defined meaning; no selector is shown for Cello |
 | Mode selector "Auto Listen" (microphone icon) / "By Ear" (ear icon) | All four screens | **Kept** |
@@ -73,6 +73,13 @@ screen and the screenshot for the tablet screen.
   (a note and an offset in cents, or a catalogue id) that feeds a generated tone through the real
   engine in place of the microphone (FR-032); an end-to-end test on both platforms asserts the
   reading for every catalogue entry (FR-028) and a screenshot matrix captures each state (FR-029).
+
+### Session 2026-10-12
+
+- Q: Should the instrument selector's "Guitar" and "Cello" segments keep their icons? → A: No.
+  The owner removed them: the segments show their labels only (the Stitch glyphs were a pencil
+  and an unreadable shape). The mode selector keeps its microphone and ear icons. The Stitch
+  tuner screens drop the icons in every size.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -333,7 +340,7 @@ cards with the platform screen reader.
   screen. The top bar, navigation control and back behaviour from feature 002 MUST remain
   unchanged, and the Tuner MUST NOT show a transport bar or a right-hand panel at any width.
 - **FR-002**: The screen MUST offer, above the mode content: an instrument selector with exactly
-  two segments, "Guitar" and "Cello", each with its icon; a mode selector with the segments "Auto
+  two segments, "Guitar" and "Cello", as text without icons (clarified 2026-10-12); a mode selector with the segments "Auto
   Listen" (microphone icon) and "By Ear" (ear icon); and an audio-state pill. For Guitar only,
   By Ear MUST offer a string-count selector with the segments "6-String" and "7-String" beside
   the tuning preset picker; like the picker (FR-017) it MUST NOT appear in Auto Listen
@@ -485,7 +492,7 @@ cards with the platform screen reader.
   numeral, note and playing state; the pill MUST expose its text.
 - **FR-026**: All colours, type styles, spacing, radii and icons MUST come from the shared design
   system; the new icons (microphone, ear, play, pause, speaker, chevron, left and right arrows,
-  and the guitar and cello glyphs) MUST be added to the shared icon set through its existing
+  and settings) MUST be added to the shared icon set through its existing
   mechanism. Every live number MUST use tabular figures. The meter MUST match the design's arc
   gauge on visual review.
 - **FR-027**: When the platform's reduce-motion setting is on, the needle MUST still move, but

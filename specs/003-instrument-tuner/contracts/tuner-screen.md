@@ -42,7 +42,7 @@ data class TunerCallbacks(onInstrument, onGuitarStrings, onPreset, onMode, onLoo
 ```
 Column(testTag "screen.tuner" (the shell's `screen.<id>` convention; feature 002's tests keep working), padding pageMargin, gap md)
 ├── TunerSelectors(layout)                                       Stacked: two rows; Wide: one row (Landscape: see below)
-│   ├── TembraSegmentedControl(items Guitar|Cello, icons, style Large)   "tuner.instrument", items "tuner.instrument.<id>"
+│   ├── TembraSegmentedControl(items Guitar|Cello, text only, style Large) "tuner.instrument", items "tuner.instrument.<id>"
 │   ├── AudioStatePill(state.pill)                                       "tuner.pill" (absent when null; contentDescription = pill.label in sentence case, drawn in capitals; MicActive primary + Mic, ToneOut secondary + VolumeUp, TestSignal tertiary + GraphicEq)
 │   └── TembraSegmentedControl(Auto Listen|By Ear, icons, style Small)  "tuner.mode"
 └── when (state.mode)

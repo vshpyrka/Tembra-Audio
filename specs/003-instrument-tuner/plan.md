@@ -168,7 +168,7 @@ app/
 │   ├── src/androidMain/…/AndroidAppDirectories.kt, iosMain/…/IosAppDirectories.kt   (+ preferences)
 │   └── tests: commonTest TunerPreferencesSnapshotTest, FakeTunerPreferencesTest; androidDeviceTest + iosTest DataStoreTunerPreferencesTest; AppDirectoriesTest extended
 ├── shared/ui/
-│   ├── src/commonMain/composeResources/drawable/ic_{mic,mic_off,hearing,play_arrow,pause,volume_up,expand_more,arrow_left,arrow_right,settings}_24.xml (script), ic_guitar_24.xml, ic_cello_24.xml (design glyphs)
+│   ├── src/commonMain/composeResources/drawable/ic_{mic,mic_off,hearing,play_arrow,pause,volume_up,expand_more,arrow_left,arrow_right,settings}_24.xml (script); the design glyphs ic_guitar_24.xml / ic_cello_24.xml were removed 2026-10-12
 │   ├── src/commonMain/composeResources/files/tuner/  (empty; documented drop-in folder, .gitkeep)
 │   ├── src/commonMain/kotlin/audio/tembra/ui/
 │   │   ├── App.kt (+ tunerTestSignal), navigation/NavigationShell.kt (+ start on Tuner when a test signal is present)

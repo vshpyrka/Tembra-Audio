@@ -38,7 +38,6 @@ import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.width
-import audio.tembra.ui.theme.TembraIcon
 import audio.tembra.ui.theme.TembraTheme
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -49,7 +48,7 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalTestApi::class)
 class TembraSegmentedControlTest {
 
-    private val instruments = listOf(SegmentSpec("guitar", "Guitar", TembraIcon.Guitar), SegmentSpec("cello", "Cello", TembraIcon.Cello))
+    private val instruments = listOf(SegmentSpec("guitar", "Guitar"), SegmentSpec("cello", "Cello"))
     private val stringCounts = listOf(SegmentSpec("6", "6-String"), SegmentSpec("7", "7-String"))
 
     private var inputModeManager: InputModeManager? = null

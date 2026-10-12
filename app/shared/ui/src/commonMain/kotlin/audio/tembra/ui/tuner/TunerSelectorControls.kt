@@ -15,7 +15,7 @@ import audio.tembra.ui.theme.TembraIcon
 import audio.tembra.ui.theme.TembraTheme
 
 // The three selectors' segments depend only on the enums, so they are built once rather than on every recomposition.
-private val instrumentItems = Instrument.entries.map { SegmentSpec(it.id, it.label, if (it == Instrument.Guitar) TembraIcon.Guitar else TembraIcon.Cello) }
+private val instrumentItems = Instrument.entries.map { SegmentSpec(it.id, it.label) }
 private val stringItems = GuitarStringCount.entries.map { SegmentSpec(it.count.toString(), it.label) }
 private val modeItems = TunerMode.entries.map { SegmentSpec(it.id, it.label, if (it == TunerMode.AutoListen) TembraIcon.Mic else TembraIcon.Hearing) }
 
