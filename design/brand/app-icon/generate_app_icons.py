@@ -7,9 +7,12 @@ gradients are the artwork's own. Nothing is redrawn.
 
     python3 design/brand/app-icon/generate_app_icons.py [android] [ios] [previews]
 
-With no arguments it writes everything. Requires Pillow and NumPy.
+With no arguments it writes everything. Requires Pillow and NumPy; the iOS
+preview also renders AppIcon.icon with Icon Composer's ictool (Xcode 27.1 beta).
 """
 import json
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -194,8 +197,45 @@ def feature_graphic(mark, wordmark):
 # --- iOS --------------------------------------------------------------------
 
 
+def greyscale(layer):
+    """The layer's luminance, stretched so the brightest part of the mark is white.
+
+    Keeps the tail's shading in the tinted icon; the floor stops the indigo tail
+    base from sinking into the black background.
+    """
+    rgba = np.asarray(layer, np.float32)
+    luma = rgba[..., :3] @ np.array([0.2126, 0.7152, 0.0722], np.float32)
+    alpha = rgba[..., 3] / 255
+    lit = luma[alpha > 0.5]
+    norm = np.clip((luma - lit.min()) / max(lit.max() - lit.min(), 1), 0, 1)
+    grey = (0.55 + 0.45 * norm) * 255 * alpha
+    return Image.fromarray(grey.round().astype(np.uint8))
+
+
+ICON_COMPOSER_DOC = {
+    "fill": {"solid": "srgb:%.5f,%.5f,%.5f,1.00000" % tuple(c / 255 for c in BG)},
+    "groups": [
+        {
+            "layers": [{"image-name": "squirrel.png", "name": "squirrel", "glass": True}],
+            "shadow": {"kind": "neutral", "opacity": 0.5},
+            "translucency": {"enabled": False, "value": 0.5},
+        }
+    ],
+    "supported-platforms": {"squares": ["iOS"]},
+}
+
+ICTOOL = Path("/Applications/Xcode-27.1-beta.app/Contents/Applications/Icon Composer.app/Contents/Executables/ictool")
+ICON_RENDITIONS = ["Default", "Dark", "ClearLight", "ClearDark", "TintedLight", "TintedDark"]
+
+
 def ios(mark, radius):
-    """Single-size 1024 App Store icon in light, dark and tinted appearances."""
+    """iOS app icon in both formats Xcode accepts, plus the App Store icon.
+
+    AppIcon.appiconset: single-size 1024 in light, dark and tinted appearances
+    (every iOS version; dark and tinted from iOS 18).
+    AppIcon.icon: Icon Composer document (iOS 26+ layered Liquid Glass icon):
+    the squirrel as one foreground layer on the artwork's solid background.
+    """
     out = HERE / "ios"
     iconset = out / "AppIcon.appiconset"
     layer = place(mark, radius, 1024, 1.0)
@@ -203,9 +243,8 @@ def ios(mark, radius):
     save_png(flatten(layer), iconset / "app-icon-1024.png", mode="RGB")
     # Dark: the mark on a transparent background; iOS supplies the dark backdrop.
     save_png(layer, iconset / "app-icon-1024-dark.png")
-    # Tinted: an opaque greyscale image that iOS recolours with the user's tint.
-    tinted = flatten(monochrome(layer), (0, 0, 0)).convert("L")
-    save_png(tinted, iconset / "app-icon-1024-tinted.png", mode="L")
+    # Tinted: opaque greyscale on black that iOS recolours with the user's tint.
+    save_png(greyscale(layer), iconset / "app-icon-1024-tinted.png", mode="L")
     contents = {
         "images": [
             {"filename": "app-icon-1024.png", "idiom": "universal", "platform": "ios", "size": "1024x1024"},
@@ -221,8 +260,62 @@ def ios(mark, radius):
         "info": {"author": "xcode", "version": 1},
     }
     (iconset / "Contents.json").write_text(json.dumps(contents, indent=2) + "\n")
+
+    icon_doc = out / "AppIcon.icon"
+    save_png(layer, icon_doc / "Assets" / "squirrel.png")
+    (icon_doc / "icon.json").write_text(json.dumps(ICON_COMPOSER_DOC, indent=2) + "\n")
+
     # App Store Connect marketing icon: 1024x1024, opaque, no alpha.
     save_png(flatten(layer), out / "app-store" / "app-store-icon-1024.png", mode="RGB")
+
+
+def ios_preview():
+    """Contact sheet: the asset-catalog variants under the iOS mask, then the
+    Icon Composer document rendered by ictool in all six Home Screen appearances."""
+    iconset = HERE / "ios" / "AppIcon.appiconset"
+    cell = 360
+    mask = squircle_mask(cell)
+
+    def masked(image, backdrop):
+        tile = Image.new("RGBA", (cell, cell), backdrop + (255,))
+        tile.alpha_composite(image.convert("RGBA").resize((cell, cell), Image.LANCZOS))
+        return apply_mask(tile, mask)
+
+    tint = Image.new("RGBA", (cell, cell), (0xF2, 0xB6, 0x4C, 255))  # an example user tint
+    tinted_src = Image.open(iconset / "app-icon-1024-tinted.png").resize((cell, cell), Image.LANCZOS)
+    tint.putalpha(tinted_src)
+    tinted = Image.new("RGBA", (cell, cell), (0, 0, 0, 255))
+    tinted.alpha_composite(tint)
+
+    rows = [[
+        ("appiconset: light", masked(Image.open(iconset / "app-icon-1024.png"), BG)),
+        ("appiconset: dark", masked(Image.open(iconset / "app-icon-1024-dark.png"), (0, 0, 0))),
+        ("appiconset: tinted (amber)", apply_mask(tinted, mask)),
+    ]]
+    if ICTOOL.exists():
+        renders = []
+        tmp = HERE / "previews" / ".ictool"
+        tmp.mkdir(parents=True, exist_ok=True)
+        for rendition in ICON_RENDITIONS:
+            png = tmp / f"{rendition}.png"
+            subprocess.run([
+                str(ICTOOL), str(HERE / "ios" / "AppIcon.icon"), "--export-image", "--output-file", str(png),
+                "--platform", "iOS", "--rendition", rendition, "--width", "1024", "--height", "1024", "--scale", "1",
+            ], check=True, capture_output=True)
+            renders.append((f"AppIcon.icon: {rendition}", Image.open(png).convert("RGBA").resize((cell, cell), Image.LANCZOS)))
+        shutil.rmtree(tmp)
+        rows += [renders[:3], renders[3:]]
+
+    pad, label_h = 40, 40
+    sheet = Image.new("RGBA", (pad + 3 * (cell + pad), pad + len(rows) * (cell + label_h + pad)), (0x6E, 0x7B, 0x8F, 255))
+    d = ImageDraw.Draw(sheet)
+    for r, row in enumerate(rows):
+        y = pad + r * (cell + label_h + pad)
+        for c, (label, tile) in enumerate(row):
+            x = pad + c * (cell + pad)
+            sheet.alpha_composite(tile, (x, y))
+            d.text((x, y + cell + 10), label, fill=(255, 255, 255, 255))
+    save_png(sheet, HERE / "previews" / "ios-preview.png", mode="RGB")
 
 
 # --- previews ---------------------------------------------------------------
@@ -293,6 +386,8 @@ def main(argv):
         ios(mark, radius)
     if "previews" in targets:
         android_preview(mark, radius)
+        if (HERE / "ios" / "AppIcon.appiconset").exists():
+            ios_preview()
     print(f"mark {mark.size}, enclosing radius {radius:.1f}px")
 
 
