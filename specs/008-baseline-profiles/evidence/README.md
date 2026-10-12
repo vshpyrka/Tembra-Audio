@@ -14,7 +14,7 @@ p < 0.01. Two runs of the default two states and one with the fully optimised re
 |---|---|---|---|
 | 1 | [`comparison-pixel6-run1.md`](comparison-pixel6-run1.md) | 13 min 10 s | 182.7 → 155.9 ms, **−14.7 %, confirmed** |
 | 2 | [`comparison-pixel6.md`](comparison-pixel6.md) | 14 min 32 s | 184.5 → 151.3 ms, **−18.0 %, confirmed** |
-| 3 (`--with-full`) | [`comparison-pixel6-with-full.md`](comparison-pixel6-with-full.md) | see the file | see §1.3 |
+| 3 (`--with-full`) | [`comparison-pixel6-with-full.md`](comparison-pixel6-with-full.md) | 19 min 53 s | 182.0 → 153.5 ms, **−15.7 %, confirmed** |
 
 Run 1 predates the direction fix (`232f0b6`: "frames.overrun_p90_ms −1.4 → −3.6 ms" was labelled *worse +157 %*
 because its baseline median is negative); its medians and p-values are valid, only the `direction` of the
@@ -40,7 +40,16 @@ The journey durations and the p50 frame times move within ±5 % and are not conf
 
 ### 1.3 The gap to full optimisation (`--with-full`)
 
-Filled in from run 3 below.
+Run 3 (none, profile, full; 19 min 53 s; SC-004 ≤ 40 min holds for every run) confirms SC-001 a third time
+(−15.7 %). The fully optimised state is **not** a better cold start than no profile on this app (182.4 vs 182.0 ms):
+`speed` compiles everything and there is more to load at start, while `speed-profile` compiles the startup path
+only — so "gap closed" is undefined for startup (the two reference medians are 0.4 ms apart) and the profile is
+simply the best of the three states for the first frame. For the frame-time tails the profile closes most of the
+none → full gap: tuner p99 92 %, metronome p99 87 %, stress p99 83 %. `tuner.load` stays at ≈ 70 ms in all three
+states, which confirms it is not compilation-bound.
+
+After the three runs `uv run tracepulse status` lists the same 67 rounds and `git -C app/perf/.history status`
+is clean: no comparison entered the history (FR-009).
 
 ## 2. The profile ships and takes effect (SC-005, FR-006, FR-007) — `uv run tracepulse profile verify --device pixel6`
 
