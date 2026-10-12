@@ -50,7 +50,7 @@ baselineProfile {
 // A release-like build never ships without a committed profile (feature 008, FR-006, D9): the check runs before
 // the ART-profile merge of the `release` and `perf` variants only — never for nonMinifiedRelease, which is the
 // generation build that must succeed before any profile exists, and never for debug.
-val checkBaselineProfileCommitted by tasks.registering {
+val checkBaselineProfileCommitted = tasks.register("checkBaselineProfileCommitted") {
     group = "verification"
     description = "Fails when src/main/generated/baselineProfiles/baseline-prof.txt is missing or has no rule"
     val profile = layout.projectDirectory.file("src/main/generated/baselineProfiles/baseline-prof.txt")
