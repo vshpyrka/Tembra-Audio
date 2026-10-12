@@ -16,9 +16,10 @@ import glob
 import json
 import logging
 import os
+import tempfile
 import threading
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from .collect_android import CollectError
 from .collect_ios import collect_round, engine_health, parse_preflight, refusal_from_failures
@@ -182,7 +183,11 @@ def build_for_testing(cfg: Config, device: Device, runner: Runner, derived_data:
 
 
 def _devicectl(cfg: Config, device: Device, runner: Runner, *args: str, timeout: int = TOOL_TIMEOUT_S) -> Completed:
-    return runner.run(["xcrun", "devicectl", "device", *args, "--device", device.device_id], timeout=timeout)
+    """`xcrun devicectl device <verb> <noun> --device <id> ...`: the device option goes before the
+    positionals, because `process launch` passes everything after the bundle id to the app as its
+    arguments (a trailing `--device` was swallowed and the launch refused)."""
+    verb, noun, *rest = args
+    return runner.run(["xcrun", "devicectl", "device", verb, noun, "--device", device.device_id, *rest], timeout=timeout)
 
 
 def install(cfg: Config, device: Device, runner: Runner, app_path: str) -> None:
@@ -208,9 +213,11 @@ def warm_up(cfg: Config, device: Device, runner: Runner, clock: Clock) -> None:
         clock.sleep(8)
         runner.run(["xcrun", "simctl", "terminate", device.device_id, bundle], timeout=TOOL_TIMEOUT_S)
     else:
-        _devicectl(cfg, device, runner, "process", "launch", "--terminate-existing", bundle)
+        with tempfile.TemporaryDirectory() as tmp:
+            _res, pid = _launch(cfg, device, runner, os.path.join(tmp, "launch.json"))
         clock.sleep(8)
-        _devicectl(cfg, device, runner, "process", "terminate", "--pid-or-name", bundle)
+        if pid is not None:  # devicectl terminates by pid only
+            _devicectl(cfg, device, runner, "process", "terminate", "--pid", str(pid))
 
 
 def test_without_building(cfg: Config, device: Device, runner: Runner, xctestrun: str, result_bundle: str,
@@ -269,6 +276,13 @@ def _launched_pid(launch_json: str) -> Optional[int]:
         return None
 
 
+def _launch(cfg: Config, device: Device, runner: Runner, launch_json: str) -> "Tuple[Completed, Optional[int]]":
+    """Launch the app on a phone (terminating a running copy) and learn its pid from devicectl's JSON."""
+    bundle = bundle_id_with_team(cfg)
+    res = _devicectl(cfg, device, runner, "process", "launch", "--terminate-existing", "--json-output", launch_json, bundle)
+    return res, (_launched_pid(launch_json) if res.returncode == 0 else None)
+
+
 def _audio_trace(cfg: Config, device: Device, runner: Runner, clock: Clock, round_dir: str,
                  xctestrun: str) -> Optional[str]:
     """The audio-trace pass (research spike 3, US5), after the measured runs on a phone: launch the app with
@@ -279,10 +293,7 @@ def _audio_trace(cfg: Config, device: Device, runner: Runner, clock: Clock, roun
     A pass that fails costs the round nothing but the series."""
     if device.kind == "simulator":
         return None
-    bundle = bundle_id_with_team(cfg)
-    launch_json = os.path.join(round_dir, "audio-trace-launch.json")
-    res = _devicectl(cfg, device, runner, "process", "launch", "--terminate-existing", "--json-output", launch_json, bundle)
-    pid = _launched_pid(launch_json) if res.returncode == 0 else None
+    res, pid = _launch(cfg, device, runner, os.path.join(round_dir, "audio-trace-launch.json"))
     if pid is None:
         logger.warning("audio-trace pass: the app did not launch (%s); no audio.trace this round", res.stderr.strip())
         return None
