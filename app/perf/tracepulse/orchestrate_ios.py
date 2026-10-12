@@ -16,6 +16,7 @@ import glob
 import json
 import logging
 import os
+import shutil
 import tempfile
 import threading
 from dataclasses import dataclass, field
@@ -37,6 +38,9 @@ TOOL_TIMEOUT_S = 300
 # One unmeasured stress journey (~25 s of taps) plus the runner's attach and set-up; xctrace stops by itself.
 AUDIO_TRACE_SECONDS = 75
 AUDIO_TRACE_TEST = "AudioTracePass"
+# A "not trusted" runner launch is retried this many times, this far apart, before the round refuses.
+TRUST_RETRIES = 2
+TRUST_RETRY_WAIT_S = 120
 # The two HAL instruments of the `Audio System Trace` template, without its kernel instruments: 35 MB for 75 s
 # system-wide instead of 0.5 GB, and the only tables the pipeline reads (`traces_ios`).
 AUDIO_TRACE_INSTRUMENTS = ("Audio Client", "Audio Server")
@@ -238,6 +242,14 @@ def test_without_building(cfg: Config, device: Device, runner: Runner, xctestrun
     return res
 
 
+_TRUST_MARKERS = ("not been explicitly trusted", "Developer App Certificate is not trusted",
+                  "Developer App certificate is not trusted")
+
+
+def _untrusted(res: Completed) -> bool:
+    return res.returncode != 0 and any(m in res.stdout or m in res.stderr for m in _TRUST_MARKERS)
+
+
 def _xcresulttool(runner: Runner, *args: str) -> Completed:
     return runner.run(["xcrun", "xcresulttool", *args], timeout=TOOL_TIMEOUT_S)
 
@@ -355,12 +367,24 @@ def run_round(cfg: Config, device: Device, runner: Runner, clock: Clock, round_d
     result_bundle = os.path.join(round_dir, "perf.xcresult")
     log = os.path.join(round_dir, "xcodebuild-test.log")
     res = test_without_building(cfg, device, runner, xctestrun, result_bundle, log)
+    # SpringBoard denies a runner launch as "not trusted" in two shapes: for good, until the developer profile is
+    # trusted in Settings, and for a few minutes at a time on an otherwise trusted phone (2026-10-12: the same runner
+    # products were denied at 11:37 and launched at 11:41, denied at 12:14 and 12:15 and launched at 12:21). A round
+    # waits that out before it refuses; the attempts' logs and bundles stay under the round.
+    for attempt in range(1, TRUST_RETRIES + 1):
+        if not _untrusted(res):
+            break
+        logger.warning("the phone denied the runner as not trusted (attempt %d of %d); retrying in %d s",
+                       attempt, TRUST_RETRIES + 1, TRUST_RETRY_WAIT_S)
+        os.replace(log, os.path.join(round_dir, f"xcodebuild-test-attempt{attempt}.log"))
+        shutil.rmtree(result_bundle, ignore_errors=True)
+        clock.sleep(TRUST_RETRY_WAIT_S)
+        res = test_without_building(cfg, device, runner, xctestrun, result_bundle, log)
     artifacts.append({"kind": "xcresult", "path": result_bundle})
     artifacts.append({"kind": "xcodebuild_log", "path": log})
 
     # A runner the phone will not launch is a device precondition, not a measurement: refuse, publish nothing.
-    trust_markers = ("not been explicitly trusted", "Developer App Certificate is not trusted", "Developer App certificate is not trusted")
-    if res.returncode != 0 and any(m in res.stdout or m in res.stderr for m in trust_markers):
+    if _untrusted(res):
         raise Refused(checks + [Check("runner_trusted", False,
                                       "the TembraPerfTests runner's profile is not trusted on the phone: Settings → General → "
                                       "VPN & Device Management → trust the developer profile, then rerun")])
