@@ -111,8 +111,9 @@ def device_headline(rounds: int, min_history: int, detections: Sequence[Dict[str
         items = ", ".join(f"{f['metric']} ({gate_observed(f)}, limit {gate_limit(f)})" for f in flagged)
         noun = "metric above its" if len(flagged) == 1 else "metrics above their"
         return f"{len(flagged)} {noun} limit in the latest round: {items}."
+    # the highest status, and among equals the largest step (a side effect never leads the regression)
     worst = max((d for d in detections if d.get("status") in _RANK and d.get("status") != "IMPROVED"),
-                key=lambda d: _RANK[d["status"]], default=None)
+                key=lambda d: (_RANK[d["status"]], abs(d.get("delta_pct") or 0.0)), default=None)
     if worst is not None:
         name = plain_metric(split_series_key(worst["metric"])[1])
         where = f" in {worst['label_at_onset']}" if worst.get("label_at_onset") else ""
