@@ -16,6 +16,8 @@ import audio.tembra.engine.PitchSnapshot
 import audio.tembra.engine.SampleHandle
 import audio.tembra.engine.TestSignal
 import audio.tembra.engine.TunerAudio
+import audio.tembra.engine.perf.PerfSection
+import audio.tembra.engine.perf.PerfTrace
 import audio.tembra.ui.platform.MicrophonePermission
 import audio.tembra.ui.platform.MicrophonePermissionStatus
 import dev.zacsweers.metro.AppScope
@@ -129,26 +131,30 @@ class TunerViewModel(
         if (startJob != null) return
         startJob = viewModelScope.launch {
             val stored = preferences.snapshot.first()
-            val presets = TuningPresets.forInstrument(stored.instrument, stored.guitarStrings)
-            val preset = presets.firstOrNull { it.id == stored.presetId } ?: presets.first()
-            val gate = launchGate ?: stored.noiseGate
-            _uiState.update {
-                it.copy(
-                    loaded = true,
-                    instrument = stored.instrument,
-                    guitarStrings = stored.guitarStrings,
-                    preset = preset,
-                    presets = presets,
-                    mode = stored.mode,
-                    loopTone = stored.loopTone,
-                    noiseGate = gate,
-                    microphone = permission.status.value,
-                )
+            // From the stored preferences to the first content state and the engine's first command: the tuner.load
+            // section of the performance catalogue (feature 007); synchronous, so one interval on this thread.
+            PerfTrace.section(PerfSection.TUNER_LOAD) {
+                val presets = TuningPresets.forInstrument(stored.instrument, stored.guitarStrings)
+                val preset = presets.firstOrNull { it.id == stored.presetId } ?: presets.first()
+                val gate = launchGate ?: stored.noiseGate
+                _uiState.update {
+                    it.copy(
+                        loaded = true,
+                        instrument = stored.instrument,
+                        guitarStrings = stored.guitarStrings,
+                        preset = preset,
+                        presets = presets,
+                        mode = stored.mode,
+                        loopTone = stored.loopTone,
+                        noiseGate = gate,
+                        microphone = permission.status.value,
+                    )
+                }
+                // A remembered gate is in the engine before listening can start, so the first hop is gated (spec FR-015).
+                // The engine starts with no gate, so "off" needs no call.
+                if (!gate.isOff) audio.setNoiseGate(gate.levelDb?.toFloat())
+                applyAudio()
             }
-            // A remembered gate is in the engine before listening can start, so the first hop is gated (spec FR-015).
-            // The engine starts with no gate, so "off" needs no call.
-            if (!gate.isOff) audio.setNoiseGate(gate.levelDb?.toFloat())
-            applyAudio()
             launch {
                 permission.status.collect { status ->
                     // The seeded value is replayed first; only a change is a new input for the policy.
@@ -198,10 +204,13 @@ class TunerViewModel(
 
     fun selectMode(mode: TunerMode) {
         if (_uiState.value.mode == mode) return
-        cancelPendingAudition()
-        _uiState.update { it.copy(mode = mode, audition = null) }
-        persist { it.copy(mode = mode) }
-        applyAudio()
+        // The tuner.modeSwitch section (feature 007): the intent's own work, not the recomposition it causes.
+        PerfTrace.section(PerfSection.TUNER_MODE_SWITCH) {
+            cancelPendingAudition()
+            _uiState.update { it.copy(mode = mode, audition = null) }
+            persist { it.copy(mode = mode) }
+            applyAudio()
+        }
     }
 
     /** Persists the toggle and re-arms a sounding tone without restarting it (spec FR-019). */

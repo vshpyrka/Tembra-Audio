@@ -1,0 +1,24 @@
+diff --git a/app/shared/ui/src/commonMain/kotlin/audio/tembra/ui/tuner/AutoListenPane.kt b/app/shared/ui/src/commonMain/kotlin/audio/tembra/ui/tuner/AutoListenPane.kt
+index ba0065f..3814511 100644
+--- a/app/shared/ui/src/commonMain/kotlin/audio/tembra/ui/tuner/AutoListenPane.kt
++++ b/app/shared/ui/src/commonMain/kotlin/audio/tembra/ui/tuner/AutoListenPane.kt
+@@ -101,6 +101,19 @@ private fun MeterOverFooter(
+ ) {
+     val spacing = TembraTheme.spacing
+     val currentReading by rememberUpdatedState(reading)
++    // tracepulse R2: deliberate frames regression: while listening, invalidate this pane on every frame and burn
++    // ~4 ms of main-thread work per recomposition (inert at rest).
++    var tracepulseStorm by androidx.compose.runtime.remember { androidx.compose.runtime.mutableLongStateOf(0L) }
++    if (listening) {
++        androidx.compose.runtime.LaunchedEffect(Unit) {
++            while (true) {
++                androidx.compose.runtime.withFrameNanos { tracepulseStorm = it }
++            }
++        }
++        val spinUntil = tracepulseStorm + 4_000_000L
++        var spin = 0L
++        while (spin >= 0 && System.nanoTime() < spinUntil) spin++
++    }
+     val currentListening by rememberUpdatedState(listening)
+     val currentFooter by rememberUpdatedState(footer)
+     SubcomposeLayout(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) { constraints ->

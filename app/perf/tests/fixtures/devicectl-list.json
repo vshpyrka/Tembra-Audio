@@ -1,0 +1,93 @@
+{
+ "info": {
+  "outcome": "success"
+ },
+ "result": {
+  "devices": [
+   {
+    "identifier": "48CD2B09-42B3-5156-9DD4-658E30BD0C1C",
+    "connectionProperties": {
+     "transportType": "wired",
+     "pairingState": "paired",
+     "tunnelState": "disconnected"
+    },
+    "deviceProperties": {
+     "name": "iPhone 14",
+     "osVersionNumber": "27.0.1",
+     "osBuildUpdate": "24A446",
+     "developerModeStatus": "enabled"
+    },
+    "hardwareProperties": {
+     "udid": "00008110-001049660E3A401E",
+     "marketingName": "iPhone 14",
+     "productType": "iPhone14,7",
+     "platform": "iOS",
+     "deviceType": "iPhone"
+    }
+   },
+   {
+    "identifier": "C9A67FF1-62FC-4BE6-89F9-685DC39FBD46",
+    "connectionProperties": {
+     "transportType": "sameMachine",
+     "pairingState": "paired",
+     "tunnelState": "connected"
+    },
+    "deviceProperties": {
+     "name": "iPad Pro 13-inch (M5)",
+     "osVersionNumber": "26.5",
+     "osBuildUpdate": "23F77",
+     "developerModeStatus": null
+    },
+    "hardwareProperties": {
+     "udid": "C9A67FF1-62FC-4BE6-89F9-685DC39FBD46",
+     "marketingName": "iPad Pro 13-inch (M5)",
+     "productType": "iPad17,4",
+     "platform": "iOS",
+     "deviceType": "iPad"
+    }
+   },
+   {
+    "identifier": "4CD6879C-8FBA-4CEF-B4EC-31968D0144B0",
+    "connectionProperties": {
+     "transportType": "sameMachine",
+     "pairingState": "paired",
+     "tunnelState": "connected"
+    },
+    "deviceProperties": {
+     "name": "iPhone 17",
+     "osVersionNumber": "26.5",
+     "osBuildUpdate": "23F77",
+     "developerModeStatus": null
+    },
+    "hardwareProperties": {
+     "udid": "4CD6879C-8FBA-4CEF-B4EC-31968D0144B0",
+     "marketingName": "iPhone 17",
+     "productType": "iPhone18,3",
+     "platform": "iOS",
+     "deviceType": "iPhone"
+    }
+   },
+   {
+    "identifier": "EB59DDD2-6D13-4503-A77E-BDFB69BF8CCD",
+    "connectionProperties": {
+     "transportType": "sameMachine",
+     "pairingState": "paired",
+     "tunnelState": "connected"
+    },
+    "deviceProperties": {
+     "name": "iPhone Duo",
+     "osVersionNumber": "27.1",
+     "osBuildUpdate": "24A94401",
+     "developerModeStatus": null
+    },
+    "hardwareProperties": {
+     "udid": "EB59DDD2-6D13-4503-A77E-BDFB69BF8CCD",
+     "marketingName": "iPhone Duo",
+     "productType": "iPhone19,4",
+     "platform": "iOS",
+     "deviceType": "iPhone"
+    }
+   }
+  ]
+ }
+}

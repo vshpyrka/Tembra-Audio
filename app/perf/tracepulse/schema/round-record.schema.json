@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "tembra/perf/round-record/1",
+  "title": "Tembra performance round record",
+  "description": "One file per round on the perf-history branch at records/<device_id>/<round_id>.json. Append-only; never edited after publication.",
+  "type": "object",
+  "required": ["schema_version", "round_id", "device", "label", "build", "fingerprint", "machine", "checks", "status", "journeys", "started_at", "finished_at"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": 1 },
+    "round_id": { "type": "string", "pattern": "^[0-9]{8}T[0-9]{6}Z_[A-Za-z0-9._-]+$" },
+    "device": {
+      "type": "object",
+      "required": ["device_id", "platform", "kind", "model", "reference"],
+      "properties": {
+        "device_id": { "type": "string" },
+        "platform": { "enum": ["android", "ios"] },
+        "kind": { "enum": ["device", "simulator"] },
+        "model": { "type": "string" },
+        "reference": { "type": "boolean" }
+      }
+    },
+    "label": { "type": "string", "minLength": 1 },
+    "session": { "type": "object", "properties": { "index": { "type": "integer" }, "size": { "type": "integer" } } },
+    "build": {
+      "type": "object",
+      "required": ["commit", "dirty"],
+      "properties": {
+        "commit": { "type": "string" },
+        "branch": { "type": "string" },
+        "dirty": { "type": "boolean" },
+        "type": { "type": "string" },
+        "app_version": { "type": "string" },
+        "app_size_bytes": { "type": "integer" },
+        "app_size_uncompressed_bytes": { "type": "integer" }
+      }
+    },
+    "fingerprint": {
+      "type": "object",
+      "required": ["os_version"],
+      "properties": {
+        "os_version": { "type": "string" },
+        "os_build": { "type": "string" },
+        "sdk": { "type": "integer" },
+        "refresh_rate_hz": { "type": "number" },
+        "network_state": { "enum": ["none", "wifi", "cellular", "unknown"] },
+        "thermal_state": { "type": "string" },
+        "battery_temp_c": { "type": "number" },
+        "battery_level": { "type": "number" }
+      }
+    },
+    "machine": {
+      "type": "object",
+      "required": ["hostname", "tool_version"],
+      "properties": { "hostname": { "type": "string" }, "os": { "type": "string" }, "tool_version": { "type": "string" } }
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "passed"],
+        "properties": { "name": { "type": "string" }, "passed": { "type": "boolean" }, "value": {}, "limit": {} }
+      }
+    },
+    "status": { "enum": ["succeeded", "failed"] },
+    "failure_reason": { "type": "string" },
+    "badges": { "type": "array", "items": { "enum": ["noisy", "thermal", "simulator", "fingerprint_changed"] } },
+    "journeys": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["journey", "iterations", "metrics"],
+        "properties": {
+          "journey": { "enum": ["startup", "tuner", "metronome", "stress"] },
+          "iterations": { "type": "integer", "minimum": 1 },
+          "metrics": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "required": ["unit", "samples", "summary", "source"],
+              "properties": {
+                "unit": { "type": "string" },
+                "samples": { "type": "array", "items": { "type": "number" } },
+                "summary": {
+                  "type": "object",
+                  "required": ["median"],
+                  "properties": {
+                    "median": { "type": "number" }, "min": { "type": "number" }, "max": { "type": "number" },
+                    "mean": { "type": "number" }, "p90": { "type": "number" }, "p99": { "type": "number" }, "cov": { "type": "number" }
+                  }
+                },
+                "source": { "enum": ["macrobenchmark", "perfetto", "xcresult", "xctrace", "engine-health", "apk", "thinning-report"] }
+              }
+            }
+          }
+        }
+      }
+    },
+    "gate": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["metric", "state"],
+        "properties": {
+          "metric": { "type": "string" },
+          "state": { "enum": ["inactive", "within_limit", "above_limit"] },
+          "reason": { "type": "string" },
+          "limit_pct": { "type": "number" },
+          "observed_pct": { "type": "number" },
+          "limit_abs": { "type": "number" },
+          "observed_abs": { "type": "number" },
+          "baseline_rounds": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": { "type": "object", "required": ["kind", "path"], "properties": { "kind": { "type": "string" }, "path": { "type": "string" } } }
+    },
+    "started_at": { "type": "string", "format": "date-time" },
+    "finished_at": { "type": "string", "format": "date-time" }
+  }
+}

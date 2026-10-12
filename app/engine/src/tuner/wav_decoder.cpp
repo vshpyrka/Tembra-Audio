@@ -2,10 +2,15 @@
 
 // dr_wav's implementation lives in third_party_check.cpp; this unit only uses its API.
 #include "dr_wav.h"
+// The engine's non-real-time loader path carries the catalogue's engine.loadClip section (feature 007); this unit
+// never runs on the audio thread, so the facade may be used here.
+#include "tembra_trace.h"
+#include "tembra_trace_names.h"
 
 namespace tembra {
 
 std::optional<DecodedSample> WavDecoder::decode(const uint8_t* bytes, size_t length) {
+    TEMBRA_TRACE_SCOPE(TEMBRA_TRACE_ENGINE_LOAD_CLIP);
     if (bytes == nullptr || length == 0) return std::nullopt;
     drwav wav;
     if (!drwav_init_memory(&wav, bytes, length, nullptr)) return std::nullopt;

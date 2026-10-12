@@ -1,0 +1,19 @@
+App + Version: Tembra Audio 0.1.0
+
+Variant: Tembra Audio-iPhone14,7.ipa
+Supported variant descriptors: [device: iPhone14,7, os-version: 16.0]
+App + On Demand Resources size: 21.3 MB compressed, 58.9 MB uncompressed
+App size: 21.3 MB compressed, 58.9 MB uncompressed
+On Demand Resources size: Zero KB compressed, Zero KB uncompressed
+
+Variant: Tembra Audio-iPhone18,3.ipa
+Supported variant descriptors: [device: iPhone18,3, os-version: 16.0]
+App + On Demand Resources size: 21.4 MB compressed, 59.1 MB uncompressed
+App size: 21.4 MB compressed, 59.1 MB uncompressed
+On Demand Resources size: Zero KB compressed, Zero KB uncompressed
+
+Variant: Tembra Audio-Universal.ipa
+Supported variant descriptors: Universal
+App + On Demand Resources size: 23.0 MB compressed, 61.2 MB uncompressed
+App size: 23.0 MB compressed, 61.2 MB uncompressed
+On Demand Resources size: Zero KB compressed, Zero KB uncompressed

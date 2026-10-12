@@ -153,6 +153,18 @@ uint32_t OboeAudioDevice::sampleRate() const { return sampleRate_.load(); }
 
 bool OboeAudioDevice::deviceLost() const { return lost_.load(); }
 
+bool OboeAudioDevice::realtime() const {
+    std::lock_guard<std::mutex> lock(streamLock_);
+    return stream_ != nullptr && stream_->getPerformanceMode() == oboe::PerformanceMode::LowLatency;
+}
+
+uint32_t OboeAudioDevice::xrunCount() const {
+    std::lock_guard<std::mutex> lock(streamLock_);
+    if (stream_ == nullptr) return 0;
+    const auto count = stream_->getXRunCount();
+    return count ? static_cast<uint32_t>(count.value()) : 0u;
+}
+
 oboe::DataCallbackResult OboeAudioDevice::onAudioReady(oboe::AudioStream* stream, void* audioData, int32_t numFrames) {
     // Audio thread: copy only (Constitution I).
     if (stream->getDirection() == oboe::Direction::Input) {

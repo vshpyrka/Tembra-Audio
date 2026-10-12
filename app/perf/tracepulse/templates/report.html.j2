@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tembra Audio performance</title>
+<style>
+{{ css | safe }}
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="#/">Tembra Audio <span>performance</span></a>
+  <nav class="crumbs" id="crumbs" aria-label="Breadcrumb"></nav>
+  <span class="generated">generated {{ generated }}</span>
+</header>
+<main id="view">
+  {# The grid is rendered here too, so the page lists every device before any script runs. #}
+  <section class="grid-view" id="static-grid">
+    <p class="summary">{{ data.summary.text }}</p>
+    <div class="grid">
+      {% for device in data.devices %}
+      <a class="card{% if not device.reference %} non-reference{% endif %}" href="#/device/{{ device.device_id }}">
+        <div class="card-head">
+          <span class="platform {{ device.platform }}">{{ device.platform }}</span>
+          <strong>{{ device.model }}</strong>
+          {% for badge in device.badges %}<span class="badge {{ badge }}">{{ badge }}</span>{% endfor %}
+        </div>
+        <p class="card-headline">{{ device.headline }}</p>
+        <p class="card-meta">
+          {% if device.last_round %}last round {{ device.last_round.date }} · {{ device.last_round.label }} · {% endif %}
+          {{ device.counts.rounds }} rounds · {{ device.counts.open_flags }} open gate flags · {{ device.counts.recent_changes }} onsets in the last session
+        </p>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+</main>
+<div id="tooltip" class="tooltip" role="status" aria-live="polite" hidden></div>
+<script type="application/json" id="tracepulse-data">{{ data_json | safe }}</script>
+<script>
+{{ js | safe }}
+</script>
+</body>
+</html>

@@ -1,7 +1,8 @@
-headers = tembra_engine.h
-headerFilter = tembra_engine.h
+headers = tembra_engine.h tembra_trace.h
+headerFilter = tembra_engine.h tembra_trace.h
 package = audio.tembra.engine.cinterop
 staticLibraries = libtembra_engine.a
 # The engine core is C++ (std::string in the descriptor); link the C++ runtime into the Kotlin binary.
 # The iOS RemoteIO shell (feature 003, research R3) needs AudioToolbox and CoreAudio.
+# The tracing shim (feature 007) uses os_signpost from the system library; nothing extra to link.
 linkerOpts = -lc++ -framework AudioToolbox -framework CoreAudio

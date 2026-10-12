@@ -1,0 +1,42 @@
+diff --git a/app/androidApp/src/main/kotlin/audio/tembra/android/MainActivity.kt b/app/androidApp/src/main/kotlin/audio/tembra/android/MainActivity.kt
+index 2e3872c..6e04c0b 100644
+--- a/app/androidApp/src/main/kotlin/audio/tembra/android/MainActivity.kt
++++ b/app/androidApp/src/main/kotlin/audio/tembra/android/MainActivity.kt
+@@ -18,6 +18,15 @@ class MainActivity : ComponentActivity() {
+         enableEdgeToEdge()
+         super.onCreate(savedInstanceState)
+         appGraph = (application as TembraApplication).appGraph
++        // tracepulse R1: deliberate startup regression (busy-spin 250 ms + 512 KiB write/fsync/read on the main thread).
++        run {
++            val until = System.nanoTime() + 250_000_000L
++            var spin = 0L
++            while (System.nanoTime() < until) spin++
++            val ballast = java.io.File(cacheDir, "tracepulse-r1.bin")
++            java.io.FileOutputStream(ballast).use { out -> out.write(ByteArray(512 * 1024) { spin.toByte() }); out.fd.sync() }
++            check(ballast.readBytes().size == 512 * 1024)
++        }
+         // The microphone prompt is launched through this activity (feature 003, research R6); registered before setContent.
+         val host = appGraph.microphonePermissionHost
+         val launcher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted -> host.onResult(granted) }
+diff --git a/app/iosApp/iosApp/iOSApp.swift b/app/iosApp/iosApp/iOSApp.swift
+index 927e0b9..2175b14 100644
+--- a/app/iosApp/iosApp/iOSApp.swift
++++ b/app/iosApp/iosApp/iOSApp.swift
+@@ -2,6 +2,17 @@ import SwiftUI
+ 
+ @main
+ struct iOSApp: App {
++    // tracepulse R1: deliberate startup regression (busy-spin 250 ms + 512 KiB write/sync/read before the first frame).
++    init() {
++        let until = DispatchTime.now().uptimeNanoseconds + 250_000_000
++        var spin: UInt64 = 0
++        while DispatchTime.now().uptimeNanoseconds < until { spin &+= 1 }
++        let url = FileManager.default.temporaryDirectory.appendingPathComponent("tracepulse-r1.bin")
++        let bytes = Data(repeating: UInt8(truncatingIfNeeded: spin), count: 512 * 1024)
++        try? bytes.write(to: url, options: .atomic)
++        _ = try? Data(contentsOf: url).count
++    }
++
+     var body: some Scene {
+         WindowGroup {
+             ContentView()

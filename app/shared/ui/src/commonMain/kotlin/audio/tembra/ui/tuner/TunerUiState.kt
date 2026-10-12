@@ -35,6 +35,9 @@ data class TunerUiState(
     /** Debug launch argument (data-model.md §9). */
     val testSignal: TestSignal? = null,
 ) {
+    /** The first content is on screen: what `ReportFirstContentDrawn` reports (feature 007). */
+    val isFirstContentReady: Boolean get() = loaded
+
     /** What the audio-state pill reads; null hides it (spec FR-006). */
     val pill: AudioStatePill?
         get() = when (audio) {
