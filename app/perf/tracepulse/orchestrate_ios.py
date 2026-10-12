@@ -37,6 +37,9 @@ TOOL_TIMEOUT_S = 300
 # One unmeasured stress journey (~25 s of taps) plus the runner's attach and set-up; xctrace stops by itself.
 AUDIO_TRACE_SECONDS = 75
 AUDIO_TRACE_TEST = "AudioTracePass"
+# The two HAL instruments of the `Audio System Trace` template, without its kernel instruments: 35 MB for 75 s
+# system-wide instead of 0.5 GB, and the only tables the pipeline reads (`traces_ios`).
+AUDIO_TRACE_INSTRUMENTS = ("Audio Client", "Audio Server")
 
 
 @dataclass(frozen=True)
@@ -286,24 +289,30 @@ def _launch(cfg: Config, device: Device, runner: Runner, launch_json: str) -> "T
 def _audio_trace(cfg: Config, device: Device, runner: Runner, clock: Clock, round_dir: str,
                  xctestrun: str) -> Optional[str]:
     """The audio-trace pass (research spike 3, US5), after the measured runs on a phone: launch the app with
-    `devicectl`, attach `xctrace record --template 'Audio System Trace'` to its pid for a fixed time limit (never
-    `--launch`, which hung) and drive one unmeasured stress journey through `AudioTracePass`, which attaches to the
-    running process instead of relaunching it (a relaunch would leave the trace's pid behind). The trace lands under
-    the round as `audio.trace`; `traces_ios` reads the I/O-proc p99 from it. Simulators have no HAL: nothing to trace.
+    `devicectl` so its engine is already running, record the HAL system-wide with xctrace's two audio instruments
+    for a fixed time limit and drive one unmeasured stress journey through `AudioTracePass`, which attaches to the
+    running process (and launches it if the `devicectl` launch failed). System-wide rather than `--attach <pid>`:
+    the Xcode 27.1 beta's xctrace finds no process on an iOS 27.0.1 phone by pid or name ("Cannot find process
+    for provided pid", every round of 2026-10-12), an attached recording with Xcode 26.6's xctrace reaches only the
+    first 10 s of the HAL's stream, and neither fills the client-side table (`traces_ios`); the phone is otherwise
+    idle, so the HAL's only client is the app. Never `--launch`, which hung in spike 3. The trace lands under the
+    round as `audio.trace`; `traces_ios` reads the I/O-proc p99 from it. Simulators have no HAL: nothing to trace.
     A pass that fails costs the round nothing but the series."""
     if device.kind == "simulator":
         return None
     res, pid = _launch(cfg, device, runner, os.path.join(round_dir, "audio-trace-launch.json"))
     if pid is None:
-        logger.warning("audio-trace pass: the app did not launch (%s); no audio.trace this round", res.stderr.strip())
-        return None
+        logger.warning("audio-trace pass: the app did not launch (%s); AudioTracePass launches it", res.stderr.strip())
     path = os.path.join(round_dir, "audio.trace")
-    record = ["xcrun", "xctrace", "record", "--template", "Audio System Trace", "--device", device.device_id,
-              "--attach", str(pid), "--time-limit", f"{AUDIO_TRACE_SECONDS}s", "--no-prompt", "--output", path]
+    record = ["xcrun", "xctrace", "record"]
+    for instrument in AUDIO_TRACE_INSTRUMENTS:
+        record += ["--instrument", instrument]
+    record += ["--device", device.device_id, "--all-processes", "--time-limit", f"{AUDIO_TRACE_SECONDS}s",
+               "--no-prompt", "--output", path]
     outcome: Dict[str, Completed] = {}
     recorder = threading.Thread(target=lambda: outcome.update(record=runner.run(record, timeout=AUDIO_TRACE_SECONDS + TOOL_TIMEOUT_S)))
     recorder.start()
-    clock.sleep(5)  # xctrace is attached before the journey's first tap
+    clock.sleep(5)  # xctrace is recording before the journey's first tap
     log = os.path.join(round_dir, "xcodebuild-audio-pass.log")
     test_without_building(cfg, device, runner, xctestrun, os.path.join(round_dir, "audio-pass.xcresult"), log,
                           only=f"{cfg.ios.test_target}/{AUDIO_TRACE_TEST}")

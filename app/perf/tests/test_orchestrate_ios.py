@@ -100,12 +100,17 @@ def _xcode_rules(cfg, round_dir, refused=False, simulator=False, fail_journey=Fa
         return _ok()
 
     def xctrace_record(cmd):
-        assert "--attach" in cmd and "4242" in cmd and "--launch" not in cmd, "attach to the launched pid, never --launch"
+        # system-wide with the two HAL instruments: the 27.1 beta xctrace cannot attach to any process on the phone
+        assert "--all-processes" in cmd and "--attach" not in cmd and "--launch" not in cmd and "--template" not in cmd
+        assert cmd[cmd.index("--instrument") + 1] == "Audio Client" and "Audio Server" in cmd
         os.makedirs(cmd[cmd.index("--output") + 1], exist_ok=True)
         return _ok()
 
     def xctrace_export(cmd):
-        with open(os.path.join(FIXTURES, "audio-ioproc.xml")) as fh:
+        # the phone's client-side table is empty; the HAL server's per-client table carries the cycles
+        xpath = cmd[cmd.index("--xpath") + 1]
+        name = "audio-ioproc-empty.xml" if "client-io-cycle-ioproc" in xpath else "audio-io-cycle-client.xml"
+        with open(os.path.join(FIXTURES, name)) as fh:
             return _ok(fh.read())
 
     def devicectl_list(cmd):
@@ -191,15 +196,18 @@ def test_round_runs_install_warm_up_test_and_collects(cfg, tmp_path):
     stress = next(j for j in outcome.journeys if j.journey == "stress")
     assert stress.metrics["audio.callbacks"].summary["median"] == 1200.0 and stress.metrics["audio.callbacks"].source == "engine-health"
     assert outcome.app_size_bytes is None, "size is opt-in on iOS"
-    # the audio-trace pass: the measured run skips AudioTracePass, the pass runs it alone while xctrace is attached
+    # the audio-trace pass: the measured run skips AudioTracePass, the pass runs it alone while xctrace records
     assert any("-skip-testing:TembraPerfTests/AudioTracePass" in c for c in cmds if c[:2] == ["xcodebuild", "test-without-building"])
     audio_pass = runner.index_of("xcodebuild", "test-without-building", "-only-testing:TembraPerfTests/AudioTracePass")
-    record = runner.index_of("xctrace", "record", "Audio System Trace", f"--device {UDID}")
+    record = runner.index_of("xctrace", "record", "--all-processes", f"--device {UDID}")
     launch_for_trace = runner.index_of("devicectl", "device", "process", "launch", "--json-output",
                                        os.path.join(round_dir, "audio-trace-launch.json"))
     assert test < launch_for_trace < audio_pass and record > launch_for_trace
     assert cmds[audio_pass][cmds[audio_pass].index("-resultBundlePath") + 1] == os.path.join(round_dir, "audio-pass.xcresult")
     assert stress.metrics["audio.ioproc_p99_us"].source == "xctrace" and stress.metrics["audio.ioproc_p99_us"].summary["median"] > 0
+    # both exports stay under the round: the empty client table says the server's view fed the series
+    assert os.path.isfile(os.path.join(round_dir, "audio-ioproc.xml")) and os.path.isfile(os.path.join(round_dir, "audio-io-cycle-client.xml"))
+    assert runner.index_of("xctrace", "export", "audio-hal-client-io-cycle-ioproc") < runner.index_of("xctrace", "export", "audio-hal-io-cycle-client")
 
 
 def test_refusal_inside_the_runner_refuses_the_round(cfg, tmp_path):
