@@ -15,8 +15,12 @@ android {
         buildConfig = true
     }
     buildTypes {
+        // Shrunk and obfuscated since feature 008 (spec FR-005a, D3): R8 is what lays the startup profile's classes
+        // out together, and it makes the app smaller. Keep rules live in proguard-rules.pro, each with its reason.
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
         // Measurement build (feature 007, D3): release optimisations, profileable, debug signing so the
         // pipeline can install it fresh. Macrobenchmark (:perf-benchmarks) targets this type; build it with
@@ -43,12 +47,38 @@ baselineProfile {
     }
 }
 
+// A release-like build never ships without a committed profile (feature 008, FR-006, D9): the check runs before
+// the ART-profile merge of the `release` and `perf` variants only — never for nonMinifiedRelease, which is the
+// generation build that must succeed before any profile exists, and never for debug.
+val checkBaselineProfileCommitted by tasks.registering {
+    group = "verification"
+    description = "Fails when src/main/generated/baselineProfiles/baseline-prof.txt is missing or has no rule"
+    val profile = layout.projectDirectory.file("src/main/generated/baselineProfiles/baseline-prof.txt")
+    inputs.files(profile).withPropertyName("baselineProfile")
+    doLast {
+        val file = profile.asFile
+        val hasRule = file.isFile && file.useLines { lines -> lines.any { it.isNotBlank() && !it.startsWith("#") } }
+        if (!hasRule) {
+            throw GradleException(
+                "no committed baseline profile: run `uv run tracepulse profile generate --device <id>` from app/perf " +
+                    "(expected a rule in $file)"
+            )
+        }
+    }
+}
+
 androidComponents {
     beforeVariants { variant ->
         // The plugin adds nonMinified<Type> and benchmark<Type> for every non-debuggable type. Only
         // nonMinifiedRelease is used (the generation target, D1); the rest would just configure.
         if (variant.buildType in setOf("benchmarkRelease", "benchmarkPerf", "nonMinifiedPerf")) {
             variant.enable = false
+        }
+    }
+    onVariants { variant ->
+        if (variant.buildType in setOf("release", "perf")) {
+            val mergeTask = "merge${variant.name.replaceFirstChar { it.uppercase() }}ArtProfile"
+            tasks.matching { it.name == mergeTask }.configureEach { dependsOn(checkBaselineProfileCommitted) }
         }
     }
 }
