@@ -8,7 +8,7 @@
   "additionalProperties": false,
   "properties": {
     "schema_version": { "const": 1 },
-    "comparison_id": { "type": "string", "pattern": "^[0-9]{8}T[0-9]{6}Z-[A-Za-z0-9_.-]+$" },
+    "comparison_id": { "type": "string", "pattern": "^[0-9]{8}T[0-9]{6}Z_[A-Za-z0-9._-]+$", "description": "the round-id shape of records.py" },
     "started_at": { "type": "string", "format": "date-time" },
     "build": {
       "type": "object",
