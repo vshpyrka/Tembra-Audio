@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The logo artwork's own background (design/brand/logo/source/logo-v3-violet-dark.jpeg). -->
+    <color name="ic_launcher_background">#141416</color>
+</resources>
