@@ -143,7 +143,7 @@ description: "Task list for feature 008: baseline profiles"
 
 ### Tests for User Story 4
 
-- [ ] T042 [US4] Run the negative lane check of quickstart §6 (edit the `home` line of `app/androidApp/baseline-profile-coverage.txt` to `Laudio/tembra/ui/home/MissingScreenKt;`, `./gradlew checkAndroidHost` fails naming the label and descriptor, `git checkout` the file, the lane passes again) and record the lane timing against T001 (SC-006, within 5 %) in `specs/008-baseline-profiles/baselines.md`; if over budget, replace the JVM test with a Gradle verification task of the same logic in `app/build-logic/src/main/kotlin/` (D8 fallback) and re-measure
+- [X] T042 [US4] Run the negative lane check of quickstart §6 (edit the `home` line of `app/androidApp/baseline-profile-coverage.txt` to `Laudio/tembra/ui/home/MissingScreenKt;`, `./gradlew checkAndroidHost` fails naming the label and descriptor, `git checkout` the file, the lane passes again) and record the lane timing against T001 (SC-006, within 5 %) in `specs/008-baseline-profiles/baselines.md`; if over budget, replace the JVM test with a Gradle verification task of the same logic in `app/build-logic/src/main/kotlin/` (D8 fallback) and re-measure
 
 ### Implementation for User Story 4
 
@@ -159,7 +159,7 @@ description: "Task list for feature 008: baseline profiles"
 
 **Purpose**: the lane gate, the evidence bundle, and the session after merge.
 
-- [ ] T046 Run the full lanes and the warning gate per quickstart §7 through `gradle-run`: `./gradlew checkAndroidHost checkIos --warning-mode all`, `./gradlew engineHostTest`, `./gradlew :androidApp:assembleRelease --warning-mode all 2>&1 | grep -ci warning` = 0, `cd app/perf && uv run pytest`; confirm `git diff --stat -- app/iosApp app/shared` is empty (FR-014)
+- [X] T046 Run the full lanes and the warning gate per quickstart §7 through `gradle-run`: `./gradlew checkAndroidHost checkIos --warning-mode all`, `./gradlew engineHostTest`, `./gradlew :androidApp:assembleRelease --warning-mode all 2>&1 | grep -ci warning` = 0, `cd app/perf && uv run pytest`; confirm `git diff --stat -- app/iosApp app/shared` is empty (FR-014)
 - [ ] T047 [P] Assemble the pull-request evidence in `specs/008-baseline-profiles/evidence/README.md`: the comparison summaries (T040, T041), the verification output (T030), the screenshot pairs (T028), the before/after timings and sizes (`baselines.md`), and the principle each non-obvious decision serves (shrinking → spec FR-005a/planning input; `profileinstaller` → Principle VI justification; no new module → Principle II)
 - [ ] T048 Run quickstart §1–§7 end to end on a clean checkout of the branch (fresh `uv sync`, fresh Gradle daemon) and fix any step that does not match its expected outcome
 - [ ] T049 After the merge to `main`, run the labelled session per quickstart §8: `uv run tracepulse run --device pixel6 --label baseline-profiles --rounds 5` and the same on `pixel7` (wake the Pixel 7 Pro before the session), then `uv run tracepulse sync && uv run tracepulse report --open`; confirm no family is flagged in the worse direction, every onset at the boundary is an improvement, `app.size_bytes` is lower than the previous label (SC-008), and attach the report to the pull request (SC-009)
