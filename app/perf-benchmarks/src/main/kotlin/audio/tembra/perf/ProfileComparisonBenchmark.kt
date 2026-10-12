@@ -13,6 +13,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
+private const val ITERATIONS_ARGUMENT = "tembra.compare.iterations"
+
 /**
  * The four journeys of the pipeline measured under the optimisation state named by the instrumentation argument
  * `tembra.compare.state` (feature 008, D2/D6): run only by `uv run tracepulse profile compare`, once per state on a
@@ -21,8 +23,10 @@ import org.junit.runner.RunWith
  * `metronome`, `stress`) and produces the same catalogue keys as a round.
  *
  * The state is parsed as the first statement of every test, so a missing or unknown argument fails the test with the
- * accepted values before anything is measured. A journey added to the pipeline is registered here and in
- * [BaselineProfileGenerator] as well; the journey definition itself stays single (spec FR-002).
+ * accepted values before anything is measured. The iteration count comes from `tembra.compare.iterations` (default
+ * [PerfMetrics.ITERATIONS]): Macrobenchmark 1.5 does not honour `androidx.benchmark.iterations` for
+ * `measureRepeated` (checked on the Pixel 6 Pro on 2026-10-12). A journey added to the pipeline is registered here
+ * and in [BaselineProfileGenerator] as well; the journey definition itself stays single (spec FR-002).
  */
 @RunWith(AndroidJUnit4::class)
 class ProfileComparisonBenchmark {
@@ -32,6 +36,9 @@ class ProfileComparisonBenchmark {
     private fun state(): CompareState =
         CompareState.parse(InstrumentationRegistry.getArguments().getString(CompareState.ARGUMENT))
 
+    private fun iterations(): Int =
+        InstrumentationRegistry.getArguments().getString(ITERATIONS_ARGUMENT)?.toInt() ?: PerfMetrics.ITERATIONS
+
     @Test
     fun startup() {
         val state = state()
@@ -40,7 +47,7 @@ class ProfileComparisonBenchmark {
             metrics = listOf(StartupTimingMetric()),
             compilationMode = state.compilationMode(),
             startupMode = StartupMode.COLD,
-            iterations = PerfMetrics.ITERATIONS,
+            iterations = iterations(),
         ) {
             pressHome()
             startActivityAndWait()
@@ -56,7 +63,7 @@ class ProfileComparisonBenchmark {
             metrics = PerfMetrics.journey("tuner"),
             compilationMode = state.compilationMode(),
             startupMode = StartupMode.WARM,
-            iterations = PerfMetrics.ITERATIONS,
+            iterations = iterations(),
             setupBlock = {
                 pressHome()
                 startActivityAndWait()
@@ -75,7 +82,7 @@ class ProfileComparisonBenchmark {
             metrics = PerfMetrics.journey("metronome"),
             compilationMode = state.compilationMode(),
             startupMode = StartupMode.WARM,
-            iterations = PerfMetrics.ITERATIONS,
+            iterations = iterations(),
             setupBlock = {
                 pressHome()
                 startActivityAndWait()
@@ -94,7 +101,7 @@ class ProfileComparisonBenchmark {
             metrics = PerfMetrics.journey("stress"),
             compilationMode = state.compilationMode(),
             startupMode = StartupMode.WARM,
-            iterations = PerfMetrics.ITERATIONS,
+            iterations = iterations(),
             setupBlock = {
                 pressHome()
                 startActivityAndWait()
