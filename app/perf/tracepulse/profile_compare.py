@@ -42,6 +42,9 @@ EXIT_FAILED = 3
 EXIT_USAGE = 4
 
 STATE_ARGUMENT = "tembra.compare.state"
+# Macrobenchmark 1.5 does not honour `androidx.benchmark.iterations` (seen on the Pixel 6 Pro: 11+ iterations
+# with it set to 1), so the comparison class reads this argument; the pipeline's is still passed for parity.
+ITERATIONS_ARGUMENT = "tembra.compare.iterations"
 DEFAULT_STATES = ("none", "profile")
 FULL_STATE = "full"
 ALPHA = 0.01
@@ -66,7 +69,7 @@ def instrument_cmd(cfg: Config, device: Device, state: str, iterations: int, jou
     fqcn = f"{cfg.android.test_package}.{COMPARISON_CLASS}"
     target = fqcn if list(journeys) == list(cfg.journeys) else ",".join(f"{fqcn}#{j}" for j in journeys)
     cmd = _instrument_cmd(cfg, device, target, iterations)
-    cmd[-1:-1] = ["-e", STATE_ARGUMENT, state]
+    cmd[-1:-1] = ["-e", STATE_ARGUMENT, state, "-e", ITERATIONS_ARGUMENT, str(iterations)]
     return cmd
 
 

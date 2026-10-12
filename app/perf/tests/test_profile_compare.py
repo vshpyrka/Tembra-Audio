@@ -173,14 +173,17 @@ def test_one_instrument_per_state_names_the_class_the_state_and_the_iterations(c
     for cmd, state in zip(cmds, ("none", "profile")):
         assert f"-e class {CLASS} " in cmd
         assert f"-e {STATE_ARG} {state} " in cmd
+        # Macrobenchmark 1.5 does not honour androidx.benchmark.iterations (checked on the Pixel 6 Pro, T039);
+        # the comparison class reads its own argument, passed beside the pipeline's for parity with a round.
         assert "-e androidx.benchmark.iterations 7 " in cmd
+        assert "-e tembra.compare.iterations 7 " in cmd
         assert "-e additionalTestOutputDir /storage/emulated/0/Android/media/audio.tembra.perf/ " in cmd
 
 
 def test_the_default_iterations_come_from_the_configuration(cfg, paths, tmp_path):
     device = _Device(cfg, tmp_path)
     _run(cfg, paths, device)
-    assert f"-e androidx.benchmark.iterations {cfg.collection.iterations} " in _instruments(device.runner)[0]
+    assert f"-e tembra.compare.iterations {cfg.collection.iterations} " in _instruments(device.runner)[0]
 
 
 def test_a_failing_state_exits_3_naming_it_and_keeps_the_earlier_state_files(cfg, paths, tmp_path, capsys):
