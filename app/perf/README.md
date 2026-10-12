@@ -192,7 +192,7 @@ terms: `+18 % (limit 15 %)` for a percentage limit, `+2.5 ms (limit 2 ms)` for a
 overrun, hitches, audio flags); the percentage is taken against the magnitude of the baseline, so a
 rise from −0.5 ms to +2 ms is positive. The first live flag was exactly that: Pixel `noise-baseline`
 round 8, stress `frames.overrun_p90_ms` +2.5 ms over its 2 ms limit, back within limits in round 9.
-Two refinements came out of the noise sessions (catalogue `gate_floor_abs`, `gate_scale_pct`): a
+Two refinements came out of the noise sessions (catalogue `floor_abs`, `gate_scale_pct`): a
 percentage limit on a section flags only a change of at least 1 ms (the stress journey's `tuner.load`
 section is 0.03 ms on the iPhone and swung +22 % between rounds), and the absolute overrun limit grows
 to 25 % of the baseline when the baseline is large (the tuner journey's overrun P90 is the mode-switch
@@ -201,7 +201,9 @@ frame, 48–59 ms across 23 Pixel rounds, which the 2 ms limit flagged every thi
 session added two more: the audio callback durations (2–17 µs in an engine that renders nothing yet;
 `last_callback_us` swung +175 % between rounds) flag only a change of at least 100 µs, 2 % of the 5 333 µs
 budget at 256 frames; and a percentage of a zero baseline was no limit at all — from 0 the gate could
-never flag the first xrun — so from 0 any rise past the floor flags, in absolute terms.
+never flag the first xrun — so from 0 any rise past the floor flags, in absolute terms. The detector's
+screening gate honours the same floor: the iPhone card's headline had been "last audio callback duration
+got 50 % slower (first hint)" for a 2 → 3 µs step.
 
 ## Adding a journey, a section, a counter
 

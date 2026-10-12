@@ -29,7 +29,7 @@ class Metric:
     comparable: bool = False
     gate_limit_pct: Optional[float] = None
     gate_limit_abs: Optional[float] = None
-    gate_floor_abs: Optional[float] = None  # a percentage limit flags only a change of at least this much
+    floor_abs: Optional[float] = None  # a change under this never counts, for the gate or the detector's screening
     gate_scale_pct: Optional[float] = None  # an absolute limit grows to this share of a large baseline
     screening_pct: Optional[float] = None
     screening_abs: Optional[float] = None
@@ -111,8 +111,8 @@ _IOS: List[Metric] = [
 _AUDIO = (
     ("audio.callbacks", "count", dict(gate_limit_pct=50, screening_pct=10)),
     # an empty engine renders in 2-17 us; under 100 us (2 % of the 5 333 us budget at 256 frames) is not a change
-    ("audio.last_callback_us", "us", dict(gate_limit_pct=50, screening_pct=10, gate_floor_abs=100.0)),
-    ("audio.max_callback_us", "us", dict(gate_limit_pct=50, screening_pct=10, gate_floor_abs=100.0)),
+    ("audio.last_callback_us", "us", dict(gate_limit_pct=50, screening_pct=10, floor_abs=100.0)),
+    ("audio.max_callback_us", "us", dict(gate_limit_pct=50, screening_pct=10, floor_abs=100.0)),
     ("audio.over_budget", "count", dict(gate_limit_pct=50, screening_pct=10)),
     ("audio.xruns", "count", dict(gate_limit_pct=50, screening_pct=10)),
     ("audio.realtime", "flag", dict(gate_limit_abs=0.5, screening_abs=0.5)),
@@ -129,7 +129,7 @@ CATALOGUE: Dict[Tuple[str, str], Metric] = {
 
 _SECTION_SUFFIXES = {
     # a section of a few hundredths of a millisecond swings by tens of percent; under a millisecond is not a change
-    "sum_ms": ("ms", dict(gate_limit_pct=20, screening_pct=5, gate_floor_abs=1.0)),
+    "sum_ms": ("ms", dict(gate_limit_pct=20, screening_pct=5, floor_abs=1.0)),
     "count": ("count", dict(gate_limit_pct=20, screening_pct=10)),
 }
 _SECTION_SOURCE = {

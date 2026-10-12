@@ -147,6 +147,24 @@ def test_screening_gate_blocks_small_step(store, cfg):
     assert len(store.all_detections()) == 0
 
 
+def test_the_catalogue_floor_screens_out_a_tiny_step_however_large_its_percentage(store, cfg):
+    # the stress journey's tuner.load section is 0.03 ms on the iPhone and the last audio
+    # callback 2-4 us: a +50 % step there is no performance change (sections: 1 ms floor,
+    # callback durations: 100 us), while the same percentage on a real section screens in
+    rng = random.Random(7)
+    tiny = [[0.030 + rng.gauss(0, 0.0005) for _ in range(20)] for _ in range(12)]
+    tiny += [[0.045 + rng.gauss(0, 0.0005) for _ in range(20)] for _ in range(6)]
+    real = [[70.0 + rng.gauss(0, 0.05) for _ in range(20)] for _ in range(12)]
+    real += [[105.0 + rng.gauss(0, 0.05) for _ in range(20)] for _ in range(6)]
+    seed(store, {"stress/section.tuner.load.sum_ms": tiny, "stress/audio.last_callback_us": [[v * 100 for v in r] for r in tiny],
+                 "tuner/section.tuner.load.sum_ms": real})
+    run_detection(store, cfg, upto_round=18)
+    recorded = {row["metric"] for row in store.all_detections()}
+    assert "tuner/section.tuner.load.sum_ms" in recorded
+    assert "stress/section.tuner.load.sum_ms" not in recorded
+    assert "stress/audio.last_callback_us" not in recorded
+
+
 # --- test 3: APK threshold rule -------------------------------------------
 
 def test_apk_threshold_rule(cfg):

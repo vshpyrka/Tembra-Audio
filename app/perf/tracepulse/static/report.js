@@ -19,6 +19,11 @@
   function gateObserved(g, unit) { return g.limit_pct != null ? pct(g.observed_pct) : (g.observed_abs > 0 ? "+" : "") + fmt(g.observed_abs, unit); }
   function gateLimit(g, unit) { return g.limit_pct != null ? g.limit_pct + " %" : g.limit_abs + (unit ? " " + unit : ""); }
   function gateText(g, unit) { return g.state.replace("_", " ") + (g.state === "inactive" ? "" : " " + gateObserved(g, unit) + " vs limit " + gateLimit(g, unit)) + (g.reason ? " (" + g.reason + ")" : ""); }
+  function fitLabel(label, room) {
+    var chars = Math.floor(room / 5.5);  // the 10 px caption font averages 5.5 px per character
+    if (chars >= label.length) { return label; }
+    return chars < 3 ? "" : label.slice(0, chars - 1) + "\u2026";
+  }
   function limitValue(g, p) { return g.limit_pct != null ? p / (1 + g.observed_pct / 100) * (1 + g.limit_pct / 100) : p - g.observed_abs + g.limit_abs; }
   function device(id) { for (var i = 0; i < DATA.devices.length; i++) if (DATA.devices[i].device_id === id) return DATA.devices[i]; return null; }
   function seriesOf(dev, key) { for (var f = 0; f < dev.families.length; f++) for (var s = 0; s < dev.families[f].series.length; s++) if (dev.families[f].series[s].key === key) return dev.families[f].series[s]; return null; }
@@ -67,16 +72,34 @@
     var days = {}; dev.rounds.forEach(function (r) { days[r.date.slice(0, 10)] = (days[r.date.slice(0, 10)] || 0) + 1; });
     var sameDay = Object.keys(days).some(function (d) { return days[d] > 1; });
     var every = n > 12 ? Math.ceil(n / 8) : 1;
+    var dateTicks = [];
     for (var i = 0; i < n; i += every) {
       var dateLabel = sameDay ? dev.rounds[i].date.slice(5, 16) : dev.rounds[i].date.slice(5, 10);
       // The first and last labels hug the plot's edges instead of spilling past them.
       var anchor = n > 1 && i === 0 ? "start" : n > 1 && i + every >= n ? "end" : "middle";
-      out.push('<g class="axis"><text x="' + x(i).toFixed(1) + '" y="' + (h - 10) + '" text-anchor="' + anchor + '">' + esc(dateLabel) + "</text></g>");
+      var width = dateLabel.length * 5.5;
+      var left = anchor === "start" ? x(i) : anchor === "end" ? x(i) - width : x(i) - width / 2;
+      dateTicks.push({ i: i, label: dateLabel, anchor: anchor, left: left, right: left + width });
     }
-    dev.label_boundaries.forEach(function (b) {
-      var bx = x(b.round_index) - (n > 1 ? (w - pad.l - pad.r) / (n - 1) / 2 : 0);
+    // Labels that would touch a neighbour are dropped, the first and the last always kept.
+    var kept = [];
+    dateTicks.forEach(function (t, ti) {
+      var last = ti === dateTicks.length - 1;
+      while (kept.length > 1 && last && kept[kept.length - 1].right + 4 > t.left) { kept.pop(); }
+      if (!kept.length || last || kept[kept.length - 1].right + 4 <= t.left) { kept.push(t); }
+    });
+    kept.forEach(function (t) {
+      out.push('<g class="axis"><text x="' + x(t.i).toFixed(1) + '" y="' + (h - 10) + '" text-anchor="' + t.anchor + '">' + esc(t.label) + "</text></g>");
+    });
+    var slot = n > 1 ? (w - pad.l - pad.r) / (n - 1) : 0;
+    dev.label_boundaries.forEach(function (b, bi) {
+      var bx = x(b.round_index) - slot / 2;
+      var next = dev.label_boundaries[bi + 1];
+      // A caption gets the room up to the next boundary (a one-round session has almost none):
+      // it is cut to fit so neighbours never overlap, and the full label is its tooltip.
+      var room = (next ? x(next.round_index) - slot / 2 : w - pad.r) - bx - 4;
       out.push('<line class="boundary" x1="' + bx.toFixed(1) + '" x2="' + bx.toFixed(1) + '" y1="' + pad.t + '" y2="' + (h - pad.b) + '"/>');
-      out.push('<text class="boundary-label" x="' + (bx + 4).toFixed(1) + '" y="' + (pad.t + 10) + '">' + esc(b.label) + "</text>");
+      out.push('<text class="boundary-label" x="' + (bx + 4).toFixed(1) + '" y="' + (pad.t + 10) + '"><title>' + esc(b.label) + "</title>" + esc(fitLabel(b.label, room)) + "</text>");
     });
     dev.fingerprint_changes.forEach(function (c) {
       out.push('<line class="fingerprint" x1="' + x(c.round_index).toFixed(1) + '" x2="' + x(c.round_index).toFixed(1) + '" y1="' + pad.t + '" y2="' + (h - pad.b) + '"><title>' + esc(c.field + " " + c.before + " → " + c.after) + "</title></line>");

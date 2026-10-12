@@ -350,8 +350,12 @@ def _passes_gate(metric: str, delta_pct: Optional[float], delta_raw: float, cfg:
     needs delta_pct >= gate; everything else (LOW candidates, and A/B's
     undirected delta) needs abs(delta_pct) >= gate.
     abs gate (e.g. frames.overrun_p90_ms): abs(delta_raw) >= gate, either direction.
+    A catalogue floor (`floor_abs`: sections 1 ms, audio callback durations 100 us)
+    is a change too small to count whatever its percentage of a tiny baseline.
     """
     entry = catalogue_entry(platform, metric, cfg)
+    if entry.floor_abs is not None and abs(delta_raw) < entry.floor_abs:
+        return False
     if entry.screening_pct is not None:
         gate = entry.screening_pct
         if delta_pct is None:
