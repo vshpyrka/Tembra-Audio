@@ -11,6 +11,7 @@ FR-054; data model §4.
 ├── library.json                         # LibraryIndex: one entry per project + openProjectId
 └── <projectId>/
     ├── project.json                     # the document (contracts/project-document.md)
+    ├── view.json                        # ProjectViewState: zoom (null = fit) and grid; device-side, never part of the document
     └── audio/<sha256>.<wav|flac|mp3>    # byte-for-byte copies of the originals
 <cache>/projects/<projectId>/
 └── <sha256>.peaks                       # waveform overview (engine format); rebuildable
@@ -33,6 +34,11 @@ repository rebuilds a missing `.peaks` on open (the clip shows the placeholder m
 | `importAudio(projectId, file: PickedFile): ImportResult` | the pipeline below |
 | `sizeOnDevice(id): Long` | sum of `project.json` and `audio/*` (not the cache) |
 | `setOpen(id?)` | records `openProjectId` for FR-047 |
+| `viewState(id): ProjectViewState` / `saveViewState(id, state)` | reads and writes `view.json` (defaults when missing: fit, Sixteenth); a small direct write, not debounced, never touching `project.json`; copied by `duplicate` |
+
+`DemoAudioSource` (interface in `:shared:data`, bound in `:shared:ui` to the Compose resource
+reader): `suspend fun open(name: String): Source` for `files/demo/<name>.wav`, used only by
+`DemoProjectInstaller` so the data module never depends on Compose.
 
 ## Import pipeline (`AudioImporter`, IO dispatcher)
 

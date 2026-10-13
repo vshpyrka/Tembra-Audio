@@ -9,7 +9,8 @@ FR-050 to FR-054; research R9, R13, R15; data model §4, §5.
 ui/projects/
   ProjectsScreen.kt            wiring: metroViewModel(), ReportFirstContentDrawn(entries loaded), messages → snackbar
   ProjectsScreenContent.kt     stateless: (state, callbacks, layout, modifier): header row (count, New project), LibrarySearchField, LibraryFilterChips, SortMenu, the card grid, dialogs
-  ProjectsViewModel.kt         @Inject @ContributesIntoMap @ViewModelKey; collects repository.library() + session.state.project?.id; LibraryQuery in memory; intents
+  ProjectsViewModel.kt         @Inject @ContributesIntoMap @ViewModelKey; collects repository.library() + session.state.project?.id + LibraryViewStateHolder.state; LibraryQuery in memory; intents
+  LibraryViewStateHolder.kt    @Inject @SingleIn(AppScope): MutableStateFlow<LibraryViewState(query, filter, sort)>; the ViewModel is entry-scoped and dies on every destination switch, so this holder is what keeps the search, filter and sort "while the app runs" (FR-053); reset on launch by construction
   ProjectsUiState.kt, ProjectsCallbacks.kt, ProjectsLayout.kt (OneColumn < 840 dp, TwoColumns ≥ 840, ThreeColumns ≥ 1200), ProjectsCopy.kt, ProjectsDialog.kt
   components/
     ProjectCard.kt             badges (Active, Demo), relative time, name, description, ProjectOverviewChart, stats row (tempo, key or "—", length, tracks), footer (size), Resume/Open button, menu button
@@ -31,8 +32,8 @@ ui/projects/
   when the project is open (undoable) or through the repository when it is not.
 - Delete confirms; deleting the open project opens the most recently edited remaining one or a
   new empty one (session).
-- Search, filter and sort are view state kept in the ViewModel while the app runs; the count
-  reads "M of N projects" (or "N projects" with no query).
+- Search, filter and sort live in `LibraryViewStateHolder` (app-scoped) and survive leaving and
+  re-entering Projects; the count reads "M of N projects" (or "N projects" with no query).
 - Empty states: no projects (only possible after deleting the demo) → "No projects yet" with
   New project and Restore demo; no match → "No projects match".
 - No transport bar on Projects (spec); playback continues while the user browses only if they

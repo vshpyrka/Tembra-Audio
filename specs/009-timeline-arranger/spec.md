@@ -126,6 +126,13 @@ they are). The amendment names this specification.
   A: "Add audio as new track" allows several files: each becomes its own new track named after
   the file, in picker order, with its clip at the playhead, as one undo step; "Add audio…" to
   an existing track still takes one file (FR-044).
+- Q (analysis, 2026-10-13): FR-003 placed the grid and the zoom level inside the project while
+  FR-049 keeps view conveniences outside the document — which wins? → A: FR-049. Zoom and grid
+  are remembered per project on the device, outside the document (FR-003, FR-015, FR-018,
+  FR-047). Also settled by the same pass: the readout and the ruler truncate to hundredths,
+  never round (FR-010); a file larger than 500 MB is refused before decoding with its own reason
+  (FR-044); the library-open section measures the Projects list as it is, with no seeded
+  project count.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -567,8 +574,8 @@ clips, overlaps or hides behind the transport bar.
 - A tempo of 40 or 240, or a time-signature change in a project with clips: ruler, click and
   positions follow; no clip is moved in beats.
 - The imported file is not WAV, FLAC or MP3, has more than two channels, is longer than 30
-  minutes, or is unreadable: it is refused with a message naming the reason, and nothing is
-  added to the project.
+  minutes, is larger than 500 MB, or is unreadable: it is refused with a message naming the
+  reason, and nothing is added to the project.
 - The imported file is 8-bit, 32-bit float, 8 kHz or 192 kHz, mono or stereo, or silent: it is
   accepted, plays at the right pitch and speed, and its waveform reflects its content (a flat
   line when silent).
@@ -630,8 +637,9 @@ clips, overlaps or hides behind the transport bar.
 - **FR-003**: A project MUST have a name (1 to 60 characters), an optional one-line description
   (up to 120 characters), an optional key (one of the 24 major and minor keys), one tempo (a
   whole number from 40 to 240 BPM; the metronome's tempo model), one time signature (one of the
-  metronome's six), an ordered list of tracks, a master volume, the metronome toggle state, the
-  grid and the last zoom level. The demo project MUST be created at 124 BPM in 4/4 with a
+  metronome's six), an ordered list of tracks, a master volume and the metronome toggle state;
+  the grid and the last zoom level are remembered per project on the device, outside the
+  document (FR-049). The demo project MUST be created at 124 BPM in 4/4 with a
   description, a key, at least three tracks and five clips of permissively licensed or generated
   audio whose total length is between 30 and 60 seconds; a new project MUST start at 120 BPM in
   4/4 with no description, no key and no tracks.
@@ -676,7 +684,8 @@ clips, overlaps or hides behind the transport bar.
   marker in the ruler's bar row that shows the playhead's bar and beat (for example "5.1"). The
   displayed position MUST be within 30 ms of the audible position on a wired output.
 - **FR-010**: The readout MUST show the playhead position and the project length as
-  minutes:seconds.hundredths in the form "00:00.00 / 00:42.20" in tabular figures, the position
+  minutes:seconds.hundredths in the form "00:00.00 / 00:42.20" in tabular figures (hundredths
+  truncated, never rounded, as the ruler's time row does), the position
   updating every frame during playback and on every seek, the length being the end of the
   last clip (00:00.00 when the project has no clips) and updating on every edit that changes it.
 - **FR-011**: Tapping the ruler MUST move the playhead to the tapped time, snapped to the grid
@@ -852,7 +861,8 @@ clips, overlaps or hides behind the transport bar.
   the playhead, the whole import being one undo step (confirmed 2026-10-13); files refused in a
   multiple selection MUST be named in one message while the accepted ones are still imported.
   WAV, FLAC and MP3 files with up to two channels and up to 30 minutes
-  MUST be accepted; anything else MUST be refused with a message naming the reason. Each accepted
+  MUST be accepted; anything else MUST be refused with a message naming the reason (unsupported
+  format, more than two channels, longer than 30 minutes, larger than 500 MB, unreadable). Each accepted
   file MUST be copied byte for byte, in its own format, into the project's storage (once per
   project, even when imported again), so the original is never needed again; the project MUST
   play it from that copy at its original pitch and speed whatever its format or sample rate
@@ -1017,8 +1027,8 @@ clips, overlaps or hides behind the transport bar.
   the card to the first frame of the tracks), waveform preparation (per clip, import and first
   open), play start (press to the first audible output), seek (tap to the first output from the
   new position), zoom (per gesture, animation variant), clip split, playhead frame (the
-  per-frame cost of the playhead and readout), project save, and library open (Projects with
-  twenty projects to the first frame of the cards).
+  per-frame cost of the playhead and readout), project save, and library open (Projects to the
+  first frame of the cards).
 - Counters added: playback underruns during the journey, clip reads that were not ready when
   the engine needed them (starvation), peak and average callback load during playback, and the
   number of simultaneous clips rendering.
@@ -1036,7 +1046,8 @@ clips, overlaps or hides behind the transport bar.
 ### Key Entities
 
 - **Project**: a named arrangement: description, key, tempo, time signature, ordered tracks,
-  master volume, metronome toggle, grid, zoom, last edited; owns its audio copies and overviews.
+  master volume, metronome toggle, last edited; owns its audio copies and overviews. Its grid
+  and zoom are a **Project View State** kept on the device beside it, outside the document.
 - **Project Document**: the portable text form of a project (FR-049): version, stable
   identifiers, beats, settings, audio references; nothing device-specific.
 - **Tempo Map**: the project's one tempo and time signature and the conversions between beats
