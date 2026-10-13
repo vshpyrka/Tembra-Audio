@@ -218,6 +218,28 @@ def journey_of(class_name: str) -> str:
         raise CollectError(f"benchmark class {class_name!r} is not one of {sorted(_JOURNEY_OF_CLASS)}") from None
 
 
+# The comparison class of `tracepulse profile compare` (feature 008) holds one test per journey, named after it.
+COMPARISON_CLASS = "ProfileComparisonBenchmark"
+_COMPARISON_METHODS = ("startup", "tuner", "metronome", "stress")
+
+
+def journey_of_method(class_name: str, method: str) -> str:
+    """The journey a test of the comparison class measures: its method name. Rounds never go through here."""
+    simple = class_name.rsplit(".", 1)[-1]
+    if simple != COMPARISON_CLASS:
+        raise CollectError(f"benchmark class {class_name!r} is not {COMPARISON_CLASS}; rounds map by class")
+    if method not in _COMPARISON_METHODS:
+        raise CollectError(f"{COMPARISON_CLASS} method {method!r} is not one of {list(_COMPARISON_METHODS)}")
+    return method
+
+
+def _journey_of_benchmark(benchmark: BenchmarkResult) -> str:
+    class_name = benchmark.class_name or benchmark.name
+    if class_name.rsplit(".", 1)[-1] == COMPARISON_CLASS:
+        return journey_of_method(class_name, benchmark.name)
+    return journey_of(class_name)
+
+
 def _is_section_key(key: str) -> bool:
     return bool(_SECTION_SUM_RE.match(key) or _SECTION_COUNT_RE.match(key))
 
@@ -244,8 +266,9 @@ def _classify_single_key(key: str, journey: str) -> Optional[str]:
 
 
 def map_benchmark(benchmark: BenchmarkResult, cfg: Config) -> JourneyResult:
-    """One benchmark class -> one JourneyResult with catalogue keys and per-iteration samples."""
-    journey = journey_of(benchmark.class_name or benchmark.name)
+    """One benchmark class (or one test of the comparison class) -> one JourneyResult with catalogue keys and
+    per-iteration samples."""
+    journey = _journey_of_benchmark(benchmark)
     metrics: Dict[str, MetricResult] = {}
     for key, metric in benchmark.single.items():
         if key == f"journey.{journey}Count" or key in _ADVISORY_KEYS:
