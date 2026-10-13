@@ -205,3 +205,35 @@ Lanes after the feature: `checkAndroidHost checkIos --warning-mode all` green in
 | §7 `engineHostTest`, `assembleRelease --warning-mode all` | 137/137 Catch2 cases, release built under R8, zero warnings |
 
 No quickstart step needed a correction; the worktree was removed afterwards.
+
+## T049 — the labelled session after the merge (`main` at bda88af, Pixel 6 Pro, 2026-10-13)
+
+`uv run tracepulse run --device pixel6 --label baseline-profiles --rounds 5 --no-build --apk … --test-apk …`
+(artifacts built through `gradle-run`, zero warnings), then `sync`, `analyze`, `report --open`. Five rounds
+`20261013T064938Z` … `20261013T074443Z_baseline-profiles`, every one `succeeded`, no badge, network none,
+battery 100 %, thermal 21.6 → 25.3 °C, all five published to `perf-history` (`records/19021FDEE001AH/`); the
+history worktree is clean afterwards. Exit 0. **The Pixel 7 Pro was not attached, so its half of the session
+is still owed**; the iPhone 14 is not part of this feature (the iOS app is untouched, FR-014).
+
+| SC-008 criterion | Outcome |
+|---|---|
+| no interactive step | none (the runner answers nothing; the device stayed awake and unlocked) |
+| same device time within 5 % | 13.57 min mean per round (13.37–14.03) vs 14.21 min for the six `007-performance-pipeline` rounds of 2026-10-12: **−4.6 %** |
+| no family flagged above its gate limit in the worse direction | one flag in round 3 (`20261013T071710Z`): `stress/section.tuner.modeSwitch.sum_ms` +35 % (limit 20 %) — the bimodal section (T027): 10 of 20 iterations in the slow mode (≈ 470 ms) against 2–9 in every other round of both labels, both modes unchanged (fast 266–292 ms, slow 462–494 ms); rounds 1, 2, 4, 5 within limits on every series. Not a regression; see below |
+| every onset at the label boundary is an improvement | 10 onsets at rounds 1–2, all `down`: `app.size_bytes` −53.3 % (IMPROVED), `startup.ttid_ms`/`ttfd_ms` −63.7 %, `tuner/frames.p99_ms` −12.9 %, `metronome/frames.p99_ms` −16.1 %, `stress/frames.p99_ms` −14.9 %, `stress/frames.p90_ms` −6.4 %, `stress/frames.overrun_p90_ms` (−1.4 → −3.6 ms), `tuner/frames.p50_ms` −8.2 %, `metronome/memory.end_kb` −8.0 % — all PRELIMINARY until the detector's later rounds confirm them; no onset in the worse direction |
+| `app.size_bytes` lower than the previous label | 14 922 467 → **6 966 412 bytes** |
+
+Medians over the five rounds against the six 007 rounds: cold start 500.8 → 178.3 ms; tuner journey 1354 → 1380 ms,
+metronome journey 1829 → 1828 ms, stress journey 4419 → 4535 ms (within the journeys' noise, not detected);
+`tuner.load` 71.8 → 71.4 ms; `tuner.modeSwitch` 205.3 → 205.5 ms (two switches); frames p99 21.3 → 18.7 ms
+(tuner), 21.1 → 18.8 ms (metronome), 24.7 → 21.9 ms (stress); peak RSS 88.5 → 85.4 MB (tuner), 100.6 → 99.7 MB
+(stress); `audio.xruns` 0 in both. The report is `app/perf/reports/report.html` (rebuilt from the synced history;
+not committed, like every report).
+
+The flagged section: the stress journey's six mode switches alternate between two settled costs (≈ 275 ms and
+≈ 475 ms per switch); the gate compares medians, so a round whose iterations split evenly between the modes
+reports the mid-point (378 ms) as a +35 % step. The section's iteration values of round 3 —
+`469 267 470 275 482 465 464 278 475 276 464 274 474 275 283 477 476 292 273 266` — show no value outside
+either mode. Whether the slow mode is the engine's capture restart or a Compose recomposition is a question for
+the tuner's next feature, not for the profile: it was present in every round before this feature (T027, the 007
+session) and its two values did not move.

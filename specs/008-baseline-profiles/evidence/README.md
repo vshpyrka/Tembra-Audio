@@ -110,8 +110,23 @@ the startup lines (timing-reached rules), never in the six descriptors; it was n
 | `CompareState.parse` owns the state argument; exhaustive `when` for the compilation mode | Principle VIII (`kotlin-api-design`, `kotlin-control-flow`) |
 | JVM coverage test kept (no Gradle-task fallback) | the lane cost is +2.4 % under the project's protocol (SC-006) |
 
-## 7. After the merge (SC-008, SC-009)
+## 7. After the merge (SC-008, SC-009) — the labelled session `baseline-profiles`
 
-The labelled session `baseline-profiles` (five rounds on the Pixel 6 Pro and the Pixel 7 Pro) and its report are
-run after the merge (tasks.md T049) and attached to the pull request; expected: `app.size_bytes` down, cold start
-down, no family flagged in the worse direction.
+Run on 2026-10-13 against `main` at the merge commit `bda88af` (tasks.md T049; the full record is
+[`../baselines.md` § T049](../baselines.md)). Five rounds on the Pixel 6 Pro, all succeeded, no badge, no
+interactive step, published to `perf-history`; 13.57 min per round against 14.21 min for the 007 session (−4.6 %,
+within SC-008's 5 %).
+
+| SC-008 criterion | Outcome |
+|---|---|
+| no family flagged in the worse direction | one flag, round 3: `stress/section.tuner.modeSwitch.sum_ms` +35 % — the bimodal section of §3, with 10/20 iterations in its slow mode against 2–9 elsewhere and both modes unchanged; the other four rounds are within limits on every series |
+| every onset at the label boundary is an improvement | ten onsets, all improvements: `app.size_bytes` −53 % (IMPROVED), cold start `ttid`/`ttfd` −64 %, frame p99 −13 % (tuner), −16 % (metronome), −15 % (stress), `tuner/frames.p50` −8 %, `metronome/memory.end` −8 %; nothing in the worse direction |
+| `app.size_bytes` lower than the previous label | 14 922 467 → 6 966 412 bytes |
+
+Cold start over the five rounds: median 178.3 ms (500.8 ms in the 007 session). Journey durations, `tuner.load`
+and the memory peaks are unchanged within noise. The report (`app/perf/reports/report.html`, rebuilt by
+`uv run tracepulse report` from the synced history) is the artefact for SC-009 together with §1–§3 above.
+
+**Still owed**: the same five rounds on the Pixel 7 Pro, which was not attached on 2026-10-13 (wake it, then
+`uv run tracepulse run --device pixel7 --label baseline-profiles --rounds 5`). The iPhone 14 is not part of this
+feature: the iOS app is untouched (FR-014).
