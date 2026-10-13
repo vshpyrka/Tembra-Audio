@@ -12,6 +12,12 @@ interface CustomClickSoundStore {
     /** `<documents>/metronome/custom.wav.tmp`. */
     val stagingPath: String
 
+    /**
+     * Copies the picked file [open] yields to [stagingPath] with the 64 MB cap (feature 009 moved the copy here from
+     * the platform pickers, which now hand over content handles). A refused or failed copy leaves nothing staged.
+     */
+    suspend fun stage(open: suspend () -> okio.Source): StageResult
+
     /** Replaces [path] with the staged file; false when nothing is staged. */
     suspend fun commit(): Boolean
 

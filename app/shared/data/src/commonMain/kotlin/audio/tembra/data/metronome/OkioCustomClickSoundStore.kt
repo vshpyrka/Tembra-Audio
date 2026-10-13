@@ -5,7 +5,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
 import okio.FileSystem
+import okio.IOException
 import okio.Path.Companion.toPath
+import okio.Source
+import okio.buffer
+import okio.use
 
 /**
  * [CustomClickSoundStore] over Okio. The `metronome` directory is created when the store is built, so the staging
@@ -27,6 +31,35 @@ class OkioCustomClickSoundStore(
         fileSystem.createDirectories(directory)
     }
 
+    override suspend fun stage(open: suspend () -> Source): StageResult = withContext(Dispatchers.IO) {
+        fileSystem.createDirectories(directory)
+        val outcome = try {
+            open().use { source -> copyCapped(source) }
+        } catch (failure: IOException) {
+            StageResult.Unreadable
+        } catch (failure: IllegalStateException) {
+            // A platform handle that was revoked or never granted.
+            StageResult.Unreadable
+        }
+        if (outcome != StageResult.Staged) fileSystem.delete(staging)
+        outcome
+    }
+
+    /** Streams at most [MAX_STAGED_BYTES] into the staging file; a longer source is cut short and refused. */
+    private fun copyCapped(source: Source): StageResult {
+        fileSystem.sink(staging).buffer().use { sink ->
+            var total = 0L
+            while (true) {
+                val read = source.read(sink.buffer, COPY_CHUNK)
+                if (read < 0L) break
+                total += read
+                if (total > MAX_STAGED_BYTES) return StageResult.TooLarge
+                sink.emit()
+            }
+        }
+        return StageResult.Staged
+    }
+
     override suspend fun commit(): Boolean = withContext(Dispatchers.IO) {
         if (!fileSystem.exists(staging)) return@withContext false
         fileSystem.createDirectories(directory)
@@ -40,4 +73,10 @@ class OkioCustomClickSoundStore(
     override suspend fun delete() = withContext(Dispatchers.IO) { fileSystem.delete(file) }
 
     override suspend fun deleteStaging() = withContext(Dispatchers.IO) { fileSystem.delete(staging) }
+
+    private companion object {
+        /** The largest custom sound accepted: 64 MB (contracts/click-sounds.md). */
+        const val MAX_STAGED_BYTES = 64L * 1024 * 1024
+        const val COPY_CHUNK = 64L * 1024
+    }
 }

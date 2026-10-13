@@ -25,15 +25,18 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.max
 import audio.tembra.ui.designsystem.NavigationItemSpec
+import audio.tembra.ui.designsystem.StopAndLeaveDialog
 import audio.tembra.ui.designsystem.TembraNavigationBar
 import audio.tembra.ui.designsystem.TembraNavigationRail
 import audio.tembra.ui.designsystem.TembraTopBar
+import audio.tembra.ui.session.DialogRequest
 import audio.tembra.ui.theme.TembraTheme
 
 /**
  * The stateless frame (contracts/navigation-shell.md): the top bar spans the width above Material 3 adaptive's
  * NavigationSuiteScaffoldLayout, which places the bar below or the rail at the start according to [layoutMode]
  * (research R4); the content slot hosts the NavDisplay. UI tests drive this composable with an explicit layout mode.
+ * [dialog] is the session's pending stop-and-leave question (feature 009, spec FR-008a), rendered above everything.
  */
 @Composable
 fun NavigationShellContent(
@@ -42,7 +45,12 @@ fun NavigationShellContent(
     onSelect: (Destination) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    dialog: DialogRequest? = null,
 ) {
+    when (dialog) {
+        is DialogRequest.StopAndLeave -> StopAndLeaveDialog(onConfirm = { dialog.answer(true) }, onCancel = { dialog.answer(false) })
+        null -> Unit
+    }
     val items = remember { Destination.entries.map { NavigationItemSpec(it.id, it.label, it.icon) } }
     // Re-selecting the active item changes nothing (spec FR-008), so the callback is not even invoked.
     val select: (String) -> Unit = { id ->

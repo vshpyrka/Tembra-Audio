@@ -30,11 +30,13 @@ fun NavigationShell(
         }
     }
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val dialog by viewModel.dialog.collectAsStateWithLifecycle()
     NavigationShellContent(
         state = state,
         layoutMode = layoutMode,
         onSelect = viewModel::select,
         onBack = { viewModel.back() },
         modifier = modifier,
+        dialog = dialog,
     )
 }

@@ -1,8 +1,21 @@
 package audio.tembra.ui.navigation
 
-/** Navigation state (data-model.md §2): which destination is selected; the back stack is derived, never stored. */
-data class ShellUiState(val selected: Destination = Destination.Home) {
-    /** `[Home]` on Home, else `[Home, selected]`; what the NavDisplay renders (spec FR-010). */
-    val backStack: List<Destination>
-        get() = if (selected == Destination.Home) listOf(Destination.Home) else listOf(Destination.Home, selected)
+import androidx.navigation3.runtime.NavKey
+import audio.tembra.ui.tracksettings.TrackSettingsKey
+
+/**
+ * Navigation state (data-model.md §2 of feature 002; §5 of feature 009): which destination is selected and, on the
+ * Timeline, which track's settings are open above it. The back stack is derived, never stored.
+ */
+data class ShellUiState(
+    val selected: Destination = Destination.Home,
+    val trackSettings: TrackSettingsKey? = null,
+) {
+    /** `[Home]` on Home, `[Home, selected]` elsewhere, plus the open track settings above the Timeline (spec FR-010). */
+    val backStack: List<NavKey>
+        get() = buildList {
+            add(DestinationKey(Destination.Home))
+            if (selected != Destination.Home) add(DestinationKey(selected))
+            if (trackSettings != null && selected == Destination.Timeline) add(trackSettings)
+        }
 }

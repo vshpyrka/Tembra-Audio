@@ -23,7 +23,7 @@ class ShellViewModelTest {
     @BeforeTest
     fun setUp() {
         Dispatchers.setMain(StandardTestDispatcher())
-        viewModel = ShellViewModel()
+        viewModel = ShellViewModel(FakePlaybackGuard())
     }
 
     @AfterTest
