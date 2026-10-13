@@ -192,10 +192,10 @@ specifications technology-free and the test-first loop of Principle III intact.
   timeline feature: the click sound set and its configuration (the built-in sounds, the custom
   sound import and preparation, the Accent, Click and Sub levels), the tempo and tempo-name
   model, the time signature, subdivision and accent-pattern model, and the engine's
-  sample-accurate click scheduler. When the transport and timeline feature lands, its transport
-  bar metronome toggle MUST drive that same click from the project tempo map, it takes over the
-  tempo and time signature from the project, and it MUST NOT duplicate the sound set, the models
-  or the scheduler.
+  sample-accurate click scheduler. When the transport and timeline feature (feature 009, the
+  audio spine with transport and timeline) lands, its transport bar metronome toggle MUST drive
+  that same click from the project tempo map, it takes over the tempo and time signature from
+  the project, and it MUST NOT duplicate the sound set, the models or the scheduler.
 - Product name is "Tembra Audio".
 
 ## Development Workflow & Quality Gates
@@ -204,14 +204,22 @@ specifications technology-free and the test-first loop of Principle III intact.
   `/speckit-plan` (how, technology), `/speckit-tasks`, `/speckit-implement`. Specifications
   MUST NOT contain technology choices; plans MUST cite this constitution's principles in their
   Constitution Check and justify any deviation.
-- Build order is fixed: project scaffold, navigation shell, tuner, metronome, audio spine,
-  transport and timeline, mixer, effects and automation, recording and loops and speed,
-  collaboration. A plan MUST NOT pull later work forward without amending this order here. The
-  tuner precedes the audio spine (amended 2026-09-26): it is the first feature to capture audio
-  and produce sound, and its input and output paths MUST obey Principle I so the audio spine can
-  grow from them. The metronome follows the tuner (amended 2026-09-29): it is the second feature
-  to produce sound and the first to schedule it sample-accurately, and its click path MUST obey
-  Principle I so the audio spine and the transport can grow from it.
+- Build order is fixed: project scaffold, navigation shell, tuner, metronome, audio spine with
+  transport and timeline (one feature), mixer, recording, effects and automation, loops and
+  speed, collaboration. A plan MUST NOT pull later work forward without amending this order
+  here. The tuner precedes the audio spine (amended 2026-09-26): it is the first feature to
+  capture audio and produce sound, and its input and output paths MUST obey Principle I so the
+  audio spine can grow from them. The metronome follows the tuner (amended 2026-09-29): it is
+  the second feature to produce sound and the first to schedule it sample-accurately, and its
+  click path MUST obey Principle I so the audio spine and the transport can grow from it. The
+  audio spine and the transport and timeline are one feature, and recording precedes effects
+  (amended 2026-10-13, feature 009): the spine's only user-facing proof is a project that plays,
+  so the engine's first multi-clip playback, the transport bar and the timeline ship together;
+  the mixer follows as its own feature; recording moves ahead of effects and automation because
+  the owner wants the microphone as a track source before effects and because recording reuses
+  the mixer's meters; loops and speed stay after effects. This amendment invalidates no spec or
+  plan: `specs/009-timeline-arranger/spec.md` is written to the new order and the order quoted in
+  earlier specs is historical.
 - Every feature instruments itself (amended 2026-10-08): every feature after the performance
   pipeline (feature 007) that adds a user-facing interaction or an engine path MUST add, in the
   same feature, its performance instrumentation: catalogue sections for its main interactions,
@@ -251,4 +259,4 @@ specifications technology-free and the test-first loop of Principle III intact.
 - `CLAUDE.md` is the runtime guidance file for agents working in this repository; it MUST point
   at this constitution and MUST NOT restate rules in a way that drifts from it.
 
-**Version**: 1.3.0 | **Ratified**: 2026-09-19 | **Last Amended**: 2026-10-08
+**Version**: 1.3.1 | **Ratified**: 2026-09-19 | **Last Amended**: 2026-10-13
