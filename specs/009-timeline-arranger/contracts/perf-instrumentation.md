@@ -1,0 +1,99 @@
+# Contract: performance instrumentation for feature 009
+
+Constitution (every feature instruments itself; feature 008's profile rule); spec "Performance
+instrumentation declared by this feature"; research R16; the pipeline survey of 2026-10-13
+(`app/perf/README.md` §"Adding a journey" is incomplete — this contract is the full list).
+
+## Catalogue (`app/shared/engine/perf-catalogue.txt`, then regenerate `tembra_trace_names.h`)
+
+| Enum | Family | Name | Emitted from |
+|---|---|---|---|
+| `TIMELINE_PROJECT_OPEN` | timeline | `timeline.projectOpen` | session `open()` (card tap → arrangement pushed) |
+| `TIMELINE_WAVEFORM` | timeline | `timeline.waveform` | repository overview build per asset |
+| `TIMELINE_PLAYHEAD_FRAME` | timeline | `timeline.playheadFrame` | `PlayheadOverlay` draw |
+| `TIMELINE_CLIP_SPLIT` | timeline | `timeline.clipSplit` | `TimelineViewModel.split` |
+| `TIMELINE_PROJECT_SAVE` | timeline | `timeline.projectSave` | repository `save` |
+| `TIMELINE_LIBRARY_OPEN` | timeline | `timeline.libraryOpen` | `ProjectsViewModel` first index → first content |
+| `TRANSPORT_PLAY` | transport (new `PerfFamily.TRANSPORT`) | `transport.play` | session play → `Playing` |
+| `TRANSPORT_SEEK` | transport | `transport.seek` | session seek → engine returned |
+| `ENGINE_PRIME` | engine | `engine.prime` | C++ `DiskStreamer::prime` (control thread) |
+| existing | | `timeline.scroll`, `timeline.zoom` (animation), `engine.loadClip` (clip source open) | |
+| `AUDIO_AVG_US` | counter | `audio.avgUs` | `AudioHealthTicker` |
+| `AUDIO_STARVATION` | counter | `audio.starvation` | `AudioHealthTicker` |
+| `AUDIO_CLIPS_ACTIVE` | counter | `audio.clipsActive` | `AudioHealthTicker` |
+
+`PerfSectionCatalogueTest.familyKeyword` gains `TRANSPORT`. `EngineHealthJson`, the C health
+struct (ABI v6), `AudioHealthTicker`, `catalogue._AUDIO` (gate 50 % / screening 10 %, `floor_abs`
+100 µs for `avgUs`; absolute 0 expected for `starvation`, flagged on any increase),
+`traces_android.AUDIO_COUNTER_KEYS`, `collect_ios._HEALTH_KEYS`, `tests/fixtures/engine-health.json`
+and `specs/007-performance-pipeline/contracts/metric-catalogue.md` gain the three counters.
+`Metrics.swift` gets `section(name, category:)` and the engine names use `"engine"`.
+
+## Anchors (`PerfAnchors` + `PerfAnchorsCatalogueTest` count + the Android and iOS mirrors)
+
+`NAV_PROJECTS = "nav.item.projects"`, `PROJECTS_ROOT = "screen.projects"`,
+`PROJECTS_SEARCH = "projects.search"`, `PROJECTS_CARD_DEMO = "projects.card.demo"`,
+`NAV_TIMELINE = "nav.item.timeline"`, `TIMELINE_ROOT = "screen.timeline"`,
+`TIMELINE_ADD_TRACK = "timeline.toolbar.addTrack"`, `TIMELINE_SPLIT = "timeline.toolbar.split"`,
+`TIMELINE_UNDO = "timeline.toolbar.undo"`, `TIMELINE_RULER = "timeline.ruler"`,
+`TIMELINE_LANE_FIRST = "timeline.lane.0"`, `TIMELINE_CLIP_FIRST = "timeline.clip.first"`,
+`TIMELINE_TRACK_MENU_FIRST = "timeline.track.menu.0"`, `TIMELINE_TRACK_SETTINGS = "timeline.track.menu.settings"`,
+`TIMELINE_SETTINGS_CLOSE = "timeline.settings.close"`, `TRANSPORT_PLAY = "transport.play"`,
+`TRANSPORT_SKIP_START = "transport.skipStart"`, `TRANSPORT_METRONOME = "transport.metronome"`,
+`TRANSPORT_READOUT = "transport.readout"`, `TIMELINE_WAVEFORMS_READY = "timeline.waveforms.ready"`
+(a zero-size semantics node present once every visible clip's overview is `Ready`).
+
+## Journey `timeline` (same steps on both platforms)
+
+1. tap `nav.item.projects`, wait `screen.projects`; 2. tap `projects.card.demo`, wait
+`screen.timeline` and `timeline.waveforms.ready` (10 s budget); 3. tap `transport.play`, wait
+until `transport.readout` text passes "00:15" (eight bars at 124 BPM = 15.5 s); 4. tap
+`timeline.ruler` at 25 % width (seek); 5. pinch in then out on `timeline.lane.0` (Android
+`UiObject2.pinchOpen/pinchClose`, iOS `pinch(withScale:velocity:)`); 6. tap
+`timeline.clip.first`, tap `timeline.toolbar.split`; 7. tap `timeline.track.menu.0`, tap
+`timeline.track.menu.settings`, wait the settings form, tap `timeline.settings.close` (or back);
+8. tap `transport.metronome` twice; 9. tap `transport.play` (pause); 10. tap `transport.skipStart`.
+
+Sections measured: `timeline.projectOpen`, `timeline.waveform`, `transport.play`,
+`transport.seek`, `timeline.zoom`, `timeline.scroll`, `timeline.clipSplit`,
+`timeline.playheadFrame`, `engine.prime`, `engine.loadClip`.
+
+Files: Android `journeys/TimelineJourney.kt`, `TimelineJourneyBenchmark.kt`,
+`PerfMetrics.sectionsOf("timeline")`, `BaselineProfileGenerator.journeys()`,
+`ProfileComparisonBenchmark.timeline()`; iOS `Journeys/TimelineJourney.swift`,
+`TimelinePerfTests.swift`, `Metrics.sections(of: "timeline")`, pbxproj entries; pipeline
+`config.DEFAULT_JOURNEYS`, `tracepulse.yml`, `catalogue.JOURNEYS_MEASURED`,
+`orchestrate_android.BENCHMARK_CLASS_OF`, `collect_android._JOURNEY_OF_CLASS/_REQUIRED/_COMPARISON_METHODS`,
+`collect_ios._TEST_JOURNEYS` and `order`, `report._JOURNEY_ORDER`, the pytest assertions, the
+007 metric-catalogue contract and the README.
+
+## Journey `stress` (extended)
+
+Before the existing steps: open Projects → demo → Timeline, play with `transport.metronome` on,
+scroll the lane for five seconds (animation), then the existing tuner/metronome cycle (which
+pauses playback through the dialog: the journey taps "Stop and leave" by tag
+`dialog.stopAndLeave.confirm`), finishing with `devtools.writeHealth`. The 75 s xctrace window
+is rechecked against the new length and widened if the taps exceed 60 s.
+
+## Baseline profile
+
+`app/androidApp/baseline-profile-coverage.txt` gains `timeline Laudio/tembra/ui/timeline/TimelineScreenKt;`
+and `projects Laudio/tembra/ui/projects/ProjectsScreenKt;` first (the host lane fails until the
+profile is regenerated), then `uv run tracepulse profile generate --device pixel6` and both profile
+files are committed; `profile verify` and `profile compare --journeys timeline` results go into the
+feature's evidence.
+
+## Labelled session after merge
+
+`uv run tracepulse run --device pixel6 --label 009-timeline --rounds 5` (through `gradle-run`
+artefacts with `--no-build --apk … --test-apk …`), the same on `iphone14` with
+`DEVELOPER_DIR` for Xcode 27.1 beta, and the Pixel 7 Pro by serial from the second Mac;
+`sync`, `report`. Expected: a duration step in `stress` at the label boundary (documented), the
+`timeline` journey present on every device, zero `audio.starvation` and `audio.xruns` on the
+reference devices, no family above its gate in the worse direction.
+
+## Tests
+
+`PerfSectionCatalogueTest`, `PerfAnchorsCatalogueTest` (new count), `trace_poison_test` (new RT
+files), `uv run pytest` (config, catalogue, collectors, report with the fifth journey), the iOS
+`FacadeSelfCheckTests` for the engine-category metric.
