@@ -4,15 +4,24 @@ import audio.tembra.ui.resources.Res
 import audio.tembra.ui.resources.ic_add_24
 import audio.tembra.ui.resources.ic_arrow_left_24
 import audio.tembra.ui.resources.ic_arrow_right_24
+import audio.tembra.ui.resources.ic_audio_file_24
 import audio.tembra.ui.resources.ic_av_timer_24
 import audio.tembra.ui.resources.ic_check_24
+import audio.tembra.ui.resources.ic_content_copy_24
+import audio.tembra.ui.resources.ic_content_cut_24
+import audio.tembra.ui.resources.ic_expand_less_24
 import audio.tembra.ui.resources.ic_expand_more_24
+import audio.tembra.ui.resources.ic_fast_forward_24
+import audio.tembra.ui.resources.ic_fast_rewind_24
 import audio.tembra.ui.resources.ic_folder_24
 import audio.tembra.ui.resources.ic_graphic_eq_24
+import audio.tembra.ui.resources.ic_grid_on_24
 import audio.tembra.ui.resources.ic_hearing_24
 import audio.tembra.ui.resources.ic_home_24
+import audio.tembra.ui.resources.ic_library_music_24
 import audio.tembra.ui.resources.ic_mic_24
 import audio.tembra.ui.resources.ic_mic_off_24
+import audio.tembra.ui.resources.ic_more_vert_24
 import audio.tembra.ui.resources.ic_music_note_24
 import audio.tembra.ui.resources.ic_note_eighth_24
 import audio.tembra.ui.resources.ic_note_eighth_pair_24
@@ -26,16 +35,26 @@ import audio.tembra.ui.resources.ic_notifications_24
 import audio.tembra.ui.resources.ic_pause_24
 import audio.tembra.ui.resources.ic_pause_fill_24
 import audio.tembra.ui.resources.ic_person_24
+import audio.tembra.ui.resources.ic_piano_24
 import audio.tembra.ui.resources.ic_play_arrow_24
 import audio.tembra.ui.resources.ic_play_arrow_fill_24
+import audio.tembra.ui.resources.ic_playlist_add_24
 import audio.tembra.ui.resources.ic_radio_button_checked_24
+import audio.tembra.ui.resources.ic_redo_24
 import audio.tembra.ui.resources.ic_remove_24
+import audio.tembra.ui.resources.ic_search_24
 import audio.tembra.ui.resources.ic_sensors_24
 import audio.tembra.ui.resources.ic_settings_24
+import audio.tembra.ui.resources.ic_skip_next_24
+import audio.tembra.ui.resources.ic_skip_previous_24
+import audio.tembra.ui.resources.ic_sort_24
 import audio.tembra.ui.resources.ic_swap_horiz_24
 import audio.tembra.ui.resources.ic_touch_app_24
 import audio.tembra.ui.resources.ic_tune_24
+import audio.tembra.ui.resources.ic_undo_24
 import audio.tembra.ui.resources.ic_volume_up_24
+import audio.tembra.ui.resources.ic_zoom_in_24
+import audio.tembra.ui.resources.ic_zoom_out_24
 import org.jetbrains.compose.resources.DrawableResource
 
 /**
@@ -87,4 +106,25 @@ enum class TembraIcon(internal val resource: DrawableResource) {
     NoteSixteenthPair(Res.drawable.ic_note_sixteenth_pair_24),
     NoteThirtySecondQuad(Res.drawable.ic_note_thirty_second_quad_24),
     NoteSixteenthTriplet(Res.drawable.ic_note_sixteenth_triplet_24),
+    // Timeline arranger glyphs (feature 009, contracts/design-system-additions.md): toolbar, transport, library and
+    // the instrument chips (Mic for Vocals, Piano for Keys, MusicNote for Strings and Other, GraphicEq for Loops).
+    ContentCut(Res.drawable.ic_content_cut_24),
+    Undo(Res.drawable.ic_undo_24),
+    Redo(Res.drawable.ic_redo_24),
+    SkipPrevious(Res.drawable.ic_skip_previous_24),
+    SkipNext(Res.drawable.ic_skip_next_24),
+    FastRewind(Res.drawable.ic_fast_rewind_24),
+    FastForward(Res.drawable.ic_fast_forward_24),
+    GridOn(Res.drawable.ic_grid_on_24),
+    ZoomIn(Res.drawable.ic_zoom_in_24),
+    ZoomOut(Res.drawable.ic_zoom_out_24),
+    Search(Res.drawable.ic_search_24),
+    Sort(Res.drawable.ic_sort_24),
+    ContentCopy(Res.drawable.ic_content_copy_24),
+    LibraryMusic(Res.drawable.ic_library_music_24),
+    ExpandLess(Res.drawable.ic_expand_less_24),
+    MoreVert(Res.drawable.ic_more_vert_24),
+    AudioFile(Res.drawable.ic_audio_file_24),
+    PlaylistAdd(Res.drawable.ic_playlist_add_24),
+    Piano(Res.drawable.ic_piano_24),
 }

@@ -21,6 +21,14 @@ class IconAssetsTest {
         "ic_play_arrow_fill_24.xml", "ic_pause_fill_24.xml", "ic_swap_horiz_24.xml",
     )
 
+    /** Feature 009 (timeline arranger): toolbar, transport, library and instrument-chip glyphs; `mic` and `expand_more` were already bundled. */
+    private val timelineGlyphs = listOf(
+        "ic_content_cut_24.xml", "ic_undo_24.xml", "ic_redo_24.xml", "ic_skip_previous_24.xml", "ic_skip_next_24.xml",
+        "ic_fast_rewind_24.xml", "ic_fast_forward_24.xml", "ic_grid_on_24.xml", "ic_zoom_in_24.xml", "ic_zoom_out_24.xml",
+        "ic_search_24.xml", "ic_sort_24.xml", "ic_content_copy_24.xml", "ic_library_music_24.xml", "ic_expand_more_24.xml",
+        "ic_expand_less_24.xml", "ic_more_vert_24.xml", "ic_audio_file_24.xml", "ic_playlist_add_24.xml", "ic_mic_24.xml", "ic_piano_24.xml",
+    )
+
     /** The filled variants (FILL 1) the play button uses, fetched with `--fill`. */
     private val filledGlyphs = listOf("ic_play_arrow_fill_24.xml", "ic_pause_fill_24.xml")
     private val materialGlyphs = (
@@ -29,7 +37,7 @@ class IconAssetsTest {
             "ic_av_timer_24.xml", "ic_folder_24.xml", "ic_person_24.xml",
             "ic_mic_24.xml", "ic_mic_off_24.xml", "ic_hearing_24.xml", "ic_play_arrow_24.xml", "ic_pause_24.xml",
             "ic_volume_up_24.xml", "ic_expand_more_24.xml", "ic_arrow_left_24.xml", "ic_arrow_right_24.xml", "ic_settings_24.xml",
-        ) + metronomeGlyphs
+        ) + metronomeGlyphs + timelineGlyphs
         ).distinct()
 
     /** Feature 004 D1: the subdivision note figures, hand-authored by `tools/make-note-glyphs.py`. */

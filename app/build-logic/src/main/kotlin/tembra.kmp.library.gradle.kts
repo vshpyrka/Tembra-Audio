@@ -58,7 +58,10 @@ kotlin {
     jvmToolchain(21)
 }
 
-// Constitution II: dependencies point inward toward :shared:core. A violation fails configuration.
+// Constitution II: dependencies point inward toward :shared:core. A violation fails configuration. The guard is on
+// project dependencies: `:shared:core` may use the two Kotlin-only libraries the constitution's stack names for the
+// document model (kotlinx.serialization, kotlinx.collections.immutable; feature 009), never a project, Compose or a
+// platform API.
 val declaredSuffixes = listOf("Implementation", "Api", "CompileOnly", "RuntimeOnly")
 configurations.matching { c -> declaredSuffixes.any { c.name.endsWith(it) } && !c.name.contains("swiftPM", ignoreCase = true) }.configureEach {
     dependencies.configureEach {

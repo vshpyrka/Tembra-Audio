@@ -130,7 +130,9 @@ decoders are enabled by dropping `MA_NO_DECODING`, `MA_NO_WAV/FLAC/MP3` from the
 unit; licence public domain / MIT-0, already in the inventory.
 
 **Verification during implementation**: `ma_decoder_config.seekPointCount` (MP3 seek table) is
-confirmed in the vendored header before the decoder contract is frozen; if MP3 seeking proves
+confirmed in the vendored header before the decoder contract is frozen (verified 2026-10-13, T003:
+`miniaudio.h` 0.11.25 declares `seekPointCount` on `ma_decoder_config` and binds it through
+`ma_dr_mp3_bind_seek_table`; the decoder contract stands, no MP3 cache); if MP3 seeking proves
 slower than 50 ms on the Pixel 6 for a 30-minute file, the fallback is a per-asset decoded PCM
 cache for MP3 only, kept under `AppDirectories.cache` and rebuildable (the contract reserves the
 path).

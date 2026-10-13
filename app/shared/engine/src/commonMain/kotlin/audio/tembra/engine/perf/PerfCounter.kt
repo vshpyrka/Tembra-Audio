@@ -8,4 +8,8 @@ enum class PerfCounter {
     AUDIO_OVER_BUDGET,
     AUDIO_XRUNS,
     AUDIO_REALTIME,
+    // Feature 009: the transport's counters (contracts/engine-c-abi-v6.md health fields).
+    AUDIO_AVG_US,
+    AUDIO_STARVATION,
+    AUDIO_CLIPS_ACTIVE,
 }
