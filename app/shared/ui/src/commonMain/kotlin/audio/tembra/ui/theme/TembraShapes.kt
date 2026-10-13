@@ -12,6 +12,9 @@ object TembraShapes {
     val large = 16.dp
     val extraLarge = 24.dp
 
+    /** The rounded clip blocks of the timeline (feature 009): the arranger screens draw them at `md`. */
+    val clip = medium
+
     val material: Shapes = Shapes(
         extraSmall = RoundedCornerShape(small),
         small = RoundedCornerShape(default),

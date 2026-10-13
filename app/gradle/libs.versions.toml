@@ -13,6 +13,8 @@ androidx-navigation3 = "1.1.2"
 compose-material3-adaptive = "1.2.0"
 kotlinx-coroutines = "1.11.0"
 kotlinx-serialization = "1.11.0"
+# Persistent collections for the project document and its undo history (feature 009, research R19).
+kotlinx-collections-immutable = "0.4.0"
 metro = "1.4.4"
 androidx-activity = "1.13.0"
 androidx-compose = "1.12.1"
@@ -58,6 +60,8 @@ compose-ui-test = { module = "org.jetbrains.compose.ui:ui-test", version.ref = "
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+# Persistent collections for the project document (feature 009, research R19).
+kotlinx-collections-immutable = { module = "org.jetbrains.kotlinx:kotlinx-collections-immutable", version.ref = "kotlinx-collections-immutable" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 # The JUnit 4 variant of kotlin-test for :androidApp's host test (feature 008): a plain Android module has no
 # commonTest, so the Kotlin plugin's framework inference does not pick it (the KMP modules get it automatically).
@@ -90,6 +94,8 @@ kotlin-compose-compiler-gradle-plugin = { module = "org.jetbrains.kotlin:compose
 android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
 compose-gradle-plugin = { module = "org.jetbrains.compose:compose-gradle-plugin", version.ref = "compose-multiplatform" }
 metro-gradle-plugin = { module = "dev.zacsweers.metro:gradle-plugin", version.ref = "metro" }
+# The kotlinx.serialization compiler plugin shares KGP's classloader through build-logic (feature 009); modules apply it by id.
+kotlin-serialization-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-serialization", version.ref = "kotlin" }
 # Baseline Profile Gradle plugin (feature 008, D1): on build-logic's classpath beside AGP (it compiles against AGP's API),
 # applied as `androidx.baselineprofile` by :androidApp (consumer) and :perf-benchmarks (producer).
 baselineprofile-gradle-plugin = { module = "androidx.benchmark:benchmark-baseline-profile-gradle-plugin", version.ref = "androidx-benchmark" }

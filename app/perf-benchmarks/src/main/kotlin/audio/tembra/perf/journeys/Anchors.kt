@@ -26,6 +26,31 @@ object Anchors {
     const val METRONOME_TEMPO_READOUT = "metronome.tempoReadout"
     const val DEVTOOLS_WRITE_HEALTH = "devtools.writeHealth"
 
+    // Feature 009 (contracts/perf-instrumentation.md).
+    const val NAV_PROJECTS = "nav.item.projects"
+    const val PROJECTS_ROOT = "screen.projects"
+    const val PROJECTS_SEARCH = "projects.search"
+    const val PROJECTS_CARD_DEMO = "projects.card.demo"
+    const val NAV_TIMELINE = "nav.item.timeline"
+    const val TIMELINE_ROOT = "screen.timeline"
+    const val TIMELINE_ADD_TRACK = "timeline.toolbar.addTrack"
+    const val TIMELINE_SPLIT = "timeline.toolbar.split"
+    const val TIMELINE_UNDO = "timeline.toolbar.undo"
+    const val TIMELINE_RULER = "timeline.ruler"
+    const val TIMELINE_LANE_FIRST = "timeline.lane.0"
+    const val TIMELINE_CLIP_FIRST = "timeline.clip.first"
+    const val TIMELINE_TRACK_MENU_FIRST = "timeline.track.menu.0"
+    const val TIMELINE_TRACK_SETTINGS = "timeline.track.menu.settings"
+    const val TIMELINE_SETTINGS_CLOSE = "timeline.settings.close"
+    const val TRANSPORT_PLAY = "transport.play"
+    const val TRANSPORT_SKIP_START = "transport.skipStart"
+    const val TRANSPORT_METRONOME = "transport.metronome"
+    const val TRANSPORT_READOUT = "transport.readout"
+    const val DIALOG_STOP_AND_LEAVE_CONFIRM = "dialog.stopAndLeave.confirm"
+
+    /** The `screen.timeline` state once every visible overview is built; "loading" before (not an anchor of its own). */
+    const val TIMELINE_READY_STATE = "ready"
+
     /** Default wait for an anchor to appear, generous for a cold process on a cool phone. */
     const val TIMEOUT_MS = 10_000L
 

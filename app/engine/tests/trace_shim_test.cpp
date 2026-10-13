@@ -28,5 +28,5 @@ TEST_CASE("intervals, animation intervals and counters do not crash", "[trace][s
 }
 
 TEST_CASE("the generated name table matches the catalogue count", "[trace][shim]") {
-    REQUIRE(TEMBRA_TRACE_NAME_COUNT == 16);
+    REQUIRE(TEMBRA_TRACE_NAME_COUNT == 28);  // 16 from feature 007 + 9 sections and 3 counters from feature 009
 }

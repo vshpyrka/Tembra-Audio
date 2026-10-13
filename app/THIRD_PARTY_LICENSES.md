@@ -23,8 +23,10 @@ Last reviewed: 2026-09-30 (feature 004, metronome).
 | Metro (compiler plugin runtime, `metrox-viewmodel-compose`) | 1.4.4 | Apache-2.0 | https://github.com/ZacSweers/metro |
 | AndroidX DataStore Preferences (`androidx.datastore:datastore-preferences-core`, with `datastore-core-okio`) | 1.2.1 | Apache-2.0 | https://developer.android.com/jetpack/androidx/releases/datastore |
 | Okio (`com.squareup.okio:okio`, direct dependency of `:shared:data`; `okio-fakefilesystem` in tests only) | 3.9.1 | Apache-2.0 | https://github.com/square/okio |
+| kotlinx.serialization (`kotlinx-serialization-json` and the compiler plugin; the project document of feature 009) | 1.11.0 | Apache-2.0 | https://github.com/Kotlin/kotlinx.serialization |
+| kotlinx.collections.immutable (`kotlinx-collections-immutable`; the project document's persistent collections, feature 009) | 0.4.0 | Apache-2.0 | https://github.com/Kotlin/kotlinx.collections.immutable |
 | Oboe (Android only, via Prefab) | 1.11.0 | Apache-2.0 | https://github.com/google/oboe |
-| miniaudio (`engine/third_party/miniaudio`) | 0.11.25 | MIT-0 or public domain (dual) | https://github.com/mackron/miniaudio |
+| miniaudio (`engine/third_party/miniaudio`; the resampler, and since feature 009 its bundled WAV, FLAC and MP3 decoders) | 0.11.25 | MIT-0 or public domain (dual) | https://github.com/mackron/miniaudio |
 | dr_wav from dr_libs (`engine/third_party/dr_libs`) | 0.14.5 | MIT-0 or public domain (dual) | https://github.com/mackron/dr_libs |
 | Signalsmith Stretch with its `dsp/` headers (`engine/third_party/signalsmith-stretch`) | 1.1.0 | MIT | https://github.com/Signalsmith-Audio/signalsmith-stretch |
 | Space Grotesk (`shared/ui/src/commonMain/composeResources/font/space_grotesk_*.ttf`) | 2.0.0 (Medium and Bold static files; SemiBold instanced from the variable font with fontTools) | SIL Open Font License 1.1 (`composeResources/files/OFL-SpaceGrotesk.txt`) | https://github.com/floriankarsten/space-grotesk |

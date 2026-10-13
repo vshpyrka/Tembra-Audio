@@ -12,9 +12,23 @@ TIMELINE_SCROLL timeline timeline.scroll
 TIMELINE_ZOOM timeline timeline.zoom
 ENGINE_LOAD_CLIP engine engine.loadClip
 ENGINE_GRAPH_SWAP engine engine.graphSwap
+# Feature 009 (timeline arranger, contracts/perf-instrumentation.md): the project, the transport and the streamer.
+TIMELINE_PROJECT_OPEN timeline timeline.projectOpen
+TIMELINE_WAVEFORM timeline timeline.waveform
+TIMELINE_PLAYHEAD_FRAME timeline timeline.playheadFrame
+TIMELINE_CLIP_SPLIT timeline timeline.clipSplit
+TIMELINE_PROJECT_SAVE timeline timeline.projectSave
+TIMELINE_LIBRARY_OPEN timeline timeline.libraryOpen
+TRANSPORT_PLAY transport transport.play
+TRANSPORT_SEEK transport transport.seek
+ENGINE_PRIME engine engine.prime
 AUDIO_CALLBACKS counter audio.callbacks
 AUDIO_LAST_US counter audio.lastUs
 AUDIO_MAX_US counter audio.maxUs
 AUDIO_OVER_BUDGET counter audio.overBudget
 AUDIO_XRUNS counter audio.xruns
 AUDIO_REALTIME counter audio.realtime
+# Feature 009: the transport's audio-thread counters (ABI revision 6).
+AUDIO_AVG_US counter audio.avgUs
+AUDIO_STARVATION counter audio.starvation
+AUDIO_CLIPS_ACTIVE counter audio.clipsActive

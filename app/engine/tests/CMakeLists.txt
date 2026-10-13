@@ -66,7 +66,7 @@ target_include_directories(tembra_rt_poison PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/signalsmith-stretch
 )
 target_compile_definitions(tembra_rt_poison PRIVATE TEMBRA_BUILD_TESTS TEMBRA_TRACING=1 TEMBRA_TRACE_POISON=1
-    MA_NO_DEVICE_IO MA_NO_DECODING MA_NO_ENCODING MA_NO_GENERATION)
+    MA_NO_DEVICE_IO MA_NO_ENCODING MA_NO_GENERATION)
 target_link_libraries(tembra_rt_poison PRIVATE Threads::Threads)
 add_dependencies(tembra_engine_tests tembra_rt_poison)
 

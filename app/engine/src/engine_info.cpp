@@ -1,4 +1,4 @@
-// Descriptor functions of the Tembra engine C ABI (contracts/engine-c-abi.md; version 0.4.0 = ABI revision 4, feature 006).
+// Descriptor functions of the Tembra engine C ABI (contracts/engine-c-abi.md; version 0.5.0 = ABI revision 6, feature 009).
 #include "tembra_engine.h"
 
 #include <string>
@@ -10,7 +10,7 @@
 #endif
 
 #define TEMBRA_ENGINE_NAME "Tembra Engine"
-#define TEMBRA_ENGINE_VERSION "0.4.0"
+#define TEMBRA_ENGINE_VERSION "0.5.0"
 
 namespace {
 

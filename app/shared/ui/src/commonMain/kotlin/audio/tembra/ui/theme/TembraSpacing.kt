@@ -109,4 +109,19 @@ data class TembraSpacing(
     val soundTileGlyphBox: Dp = 28.dp,
     /** The wide layout's settings column: a third of the width, at least this. */
     val wideSettingsMinWidth: Dp = 320.dp,
+    // Timeline arranger metrics (feature 009, contracts/timeline-screen.md layout table, design-system-additions.md).
+    /** Track lane height on compact and medium windows, and on expanded ones. */
+    val laneHeightCompact: Dp = 88.dp,
+    val laneHeightExpanded: Dp = 96.dp,
+    /** The pinned ruler (bar row and time row). */
+    val rulerHeight: Dp = 44.dp,
+    /** The timeline toolbar. */
+    val toolbarHeight: Dp = 48.dp,
+    /** The transport bar on compact and on expanded windows. */
+    val transportHeightCompact: Dp = 64.dp,
+    val transportHeightExpanded: Dp = 72.dp,
+    /** The pinned track-header column of the expanded layout. */
+    val headerColumnWidth: Dp = 200.dp,
+    /** The project card's overview chart. */
+    val cardOverviewHeight: Dp = 56.dp,
 )

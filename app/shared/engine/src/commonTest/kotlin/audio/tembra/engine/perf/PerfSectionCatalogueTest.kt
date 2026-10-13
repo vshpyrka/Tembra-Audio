@@ -67,6 +67,7 @@ class PerfSectionCatalogueTest {
         PerfFamily.TUNER -> "tuner"
         PerfFamily.METRONOME -> "metronome"
         PerfFamily.TIMELINE -> "timeline"
+        PerfFamily.TRANSPORT -> "transport"
         PerfFamily.ENGINE -> "engine"
     }
 }
