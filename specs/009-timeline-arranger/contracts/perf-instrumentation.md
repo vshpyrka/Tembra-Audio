@@ -40,13 +40,16 @@ and `specs/007-performance-pipeline/contracts/metric-catalogue.md` gain the thre
 `TIMELINE_TRACK_MENU_FIRST = "timeline.track.menu.0"`, `TIMELINE_TRACK_SETTINGS = "timeline.track.menu.settings"`,
 `TIMELINE_SETTINGS_CLOSE = "timeline.settings.close"`, `TRANSPORT_PLAY = "transport.play"`,
 `TRANSPORT_SKIP_START = "transport.skipStart"`, `TRANSPORT_METRONOME = "transport.metronome"`,
-`TRANSPORT_READOUT = "transport.readout"`, `TIMELINE_WAVEFORMS_READY = "timeline.waveforms.ready"`
-(a zero-size semantics node present once every visible clip's overview is `Ready`).
+`TRANSPORT_READOUT = "transport.readout"`, `DIALOG_STOP_AND_LEAVE_CONFIRM = "dialog.stopAndLeave.confirm"`.
+Waveform readiness is not an anchor (a zero-size node could be pruned from the accessibility
+tree): the `screen.timeline` node carries `stateDescription = "ready"` once every visible clip's
+overview is `Ready` (and `"loading"` before), which both UiAutomator (`By.res` + `UiObject2.text`/
+content description) and XCUITest (`value`) can wait on.
 
 ## Journey `timeline` (same steps on both platforms)
 
 1. tap `nav.item.projects`, wait `screen.projects`; 2. tap `projects.card.demo`, wait
-`screen.timeline` and `timeline.waveforms.ready` (10 s budget); 3. tap `transport.play`, wait
+`screen.timeline` with `stateDescription == "ready"` (10 s budget); 3. tap `transport.play`, wait
 until `transport.readout` text passes "00:15" (eight bars at 124 BPM = 15.5 s); 4. tap
 `timeline.ruler` at 25 % width (seek); 5. pinch in then out on `timeline.lane.0` (Android
 `UiObject2.pinchOpen/pinchClose`, iOS `pinch(withScale:velocity:)`); 6. tap

@@ -60,8 +60,8 @@ iOS `UIDocumentPickerViewController` with multiple selection, security-scoped ac
 `.playback` session and `audio` background mode (already declared). No Room (Complexity #1),
 no FlatBuffers (R8), no Turbine.
 
-**Storage**: `AppDirectories.documents/projects/<id>/project.json` + `audio/<sha256>.<ext>`
-(byte-for-byte originals); `documents/projects/library.json` index;
+**Storage**: `AppDirectories.documents/projects/<id>/project.json` + `view.json` (device-side zoom
+and grid) + `audio/<sha256>.<ext>` (byte-for-byte originals); `documents/projects/library.json` index;
 `AppDirectories.cache/projects/<id>/<sha256>.peaks` overviews (rebuildable); the metronome's
 DataStore preferences are read, not changed; the demo audio ships as Compose resources.
 
@@ -100,7 +100,7 @@ transport bar on Timeline and the track settings screen only; playback stops whe
 Timeline after the dialog, continues under screen lock and backgrounding, never resumes by
 itself after a call, another app or a route loss; bounded arrangement (64 tracks, 1024 clips).
 
-**Scale/Scope**: about 30 new C++ files (three modules, ABI revision 6 with 17 functions and
+**Scale/Scope**: about 30 new C++ files (three modules, ABI revision 6 with 15 functions and
 7 structs, 13 Catch2 files); about 150 new Kotlin files across the four shared modules and the
 apps (core 35, engine 12, data 18, ui 80, platform 8); two Swift journey files; ~20 vector
 assets; ~50 new test classes on the JVM/iOS lanes, ~18 UI test classes, ~8 device test classes;
@@ -195,7 +195,7 @@ app/
 │   └── tests: commonTest FakeAudioEngineTest (+ transport), PerfSectionCatalogueTest (+ TRANSPORT); androidDeviceTest + iosTest NativeAudioEngineTransportTest, TransportTimingEndToEndTest
 ├── shared/data/
 │   ├── build.gradle.kts                             + serialization plugin + json
-│   ├── src/commonMain/kotlin/audio/tembra/data/projects/ ProjectRepository.kt, OkioProjectRepository.kt, FakeProjectRepository.kt, ProjectFolder.kt, ProjectDocumentCodec.kt,
+│   ├── src/commonMain/kotlin/audio/tembra/data/projects/ ProjectRepository.kt, OkioProjectRepository.kt, FakeProjectRepository.kt, ProjectFolder.kt, ProjectViewState.kt, DemoAudioSource.kt, ProjectDocumentCodec.kt,
 │   │                                                       ProjectDocumentMigrations.kt, ProjectValidator.kt, LibraryIndex.kt, LibraryEntry.kt, CardOverview.kt, CardOverviewBuilder.kt,
 │   │                                                       OpenedProject.kt, AudioImporter.kt, ImportResult.kt, ImportRefusal.kt, PickedFile.kt, WaveformOverview.kt, WaveformOverviewReader.kt,
 │   │                                                       OverviewStatus.kt, DemoProjectInstaller.kt, AutosaveScheduler.kt
@@ -206,14 +206,14 @@ app/
 │   ├── src/commonMain/kotlin/audio/tembra/ui/
 │   │   ├── App.kt (+ session start), di/AppBindings.kt (+ repository, session, TimelineAudio, AudioFilePicker, sessionScope), di/AppGraph.kt
 │   │   ├── navigation/ ShellUiState.kt (List<NavKey>), ShellViewModel.kt (guarded select/back), TembraNavDisplay.kt (+ TrackSettingsKey entry), NavigationShellContent.kt (+ dialog host), DestinationContent.kt
-│   │   ├── session/ ProjectSession.kt, SessionState.kt, SessionMessage.kt, ArrangementMapper.kt, ClipSourceRegistry.kt, OverviewTracker.kt, MetronomeBridge.kt, PlaybackGuard.kt, DialogRequest.kt, AppStartup.kt
+│   │   ├── session/ ProjectSession.kt, SessionState.kt, SessionMessage.kt, ArrangementMapper.kt, ClipSourceRegistry.kt, OverviewTracker.kt, MetronomeBridge.kt, PlaybackGuard.kt, DialogRequest.kt, AppStartup.kt, AppLifecycleObserver.kt
 │   │   ├── platform/ AudioFilePicker.kt, AudioPickRequest.kt, AudioPickResult.kt (SoundFilePicker removed; metronome call sites updated)
 │   │   ├── theme/ DawColors.kt (+ trackTints and clip tokens), TembraSpacing.kt (+ timeline sizes), TembraIcon.kt (+ glyphs)
 │   │   ├── designsystem/ TembraMenu.kt, TembraTooltip.kt, TembraTextField.kt, TembraDialog.kt, TembraCard.kt, StopAndLeaveDialog.kt
-│   │   ├── timeline/ … (contracts/timeline-screen.md file list) and timeline/components/ …
+│   │   ├── timeline/ … (contracts/timeline-screen.md file list incl. TimelineKeyHandling.kt) and timeline/components/ …
 │   │   ├── transport/ TransportBar.kt, TransportUiState.kt, TransportCallbacks.kt, TransportButton.kt, TimeReadout.kt, MasterVolumeSlider.kt, MetronomeToggle.kt
-│   │   ├── tracksettings/ TrackSettingsScreen.kt, TrackSettingsViewModel.kt, TrackSettingsUiState.kt, TrackSettingsForm.kt, TrackSettingsInlineRow.kt, EffectsPlaceholder.kt, TrackSettingsKey.kt
-│   │   ├── projects/ … (contracts/projects-library-screen.md file list) and projects/components/ …
+│   │   ├── tracksettings/ TrackSettingsScreen.kt, TrackSettingsViewModel.kt, TrackSettingsUiState.kt, TrackSettingsCallbacks.kt, TrackSettingsForm.kt, TrackSettingsInlineRow.kt, TrackSettingsDraft.kt, EffectsPlaceholder.kt, TrackSettingsKey.kt
+│   │   ├── projects/ … (contracts/projects-library-screen.md file list incl. LibraryViewStateHolder.kt) and projects/components/ …
 │   │   └── perf/PerfAnchors.kt (+ 20), EngineHealthJson.kt (+3), AudioHealthTicker.kt (+3)
 │   ├── src/iosMain/kotlin/audio/tembra/ui/ IosAppGraph.kt (+ IosAudioFilePicker, repository), platform/IosAudioFilePicker.kt
 │   ├── src/commonTest/…/ session/*, timeline/*, transport/*, tracksettings/*, projects/*, navigation/ShellViewModelGuardTest, platform/FakeAudioFilePicker.kt, theme/TimelineTokensTest.kt

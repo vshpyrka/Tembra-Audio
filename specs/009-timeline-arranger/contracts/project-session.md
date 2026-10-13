@@ -24,7 +24,11 @@ Launch sites (all on one `sessionScope = CoroutineScope(SupervisorJob() + Dispat
 `observeEngineEvents` (one collector of `AudioStatus.events`, FR: hot, no replay),
 `observeMetronomePreferences`, `observeHostStopRequests`, `autosave`, `overviewPolling(assetId)`,
 `importJob`. No `init` launches: `start()` is called once by the graph's `AppStartup` on first
-composition (the shell's `LaunchedEffect(session)`).
+composition (the shell's `LaunchedEffect(session)`). `AppLifecycleObserver` (a
+`LifecycleEventObserver` installed by `App.kt` on `LocalLifecycleOwner`) calls `session.flush()`
+on `ON_STOP` so backgrounding and termination save at once (FR-046); playback itself is not
+touched by lifecycle events. `settingsDraft: MutableStateFlow<TrackSettingsDraft?>` carries an
+open settings form between the nested screen and the inline row (FR-042).
 
 ## State
 

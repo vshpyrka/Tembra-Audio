@@ -20,14 +20,14 @@ FR-046, FR-049; data model §1.
 5. **Beats, not samples**: `startBeats` is a double in beats of the signature's unit; clip
    `offsetFrames` and `lengthFrames` are facts about the audio at the asset's own sample rate
    and never depend on the project tempo.
-6. **Nothing device-specific**: no path, URI, cache state, selection, last-opened or window
-   state. `zoom` and `grid` are stored because the spec remembers them per project; they are
-   view conveniences a server may ignore.
+6. **Nothing device-specific**: no path, URI, cache state, selection, last-opened, window,
+   zoom or grid state. Zoom and grid are remembered per project in the device-side `view.json`
+   (contracts/project-storage.md), never in the document (spec FR-049, clarified 2026-10-13).
 7. **Evolution rules** (the same rules FlatBuffers and Protobuf enforce): a field's name, type
    and meaning never change; new fields are optional with defaults; a removed field's name is
    never reused; enums only grow and readers map unknown enum values to a documented fallback
-   (`InstrumentLabel` → `Other`, `MusicalKey` → `null`, `GridSize` → `Sixteenth`,
-   `AudioFormat` → refuse the asset as unavailable).
+   (`InstrumentLabel` → `Other`, `MusicalKey` → `null`, `AudioFormat` → refuse the asset as
+   unavailable).
 8. **Wire readiness**: the same classes serialise to ProtoBuf or CBOR through
    `kotlinx.serialization` when a server arrives; the field order in this contract is the
    future `@ProtoNumber` order (1-based, declaration order), recorded here so it never shifts.
@@ -46,8 +46,6 @@ FR-046, FR-049; data model §1.
     "timeSignature": "4/4",
     "masterVolume": 80,
     "metronomeOn": false,
-    "grid": "1/16",
-    "zoom": 24.0,
     "assets": {
       "3f8a…sha256…": { "fileName": "drums.wav", "format": "wav", "channels": 2, "sampleRate": 48000, "frames": 1486452, "byteSize": 5945808 }
     },
@@ -67,8 +65,9 @@ FR-046, FR-049; data model §1.
 Field notes: `tempo` is the integer BPM (the metronome's `Tempo`); `timeSignature` is the
 metronome's id string ("4/4", "3/4", "6/8", "2/4", "5/4", "7/8"); `key` is one of the 24 display
 names or absent; `gainDb` uses `"-Infinity"` for silence (the JSON codec is configured with
-`allowSpecialFloatingPointValues = true`); `zoom` is pixels per beat at 1× density or the string
-`"fit"`; `label` is the lower-case enum name or absent; `colorIndex` 0–5.
+`allowSpecialFloatingPointValues = true`); `label` is the lower-case enum name or absent;
+`colorIndex` 0–5. Every field has exactly one JSON type (no number-or-string fields), so the
+same shape maps onto ProtoBuf without change.
 
 ## Validation on read (`ProjectValidator`)
 
@@ -82,7 +81,9 @@ a track count above 64 or a clip count above 1024 (the engine's bounds), names o
 - Round trip of the demo project and of a 32-track project: equal after `decode(encode(p))`.
 - Unknown top-level and nested keys are ignored; a document with `formatVersion: 2` is refused;
   a document with version 0 is migrated (the test registers a fake migration).
-- Unknown `label`, `key`, `grid` and `format` values map to the documented fallbacks.
+- Unknown `label`, `key` and `format` values map to the documented fallbacks; a document that
+  still carries `grid` or `zoom` keys (a pre-release draft) reads fine because unknown keys are
+  ignored.
 - Serialised text contains no `/`-separated path, no `file:` or `content:` prefix (a regex guard
   that fails if anyone adds a path field later).
 - `-Infinity` gain round-trips; `startBeats` keeps full double precision.

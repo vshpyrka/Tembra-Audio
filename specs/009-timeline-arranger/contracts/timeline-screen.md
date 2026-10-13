@@ -33,13 +33,16 @@ ui/timeline/
     EmptyTimeline.kt           "Add track" / "Add audio" invitation
     TempoDialog.kt             TempoDial + TempoStepper ×2 + TempoSlider + TapTempoButton (metronome components)
     MetronomeSettingsSheet.kt  ModalBottomSheet: ClickSoundPicker, SubdivisionTiles, AccentCells, StyleMenu; tempo and signature read-only
+  TimelineKeyHandling.kt       a Modifier.onPreviewKeyEvent owner on the screen root mapping the FR-057 keys to callbacks (US8)
 ui/transport/
   TransportBar.kt              (state: TransportUiState, callbacks, telemetry, modifier): MasterVolumeSlider, skip, step back, PlayPauseButton (metronome's), step forward, TimeReadout, MetronomeToggle
-  TransportUiState.kt, TransportCallbacks.kt, TransportButton.kt, TimeReadout.kt, MasterVolumeSlider.kt, MetronomeToggle.kt
+  TransportUiState.kt, TransportCallbacks.kt, TransportButton.kt, MasterVolumeSlider.kt, MetronomeToggle.kt
+  TimeReadout.kt               a Canvas: reads TransportTelemetry in draw and paints "mm:ss.hh / mm:ss.hh" with drawText in tabularTimecode (never a Text recomposed per frame); semantics text from the 10 Hz UiState value, announced at 1 Hz
 ui/tracksettings/
   TrackSettingsScreen.kt       nested entry (compact): title = track name; TransportBar at the bottom
   TrackSettingsForm.kt         shared by the screen and the inline row: name field, InstrumentLabelMenu, GainReadout slider, M/S toggles, Delete track, EffectsPlaceholder
   TrackSettingsInlineRow.kt    expanded: the form under the header, chevron collapses
+  TrackSettingsDraft.kt        the unsaved field values handed between the nested screen and the inline row through ProjectSession.settingsDraft when the window crosses 840 dp
   EffectsPlaceholder.kt        heading "Effects" + one sentence (TimelineCopy.effectsLater)
   TrackSettingsKey.kt          NavKey(trackId)
 ui/navigation/
