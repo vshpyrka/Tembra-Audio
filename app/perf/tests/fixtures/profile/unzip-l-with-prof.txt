@@ -1,0 +1,12 @@
+Archive:  androidApp-perf.apk
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+  3421760  01-01-1981 01:01   classes.dex
+  1864320  01-01-1981 01:01   classes2.dex
+   183512  01-01-1981 01:01   assets/dexopt/baseline.prof
+     2048  01-01-1981 01:01   assets/dexopt/baseline.profm
+  2101248  01-01-1981 01:01   lib/arm64-v8a/libtembra_engine.so
+   412368  01-01-1981 01:01   resources.arsc
+     6212  01-01-1981 01:01   AndroidManifest.xml
+---------                     -------
+  7991468                     7 files

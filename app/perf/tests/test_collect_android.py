@@ -290,3 +290,53 @@ def test_quality_flags_ignore_section_keys_but_not_the_journey_section(cfg):
     journey = {"journey.tunerSumMs": single(0.3), "timeToInitialDisplayMs": single(0.05)}
     flags, _ = quality_flags([BenchmarkFile(context={}, benchmarks=[benchmark(journey)])], cfg)
     assert flags == ["noisy"], "the journey section (0.3 > its 0.25 allowance) still counts"
+
+
+# ---------------------------------------------------------------------------
+# the comparison class (feature 008): keyed by method, same catalogue keys as a round
+# ---------------------------------------------------------------------------
+
+PROFILE_FIXTURES = os.path.join(FIXTURES_DIR, "profile")
+COMPARISON_CLASS = "audio.tembra.perf.ProfileComparisonBenchmark"
+
+
+@pytest.mark.parametrize("method", ["startup", "tuner", "metronome", "stress"])
+def test_journey_of_method_maps_the_comparison_class_by_method(method):
+    from tracepulse.collect_android import journey_of_method
+    assert journey_of_method(COMPARISON_CLASS, method) == method
+
+
+def test_journey_of_method_rejects_an_unknown_method():
+    from tracepulse.collect_android import journey_of_method
+    with pytest.raises(CollectError) as exc:
+        journey_of_method(COMPARISON_CLASS, "scroll")
+    assert "scroll" in str(exc.value)
+
+
+def test_journey_of_method_rejects_a_class_that_is_not_the_comparison_class():
+    from tracepulse.collect_android import journey_of_method
+    with pytest.raises(CollectError):
+        journey_of_method("audio.tembra.perf.StartupBenchmark", "startup")
+
+
+def test_a_comparison_fixture_parses_into_per_journey_results_with_the_round_catalogue_keys(cfg):
+    from tracepulse.collect_android import collect_round
+    collected = collect_round([os.path.join(PROFILE_FIXTURES, "benchmarkData-none.json")], cfg)
+    by_name = {j.journey: j for j in collected.journeys}
+    assert sorted(by_name) == ["metronome", "startup", "stress", "tuner"]
+    assert set(by_name["startup"].metrics) == {"startup.ttid_ms", "startup.ttfd_ms"}
+    assert by_name["startup"].iterations == 20
+    for journey in ("tuner", "metronome", "stress"):
+        keys = set(by_name[journey].metrics)
+        assert {"frames.p50_ms", "frames.p90_ms", "frames.p99_ms", "frames.overrun_p90_ms",
+                "memory.peak_kb", "memory.end_kb", "journey.duration_ms"} <= keys, journey
+    assert "section.tuner.load.sum_ms" in by_name["tuner"].metrics
+    assert "section.metronome.load.sum_ms" in by_name["metronome"].metrics
+    assert len(by_name["startup"].metrics["startup.ttid_ms"].samples) == 20
+
+
+def test_the_round_mapping_by_class_is_untouched():
+    from tracepulse.collect_android import journey_of
+    assert journey_of("audio.tembra.perf.StartupBenchmark") == "startup"
+    with pytest.raises(CollectError):
+        journey_of(COMPARISON_CLASS)

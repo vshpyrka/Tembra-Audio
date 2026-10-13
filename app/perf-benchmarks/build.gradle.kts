@@ -1,8 +1,11 @@
 // :perf-benchmarks — Jetpack Macrobenchmark journeys over the app's perf anchors (feature 007, D2).
 // Included in the build only with `-Ptembra.perf=true` (settings.gradle.kts); depends on nothing in the
 // module graph and nothing depends on it. Build: `./gradlew -Ptembra.perf=true :perf-benchmarks:assemblePerf`.
+// Since feature 008 the module takes `com.android.test` and the baseline-profile producer (D1) from the
+// `tembra.android.benchmarks` convention plugin: `BaselineProfileGenerator` drives the journeys on the connected
+// device named by ANDROID_SERIAL when `:androidApp:generateBaselineProfile` runs.
 plugins {
-    alias(libs.plugins.androidTest)
+    id("tembra.android.benchmarks")
 }
 
 android {
@@ -39,8 +42,14 @@ android {
 
 androidComponents {
     beforeVariants { variant ->
-        variant.enable = variant.buildType == "perf" || variant.buildType == "release"
+        // nonMinifiedRelease is the profile-generation variant the plugin pairs with the app's (feature 008).
+        variant.enable = variant.buildType in setOf("perf", "release", "nonMinifiedRelease")
     }
+}
+
+// No managed device: generation runs on the attached Pixel (API 33+), selected through ANDROID_SERIAL (D7).
+baselineProfile {
+    useConnectedDevices = true
 }
 
 dependencies {

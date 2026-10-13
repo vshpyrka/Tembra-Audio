@@ -8,6 +8,8 @@ dependencies {
     implementation(libs.android.gradle.plugin)
     implementation(libs.compose.gradle.plugin)
     implementation(libs.metro.gradle.plugin)
+    // The Baseline Profile plugin must share AGP's classloader (feature 008); the modules apply it by id.
+    implementation(libs.baselineprofile.gradle.plugin)
 }
 
 // Gradle generates type-safe accessors for every task type of the applied plugins, including Metro's graph

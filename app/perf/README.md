@@ -77,6 +77,11 @@ uv run tracepulse analyze                              # detections (ratchet) + 
 uv run tracepulse report [--open] [--out <file>]       # reports/report.html, self-contained
 uv run tracepulse status [--series [--label <label>] [--last N]]  # cache, unpublished records, branch state (+ CoV per series: one label, last N rounds)
 uv run tracepulse inject R1 | revert R1 | revert --all  # the regression-injection self-test
+uv run tracepulse profile generate --device pixel6      # baseline + startup profile from the journeys into androidApp/src/main/generated/baselineProfiles/
+uv run tracepulse profile compare --device pixel6 [--with-full] [--journeys …] [--iterations N] [--no-build --apk … --test-apk …]
+                                                        # one build, no profile vs shipped profile (+ fully optimised): data/comparisons/<id>/comparison.md
+uv run tracepulse profile verify --device pixel6 [--apk …] [--build-type perf|release]
+                                                        # the installed build carries, recognises and is compiled from its profile
 ```
 
 `--json` on any command prints one JSON object on stdout (progress lines go to stderr) for a future CI job.
@@ -241,7 +246,12 @@ got 50 % slower (first hint)" for a 2 → 3 µs step.
    `perf-benchmarks/.../journeys/Anchors.kt` and `TembraPerfTests/Anchors.swift`.
 3. **Journey**: a class in `perf-benchmarks/.../journeys/` + a benchmark class, a struct in
    `TembraPerfTests/Journeys/` + a test case, the name in `tracepulse.yml` `journeys:` and in
-   `collect_android.BENCHMARK_CLASS_OF` / `collect_ios._TEST_JOURNEYS`.
+   `collect_android.BENCHMARK_CLASS_OF` / `collect_ios._TEST_JOURNEYS`. One journey definition, several
+   registrations (feature 008, spec FR-002): the same journey class is also run by
+   `BaselineProfileGenerator.journeys()` and gets its own test in `ProfileComparisonBenchmark` (named after
+   the journey; add the method to `collect_android._COMPARISON_METHODS`). When the journey visits a new
+   primary destination, append `<label> <class descriptor>` to `androidApp/baseline-profile-coverage.txt`
+   and regenerate the profile in the same feature.
 
 ## Every feature instruments itself (FR-022, constitution)
 
@@ -261,6 +271,83 @@ uv run tracepulse sync && uv run tracepulse report --open
 
 A single round only attributes an onset to the feature; confirmation needs the detector's later rounds,
 so sessions of five are the practice.
+
+A feature that adds a primary destination, a journey or a main interaction also **regenerates the baseline
+profile in the same feature** (`uv run tracepulse profile generate --device pixel6`, feature 008, spec FR-012)
+and commits the two regenerated files; a feature that adds a destination the journeys visit appends it to
+`androidApp/baseline-profile-coverage.txt` first, so the host lane's coverage check names it until the
+profile covers it. Regeneration is never part of a round.
+
+## Baseline profiles (feature 008)
+
+A **baseline profile** is the list of the app's hot code paths (startup, the primary destinations, their
+interactions) that ships inside the Android app as `assets/dexopt/baseline.prof`; ART compiles those paths
+when the app is installed, so the first launches are fast instead of the tenth. The **startup profile** is the
+subset recorded during cold start; R8 uses it to lay the startup classes out together in `classes.dex`. Both
+are generated from the pipeline's journeys, committed as text, and shipped by every release-like build
+(`release` and the `perf` measurement build), which are shrunk with R8 since this feature. The debug build
+carries no profile and is not shrunk. iOS has no equivalent and is untouched.
+
+| What | Where |
+|---|---|
+| the two profiles (generated, committed, never edited by hand) | `androidApp/src/main/generated/baselineProfiles/baseline-prof.txt`, `startup-prof.txt` |
+| the coverage rule the host lane checks (`BaselineProfileCoverageTest`) | `androidApp/baseline-profile-coverage.txt` — `<label> <class descriptor>` per line |
+| the keep rules of the shrunk build, each with its reason | `androidApp/proguard-rules.pro` |
+| the generator and the comparison class | `perf-benchmarks/.../BaselineProfileGenerator.kt`, `ProfileComparisonBenchmark.kt`, `CompareState.kt` |
+| comparison outputs and generation logs | `app/perf/data/comparisons/<id>/`, `app/perf/data/profile-generate/<id>/` (git-ignored) |
+
+The three commands share the registry, the device protocol (`doctor`), the measurement state of a round
+(airplane mode, pinned refresh rate, screen on — restored afterwards) and the build step, and they **never**
+write to the history, the records, the store or the report. Exit statuses: 0 done; 2 refused (a check
+failed, nothing ran); 3 failed (started and did not complete; `generate` restores the committed files);
+4 usage. A round never generates or evaluates a profile: rounds keep measuring the fully optimised state.
+
+**Generate** — `uv run tracepulse profile generate --device pixel6` (about 3 minutes on the Pixel 6 Pro; needs
+API 33+ on a non-rooted device). It backs the two files up, runs
+`./gradlew -Ptembra.perf=true :androidApp:generateBaselineProfile` with `ANDROID_SERIAL` naming the device
+(the plugin builds and installs the `nonMinifiedRelease` app, drives `BaselineProfileGenerator` until three
+iterations add no new rule, merges, and writes the files), then runs the coverage test; on any failure the
+backups come back byte for byte and the output names the failing step and the Gradle log. The generator
+grants the microphone itself (the plugin's install does not, and AGP uninstalls the app afterwards).
+**When to regenerate**: when the startup path, a primary destination, a journey or a main interaction
+changed, and before a release. **When to commit** the regenerated files: when covered code changed; a
+regeneration on an unchanged app differs only in order and in timing-reached rules (0.2–0.8 % of the lines
+on 2026-10-12) and is not committed.
+
+**Verify** — `uv run tracepulse profile verify --device pixel6` builds the `perf` APK (or takes `--apk`),
+checks it carries `assets/dexopt/baseline.prof` and reports its share of the APK (budget 3 %, FR-013),
+installs it, launches once, waits five seconds, and reports whether the device *recognised* the profile
+(the installer's broadcast: result 1 installed, 2 already installed, 6 no profile in the APK) and, after the
+forced optimisation pass, whether the app is *optimised* from it (`speed-profile`). The same as plain `adb`:
+
+```
+adb install -r -t androidApp/build/outputs/apk/perf/androidApp-perf.apk
+adb shell am start -W -n audio.tembra.app/audio.tembra.android.MainActivity ; sleep 5
+adb shell am broadcast -a androidx.profileinstaller.action.INSTALL_PROFILE -n audio.tembra.app/androidx.profileinstaller.ProfileInstallReceiver
+adb shell cmd package compile -r bg-dexopt audio.tembra.app
+adb shell dumpsys package dexopt | grep -A2 audio.tembra.app        # expect status=speed-profile
+```
+
+`--build-type release` inspects the unsigned release APK only (no signing config, so nothing is installed).
+
+**Compare** — `uv run tracepulse profile compare --device pixel6 [--with-full]` measures one `perf` build
+in the states `none` (compilation reset: the worst case after a direct install) and `profile` (the shipped
+profile compiled ahead of time), each from a fresh install, 20 iterations per journey, about 30 minutes
+for the two; `--with-full` adds the fully optimised state the rounds measure as a reference. It writes
+`data/comparisons/<id>/comparison.json` (schema `tracepulse/schema/comparison.schema.json`) and
+`comparison.md`: one row per series (`<journey>/<metric>`) with the median per state, the change of
+`profile` against `none` in percent, its direction (`better`/`worse`), whether a two-sided Mann–Whitney test
+confirms it at p < 0.01, and with `full` the share of the none→full gap the profile closes. The headline is
+the cold-start first frame: `startup.ttid_ms: <none> → <profile> ms (<change> %, confirmed)`. The command
+exits 0 whatever the numbers say; a worse metric is a finding to record in the feature's evidence, not a
+reason to change the comparison. `--no-build --apk … --test-apk …` reuses artifacts an agent built through
+`gradle-run`.
+
+**Keep rules** (`androidApp/proguard-rules.pro`): the shrunk build is accepted only after a round's four
+journeys complete on it and every primary destination is screenshot-verified at compact and expanded widths
+against the debug build. A rule is added only when such a run fails, with a comment naming the code path
+and the symptom; never a `-dontwarn` wildcard, never shrinking turned off for a build. Zero R8 warnings is
+part of the warning gate.
 
 ## Audio-thread health
 
