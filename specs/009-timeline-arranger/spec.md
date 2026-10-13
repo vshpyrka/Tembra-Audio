@@ -104,6 +104,28 @@ they are). The amendment names this specification.
   length, track count and size, and the actions; the project document must be built with good
   abstractions and data structures so that it can later be saved to a remote service unchanged
   (FR-049 to FR-054).
+- Q: When the user navigates from Timeline to another destination inside the app while a
+  project is playing, what should happen to playback? → A: It stops (pauses, position kept)
+  whenever the user leaves Timeline or its track settings screen for any other destination,
+  after a confirmation dialog that asks whether to stop playback and leave; cancelling stays on
+  Timeline with playback running. Locking the screen or switching apps keeps playback running
+  without a dialog (FR-008, FR-040).
+- Q: What should a project keep for an imported audio file: the file exactly as it was, or a
+  larger playback-ready copy? → A: The original file, unchanged in format and size, and the
+  project session plays from it; anything the app needs for fast playback or waveforms is a
+  rebuildable cache that is never part of the project (FR-044, FR-048, FR-049).
+- Q: On a touch screen, what should a one-finger drag that starts on a clip do? → A: A plain
+  drag on a clip scrolls the timeline; moving a clip requires a long press on it first, then
+  dragging without lifting the finger (a lifted long press just selects). With a pointer, a
+  drag on a clip moves it and the wheel or trackpad scrolls (FR-016, FR-031, FR-033).
+- Q: While the user drags the playhead marker in the ruler during playback, should the audio be
+  heard following the finger, or stay silent until the finger lifts? → A: Silent during the
+  drag: the readout and playhead follow the finger, playback resumes from the release point (or
+  stays paused if it was paused); no audible scrubbing in this feature (FR-011).
+- Q: When the user picks several audio files at once in the file picker, what should happen? →
+  A: "Add audio as new track" allows several files: each becomes its own new track named after
+  the file, in picker order, with its clip at the playhead, as one undo step; "Add audio…" to
+  an existing track still takes one file (FR-044).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -161,8 +183,10 @@ to start and seek behave as specified. Delivers a working multitrack player.
    **Then** the loudness follows the slider smoothly with no steps or crackle, and the
    percentage readout updates while dragging.
 7. **Given** playback is running, **When** the screen locks or another app comes to the front,
-   **Then** playback continues until the user stops it, a call or another app takes the audio,
-   or the user opens Tuner or Metronome inside the app.
+   **Then** playback continues until the user stops it or a call or another app takes the
+   audio; **When** the user chooses another destination inside the app, **Then** a dialog asks
+   whether to stop playback and leave: "Stop and leave" pauses at the current position and
+   navigates, "Keep playing" stays on Timeline with the music running.
 8. **Given** the playhead reaches the end of the last clip, **When** playback continues,
    **Then** it keeps running in silence (so the metronome can keep clicking) until the user
    stops it, and the position readout keeps counting past the project length.
@@ -204,8 +228,11 @@ gain, mute and solo, and the project reopens identically after the app is relaun
    speed whatever its sample rate or channel count.
 4. **Given** any project, **When** the user chooses "Add audio as new track" and picks a file,
    **Then** a new track named after the file (without its extension) is added at the end with
-   the clip on it at the playhead and is selected; **When** no track is selected and the user
-   chooses the toolbar's "Add audio…", **Then** it behaves the same way.
+   the clip on it at the playhead and is selected; **When** the user picks three files at once,
+   **Then** three new tracks are added in the picker's order, each with its clip at the
+   playhead, the last one selected, and one undo removes all three; **When** no track is
+   selected and the user chooses the toolbar's "Add audio…", **Then** it behaves as "Add audio
+   as new track".
 5. **Given** several tracks, **When** the user changes a track's gain from its header,
    **Then** the readout shows the value in dB with one decimal (for example "−2.4dB"), the
    loudness of that track follows during playback without steps, and the settings show the same
@@ -265,7 +292,8 @@ it. Delivers a navigable timeline.
    where the user tapped.
 6. **Given** any zoom, **When** the user drags the playhead marker in the ruler, **Then** the
    playhead follows the finger (snapped when the grid is on), the readout updates while
-   dragging, and releasing during playback continues from the released position.
+   dragging, nothing is heard during the drag, and releasing resumes playback from the released
+   position if it was running before the drag (or leaves it paused there if it was paused).
 
 ---
 
@@ -289,20 +317,22 @@ Delivers a clip editor.
 
 1. **Given** a clip on a track, **When** the user taps it, **Then** it is selected (an outline
    in the design's selection style) and the scissors becomes available; tapping empty track area
-   or another clip changes the selection; a long press on a clip also selects it and starts a
-   drag.
+   or another clip changes the selection; **When** the user drags a finger across a clip without
+   a long press, **Then** the timeline scrolls and the clip stays put; **When** the user long
+   presses a clip and keeps the finger down, **Then** the clip lifts and follows the finger.
 2. **Given** a selected clip crossed by the playhead, **When** the user presses the scissors,
    **Then** the clip becomes two clips meeting at the playhead (snapped when the grid is on),
    each with its own waveform and the original name, and playback across the cut is identical to
    the uncut clip; **When** the playhead is at a clip edge or outside the selected clip,
    **Then** the scissors does nothing and is shown as unavailable.
-3. **Given** a selected clip, **When** the user drags it sideways, **Then** it follows with its
-   waveform, snaps its start to the grid, cannot pass over a neighbouring clip on the same
-   track (it stops against it), cannot start before the beginning, and the project length
-   readout updates on release.
-4. **Given** a selected clip, **When** the user drags it onto another track, **Then** it moves
-   to that track at the same position if the span is free, otherwise it returns to where it
-   was; the clip takes the colour of its new track.
+3. **Given** a clip move in progress (long press and drag on touch, press and drag with a
+   pointer), **When** the user moves it sideways, **Then** it follows with its waveform, snaps
+   its start to the grid, cannot pass over a neighbouring clip on the same track (it stops
+   against it), cannot start before the beginning, and the project length readout updates on
+   release.
+4. **Given** a clip move in progress, **When** the user moves it onto another track, **Then** it
+   moves to that track at the same position if the span is free, otherwise it returns to where
+   it was; the clip takes the colour of its new track.
 5. **Given** a selected clip, **When** the user chooses "Delete clip" (menu, delete key or
    backspace), **Then** it disappears and the project length is recalculated.
 6. **Given** a sequence of edits (add track, import, split, move, delete, gain change, rename,
@@ -359,9 +389,9 @@ destination shows the same settings. Delivers tempo-locked play-along.
    picker, subdivision, accent cells and style with the tempo and time signature shown
    read-only as the project's; a change made here is visible in the Metronome destination and
    the other way round.
-7. **Given** the user leaves Timeline for the Metronome destination while playing, **When** the
-   destination opens, **Then** project playback and its click have stopped and the standalone
-   metronome shows its own tempo, unchanged by the project.
+7. **Given** the user chooses the Metronome destination while playing and confirms "Stop and
+   leave", **When** the destination opens, **Then** project playback and its click have
+   stopped and the standalone metronome shows its own tempo, unchanged by the project.
 
 ---
 
@@ -523,7 +553,9 @@ clips, overlaps or hides behind the transport bar.
   still runs.
 - The soloed track is deleted: no track is soloed afterwards and all remaining tracks sound.
 - A clip is shorter than a touch target at the current zoom: it still selects with a tap on it,
-  and its drag starts from a long press; zooming in restores a usable width.
+  and its move starts from a long press; zooming in restores a usable width.
+- The finger drifts slightly during a long press on a clip: the press still counts as a long
+  press within the platform's usual slop, and the move begins from where the clip was.
 - The playhead is exactly at a clip's start or end when the scissors is pressed: nothing is
   split and the control is unavailable.
 - Two clips meet exactly (after a split): playback across the join is identical to the
@@ -544,6 +576,11 @@ clips, overlaps or hides behind the transport bar.
   copy.
 - The same file is imported twice into one project: one audio copy is kept and two clips refer
   to it; deleting one clip keeps the copy for the other.
+- A multiple selection mixes accepted and refused files (a 4-channel file among stereo WAVs):
+  the accepted files become tracks, one message names each refused file and its reason, and
+  the import is still one undo step.
+- A multiple selection of twelve files: twelve tracks appear, the waveforms fill in
+  progressively, and the timeline stays responsive while they prepare.
 - The app's copy of a file cannot be read when a project opens: the clip is shown as
   unavailable and silent (User Story 7, scenario 7).
 - The user zooms to the widest level on a 60-minute project: labels stay legible (bars only,
@@ -559,8 +596,10 @@ clips, overlaps or hides behind the transport bar.
 - Headphones are unplugged while playing: playback pauses (the platform conventions), the
   playhead stays; plugging in a new output does not restart it. A phone call or another app
   taking the audio pauses playback; it does not resume by itself.
-- The user opens Tuner or Metronome while playing: playback stops and the position is kept;
-  returning to Timeline shows it paused at that position.
+- The user chooses another destination while playing: the stop-and-leave dialog appears;
+  confirming pauses with the position kept and navigates, and returning to Timeline shows it
+  paused at that position; cancelling leaves everything as it was. Choosing the destination
+  while stopped navigates at once with no dialog.
 - The largest system font size: readouts, names and chips stay readable and unclipped; names
   truncate with an ellipsis, chips wrap to a second line in the header, the transport readout
   never truncates; project cards grow in height, never clip.
@@ -618,10 +657,17 @@ clips, overlaps or hides behind the transport bar.
   as a percentage, applied to the sum of all tracks, smoothed so that dragging it produces no
   steps or crackle, and remembered per project.
 - **FR-008**: Playback MUST continue while the screen is locked or another app is in front until
-  the user pauses it, a call or another app takes the audio, the output route is lost
-  (headphones unplugged), or the user opens the Tuner or Metronome destination inside the app;
-  after an interruption it MUST NOT resume by itself. Connecting a new output while playing
-  MUST continue playback on it.
+  the user pauses it, a call or another app takes the audio, or the output route is lost
+  (headphones unplugged); after an interruption it MUST NOT resume by itself. Connecting a new
+  output while playing MUST continue playback on it.
+- **FR-008a**: While a project is playing, choosing any other destination inside the app
+  (including Tuner, Metronome, Projects and the system back action from Timeline), or leaving
+  the track settings screen for a destination other than Timeline, MUST first show a
+  confirmation dialog asking whether to stop playback and leave, with "Stop and leave" and
+  "Keep playing" actions; confirming MUST pause playback (position kept) and then navigate,
+  cancelling MUST stay where the user was with playback running. The dialog MUST NOT appear
+  when playback is stopped, when moving between Timeline and its track settings screen, when
+  the screen locks or when another app comes to the front (added 2026-10-13, clarification).
 
 **Playhead and readout**
 
@@ -634,8 +680,12 @@ clips, overlaps or hides behind the transport bar.
   updating every frame during playback and on every seek, the length being the end of the
   last clip (00:00.00 when the project has no clips) and updating on every edit that changes it.
 - **FR-011**: Tapping the ruler MUST move the playhead to the tapped time, snapped to the grid
-  when it is on; dragging the ruler's marker MUST scrub the playhead with the readout
-  following; both MUST work while playing, with playback continuing from the new position.
+  when it is on, and running playback MUST continue from there. Dragging the ruler's marker
+  MUST move the playhead and the readout with the finger or pointer (snapped when the grid is
+  on) with no sound during the drag: if playback was running it MUST pause silently when the
+  drag begins and resume from the release point within 100 ms of the lift; if it was paused it
+  MUST stay paused at the release point. Audible scrubbing is not part of this feature
+  (confirmed 2026-10-13).
 - **FR-012**: During playback the view MUST keep the playhead visible by paging when it reaches
   the right edge; a manual scroll MUST suspend following until the next skip-to-start, ruler tap
   or play press.
@@ -726,16 +776,23 @@ clips, overlaps or hides behind the transport bar.
 **Editing and undo**
 
 - **FR-031**: Tapping a clip MUST select it; one clip is selected at a time; tapping empty track
-  area clears the selection; a long press selects and starts a drag.
+  area clears the selection. On touch, a plain one-finger drag that starts on a clip MUST scroll
+  the timeline exactly as a drag on empty track area does; a long press on a clip MUST select it
+  and, if the finger then moves without lifting, start the clip move of FR-033 (a lifted long
+  press only selects), with a brief visual lift of the clip to show that the move has begun.
+  With a pointer, a press-and-drag on a clip MUST move it and scrolling is the wheel's or the
+  trackpad's (confirmed 2026-10-13).
 - **FR-032**: The scissors (toolbar; "S" key) MUST split the selected clip at the playhead
   (snapped when the grid is on) into two clips that together play exactly as the original,
   each keeping the name; it MUST be unavailable when no clip is selected, when the playhead
   lies outside the selected clip or when it lies within one hundredth of a second of a clip
   edge.
-- **FR-033**: A selected clip MUST be movable by drag along its track (start snapped to the grid
-  when on, never before the beginning, stopping against neighbouring clips) and onto another
-  track at the same position when the span is free (otherwise it returns); the move MUST be
-  applied on release and MUST be reflected in playback at once, including during playback.
+- **FR-033**: A clip move (begun as FR-031 defines) MUST drag the clip along its track (start
+  snapped to the grid when on, never before the beginning, stopping against neighbouring clips)
+  and onto another track at the same position when the span is free (otherwise it returns); the
+  move MUST be applied on release and MUST be reflected in playback at once, including during
+  playback. While a move is in progress the timeline MUST NOT scroll under the finger except to
+  follow the clip when it is dragged past an edge.
 - **FR-034**: "Delete clip" (clip menu, delete key, backspace) MUST remove the selected clip
   without touching the audio copy while other clips still use it; an audio copy no clip uses
   MUST be removed from the device once the deletion has left the undo history.
@@ -767,8 +824,8 @@ clips, overlaps or hides behind the transport bar.
   controls, with the tempo and time signature shown read-only as the project's; changes made
   there MUST be the same settings the Metronome destination shows and changes.
 - **FR-040**: The standalone Metronome destination MUST keep its own tempo and settings as
-  feature 004 defined; opening it MUST stop project playback; the project tempo MUST never
-  change it and it MUST never change the project.
+  feature 004 defined; it is reached only after project playback has stopped (FR-008a); the
+  project tempo MUST never change it and it MUST never change the project.
 
 **Track settings and the effects placeholder**
 
@@ -788,13 +845,20 @@ clips, overlaps or hides behind the transport bar.
 
 **Audio import and the demo project**
 
-- **FR-044**: "Add audio…" (a track's menu, or the toolbar for the selected track) and "Add audio
-  as new track" (the toolbar's menu and the empty-project invitation) MUST open the platform's
-  file picker for one file; WAV, FLAC and MP3 files with up to two channels and up to 30 minutes
-  MUST be accepted; anything else MUST be refused with a message naming the reason. The accepted
-  file MUST be copied into the project's storage (once per project, even when imported again),
-  so the original is never needed again, prepared so that it plays at its original pitch and
-  speed whatever its sample rate, and placed as one clip at the playhead (or at the first free
+- **FR-044**: "Add audio…" (a track's menu, or the toolbar for the selected track) MUST open the
+  platform's file picker for one file; "Add audio as new track" (the toolbar's menu and the
+  empty-project invitation) MUST open it allowing several files, and MUST create one new track
+  per accepted file, in the picker's order, each named after its file and carrying its clip at
+  the playhead, the whole import being one undo step (confirmed 2026-10-13); files refused in a
+  multiple selection MUST be named in one message while the accepted ones are still imported.
+  WAV, FLAC and MP3 files with up to two channels and up to 30 minutes
+  MUST be accepted; anything else MUST be refused with a message naming the reason. Each accepted
+  file MUST be copied byte for byte, in its own format, into the project's storage (once per
+  project, even when imported again), so the original is never needed again; the project MUST
+  play it from that copy at its original pitch and speed whatever its format or sample rate
+  (confirmed 2026-10-13: originals are kept and used, never converted into the project); any
+  playback or waveform preparation the app needs MUST be a cache that can be rebuilt from the
+  copy and is not part of the project. The clip is placed at the playhead (or at the first free
   position after it when the playhead is inside a clip) on the chosen track or on a new track
   named after the file; its overview MUST be computed; the import MUST be one undo step. When no
   track is selected the toolbar's "Add audio…" MUST behave as "Add audio as new track".
@@ -810,8 +874,11 @@ clips, overlaps or hides behind the transport bar.
   forward-compatibly (unknown fields ignored, explicit migrations between versions).
 - **FR-047**: On launch the app MUST reopen the most recently opened project in Timeline,
   stopped at the start, with its zoom, grid, master volume and metronome toggle as saved.
-- **FR-048**: Audio copies and waveform overviews MUST live with the project on the device, MUST
-  be shared by every clip that uses the same audio, and MUST be removed with the project.
+- **FR-048**: Audio copies (the original files, FR-044) MUST live with the project on the
+  device, MUST be shared by every clip that uses the same audio, and MUST be removed with the
+  project; waveform overviews and any playback cache MUST be kept apart from the copies, MUST be
+  rebuildable from them, MUST NOT count toward the project's size shown on its card, and MUST be
+  removed with the project.
 - **FR-049**: The project document MUST be portable and self-describing: one text document
   carrying its format version, a stable identifier for the project and for every track, clip
   and audio copy, every position in beats, every setting of FR-003 and of the tracks and clips,
@@ -901,8 +968,11 @@ clips, overlaps or hides behind the transport bar.
   on switch); the project document round trip including an unknown field, a version migration,
   a missing audio copy and the portability rules of FR-049 (no device path, identical on both
   platforms); the import acceptance and refusal matrix (formats, channels, length, bit depths,
-  sample rates, a repeated file); the overview computation and the card overview of FR-054;
-  the library's search, filter and sort; duplicate naming; the multi-clip rendering (clip
+  sample rates, a repeated file, a multiple selection with refusals, one undo step for a
+  multiple import); the overview computation and the card overview of FR-054;
+  the library's search, filter and sort; duplicate naming; the stop-and-leave dialog of
+  FR-008a (shown only while playing, both actions, not shown between Timeline and its track
+  settings); the multi-clip rendering (clip
   starts within one hundredth of a millisecond of their position, mid-clip start, the join
   after a split, overlap precedence after a tempo change, the click aligned with the audio) on
   audio rendered offline; the screens in every state with a fake audio source; and the
@@ -916,7 +986,8 @@ clips, overlaps or hides behind the transport bar.
   project stopped and playing with the playhead mid-song, the widest and closest zoom, a
   selected clip and the result of a split, the grid picker open, the track settings as a screen
   and inline, the tempo control open from the ruler, the metronome settings sheet, an empty
-  project, an unavailable clip, an import refusal, the Projects library with at least six cards
+  project, an unavailable clip, an import refusal, the stop-and-leave dialog, the Projects
+  library with at least six cards
   (the demo, the active project, a project with a description and key, one without), a card
   menu open, a search with results and without, and the largest font size.
 - **FR-063**: Any dependency added for this feature (audio file decoding, resampling or
@@ -927,8 +998,9 @@ clips, overlaps or hides behind the transport bar.
   (feature 011); a loop or cycle region; playback speed; time-stretch or pitch change of clips;
   clip trim, copy, paste, duplicate, fades, crossfades or gain per clip; overlapping clips by
   editing; multi-selection; automation; effects, sends or buses; a session or clip-launch view
-  (the design's "Arrange" pill); the loop library and pads; markers; tempo changes within a
-  project; count-in; a track colour picker; track freeze or bounce; stem or mix export; cloud
+  (the design's "Arrange" pill); the loop library and pads; markers; audible scrubbing while
+  dragging the playhead; tempo changes within a project; count-in; a track colour picker; track
+  freeze or bounce; stem or mix export; cloud
   sync, sharing, collaboration, guests or sync badges; MIDI; a transport bar on Projects,
   Tuner, Metronome, Home, Effects, Pads or Profile; or changes to the navigation and its glyphs.
 
@@ -974,9 +1046,10 @@ clips, overlaps or hides behind the transport bar.
 - **Instrument Label**: one of the twelve fixed labels.
 - **Clip**: a reference to an audio copy, a start in beats, an offset into the audio and the
   audio length it covers; drawn with a name and a waveform overview.
-- **Audio Copy**: the project's own copy of an imported or demo file, identified by its content,
-  with its format facts (channels, rate, length) and its waveform overview; shared by the clips
-  that use it.
+- **Audio Copy**: the project's own byte-for-byte copy of an imported or demo file in its
+  original format, identified by its content, with its format facts (format, channels, rate,
+  length); shared by the clips that use it. Its waveform overview and any playback cache are
+  derived, rebuildable and outside the project.
 - **Transport State**: stopped or playing, the playhead position, whether the view follows it.
 - **Edit History**: the ordered undo and redo snapshots of the open project.
 - **Metronome Settings**: the Metronome destination's sound, subdivision, accent pattern and
@@ -1039,8 +1112,14 @@ clips, overlaps or hides behind the transport bar.
   MP3 are the formats (confirmed 2026-10-13) because they can be decoded identically on both
   platforms with permissively licensed code the engine already uses for WAV; the platform's own
   decoders are not used so that a file behaves the same everywhere. Up to two channels and 30
-  minutes keeps overviews and copies bounded. One file per import keeps the picker simple;
-  "Add audio as new track" is the user's "into a new track".
+  minutes keeps overviews and copies bounded. "Add audio as new track" is the user's "into a new
+  track" and accepts several files at once, one track per file (confirmed 2026-10-13), because a
+  set of stems is the common case; adding to an existing track takes one file so the drop
+  position stays unambiguous. The project keeps the original
+  file bytes and plays from them (confirmed 2026-10-13): the size on a card is the real size of
+  what the user imported, nothing is lost or re-encoded, and the project document's content
+  identifiers name real files a server can store; the plan decides what rebuildable cache the
+  engine wants beside them.
 - **"Split the track into multiple pieces like stems"** is read as splitting a clip at the
   playhead (the design's scissors), not as exporting stems; export is the export and mastering
   screen, later. "Slice the selected track" from the ruler is read as: tap the ruler to place the
@@ -1093,8 +1172,12 @@ clips, overlaps or hides behind the transport bar.
 - **Track colours** come from the design's clip tints in creation order; a picker is excluded for
   simplicity.
 - **Playback continues in the background** like the metronome's click, because a musician may
-  lock the phone while playing along; it stops for Tuner and Metronome because they own the
-  audio, and never restarts itself after an interruption.
+  lock the phone while playing along, and never restarts itself after an interruption. Inside
+  the app it stops when the user leaves Timeline for any other destination (confirmed
+  2026-10-13), because no other destination shows a transport bar yet and Tuner and Metronome
+  own the audio; the user asked for a confirmation dialog before the stop so that a stray tap
+  on the navigation never silences a performance (FR-008a). When Effects and Pads land with
+  their own transport bars, the rule can narrow to Tuner and Metronome.
 - **Undo** is included although the user did not ask for it: a DAW without undo loses work, and
   the constitution's document model is built for it. Fifty steps per project is enough for a
   session and bounded in memory.
