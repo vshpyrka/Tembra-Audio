@@ -33,6 +33,8 @@ Nine screens, each in a phone (390-wide) and tablet (1280-wide) variant; the tun
 | **Foldable** (added 2026-10-02, feature 005; refreshed the same day for design iterations D1/D2; Auto Listen refreshed 2026-10-06 for feature 006) | — | `instrument-tuner/foldable-tabletop` (v3), `instrument-tuner/foldable-open` (new), `tuner-by-ear/foldable-tabletop`, `metronome/foldable-tabletop`, `metronome/foldable-book`, `tuner-by-ear/foldable-open` | HTML uploads that mirror the app on a Pixel 9 Pro Fold (`specs/005-tabletop-posture/screenshots/`). Tabletop (v2, 883 × 852, the fold at y 426 drawn as a faint dashed guide, 12 px gutters): the meter or the cello's 2 × 2 string cards above a card with a centred TUNER CONTROLS heading and the controls stacked in one centred column; the metronome's ring-only dial and tall accent cells above one METRONOME CONTROLS card (signature, tiles and sound; style; slider; tap and play). Book (852 × 883, the hinge at x 426): the metronome's settings before the hinge, the dial and transport after it. Open (852 × 883): the By Ear grid of square cards, centred, a short last row centred. The v1 tabletop instances are hidden. Stitch draws their thumbnails on its wide canvas; the HTML is the design. Feature 006 (2026-10-06): the tuner's tabletop controls card (v3) carries the noise gate control under the mode selector, with the heading, seam and column moved up to stay centred; "Tuner Auto Listen (Foldable Open)" (852 × 883, next to the By Ear open screen on the canvas) is the wide form: the rail, the selector row with a MIC ACTIVE pill, and one card with the regular gauge centred in the room above the control at the card's foot (480 wide, centred). The mocks draw the slider's track 4 px tall where the app's is 6 dp; everything else follows the captures in `specs/006-tuner-noise-gate/screenshots/`. The tabletop v2 instance is hidden. |
 | **Audio export & stem mastering** | `export-mastering/phone` | `export-mastering/tablet` | Stem routing matrix (per-stem checkbox, tag, format, size), estimated total, format (WAV / FLAC / MP3 320 / AAC), sample rate, bit depth, gradient "Render selected stems" CTA. |
 
+| **Mixer and timeline references** (added 2026-10-13, feature 009; evidence for feature 010) | `mixer-timeline/phone-drawer` | `mixer-timeline/tablet-split-v1`, `-v2`, `-console` | Image-only screens from the user's **second** Stitch project, https://stitch.withgoogle.com/projects/13820816821466270236 ("Studio Sound" design system; Stitch holds no HTML for them, so each folder has only `screenshot.jpg`, 768 × 1376). Phone: a timeline with a two-row ruler (bars with a lilac playhead chip, seconds), large square S/M buttons and a Pan L/R slider per header, full-height rounded clips with filled waveforms (lilac, salmon, rose), and a "Mixer" drawer at the bottom with a master fader, LED meter and FX dial. Tablet: a six-strip mixer console (numbers, dual meters, VU dials, pan knobs, Solo/Mute, long-throw faders with a dB scale in the console version) beside a six-track timeline; a top transport with record and a "120 BPM / 4/4" pill, and their own bottom navigation. Only the timeline parts are decided in spec 009; the mixer parts wait for spec 010; the top transport, bottom navigation, iOS status bars and the Studio Sound tokens are drift against this project's `DESIGN.md`. Listed in `screens.json` with a `project` field. |
+
 The four original reference mockups uploaded to the project are already in `../mockups/`.
 
 ## Navigation model (derived from the screens)
@@ -61,8 +63,11 @@ The four original reference mockups uploaded to the project are already in `../m
 The Stitch MCP server is configured in Claude Code (`claude mcp get stitch`). To refresh after editing in Stitch:
 
 1. Call `get_project` for `projects/12040171611712589599` and copy `designTheme.designMd` into `DESIGN.md` (keep the `name: Tembra Audio` line and the source comment). Keep the `### Sliders` component entry too if the pulled text lacks it (added 2026-10-06, feature 006). The project's own `designTheme` was never changed by that work; the design system asset `assets/fb1657e091d24ba8a3e2aa5dee703ce3` was, through the MCP's `update_design_system`, and that tool is not a plain write: it runs a Stitch session that re-derives the palette from the colours it is given and rewrites parts of the prose. The first call (with the token front matter in `designMd`) shifted `primary` to `#e8deff` and the outlines with it; a second call with the original seeds (`customColor` and the four overrides) and the prose alone put every named colour back (version 4, checked against the project's theme) and kept the Sliders entry, but the asset's prose now differs from this file in wording and in a few surface hex values. This file and `theme.json` stay the source of truth; do not copy the asset's prose over it, and pass only the seeds and the prose when the asset has to change again.
-2. Call `list_screens` and update the URLs in `screens.json` if any screen was regenerated.
-3. Run the download step (Python, no dependencies):
+2. Call `list_screens` and update the URLs in `screens.json` if any screen was regenerated. The
+   download URLs expire (a 403 after some days), so refresh them from a fresh `list_screens`
+   before pulling. Screens from the second project (`secondaryProjects` in the manifest, each
+   entry carrying a `project` field) are listed by `list_screens` for `13820816821466270236`.
+3. Run the download step (Python, no dependencies; image-only screens have no `html` key):
 
 ```bash
 cd design/stitch && python3 - <<'EOF'
@@ -70,6 +75,8 @@ import json, os, urllib.request
 for s in json.load(open('screens.json'))['screens']:
     d = os.path.join('screens', s['slug']); os.makedirs(d, exist_ok=True)
     for key, fn in (('html', 'index.html'), ('screenshot', 'screenshot.jpg')):
+        if key not in s:
+            continue
         url = s[key] + ('=s0' if key == 'screenshot' else '')
         req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
         open(os.path.join(d, fn), 'wb').write(urllib.request.urlopen(req, timeout=120).read())
