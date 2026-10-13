@@ -1,9 +1,12 @@
 package audio.tembra.ui.navigation
 
+import androidx.navigation3.runtime.NavKey
+import audio.tembra.core.project.TrackId
+import audio.tembra.ui.tracksettings.TrackSettingsKey
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-/** Back-stack derivation of data-model.md §2. */
+/** Back-stack derivation of data-model.md §2 (feature 002) and the track-settings entry of feature 009. */
 class ShellUiStateTest {
 
     @Test
@@ -13,11 +16,27 @@ class ShellUiStateTest {
 
     @Test
     fun homeAloneIsTheBackStackOnHome() {
-        assertEquals(listOf(Destination.Home), ShellUiState().backStack)
+        assertEquals(listOf<NavKey>(DestinationKey(Destination.Home)), ShellUiState().backStack)
     }
 
     @Test
     fun anotherDestinationSitsAboveHome() {
-        assertEquals(listOf(Destination.Home, Destination.Tuner), ShellUiState(selected = Destination.Tuner).backStack)
+        assertEquals(
+            listOf<NavKey>(DestinationKey(Destination.Home), DestinationKey(Destination.Tuner)),
+            ShellUiState(selected = Destination.Tuner).backStack,
+        )
+    }
+
+    @Test
+    fun trackSettingsSitAboveTheTimelineOnly() {
+        val key = TrackSettingsKey(TrackId("t1"))
+        assertEquals(
+            listOf<NavKey>(DestinationKey(Destination.Home), DestinationKey(Destination.Timeline), key),
+            ShellUiState(selected = Destination.Timeline, trackSettings = key).backStack,
+        )
+        assertEquals(
+            listOf<NavKey>(DestinationKey(Destination.Home), DestinationKey(Destination.Tuner)),
+            ShellUiState(selected = Destination.Tuner, trackSettings = key).backStack,
+        )
     }
 }

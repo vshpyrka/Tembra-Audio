@@ -45,7 +45,8 @@ import kotlin.test.assertNull
 
 /**
  * Drives the stateless shell through every layout (spec FR-004 to FR-009, FR-020). The destination switched to is
- * Projects, a placeholder: the Tuner and Metronome screens obtain a ViewModel from the Metro graph, which these tests do not provide.
+ * Profile, a placeholder: the Tuner, Metronome, Timeline and Projects screens obtain a ViewModel from the Metro graph,
+ * which these tests do not provide (feature 009 replaced the Timeline and Projects placeholders).
  */
 @OptIn(ExperimentalTestApi::class)
 class NavigationShellTest {
@@ -101,23 +102,23 @@ class NavigationShellTest {
 
     @Test
     fun railWithPanelWithoutSupportingContentShowsNoPane() = runComposeUiTest {
-        withShellLocals { NavigationShellContent(ShellUiState(Destination.Projects), LayoutMode.RailWithPanel, onSelect = {}, onBack = {}) }
+        withShellLocals { NavigationShellContent(ShellUiState(Destination.Profile), LayoutMode.RailWithPanel, onSelect = {}, onBack = {}) }
         onNodeWithTag("chrome.rail").assertExists()
         onNodeWithTag("chrome.bottomBar").assertDoesNotExist()
         onNodeWithTag("chrome.supportingPane").assertDoesNotExist()
-        onNodeWithTag("screen.projects").assertIsDisplayed()
+        onNodeWithTag("screen.profile").assertIsDisplayed()
     }
 
     @Test
     fun layoutSwitchKeepsTheSelection() = runComposeUiTest {
         var layoutMode by mutableStateOf(LayoutMode.BottomBar)
-        withShellLocals { NavigationShellContent(ShellUiState(Destination.Projects), layoutMode, onSelect = {}, onBack = {}) }
+        withShellLocals { NavigationShellContent(ShellUiState(Destination.Profile), layoutMode, onSelect = {}, onBack = {}) }
         for (mode in listOf(LayoutMode.Rail, LayoutMode.RailWithPanel, LayoutMode.BottomBar)) {
             layoutMode = mode
             waitForIdle()
-            onNodeWithTag("nav.item.projects").assertIsSelected()
-            onNodeWithTag("screen.projects").assertIsDisplayed()
-            onNodeWithTag("chrome.topBar.title").assertTextEquals("Projects")
+            onNodeWithTag("nav.item.profile").assertIsSelected()
+            onNodeWithTag("screen.profile").assertIsDisplayed()
+            onNodeWithTag("chrome.topBar.title").assertTextEquals("Profile")
         }
     }
 
@@ -131,10 +132,10 @@ class NavigationShellTest {
         onNode(hasText("Loops and sounds will appear here.") and hasAnyAncestor(hasTestTag("chrome.supportingPane"))).assertIsDisplayed()
         // On a phone-sized test window the forced panel leaves Home no width; its presence is what matters here.
         onNodeWithTag("screen.home").assertExists()
-        state = ShellUiState(Destination.Projects)
+        state = ShellUiState(Destination.Profile)
         waitForIdle()
         onNodeWithTag("chrome.supportingPane").assertDoesNotExist()
-        onNodeWithTag("screen.projects").assertIsDisplayed()
+        onNodeWithTag("screen.profile").assertIsDisplayed()
         state = ShellUiState()
         layoutMode = LayoutMode.Rail
         waitForIdle()
@@ -162,14 +163,14 @@ class NavigationShellTest {
         var state by mutableStateOf(ShellUiState())
         var selected: Destination? = null
         withShellLocals { NavigationShellContent(state, LayoutMode.BottomBar, onSelect = { selected = it }, onBack = {}) }
-        onNodeWithTag("nav.item.projects").performClick()
-        assertEquals(Destination.Projects, selected)
-        state = ShellUiState(Destination.Projects)
+        onNodeWithTag("nav.item.profile").performClick()
+        assertEquals(Destination.Profile, selected)
+        state = ShellUiState(Destination.Profile)
         waitForIdle()
-        onNodeWithTag("nav.item.projects").assertIsSelected()
+        onNodeWithTag("nav.item.profile").assertIsSelected()
         onNodeWithTag("nav.item.home").assertIsNotSelected()
-        onNodeWithTag("chrome.topBar.title").assertTextEquals("Projects")
-        onNodeWithTag("screen.projects").assertIsDisplayed()
+        onNodeWithTag("chrome.topBar.title").assertTextEquals("Profile")
+        onNodeWithTag("screen.profile").assertIsDisplayed()
     }
 
     @Test
@@ -185,14 +186,14 @@ class NavigationShellTest {
         var state by mutableStateOf(ShellUiState())
         withShellLocals { NavigationShellContent(state, LayoutMode.BottomBar, onSelect = {}, onBack = {}) }
         mainClock.autoAdvance = false
-        state = ShellUiState(Destination.Projects)
+        state = ShellUiState(Destination.Profile)
         repeat(SETTLE_FRAMES) { mainClock.advanceTimeByFrame() }
         // Mid-fade both destinations are on screen: no blank frame (spec SC-002).
-        onNodeWithTag("screen.projects").assertIsDisplayed()
+        onNodeWithTag("screen.profile").assertIsDisplayed()
         onNodeWithTag("screen.home").assertExists()
         mainClock.advanceTimeBy(300)
         repeat(SETTLE_FRAMES) { mainClock.advanceTimeByFrame() }
-        onNodeWithTag("screen.projects").assertIsDisplayed()
+        onNodeWithTag("screen.profile").assertIsDisplayed()
         onNodeWithTag("screen.home").assertDoesNotExist()
     }
 
@@ -201,10 +202,10 @@ class NavigationShellTest {
         var state by mutableStateOf(ShellUiState())
         withShellLocals { NavigationShellContent(state, LayoutMode.BottomBar, onSelect = {}, onBack = {}) }
         mainClock.autoAdvance = false
-        state = ShellUiState(Destination.Projects)
+        state = ShellUiState(Destination.Profile)
         repeat(SETTLE_FRAMES) { mainClock.advanceTimeByFrame() }
         // A few frames later (well under the 300 ms fade) the switch is complete: no outgoing screen remains.
-        onNodeWithTag("screen.projects").assertIsDisplayed()
+        onNodeWithTag("screen.profile").assertIsDisplayed()
         onNodeWithTag("screen.home").assertDoesNotExist()
     }
 
@@ -213,11 +214,11 @@ class NavigationShellTest {
         var selected: Destination? = null
         withShellLocals { NavigationShellContent(ShellUiState(), LayoutMode.BottomBar, onSelect = { selected = it }, onBack = {}) }
         if (!enterKeyboardMode(inputModeManager)) return@runComposeUiTest
-        onNodeWithTag("nav.item.projects").requestFocus()
-        onNodeWithTag("nav.item.projects").assertIsFocused()
-        onNodeWithTag("nav.item.projects").performKeyInput { pressKey(Key.Enter) }
+        onNodeWithTag("nav.item.profile").requestFocus()
+        onNodeWithTag("nav.item.profile").assertIsFocused()
+        onNodeWithTag("nav.item.profile").performKeyInput { pressKey(Key.Enter) }
         waitForIdle()
-        assertEquals(Destination.Projects, selected)
+        assertEquals(Destination.Profile, selected)
     }
 
     @Test
