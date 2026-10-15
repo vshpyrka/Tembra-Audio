@@ -1,0 +1,2498 @@
+{
+ "artifacts": [
+  {
+   "kind": "benchmark_json",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/MetronomeJourneyBenchmark/audio.tembra.perf/audio.tembra.perf-benchmarkData.json"
+  },
+  {
+   "kind": "benchmark_json",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StartupBenchmark/audio.tembra.perf/audio.tembra.perf-benchmarkData.json"
+  },
+  {
+   "kind": "benchmark_json",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StressJourneyBenchmark/audio.tembra.perf/audio.tembra.perf-benchmarkData.json"
+  },
+  {
+   "kind": "benchmark_json",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/TunerJourneyBenchmark/audio.tembra.perf/audio.tembra.perf-benchmarkData.json"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/MetronomeJourneyBenchmark/audio.tembra.perf/MetronomeJourneyBenchmark_metronomeJourney_iter000_2026-10-15-16-52-02.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/MetronomeJourneyBenchmark/audio.tembra.perf/MetronomeJourneyBenchmark_metronomeJourney_iter001_2026-10-15-16-52-08.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/MetronomeJourneyBenchmark/audio.tembra.perf/MetronomeJourneyBenchmark_metronomeJourney_iter002_2026-10-15-16-52-13.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/MetronomeJourneyBenchmark/audio.tembra.perf/MetronomeJourneyBenchmark_metronomeJourney_iter003_2026-10-15-16-52-19.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/MetronomeJourneyBenchmark/audio.tembra.perf/MetronomeJourneyBenchmark_metronomeJourney_iter004_2026-10-15-16-52-25.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/MetronomeJourneyBenchmark/audio.tembra.perf/MetronomeJourneyBenchmark_metronomeJourney_iter005_2026-10-15-16-52-32.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/MetronomeJourneyBenchmark/audio.tembra.perf/MetronomeJourneyBenchmark_metronomeJourney_iter006_2026-10-15-16-52-38.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/MetronomeJourneyBenchmark/audio.tembra.perf/MetronomeJourneyBenchmark_metronomeJourney_iter007_2026-10-15-16-52-44.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/MetronomeJourneyBenchmark/audio.tembra.perf/MetronomeJourneyBenchmark_metronomeJourney_iter008_2026-10-15-16-52-50.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/MetronomeJourneyBenchmark/audio.tembra.perf/MetronomeJourneyBenchmark_metronomeJourney_iter009_2026-10-15-16-52-56.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/MetronomeJourneyBenchmark/audio.tembra.perf/MetronomeJourneyBenchmark_metronomeJourney_iter010_2026-10-15-16-53-02.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/MetronomeJourneyBenchmark/audio.tembra.perf/MetronomeJourneyBenchmark_metronomeJourney_iter011_2026-10-15-16-53-08.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/MetronomeJourneyBenchmark/audio.tembra.perf/MetronomeJourneyBenchmark_metronomeJourney_iter012_2026-10-15-16-53-14.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/MetronomeJourneyBenchmark/audio.tembra.perf/MetronomeJourneyBenchmark_metronomeJourney_iter013_2026-10-15-16-53-20.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/MetronomeJourneyBenchmark/audio.tembra.perf/MetronomeJourneyBenchmark_metronomeJourney_iter014_2026-10-15-16-53-25.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/MetronomeJourneyBenchmark/audio.tembra.perf/MetronomeJourneyBenchmark_metronomeJourney_iter015_2026-10-15-16-53-31.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/MetronomeJourneyBenchmark/audio.tembra.perf/MetronomeJourneyBenchmark_metronomeJourney_iter016_2026-10-15-16-53-37.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/MetronomeJourneyBenchmark/audio.tembra.perf/MetronomeJourneyBenchmark_metronomeJourney_iter017_2026-10-15-16-53-43.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/MetronomeJourneyBenchmark/audio.tembra.perf/MetronomeJourneyBenchmark_metronomeJourney_iter018_2026-10-15-16-53-49.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/MetronomeJourneyBenchmark/audio.tembra.perf/MetronomeJourneyBenchmark_metronomeJourney_iter019_2026-10-15-16-53-54.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StartupBenchmark/audio.tembra.perf/StartupBenchmark_startupCold_iter000_2026-10-15-16-44-23.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StartupBenchmark/audio.tembra.perf/StartupBenchmark_startupCold_iter001_2026-10-15-16-44-27.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StartupBenchmark/audio.tembra.perf/StartupBenchmark_startupCold_iter002_2026-10-15-16-44-32.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StartupBenchmark/audio.tembra.perf/StartupBenchmark_startupCold_iter003_2026-10-15-16-44-36.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StartupBenchmark/audio.tembra.perf/StartupBenchmark_startupCold_iter004_2026-10-15-16-44-41.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StartupBenchmark/audio.tembra.perf/StartupBenchmark_startupCold_iter005_2026-10-15-16-44-45.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StartupBenchmark/audio.tembra.perf/StartupBenchmark_startupCold_iter006_2026-10-15-16-44-50.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StartupBenchmark/audio.tembra.perf/StartupBenchmark_startupCold_iter007_2026-10-15-16-44-54.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StartupBenchmark/audio.tembra.perf/StartupBenchmark_startupCold_iter008_2026-10-15-16-44-58.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StartupBenchmark/audio.tembra.perf/StartupBenchmark_startupCold_iter009_2026-10-15-16-45-03.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StartupBenchmark/audio.tembra.perf/StartupBenchmark_startupCold_iter010_2026-10-15-16-45-07.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StartupBenchmark/audio.tembra.perf/StartupBenchmark_startupCold_iter011_2026-10-15-16-45-11.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StartupBenchmark/audio.tembra.perf/StartupBenchmark_startupCold_iter012_2026-10-15-16-45-15.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StartupBenchmark/audio.tembra.perf/StartupBenchmark_startupCold_iter013_2026-10-15-16-45-20.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StartupBenchmark/audio.tembra.perf/StartupBenchmark_startupCold_iter014_2026-10-15-16-45-24.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StartupBenchmark/audio.tembra.perf/StartupBenchmark_startupCold_iter015_2026-10-15-16-45-29.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StartupBenchmark/audio.tembra.perf/StartupBenchmark_startupCold_iter016_2026-10-15-16-45-33.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StartupBenchmark/audio.tembra.perf/StartupBenchmark_startupCold_iter017_2026-10-15-16-45-37.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StartupBenchmark/audio.tembra.perf/StartupBenchmark_startupCold_iter018_2026-10-15-16-45-42.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StartupBenchmark/audio.tembra.perf/StartupBenchmark_startupCold_iter019_2026-10-15-16-45-46.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StressJourneyBenchmark/audio.tembra.perf/StressJourneyBenchmark_stressJourney_iter000_2026-10-15-16-56-20.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StressJourneyBenchmark/audio.tembra.perf/StressJourneyBenchmark_stressJourney_iter001_2026-10-15-16-56-29.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StressJourneyBenchmark/audio.tembra.perf/StressJourneyBenchmark_stressJourney_iter002_2026-10-15-16-56-38.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StressJourneyBenchmark/audio.tembra.perf/StressJourneyBenchmark_stressJourney_iter003_2026-10-15-16-56-47.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StressJourneyBenchmark/audio.tembra.perf/StressJourneyBenchmark_stressJourney_iter004_2026-10-15-16-56-55.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StressJourneyBenchmark/audio.tembra.perf/StressJourneyBenchmark_stressJourney_iter005_2026-10-15-16-57-05.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StressJourneyBenchmark/audio.tembra.perf/StressJourneyBenchmark_stressJourney_iter006_2026-10-15-16-57-13.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StressJourneyBenchmark/audio.tembra.perf/StressJourneyBenchmark_stressJourney_iter007_2026-10-15-16-57-52.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StressJourneyBenchmark/audio.tembra.perf/StressJourneyBenchmark_stressJourney_iter008_2026-10-15-16-58-02.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StressJourneyBenchmark/audio.tembra.perf/StressJourneyBenchmark_stressJourney_iter009_2026-10-15-16-58-10.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StressJourneyBenchmark/audio.tembra.perf/StressJourneyBenchmark_stressJourney_iter010_2026-10-15-16-58-19.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StressJourneyBenchmark/audio.tembra.perf/StressJourneyBenchmark_stressJourney_iter011_2026-10-15-16-58-28.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StressJourneyBenchmark/audio.tembra.perf/StressJourneyBenchmark_stressJourney_iter012_2026-10-15-16-58-38.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StressJourneyBenchmark/audio.tembra.perf/StressJourneyBenchmark_stressJourney_iter013_2026-10-15-16-58-47.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StressJourneyBenchmark/audio.tembra.perf/StressJourneyBenchmark_stressJourney_iter014_2026-10-15-16-58-56.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StressJourneyBenchmark/audio.tembra.perf/StressJourneyBenchmark_stressJourney_iter015_2026-10-15-16-59-06.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StressJourneyBenchmark/audio.tembra.perf/StressJourneyBenchmark_stressJourney_iter016_2026-10-15-16-59-15.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StressJourneyBenchmark/audio.tembra.perf/StressJourneyBenchmark_stressJourney_iter017_2026-10-15-16-59-25.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StressJourneyBenchmark/audio.tembra.perf/StressJourneyBenchmark_stressJourney_iter018_2026-10-15-16-59-34.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/StressJourneyBenchmark/audio.tembra.perf/StressJourneyBenchmark_stressJourney_iter019_2026-10-15-16-59-42.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/TunerJourneyBenchmark/audio.tembra.perf/TunerJourneyBenchmark_tunerJourney_iter000_2026-10-15-16-48-10.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/TunerJourneyBenchmark/audio.tembra.perf/TunerJourneyBenchmark_tunerJourney_iter001_2026-10-15-16-48-15.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/TunerJourneyBenchmark/audio.tembra.perf/TunerJourneyBenchmark_tunerJourney_iter002_2026-10-15-16-48-20.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/TunerJourneyBenchmark/audio.tembra.perf/TunerJourneyBenchmark_tunerJourney_iter003_2026-10-15-16-48-25.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/TunerJourneyBenchmark/audio.tembra.perf/TunerJourneyBenchmark_tunerJourney_iter004_2026-10-15-16-48-29.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/TunerJourneyBenchmark/audio.tembra.perf/TunerJourneyBenchmark_tunerJourney_iter005_2026-10-15-16-48-34.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/TunerJourneyBenchmark/audio.tembra.perf/TunerJourneyBenchmark_tunerJourney_iter006_2026-10-15-16-48-39.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/TunerJourneyBenchmark/audio.tembra.perf/TunerJourneyBenchmark_tunerJourney_iter007_2026-10-15-16-48-44.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/TunerJourneyBenchmark/audio.tembra.perf/TunerJourneyBenchmark_tunerJourney_iter008_2026-10-15-16-48-49.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/TunerJourneyBenchmark/audio.tembra.perf/TunerJourneyBenchmark_tunerJourney_iter009_2026-10-15-16-48-54.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/TunerJourneyBenchmark/audio.tembra.perf/TunerJourneyBenchmark_tunerJourney_iter010_2026-10-15-16-48-59.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/TunerJourneyBenchmark/audio.tembra.perf/TunerJourneyBenchmark_tunerJourney_iter011_2026-10-15-16-49-03.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/TunerJourneyBenchmark/audio.tembra.perf/TunerJourneyBenchmark_tunerJourney_iter012_2026-10-15-16-49-09.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/TunerJourneyBenchmark/audio.tembra.perf/TunerJourneyBenchmark_tunerJourney_iter013_2026-10-15-16-49-13.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/TunerJourneyBenchmark/audio.tembra.perf/TunerJourneyBenchmark_tunerJourney_iter014_2026-10-15-16-49-18.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/TunerJourneyBenchmark/audio.tembra.perf/TunerJourneyBenchmark_tunerJourney_iter015_2026-10-15-16-49-23.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/TunerJourneyBenchmark/audio.tembra.perf/TunerJourneyBenchmark_tunerJourney_iter016_2026-10-15-16-49-28.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/TunerJourneyBenchmark/audio.tembra.perf/TunerJourneyBenchmark_tunerJourney_iter017_2026-10-15-16-49-33.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/TunerJourneyBenchmark/audio.tembra.perf/TunerJourneyBenchmark_tunerJourney_iter018_2026-10-15-16-49-38.perfetto-trace"
+  },
+  {
+   "kind": "trace",
+   "path": "/Users/university/Workspace/Dev/Tembra Audio/.claude/worktrees/device-matrix/app/perf/data/rounds/20261015T164356Z_baseline-profiles/TunerJourneyBenchmark/audio.tembra.perf/TunerJourneyBenchmark_tunerJourney_iter019_2026-10-15-16-49-43.perfetto-trace"
+  }
+ ],
+ "badges": [],
+ "build": {
+  "app_size_bytes": 6965255,
+  "branch": "worktree-device-matrix",
+  "commit": "42d8e92284075e87ddd7782db2f972e150561cd8",
+  "dirty": true,
+  "type": "perf"
+ },
+ "checks": [
+  {
+   "limit": null,
+   "name": "java_home",
+   "passed": true,
+   "value": "/Users/university/Library/Java/JavaVirtualMachines/temurin-21.jdk/Contents/Home"
+  },
+  {
+   "limit": null,
+   "name": "sdk_dir",
+   "passed": true,
+   "value": "/Users/university/Library/Android/sdk"
+  },
+  {
+   "limit": null,
+   "name": "adb_device",
+   "passed": true,
+   "value": null
+  },
+  {
+   "limit": {
+    "max_temp_c": 35.0,
+    "min_level": 50
+   },
+   "name": "battery",
+   "passed": true,
+   "value": {
+    "level": 56,
+    "temp_c": 28.1
+   }
+  },
+  {
+   "limit": 60.0,
+   "name": "refresh_rate",
+   "passed": true,
+   "value": 60.0
+  },
+  {
+   "limit": true,
+   "name": "airplane",
+   "passed": true,
+   "value": true
+  },
+  {
+   "limit": null,
+   "name": "brightness_manual",
+   "passed": true,
+   "value": null
+  },
+  {
+   "limit": 2097152,
+   "name": "storage",
+   "passed": true,
+   "value": 99885256
+  },
+  {
+   "limit": null,
+   "name": "awake",
+   "passed": true,
+   "value": null
+  },
+  {
+   "limit": null,
+   "name": "unlocked",
+   "passed": true,
+   "value": null
+  }
+ ],
+ "device": {
+  "device_id": "33241FDH3000NZ",
+  "kind": "device",
+  "model": "Pixel 7 Pro",
+  "platform": "android",
+  "reference": true
+ },
+ "fingerprint": {
+  "battery_level": 56,
+  "battery_temp_c": 28.1,
+  "network_state": "none",
+  "os_build": "CP3A.260905.009",
+  "os_version": "17",
+  "refresh_rate_hz": 60.0,
+  "sdk": 37
+ },
+ "finished_at": "2026-10-15T17:00:19Z",
+ "gate": [
+  {
+   "limit_pct": 2.0,
+   "metric": "app.size_bytes",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_abs": 2.0,
+   "metric": "metronome/frames.overrun_p90_ms",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 25,
+   "metric": "metronome/frames.p50_ms",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 25,
+   "metric": "metronome/frames.p90_ms",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 25,
+   "metric": "metronome/frames.p99_ms",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 20,
+   "metric": "metronome/journey.duration_ms",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 15,
+   "metric": "metronome/memory.end_kb",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 15.0,
+   "metric": "metronome/memory.peak_kb",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 20,
+   "metric": "metronome/section.metronome.load.count",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 20,
+   "metric": "metronome/section.metronome.load.sum_ms",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 20,
+   "metric": "metronome/section.metronome.tempoChange.count",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 20,
+   "metric": "metronome/section.metronome.tempoChange.sum_ms",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 15,
+   "metric": "startup/startup.ttfd_ms",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 15.0,
+   "metric": "startup/startup.ttid_ms",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 50,
+   "metric": "stress/audio.callbacks",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 50,
+   "metric": "stress/audio.last_callback_us",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 50,
+   "metric": "stress/audio.max_callback_us",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 50,
+   "metric": "stress/audio.over_budget",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_abs": 0.5,
+   "metric": "stress/audio.realtime",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 50,
+   "metric": "stress/audio.xruns",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_abs": 2.0,
+   "metric": "stress/frames.overrun_p90_ms",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 25,
+   "metric": "stress/frames.p50_ms",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 25,
+   "metric": "stress/frames.p90_ms",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 25,
+   "metric": "stress/frames.p99_ms",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 20,
+   "metric": "stress/journey.duration_ms",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 15,
+   "metric": "stress/memory.end_kb",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 15.0,
+   "metric": "stress/memory.peak_kb",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 20,
+   "metric": "stress/section.metronome.load.count",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 20,
+   "metric": "stress/section.metronome.load.sum_ms",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 20,
+   "metric": "stress/section.metronome.tempoChange.count",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 20,
+   "metric": "stress/section.metronome.tempoChange.sum_ms",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 20,
+   "metric": "stress/section.tuner.frame.count",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 20,
+   "metric": "stress/section.tuner.frame.sum_ms",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 20,
+   "metric": "stress/section.tuner.load.count",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 20,
+   "metric": "stress/section.tuner.load.sum_ms",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 20,
+   "metric": "stress/section.tuner.modeSwitch.count",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 20,
+   "metric": "stress/section.tuner.modeSwitch.sum_ms",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_abs": 2.0,
+   "metric": "tuner/frames.overrun_p90_ms",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 25,
+   "metric": "tuner/frames.p50_ms",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 25,
+   "metric": "tuner/frames.p90_ms",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 25,
+   "metric": "tuner/frames.p99_ms",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 20,
+   "metric": "tuner/journey.duration_ms",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 15,
+   "metric": "tuner/memory.end_kb",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 15.0,
+   "metric": "tuner/memory.peak_kb",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 20,
+   "metric": "tuner/section.tuner.frame.count",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 20,
+   "metric": "tuner/section.tuner.frame.sum_ms",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 20,
+   "metric": "tuner/section.tuner.load.count",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 20,
+   "metric": "tuner/section.tuner.load.sum_ms",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 20,
+   "metric": "tuner/section.tuner.modeSwitch.count",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  },
+  {
+   "limit_pct": 20,
+   "metric": "tuner/section.tuner.modeSwitch.sum_ms",
+   "reason": "fewer than 5 clean rounds (3)",
+   "state": "inactive"
+  }
+ ],
+ "journeys": [
+  {
+   "iterations": 20,
+   "journey": "startup",
+   "metrics": {
+    "app.size_bytes": {
+     "samples": [],
+     "source": "apk",
+     "summary": {
+      "cov": 0.0,
+      "max": 6965255.0,
+      "mean": 6965255.0,
+      "median": 6965255.0,
+      "min": 6965255.0,
+      "p90": 6965255.0,
+      "p99": 6965255.0
+     },
+     "unit": "bytes"
+    },
+    "startup.ttfd_ms": {
+     "samples": [
+      186.333089,
+      192.240113,
+      204.56311,
+      213.338095,
+      189.796957,
+      183.903687,
+      192.746215,
+      182.880372,
+      199.398479,
+      194.678385,
+      191.180461,
+      194.980428,
+      189.161825,
+      185.055542,
+      205.537435,
+      200.574178,
+      182.620483,
+      210.943319,
+      197.066895,
+      189.819092
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.04532258102070848,
+      "max": 213.338095,
+      "mean": 194.34090799999998,
+      "median": 192.493164,
+      "min": 182.620483,
+      "p90": 206.0780234,
+      "p99": 212.88308756
+     },
+     "unit": "ms"
+    },
+    "startup.ttid_ms": {
+     "samples": [
+      186.333089,
+      192.240113,
+      204.56311,
+      213.338095,
+      189.796957,
+      183.903687,
+      192.746215,
+      182.880372,
+      199.398479,
+      194.678385,
+      191.180461,
+      194.980428,
+      189.161825,
+      185.055542,
+      205.537435,
+      200.574178,
+      182.620483,
+      210.943319,
+      197.066895,
+      189.819092
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.04532258102070848,
+      "max": 213.338095,
+      "mean": 194.34090799999998,
+      "median": 192.493164,
+      "min": 182.620483,
+      "p90": 206.0780234,
+      "p99": 212.88308756
+     },
+     "unit": "ms"
+    }
+   }
+  },
+  {
+   "iterations": 20,
+   "journey": "tuner",
+   "metrics": {
+    "frames.overrun_p90_ms": {
+     "samples": [
+      43.80715919999996,
+      28.9571225,
+      53.959307900000006,
+      55.45721910000001,
+      57.470868,
+      67.1616465,
+      46.633634400000034,
+      58.832199,
+      55.9123626,
+      35.862353,
+      64.59304800000001,
+      37.18621960000006,
+      34.607847400000075,
+      44.26250120000003,
+      36.85587140000006,
+      30.384502499999996,
+      59.650438400000006,
+      58.103233599999996,
+      60.5361394,
+      41.377639
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.2395887449789822,
+      "max": 67.1616465,
+      "mean": 48.58056563500001,
+      "median": 50.296471150000016,
+      "min": 28.9571225,
+      "p90": 60.94183026000001,
+      "p99": 66.673612785
+     },
+     "unit": "ms"
+    },
+    "frames.p50_ms": {
+     "samples": [
+      6.814616,
+      5.825643,
+      6.83195,
+      4.379008499999999,
+      5.370117499999999,
+      4.6497395,
+      5.812663,
+      4.635783,
+      6.02771,
+      7.604187,
+      5.260437,
+      6.946737,
+      7.068522,
+      5.952718,
+      7.080323,
+      6.8430175,
+      5.025919,
+      4.505819,
+      6.46167,
+      7.89504
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.17378463523298243,
+      "max": 7.89504,
+      "mean": 6.049581,
+      "median": 5.990214,
+      "min": 4.379008499999999,
+      "p90": 7.1327094,
+      "p99": 7.8397779299999995
+     },
+     "unit": "ms"
+    },
+    "frames.p90_ms": {
+     "samples": [
+      9.743436899999999,
+      9.453634000000001,
+      11.824784100000002,
+      10.784183700000002,
+      9.433431,
+      9.9493205,
+      9.588533400000001,
+      12.112793,
+      14.229263999999997,
+      10.8439535,
+      15.3805945,
+      9.373413000000001,
+      10.183455400000003,
+      10.0985592,
+      11.444661000000002,
+      8.682515500000001,
+      11.4075276,
+      11.299935199999998,
+      11.857959200000002,
+      12.0350345
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.14800678327935304,
+      "max": 15.3805945,
+      "mean": 10.986349460000001,
+      "median": 10.8140686,
+      "min": 8.682515500000001,
+      "p90": 12.324440100000002,
+      "p99": 15.161841704999999
+     },
+     "unit": "ms"
+    },
+    "frames.p99_ms": {
+     "samples": [
+      18.302431269999992,
+      20.751903,
+      22.056330279999983,
+      20.95091662999998,
+      21.338356499999996,
+      20.500040099999996,
+      21.612379100000012,
+      20.553877949999997,
+      18.8505989,
+      31.67779525,
+      23.1568975,
+      21.14555248000002,
+      20.26090032000002,
+      21.295529120000012,
+      21.91902176000002,
+      20.80684425,
+      23.25208884,
+      22.646747359999992,
+      24.584857999999997,
+      32.296743
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.15574750312408955,
+      "max": 32.296743,
+      "mean": 22.3979905805,
+      "median": 21.316942810000004,
+      "min": 18.302431269999992,
+      "p90": 25.294151725000006,
+      "p99": 32.179142927499996
+     },
+     "unit": "ms"
+    },
+    "journey.duration_ms": {
+     "samples": [
+      1331.962078,
+      1341.089071,
+      1191.575033,
+      1192.19218,
+      1174.034709,
+      1183.947755,
+      1338.547079,
+      1199.780518,
+      1160.759563,
+      1347.636272,
+      1197.172446,
+      1289.794109,
+      1340.353435,
+      1332.165731,
+      1309.604574,
+      1360.262248,
+      1217.525635,
+      1182.698487,
+      1215.639405,
+      1388.208619
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.06028825552950033,
+      "max": 1388.208619,
+      "mean": 1264.7474473500001,
+      "median": 1253.659872,
+      "min": 1160.759563,
+      "p90": 1348.8988696,
+      "p99": 1382.89880851
+     },
+     "unit": "ms"
+    },
+    "memory.end_kb": {
+     "samples": [
+      74140.0,
+      69340.0,
+      74452.0,
+      79596.0,
+      84796.0,
+      72092.0,
+      76520.0,
+      81180.0,
+      85676.0,
+      90412.0,
+      74648.0,
+      79236.0,
+      83664.0,
+      88592.0,
+      74488.0,
+      79068.0,
+      83332.0,
+      87844.0,
+      74008.0,
+      78500.0
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.07292426088949534,
+      "max": 90412.0,
+      "mean": 79579.2,
+      "median": 79152.0,
+      "min": 69340.0,
+      "p90": 87918.8,
+      "p99": 90066.2
+     },
+     "unit": "kB"
+    },
+    "memory.peak_kb": {
+     "samples": [
+      74140.0,
+      76524.0,
+      74452.0,
+      79596.0,
+      84804.0,
+      90196.0,
+      76520.0,
+      81180.0,
+      85676.0,
+      90416.0,
+      93924.0,
+      79236.0,
+      83664.0,
+      88592.0,
+      91008.0,
+      79068.0,
+      83332.0,
+      87844.0,
+      90312.0,
+      78500.0
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.07117977764633217,
+      "max": 93924.0,
+      "mean": 83449.2,
+      "median": 83498.0,
+      "min": 74140.0,
+      "p90": 90475.2,
+      "p99": 93369.95999999999
+     },
+     "unit": "kB"
+    },
+    "section.tuner.frame.count": {
+     "samples": [
+      17.0,
+      19.0,
+      12.0,
+      12.0,
+      11.0,
+      11.0,
+      19.0,
+      10.0,
+      11.0,
+      21.0,
+      11.0,
+      21.0,
+      20.0,
+      19.0,
+      20.0,
+      20.0,
+      11.0,
+      9.0,
+      13.0,
+      20.0
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.2856623668425885,
+      "max": 21.0,
+      "mean": 15.35,
+      "median": 15.0,
+      "min": 9.0,
+      "p90": 20.1,
+      "p99": 21.0
+     },
+     "unit": "count"
+    },
+    "section.tuner.frame.sum_ms": {
+     "samples": [
+      0.223025,
+      0.264729,
+      0.222209,
+      0.138063,
+      0.138995,
+      0.131633,
+      0.229408,
+      0.111694,
+      0.123128,
+      0.370603,
+      0.152915,
+      0.334189,
+      0.270997,
+      0.224078,
+      0.296428,
+      0.264932,
+      0.127889,
+      0.102214,
+      0.183227,
+      0.301921
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.3733460131104455,
+      "max": 0.370603,
+      "mean": 0.21061385000000002,
+      "median": 0.222617,
+      "min": 0.102214,
+      "p90": 0.3051478,
+      "p99": 0.36368433999999994
+     },
+     "unit": "ms"
+    },
+    "section.tuner.load.count": {
+     "samples": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.0,
+      "max": 1.0,
+      "mean": 1.0,
+      "median": 1.0,
+      "min": 1.0,
+      "p90": 1.0,
+      "p99": 1.0
+     },
+     "unit": "count"
+    },
+    "section.tuner.load.sum_ms": {
+     "samples": [
+      66.050253,
+      72.999511,
+      66.051473,
+      66.29126,
+      67.657837,
+      86.537435,
+      70.563639,
+      70.820638,
+      72.929158,
+      66.508016,
+      68.831096,
+      69.089478,
+      66.708333,
+      66.673055,
+      69.964519,
+      70.613281,
+      65.81075,
+      64.525594,
+      71.466471,
+      70.907023
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.06632666148688193,
+      "max": 86.537435,
+      "mean": 69.549941,
+      "median": 68.960287,
+      "min": 64.525594,
+      "p90": 72.9361933,
+      "p99": 83.96522943999999
+     },
+     "unit": "ms"
+    },
+    "section.tuner.modeSwitch.count": {
+     "samples": [
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.0,
+      "max": 2.0,
+      "mean": 2.0,
+      "median": 2.0,
+      "min": 2.0,
+      "p90": 2.0,
+      "p99": 2.0
+     },
+     "unit": "count"
+    },
+    "section.tuner.modeSwitch.sum_ms": {
+     "samples": [
+      211.115723,
+      209.891968,
+      208.205119,
+      211.803711,
+      196.951254,
+      206.554687,
+      208.940552,
+      204.902262,
+      201.606852,
+      197.940512,
+      208.813802,
+      214.112183,
+      215.164266,
+      209.113037,
+      209.565715,
+      205.295614,
+      210.725668,
+      206.526326,
+      214.061361,
+      214.982829
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.023954032116739216,
+      "max": 215.164266,
+      "mean": 208.31367205,
+      "median": 209.0267945,
+      "min": 196.951254,
+      "p90": 214.19924759999998,
+      "p99": 215.12979297
+     },
+     "unit": "ms"
+    }
+   }
+  },
+  {
+   "iterations": 20,
+   "journey": "metronome",
+   "metrics": {
+    "frames.overrun_p90_ms": {
+     "samples": [
+      -2.04379,
+      -6.1286314,
+      -4.0129968,
+      -2.87715499999999,
+      -2.266081,
+      -5.285352399999999,
+      -2.0987154999999995,
+      -2.8670578000000004,
+      -3.454936199999999,
+      -1.728116,
+      -2.0931212999999986,
+      -4.033226,
+      -4.020152799999998,
+      -1.826626,
+      -4.599121700000001,
+      -1.604625699999999,
+      -5.483005,
+      7.165803000000001,
+      -2.7842743000000008,
+      -5.07679
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": -0.9344052511347671,
+      "max": 7.165803000000001,
+      "mean": -2.8558985949999993,
+      "median": -2.8721063999999954,
+      "min": -6.1286314,
+      "p90": -1.7157669699999998,
+      "p99": 5.49942154699999
+     },
+     "unit": "ms"
+    },
+    "frames.p50_ms": {
+     "samples": [
+      5.214904499999999,
+      4.538656,
+      5.140665,
+      6.2284135,
+      7.5840654999999995,
+      5.243856,
+      6.9033405000000005,
+      6.155212000000001,
+      7.295533,
+      4.411417,
+      7.5519815,
+      6.282511,
+      4.62559,
+      7.556397,
+      4.4727175,
+      7.083963499999999,
+      5.774455,
+      6.342936,
+      7.2539265,
+      6.61259
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.17854723603560188,
+      "max": 7.5840654999999995,
+      "mean": 6.11365655,
+      "median": 6.255462250000001,
+      "min": 4.411417,
+      "p90": 7.55242305,
+      "p99": 7.578808485
+     },
+     "unit": "ms"
+    },
+    "frames.p90_ms": {
+     "samples": [
+      11.6675005,
+      7.5924804,
+      9.5504075,
+      8.455211900000004,
+      10.271260999999999,
+      8.1668786,
+      10.353006500000001,
+      10.1515345,
+      9.557064200000001,
+      10.497274,
+      10.312874200000001,
+      8.792676,
+      9.4087407,
+      10.625448,
+      8.4551427,
+      10.9966304,
+      7.954183,
+      16.525529200000012,
+      9.727681599999999,
+      8.351197
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.18965959482741684,
+      "max": 16.525529200000012,
+      "mean": 9.870636095,
+      "median": 9.6423729,
+      "min": 7.5924804,
+      "p90": 11.063717410000002,
+      "p99": 15.602503747000004
+     },
+     "unit": "ms"
+    },
+    "frames.p99_ms": {
+     "samples": [
+      27.83327239999994,
+      15.339268920000013,
+      17.929924789999955,
+      21.70680297999998,
+      23.532728699999822,
+      15.897740559999994,
+      19.774940999999934,
+      20.11187895000001,
+      19.00865022000002,
+      21.551941,
+      28.222833019999975,
+      19.520132240000013,
+      21.267894879999965,
+      28.138614999999987,
+      20.063067289999996,
+      17.686368059999968,
+      17.113525,
+      28.60624812000001,
+      20.853061889999996,
+      18.420898
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.1905572714654596,
+      "max": 28.60624812000001,
+      "mean": 21.128989650999976,
+      "median": 20.087473120000002,
+      "min": 15.339268920000013,
+      "p90": 28.147036801999985,
+      "p99": 28.533399251000002
+     },
+     "unit": "ms"
+    },
+    "journey.duration_ms": {
+     "samples": [
+      2373.806967,
+      1683.569296,
+      1836.179078,
+      1679.31836,
+      2072.119589,
+      1927.457724,
+      1751.919719,
+      1922.169434,
+      1757.934612,
+      1623.420533,
+      2367.99996,
+      1663.408733,
+      1586.072348,
+      1879.178387,
+      1813.883057,
+      1750.356853,
+      1572.03182,
+      1689.329632,
+      1758.83663,
+      1602.543905
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.12286336217028347,
+      "max": 2373.806967,
+      "mean": 1815.57683185,
+      "median": 1754.9271655,
+      "min": 1572.03182,
+      "p90": 2101.7076261,
+      "p99": 2372.70363567
+     },
+     "unit": "ms"
+    },
+    "memory.end_kb": {
+     "samples": [
+      80872.0,
+      72960.0,
+      82016.0,
+      91600.0,
+      77532.0,
+      86280.0,
+      95096.0,
+      104348.0,
+      78656.0,
+      87016.0,
+      95464.0,
+      104080.0,
+      79144.0,
+      87680.0,
+      96156.0,
+      104556.0,
+      79860.0,
+      88476.0,
+      77648.0,
+      86036.0
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.10669636375607967,
+      "max": 104556.0,
+      "mean": 87773.8,
+      "median": 86648.0,
+      "min": 72960.0,
+      "p90": 104106.8,
+      "p99": 104516.48
+     },
+     "unit": "kB"
+    },
+    "memory.peak_kb": {
+     "samples": [
+      80888.0,
+      72976.0,
+      82032.0,
+      91616.0,
+      77548.0,
+      86296.0,
+      95112.0,
+      104364.0,
+      109420.0,
+      87032.0,
+      95480.0,
+      104096.0,
+      107336.0,
+      87696.0,
+      96172.0,
+      104572.0,
+      79876.0,
+      88492.0,
+      91116.0,
+      86052.0
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.11191480946823268,
+      "max": 109420.0,
+      "mean": 91408.6,
+      "median": 89804.0,
+      "min": 72976.0,
+      "p90": 104848.40000000001,
+      "p99": 109024.04
+     },
+     "unit": "kB"
+    },
+    "section.metronome.load.count": {
+     "samples": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.0,
+      "max": 1.0,
+      "mean": 1.0,
+      "median": 1.0,
+      "min": 1.0,
+      "p90": 1.0,
+      "p99": 1.0
+     },
+     "unit": "count"
+    },
+    "section.metronome.load.sum_ms": {
+     "samples": [
+      0.032471,
+      0.027832,
+      0.027628,
+      0.032755,
+      0.06132,
+      0.027303,
+      0.033407,
+      0.03361,
+      0.033162,
+      0.032674,
+      0.037516,
+      0.048951,
+      0.035034,
+      0.035645,
+      0.032145,
+      0.082154,
+      0.073201,
+      0.034179,
+      0.028727,
+      0.029378
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.3864987983013473,
+      "max": 0.082154,
+      "mean": 0.0389546,
+      "median": 0.033284499999999995,
+      "min": 0.027303,
+      "p90": 0.06250810000000001,
+      "p99": 0.08045292999999999
+     },
+     "unit": "ms"
+    },
+    "section.metronome.tempoChange.count": {
+     "samples": [
+      10.0,
+      10.0,
+      10.0,
+      10.0,
+      10.0,
+      10.0,
+      10.0,
+      10.0,
+      10.0,
+      10.0,
+      10.0,
+      10.0,
+      10.0,
+      10.0,
+      10.0,
+      10.0,
+      10.0,
+      10.0,
+      10.0,
+      10.0
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.0,
+      "max": 10.0,
+      "mean": 10.0,
+      "median": 10.0,
+      "min": 10.0,
+      "p90": 10.0,
+      "p99": 10.0
+     },
+     "unit": "count"
+    },
+    "section.metronome.tempoChange.sum_ms": {
+     "samples": [
+      2.017252,
+      1.537027,
+      1.907104,
+      1.504108,
+      1.719238,
+      1.723184,
+      1.935832,
+      1.727012,
+      1.746461,
+      1.79008,
+      1.674926,
+      1.554687,
+      1.673868,
+      1.637656,
+      1.620076,
+      2.053139,
+      1.524209,
+      1.547322,
+      1.857584,
+      1.462729
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.09838028260657593,
+      "max": 2.053139,
+      "mean": 1.7106746999999998,
+      "median": 1.697082,
+      "min": 1.462729,
+      "p90": 1.943974,
+      "p99": 2.04632047
+     },
+     "unit": "ms"
+    }
+   }
+  },
+  {
+   "iterations": 20,
+   "journey": "stress",
+   "metrics": {
+    "audio.callbacks": {
+     "samples": [
+      176.0,
+      5.0,
+      208.0,
+      25.0,
+      226.0,
+      228.0,
+      325.0,
+      156.0,
+      175.0,
+      138.0,
+      178.0,
+      196.0,
+      345.0,
+      153.0,
+      347.0,
+      335.0,
+      198.0,
+      106.0,
+      313.0
+     ],
+     "source": "perfetto",
+     "summary": {
+      "cov": 0.4796512380738495,
+      "max": 347.0,
+      "mean": 201.73684210526315,
+      "median": 196.0,
+      "min": 5.0,
+      "p90": 337.0,
+      "p99": 346.64
+     },
+     "unit": "count"
+    },
+    "audio.last_callback_us": {
+     "samples": [
+      5.0,
+      5.0,
+      4.0,
+      3.0,
+      3.0,
+      7.0,
+      6.0,
+      8.0,
+      5.0,
+      7.0,
+      2.0,
+      3.0,
+      4.0,
+      4.0,
+      3.0,
+      6.0,
+      6.0,
+      3.0,
+      2.0
+     ],
+     "source": "perfetto",
+     "summary": {
+      "cov": 0.3817780269623722,
+      "max": 8.0,
+      "mean": 4.526315789473684,
+      "median": 4.0,
+      "min": 2.0,
+      "p90": 7.0,
+      "p99": 7.82
+     },
+     "unit": "us"
+    },
+    "audio.max_callback_us": {
+     "samples": [
+      10.0,
+      12.0,
+      12.0,
+      10.0,
+      17.0,
+      15.0,
+      14.0,
+      13.0,
+      13.0,
+      19.0,
+      15.0,
+      60.0,
+      22.0,
+      24.0,
+      270.0,
+      20.0,
+      12.0,
+      15.0,
+      65.0
+     ],
+     "source": "perfetto",
+     "summary": {
+      "cov": 1.7182858792844913,
+      "max": 270.0,
+      "mean": 33.578947368421055,
+      "median": 15.0,
+      "min": 10.0,
+      "p90": 61.0,
+      "p99": 233.10000000000005
+     },
+     "unit": "us"
+    },
+    "audio.over_budget": {
+     "samples": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "source": "perfetto",
+     "summary": {
+      "cov": 0.0,
+      "max": 0.0,
+      "mean": 0.0,
+      "median": 0.0,
+      "min": 0.0,
+      "p90": 0.0,
+      "p99": 0.0
+     },
+     "unit": "count"
+    },
+    "audio.realtime": {
+     "samples": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     "source": "perfetto",
+     "summary": {
+      "cov": 0.0,
+      "max": 1.0,
+      "mean": 1.0,
+      "median": 1.0,
+      "min": 1.0,
+      "p90": 1.0,
+      "p99": 1.0
+     },
+     "unit": "flag"
+    },
+    "audio.xruns": {
+     "samples": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "source": "perfetto",
+     "summary": {
+      "cov": 0.0,
+      "max": 0.0,
+      "mean": 0.0,
+      "median": 0.0,
+      "min": 0.0,
+      "p90": 0.0,
+      "p99": 0.0
+     },
+     "unit": "count"
+    },
+    "frames.overrun_p90_ms": {
+     "samples": [
+      -3.2117196000000003,
+      0.6445313999999968,
+      7.249580300000002,
+      6.676553399999997,
+      0.725899399999991,
+      0.2273137000000074,
+      1.1131862000000032,
+      10.536096600000018,
+      1.6553186999999991,
+      4.536554900000008,
+      2.855248299999997,
+      0.5261423999999932,
+      1.8786114999999999,
+      1.9741095999999967,
+      -1.243319599999999,
+      7.243818800000012,
+      0.24514410000000653,
+      4.1296975999999965,
+      2.1849143000000053,
+      2.604121
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 1.21686549564483,
+      "max": 10.536096600000018,
+      "mean": 2.6275901500000014,
+      "median": 1.9263605499999983,
+      "min": -3.2117196000000003,
+      "p90": 7.244394950000011,
+      "p99": 9.91165850300001
+     },
+     "unit": "ms"
+    },
+    "frames.p50_ms": {
+     "samples": [
+      6.4224245,
+      5.274577,
+      7.382955,
+      8.132446,
+      4.954509,
+      6.0074465,
+      6.776245,
+      6.789815,
+      5.8815515000000005,
+      7.714396,
+      5.253235500000001,
+      4.935221,
+      7.659953,
+      7.7849125,
+      8.146322,
+      6.499919,
+      5.528137,
+      7.587565,
+      6.365641,
+      6.407185999999999
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.15714069571967942,
+      "max": 8.146322,
+      "mean": 6.575222875,
+      "median": 6.46117175,
+      "min": 4.935221,
+      "p90": 7.819665850000001,
+      "p99": 8.14368556
+     },
+     "unit": "ms"
+    },
+    "frames.p90_ms": {
+     "samples": [
+      9.648758899999999,
+      9.1165852,
+      11.224886300000001,
+      11.1878334,
+      8.5245444,
+      9.2156328,
+      9.454549400000001,
+      10.333654600000001,
+      9.846512499999998,
+      10.954626300000001,
+      9.0584758,
+      8.6021398,
+      10.186198000000001,
+      10.847245399999998,
+      10.6432048,
+      11.847468800000003,
+      7.7624147,
+      10.405574599999998,
+      10.012544900000002,
+      9.784342500000001
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.10192318148196652,
+      "max": 11.847468800000003,
+      "mean": 9.932859655,
+      "median": 9.929528699999999,
+      "min": 7.7624147,
+      "p90": 11.191538690000002,
+      "p99": 11.729178125000002
+     },
+     "unit": "ms"
+    },
+    "frames.p99_ms": {
+     "samples": [
+      19.79867192999994,
+      21.13199196,
+      26.128370670000002,
+      27.968207120000017,
+      20.22493960000002,
+      28.627957740000014,
+      25.895187539999995,
+      35.60459211999993,
+      23.602024160000013,
+      28.164655560000075,
+      22.027012709999994,
+      25.459145179999933,
+      22.84182735000002,
+      24.196823070000008,
+      22.27072266000001,
+      28.89625778000001,
+      22.932660079999987,
+      28.067422779999987,
+      26.323589590000015,
+      26.603658000000035
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.14392640301368118,
+      "max": 35.60459211999993,
+      "mean": 25.33828588,
+      "median": 25.677166359999966,
+      "min": 19.79867192999994,
+      "p90": 28.654787744000014,
+      "p99": 34.33000859539993
+     },
+     "unit": "ms"
+    },
+    "journey.duration_ms": {
+     "samples": [
+      4881.844891,
+      4192.899457,
+      3857.835044,
+      4160.827191,
+      3783.926271,
+      4838.36015,
+      3723.495445,
+      4303.927655,
+      4942.196373,
+      3994.156496,
+      4417.057579,
+      3727.804405,
+      4368.860028,
+      4433.595623,
+      4450.666669,
+      4454.612226,
+      4194.1779,
+      4350.115115,
+      3971.627565,
+      3710.441896
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.0876845270193371,
+      "max": 4942.196373,
+      "mean": 4237.92139895,
+      "median": 4249.0527775,
+      "min": 3710.441896,
+      "p90": 4842.708624100001,
+      "p99": 4930.729591419999
+     },
+     "unit": "ms"
+    },
+    "memory.end_kb": {
+     "samples": [
+      81460.0,
+      98168.0,
+      86436.0,
+      102848.0,
+      88336.0,
+      105004.0,
+      89944.0,
+      87644.0,
+      103772.0,
+      86912.0,
+      82980.0,
+      99368.0,
+      86944.0,
+      77416.0,
+      93380.0,
+      77712.0,
+      93400.0,
+      109564.0,
+      90416.0,
+      76364.0
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.10381887632198254,
+      "max": 109564.0,
+      "mean": 90903.4,
+      "median": 89140.0,
+      "min": 76364.0,
+      "p90": 103895.2,
+      "p99": 108697.59999999999
+     },
+     "unit": "kB"
+    },
+    "memory.peak_kb": {
+     "samples": [
+      89632.0,
+      98168.0,
+      86436.0,
+      102848.0,
+      88336.0,
+      105004.0,
+      89944.0,
+      92696.0,
+      103772.0,
+      86912.0,
+      93532.0,
+      99368.0,
+      86944.0,
+      99176.0,
+      93380.0,
+      105904.0,
+      93400.0,
+      109564.0,
+      90416.0,
+      106016.0
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.07544194398654822,
+      "max": 109564.0,
+      "mean": 96072.4,
+      "median": 93466.0,
+      "min": 86436.0,
+      "p90": 105915.2,
+      "p99": 108889.87999999999
+     },
+     "unit": "kB"
+    },
+    "section.metronome.load.count": {
+     "samples": [
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.0,
+      "max": 2.0,
+      "mean": 2.0,
+      "median": 2.0,
+      "min": 2.0,
+      "p90": 2.0,
+      "p99": 2.0
+     },
+     "unit": "count"
+    },
+    "section.metronome.load.sum_ms": {
+     "samples": [
+      0.070557,
+      0.051107,
+      0.058594,
+      0.060059,
+      0.045654,
+      0.091675,
+      0.065959,
+      0.066162,
+      0.053305,
+      0.117635,
+      0.0566,
+      0.09139,
+      0.057983,
+      0.062459,
+      0.086304,
+      0.056926,
+      0.072917,
+      0.057942,
+      0.054159,
+      0.051635
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.26049667966420176,
+      "max": 0.117635,
+      "mean": 0.0664511,
+      "median": 0.059326500000000004,
+      "min": 0.045654,
+      "p90": 0.0914185,
+      "p99": 0.11270259999999997
+     },
+     "unit": "ms"
+    },
+    "section.metronome.tempoChange.count": {
+     "samples": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.0,
+      "max": 0.0,
+      "mean": 0.0,
+      "median": 0.0,
+      "min": 0.0,
+      "p90": 0.0,
+      "p99": 0.0
+     },
+     "unit": "count"
+    },
+    "section.metronome.tempoChange.sum_ms": {
+     "samples": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.0,
+      "max": 0.0,
+      "mean": 0.0,
+      "median": 0.0,
+      "min": 0.0,
+      "p90": 0.0,
+      "p99": 0.0
+     },
+     "unit": "ms"
+    },
+    "section.tuner.frame.count": {
+     "samples": [
+      61.0,
+      29.0,
+      33.0,
+      31.0,
+      30.0,
+      31.0,
+      56.0,
+      31.0,
+      34.0,
+      59.0,
+      29.0,
+      55.0,
+      31.0,
+      30.0,
+      31.0,
+      30.0,
+      30.0,
+      30.0,
+      57.0,
+      55.0
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.31648724481728663,
+      "max": 61.0,
+      "mean": 38.65,
+      "median": 31.0,
+      "min": 29.0,
+      "p90": 57.2,
+      "p99": 60.62
+     },
+     "unit": "count"
+    },
+    "section.tuner.frame.sum_ms": {
+     "samples": [
+      0.980352,
+      0.421063,
+      0.566407,
+      0.553343,
+      0.436562,
+      0.533979,
+      0.935342,
+      0.551145,
+      0.600097,
+      0.916014,
+      0.479654,
+      0.943072,
+      0.535643,
+      0.490116,
+      0.527951,
+      0.453814,
+      0.47465,
+      0.534388,
+      0.97323,
+      0.998375
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.3246706224767705,
+      "max": 0.998375,
+      "mean": 0.64525985,
+      "median": 0.5433939999999999,
+      "min": 0.421063,
+      "p90": 0.9739422000000001,
+      "p99": 0.99495063
+     },
+     "unit": "ms"
+    },
+    "section.tuner.load.count": {
+     "samples": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.0,
+      "max": 1.0,
+      "mean": 1.0,
+      "median": 1.0,
+      "min": 1.0,
+      "p90": 1.0,
+      "p99": 1.0
+     },
+     "unit": "count"
+    },
+    "section.tuner.load.sum_ms": {
+     "samples": [
+      0.031128,
+      0.030274,
+      0.037109,
+      0.024658,
+      0.036905,
+      0.024983,
+      0.046468,
+      0.024414,
+      0.022054,
+      0.048055,
+      0.027141,
+      0.028523,
+      0.031942,
+      0.056274,
+      0.040569,
+      0.031006,
+      0.018433,
+      0.032064,
+      0.020182,
+      0.032146
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.29469808931223734,
+      "max": 0.056274,
+      "mean": 0.0322164,
+      "median": 0.031066999999999997,
+      "min": 0.018433,
+      "p90": 0.04662670000000001,
+      "p99": 0.054712389999999986
+     },
+     "unit": "ms"
+    },
+    "section.tuner.modeSwitch.count": {
+     "samples": [
+      6.0,
+      6.0,
+      6.0,
+      6.0,
+      6.0,
+      6.0,
+      6.0,
+      6.0,
+      6.0,
+      6.0,
+      6.0,
+      6.0,
+      6.0,
+      6.0,
+      6.0,
+      6.0,
+      6.0,
+      6.0,
+      6.0,
+      6.0
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.0,
+      "max": 6.0,
+      "mean": 6.0,
+      "median": 6.0,
+      "min": 6.0,
+      "p90": 6.0,
+      "p99": 6.0
+     },
+     "unit": "count"
+    },
+    "section.tuner.modeSwitch.sum_ms": {
+     "samples": [
+      471.619507,
+      298.640504,
+      277.223632,
+      280.749348,
+      291.96045,
+      271.629027,
+      270.645914,
+      303.078979,
+      500.020631,
+      262.619791,
+      292.132366,
+      258.895304,
+      283.393922,
+      276.856202,
+      294.616577,
+      276.023642,
+      295.195475,
+      280.964233,
+      472.213909,
+      274.928345
+     ],
+     "source": "macrobenchmark",
+     "summary": {
+      "cov": 0.23204164155603046,
+      "max": 500.020631,
+      "mean": 311.67038790000004,
+      "median": 282.17907749999995,
+      "min": 258.895304,
+      "p90": 471.6789472,
+      "p99": 494.73735381999995
+     },
+     "unit": "ms"
+    }
+   }
+  }
+ ],
+ "label": "baseline-profiles",
+ "machine": {
+  "hostname": "Victors-MacBook-Pro-M4.local",
+  "os": "Darwin 25.6.0",
+  "tool_version": "0.2.0"
+ },
+ "round_id": "20261015T164356Z_baseline-profiles",
+ "schema_version": 1,
+ "session": {
+  "index": 4,
+  "size": 5
+ },
+ "started_at": "2026-10-15T16:43:56Z",
+ "status": "succeeded"
+}
