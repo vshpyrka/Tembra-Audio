@@ -1,0 +1,112 @@
+{
+ "artifacts": [],
+ "badges": [],
+ "build": {
+  "branch": "worktree-device-matrix",
+  "commit": "42d8e92284075e87ddd7782db2f972e150561cd8",
+  "dirty": true,
+  "type": "perf"
+ },
+ "checks": [
+  {
+   "limit": null,
+   "name": "java_home",
+   "passed": true,
+   "value": "/Users/university/Library/Java/JavaVirtualMachines/temurin-21.jdk/Contents/Home"
+  },
+  {
+   "limit": null,
+   "name": "sdk_dir",
+   "passed": true,
+   "value": "/Users/university/Library/Android/sdk"
+  },
+  {
+   "limit": null,
+   "name": "adb_device",
+   "passed": true,
+   "value": null
+  },
+  {
+   "limit": {
+    "max_temp_c": 35.0,
+    "min_level": 50
+   },
+   "name": "battery",
+   "passed": true,
+   "value": {
+    "level": 99,
+    "temp_c": 27.0
+   }
+  },
+  {
+   "limit": 60.0,
+   "name": "refresh_rate",
+   "passed": true,
+   "value": 60.0
+  },
+  {
+   "limit": true,
+   "name": "airplane",
+   "passed": true,
+   "value": true
+  },
+  {
+   "limit": null,
+   "name": "brightness_manual",
+   "passed": true,
+   "value": null
+  },
+  {
+   "limit": 2097152,
+   "name": "storage",
+   "passed": true,
+   "value": 44716540
+  },
+  {
+   "limit": null,
+   "name": "awake",
+   "passed": true,
+   "value": null
+  },
+  {
+   "limit": null,
+   "name": "unlocked",
+   "passed": true,
+   "value": null
+  }
+ ],
+ "device": {
+  "device_id": "e9446ac2",
+  "kind": "device",
+  "model": "Redmi Note 5",
+  "platform": "android",
+  "reference": true
+ },
+ "failure_reason": "StartupBenchmark failed twice: FAILURES!!! | Tests run: 1,  Failures: 1",
+ "fingerprint": {
+  "battery_level": 99,
+  "battery_temp_c": 27.0,
+  "network_state": "none",
+  "os_build": "PKQ1.180904.001",
+  "os_version": "9",
+  "refresh_rate_hz": 60.0,
+  "sdk": 28
+ },
+ "finished_at": "2026-10-15T16:03:21Z",
+ "gate": [],
+ "journeys": [],
+ "label": "baseline-profiles",
+ "machine": {
+  "hostname": "Victors-MacBook-Pro-M4.local",
+  "os": "Darwin 25.6.0",
+  "tool_version": "0.2.0"
+ },
+ "round_id": "20261015T160148Z_baseline-profiles",
+ "schema_version": 1,
+ "session": {
+  "index": 1,
+  "size": 1
+ },
+ "started_at": "2026-10-15T16:01:48Z",
+ "status": "failed"
+}
