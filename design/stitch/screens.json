@@ -2,7 +2,7 @@
   "project": "projects/12040171611712589599",
   "projectUrl": "https://stitch.withgoogle.com/projects/12040171611712589599",
   "title": "Tembra Audio DAW Design",
-  "fetchedAt": "2026-10-16T11:39:06Z",
+  "fetchedAt": "2026-10-16T12:04:49Z",
   "screens": [
     {
       "slug": "sign-in/phone",
@@ -116,13 +116,13 @@
     },
     {
       "slug": "instrument-tuner/tablet",
-      "screenId": "e916ae161b984825bbc5264dc718e3c9",
-      "title": "Tembra Audio - Instrument Tuner (Tablet)",
+      "screenId": "16662715132138347819",
+      "title": "Tembra Audio - Instrument Tuner (Tablet) v2",
       "device": "DESKTOP",
       "width": 2560,
-      "height": 2048,
-      "html": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAwMDY1YmFhNzhlNDc5MTMwNGU3NGFjNzBhMWVlZjBkEgsSBxCpxtiRkRMYAZIBJAoKcHJvamVjdF9pZBIWQhQxMjA0MDE3MTYxMTcxMjU4OTU5OQ&filename=&opi=89354086",
-      "screenshot": "https://lh3.googleusercontent.com/aida/AEtjO1U41X-xi6JNtjRv_ZV6U3G11UTvdA77bJzz1_tJ6qhAHftcaeZOy1BN_xVChD9FcPcmLxA_dq7ajJt-oQBfa7wU61SjXkPbNfG4Itkew0DI2pMKnWDeZwL-nV-vBQbhLEyoGfuqmnE781Nh7tjisQdJztkx0qFt7gGcmPh5qMKbeNI7wevkD-KtjJ3icPttHGPvgRldPXxtFDGqhcnhwq3nUuKb1_eX13cwxgJeh2vNKfc1fT4PzA0-o6c7"
+      "height": 1600,
+      "html": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBKOARIhYXBwX2NvbXBhbmlvbl91c2VyX3VwbG9hZGVkX2ZpbGVzGmkKM3VzZXJfdXBsb2FkZWRfaHRtbF8wMDA2NWRmM2Y3Mjk0MjMxMDM1NmU4Yjk4OTI0YTU2ZBILEgcQqcbYkZETGAGSASQKCnByb2plY3RfaWQSFkIUMTIwNDAxNzE2MTE3MTI1ODk1OTk&filename=&opi=96797242",
+      "screenshot": "https://lh3.googleusercontent.com/aida/AEtjO1X04dUhLfO3I9SynKqrrAoyJPbgDTCXKvqgEzBkAwcFzQKfQ28zTQtiwWSWFXHfJYF6qX23YS82oWxnDt3ruk-NoXoJnQOGsAJqF2P1iWNJeR8yH2Yd3LNKT-AnjrCwZPpblhrfJDT7wVP31-mtS9ycxSyIhy36pfLEzQrtg-qhDMZf9pG7hfPQvok_kmF8xpjPt2a0ULwYX3aRItH0RMMMbQ3PqaOlGP-8vJupIH4wYJCbag_OlQA08kN-pFQx8Qerz_qufhcN_w"
     },
     {
       "slug": "tuner-by-ear-cello/phone",
