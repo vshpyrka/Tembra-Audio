@@ -31,6 +31,7 @@ import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.test.v2.runComposeUiTest
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -81,7 +82,7 @@ class TunerScreenLayoutTest {
         presets = TuningPresets.forInstrument(Instrument.Cello, null),
     )
 
-    /** A Pixel 6 Pro held sideways, less the status and top bars (quickstart §8). */
+    /** A Pixel 6 Pro held sideways, less the status bar and the shell's former top bar (quickstart §8). */
     private val phoneLandscape = DpSize(892.dp, 330.dp)
 
     private val stateHolder = mutableStateOf(TunerUiState())
@@ -127,12 +128,58 @@ class TunerScreenLayoutTest {
     private fun DpRect.intersects(other: DpRect): Boolean =
         left < other.right && other.left < right && top < other.bottom && other.top < bottom
 
+    private fun DpRect.contains(other: DpRect, tolerance: Dp = 0.5.dp): Boolean =
+        other.left >= left - tolerance && other.right <= right + tolerance && other.top >= top - tolerance && other.bottom <= bottom + tolerance
+
+    private fun DpRect.middle(): Float = (top + bottom).value / 2
+
+    /** The content areas the tablet survey measured (2026-10-16): 420 × 380, 560 × 480 and 772 × 511 dp windows. */
+    private val pocketHosts = listOf(DpSize(420.dp, 212.dp), DpSize(560.dp, 312.dp), DpSize(708.dp, 407.dp))
+
+    /** The Pocket form puts instrument and mode on one row without the pill, which only reports, on every short host. */
+    @Test
+    fun pocketPutsInstrumentAndModeOnOneRowWithoutThePill() = runComposeUiTest {
+        for (host in pocketHosts) {
+            setScreen(autoListen, TunerLayout.Pocket, size = host)
+            val what = "${host.width} × ${host.height}"
+            val instrument = bounds("tuner.instrument")
+            val mode = bounds("tuner.mode")
+            assertTrue(abs(instrument.middle() - mode.middle()) < 1f, "$what: instrument $instrument and mode $mode are not on one row")
+            onNodeWithTag("tuner.pill").assertDoesNotExist()
+        }
+    }
+
+    /**
+     * The 772 × 511 dp window (407 dp of content beside the rail): the one selector row leaves the Auto Listen card the
+     * compact meter's 243 dp, so the meter is whole under the selectors with the noise gate after it.
+     */
+    @Test
+    fun pocketShowsTheWholeMeterUnderTheSelectorsIn772x511() = runComposeUiTest {
+        setScreen(autoListen, TunerLayout.Pocket, size = pocketHosts.last())
+        val screen = bounds("screen.tuner")
+        val meter = bounds("tuner.meter")
+        assertTrue(screen.contains(meter), "the meter $meter is not whole in the screen $screen")
+        assertTrue(meter.top >= bounds("tuner.mode").bottom - 0.5.dp, "the meter is not under the selectors")
+        assertTrue(bounds("tuner.noiseGate").top >= meter.bottom - 0.5.dp, "the noise gate is not under the meter")
+    }
+
+    /** By Ear in the Pocket form: the same one-row selectors over the By Ear card, which stays in the screen. */
+    @Test
+    fun pocketByEarKeepsTheOneRowSelectorsOverTheCard() = runComposeUiTest {
+        setScreen(byEarSeven, TunerLayout.Pocket, size = pocketHosts.first())
+        assertTrue(abs(bounds("tuner.instrument").middle() - bounds("tuner.mode").middle()) < 1f, "instrument and mode are not on one row")
+        onNodeWithTag("tuner.pill").assertDoesNotExist()
+        assertTrue(bounds("screen.tuner").contains(bounds("tuner.byEar")), "the By Ear card leaves the screen")
+    }
+
     @Test
     fun oneSelectorRowWhenWide() = runComposeUiTest {
-        setScreen(autoListen, TunerLayout.Wide)
+        // A wide window: on a 360 dp phone (OPPO CPH2239) the picker's 200 dp minimum wraps it below the string count.
+        val wide = DpSize(830.dp, 740.dp)
+        setScreen(autoListen, TunerLayout.Wide, size = wide)
         val tops = listOf("tuner.instrument", "tuner.pill", "tuner.mode").map { bounds(it) }
         for (b in tops) assertTrue(abs((b.top + b.bottom).value / 2 - (tops[0].top + tops[0].bottom).value / 2) < 1f, "selectors are not on one row: $tops")
-        setScreen(byEarSeven, TunerLayout.Wide)
+        setScreen(byEarSeven, TunerLayout.Wide, size = wide)
         val strings = bounds("tuner.strings")
         val picker = bounds("tuner.preset.picker")
         assertTrue(strings.right <= picker.left, "the string count $strings is not before the picker $picker")

@@ -39,7 +39,7 @@ internal fun StringCardGrid(
 ) {
     val spacing = TembraTheme.spacing
     val gap = when (layout) {
-        TunerLayout.Stacked, TunerLayout.Landscape, TunerLayout.Tabletop -> spacing.sm
+        TunerLayout.Stacked, TunerLayout.Pocket, TunerLayout.Landscape, TunerLayout.Tabletop -> spacing.sm
         TunerLayout.Wide -> spacing.lg
     }
     // Wide: three columns, or two when that fills every row and three would not (the cello's four strings: 2 + 2),
@@ -53,12 +53,12 @@ internal fun StringCardGrid(
         WideStringGrid(wideBase, wideFull)
     }
     val columns = when (layout) {
-        TunerLayout.Stacked -> 2
+        TunerLayout.Stacked, TunerLayout.Pocket -> 2
         TunerLayout.Wide -> wide.columns
         TunerLayout.Landscape, TunerLayout.Tabletop -> ((strings.size + 1) / 2).coerceAtLeast(1)
     }
     val maxWidth = when (layout) {
-        TunerLayout.Stacked -> spacing.byEarGridMaxWidth
+        TunerLayout.Stacked, TunerLayout.Pocket -> spacing.byEarGridMaxWidth
         TunerLayout.Wide -> wide.card * columns + gap * (columns - 1)
         TunerLayout.Landscape, TunerLayout.Tabletop -> Dp.Unspecified
     }

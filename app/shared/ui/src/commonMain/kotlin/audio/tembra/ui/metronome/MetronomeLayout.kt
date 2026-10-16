@@ -1,5 +1,7 @@
 package audio.tembra.ui.metronome
 
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.window.core.layout.WindowSizeClass
 import audio.tembra.ui.posture.TabletopFold
 import audio.tembra.ui.theme.WindowWidth
@@ -18,12 +20,26 @@ enum class MetronomeLayout {
     Tabletop,
 
     /**
-     * Experiment (not in any spec): the iPhone Duo's closed screen, too short for the [Stacked] card over the dial.
-     * Only the accent cells sit over the dial card, which fills the height; the other settings open in a sheet.
+     * The dial-first form for a screen too short for the [Stacked] card over the dial: the accent cells over the dial
+     * card, which fills the height, the tap and play row under it, and the other settings in a sheet. Born as the
+     * iPhone Duo experiment (its closed screen); since 2026-10-16 also any [Stacked] screen under [PocketBelow] of
+     * content (a short desktop window, a split-screen half), where the dial gives way to a tempo row in the shortest.
      */
     Pocket;
 
+    /** [Pocket] in place of [Stacked] when the screen's content is under [PocketBelow] tall; every other form stays. */
+    fun forContentHeight(height: Dp): MetronomeLayout = if (this == Stacked && height < PocketBelow) Pocket else this
+
     companion object {
+        /**
+         * The content height under which [Stacked] gives way to [Pocket]. The tablet survey (2026-10-16) found the
+         * dial under the fold in a 772 × 511 dp desktop window and whole in a 700 × 708 dp one; the line was 450 dp
+         * under the shell's 56 dp top bar and moved with the bar's removal (the same day) to 506 dp, so the same
+         * windows take [Pocket]: the 772 × 511 window (463 dp now) does, a 360 × 720 dp phone held upright with
+         * three-button navigation (584 dp) keeps [Stacked]. Stacked fits whole from 618 dp at 4/4; under that it scrolls.
+         */
+        val PocketBelow: Dp = 506.dp
+
         fun from(width: WindowWidth, isShort: Boolean): MetronomeLayout = when (width) {
             WindowWidth.Compact -> Stacked
             WindowWidth.Medium -> if (isShort) Landscape else Stacked

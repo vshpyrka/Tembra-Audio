@@ -1,5 +1,7 @@
 package audio.tembra.ui.tuner
 
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -63,6 +65,18 @@ fun TunerScreen(modifier: Modifier = Modifier, viewModel: TunerViewModel = metro
         )
     }
     if (state.loaded) {
-        TunerScreenContent(state = state, callbacks = callbacks, telemetry = viewModel.telemetry, layout = layout, modifier = modifier, fold = fold, verticalFold = currentVerticalFold())
+        // The screen's own height, not the window's: under 506 dp of content the one-row Pocket form takes the place of
+        // a Stacked one whose second selector row pushed the meter and the noise gate down (a short desktop window).
+        BoxWithConstraints(modifier = modifier) {
+            TunerScreenContent(
+                state = state,
+                callbacks = callbacks,
+                telemetry = viewModel.telemetry,
+                layout = layout.forContentHeight(maxHeight),
+                modifier = Modifier.fillMaxSize(),
+                fold = fold,
+                verticalFold = currentVerticalFold(),
+            )
+        }
     }
 }
