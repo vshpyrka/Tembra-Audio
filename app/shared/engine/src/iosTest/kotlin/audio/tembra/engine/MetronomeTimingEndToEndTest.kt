@@ -77,6 +77,27 @@ class MetronomeTimingEndToEndTest {
         println("MetronomeTimingEndToEndTest: ${audibleAt.size} crossings, spacings $spacingsMs ms")
         assertTrue(audibleAt.size >= 9, "only ${audibleAt.size} crossings: $indices")
         indices.zipWithNext { a, b -> assertEquals(a + 1, b, "tick indices $indices") }
-        for (spacing in spacingsMs) assertTrue(abs(spacing - 500.0) <= 1.0, "spacing $spacing ms in $spacingsMs")
+        assertOnTime(indices, audibleAt, spacingsMs)
     }
+}
+
+/**
+ * The ticks as the beat light sees them keep 120 BPM: a line fitted through (tick index, audible instant) has a period
+ * of 500 ms ± 1 ms (the unit runs at its reported rate and nothing drifts), and no estimate is more than 15 ms off that
+ * line. Where each click lands in the audio is the renderer's, frame-exact (SC-001; host test "ten minutes of ticks land
+ * on round(i × framesPerTick) without drift"); an estimate also carries the jitter of the callback that rendered it,
+ * which a ±1 ms limit per spacing mistook for drift on Android phones (the Android twin, 2026-10-16). 15 ms is half of
+ * the 30 ms SC-006 allows between the lit cell and the click. The period bound is there
+ * for a unit run at the wrong rate (44.1 for 48 kHz moves it by 44 ms).
+ */
+internal fun assertOnTime(indices: List<Long>, audibleAt: List<Long>, spacingsMs: List<Double>) {
+    val x = indices.map { (it - indices.first()).toDouble() }
+    val y = audibleAt.map { (it - audibleAt.first()) / 1e6 }
+    val meanX = x.average()
+    val meanY = y.average()
+    val periodMs = x.indices.sumOf { (x[it] - meanX) * (y[it] - meanY) } / x.sumOf { (it - meanX) * (it - meanX) }
+    val deviationMs = x.indices.maxOf { abs(y[it] - (meanY + periodMs * (x[it] - meanX))) }
+    println("MetronomeTimingEndToEndTest: fitted period $periodMs ms, largest deviation $deviationMs ms")
+    assertTrue(abs(periodMs - 500.0) <= 1.0, "fitted period $periodMs ms; spacings $spacingsMs")
+    assertTrue(deviationMs <= 15.0, "a tick $deviationMs ms off the fitted line; spacings $spacingsMs")
 }

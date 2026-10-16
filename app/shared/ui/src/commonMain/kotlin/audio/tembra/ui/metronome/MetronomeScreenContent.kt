@@ -66,6 +66,7 @@ import audio.tembra.ui.metronome.components.StyleRow
 import audio.tembra.ui.metronome.components.SubdivisionTiles
 import audio.tembra.ui.metronome.components.TapTempoButton
 import audio.tembra.ui.metronome.components.TempoDial
+import audio.tembra.ui.metronome.components.TempoRow
 import audio.tembra.ui.metronome.components.TempoSlider
 import audio.tembra.ui.metronome.components.TimeSignatureMenu
 import audio.tembra.ui.posture.TabletopFold
@@ -163,54 +164,158 @@ private fun StackedMetronome(state: MetronomeUiState, callbacks: MetronomeCallba
 }
 
 /**
- * The iPhone Duo experiment (not in any spec): the accent cells as bar boxes without labels (the phone-landscape form)
- * in a card on top, the dial card filling the height under them with a settings button in its top end corner, and the
- * tap and play row pinned above the navigation bar. The button opens the other settings (signature, subdivision, style
- * and sound) in a modal bottom sheet; whether it is open is this form's own state.
+ * The Pocket form: the accent cells as bar boxes without labels (the phone-landscape form) in a card on top, the dial
+ * card filling the height under them with a settings button in its top end corner, and the tap and play row pinned at
+ * the foot. The button opens the other settings (signature, subdivision, style and sound) in a modal bottom sheet;
+ * whether it is open is this form's own state. Born as the iPhone Duo experiment; since 2026-10-16 also the form of any
+ * screen too short for [MetronomeLayout.Stacked] (a short desktop window, a split-screen half), so it steps down with
+ * the height ([pocketTier]): when the ring would be under its 160 dp the [TempoRow] stands in for it with the settings
+ * button at its end, then the slider goes, then the cells move into the sheet. Tap, play and the tempo stay in view.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PocketMetronome(state: MetronomeUiState, callbacks: MetronomeCallbacks, telemetry: BeatTelemetry, modifier: Modifier) {
     val spacing = TembraTheme.spacing
     var settingsOpen by rememberSaveable { mutableStateOf(false) }
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
-        Box(modifier = Modifier.fillMaxWidth().tabletopCard(TembraTheme.colors.surfaceContainerLow).padding(spacing.sm)) {
-            AccentCells(
-                pattern = state.settings.pattern,
-                running = state.running,
-                currentBeat = state.currentBeat,
-                telemetry = telemetry,
-                onCycle = callbacks.onCycleBeat,
-                modifier = Modifier.fillMaxWidth(),
-                gap = spacing.xs,
-                form = AccentCellsForm.BarOnly,
-            )
-        }
-        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
-            DialCard(state = state, callbacks = callbacks, discs = CardDiscs.None, modifier = Modifier.fillMaxSize()) {
-                DialInCard(state, callbacks, cap = MetronomeDefaults.CompactDialMax)
+    val heights = pocketHeights()
+    BoxWithConstraints(modifier = modifier) {
+        // A constraint read while measuring (BoxWithConstraints), so the sheet below knows where the cells are.
+        val tier = pocketTier(height = maxHeight, cellsCard = heights.cellsCard(maxWidth, state.settings.signature.beats), heights = heights)
+        Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
+            if (tier.cells) {
+                Box(modifier = Modifier.fillMaxWidth().tabletopCard(TembraTheme.colors.surfaceContainerLow).padding(spacing.sm)) {
+                    AccentCells(
+                        pattern = state.settings.pattern,
+                        running = state.running,
+                        currentBeat = state.currentBeat,
+                        telemetry = telemetry,
+                        onCycle = callbacks.onCycleBeat,
+                        modifier = Modifier.fillMaxWidth(),
+                        gap = spacing.xs,
+                        form = AccentCellsForm.BarOnly,
+                    )
+                }
             }
-            SettingsButton(onClick = { settingsOpen = true }, modifier = Modifier.align(Alignment.TopEnd).padding(spacing.xs))
+            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                if (tier.ring) {
+                    DialCard(state = state, callbacks = callbacks, discs = CardDiscs.None, modifier = Modifier.fillMaxSize()) {
+                        DialInCard(state, callbacks, cap = MetronomeDefaults.CompactDialMax)
+                    }
+                    SettingsButton(onClick = { settingsOpen = true }, modifier = Modifier.align(Alignment.TopEnd).padding(spacing.xs))
+                } else {
+                    TempoCard(state = state, callbacks = callbacks, slider = tier.slider, onSettings = { settingsOpen = true }, modifier = Modifier.fillMaxSize())
+                }
+            }
+            TransportRow(state = state, callbacks = callbacks, modifier = Modifier.fillMaxWidth())
         }
-        TransportRow(state = state, callbacks = callbacks, modifier = Modifier.fillMaxWidth())
+        if (settingsOpen) {
+            ModalBottomSheet(
+                onDismissRequest = { settingsOpen = false },
+                containerColor = TembraTheme.colors.surfaceContainerLowest,
+            ) {
+                MetronomeSettingsPanel(
+                    state = state,
+                    callbacks = callbacks,
+                    telemetry = telemetry,
+                    layout = MetronomeLayout.Pocket,
+                    pocketCells = !tier.cells,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                        .padding(start = spacing.pageMargin, end = spacing.pageMargin, bottom = spacing.lg)
+                        .testTag(SETTINGS_TAG),
+                )
+            }
+        }
     }
-    if (settingsOpen) {
-        ModalBottomSheet(
-            onDismissRequest = { settingsOpen = false },
-            containerColor = TembraTheme.colors.surfaceContainerLowest,
+}
+
+/**
+ * The Pocket form's dial card when the ring does not fit: the [TempoRow] (with the settings button at its end) and,
+ * when [slider], the tempo slider under it, centred in the card's height.
+ */
+@Composable
+private fun TempoCard(state: MetronomeUiState, callbacks: MetronomeCallbacks, slider: Boolean, onSettings: () -> Unit, modifier: Modifier) {
+    val spacing = TembraTheme.spacing
+    val gradients = TembraTheme.gradients
+    TembraGradientCard(
+        glow = gradients.tempoDialCard,
+        modifier = modifier,
+        discs = CardDiscs.None,
+        overlay = gradients.tempoDialOverlay,
+        testTag = "metronome.dialCard",
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(spacing.md),
+            verticalArrangement = Arrangement.spacedBy(spacing.xs, Alignment.CenterVertically),
         ) {
-            MetronomeSettingsPanel(
-                state = state,
-                callbacks = callbacks,
-                telemetry = telemetry,
-                layout = MetronomeLayout.Pocket,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .padding(start = spacing.pageMargin, end = spacing.pageMargin, bottom = spacing.lg)
-                    .testTag(SETTINGS_TAG),
+            TempoRow(
+                tempo = state.settings.tempo,
+                marking = state.marking,
+                canStepDown = state.canStepDown,
+                canStepUp = state.canStepUp,
+                onTempo = callbacks.onTempo,
+                onStep = callbacks.onStep,
+                modifier = Modifier.fillMaxWidth(),
+                trailing = { SettingsButton(onClick = onSettings, modifier = Modifier) },
             )
+            if (slider) TempoSlider(tempo = state.settings.tempo, onTempo = callbacks.onTempo, modifier = Modifier.fillMaxWidth())
         }
+    }
+}
+
+/** What a Pocket screen of a given height shows: the cells over the card, the ring (else the tempo row), the slider. */
+private data class PocketTier(val cells: Boolean, val ring: Boolean, val slider: Boolean)
+
+/** The heights the Pocket tiers are weighed with, from the same tokens the parts are drawn with. */
+private class PocketHeights(
+    val transport: Dp,
+    val gap: Dp,
+    val ringCard: Dp,
+    val tempoCard: Dp,
+    private val cell: Dp,
+    private val cellGap: Dp,
+    private val cellsPadding: Dp,
+) {
+    /** The bar-box cells card for [beats] cells across [width]: 44 dp cells, wrapping into as many rows as needed. */
+    fun cellsCard(width: Dp, beats: Int): Dp {
+        val inner = width - cellsPadding * 2
+        val perRow = ((inner + cellGap) / (cell + cellGap)).toInt().coerceAtLeast(1)
+        val rows = (beats + perRow - 1) / perRow
+        return cellsPadding * 2 + cell * rows + cellGap * (rows - 1).coerceAtLeast(0)
+    }
+}
+
+@Composable
+private fun pocketHeights(): PocketHeights {
+    val spacing = TembraTheme.spacing
+    val slider = max(spacing.touchTargetMin, LocalMinimumInteractiveComponentSize.current)
+    // The tempo row is one number line tall (the readout's 64 sp line, which grows with the font), or the steppers.
+    val tempoRow = max(spacing.tempoStepper, with(LocalDensity.current) { TembraTheme.typographyExtras.tempoNumber.lineHeight.toDp() })
+    return PocketHeights(
+        transport = max(spacing.tapTempoHeight, spacing.playButton),
+        gap = spacing.sm,
+        ringCard = MetronomeDefaults.DialMin + dialCardChrome(),
+        tempoCard = spacing.md * 2 + tempoRow + spacing.xs + slider,
+        cell = spacing.touchTargetMin,
+        cellGap = spacing.xs,
+        cellsPadding = spacing.sm,
+    )
+}
+
+/**
+ * The Pocket tier for a screen [height]: the cells and the ring while the ring keeps its 160 dp under the cells; the
+ * cells and the tempo row with the slider; the tempo row with the slider alone (the cells in the sheet); and, shorter
+ * still, the tempo row alone. Tap and play keep their row at the foot in every tier.
+ */
+private fun pocketTier(height: Dp, cellsCard: Dp, heights: PocketHeights): PocketTier {
+    val card = height - heights.transport - heights.gap
+    val cardUnderCells = card - cellsCard - heights.gap
+    return when {
+        cardUnderCells >= heights.ringCard -> PocketTier(cells = true, ring = true, slider = true)
+        cardUnderCells >= heights.tempoCard -> PocketTier(cells = true, ring = false, slider = true)
+        card >= heights.tempoCard -> PocketTier(cells = false, ring = false, slider = true)
+        else -> PocketTier(cells = false, ring = false, slider = false)
     }
 }
 
@@ -557,7 +662,7 @@ private data class LandscapeBlock(val ring: Dp, val row: Dp, val scrolls: Boolea
  * The dial pane's sizes for a pane [height] (T152): the tap and play row is 48 dp up to a 300 dp pane and grows
  * linearly to 64 dp at 420 dp; the ring takes the rest of the height ([chrome] being the card's padding, the slider and
  * the gaps), within 160–300 dp and never wider than [ringWidth]. Only when even the 48 dp row leaves the ring under
- * 160 dp does the pane scroll, with the ring at 160 dp.
+ * 160 dp does the dial card scroll, with the ring at 160 dp; the row stays in view under it.
  */
 private fun landscapeBlock(height: Dp, chrome: Dp, ringWidth: Dp): LandscapeBlock {
     val low = MetronomeDefaults.LandscapeRowScaleFrom
@@ -593,21 +698,25 @@ private fun landscapeDialChrome(): Dp {
 /**
  * The landscape dial pane (T152, contracts/metronome-screen.md): the dial card across the whole pane with the ring
  * centred in it and, under it, tap tempo (taking the rest of the row) and play in a row of [LandscapeBlock.row] across
- * the pane. Tab reads the dial, the slider, tap, then play.
+ * the pane. In a pane too short for both ([LandscapeBlock.scrolls]: a short desktop window) the card scrolls in the
+ * height the row leaves, so the row is never pushed out of view. Tab reads the dial, the slider, tap, then play.
  */
 @Composable
 private fun LandscapeDialPane(state: MetronomeUiState, callbacks: MetronomeCallbacks, block: LandscapeBlock, modifier: Modifier) {
     val spacing = TembraTheme.spacing
-    val scroll = if (block.scrolls) Modifier.verticalScroll(rememberScrollState()) else Modifier
     Column(
-        modifier = modifier.then(scroll),
+        modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(spacing.sm),
     ) {
         DialCard(
             state = state,
             callbacks = callbacks,
             discs = CardDiscs.None,
-            modifier = if (block.scrolls) Modifier.fillMaxWidth() else Modifier.weight(1f).fillMaxWidth(),
+            modifier = if (block.scrolls) {
+                Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
+            } else {
+                Modifier.weight(1f).fillMaxWidth()
+            },
             padding = spacing.sm,
         ) {
             val room = if (block.scrolls) Modifier.fillMaxWidth() else Modifier.weight(1f).fillMaxWidth()

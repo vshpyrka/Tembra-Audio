@@ -219,10 +219,10 @@ screen of their kind:
 | bar item | `flex-col gap-1 px-space-sm py-1.5 rounded-full min-w-[56px]`, icon `text-[20px]`, label `text-label-sm` | pill, min width 56 dp, icon 20 dp, gap 4 dp, `labelSmall` |
 | bar item active | `bg-primary-container text-on-primary-container font-semibold shadow-[0_0_12px_rgba(167,139,250,0.3)]` | `primaryContainer` fill, `onPrimaryContainer` content, `clip_glow` |
 | bar item inactive / hover | `text-on-surface-variant hover:text-on-surface` | `onSurfaceVariant` → `onSurface` |
-| rail | `aside.w-16.top-14.bg-surface-container-lowest`, `nav.px-2.gap-1.5` | 64 dp wide below a 56 dp top bar, items 48 dp wide, 6 dp apart |
+| rail | `aside.w-16.top-14.bg-surface-container-lowest`, `nav.px-2.gap-1.5` | 64 dp wide below a 56 dp top bar (full height since the bar was removed on 2026-10-16), items 48 dp wide, 6 dp apart |
 | rail item | `py-2 px-1 rounded-lg`, icon `text-[22px]`, label `text-label-sm` | rounded 16 dp (design `rounded.lg`), icon 22 dp |
 | rail item active / hover | `bg-secondary-container text-on-secondary-container font-bold` / `hover:bg-surface-container-high hover:text-on-surface` | `secondaryContainer` fill; hover `surfaceContainerHigh` |
-| top bar | overline `font-label-sm text-primary tracking-wider uppercase` "Tembra Audio", title `font-headline-sm text-on-surface` | overline `labelSmall` in `primary`, title `headlineSmall`; height 56 dp per spec (phone screens use 64 dp, wide screens 56 dp; the two-line block fits 56 dp) |
+| top bar | overline `font-label-sm text-primary tracking-wider uppercase` "Tembra Audio", title `font-headline-sm text-on-surface` | overline `labelSmall` in `primary`, title `headlineSmall`; height 56 dp per spec (phone screens use 64 dp, wide screens 56 dp; the two-line block fits 56 dp). Removed from the shell on 2026-10-16 (spec FR-007 reversed); the component stays |
 | panel | `w-80 bg-surface-container-low rounded-xl p-space-md` (timeline tablet) | 320 dp, `surfaceContainerLow`, 12 dp radius and padding |
 
 ## R9. Developer-only token preview

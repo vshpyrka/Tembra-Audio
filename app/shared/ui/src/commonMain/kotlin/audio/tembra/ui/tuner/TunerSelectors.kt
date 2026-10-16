@@ -44,6 +44,17 @@ internal fun TunerSelectors(
             Spacer(modifier = Modifier.weight(1f))
             ModeControl(mode = mode, onMode = callbacks.onMode)
         }
+        // A screen too short for two rows: instrument and mode share one (wrapping only at large fonts); the pill, which
+        // only reports, is left out, as the meter's own status says the same.
+        TunerLayout.Pocket -> FlowRow(
+            modifier = modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalArrangement = Arrangement.spacedBy(spacing.xs),
+            itemVerticalAlignment = Alignment.CenterVertically,
+        ) {
+            InstrumentControl(instrument = instrument, onInstrument = callbacks.onInstrument)
+            ModeControl(mode = mode, onMode = callbacks.onMode)
+        }
         TunerLayout.Stacked, TunerLayout.Landscape -> Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(spacing.xs)) {
             // The first row wraps onto a further line when large fonts make its controls wider than the window.
             FlowRow(
