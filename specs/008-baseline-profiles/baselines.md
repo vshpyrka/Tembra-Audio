@@ -150,6 +150,10 @@ window size, not device type. Effects and Pads are not navigation destinations y
 Tuner, Metronome, Projects, Profile), so the set is: home, timeline, tuner-autoListen, tuner-byEar-tone (string VI
 auditioned), metronome-running-settings (running, settings open), projects, profile.
 
+**Retaken 2026-10-16** (the shell lost its top bar): all 28 images on the Pixel 6 Pro, 28 retaken, 0 left. The `expanded-*` ones were this Pixel held sideways at native density, as before. Debug and perf pairs differ only by
+the perf build's 8 dp "write engine health" dot at the top end corner (it replaced the waveform icon in the old top bar)
+and the live tuner meter; the By Ear pairs now show string VI "Playing" and the "TONE OUT" pill.
+
 Pixel difference per pair (status bar excluded, threshold 40/255): every pair ≤ 0.13 % except the two Auto Listen
 pairs at 0.81 % / 0.96 % — the live meter reacting to room noise. Nothing missing in the shrunk build: text, icons,
 fonts, the audition tone pill, the metronome's settings and sound name, the rail. (A first Auto Listen capture of the

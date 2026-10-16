@@ -149,3 +149,36 @@ pose, outer display 466 × 678 pt. Background: `docs/research/iphone-duo.md`; la
 Observed: "Metronome" fills its selected rail pill edge to edge; the rail's secondaryContainer highlight differs
 from the bottom bar's primaryContainer one, now visible on the same device. checkIos on the Duo (660) and
 checkAndroidHost (380) passed with the change.
+
+## Recaptured 2026-10-16: the shell has no top bar
+
+The navigation shell's top bar was removed on 2026-10-16 (spec 002 FR-007 reversed at the owner's request), so every
+capture here that showed the shell was retaken from that day's build, under the same file name, on the same target
+and in the same state. Content now starts right under the status bar (56 dp / pt higher). Other differences come from
+features that landed after the original captures and are named below. `*-before*` images and captures from targets
+that no longer exist were kept as they were. Android: Pixel 6 Pro `19021FDEE001AH`, the debug APK (no `tembra.perf`
+property), `adb exec-out screencap`, app state set with the debug launch extras and UiAutomator taps. iOS: the Debug app
+built with the Xcode 27.1 SDK on the iPhone 17 / iPad Pro 13" (M5) (iOS 26.5) / iPhone Duo (iOS 27.1) simulators,
+`simctl io screenshot`, app state set with the debug launch arguments, the app's stored preferences (written with the
+app stopped, backed up and restored) and real mouse clicks; rotation through the Simulator menu or Device Hub.
+
+### Android, Pixel 6 Pro (6 retaken, 0 left)
+
+| File | How | Differs beyond the top bar |
+|---|---|---|
+| `android-compact-home.png` | portrait, Home | no |
+| `android-compact-home-largefont.png` | `font_scale 2.0`, Home | no |
+| `android-short-home.png` | `wm user-rotation lock 1` (891 × 411 dp), Home | no; the rail now starts at the top |
+| `android-medium-home.png` | portrait, `wm density 380` | no |
+| `android-expanded-home.png` | landscape, density 380 | no; Library panel as before |
+| `android-expanded-tuner.png` | landscape, density 380, Tuner tapped from Home | **yes**: the old one showed the placeholder ("The instrument tuner arrives with the tuner feature."); now the real tuner (Auto Listen on the microphone, "Listening", noise gate; the system's green microphone dot in the status bar) |
+
+### iOS simulators (9 retaken, 0 left)
+
+| File | How | Differs beyond the top bar |
+|---|---|---|
+| `ios-compact-home`, `ios-compact-home-largefont`, `ios-short-home` | iPhone 17, Home (portrait / largest text / Landscape Left) | no |
+| `ios-medium-home` | temporary iPad mini (A17 Pro), iOS 26.5, portrait, as the original; created, captured, deleted | no |
+| `ios-expanded-home` | iPad Pro landscape, Home with the Library panel | no |
+| `ios-expanded-tuner` | iPad Pro landscape, Tuner (Auto Listen, real microphone, the iPad's own gate level −28 dB passed as the launch value) | **yes**: the old image showed feature 002's placeholder ("The instrument tuner arrives…"); now the real tuner ("MIC ACTIVE", "Listening", noise gate control) |
+| `ios-duo-closed-end-rail-home`, `-tuner` (By Ear, guitar 6), `ios-duo-closed-landscape-rail` | Duo closed, outer display; landscape via Device Hub's Rotate Right | tuner: instrument chips are text only now (no icons), otherwise no |
