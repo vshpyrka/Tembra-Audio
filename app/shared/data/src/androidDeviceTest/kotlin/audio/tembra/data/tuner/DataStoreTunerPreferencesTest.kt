@@ -10,7 +10,8 @@ import audio.tembra.core.tuner.TunerMode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.job
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import java.io.File
@@ -39,12 +40,12 @@ class DataStoreTunerPreferencesTest {
         assertEquals("cello-bach-5", written.presetId)
         assertEquals(TunerMode.ByEar, written.mode)
         assertEquals(false, written.loopTone)
-        firstScope.cancel()
+        firstScope.coroutineContext.job.cancelAndJoin()
 
         val secondScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
         val second = DataStoreTunerPreferences(TembraDataStore.preferences(directory, secondScope))
         assertEquals(written, second.snapshot.first())
-        secondScope.cancel()
+        secondScope.coroutineContext.job.cancelAndJoin()
     }
 
     @Test
@@ -54,7 +55,7 @@ class DataStoreTunerPreferencesTest {
         dataStore.edit { it[stringPreferencesKey(TunerPreferenceKeys.INSTRUMENT)] = "banjo" }
         val preferences = DataStoreTunerPreferences(dataStore)
         assertEquals(Instrument.Guitar, preferences.snapshot.first().instrument)
-        scope.cancel()
+        scope.coroutineContext.job.cancelAndJoin()
     }
 
     // --- The noise gate (feature 006, contracts/tuner-preferences.md) ---
@@ -70,7 +71,7 @@ class DataStoreTunerPreferencesTest {
         first.update { it.copy(noiseGate = NoiseGate.ofLevelDb(-50)!!) }
         assertEquals(-50, first.snapshot.first().noiseGate.levelDb)
         assertEquals(-50, firstStore.data.first()[key])
-        firstScope.cancel()
+        firstScope.coroutineContext.job.cancelAndJoin()
 
         val secondScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
         val secondStore = TembraDataStore.preferences(directory, secondScope)
@@ -79,7 +80,7 @@ class DataStoreTunerPreferencesTest {
         second.update { it.copy(noiseGate = NoiseGate.Off) }
         assertEquals(NoiseGate.Off, second.snapshot.first().noiseGate)
         assertFalse(secondStore.data.first().contains(key), "the gate's key must be removed when the gate is off")
-        secondScope.cancel()
+        secondScope.coroutineContext.job.cancelAndJoin()
     }
 
     @Test
@@ -94,6 +95,6 @@ class DataStoreTunerPreferencesTest {
         assertEquals(NoiseGate.Off, preferences.snapshot.first().noiseGate)
         dataStore.edit { it[intPreferencesKey(TunerPreferenceKeys.NOISE_GATE_DB)] = -51 }
         assertEquals(-52, preferences.snapshot.first().noiseGate.levelDb)
-        scope.cancel()
+        scope.coroutineContext.job.cancelAndJoin()
     }
 }
