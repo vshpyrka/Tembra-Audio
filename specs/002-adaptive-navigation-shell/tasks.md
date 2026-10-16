@@ -9,6 +9,8 @@ description: "Task list for feature 002: adaptive navigation shell and Home"
 
 **Prerequisites**: plan.md, spec.md, research.md (R1–R12), data-model.md, contracts/ (navigation-shell.md, design-system-additions.md, developer-view.md), quickstart.md
 
+**Amended 2026-10-16**: the shell no longer composes `TembraTopBar` (spec FR-007 reversed at the owner's request); the tasks below that build and wire it are kept as the record of what was done, and the component and its test remain.
+
 **Tests**: Required. Constitution III (test-first, non-negotiable) and spec FR-020: every implementation task is preceded by the test that fails without it. Run a lane after each group: `cd app && ./gradlew checkAndroidHost` (JVM), `./gradlew checkIos` (simulator), `./gradlew checkAndroidDevice` (device), always with `--warning-mode all`.
 
 **Organization**: Tasks are grouped by user story so each story is an independently testable increment. Setup and foundational phases hold the shared tokens every story needs.
@@ -76,7 +78,7 @@ description: "Task list for feature 002: adaptive navigation shell and Home"
 
 ## Phase 3: User Story 1 - Start on Home and move between the six destinations (Priority: P1) 🎯 MVP
 
-**Goal**: the app opens on Home; the top bar names the destination; the six items in the bottom bar (or rail on wide windows) switch destinations with a 300 ms fade; re-selecting does nothing; Android back returns to Home.
+**Goal**: the app opens on Home; the top bar names the destination (until 2026-10-16, when the top bar was removed: the selected item names it); the six items in the bottom bar (or rail on wide windows) switch destinations with a 300 ms fade; re-selecting does nothing; Android back returns to Home.
 
 **Independent Test**: launch on a phone and a simulator, confirm Home, tap all six items, confirm title and active marker, press back on Android (spec US1 scenarios 1–4).
 
@@ -130,7 +132,7 @@ description: "Task list for feature 002: adaptive navigation shell and Home"
 
 ### Implementation for User Story 2
 
-- [X] T051 [US2] Make T049 pass in `app/shared/ui/src/commonMain/kotlin/audio/tembra/ui/navigation/NavigationShellContent.kt`: confirm the rail branch renders `TembraNavigationRail` at the start edge below the top bar and the bar branch at the bottom; key the `NavigationSuiteScaffoldLayout` content so switching `navigationSuiteType` does not recreate `TembraNavDisplay` (selection and content state survive)
+- [X] T051 [US2] Make T049 pass in `app/shared/ui/src/commonMain/kotlin/audio/tembra/ui/navigation/NavigationShellContent.kt`: confirm the rail branch renders `TembraNavigationRail` at the start edge below the top bar (full height since the top bar was removed on 2026-10-16) and the bar branch at the bottom; key the `NavigationSuiteScaffoldLayout` content so switching `navigationSuiteType` does not recreate `TembraNavDisplay` (selection and content state survive)
 - [X] T052 [US2] Manual live-resize checks per quickstart §3 on a foldable AVD (fold/unfold on Tuner), a desktop-mode/freeform window dragged across 600 dp and 840 dp, and an iPad in Split View / Stage Manager; record devices and outcomes in `specs/002-adaptive-navigation-shell/screenshots/NOTES.md`
 - [X] T053 [US2] Capture `specs/002-adaptive-navigation-shell/screenshots/android-medium-home.png` (tablet or foldable portrait, 600–839 dp), `android-short-home.png` (phone landscape: rail, no pane), `ios-medium-home.png` (iPad mini portrait) and `ios-short-home.png` (iPhone 17 landscape); confirm no clipped or overlapping elements
 

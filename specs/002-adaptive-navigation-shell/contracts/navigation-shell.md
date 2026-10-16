@@ -56,13 +56,17 @@ enum class LayoutMode { BottomBar, Rail, RailWithPanel;
 ## Composition (NavigationShellContent)
 
 ```
-Column(testTag "nav.shell")
-├── TembraTopBar(title = state.selected.title)                       full width, above the rail (FR-007)
+Column(testTag "nav.shell")                                          no top bar since 2026-10-16 (FR-007 reversed)
 └── NavigationSuiteScaffoldLayout(                                   Material 3 adaptive; places bar vs rail
         layoutType = BottomBar -> NavigationSuiteType.NavigationBar, else NavigationRail,
         navigationSuite = { TembraNavigationBar(...) or TembraNavigationRail(...) })
     └── TembraNavDisplay(backStack, layoutMode, onBack)              Navigation 3 NavDisplay (below)
 ```
+
+The content box pads the safe-drawing top inset (status bar, a desktop window's caption, a top cutout) as well as
+its other sides, and the rail's surface reaches the top edge while its items clear the same inset
+(`NavigationShellTest.noLayoutHasATopBarAndTheContentStartsAtTheTopInset`). The iPhone Duo's end-rail frame pads
+the top too.
 
 The navigation items are `Destination.entries.map { NavigationItemSpec(it.id, it.label, it.icon) }`;
 `selectedId = state.selected.id`; `onSelect` maps id back to the enum. The chrome never sees
@@ -126,7 +130,7 @@ A later feature replaces one composable in this table and touches nothing else.
 | Element | testTag | Semantics |
 |---|---|---|
 | shell root | `nav.shell` | — |
-| top bar / title | `chrome.topBar` / `chrome.topBar.title` | title text = `selected.title`; overline "TEMBRA AUDIO" |
+| top bar / title | `chrome.topBar` / `chrome.topBar.title` | absent from the shell since 2026-10-16; the component keeps the tags |
 | bottom bar / rail | `chrome.bottomBar` / `chrome.rail` | exactly one of them exists per layout |
 | item | `nav.item.<id>` | role Tab, `selected`, contentDescription = label, focusable, ≥ 44 dp |
 | supporting pane | `chrome.supportingPane` | exists only for `RailWithPanel` + `hasSupportingPane` |

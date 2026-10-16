@@ -13,7 +13,7 @@ The six places a user can go. A closed, ordered set: an `enum class Destination`
 navigation key (it implements Navigation 3's `NavKey`, research R2), so the back stack is a
 `List<Destination>` and no parallel key hierarchy exists.
 
-| Value | `id` | `label` (under the icon) | `title` (top bar) | `icon` | `hasSupportingPane` | `placeholderMessage` |
+| Value | `id` | `label` (under the icon) | `title` (placeholder heading; the top bar showed it until 2026-10-16) | `icon` | `hasSupportingPane` | `placeholderMessage` |
 |---|---|---|---|---|---|---|
 | `Home` | `home` | Home | Home | `TembraIcon.Home` | true | This is your starting point in Tembra Audio. |
 | `Timeline` | `timeline` | Timeline | Timeline | `TembraIcon.Timeline` | false | The timeline arranger arrives with the transport and timeline feature. |
@@ -112,7 +112,7 @@ From the Stitch HTML (research R8) and spec FR-019. All in dp.
 
 | Token | Value | Design source |
 |---|---|---|
-| `topBarHeight` | 56 | `h-14` on wide screens; spec FR-019 |
+| `topBarHeight` | 56 | `h-14` on wide screens; spec FR-019 (the `TembraTopBar` component's; the shell has no top bar since 2026-10-16) |
 | `bottomBarHeight` | 64 | `h-16` on every phone bottom bar (plus the system inset) |
 | `railWidth` | 64 | `w-16` rail |
 | `supportingPaneWidth` | 320 | `w-80` inspector; DESIGN.md desktop layout |
@@ -129,14 +129,15 @@ Implementation notes (2026-09-24): the bar's active capsule is drawn behind the 
 the label on each side, and nothing is clipped, because six items at 360 dp leave "Metronome" (59.4 dp at 10 sp) no
 spare width in its 60 dp cell; the rail item hugs its label (48 dp minimum, 64 dp maximum) for the same reason, and
 the rail uses 4 dp (`xs`) vertical padding and gaps instead of the design's 8 dp and 6 dp so six items fit a phone
-in landscape (about 311 dp below the top bar); shorter windows scroll the rail.
+in landscape (about 311 dp below the top bar; the rail has the window's full height since the bar was removed on
+2026-10-16); shorter windows scroll the rail.
 
 Active-state treatment (spec FR-019): bar item is a `rounded-full` pill in `primaryContainer`
 with `onPrimaryContainer` content and the `clip_glow` shadow; rail item is a `rounded-lg`
 (16 dp) square in `secondaryContainer` with `onSecondaryContainer` content. Inactive items use
 `onSurfaceVariant`; hover raises to `onSurface` (rail also fills `surfaceContainerHigh`). Labels
-use `labelSmall`; the top bar shows the product name as an uppercase `labelSmall` overline in
-`primary` and the title in `headlineSmall`.
+use `labelSmall`; the top bar component shows the product name as an uppercase `labelSmall` overline in
+`primary` and the title in `headlineSmall` (the shell has no top bar since 2026-10-16).
 
 ## 7. Developer view
 

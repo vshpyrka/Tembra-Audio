@@ -29,10 +29,10 @@ The simulator bundle identifier is `audio.tembra.app` followed by the `TEAM_ID` 
 `audio.tembra.app<TEAM_ID>`). Read it from the built app before launching:
 `/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "build/Build/Products/Debug-iphonesimulator/Tembra Audio.app/Info.plist"`.
 
-Expected on both: the app opens on **Home** (top bar overline "TEMBRA AUDIO", title "Home",
-one sentence of placeholder text). On a phone the six items Home, Timeline, Tuner, Metronome,
-Projects, Profile sit in the bottom bar with Home marked active. Tap each item: the title
-changes, the marker moves with a short animation, and tapping the active item again does
+Expected on both: the app opens on **Home** (its title "Home" and one sentence of placeholder
+text right under the status bar: there is no top bar since 2026-10-16). On a phone the six items Home,
+Timeline, Tuner, Metronome, Projects, Profile sit in the bottom bar with Home marked active. Tap each
+item: the destination changes, the marker moves with a short animation, and tapping the active item again does
 nothing. On Android, press back from any other destination: Home returns; back again leaves
 the app.
 
@@ -41,7 +41,7 @@ the app.
 ```bash
 cd app
 ./gradlew checkAndroidHost     # JVM: ShellViewModelTest, LayoutModeTest, DestinationTest, IconAssetsTest, ThemeJsonParityTest
-./gradlew checkIos             # iOS simulator: the same commonTest classes + NavigationShellTest, TopBarTest, placeholder and dev-view UI tests
+./gradlew checkIos             # iOS simulator: the same commonTest classes + NavigationShellTest, TembraTopBarTest (the component), placeholder and dev-view UI tests
 ./gradlew checkAndroidDevice   # connected Android device: the uiTest classes + engine link tests
 ./gradlew engineHostTest       # unchanged C++ lane; must still pass
 ```
