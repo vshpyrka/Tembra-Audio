@@ -33,7 +33,7 @@ import kotlin.math.roundToInt
  * screens): a card with a "Tuner controls" header carrying the audio-state pill, then the instrument and mode
  * selectors sharing the column's width, and in By Ear the string count (guitar only), the tuning preset picker and
  * the loop toggle. The design's overline above each control is left out: with 44 dp targets the By Ear column is 271 dp tall
- * and a phone's landscape window under the top bar has about 295 dp, so the overlines would push the picker and the
+ * and a phone's landscape window had about 295 dp under the former top bar (351 dp now), so the overlines would push the picker and the
  * toggle out of view (research R9). It is 36 % of the content width within the design's 224–280 dp, scaled by the
  * font scale up to half the width, and scrolls vertically when large fonts make it taller than the window. It takes
  * only the fields it renders, so the 10 Hz reading never recomposes it. [autoListenControls] (the noise gate control,

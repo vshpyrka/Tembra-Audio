@@ -24,6 +24,9 @@ interface AndroidAppGraph : AppGraph {
     /** The activity attaches its document-picker launcher here (contracts/click-sounds.md). */
     val soundFilePickerHost: SoundFilePickerHost
 
+    /** The activity attaches its notifications-permission launcher here (contracts/background-playback.md). */
+    val notificationPermissionHost: NotificationPermissionHost
+
     @Provides
     @SingleIn(AppScope::class)
     fun provideAppDirectories(context: Context): AppDirectories = AndroidAppDirectories(context)
@@ -45,7 +48,14 @@ interface AndroidAppGraph : AppGraph {
     /** The media-playback foreground service keeps the metronome running with the screen off (research R6). */
     @Provides
     @SingleIn(AppScope::class)
-    fun provideBackgroundPlaybackHost(context: Context): BackgroundPlaybackHost = AndroidBackgroundPlaybackHost(context)
+    fun provideBackgroundPlaybackHost(context: Context, notifications: NotificationPermissionHost): BackgroundPlaybackHost =
+        AndroidBackgroundPlaybackHost(context, notifications)
+
+    /** A grant re-posts the running service's notification, which stayed hidden without the permission. */
+    @Provides
+    @SingleIn(AppScope::class)
+    fun provideNotificationPermissionHost(context: Context): NotificationPermissionHost =
+        NotificationPermissionHost { AndroidBackgroundPlaybackHost.repostRunningNotification(context) }
 
     @Provides
     @SingleIn(AppScope::class)

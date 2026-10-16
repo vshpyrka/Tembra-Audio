@@ -116,7 +116,7 @@ app/
 │   ├── data/               :shared:data   — persistence: AppDirectories, tuner/ DataStore preferences (TunerPreferences, TembraDataStore), metronome/ (MetronomePreferences, CustomClickSoundStore)
 │   └── ui/                 :shared:ui     — Compose screens, ViewModels, theme, Metro graph; iOS framework "TembraShared"
 │       ├── theme/          design tokens from design/stitch/theme.json: colours, type, shapes, spacing and chrome metrics, motion, TembraIcon registry
-│       ├── designsystem/   chrome components: TembraTopBar, TembraNavigationBar, TembraNavigationRail, TembraSupportingPane, EmptyState, PlaceholderDestination, TembraSegmentedControl, TembraToggle, TembraStatusPill, TembraGradientCard, TembraChipRow, TembraPill, FocusRing, FrameTick
+│       ├── designsystem/   chrome components: TembraTopBar (not shown by the shell since 2026-10-16), TembraNavigationBar, TembraNavigationRail, TembraSupportingPane, EmptyState, PlaceholderDestination, TembraSegmentedControl, TembraToggle, TembraStatusPill, TembraGradientCard, TembraChipRow, TembraPill, FocusRing, FrameTick
 │       ├── platform/       MicrophonePermission, BackgroundPlaybackHost, SoundFilePicker interfaces (+ IosMicrophonePermission, IosBackgroundPlaybackHost, IosSoundFilePicker in iosMain; the Android ones live in :androidApp)
 │       ├── navigation/     the shell: Destination registry, ShellViewModel, LayoutMode, NavigationShell, Navigation 3 wiring (TembraNavDisplay), SupportingPaneSceneStrategy
 │       ├── metronome/      MetronomeScreen + MetronomeViewModel, PlaybackPolicy, MetronomeSettingsPanel; components/ (TempoDial, TempoSlider, AccentCells, StyleRow, ClickSoundPicker, TapTempoButton, PlayPauseButton, MetronomeDefaults)

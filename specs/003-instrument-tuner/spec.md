@@ -337,8 +337,8 @@ cards with the platform screen reader.
 **Destination, modes and selectors**
 
 - **FR-001**: The Tuner destination MUST replace the feature 002 placeholder with the tuner
-  screen. The top bar, navigation control and back behaviour from feature 002 MUST remain
-  unchanged, and the Tuner MUST NOT show a transport bar or a right-hand panel at any width.
+  screen. The navigation control and back behaviour from feature 002 MUST remain unchanged (the
+  shell's top bar, kept here, was removed on 2026-10-16 by feature 002's amended FR-007), and the Tuner MUST NOT show a transport bar or a right-hand panel at any width.
 - **FR-002**: The screen MUST offer, above the mode content: an instrument selector with exactly
   two segments, "Guitar" and "Cello", as text without icons (clarified 2026-10-12); a mode selector with the segments "Auto
   Listen" (microphone icon) and "By Ear" (ear icon); and an audio-state pill. For Guitar only,

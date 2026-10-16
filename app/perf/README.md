@@ -308,7 +308,7 @@ API 33+ on a non-rooted device). It backs the two files up, runs
 (the plugin builds and installs the `nonMinifiedRelease` app, drives `BaselineProfileGenerator` until three
 iterations add no new rule, merges, and writes the files), then runs the coverage test; on any failure the
 backups come back byte for byte and the output names the failing step and the Gradle log. The generator
-grants the microphone itself (the plugin's install does not, and AGP uninstalls the app afterwards).
+grants the microphone itself, and on Android 13+ notifications, which the metronome asks for on its first Play (the plugin's install grants neither, and AGP uninstalls the app afterwards); a round's install step grants both too.
 **When to regenerate**: when the startup path, a primary destination, a journey or a main interaction
 changed, and before a release. **When to commit** the regenerated files: when covered code changed; a
 regeneration on an unchanged app differs only in order and in timing-reached rules (0.2–0.8 % of the lines

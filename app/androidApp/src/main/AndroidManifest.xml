@@ -8,9 +8,9 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <!--
-        Declared, never requested at runtime (contracts/background-playback.md): on Android 13+ the service's "Metronome
-        · Running" notification with its Stop action shows once the user allows notifications in the app's settings.
-        Without the declaration the system can never grant it and the Stop action is unreachable.
+        On Android 13+ the service's "Metronome · Running" notification with its Stop action shows only with this
+        permission; NotificationPermissionHost asks for it once when playback first starts the service
+        (contracts/background-playback.md).
     -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 

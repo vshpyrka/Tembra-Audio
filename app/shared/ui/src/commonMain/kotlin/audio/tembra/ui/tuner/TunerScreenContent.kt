@@ -137,7 +137,7 @@ fun TunerScreenContent(
                 }
             },
         )
-        TunerLayout.Stacked, TunerLayout.Wide -> Column(modifier = root, verticalArrangement = Arrangement.spacedBy(spacing.md)) {
+        TunerLayout.Stacked, TunerLayout.Wide, TunerLayout.Pocket -> Column(modifier = root, verticalArrangement = Arrangement.spacedBy(spacing.md)) {
             TunerSelectors(
                 instrument = state.instrument,
                 mode = state.mode,

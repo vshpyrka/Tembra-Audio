@@ -1,6 +1,7 @@
 package audio.tembra.ui.metronome.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -34,10 +35,22 @@ import audio.tembra.ui.theme.TembraTheme
  * Moderato" (spec FR-030), so they would only add three stops after it. They stay in the semantics tree for tests.
  */
 @Composable
-internal fun TempoReadout(tempo: Tempo, marking: TempoMarking, modifier: Modifier = Modifier) {
+internal fun TempoReadout(tempo: Tempo, marking: TempoMarking, modifier: Modifier = Modifier, markingBeside: Boolean = false) {
     val colors = TembraTheme.colors
     val typography = TembraTheme.typography
     val spacing = TembraTheme.spacing
+    if (markingBeside) {
+        // The tempo row of a short Pocket screen: one line, the marking after the number, so the row stays one number tall.
+        Row(
+            modifier = modifier.testTag(PerfAnchors.METRONOME_TEMPO_READOUT),
+            horizontalArrangement = Arrangement.spacedBy(spacing.sm, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(modifier = Modifier.weight(1f, fill = false)) { NumberLine(tempo) }
+            Box(modifier = Modifier.weight(1f, fill = false)) { MarkingLine(marking) }
+        }
+        return
+    }
     Column(
         modifier = modifier.testTag(PerfAnchors.METRONOME_TEMPO_READOUT),
         horizontalAlignment = Alignment.CenterHorizontally,

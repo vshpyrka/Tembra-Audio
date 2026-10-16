@@ -56,6 +56,16 @@ Column(testTag "screen.tuner" (the shell's `screen.<id>` convention; feature 002
         └── StringCardGrid(columns = Stacked 2, Wide 3, Landscape ⌈n / 2⌉)
             └── StringCard(string, playing = audition?.stringIndex == index, onAudition, onStop)   "tuner.card.<numeral>", button "tuner.card.<numeral>.audition"
 
+Pocket (2026-10-16, owner's request after the tablet window-size survey; not yet in spec.md): TunerScreen measures its
+own content height (BoxWithConstraints, after the shell's bar or rail, the status bar and a desktop caption) and takes
+Pocket in place of Stacked under `TunerLayout.PocketBelow` (506 dp: 450 dp until the shell's 56 dp top bar was removed
+on 2026-10-16, moved with it so the same windows take Pocket). It is Stacked with one change: instrument and mode share one
+FlowRow (wrapping only at large fonts) and the AudioStatePill, which only reports, is left out, which gives the card
+the ~60 dp of the second row; from about 407 dp of content (a 772 × 511 dp desktop window under the former top bar; 463 dp
+now) the compact meter (243 dp at
+`meterMinWidth`) is whole with the noise gate under it. Shorter screens still scroll the meter: a smaller meter form
+would be needed. Tests: TunerLayoutTest (the rule), TunerScreenLayoutTest `pocket…`.
+
 Landscape (600 dp or wider, shorter than 480 dp; spec FR-023, research R9 landscape table):
 Row(testTag "screen.tuner", padding pageMargin × sm, gap md)
 ├── TunerSettingsColumn                                          TembraGradientCard "tuner.settings", 36 % of the width within 224–280 dp, scrolls vertically

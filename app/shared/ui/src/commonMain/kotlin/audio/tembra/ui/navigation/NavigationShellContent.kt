@@ -27,13 +27,13 @@ import androidx.compose.ui.unit.max
 import audio.tembra.ui.designsystem.NavigationItemSpec
 import audio.tembra.ui.designsystem.TembraNavigationBar
 import audio.tembra.ui.designsystem.TembraNavigationRail
-import audio.tembra.ui.designsystem.TembraTopBar
 import audio.tembra.ui.theme.TembraTheme
 
 /**
- * The stateless frame (contracts/navigation-shell.md): the top bar spans the width above Material 3 adaptive's
- * NavigationSuiteScaffoldLayout, which places the bar below or the rail at the start according to [layoutMode]
- * (research R4); the content slot hosts the NavDisplay. UI tests drive this composable with an explicit layout mode.
+ * The stateless frame (contracts/navigation-shell.md): Material 3 adaptive's NavigationSuiteScaffoldLayout places the
+ * bar below or the rail at the start according to [layoutMode] (research R4); the content slot hosts the NavDisplay.
+ * There is no top bar (removed 2026-10-16: the selected item already names the destination), so the content clears
+ * the status bar, a desktop caption and a top cutout itself. UI tests drive this composable with an explicit layout mode.
  */
 @Composable
 fun NavigationShellContent(
@@ -55,7 +55,6 @@ fun NavigationShellContent(
             .background(TembraTheme.colors.background)
             .testTag("nav.shell"),
     ) {
-        TembraTopBar(title = state.selected.title)
         if (layoutMode == LayoutMode.EndRail) {
             EndRailFrame(items = items, state = state, onSelect = select, onBack = onBack)
             return@Column
@@ -71,8 +70,10 @@ fun NavigationShellContent(
             navigationSuiteType = if (bottomBar) NavigationSuiteType.NavigationBar else NavigationSuiteType.NavigationRail,
             state = rememberNavigationSuiteScaffoldState(),
         ) {
-            // The bar clears the bottom inset itself; beside a rail the content reaches the bottom and end edges.
-            val contentInsets = if (bottomBar) WindowInsetsSides.Horizontal else WindowInsetsSides.End + WindowInsetsSides.Bottom
+            // The content clears the top inset; the bar clears the bottom inset itself; beside a rail the content reaches
+            // the bottom and end edges.
+            val sides = if (bottomBar) WindowInsetsSides.Horizontal else WindowInsetsSides.End + WindowInsetsSides.Bottom
+            val contentInsets = WindowInsetsSides.Top + sides
             Box(modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing.only(contentInsets))) {
                 TembraNavDisplay(backStack = state.backStack, layoutMode = layoutMode, onBack = onBack, modifier = Modifier.fillMaxSize())
             }
@@ -81,7 +82,7 @@ fun NavigationShellContent(
 }
 
 /**
- * The iPhone Duo experiment's frame ([LayoutMode.EndRail]): the content clears the start and bottom insets, and the rail
+ * The iPhone Duo experiment's frame ([LayoutMode.EndRail]): the content clears the top, start and bottom insets, and the rail
  * fills the column iOS reserves at the end edge for the status bar and camera (at least the rail's own width), its
  * items at the bottom of that column.
  */
@@ -93,7 +94,7 @@ private fun EndRailFrame(items: List<NavigationItemSpec>, state: ShellUiState, o
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight()
-                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Start + WindowInsetsSides.Bottom)),
+                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Start + WindowInsetsSides.Bottom)),
         ) {
             TembraNavDisplay(backStack = state.backStack, layoutMode = LayoutMode.EndRail, onBack = onBack, modifier = Modifier.fillMaxSize())
         }

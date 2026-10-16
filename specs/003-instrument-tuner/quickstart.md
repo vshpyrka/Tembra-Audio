@@ -26,7 +26,7 @@ xcrun simctl boot "iPhone 17"; xcrun simctl install "iPhone 17" "build/Build/Pro
 xcrun simctl launch "iPhone 17" "$BUNDLE"
 ```
 
-Expected: the app opens on Home. Tap **Tuner**: the top bar reads "Tuner", the selectors show
+Expected: the app opens on Home. Tap **Tuner**: the Tuner item is marked (no top bar since 2026-10-16), the selectors show
 Guitar, 6-String, Auto Listen, and the platform's microphone prompt appears at once (first launch).
 Allow it: the pill "MIC ACTIVE" appears and the meter shows "Listening".
 

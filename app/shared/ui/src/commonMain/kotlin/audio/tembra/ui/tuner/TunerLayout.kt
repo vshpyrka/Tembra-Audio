@@ -1,5 +1,7 @@
 package audio.tembra.ui.tuner
 
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.window.core.layout.WindowSizeClass
 import audio.tembra.ui.posture.TabletopFold
 import audio.tembra.ui.theme.WindowWidth
@@ -17,9 +19,27 @@ enum class TunerLayout {
     Landscape,
 
     /** A foldable in tabletop posture: watched content above the fold, settings below it (feature 005, research R5). */
-    Tabletop;
+    Tabletop,
+
+    /**
+     * The form of a screen too short for [Stacked] (2026-10-16): instrument and mode on one row (the audio-state pill,
+     * which only reports, is left out), which gives the Auto Listen or By Ear card under it the 60 dp the second row
+     * took; the cards are [Stacked]'s. From about 407 dp of content the compact meter (243 dp at its least width) is
+     * whole under the row; shorter screens still scroll it, as the meter cannot shrink further without a smaller form.
+     */
+    Pocket;
+
+    /** [Pocket] in place of [Stacked] when the screen's content is under [PocketBelow] tall; every other form stays. */
+    fun forContentHeight(height: Dp): TunerLayout = if (this == Stacked && height < PocketBelow) Pocket else this
 
     companion object {
+        /**
+         * The content height under which [Stacked] gives way to [Pocket]: the metronome's line (the tablet survey,
+         * 2026-10-16, never saw the stacked meter whole at 212 dp of content and lost its noise gate at 407 dp, both
+         * under the shell's former 56 dp top bar; the line moved with the bar from 450 dp, so the same windows take it).
+         */
+        val PocketBelow: Dp = 506.dp
+
         fun from(width: WindowWidth, isShort: Boolean): TunerLayout = when (width) {
             WindowWidth.Compact -> Stacked
             WindowWidth.Medium -> if (isShort) Landscape else Stacked

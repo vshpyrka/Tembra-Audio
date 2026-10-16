@@ -6,6 +6,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.graphics.drawable.Icon
@@ -78,38 +79,7 @@ class MetronomeForegroundService : Service() {
         stopSelf()
     }
 
-    private fun buildNotification(): Notification {
-        val manager = getSystemService(NotificationManager::class.java)
-        manager.createNotificationChannel(
-            NotificationChannel(CHANNEL_ID, getString(R.string.metronome_channel_name), NotificationManager.IMPORTANCE_LOW),
-        )
-        val open = PendingIntent.getActivity(
-            this,
-            0,
-            Intent(this, MainActivity::class.java)
-                .setAction(Intent.ACTION_MAIN)
-                .addCategory(Intent.CATEGORY_LAUNCHER)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED),
-            PendingIntent.FLAG_IMMUTABLE,
-        )
-        val stop = PendingIntent.getService(
-            this,
-            0,
-            Intent(this, MetronomeForegroundService::class.java).setAction(ACTION_STOP),
-            PendingIntent.FLAG_IMMUTABLE,
-        )
-        val icon = Icon.createWithResource(this, R.drawable.ic_stat_metronome)
-        return Notification.Builder(this, CHANNEL_ID)
-            .setSmallIcon(icon)
-            .setContentTitle(getString(R.string.metronome_notification_title))
-            .setContentText(getString(R.string.metronome_notification_text))
-            .setContentIntent(open)
-            .addAction(Notification.Action.Builder(icon, getString(R.string.metronome_notification_stop), stop).build())
-            .setOngoing(true)
-            .setCategory(Notification.CATEGORY_SERVICE)
-            .setVisibility(Notification.VISIBILITY_PUBLIC)
-            .build()
-    }
+    private fun buildNotification(): Notification = buildNotification(this)
 
     companion object {
         /** Enter the foreground with the ongoing notification. */
@@ -119,6 +89,40 @@ class MetronomeForegroundService : Service() {
         const val ACTION_STOP = "audio.tembra.android.metronome.STOP"
 
         private const val CHANNEL_ID = "metronome"
-        private const val NOTIFICATION_ID = 4004
+        internal const val NOTIFICATION_ID = 4004
+
+        /** The ongoing "Running" notification with its Stop action; also re-posted once notifications are allowed. */
+        internal fun buildNotification(context: Context): Notification {
+            val manager = context.getSystemService(NotificationManager::class.java)
+            manager.createNotificationChannel(
+                NotificationChannel(CHANNEL_ID, context.getString(R.string.metronome_channel_name), NotificationManager.IMPORTANCE_LOW),
+            )
+            val open = PendingIntent.getActivity(
+                context,
+                0,
+                Intent(context, MainActivity::class.java)
+                    .setAction(Intent.ACTION_MAIN)
+                    .addCategory(Intent.CATEGORY_LAUNCHER)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED),
+                PendingIntent.FLAG_IMMUTABLE,
+            )
+            val stop = PendingIntent.getService(
+                context,
+                0,
+                Intent(context, MetronomeForegroundService::class.java).setAction(ACTION_STOP),
+                PendingIntent.FLAG_IMMUTABLE,
+            )
+            val icon = Icon.createWithResource(context, R.drawable.ic_stat_metronome)
+            return Notification.Builder(context, CHANNEL_ID)
+                .setSmallIcon(icon)
+                .setContentTitle(context.getString(R.string.metronome_notification_title))
+                .setContentText(context.getString(R.string.metronome_notification_text))
+                .setContentIntent(open)
+                .addAction(Notification.Action.Builder(icon, context.getString(R.string.metronome_notification_stop), stop).build())
+                .setOngoing(true)
+                .setCategory(Notification.CATEGORY_SERVICE)
+                .setVisibility(Notification.VISIBILITY_PUBLIC)
+                .build()
+        }
     }
 }

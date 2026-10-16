@@ -69,7 +69,7 @@ with `runComposeUiTest(effectContext = <MotionDurationScale with scaleFactor 0f>
 
 ## Chrome metrics (FR-019)
 
-`TembraSpacing` gains: `topBarHeight = 56.dp`, `bottomBarHeight = 64.dp`, `railWidth = 64.dp`,
+`TembraSpacing` gains: `topBarHeight = 56.dp` (the `TembraTopBar` component's; the shell shows no top bar since 2026-10-16), `bottomBarHeight = 64.dp`, `railWidth = 64.dp`,
 `supportingPaneWidth = 320.dp`, `navItemMinWidth = 56.dp`, `railItemWidth = 48.dp`,
 `navBarIconSize = 20.dp`, `navRailIconSize = 22.dp`, `navItemGap = 4.dp`.
 Values and their design sources: data-model.md §6. `ThemeJsonParityTest` is unaffected (these
@@ -84,7 +84,7 @@ All in `audio.tembra.ui.designsystem`, one file each, stateless, every value fro
 // NavigationItemSpec.kt — what a bar or rail item needs to know; no dependency on Destination
 data class NavigationItemSpec(val id: String, val label: String, val icon: TembraIcon)
 
-// TembraTopBar.kt
+// TembraTopBar.kt (not composed by the shell since 2026-10-16; kept for a later screen that needs a title bar)
 @Composable fun TembraTopBar(title: String, modifier: Modifier = Modifier)
 // 56 dp tall + status inset; overline "TEMBRA AUDIO" (labelSmall, primary, uppercase, letter-spaced),
 // title in headlineSmall on surfaceContainerLowest; nothing else. testTag "chrome.topBar";
@@ -106,7 +106,8 @@ data class NavigationItemSpec(val id: String, val label: String, val icon: Tembr
     itemsAlignment: Alignment.Vertical = Alignment.Top)
 // itemsAlignment (2026-10-04): Alignment.Bottom for the iPhone Duo's end-edge rail (LayoutMode.EndRail), whose
 // column also holds the status bar and camera at the top; the items scroll when they do not fit either way.
-// 64 dp wide, fills height below the top bar; items 48 dp wide, icon (22 dp) over label,
+// 64 dp wide, fills the window height (the shell has no top bar since 2026-10-16), its items clear the
+// safe-drawing top inset; items 48 dp wide, icon (22 dp) over label,
 // 16 dp rounded square; active: secondaryContainer fill, onSecondaryContainer content, bold label;
 // hover: surfaceContainerHigh fill, onSurface content. testTag "chrome.rail"; items "nav.item.<id>".
 

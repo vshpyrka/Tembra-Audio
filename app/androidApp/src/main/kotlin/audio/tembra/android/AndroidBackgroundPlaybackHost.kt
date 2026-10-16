@@ -1,6 +1,7 @@
 package audio.tembra.android
 
 import android.app.ForegroundServiceStartNotAllowedException
+import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -21,8 +22,14 @@ import kotlinx.coroutines.flow.asSharedFlow
  * [release] stops the service with `stopService` rather than sending [MetronomeForegroundService.ACTION_STOP]: a
  * background `startService` throws on API 26+ once the service has gone, and the Stop action would echo back to the
  * ViewModel as a [stopRequests] item it did not ask for.
+ *
+ * Starting the service also asks, once per session, for the notifications permission its notification needs on
+ * Android 13+ ([notifications]); playback does not wait for the answer.
  */
-class AndroidBackgroundPlaybackHost(private val context: Context) : BackgroundPlaybackHost {
+class AndroidBackgroundPlaybackHost(
+    private val context: Context,
+    private val notifications: NotificationPermissionHost? = null,
+) : BackgroundPlaybackHost {
 
     private fun serviceIntent() = Intent(context, MetronomeForegroundService::class.java)
 
@@ -41,6 +48,7 @@ class AndroidBackgroundPlaybackHost(private val context: Context) : BackgroundPl
     private fun start(): Boolean = try {
         context.startForegroundService(serviceIntent().setAction(MetronomeForegroundService.ACTION_START))
         state = ForegroundState.Starting
+        notifications?.requestOnceForPlayback()
         true
     } catch (e: IllegalStateException) {
         // API 31+ refuses a foreground-service start while the app is not visible.
@@ -83,6 +91,18 @@ class AndroidBackgroundPlaybackHost(private val context: Context) : BackgroundPl
             val released = state == ForegroundState.ReleaseRequested
             state = if (released) ForegroundState.Idle else ForegroundState.Foreground
             released
+        }
+
+        /**
+         * Posts the running service's notification again, so it shows once notifications were allowed while it ran (the
+         * one posted by `startForeground` stays hidden). Nothing while the service is not in the foreground.
+         */
+        internal fun repostRunningNotification(context: Context) {
+            synchronized(lock) {
+                if (state != ForegroundState.Foreground) return
+                context.getSystemService(NotificationManager::class.java)
+                    .notify(MetronomeForegroundService.NOTIFICATION_ID, MetronomeForegroundService.buildNotification(context))
+            }
         }
 
         /** Called by the service when it stops on its own (the Stop action, task removal, a refused foreground start). */

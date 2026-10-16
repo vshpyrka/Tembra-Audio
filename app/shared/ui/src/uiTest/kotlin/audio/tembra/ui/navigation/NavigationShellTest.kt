@@ -1,5 +1,7 @@
 package audio.tembra.ui.navigation
 
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -10,6 +12,7 @@ import androidx.compose.ui.MotionDurationScale
 import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
@@ -23,6 +26,7 @@ import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasTestTag
@@ -39,9 +43,11 @@ import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import audio.tembra.ui.designsystem.enterKeyboardMode
 import audio.tembra.ui.theme.TembraTheme
+import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 /**
  * Drives the stateless shell through every layout (spec FR-004 to FR-009, FR-020). The destination switched to is
@@ -84,7 +90,36 @@ class NavigationShellTest {
             onNodeWithTag("nav.item.${destination.id}").assertExists()
         }
         onNodeWithTag("screen.home").assertIsDisplayed()
-        onNodeWithTag("chrome.topBar.title").assertTextEquals("Home")
+    }
+
+    /**
+     * The frame has no top bar (2026-10-16): the selected item names the destination, so the content starts right under
+     * the status bar (the safe-drawing top inset, zero where the window does not draw behind it) in every layout, and
+     * the rail's surface reaches the top edge while its items stay clear of the inset.
+     */
+    @Test
+    fun noLayoutHasATopBarAndTheContentStartsAtTheTopInset() = runComposeUiTest {
+        var layoutMode by mutableStateOf(LayoutMode.BottomBar)
+        var topInset = 0.dp
+        var homeMargin = 0.dp
+        withShellLocals {
+            topInset = with(LocalDensity.current) { WindowInsets.safeDrawing.getTop(this).toDp() }
+            homeMargin = TembraTheme.spacing.lg // the placeholder's own top margin, inside its tagged node
+            NavigationShellContent(ShellUiState(), layoutMode, onSelect = {}, onBack = {})
+        }
+        for (mode in LayoutMode.entries) {
+            layoutMode = mode
+            waitForIdle()
+            onNodeWithTag("chrome.topBar").assertDoesNotExist()
+            val shell = onNodeWithTag("nav.shell").getUnclippedBoundsInRoot()
+            val home = onNodeWithTag("screen.home").getUnclippedBoundsInRoot()
+            val expected = topInset + homeMargin
+            assertTrue(abs((home.top - shell.top - expected).value) < 0.5f, "$mode: Home starts ${home.top - shell.top} below the shell's top, not $expected (inset $topInset)")
+            if (mode == LayoutMode.BottomBar) continue
+            assertTrue(abs((onNodeWithTag("chrome.rail").getUnclippedBoundsInRoot().top - shell.top).value) < 0.5f, "$mode: the rail does not reach the top edge")
+            val firstItem = onNodeWithTag("nav.item.${Destination.entries.first().id}").getUnclippedBoundsInRoot()
+            assertTrue(firstItem.top >= shell.top + topInset - 0.5.dp, "$mode: the first rail item (${firstItem.top}) is under the top inset $topInset")
+        }
     }
 
     @Test
@@ -117,7 +152,6 @@ class NavigationShellTest {
             waitForIdle()
             onNodeWithTag("nav.item.projects").assertIsSelected()
             onNodeWithTag("screen.projects").assertIsDisplayed()
-            onNodeWithTag("chrome.topBar.title").assertTextEquals("Projects")
         }
     }
 
@@ -168,7 +202,6 @@ class NavigationShellTest {
         waitForIdle()
         onNodeWithTag("nav.item.projects").assertIsSelected()
         onNodeWithTag("nav.item.home").assertIsNotSelected()
-        onNodeWithTag("chrome.topBar.title").assertTextEquals("Projects")
         onNodeWithTag("screen.projects").assertIsDisplayed()
     }
 
