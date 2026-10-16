@@ -215,6 +215,20 @@ def test_round_runs_every_step_in_order(cfg, tmp_path):
     assert clock.sleeps.count(120) == 3, "a cooldown between classes, never after the last one"
 
 
+def test_a_fresh_install_is_granted_the_microphone_and_notifications_before_the_warm_up(cfg, tmp_path):
+    """Android 13+ asks for notifications on the first Play (the metronome's keep-alive service, 2026-10-16):
+    ungranted, the dialog covers the app and the metronome journey never finds its anchors."""
+    _state, rules = _device_rules(tmp_path)
+    app_apk, test_apk = _apks(cfg)
+    runner = TableRunner([_gradle_rule(cfg, app_apk, test_apk)] + rules)
+    run_round(cfg, PIXEL, runner, FakeClock(), str(tmp_path / "r"), RoundOptions(journeys=["startup"]))
+    install_test = runner.index_of("install", test_apk)
+    warm = runner.index_of("am", "start", "-W", "audio.tembra.app/audio.tembra.android.MainActivity")
+    for permission in ("android.permission.RECORD_AUDIO", "android.permission.POST_NOTIFICATIONS"):
+        grant = runner.index_of("pm", "grant", "audio.tembra.app", permission)
+        assert install_test < grant < warm, permission
+
+
 def test_doctor_failure_refuses_before_any_build(cfg, tmp_path):
     _state, rules = _device_rules(tmp_path, battery=BATTERY_HOT)
     app_apk, test_apk = _apks(cfg)
