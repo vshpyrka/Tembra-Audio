@@ -42,7 +42,7 @@ class TunerTabletopLayoutTest {
     private val auditions = mutableListOf<Int>()
     private val callbacks = TunerCallbacks.None.copy(onAudition = { auditions += it })
 
-    /** The Pixel 9 Pro Fold's inner screen half-opened, less the status bar, the top bar and the rail. */
+    /** The Pixel 9 Pro Fold's inner screen half-opened, less the status bar, the shell's former top bar and the rail. */
     private val foldContent = DpSize(800.dp, 720.dp)
 
     private val autoListen = TunerUiState(loaded = true, microphone = MicrophonePermissionStatus.Granted, audio = AudioState.Listening)

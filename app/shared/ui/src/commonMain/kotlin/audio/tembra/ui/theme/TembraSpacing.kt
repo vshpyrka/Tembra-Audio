@@ -19,7 +19,7 @@ data class TembraSpacing(
     /** Reading-width cap for centred content on wide windows (plan: placeholder wide layout). */
     val wideContentMaxWidth: Dp = 720.dp,
     // Chrome metrics of the navigation frame (feature 002, data-model.md §6, spec FR-019).
-    /** Top bar content height: `h-14` on the wide design screens. */
+    /** [audio.tembra.ui.designsystem.TembraTopBar]'s content height (`h-14` on the wide design screens); the shell shows no top bar since 2026-10-16. */
     val topBarHeight: Dp = 56.dp,
     /** Bottom bar content height: `h-16` on every phone bottom bar (the system inset is added below it). */
     val bottomBarHeight: Dp = 64.dp,
