@@ -971,3 +971,108 @@ Xcode 27.1 so the app fills the displays), closed pose, outer display 466 × 678
 
 Observed: the sheet's surfaceContainerLowest is close to the scrim, so its top edge is faint. checkIos on the Duo
 (660 tests) and checkAndroidHost (380) passed with the change.
+
+## Recaptured 2026-10-16: the shell has no top bar
+
+The navigation shell's top bar was removed on 2026-10-16 (spec 002 FR-007 reversed at the owner's request), so every
+capture here that showed the shell was retaken from that day's build, under the same file name, on the same target
+and in the same state. Content now starts right under the status bar (56 dp / pt higher). Other differences come from
+features that landed after the original captures and are named below. `*-before*` images and captures from targets
+that no longer exist were kept as they were. Android: Pixel 6 Pro `19021FDEE001AH`, the debug APK (no `tembra.perf`
+property), `adb exec-out screencap`, app state set with the debug launch extras and UiAutomator taps. iOS: the Debug app
+built with the Xcode 27.1 SDK on the iPhone 17 / iPad Pro 13" (M5) (iOS 26.5) / iPhone Duo (iOS 27.1) simulators,
+`simctl io screenshot`, app state set with the debug launch arguments, the app's stored preferences (written with the
+app stopped, backed up and restored) and real mouse clicks; rotation through the Simulator menu or Device Hub.
+
+### Android, Pixel 6 Pro (39 retaken, 1 left)
+
+Left: `android-notification-stop.png` (a crop of the notification shade; the app is not in it).
+
+How: compact = portrait, landscape = rotation 1, expanded = rotation 1 at density 380. `stopped` = launch then
+Metronome; `standard` = launch with `--es tembra.metronome.syncopation off-beat-ticks`; `downbeat` / `syncopated` =
+the style pill (landscape: the Style menu), stopped, 1/4; `7-8`, `6-8-labels` = the signature menu (expanded: the
+chip); `picker-open` = the sound menu open (expanded: the tile grid scrolled into view); `tempo-240` / `tempo-40` =
+slider dragged to each end, stopped, then 80 presses of "+" back to 120; `running-beat1` = play, frames captured until
+the Accent bar box showed the secondary outline (255,175,211); `import-refused` = picker → `notes.wav` from
+Download; `custom-filled` = `silence-then-click.wav` imported/selected, menu open (expanded: tile selected);
+`replace-refused` = Replace → `float32.wav`, then Replace → `notes.wav` (float32 kept), then the custom sound
+replaced back with `silence-then-click.wav` and Classic Wood selected; largefont = font 2.0, the `-scrolled` one
+after a swipe on the empty area beside the sound pill. Order as in the old set: compact `picker-open` and
+`import-refused` before any import (Custom "+"); landscape/expanded with `silence-then-click` present; expanded
+`custom-filled` and `import-refused` with the custom sound selected.
+
+Differs beyond the top bar:
+
+- **Layout from later iterations** (the old files predate them): compact `6-8-labels`, `custom-filled`, `downbeat`,
+  `import-refused`, `picker-open`, `replace-refused`, `standard`, `syncopated`, `tempo-240`, `tempo-40`,
+  `stopped-largefont`, `stopped-largefont-scrolled` were from the 2026-09-30 chip layout; they now show the D1
+  compact card (signature menu, subdivision tiles, cells, style row, sound pill). Landscape `6-8-labels`,
+  `custom-filled`, `downbeat`, `import-refused`, `picker-open`, `running-beat1`, `standard`, `syncopated`,
+  `tempo-240`, `tempo-40` were from the chip column; they now show the T152 card (signature + style menus).
+  Expanded: chips now carry the note glyphs and the whole settings column (time signature to the tile grid)
+  nearly fits, so the scrolled states show the 4/4 row at the top instead of RHYTHM SUBDIVISION.
+- Already on the D1/T152 layout before, so only the bar differs: compact `stopped`, `7-8`, `running-beat1`;
+  landscape `stopped`, `7-8`.
+- `android-compact-stopped-largefont-scrolled.png`: the column scrolls only a little now (the slider was just
+  below the fold), so the "scrolled" view is the dial card with its slider rather than the old lower half.
+
+### iOS simulators (43 retaken, 2 left)
+
+Left: `ios-duo-closed-stacked-cut.png` (as asked) and **`ios-duo-closed-bar-insets.png`**: it shows the bottom bar on the
+closed Duo's outer display; since the end-edge rail (2026-10-04) the closed, upright Duo never shows a bottom bar, so
+that state cannot be reproduced.
+
+Retaken: compact (14, iPhone 17), landscape (12, iPhone 17 Landscape Left), expanded (12, iPad Pro landscape), Duo
+closed (`pocket`, `pocket-sheet`, `pocket-downbeat`, `pocket-end-rail`, `landscape`; tempo 40 as in the originals).
+
+Differs beyond the top bar:
+- **Layout from design iteration D1 and the landscape rulings (2026-10-01)**: these old images were from batch B13
+  (2026-09-30) and showed the three-card column: compact `standard`, `downbeat`, `syncopated`, `6-8-labels`,
+  `picker-open`, `import-refused`, `custom-filled`, `tempo-40`, `tempo-240`, `running-beat1`, `stopped-largefont`,
+  `stopped-largefont-scrolled`; landscape `standard`, `downbeat`, `syncopated`, `6-8-labels`, `picker-open`,
+  `import-refused`, `custom-filled`, `tempo-40`, `tempo-240`, `running-beat1` (old: scrolled column, tap and play beside
+  the dial). Now the compact bar-shape card and the landscape card with the style menu.
+- `ios-compact-picker-open`, `ios-landscape-picker-open`: the Custom entry reads "Custom +" (no custom sound on the
+  iPhone at that moment); the old ones read "8bit-8k +" / "silence-then-click +". The compact menu now opens below the pill.
+- Expanded: the Custom tile shows the iPad's stored, stale custom reference ("+ silence-then-click") wherever another
+  sound is selected; the old images varied ("Custom +", or the filled tile).
+- `ios-duo-closed-pocket`, `-pocket-sheet`, `-pocket-downbeat`: the old images had the bottom bar (2026-10-03); now the
+  end-edge rail, so `pocket` and `pocket-end-rail` are the same picture.
+- `syncopated` (all three bands) is stopped at 1/4 like the existing images (the B9 description mentions 1/8 and running).
+
+### Every remaining capture retaken, 2026-10-16 (the owner's request: update all recorded screenshots)
+
+The files kept above as records of past states (`*-before*`, `stacked-cut`, `bar-insets`, the 005 `-r1` set), the
+live-sound captures, the notification crop and the Device Hub window shot were retaken too, in the original
+configuration with today's build, so no image here shows the removed top bar any more. Where a file recorded a
+defect or a first build, it now shows today's app in the same configuration, and the caption written for it above
+describes the original image, which stays in git: `git show 42d8e92:<path>` (main at the start of this work).
+The live captures used quickstart §5's 196 Hz tone with four harmonics from the MacBook's loudspeaker, as the
+originals did; the output volume was put back to 31 % after every run.
+
+#### Android (Pixel 6 Pro, fold emulator): `android-notification-stop.png`
+
+**How.** Pixel 6 Pro, portrait. The metronome was set to 4/4, 120 BPM and Classic Wood (the stored defaults). Under
+the lock: Play tapped, `cmd statusbar expand-notifications`. On this build and Android version the Tembra
+notification sits collapsed in the shade's "Silent" section. Its expand chevron (found in a dump of the shade) was
+tapped to show the Stop action; the old image is that expanded form, with the collapse chevron. Then a full-screen
+capture, `cmd statusbar collapse`, and the app's Stop. Afterwards `dumpsys notification` lists no `audio.tembra.app`
+notification and the button reads "Start metronome". Media volume was 0, so the click was silent.
+
+**Crop.** The old file is 1440 × 500. The card runs from row 8 to 492 (485 px) on a green shade background, full
+width. In the new capture the expanded card runs from row 1379 to 1863 (also 485 px), so the crop is
+(0, 1371)–(1440, 1871). That gives 1440 × 500 with the card at the same rows (8–492) and the same 8 px / 7 px margins.
+
+**What differs.** Only the large icon: the squirrel app icon (the 2026-10-12 app-icon change) instead of the purple
+waveform bars. The header "Tembra Audio • now", "Metronome", "Running", the green "Stop" action, the chevron, the
+layout and the colours are the same. The removed top bar does not appear in this image, because it shows the shade
+and not the app.
+
+#### iOS (iPhone 17, iPhone Duo simulators): 2 retaken, 0 left
+
+Both on the closed Duo's outer display, upright (pose not changed; it was Closed and upright when I started).
+
+| File | How | Shows now | Differs from the old one |
+|---|---|---|---|
+| `ios-duo-closed-stacked-cut.png` (1398 × 2034) | prefs tempo 61, 4/4, 1/4, ACCC, Standard, Classic Wood (the old image's settings), launched with `--tembra-metronome-syncopation=even-beats` (opens the Metronome) | the Pocket form beside the end-edge rail: label-less accent bars, the dial card filling the height (61 BPM, "Larghetto (60-66)", slider 40–240, settings button), tap tempo and play; Metronome lit in the rail | The old image recorded the Stacked form cut off: top bar, signature / subdivision / cells / style card, sound pill, the dial card sliced at "Larghetto" with the slider out of view, and a six-item bottom bar with Profile under the status column. None of that state exists any more; the picture is now today's Pocket form at 61 BPM (the same layout as `ios-duo-closed-pocket-end-rail.png`, which is at 40 BPM). |
+| `ios-duo-closed-bar-insets.png` (1398 × 2034) | plain launch (opens Home) — the old image is on **Home**, not the Metronome, so Home was kept | Home ("This is your starting point in Tembra Audio.") beside the end-edge rail, Home lit | The old image recorded the bottom bar after the inset fix (six items ending before the status and camera column) under the top bar. Today the closed upright Duo has no bottom bar; the image shows the end-edge rail instead and is the same as today's `ios-duo-closed-end-rail-home.png` except the clock. |
