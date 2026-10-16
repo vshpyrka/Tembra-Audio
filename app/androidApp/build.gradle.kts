@@ -110,6 +110,9 @@ dependencies {
     androidTestImplementation(libs.androidx.test.runner)
     // AndroidBackgroundPlaybackHostTest (feature 004): ServiceTestRule binds the metronome foreground service.
     androidTestImplementation(libs.androidx.test.rules)
+    // AndroidMicrophonePermissionTest answers the system's microphone prompt where the platform refuses the runner's
+    // grant (ColorOS without "Disable permission monitoring", 2026-10-16).
+    androidTestImplementation(libs.androidx.test.uiautomator)
     androidTestImplementation(libs.kotlinx.coroutines.core)
     // BaselineProfileCoverageTest (feature 008, FR-011): a JVM test over two text files of this module. The JUnit 4
     // variant is named because the Kotlin plugin's framework inference covers KMP commonTest, not a plain Android
