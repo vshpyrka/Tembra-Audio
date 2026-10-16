@@ -18,8 +18,10 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
@@ -50,7 +52,8 @@ import audio.tembra.ui.theme.TembraTheme
 
 /**
  * The navigation rail for windows from 600 dp (spec FR-003, FR-005, FR-019): 64 dp wide on surfaceContainerLowest,
- * filling the height below the top bar, clearing a start-side cutout and the gesture area; items are rounded squares
+ * filling the window's height (the shell has no top bar), its items clear of the status bar, a desktop caption, a
+ * start-side cutout and the gesture area; items are rounded squares
  * at least 48 x 48 dp that grow to their label within the rail (so "Metronome" stays on one line), with the glyph
  * above a labelSmall label. Vertical metrics are 4 dp so six items fit a phone in landscape (411 dp tall) with no
  * item off screen; shorter windows scroll the rail. The active item is secondaryContainer with onSecondaryContainer
@@ -81,7 +84,7 @@ fun TembraNavigationRail(
         Box(
             modifier = Modifier
                 .fillMaxHeight()
-                .windowInsetsPadding(WindowInsets.navigationBars.only(WindowInsetsSides.Bottom)),
+                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top).union(WindowInsets.navigationBars.only(WindowInsetsSides.Bottom))),
             contentAlignment = BiasAlignment(horizontalBias = 0f, verticalBias = if (itemsAlignment == Alignment.Bottom) 1f else -1f),
         ) {
             Column(
