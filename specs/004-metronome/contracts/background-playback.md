@@ -28,12 +28,16 @@ class FakeBackgroundPlaybackHost(var allow: Boolean = true) : BackgroundPlayback
 - Manifest: `<uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>`,
   `<uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>`,
   `<service android:name=".MetronomeForegroundService" android:foregroundServiceType="mediaPlayback" android:exported="false"/>`.
-  `<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>` is declared but never
-  requested at runtime (B12 ruling, 2026-09-30): on Android 13+ the notification and its Stop action
-  appear only once the user allows notifications for the app in system settings (without the
-  declaration the system could never grant it); the service, the in-app button and the system's
-  active-app chip work regardless. Device checks grant it with `adb shell pm grant`.
-- `AndroidBackgroundPlaybackHost(context)`: `keepAlive()` = `ContextCompat.startForegroundService(context, Intent(ACTION_START))`
+  `<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>` is declared and, since
+  2026-10-15 (owner's request after the device-matrix run; supersedes the B12 ruling of 2026-09-30,
+  which never requested it, so the notification and its Stop action stayed hidden until the user
+  found the app's notification settings), requested at runtime on Android 13+ by
+  `NotificationPermissionHost`: once per process, the first time `keepAlive()` starts the service,
+  only while not granted and an activity is attached. Playback never waits for the answer; a grant
+  re-posts the running service's notification (`AndroidBackgroundPlaybackHost.repostRunningNotification`),
+  because the one `startForeground` posted without the permission stays hidden. The service, the
+  in-app button and the system's active-app chip work whatever the answer.
+- `AndroidBackgroundPlaybackHost(context, notifications)`: `keepAlive()` = `ContextCompat.startForegroundService(context, Intent(ACTION_START))`
   wrapped in a `try` returning false on `ForegroundServiceStartNotAllowedException` (API 31+,
   the app is not visible); `release()` = `context.stopService(Intent(context, MetronomeForegroundService::class.java))` (not `startService(ACTION_STOP)`: starting a service from the background throws on API 26+, and an ACTION_STOP would emit a stop request the ViewModel did not ask for).
 - Focus (`AUDIOFOCUS_GAIN`), the becoming-noisy receiver and the resulting `AudioEvent`s live in
