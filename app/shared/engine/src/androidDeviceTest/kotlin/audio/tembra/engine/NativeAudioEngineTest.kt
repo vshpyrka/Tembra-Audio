@@ -76,6 +76,23 @@ class NativeAudioEngineTest {
         assertNull(engine.loadSample(byteArrayOf(0, 1, 2)))
     }
 
+    /**
+     * A start that opens the stream reports Tone at once, every time (2026-10-16): the first callbacks of a fresh stream
+     * used to read the sources before the start published them and, preempted before their end-of-block check, report
+     * an Idle engine while the tone played (seen on the OPPO CPH2239 and the fold emulator).
+     */
+    @Test
+    fun aToneReportsToneAsSoonAsItsStartReturns() {
+        repeat(200) { attempt ->
+            assertEquals(AudioResult.Ok, engine.startTone(440.0, 0), "start $attempt")
+            for (read in 0 until 5) {
+                assertEquals(AudioState.Tone, engine.audioState, "start $attempt, read $read")
+                Thread.sleep(2)
+            }
+            engine.stopTone()
+        }
+    }
+
     @Test
     fun aToneStartsAndStopsWithoutAMicrophone() {
         assertEquals(AudioResult.Ok, engine.startTone(440.0, 200))
