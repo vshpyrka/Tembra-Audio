@@ -18,7 +18,7 @@ screen. Only elements that appear consistently were carried into this specificat
 |---|---|---|
 | Bottom navigation bar: five items, icon above a short label, the active item sits on a raised lavender circle | Every phone screen that has a bottom bar (tuner, tuner by ear, effects, drum sequencer, export) and the tablet timeline | **Kept** as the compact-width navigation |
 | Left navigation rail, 64 px wide, icon above label, active item on a filled rounded square | Seven of eight wide screens (timeline, projects, effects, tuner, tuner by ear, export; the tablet timeline's "Tracks / FX" rail is the known inconsistency) | **Kept** as the wide-width navigation |
-| Top bar showing the product name and the current screen title (or project name) | Every main screen | **Kept**, reduced to name and title |
+| Top bar showing the product name and the current screen title (or project name) | Every main screen | **Kept**, reduced to name and title; **removed from the shell on 2026-10-16** (owner's request: it only repeated the selected item and took height) |
 | Top-bar icons: menu, cloud state, help, share, avatar, folder, settings | Vary from screen to screen; no screen defines what they open | **Excluded** (ambiguous) |
 | Right-hand panel, 320 px, holding the loop library (category chips and a pad bank) | Timeline screens and mockups only; absent on tuner, effects, export and projects | **Kept as a slot** on expanded widths; on Home it holds a "Library" empty state (FR-012) |
 | Transport bar (volume, rewind, play, timecode, speed, metronome toggle) | Every DAW screen | **Excluded**: it belongs to the transport and timeline feature, which comes after the audio spine in the fixed build order |
@@ -35,33 +35,37 @@ screen. Only elements that appear consistently were carried into this specificat
 - Q: On windows 840 dp and wider, is the "Library" panel beside Home always visible, or can the user collapse and reopen it? → A: A. Always visible at 840 dp and wider (hidden only when the window is shorter than 480 dp); no collapse control.
 - Q: When the user switches between destinations, should the change be instant or animated? → A: B. A short fade between destinations, and the active marker animates too, using the standard transition duration from the platform's design guidelines rather than a custom value.
 
+### Session 2026-10-16
+
+- Owner's request after the device-matrix run: the top bar that showed only the selected tab is redundant, takes a lot of space and does nothing, so the shell drops it on every destination. The `TembraTopBar` component stays in the design system for a later screen that needs a title bar. FR-007 is reversed; FR-002, FR-015, FR-018, FR-019, FR-022, the edge cases, User Story 1 and the Destination entity are amended to match.
+
 ## User Scenarios & Testing *(mandatory)*
 
 The users of this feature are musicians and producers opening Tembra Audio on a phone, a
 foldable, a tablet or an Android desktop-mode window, and the contributors who will build every
-later screen inside this shell. The feature delivers the persistent frame of the app (top bar,
-navigation control, optional side panel), a Home destination that is the starting point, five
+later screen inside this shell. The feature delivers the persistent frame of the app (the
+navigation control and an optional side panel; its top bar was removed on 2026-10-16), a Home destination that is the starting point, five
 destinations that are reachable but not yet functional, and the shared icon set the frame uses.
 
 ### User Story 1 - Start on Home and move between the six destinations (Priority: P1)
 
 A user opens the app and lands on Home. From the navigation control they can reach Timeline,
 Tuner, Metronome, Projects and Profile, and come back to Home. The item for the current destination is
-visibly marked, and the top bar names the destination.
+visibly marked and is what names the destination (the top bar that repeated it was removed on 2026-10-16).
 
 **Why this priority**: The navigation structure is the point of the feature. Without it no
 other story can be demonstrated.
 
 **Independent Test**: Launch the app, confirm Home is shown, tap each of the six items in
-turn and confirm the matching destination title appears and the item is marked active.
+turn and confirm the matching destination appears and the item is marked active.
 
 **Acceptance Scenarios**:
 
 1. **Given** a cold launch on either platform, **When** the app finishes opening, **Then** the
    Home destination is shown and its navigation item is marked active.
 2. **Given** any destination, **When** the user selects a different navigation item, **Then**
-   the destination for that item replaces the current one, the item becomes the only active
-   item, and the top bar title changes to that destination's title.
+   the destination for that item replaces the current one and the item becomes the only active
+   item.
 3. **Given** a destination is shown, **When** the user selects its own (already active) item
    again, **Then** nothing changes and no duplicate screen is created.
 4. **Given** the user is on Timeline, Tuner, Metronome, Projects or Profile on Android, **When** they
@@ -191,8 +195,8 @@ contains no literal colour, size or font values.
   panel is hidden.
 - The user enables the largest system font size: labels stay readable and unclipped, the bottom
   bar grows in height as needed, and no item overflows or overlaps.
-- The device has a display cutout, rounded corners or a gesture navigation area: the top bar
-  clears the status area, the bottom bar sits above the gesture area, and the rail clears a
+- The device has a display cutout, rounded corners or a gesture navigation area: the content
+  clears the status area (and a desktop window's caption), the bottom bar sits above the gesture area, and the rail clears a
   side cutout in landscape.
 - The user taps two items in quick succession: the last tap wins and exactly one destination
   is shown.
@@ -211,7 +215,7 @@ contains no literal colour, size or font values.
 - **FR-001**: The app MUST open on the Home destination on every launch.
 - **FR-002**: The navigation MUST contain exactly six destinations, in this order: Home,
   Timeline, Tuner, Metronome, Projects, Profile. No other items (no Effects, Pads, Remote,
-  menu, avatar or settings) MUST appear in the navigation control or the top bar.
+  menu, avatar or settings) MUST appear in the navigation control or anywhere else in the frame.
 - **FR-003**: Every destination MUST have a text label and an icon, both visible in the bottom
   bar and in the rail, with the icon above the label as in the design.
 - **FR-004**: In windows narrower than 600 dp the six items MUST be shown in a bottom
@@ -222,9 +226,11 @@ contains no literal colour, size or font values.
   destination that has supporting content MUST show it in a right-hand panel 320 dp wide
   beside its main content. In this feature only Home has supporting content. When the window
   is shorter than 480 dp the panel MUST be hidden.
-- **FR-007**: A top bar MUST be shown on every destination, spanning the full window width
-  above the rail, containing the product name "Tembra Audio" and the current destination's
-  title, and nothing else.
+- **FR-007** (reversed 2026-10-16): The frame MUST NOT show a top bar on any destination: the
+  active navigation item names the destination, the content starts right under the status bar
+  (or a desktop window's caption), and a rail runs the full window height. Until 2026-10-16 a
+  full-width top bar above the rail showed the product name "Tembra Audio" and the current
+  destination's title.
 - **FR-008**: Selecting an item MUST show its destination and mark that item as the only
   active item; selecting the already active item MUST have no effect. The switch MUST be
   animated: the outgoing destination fades into the incoming one and the active marker moves
@@ -249,8 +255,8 @@ contains no literal colour, size or font values.
   indicator when focused, MUST be activatable from the keyboard, and MUST be at least 44 dp in
   both dimensions.
 - **FR-015**: Every navigation item MUST expose its label, its selected state and a stable
-  test identifier to accessibility services and UI tests; the top bar, bottom bar, rail and
-  side panel MUST each be identifiable the same way.
+  test identifier to accessibility services and UI tests; the bottom bar, rail and side panel
+  MUST each be identifiable the same way.
 - **FR-016**: The icons MUST come from Google's Material Symbols set (Apache-2.0), MUST be
   bundled with the app (never fetched at run time), MUST be added to the shared design system
   as named icons, and MUST be used by screens only through those names. The licence inventory
@@ -258,9 +264,12 @@ contains no literal colour, size or font values.
 - **FR-017**: All text in the frame MUST use the shared design system's type styles (the
   bundled Space Grotesk and Inter families) and all colours, sizes, spacing and shapes MUST
   come from the shared design tokens. The frame MUST contain no literal visual values.
-- **FR-018**: The top bar, bottom bar, rail and side-panel frame MUST be shared design-system
-  components implemented once for both platforms, so later features reuse them unchanged.
-- **FR-019**: The frame MUST match the design reference: top bar 56 dp high; bottom bar 64 dp
+- **FR-018**: The bottom bar, rail and side-panel frame MUST be shared design-system
+  components implemented once for both platforms, so later features reuse them unchanged. The
+  top bar component stays in the design system for later screens, though the frame no longer
+  shows it (FR-007).
+- **FR-019**: The frame MUST match the design reference: the top bar component 56 dp high (not
+  shown by the frame since 2026-10-16); bottom bar 64 dp
   high plus the system inset; rail 64 dp wide; side panel 320 dp wide; the active bottom-bar
   item drawn on a raised circle in the primary lavender; the active rail item drawn on a
   filled rounded square in the secondary container colour; inactive items in the muted
@@ -277,14 +286,15 @@ contains no literal colour, size or font values.
   any audio behaviour.
 - **FR-022**: The scaffold's design-token preview MUST remain available as a developer-only
   view: present in debug builds only, absent from release builds, never reachable from the
-  navigation control or the top bar, and opened through a developer mechanism chosen in the
+  navigation control, and opened through a developer mechanism chosen in the
   plan. Its existing automated test MUST keep passing. The scaffold's counter button, its
   state and its tests MUST be removed.
 
 ### Key Entities
 
 - **Destination**: one of the six places the user can go. Attributes: stable identifier,
-  label (shown under the icon), title (shown in the top bar), icon name, order, and whether it
+  label (shown under the icon), title (shown by its placeholder; the top bar that also showed it
+  was removed on 2026-10-16), icon name, order, and whether it
   has supporting content for the side panel.
 - **Navigation State**: which destination is selected. Starts at Home; changes only through
   the navigation control or the Android back action; survives rotation and resizing.
@@ -351,7 +361,8 @@ contains no literal colour, size or font values.
   needs the engine and transport feature; placeholders are not DAW screens.
 - **Top bar is name and title only.** The menu, cloud-state, help, share, avatar, folder and
   settings icons in the top bars of the design vary between screens and none of them has a
-  defined behaviour, so they are excluded per the user's instruction.
+  defined behaviour, so they are excluded per the user's instruction. On 2026-10-16 the owner
+  removed the remaining name-and-title bar from the frame as well (FR-007).
 - **Icon choices.** Where the design shows a glyph for a destination it was taken from the
   phone bottom bars, which agree on every screen; the rails use different glyphs for the same
   items and were not followed. Chosen glyphs (all present in the current Material Symbols

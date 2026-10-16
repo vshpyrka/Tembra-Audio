@@ -54,7 +54,8 @@ After trying the first build on the Pixel 9 Pro Fold emulator the user asked for
   (FR-011).
 - **Top bar fix found on the way.** With the device rotated so that its camera cutout is reported on the bottom edge,
   the shell's top bar used to grow by the cutout's height and leave a gap above the content; the top bar now only
-  keeps clear of the top and side insets. (A navigation-shell defect from feature 002, fixed here.)
+  keeps clear of the top and side insets. (A navigation-shell defect from feature 002, fixed here. Since 2026-10-16
+  the shell has no top bar; the content itself clears the top inset in the same way.)
 
 ## Design iteration D2 (2026-10-02)
 
@@ -218,7 +219,7 @@ and the iPad Pro simulators are unchanged; on the foldable, flat and book postur
   applies only when the fold runs across the screen's content; otherwise the existing layout is used.
 - **The fold is not in the middle** or has a visible width: the halves are measured from the fold's actual position, and
   a gutter keeps every piece of content clear of the fold's area.
-- **One half is too short for its content** (large fonts, a small foldable, the shell's top bar in the upper half):
+- **One half is too short for its content** (large fonts, a small foldable; until 2026-10-16 also the shell's top bar in the upper half):
   that half scrolls on its own; nothing moves across the fold to make room.
 - **The navigation rail**: it stays where the shell puts it, beside both halves; only the screen's own content is split.
 - **Rotating while in tabletop**: a vertical fold is book posture: the existing layouts, except that the wide
@@ -265,7 +266,9 @@ and the iPad Pro simulators are unchanged; on the foldable, flat and book postur
   its settings before the fold and the dial card, tap tempo and play after it, each a gutter clear of the fold's area,
   measured from the fold's reported position (D1).
 - **FR-012**: The shell's top bar MUST keep clear of the status bar and of a display cutout on the top or the sides,
-  and MUST NOT grow by a cutout reported on the bottom edge (D1, a feature 002 defect).
+  and MUST NOT grow by a cutout reported on the bottom edge (D1, a feature 002 defect). Since 2026-10-16 the shell
+  has no top bar (feature 002's amended FR-007): the content clears only the top inset above it, never a cutout
+  reported on the bottom edge.
 - **FR-013**: On large screens By Ear MUST show square string cards in a grid centred horizontally and, when shorter
   than its card, vertically; four strings MUST show as two rows of two and other counts three per row with a short
   last row centred; when the grid would not fit the card's height the cards MUST shrink (staying square) or, below
@@ -303,7 +306,7 @@ and the iPad Pro simulators are unchanged; on the foldable, flat and book postur
   so the fold is horizontal). No physical foldable is available.
 - iOS has no foldable devices; the iPhone and iPad keep their layouts and are checked for regressions only.
 - The shell (top bar, navigation rail or bar) is not changed by this feature; the top bar stays in the upper half and
-  the screen content is split below it.
+  the screen content is split below it. (Since 2026-10-16 there is no top bar: the content starts under the status bar.)
 - The accent cells in the upper region stay interactive (tap to cycle); the user asked for them to be shown there, and
   removing their only control would lose a feature.
 - The tempo dial keeps its − / + steps and drag in the upper region, since they are part of the dial; the slider moves to

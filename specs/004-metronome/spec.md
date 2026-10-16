@@ -417,8 +417,8 @@ and the picker with the platform screen reader.
 **Destination and defaults**
 
 - **FR-001**: The Metronome destination MUST replace the feature 002 placeholder with the
-  metronome screen. The top bar, navigation control and back behaviour from feature 002 MUST
-  remain unchanged, and Metronome MUST NOT show a transport bar or a right-hand panel at any
+  metronome screen. The navigation control and back behaviour from feature 002 MUST remain
+  unchanged (the shell's top bar, kept here, was removed on 2026-10-16 by feature 002's amended FR-007), and Metronome MUST NOT show a transport bar or a right-hand panel at any
   width. On the first launch the defaults are 120 BPM, 4/4, subdivision 1/4, the Standard style
   and the Classic Wood sound, stopped.
 
