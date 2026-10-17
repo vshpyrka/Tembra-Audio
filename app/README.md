@@ -115,7 +115,7 @@ app/
 │   ├── engine/             :shared:engine — AudioEngine facade (TunerAudio + MetronomeAudio): NativeAudioEngine (JNI / cinterop), FakeAudioEngine, parser
 │   ├── data/               :shared:data   — persistence: AppDirectories, tuner/ DataStore preferences (TunerPreferences, TembraDataStore), metronome/ (MetronomePreferences, CustomClickSoundStore)
 │   └── ui/                 :shared:ui     — Compose screens, ViewModels, theme, Metro graph; iOS framework "TembraShared"
-│       ├── theme/          design tokens from design/stitch/theme.json: colours, type, shapes, spacing and chrome metrics, motion, TembraIcon registry
+│       ├── theme/          design tokens from design/stitch/theme.json: colours, type, shapes, spacing and chrome metrics, motion, TembraIcon registry (Material Symbols glyphs plus the project's own note figures and, since 2026-10-17, the navigation's hand-drawn tuning fork and metronome)
 │       ├── designsystem/   chrome components: TembraTopBar (not shown by the shell since 2026-10-16), TembraNavigationBar and TembraNavigationRail (icon-only, on Material 3 Expressive's ShortNavigationBar and collapsed WideNavigationRail since 2026-10-17; NavigationItemIcon shows the label as a hover tooltip, InsetFocusRing gives Material's inset focus ring), TembraSupportingPane, EmptyState, PlaceholderDestination, TembraSegmentedControl, TembraToggle, TembraStatusPill, TembraGradientCard, TembraChipRow, TembraPill, TembraSlider (expect/actual: Material's slider with a custom thumb and track), FocusRing, FrameTick
 │       ├── platform/       MicrophonePermission, BackgroundPlaybackHost, SoundFilePicker interfaces (+ IosMicrophonePermission, IosBackgroundPlaybackHost, IosSoundFilePicker in iosMain; the Android ones live in :androidApp)
 │       ├── navigation/     the shell: Destination registry, ShellViewModel, LayoutMode, NavigationShell, Navigation 3 wiring (TembraNavDisplay), SupportingPaneSceneStrategy
@@ -125,7 +125,7 @@ app/
 │       └── devtools/       debug-only developer views (DesignTokenPreview behind a launch argument)
 ├── androidApp/             :androidApp — TembraApplication (Metro graph), MainActivity, AndroidMicrophonePermission + MicrophonePermissionHost, MetronomeForegroundService + AndroidBackgroundPlaybackHost, SoundFilePickerHost + AndroidSoundFilePicker
 ├── iosApp/                 Xcode project; two Swift files host MainViewController()
-└── tools/                  fetch-material-symbols.sh (glyphs at a pinned commit); make-note-glyphs.py (the note-figure glyphs); capture-tuner-states.sh (the tuner's test-signal screenshot matrix); capture-noise-gate.sh (the noise gate control on one target in one orientation, with a layout check on Android)
+└── tools/                  fetch-material-symbols.sh (glyphs at a pinned commit); make-note-glyphs.py (the note-figure glyphs); make-nav-glyphs.py (the navigation's hand-drawn Tuner and Metronome glyphs and the metronome notification's status-bar icon; `--preview <dir>` writes a preview sheet); capture-tuner-states.sh (the tuner's test-signal screenshot matrix); capture-noise-gate.sh (the noise gate control on one target in one orientation, with a layout check on Android)
 ```
 
 Dependencies point inward: apps → `:shared:ui` → `:shared:engine` / `:shared:data` → `:shared:core`.
