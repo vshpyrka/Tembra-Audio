@@ -122,19 +122,18 @@
   .material-symbols-outlined.fill { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
 </style>
 
-<!-- LEFT NAVIGATION RAIL: the app's six destinations, Tuner selected; it runs the full height from the top (no top bar) -->
-<aside class="fixed left-0 top-0 w-16 bg-surface-container-lowest z-40 flex flex-col items-center py-2.5 border-r border-outline-variant/30 shadow-[1px_0_12px_rgba(0,0,0,0.4)] bottom-0">
-<nav class="w-full flex flex-col items-center gap-[3px]">
-  <a class="w-[58px] h-12 flex flex-col items-center justify-center rounded-xl text-on-surface" href="#"><span class="material-symbols-outlined !text-[24px] leading-6">home</span><span class="font-label-md text-[11px] leading-[14px] font-medium">Home</span></a>
-  <a class="w-[58px] h-12 flex flex-col items-center justify-center rounded-xl text-on-surface" href="#"><span class="material-symbols-outlined !text-[24px] leading-6">graphic_eq</span><span class="font-label-md text-[11px] leading-[14px] font-medium">Timeline</span></a>
-  <a class="w-[58px] h-12 flex flex-col items-center justify-center rounded-xl bg-secondary-container text-secondary" href="#" aria-current="page"><span class="material-symbols-outlined !text-[24px] leading-6" style="font-variation-settings:'FILL' 1">music_note</span><span class="font-label-md text-[11px] leading-[14px] font-medium">Tuner</span></a>
-  <a class="w-[58px] h-12 flex flex-col items-center justify-center rounded-xl text-on-surface" href="#"><span class="material-symbols-outlined !text-[24px] leading-6">av_timer</span><span class="font-label-md text-[11px] leading-[14px] font-medium">Metronome</span></a>
-  <a class="w-[58px] h-12 flex flex-col items-center justify-center rounded-xl text-on-surface" href="#"><span class="material-symbols-outlined !text-[24px] leading-6">folder</span><span class="font-label-md text-[11px] leading-[14px] font-medium">Projects</span></a>
-  <a class="w-[58px] h-12 flex flex-col items-center justify-center rounded-xl text-on-surface" href="#"><span class="material-symbols-outlined !text-[24px] leading-6">person</span><span class="font-label-md text-[11px] leading-[14px] font-medium">Profile</span></a>
+<!-- LEFT NAVIGATION RAIL (M3 Expressive WideNavigationRail, collapsed): the app's five destinations, icon-only, Tuner selected; it runs the full height from the top (no top bar) -->
+<aside class="fixed left-0 top-0 bottom-0 w-24 bg-surface-container-lowest z-40 flex flex-col items-center pt-11">
+<nav class="w-full flex flex-col items-center gap-1" aria-label="Primary" data-purpose="wide-navigation-rail" data-active-classes="rounded-full bg-secondary-container text-on-secondary-container">
+  <a class="w-14 h-14 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" href="#" aria-label="Timeline"><span class="material-symbols-outlined !text-[24px] leading-none">graphic_eq</span></a>
+  <a class="w-14 h-14 flex-shrink-0 flex items-center justify-center rounded-full bg-secondary-container text-on-secondary-container" href="#" aria-label="Tuner" aria-current="page"><span class="material-symbols-outlined !text-[24px] leading-none">music_note</span></a>
+  <a class="w-14 h-14 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" href="#" aria-label="Metronome"><span class="material-symbols-outlined !text-[24px] leading-none">av_timer</span></a>
+  <a class="w-14 h-14 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" href="#" aria-label="Projects"><span class="material-symbols-outlined !text-[24px] leading-none">folder</span></a>
+  <a class="w-14 h-14 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" href="#" aria-label="Profile"><span class="material-symbols-outlined !text-[24px] leading-none">person</span></a>
 </nav>
 </aside>
 <!-- MAIN TUNER WORKSPACE: content starts at the top, no top bar -->
-<div class="pl-16 h-screen flex flex-col overflow-hidden">
+<div class="pl-24 h-screen flex flex-col overflow-hidden">
 <main class="flex-1 min-h-0 flex flex-col gap-3 p-4 font-label-md text-on-surface">
 <!-- SELECTOR ROW: instrument (text only) and the audio-state pill at the start, the mode at the end -->
 <section class="flex items-center justify-between gap-3 flex-shrink-0">
