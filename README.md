@@ -24,8 +24,8 @@ effects and recording come next, in that order.
 - **Adaptive layout.** Separate layouts for phones (portrait and landscape), tablets and foldables.
   A foldable in tabletop or book posture splits the screen at the hinge.
 
-Timeline, Projects, Home and Profile already appear in the navigation, but for now they only show a
-placeholder.
+Timeline, Projects and Profile already appear in the navigation, but for now they only show a
+placeholder. The app opens on Timeline.
 
 ## How it is built
 

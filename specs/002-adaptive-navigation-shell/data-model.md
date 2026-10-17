@@ -8,14 +8,15 @@ design values is the Stitch HTML quoted in [research.md](research.md) R8.
 
 ## 1. Destination (registry)
 
-The six places a user can go. A closed, ordered set: an `enum class Destination` in
-`audio.tembra.ui.navigation`. Declaration order is display order (spec FR-002). The enum is the
-navigation key (it implements Navigation 3's `NavKey`, research R2), so the back stack is a
-`List<Destination>` and no parallel key hierarchy exists.
+The five places a user can go (six until Home was removed on 2026-10-17). A closed, ordered set:
+an `enum class Destination` in `audio.tembra.ui.navigation`. Declaration order is display order
+(spec FR-002), and the first entry is the start destination (`StartDestination`, Timeline). The
+enum is the navigation key (it implements Navigation 3's `NavKey`, research R2), so the back
+stack is a `List<Destination>` and no parallel key hierarchy exists.
 
-| Value | `id` | `label` (under the icon) | `title` (placeholder heading; the top bar showed it until 2026-10-16) | `icon` | `hasSupportingPane` | `placeholderMessage` |
+| Value | `id` | `label` (the icon's accessible name; drawn under the icon until 2026-10-17) | `title` (placeholder heading; the top bar showed it until 2026-10-16) | `icon` | `hasSupportingPane` | `placeholderMessage` |
 |---|---|---|---|---|---|---|
-| `Home` | `home` | Home | Home | `TembraIcon.Home` | true | This is your starting point in Tembra Audio. |
+| `Home` (removed 2026-10-17) | `home` | Home | Home | `TembraIcon.Home` | true | This is your starting point in Tembra Audio. |
 | `Timeline` | `timeline` | Timeline | Timeline | `TembraIcon.Timeline` | false | The timeline arranger arrives with the transport and timeline feature. |
 | `Tuner` | `tuner` | Tuner | Tuner | `TembraIcon.Tuner` | false | The instrument tuner arrives with the tuner feature. |
 | `Metronome` | `metronome` | Metronome | Metronome | `TembraIcon.Metronome` | false | The metronome arrives with the metronome feature. |
@@ -24,6 +25,8 @@ navigation key (it implements Navigation 3's `NavKey`, research R2), so the back
 
 Rules
 - `id`, `label` and `title` are unique (test). `Home` is first (test). Exactly six values (test).
+  Since 2026-10-17: `Timeline` is first and exactly five values remain; no value has
+  `hasSupportingPane = true`.
 - `placeholderMessage` is the one sentence FR-011 / FR-013 require; UI tests assert the exact
   text, so it is data, not copy inside a composable.
 - The shell never `when`s over destinations for layout; it reads `hasSupportingPane` and the
@@ -32,19 +35,22 @@ Rules
 
 ## 2. Navigation state
 
-`ShellUiState(val selected: Destination = Destination.Home)` exposed by `ShellViewModel` as a
-`StateFlow` (Constitution II). Intents are plain functions.
+`ShellUiState(val selected: Destination = StartDestination)` exposed by `ShellViewModel` as a
+`StateFlow` (Constitution II), where `StartDestination = Destination.entries.first()` (Timeline;
+the default was `Destination.Home` until 2026-10-17). Intents are plain functions.
 
 | Intent | Precondition | Effect |
 |---|---|---|
 | `select(d)` | any | `selected = d`; if `d == selected` nothing changes (FR-008) |
-| `back()` | `selected != Home` | `selected = Home`; returns `true` (consumed) |
-| `back()` | `selected == Home` | no change; returns `false` so the platform handles it (FR-010) |
+| `back()` | `selected != StartDestination` | `selected = StartDestination`; returns `true` (consumed) |
+| `back()` | `selected == StartDestination` | no change; returns `false` so the platform handles it (FR-010) |
 
-Derived, not stored: `backStack: List<Destination>` = `[Home]` when `selected == Home`, else
-`[Home, selected]`. It is what `NavDisplay` renders; its length is never above two in this
-feature. Survives rotation and live resizing because the ViewModel outlives the composition.
-Not restored after process death: a relaunch starts at `Home` (spec edge case; FR-021).
+Derived, not stored: `backStack: List<Destination>` = `[StartDestination]` when
+`selected == StartDestination`, else `[StartDestination, selected]` (`Home` held that place until
+2026-10-17). It is what `NavDisplay` renders; its length is never above two in this feature.
+Survives rotation and live resizing because the ViewModel outlives the composition. Not
+restored after process death: a relaunch starts at the start destination, Timeline (spec edge
+case; FR-021).
 
 ## 3. Layout mode
 
@@ -68,10 +74,12 @@ shell composable receives a `LayoutMode` parameter so UI tests can force each la
 outer display held upright), `from(windowSizeClass, iphoneDuo)` gives `EndRail` instead. iOS keeps the status bar
 and camera in a column at the end edge of that display and Apple's guidance puts tab bars in that column, so the rail
 fills it (at least 64 dp, as wide as the end safe-drawing inset) with its items at the bottom, and no bottom bar
-takes vertical space. Every other device keeps the table above. Background: docs/research/iphone-duo.md.
+takes vertical space. Since 2026-10-17 the rail there is Material's collapsed rail: at least as wide as the end inset,
+and Material's 96 dp otherwise. Every other device keeps the table above. Background: docs/research/iphone-duo.md.
 
 `RailWithPanel` shows the supporting pane only for a destination whose `hasSupportingPane` is
-true; for the others the layout is visually identical to `Rail` (spec US3 scenario 3).
+true; for the others the layout is visually identical to `Rail` (spec US3 scenario 3). Since
+2026-10-17 no destination has a pane, so `RailWithPanel` looks like `Rail` everywhere.
 
 ## 4. Icon set
 
@@ -82,7 +90,7 @@ files are Material Symbols Outlined, weight 400, no fill, grade 0, optical size 
 
 | Value | Glyph name | Resource file | Why |
 |---|---|---|---|
-| `Home` | `home` | `drawable/ic_home_24.xml` | no design reference; conventional |
+| `Home` (removed with its file on 2026-10-17) | `home` | `drawable/ic_home_24.xml` | no design reference; conventional |
 | `Timeline` | `graphic_eq` | `drawable/ic_graphic_eq_24.xml` | every phone bottom bar |
 | `Tuner` | `music_note` | `drawable/ic_music_note_24.xml` | every phone bottom bar |
 | `Metronome` | `av_timer` | `drawable/ic_av_timer_24.xml` | no metronome glyph exists in Material Symbols |
@@ -104,22 +112,26 @@ a file and an enum value, nothing else.
 | `reduceMotion` | platform preference, read at the root (research R7) | when true, durations are treated as 0 |
 
 Used by the destination transition (FR-008) and the active-marker animation. No screen defines
-its own duration.
+its own duration. Since 2026-10-17 the active marker is Material's indicator, animated by the
+theme's `MotionScheme.expressive()` (`MaterialExpressiveTheme`), so only the destination
+transition reads these tokens.
 
 ## 6. Chrome metrics (design reference, added to `TembraSpacing`)
 
-From the Stitch HTML (research R8) and spec FR-019. All in dp.
+From the Stitch HTML (research R8) and spec FR-019. All in dp. Since 2026-10-17 the bar and the
+rail take their sizes from Material's `ShortNavigationBar` and collapsed `WideNavigationRail`
+tokens (research R4), and the seven tokens marked removed below are gone from `TembraSpacing`.
 
 | Token | Value | Design source |
 |---|---|---|
 | `topBarHeight` | 56 | `h-14` on wide screens; spec FR-019 (the `TembraTopBar` component's; the shell has no top bar since 2026-10-16) |
-| `bottomBarHeight` | 64 | `h-16` on every phone bottom bar (plus the system inset) |
-| `railWidth` | 64 | `w-16` rail |
+| `bottomBarHeight` (removed 2026-10-17) | 64 | `h-16` on every phone bottom bar (plus the system inset) |
+| `railWidth` (removed 2026-10-17) | 64 | `w-16` rail |
 | `supportingPaneWidth` | 320 | `w-80` inspector; DESIGN.md desktop layout |
-| `navItemMinWidth` | 56 | `min-w-[56px]` bar item |
-| `railItemWidth` | 48 | rail `px-2` inside 64 |
-| `navBarIconSize` / `navRailIconSize` | 20 / 22 | `text-[20px]` / `text-[22px]` |
-| `navItemGap` | 4 | `gap-1` between icon and label |
+| `navItemMinWidth` (removed 2026-10-17) | 56 | `min-w-[56px]` bar item |
+| `railItemWidth` (removed 2026-10-17) | 48 | rail `px-2` inside 64 |
+| `navBarIconSize` / `navRailIconSize` (removed 2026-10-17) | 20 / 22 | `text-[20px]` / `text-[22px]` |
+| `navItemGap` (removed 2026-10-17) | 4 | `gap-1` between icon and label |
 | `focusRingWidth` | 2 | keyboard focus ring in `primary` (Constitution IV; added during implementation) |
 
 The 480 dp short-window rule is not a spacing token: `LayoutMode.from` reads window-core's
@@ -132,12 +144,28 @@ the rail uses 4 dp (`xs`) vertical padding and gaps instead of the design's 8 dp
 in landscape (about 311 dp below the top bar; the rail has the window's full height since the bar was removed on
 2026-10-16); shorter windows scroll the rail.
 
+Since 2026-10-17 (research R4): the bar is Material's 64 dp minimum (`defaultMinSize`) plus the
+navigation inset, 88 dp in all on a Pixel 6 Pro and 98 pt on an iPhone 14, the same at every font
+size because the items carry no text. The collapsed rail is 96 dp wide with Material's 44 dp top
+space; its items sit in a vertically scrolling column spaced 4 dp (`xs`), so five of them still fit
+a 360 dp-tall phone in landscape. The capsule and rounded-square drawing above is gone.
+
 Active-state treatment (spec FR-019): bar item is a `rounded-full` pill in `primaryContainer`
 with `onPrimaryContainer` content and the `clip_glow` shadow; rail item is a `rounded-lg`
 (16 dp) square in `secondaryContainer` with `onSecondaryContainer` content. Inactive items use
 `onSurfaceVariant`; hover raises to `onSurface` (rail also fills `surfaceContainerHigh`). Labels
 use `labelSmall`; the top bar component shows the product name as an uppercase `labelSmall` overline in
-`primary` and the title in `headlineSmall` (the shell has no top bar since 2026-10-16).
+`primary` and the title in `headlineSmall` (the shell has no top bar since 2026-10-16). Since
+2026-10-17: the active bar item is Material's 56 × 32 dp pill indicator in `primaryContainer`
+behind an `onPrimaryContainer` icon, with no glow; the active rail item is Material's collapsed-rail
+indicator, a 56 × 56 dp circle (with `label = null`, measured on devices) in `secondaryContainer`
+behind an `onSecondaryContainer` icon; inactive icons are `onSurfaceVariant`. Hover shows
+Material's state layer and the label as a plain tooltip (`NavigationItemIcon`: above the glyph in
+the bar, at its end side in the rail). Keyboard focus draws Material's inset focus ring inside the
+indicator, outer stroke `secondary` and inner stroke `onSecondary` (`InsetFocusRing`, provided as
+`LocalRippleThemeConfiguration` by the bar and the rail); the design system's own 2 dp
+`focusRingWidth` ring in `primary` is no longer drawn on these items. No label is drawn; the label
+is the icon's `contentDescription`. Both containers are `surfaceContainerLowest`.
 
 ## 7. Developer view
 

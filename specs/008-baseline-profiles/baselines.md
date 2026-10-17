@@ -146,8 +146,8 @@ section in the tuner journey is unchanged (205 ms). It is a finding to watch in 
 `specs/008-baseline-profiles/screenshots/<width>-<destination>-<build>.png`, 14 pairs. Compact = portrait (412 dp
 wide, bottom bar); expanded = the same phone in landscape (≈891 dp wide, the expanded window class: left rail,
 two panes) because the fold/tablet AVD of feature 005 no longer exists on this Mac and the layouts are driven by
-window size, not device type. Effects and Pads are not navigation destinations yet (the enum holds Home, Timeline,
-Tuner, Metronome, Projects, Profile), so the set is: home, timeline, tuner-autoListen, tuner-byEar-tone (string VI
+window size, not device type. Effects and Pads are not navigation destinations yet (the enum held Home, Timeline,
+Tuner, Metronome, Projects, Profile at the time; Home was removed on 2026-10-17), so the set is: home, timeline, tuner-autoListen, tuner-byEar-tone (string VI
 auditioned), metronome-running-settings (running, settings open), projects, profile.
 
 **Retaken 2026-10-16** (the shell lost its top bar): all 28 images on the Pixel 6 Pro, 28 retaken, 0 left. The `expanded-*` ones were this Pixel held sideways at native density, as before. Debug and perf pairs differ only by

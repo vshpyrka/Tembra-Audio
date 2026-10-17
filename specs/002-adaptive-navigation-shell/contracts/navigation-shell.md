@@ -6,17 +6,19 @@
 
 ```kotlin
 // Destination.kt — the registry (data-model.md §1). Pure data; no Navigation 3 type.
+// Home was the first value until 2026-10-17; the first value is the start destination.
 enum class Destination(
     val id: String, val label: String, val title: String, val icon: TembraIcon,
     val hasSupportingPane: Boolean, val placeholderMessage: String,
-) { Home, Timeline, Tuner, Metronome, Projects, Profile }
+) { Timeline, Tuner, Metronome, Projects, Profile }
 
 // DestinationKey.kt — the only Navigation 3 key. One class, so entryProvider has one entry.
 data class DestinationKey(val destination: Destination) : NavKey
 
 // ShellUiState.kt
-data class ShellUiState(val selected: Destination = Destination.Home) {
-    /** [Home] or [Home, selected]; what NavDisplay renders. */
+val StartDestination: Destination = Destination.entries.first()   // Timeline (2026-10-17)
+data class ShellUiState(val selected: Destination = StartDestination) {
+    /** [start] or [start, selected]; what NavDisplay renders ([Home] / [Home, selected] until 2026-10-17). */
     val backStack: List<Destination>
 }
 
@@ -25,7 +27,7 @@ data class ShellUiState(val selected: Destination = Destination.Home) {
 class ShellViewModel : ViewModel() {
     val uiState: StateFlow<ShellUiState>
     fun select(destination: Destination)      // no-op when already selected (FR-008)
-    fun back(): Boolean                       // true and selected = Home when not on Home; false on Home (FR-010)
+    fun back(): Boolean                       // true and selected = StartDestination elsewhere; false on it (FR-010)
 }
 
 // LayoutMode.kt (data-model.md §3)
@@ -58,10 +60,13 @@ enum class LayoutMode { BottomBar, Rail, RailWithPanel;
 ```
 Column(testTag "nav.shell")                                          no top bar since 2026-10-16 (FR-007 reversed)
 └── NavigationSuiteScaffoldLayout(                                   Material 3 adaptive; places bar vs rail
-        layoutType = BottomBar -> NavigationSuiteType.NavigationBar, else NavigationRail,
+        layoutType = BottomBar -> NavigationSuiteType.ShortNavigationBarCompact, else WideNavigationRailCollapsed,
         navigationSuite = { TembraNavigationBar(...) or TembraNavigationRail(...) })
     └── TembraNavDisplay(backStack, layoutMode, onBack)              Navigation 3 NavDisplay (below)
 ```
+
+The suite types were `NavigationSuiteType.NavigationBar` / `NavigationRail` until 2026-10-17, when the bar and rail
+moved onto Material 3 Expressive's `ShortNavigationBar` and collapsed `WideNavigationRail` (research R4).
 
 The content box pads the safe-drawing top inset (status bar, a desktop window's caption, a top cutout) as well as
 its other sides, and the rail's surface reaches the top edge while its items clear the same inset
@@ -77,7 +82,7 @@ The navigation items are `Destination.entries.map { NavigationItemSpec(it.id, it
 ```kotlin
 NavDisplay(
     backStack = state.backStack.map(::DestinationKey),           // plain List, derived from the ViewModel
-    onBack = onBack,                                             // ViewModel.back(); with [Home] alone NavDisplay does not intercept, so the platform exits (FR-010)
+    onBack = onBack,                                             // ViewModel.back(); with [start] alone NavDisplay does not intercept, so the platform exits (FR-010)
     entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator(), rememberViewModelStoreNavEntryDecorator()),
     sceneStrategies = listOf(SupportingPaneSceneStrategy(enabled = layoutMode == LayoutMode.RailWithPanel)),  // then the built-in single-pane fallback
     transitionSpec = fade, popTransitionSpec = fade, predictivePopTransitionSpec = { fade() },
@@ -93,8 +98,9 @@ NavDisplay(
 
 ```kotlin
 // DestinationContent.kt — exhaustive `when`; adding a destination fails compilation until mapped
+// (the Home -> HomeScreen() branch went with Home on 2026-10-17)
 @Composable fun DestinationContent(destination: Destination) = when (destination) {
-    Home -> HomeScreen(); Timeline -> TimelineScreen(); Tuner -> TunerScreen();
+    Timeline -> TimelineScreen(); Tuner -> TunerScreen();
     Metronome -> MetronomeScreen(); Projects -> ProjectsScreen(); Profile -> ProfileScreen() }
 
 // SupportingPane.kt: enum class SupportingPane { Library }
@@ -114,9 +120,9 @@ stack; ours is about 40 lines and keeps the pane as metadata on one entry (resea
 
 | Package | Composable | Content in this feature | testTag |
 |---|---|---|---|
-| `audio.tembra.ui.home` | `HomeScreen()` | `PlaceholderDestination(Destination.Home)` | `screen.home` |
-| `audio.tembra.ui.home` | `LibraryPane()` | `TembraSupportingPane(title = "Library") { EmptyState("Loops and sounds will appear here.") }` | `chrome.supportingPane` |
-| `audio.tembra.ui.timeline` | `TimelineScreen()` | `PlaceholderDestination(Destination.Timeline)` | `screen.timeline` |
+| `audio.tembra.ui.home` | `HomeScreen()` (deleted 2026-10-17 with Home) | `PlaceholderDestination(Destination.Home)` | `screen.home` |
+| `audio.tembra.ui.home` | `LibraryPane()` (no destination declares it since 2026-10-17) | `TembraSupportingPane(title = "Library") { EmptyState("Loops and sounds will appear here.") }` | `chrome.supportingPane` |
+| `audio.tembra.ui.timeline` | `TimelineScreen()` | `PlaceholderDestination(Destination.Timeline)`; since 2026-10-17, as the start destination, it also calls `ReportFirstContentDrawn(ready = true)` (feature 007), which `HomeScreen` did before | `screen.timeline` |
 | `audio.tembra.ui.tuner` | `TunerScreen()` | placeholder | `screen.tuner` |
 | `audio.tembra.ui.metronome` | `MetronomeScreen()` | placeholder | `screen.metronome` |
 | `audio.tembra.ui.projects` | `ProjectsScreen()` | placeholder | `screen.projects` |
@@ -132,8 +138,8 @@ A later feature replaces one composable in this table and touches nothing else.
 | shell root | `nav.shell` | — |
 | top bar / title | `chrome.topBar` / `chrome.topBar.title` | absent from the shell since 2026-10-16; the component keeps the tags |
 | bottom bar / rail | `chrome.bottomBar` / `chrome.rail` | exactly one of them exists per layout |
-| item | `nav.item.<id>` | role Tab, `selected`, contentDescription = label, focusable, ≥ 44 dp |
-| supporting pane | `chrome.supportingPane` | exists only for `RailWithPanel` + `hasSupportingPane` |
+| item | `nav.item.<id>` | role Tab, `selected`, contentDescription = label, focusable, ≥ 44 dp; since 2026-10-17 Material's `ShortNavigationBarItem` / `WideNavigationRailItem` supply the role, selection and focus (Material's inset focus ring), the label is the icon's `contentDescription` (no label text node) and its hover tooltip |
+| supporting pane | `chrome.supportingPane` | exists only for `RailWithPanel` + `hasSupportingPane` (no destination since 2026-10-17) |
 | destination root | `screen.<id>` | exactly one exists once the transition finished |
 
 ## Back
@@ -143,6 +149,12 @@ then calls `onBack` = `ShellViewModel.back()`; with `[Home]` alone the activity 
 (FR-010). iOS: the same path is driven by the edge-swipe predictive back that Navigation 3
 implements on iOS, so a swipe from the left edge on a non-Home destination returns to Home;
 on Home nothing happens. This is the iOS mirror of FR-010 and is documented in quickstart §1.
+
+Since 2026-10-17 the start destination, Timeline, takes Home's place on both platforms: back (or
+the iOS edge swipe) from any other destination returns to Timeline, and with `[Timeline]` alone
+the Android activity finishes. A hardware keyboard's Escape acts as back on Android while back
+has somewhere to go (`dispatchEscapeAsBack`, a device-matrix fix); on Timeline nothing handles back,
+so Escape is left to Compose and never closes the app.
 
 ## Tests
 
@@ -169,6 +181,22 @@ data-model §3, both directions).
   launch checks in quickstart §1 (a test graph would have to bind the real engine).
 
 `androidDeviceTest` only: `AndroidBackTest` — launch `MainActivity`, tap Tuner, `Espresso.pressBack()` → Home shown; `pressBack()` again → activity finishing.
+
+Amended 2026-10-17: the tests now assert the five-destination shell that starts on Timeline.
+- `commonTest`: `DestinationTest` — five destinations, Timeline first, none with supporting content;
+  `ShellUiStateTest` and `ShellViewModelTest` — start on Timeline, and back returns there;
+  `SupportingPaneSceneStrategyTest` runs on synthetic entry metadata, since no destination declares
+  a pane.
+- `NavigationShellTest` — starts on and shows Timeline in every layout; `RailWithPanel` shows no
+  supporting pane on any destination (`railWithPanelShowsNoPaneOnAnyDestination`); Timeline shows
+  only its title and sentence (`timelineShowsOnlyTitleAndSentence`); the items show no text in the
+  bar or the rail and each item's description is its label
+  (`navigationItemsShowIconsWithoutLabelsInBothLayouts`); the back, transition and reduce-motion
+  cases use Timeline.
+- Device tests: `AndroidBackTest` and `EscapeAsBackTest` (`escapeReturnsToTimelineAndStaysThere`)
+  return to `screen.timeline`; `ReportFirstContentDrawnTest` checks `TimelineScreen`
+  (`timelineReportsAtOnce`).
+- The bar and rail tests: contracts/design-system-additions.md, Tests.
 
 Manual (quickstart §3–§5): live resize on foldable/desktop-mode, iPad multitasking, hover
 colour, screen reader announcements, screenshots.
