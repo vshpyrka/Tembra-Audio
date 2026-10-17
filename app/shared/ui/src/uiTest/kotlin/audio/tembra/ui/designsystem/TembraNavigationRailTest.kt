@@ -35,6 +35,7 @@ import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.dp
 import audio.tembra.ui.theme.TembraTheme
+import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -115,6 +116,19 @@ class TembraNavigationRailTest {
     fun fitsFiveItemsWithLargeFonts() = runComposeUiTest {
         setRail(fontScale = 2f)
         assertFiveItemsFitWithinTheRail()
+    }
+
+    /** The items sit in the middle of the rail's width, not at its start edge (an iPad capture showed them flush left). */
+    @Test
+    fun itemsAreCentredInTheRail() = runComposeUiTest {
+        setRail()
+        val rail = onNodeWithTag("chrome.rail").getUnclippedBoundsInRoot()
+        val railCentre = (rail.left + rail.right) / 2
+        for (item in fiveNavigationItems) {
+            val bounds = onNodeWithTag("nav.item.${item.id}").getUnclippedBoundsInRoot()
+            val itemCentre = (bounds.left + bounds.right) / 2
+            assertTrue(abs((itemCentre - railCentre).value) < 0.5f, "${item.id} is centred at $itemCentre, the rail at $railCentre")
+        }
     }
 
     /** A phone held sideways leaves the rail less height than its items need: they scroll, and the last stays reachable. */
