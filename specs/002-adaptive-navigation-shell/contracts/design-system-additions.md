@@ -10,8 +10,8 @@
 enum class TembraIcon(internal val resource: DrawableResource) {
     Home(Res.drawable.ic_home_24),              // removed with ic_home_24.xml on 2026-10-17, when Home left the navigation
     Timeline(Res.drawable.ic_graphic_eq_24),
-    Tuner(Res.drawable.ic_music_note_24),
-    Metronome(Res.drawable.ic_av_timer_24),
+    Tuner(Res.drawable.ic_music_note_24),       // ic_tuning_fork_24 since 2026-10-17 (the project's own glyph)
+    Metronome(Res.drawable.ic_av_timer_24),     // ic_metronome_24 since 2026-10-17 (the project's own glyph); ic_av_timer_24.xml deleted
     Projects(Res.drawable.ic_folder_24),
     Profile(Res.drawable.ic_person_24),
 }
@@ -31,6 +31,15 @@ Files: `shared/ui/src/commonMain/composeResources/drawable/ic_<glyph>_24.xml`, p
 attribute, and writes a header comment with the source path, commit and licence. The script is
 idempotent and is the only sanctioned way to add a glyph.
 
+Amended 2026-10-17: the Tuner and Metronome navigation glyphs are the project's own artwork,
+not Material Symbols (research R6): `app/tools/make-nav-glyphs.py [--preview <dir>]` writes
+`ic_tuning_fork_24.xml` and `ic_metronome_24.xml` (stroked paths on the 24 dp grid, 2 dp strokes,
+round joins, flat ends, a literal `#FFFFFFFF` stroke that `Icon` tints, a header naming the
+generator) and the Android notification's `ic_stat_metronome.xml`; `--preview` adds an HTML and
+SVG preview sheet. Those two files are regenerated with that script, never edited by hand; the
+fetch script stays the way to add a Material Symbols glyph. `ic_av_timer_24.xml` is deleted, and
+`ic_music_note_24.xml` stays for `TembraIcon.MusicNote` (the tuner's preset picker).
+
 Licence inventory: one row "Material Symbols Outlined glyphs (`composeResources/drawable/ic_*_24.xml`)",
 version = the pinned commit `27e9ef1dbeedc13d682fece4a58e1eda4cb0961a` (master, 2026-09-18; the
 repository has no usable release tag), Apache-2.0, source
@@ -38,7 +47,9 @@ repository has no usable release tag), Apache-2.0, source
 `composeResources/files/LICENSE-MaterialSymbols.txt`. Resource file names must match
 `[a-z0-9_]+` and sit directly in `drawable/` (the resource generator does not descend into
 subfolders); the accessor is `Res.drawable.ic_home_24` (that glyph was deleted on 2026-10-17; the
-pattern holds for the others, for example `Res.drawable.ic_graphic_eq_24`).
+pattern holds for the others, for example `Res.drawable.ic_graphic_eq_24`). The licence row does
+not cover `ic_tuning_fork_24.xml` and `ic_metronome_24.xml`, which are the project's own artwork
+(2026-10-17) and need no row.
 
 ## Motion (FR-008)
 
@@ -204,4 +215,6 @@ the JetBrains port of 1.5.0-alpha22. The tuner's `NoiseGateSlider` and the metro
   label as a tooltip (`hoverShowsTheLabelAsATooltip`); and a 240 dp tall rail scrolls to its last
   item (`aShortRailScrollsToItsLastItem`). `ChromeMetricsTest` pins `topBarHeight`,
   `supportingPaneWidth` and `focusRingWidth` only; `IconAssetsTest` no longer lists
-  `ic_home_24.xml`.
+  `ic_home_24.xml` or `ic_av_timer_24.xml`, and checks that `ic_tuning_fork_24.xml` and
+  `ic_metronome_24.xml` name their generator in the header and are white strokes
+  (`navGlyphsNameTheirGeneratorAndAreWhiteStrokes`).

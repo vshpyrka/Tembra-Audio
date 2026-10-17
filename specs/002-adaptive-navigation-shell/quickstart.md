@@ -109,6 +109,9 @@ and the content spans the width. Rotate a phone to landscape on Home: rail, no p
 ## 6. Icons and fonts in the shared design system (User Story 5)
 
 - Compare the five glyphs (six until 2026-10-17) on both platforms at the same size: they are the same vector files.
+  Since 2026-10-17 Tuner is a hand-drawn tuning fork and Metronome a hand-drawn pyramid metronome (the project's own
+  glyphs on the Material Symbols grid); regenerate them with `python3 app/tools/make-nav-glyphs.py`, and add
+  `--preview <dir>` to write a preview sheet.
 - Confirm `app/THIRD_PARTY_LICENSES.md` lists "Material Symbols (google/material-design-icons)"
   with the commit and Apache-2.0, and still lists Space Grotesk and Inter.
 - Grep the shell for literal visual values: `grep -rnE '\b[0-9]+\.(dp|sp)\b|Color\(0x' app/shared/ui/src/commonMain/kotlin/audio/tembra/ui/{navigation,designsystem}` returns nothing (all values come from `TembraTheme`).

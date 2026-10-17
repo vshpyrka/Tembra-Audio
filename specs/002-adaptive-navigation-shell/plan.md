@@ -148,7 +148,8 @@ app/
 └── shared/ui/
     ├── build.gradle.kts                            + the four dependencies in commonMain
     ├── src/commonMain/composeResources/
-    │   ├── drawable/ic_{home,graphic_eq,music_note,av_timer,folder,person}_24.xml     normalised Material Symbols Outlined glyphs (ic_home_24 removed 2026-10-17)
+    │   ├── drawable/ic_{home,graphic_eq,music_note,av_timer,folder,person}_24.xml     normalised Material Symbols Outlined glyphs (ic_home_24 removed 2026-10-17;
+    │   │       on 2026-10-17 ic_av_timer_24 was deleted and Tuner / Metronome moved to the project's own ic_tuning_fork_24 / ic_metronome_24, written by tools/make-nav-glyphs.py)
     │   └── files/LICENSE-MaterialSymbols.txt
     ├── src/commonMain/kotlin/audio/tembra/ui/
     │   ├── App.kt                                  App(appGraph, developerView = DeveloperViewRequest(null)); AppContent.kt (graph-free branch)

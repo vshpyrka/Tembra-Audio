@@ -205,6 +205,7 @@ app/
 │   ├── src/main/kotlin/audio/tembra/android/ AndroidAppGraph.kt (+ AndroidBackgroundPlaybackHost, SoundFilePickerHost, AndroidSoundFilePicker), MainActivity.kt (OpenDocument launcher attach/detach; "tembra.metronome.syncopation" extra in debug),
 │   │                                          MetronomeForegroundService.kt, AndroidBackgroundPlaybackHost.kt, SoundFilePickerHost.kt, AndroidSoundFilePicker.kt
 │   ├── src/main/res/drawable/ic_stat_metronome.xml, res/values/strings.xml (channel and notification text)
+│   │       (ic_stat_metronome was the av_timer path; since 2026-10-17 the hand-drawn metronome glyph, written by tools/make-nav-glyphs.py)
 │   └── src/androidTest/kotlin/audio/tembra/android/AndroidBackgroundPlaybackHostTest.kt
 └── iosApp/iosApp/Info.plist                          + UIBackgroundModes [audio]; ContentView.swift reads --tembra-metronome-syncopation= in #if DEBUG
 ```

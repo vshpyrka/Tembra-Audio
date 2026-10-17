@@ -30,7 +30,7 @@ behaviour used in the requirements and success criteria.
 | "TAP TEMPO" wide button with a touch glyph and the caption "Sync Finger Rhythm" | All three screens | **Kept** (FR-015 to FR-017) |
 | Round rose play button (titled "Start Metronome" in landscape) | All three screens | **Kept**; it becomes the pause button while the click runs (FR-011) |
 | Bottom bar with six items (Timeline, Tuner, Metronome, Effects, Pads, Projects); landscape rail with Home, Timeline, Tuner, Metronome, Projects, Profile; tablet rail with Timeline, Tuner, Effects, Pads, Remote, Projects and no Metronome item; tablet top bar with menu, logo, project name, help, cloud sync, share and avatar | Vary between screens | **Excluded**: the navigation and its items were decided in feature 002 and are not changed here |
-| Metronome glyph: a speedometer in the phone bottom bar, a clock in the landscape rail | Two screens, two different glyphs | **Excluded**: feature 002 chose the navigation glyph; the two screens do not agree on another |
+| Metronome glyph: a speedometer in the phone bottom bar, a clock in the landscape rail | Two screens, two different glyphs | **Excluded**: feature 002 chose the navigation glyph; the two screens do not agree on another. Since 2026-10-17 the navigation shows the project's own pyramid metronome glyph (feature 002, FR-016 amended), and the notification's status-bar icon is the same glyph |
 | Transport bar | On none of the three screens | **Excluded**, as for the tuner |
 
 Export artefacts to be aware of: the tablet `index.html` carries the title "TEMBRA - Instrument
@@ -788,7 +788,9 @@ and the picker with the platform screen reader.
 - **Design copy.** The captions "Common & Complex" and "Sync finger rhythm" are kept as the
   design's labels; casing follows the design system's label style, which the plan verifies.
 - **Navigation glyph.** Feature 002 chose the Metronome glyph; the two metronome screens show
-  two different ones, so neither replaces it.
+  two different ones, so neither replaces it. (Amended 2026-10-17: the owner replaced feature
+  002's timer glyph with a hand-drawn pyramid metronome, the project's own artwork, which the
+  background notification's status-bar icon also uses; this feature's screens are unchanged.)
 - **Layout.** No right-hand panel and no transport bar, as for the tuner. The compact column
   scrolls with the Tap Tempo and play row pinned so the click can always be started and stopped;
   the medium band (600 to 839 dp) follows the compact rules; the phone-landscape layout follows

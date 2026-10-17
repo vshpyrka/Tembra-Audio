@@ -608,3 +608,80 @@ bar, are from the first build.
 | `iphone-duo-open-sideways-{off,below,above}` | retaken (build with 41fffa2): Device Hub Open, inner display | no |
 | `iphone-duo-open-upright-{off,below,above}` | retaken (build with 41fffa2): Open, then one Rotate Right | no |
 | `iphone-duo-remembered-devicehub` (726 × 816) | retaken (build with 41fffa2): Duo closed, upright, stored gate −62 dB, launched with `e2-55db` and no gate argument. Device Hub's window was set to 1227 × 800 pt, captured with `screencapture -x -o -l 3880` and cropped at (1117, 400), 726 × 816. Rail matching puts the display at (117.7, 47.9) at 0.354 scale, as in the existing image. The window was put back to 1227 × 848. | no |
+
+## Recaptured 2026-10-17 (2): hand-drawn Tuner and Metronome glyphs (Android)
+
+The Tuner and Metronome navigation items now show hand-drawn glyphs, a tuning fork with a sound arc on each side and a
+pyramid metronome, instead of Material's music_note and av_timer (branch `experiment/nav-glyphs`, 041819b). All 32
+Android captures were retaken under the same names, on the same targets and in the same states as the morning's pass,
+from the debug APK built from HEAD 2a5d7dc (`:androidApp:assembleDebug` through the gradle-run wrapper), with
+RECORD_AUDIO and POST_NOTIFICATIONS granted by `pm grant`.
+
+### Android, Pixel 6 Pro (15 retaken, 0 left)
+
+Pixel 6 Pro `19021FDEE001AH` (Android 17), fresh install (stored gate Off), `adb exec-out screencap -p`. Every capture
+was compared with the committed one pixel by pixel (threshold 40/255, status bar excluded): outside the bar or rail
+they are identical. Four first captures (`upright-off`, `turn-3-upright`, `upright-largest-font-scrolled`,
+`sideways-largest-font`) had caught the IN TUNE pill's dot in another phase of its pulse and were retaken by taking
+frames until the content matched the committed image outside the navigation.
+
+| File | How | Differs beyond the two glyphs |
+|---|---|---|
+| `pixel-6-pro-{upright,sideways}-{off,below,above}.png` | retaken with `tools/capture-noise-gate.sh --android 19021FDEE001AH --name pixel-6-pro --orientation upright|sideways --out <scratch>`; its layout check passed all six times (upright control (122, 2581, 1288, 2735), sideways (603, 692, 1351, 846), as in the morning) | no |
+| `pixel-6-pro-turn-{1-upright,2-sideways,3-upright}.png` | retaken: `e2-45db`, −50, upright → `wm user-rotation lock 1` → `lock 0` | no |
+| `pixel-6-pro-upright-keyboard-focus.png` | retaken: `e2-45db`, gate off, `KEYCODE_TAB` × 5; the dump showed `tuner.noiseGate.slider` focused | no |
+| `pixel-6-pro-upright-largest-font.png`, `-scrolled.png` | retaken: font 2.0, `e2-45db`, −50; then a swipe up on the card | no |
+| `pixel-6-pro-sideways-largest-font.png` | retaken: font 2.0, rotation 1 | no |
+| `pixel-6-pro-live-background-gated.png` | retaken under the speaker lock: portrait, no test signal, `noiseGate -68`; quickstart §5's 196 Hz tone (`tembra-g3.wav`) from the MacBook at `afplay -v 0.25`, output volume 50 % (31 % before and after). Quiet room first: the room was not quiet this time (three of four frames showed a fill at −67 to −76 dB and a passing note), so the background was louder than in the morning. Background B, gate off: −73.6 to −73.2 dB, G3 named (one frame −60.5 dB from a room sound). Behind the gate: 12 of 12 resting, fill held back at −73.4 to −71.8 dB; capture 6 kept (−73.3 dB) | no: same picture (Listening, handle at −68 dB, grey fill short of it); the fill ends about 1 dB further right than in the morning's capture (−73.3 against −74.3 dB) |
+| `pixel-6-pro-live-instrument-over-background.png` | the same run: the tone at `-v 1` added; 6 of 6 named G3, 196.0 Hz, in tune, fill read past the handle at −63.8 to −64.8 dB; capture 1 kept (−63.8 dB) | no: same picture; the fill ends 1 dB further right (−63.8 against −64.8 dB) |
+
+### Android, Pixel 9 Pro Fold emulator (17 retaken, 0 left)
+
+Target `emulator-5554` (Android 16), inner display `4619827259835644672`, the same debug APK installed with
+`adb install -r -t` over the existing install. Initial state, restored at the end: `device_state` 2 with no override,
+`accelerometer_rotation 1`, `user_rotation 0`, font 1.0, no `wm size` override; the app left on Timeline with guitar,
+6-String, Auto Listen, gate Off. Postures: flat = state 2 + rotation 0; flat sideways = state 2 + rotation 1;
+tabletop = state 1 + rotation 1; book = state 1 + rotation 0.
+
+The emulator was far faster than in the morning (median frame 65 ms against 1500 ms) and `uiautomator dump` worked on
+the static screens again. The launches were scripted as in the morning (force-stop, `am start --es
+tembra.tuner.testSignal <id> --es tembra.tuner.noiseGate <gate>`), and each capture is the first of up to 15 frames
+that matched the morning's verified capture outside the rail (status bar and gesture handle excluded). A first run
+showed By Ear in every frame: feature 005's captures had left the tuner in By Ear, and a test-signal launch keeps the
+stored mode. Auto Listen was tapped and the run repeated. Fifteen of the seventeen are identical to the committed
+images outside the rail; `cycle-10-flat` and `sideways-above` differ by 11 and 17 px of anti-aliasing at the slider
+handle.
+
+| File | How | Differs beyond the two glyphs |
+|---|---|---|
+| `pixel-9-pro-fold-{upright,sideways,tabletop,book}-{off,below,above}.png` | retaken: off = `e2-in-tune` + gate off, below = `e2-55db` + −50, above = `e2-45db` + −50, in each posture | `upright-off`: needle exactly upright now. The committed frame had it a hair off centre, and the new one matches today's `upright-above` (same reading, 82.4 Hz). The others: no |
+| `pixel-9-pro-fold-cycle-10-{flat,tabletop,book}.png` | retaken: launched flat with `e2-45db` + −50, then flat → tabletop → book ten times (thirty changes, 3 s apart); the tenth cycle's three postures captured | no |
+| `pixel-9-pro-fold-keyboard-focus.png` | retaken: flat, `e2-55db` + −50; `KEYCODE_TAB` with a dump after each: Guitar, Cello, Auto Listen, By Ear, then the slider on the 5th; `KEYCODE_DPAD_RIGHT` × 2: handle at (1156, 1913)–(1263, 2020), −46 dB, as in the morning | no |
+| `pixel-9-pro-fold-remembered.png` | retaken: flat, launched with `e2-45db` and no gate argument, a tap at the slider's middle (x 1145), force-stop, relaunched with `e2-55db` and no gate argument: handle at the middle, "Listening", fill grey and short of it. Afterwards a tap at the track's start (x 664) set Off, which survived a restart | no |
+
+## Recaptured 2026-10-17 (2): hand-drawn Tuner and Metronome glyphs (iOS)
+
+All 33 iOS captures were retaken under the same names, on the same targets and in the same states. The build was Debug,
+made from 041819b (`experiment/nav-glyphs`) with the Xcode 27.1 SDK: Tuner shows a hand-drawn tuning fork and Metronome
+a hand-drawn pyramid metronome.
+
+- **Targets:** iPhone 17 (cello) and iPad Pro 13-inch (M5) (guitar), iOS 26.5; iPhone Duo (guitar), iOS 27.1.
+- **Launches:** off = `e2-in-tune` with the gate off; below = `e2-55db` with −50; above = `e2-45db` with −50. The turns
+  used `e2-45db` with −50, rotated while running. Remembered used the stored gate (iPhone −62 dB, iPad −50 dB) and a
+  launch with `e2-55db` and no gate argument.
+- **Rotation:** the Simulator menu for the iPhone and iPad; Device Hub's Open, Rotate Right and Closed for the Duo,
+  which was put back to Closed and upright.
+- **Check:** each image was compared with the previous one (HEAD) outside the navigation and the status bar.
+
+| File | How | Differs beyond the two glyphs |
+|---|---|---|
+| `iphone-17-upright-{off,below,above}`, `-remembered`, `-turn-1-upright`, `-turn-3-upright` | retaken: portrait | no |
+| `iphone-17-sideways-{off,below,above}`, `-turn-2-sideways` | retaken: Landscape Left | no. The Dynamic Island's black pill, which simctl draws in some captures only, is now in `-above` and `-below` and not in `-off`. |
+| `iphone-17-upright-largest-font` | retaken: largest text size, `e2-45db`, −50; back to `medium` | no |
+| `iphone-17-live-background-gated` | retaken: portrait, cello, real microphone, no test signal. Background B, quickstart §5's tone at output 13 % (`afplay -v 1`), read −51.0 to −49.5 dB (named) with the gate off. With the gate at −40: resting in 20 of 20 captures, muted fill at −51.1 to −50.1 dB; capture 19 kept (−50.1 dB). Volume back to 31. | no (fill to −50.1 dB instead of −50.0) |
+| `iphone-17-live-instrument-over-background` | retaken: same launch, the tone at output 50 %: G3, 196.0 Hz, in tune in 6 of 6 captures at −27.4 dB; capture 6 kept. Volume back to 31. | no (fill to −27.4 dB instead of −27.2) |
+| `ipad-pro-13-upright-{off,below,above}`, `-remembered`, `-turn-1-upright`, `-turn-3-upright` | retaken: portrait | no |
+| `ipad-pro-13-sideways-{off,below,above}`, `-turn-2-sideways` | retaken: Landscape Left | `-turn-2-sideways` shows iOS's home indicator at the bottom centre, which the previous one did not; the rest no |
+| `iphone-duo-closed-upright-{off,below,above}` | retaken: Duo closed, upright, outer display | no |
+| `iphone-duo-open-sideways-{off,below,above}`, `iphone-duo-open-upright-{off,below,above}` | retaken: Open (inner display), then one Rotate Right | `iphone-duo-open-upright-off` shows iOS's home indicator at the bottom; the rest no |
+| `iphone-duo-remembered-devicehub` (726 × 816) | retaken: Duo closed, upright, stored gate −62 dB, `e2-55db`. Device Hub window at 1227 × 800 pt, `screencapture -o -l 3880`, cropped at (1117, 400). The display sits at (117.7, 47.9) at 0.354 scale, as before. Window back to 1227 × 848. | no |

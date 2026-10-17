@@ -356,3 +356,74 @@ came from the stored preferences (restored afterwards) and the debug launch argu
 | `ios-iphone17-autolisten.png` | retaken: iPhone 17 portrait, guitar, `e2-flat-20`, gate off | no |
 | `ios-ipadpro-autolisten.png` | retaken (build with 41fffa2): iPad Pro 13-inch (M5) portrait, cello, `e2-flat-20`, gate off | no |
 | `ios-ipadpro-d2-byear.png` | retaken (build with 41fffa2): iPad Pro portrait, guitar, 6-String, By Ear | no |
+
+## Recaptured 2026-10-17 (2): hand-drawn Tuner and Metronome glyphs (Android)
+
+The Tuner and Metronome navigation items now show hand-drawn glyphs, a tuning fork with a sound arc on each side and a
+pyramid metronome, instead of Material's music_note and av_timer (branch `experiment/nav-glyphs`, 041819b). All 30
+Android captures were retaken under the same names, on the same targets and in the same states as the morning's pass.
+Builds: the debug APK from HEAD 2a5d7dc (`:androidApp:assembleDebug` through the gradle-run wrapper), installed with
+`adb install -r -t`.
+
+Pixel 6 Pro `19021FDEE001AH` (Android 17): fresh install, permissions granted with `pm grant`,
+`adb exec-out screencap -p`, UiAutomator taps.
+
+Pixel 9 Pro Fold emulator `emulator-5554` (Android 16), inner display `4619827259835644672` (`screencap -p -d …`;
+anything printed before the PNG signature is stripped). Postures as before: tabletop = `cmd device_state state 1` +
+rotation 1; book = state 1 + rotation 0; book at 180° = state 1 + `user_rotation 2`; flat = state 2 + rotation 0; flat
+sideways = state 2 + rotation 1. Initial state, restored at the end: `device_state` 2 with no override,
+`accelerometer_rotation 1`, `user_rotation 0`, font 1.0, no `wm size` override; the app's preferences back to guitar,
+6-String, Auto Listen, gate Off and the metronome at 4/4, 120 BPM, and the app left on Timeline. The emulator was much
+faster than in the morning (65 ms median frame, against 1500 ms), and every capture was made as the first of up to
+4–25 frames that matched the committed image outside the rail (status bar and gesture handle excluded), so test-signal
+readings and the lit beat were checked against the committed pictures rather than by eye alone.
+
+### Android, Pixel 6 Pro (4 retaken, 0 left)
+
+| File | How | Differs beyond the two glyphs |
+|---|---|---|
+| `android-pixel6pro-autolisten.png` | retaken: portrait, `e2-flat-20` | no |
+| `android-pixel6pro-byear.png`, `android-pixel6pro-d2-byear.png` | retaken: portrait, By Ear, 6-String | no |
+| `android-pixel6pro-metronome.png` | retaken: portrait, Metronome stopped | no |
+
+### Android, Pixel 9 Pro Fold emulator (26 retaken, 0 left)
+
+Twenty of the twenty-six are identical to the committed images outside the rail (0 px differ). The other six are
+test-signal captures whose needle sits at a slightly different angle from the committed frame; the readout is the same
+in each (82.4 Hz in tune, or 81.5 Hz flat). In four of them the new frame matches today's sibling captures of the same
+state pixel for pixel, and it was the committed image that had been taken a frame early or late:
+
+| File | How | Differs beyond the two glyphs |
+|---|---|---|
+| `android-fold-tabletop-home-before.png` | retaken: tabletop, Timeline | no |
+| `android-fold-tabletop-metronome.png`, `-metronome-r1.png` | retaken: tabletop, Metronome stopped, 120, 4/4 | no |
+| `android-fold-tabletop-autolisten-r1.png` | retaken: tabletop, `e2-in-tune` + gate off | needle exactly upright now; the committed frame showed it a hair off centre. The new meter is identical to 006's `pixel-9-pro-fold-tabletop-off` / `-above` / `cycle-10-tabletop` (same state) |
+| `android-fold-tabletop-byear-r1.png`, `-byear.png` | retaken: By Ear tapped in the same launch | no |
+| `android-fold-tabletop-autolisten.png` | retaken: tabletop, `e2-flat-20` | needle angle: the new frame is identical to the new `android-fold-d1-tabletop-autolisten` (same reading, 81.5 Hz); the committed one leaned further |
+| `android-fold-d1-tabletop-autolisten.png`, `-d1-tabletop-byear.png` | retaken: Cello tapped; then By Ear | no |
+| `android-fold-tabletop-byear-largefont.png` | retaken: font 2.0, By Ear | no |
+| `android-fold-tabletop-autolisten-largefont.png` | retaken: font 2.0, `e2-flat-20` | needle a few pixels off (458 px); same reading, 81.5 Hz |
+| `android-fold-tabletop-metronome-largefont.png` | retaken: font 2.0, 122 BPM | no |
+| `android-fold-d1-tabletop-metronome.png` | retaken: font 1.0, 6/8, 122 BPM | no |
+| `android-fold-book-autolisten.png` | retaken: book, `e2-flat-20` | needle angle: the new frame is identical to the new `android-fold-d3-book-autolisten` (the same state, as the earlier notes say); the committed pair differed from each other |
+| `android-fold-d3-book-autolisten.png` | retaken: same launch | no (1 px) |
+| `android-fold-d3-book-autolisten-before-heading.png` | retaken: book, `e2-flat-20` + gate off | needle angle as above: identical to the new `d3-book-autolisten` |
+| `android-fold-d3-book-byear7.png`, `android-fold-d2-book-byear-cello-before.png` | retaken: book, By Ear 7-String; then 6-String, Cello | no |
+| `android-fold-d1-book-metronome-hinge.png`, `-d1-book-topbar-gap-before.png` | retaken: book (and at 180°), Metronome, 6/8, 122 BPM | no |
+| `android-fold-d2-flat-byear-cello.png`, `-d2-flat-byear7.png` | retaken: flat, cello; then guitar 7-String | no |
+| `android-fold-d2-flat-byear7-short.png`, `-short-before.png` | retaken: flat, `wm size 2076x1700`, then `wm size reset` | no |
+| `android-fold-tabletop-metronome-running.png` | retaken: 4/4 at 122 BPM started in tabletop, ten `device_state 2` / `1` changes 1.2 s apart (rotation 1), beat 1 caught (frame 18) | no |
+| `android-fold-flat-metronome-running.png` | retaken: then `device_state 2`, still running, beat 3 caught (frame 3); stopped, "−" twice back to 120 | no |
+
+## Recaptured 2026-10-17 (2): hand-drawn Tuner and Metronome glyphs (iOS)
+
+The three iOS captures were retaken under the same names, on the same simulators and in the same states. The build was
+Debug, made from 041819b (`experiment/nav-glyphs`) with the Xcode 27.1 SDK: Tuner shows a hand-drawn tuning fork and
+Metronome a hand-drawn pyramid metronome. Each image was compared with the previous one (HEAD) outside the navigation
+and the status bar.
+
+| File | How | Differs beyond the two glyphs |
+|---|---|---|
+| `ios-iphone17-autolisten.png` | retaken: iPhone 17 portrait, guitar, `e2-flat-20`, gate off | no |
+| `ios-ipadpro-autolisten.png` | retaken: iPad Pro 13-inch (M5) portrait, cello, `e2-flat-20`, gate off | no |
+| `ios-ipadpro-d2-byear.png` | retaken: iPad Pro portrait, guitar, 6-String, By Ear | no |
