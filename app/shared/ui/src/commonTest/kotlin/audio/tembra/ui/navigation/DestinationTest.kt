@@ -3,23 +3,20 @@ package audio.tembra.ui.navigation
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-/** The registry of data-model.md §1 (spec FR-002, FR-011, FR-013). */
+/** The registry of data-model.md §1 (spec FR-002, FR-011, FR-013); Home was removed on 2026-10-17. */
 class DestinationTest {
 
     @Test
-    fun containsExactlySixDestinationsInDisplayOrder() {
+    fun containsExactlyFiveDestinationsInDisplayOrder() {
         assertEquals(
-            listOf(
-                Destination.Home, Destination.Timeline, Destination.Tuner,
-                Destination.Metronome, Destination.Projects, Destination.Profile,
-            ),
+            listOf(Destination.Timeline, Destination.Tuner, Destination.Metronome, Destination.Projects, Destination.Profile),
             Destination.entries.toList(),
         )
     }
 
     @Test
     fun idsAreStableLowercaseIdentifiers() {
-        assertEquals(listOf("home", "timeline", "tuner", "metronome", "projects", "profile"), Destination.entries.map { it.id })
+        assertEquals(listOf("timeline", "tuner", "metronome", "projects", "profile"), Destination.entries.map { it.id })
     }
 
     @Test
@@ -32,20 +29,19 @@ class DestinationTest {
 
     @Test
     fun idsLabelsAndTitlesAreUnique() {
-        assertEquals(6, Destination.entries.map { it.id }.distinct().size)
-        assertEquals(6, Destination.entries.map { it.label }.distinct().size)
-        assertEquals(6, Destination.entries.map { it.title }.distinct().size)
+        assertEquals(5, Destination.entries.map { it.id }.distinct().size)
+        assertEquals(5, Destination.entries.map { it.label }.distinct().size)
+        assertEquals(5, Destination.entries.map { it.title }.distinct().size)
     }
 
     @Test
-    fun onlyHomeHasSupportingContent() {
-        assertEquals(listOf(Destination.Home), Destination.entries.filter { it.hasSupportingPane })
+    fun noDestinationHasSupportingContentSinceHomeWasRemoved() {
+        assertEquals(emptyList(), Destination.entries.filter { it.hasSupportingPane })
     }
 
     @Test
     fun placeholderMessagesAreTheAgreedSentences() {
         val expected = mapOf(
-            Destination.Home to "This is your starting point in Tembra Audio.",
             Destination.Timeline to "The timeline arranger arrives with the transport and timeline feature.",
             Destination.Tuner to "The instrument tuner arrives with the tuner feature.",
             Destination.Metronome to "The metronome arrives with the metronome feature.",

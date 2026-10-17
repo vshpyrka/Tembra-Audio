@@ -11,6 +11,8 @@ description: "Task list for feature 002: adaptive navigation shell and Home"
 
 **Amended 2026-10-16**: the shell no longer composes `TembraTopBar` (spec FR-007 reversed at the owner's request); the tasks below that build and wire it are kept as the record of what was done, and the component and its test remain.
 
+**Amended 2026-10-17**: at the owner's decision Home is removed (spec FR-011, FR-012 and User Story 3 reversed; the app opens on Timeline, the first of five destinations, and back returns there), the navigation items are icon-only with the label as the icon's accessible name (FR-003 reversed), and `TembraNavigationBar` / `TembraNavigationRail` wrap Material 3 Expressive's `ShortNavigationBar` and collapsed `WideNavigationRail` with Material's own sizes (FR-019 amended; research R4 reversed), so the seven bar and rail tokens of T010 and T017 are removed and the drawing of T037 and T038 is replaced. The tasks below that build Home, its Library pane, the six labelled items and the 64 dp geometry are kept as the record of what was done; the work of the amendment is described in the spec's Session 2026-10-17 and in plan.md's amended Summary, not as new tasks here.
+
 **Tests**: Required. Constitution III (test-first, non-negotiable) and spec FR-020: every implementation task is preceded by the test that fails without it. Run a lane after each group: `cd app && ./gradlew checkAndroidHost` (JVM), `./gradlew checkIos` (simulator), `./gradlew checkAndroidDevice` (device), always with `--warning-mode all`.
 
 **Organization**: Tasks are grouped by user story so each story is an independently testable increment. Setup and foundational phases hold the shared tokens every story needs.

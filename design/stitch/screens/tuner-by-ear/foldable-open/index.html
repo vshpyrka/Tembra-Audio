@@ -20,14 +20,12 @@ html,body{width:852px;height:883px;overflow:hidden}
 body{background:#0e0e11;color:#e4e1e6;font-family:'Space Grotesk',sans-serif;position:relative}
 .material-symbols-outlined{font-family:'Material Symbols Outlined';font-weight:300;font-style:normal;font-size:24px;line-height:1;display:inline-block;white-space:nowrap;-webkit-font-smoothing:antialiased;font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 24}
 .material-symbols-outlined.fill{font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24}
-.rail{position:absolute;left:0;top:0;width:64px;bottom:0;background:#0e0e11;display:flex;flex-direction:column;align-items:center;padding-top:63px}
-.ritem{width:48px;height:47px;margin-bottom:4px;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#cac4d4}
-.ritem .material-symbols-outlined{font-size:22px}
+.rail{position:absolute;left:0;top:0;width:96px;bottom:0;background:#0e0e11;display:flex;flex-direction:column;align-items:center;gap:4px;padding-top:97px}
+.ritem{width:56px;height:56px;border-radius:28px;display:flex;align-items:center;justify-content:center;color:#cac4d4}
+.ritem .material-symbols-outlined{font-size:24px;font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24}
 .ritem.sel{background:#85145a;color:#ff93c8}
-.ritem.sel .rlabel{font-weight:600}
-.rlabel{font-size:10px;font-weight:500;letter-spacing:.04em;line-height:12px}
-.content{position:absolute;left:64px;top:0;right:0;bottom:0;background:#131316}
-.panel{position:absolute;left:79px;width:740px;top:121px;height:704px;border-radius:24px;border:1px solid #1f1a24;
+.content{position:absolute;left:96px;top:0;right:0;bottom:0;background:#131316}
+.panel{position:absolute;left:111px;width:708px;top:121px;height:704px;border-radius:24px;border:1px solid #1f1a24;
   background:radial-gradient(120% 110% at 50% 50%,#1a1622 0%,#151219 55%,#120e13 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.02)}
 .scard{position:absolute;width:172px;height:172px;background:#0e0e11;border:1px solid #1f1e24;border-radius:16px;padding:14px 13px 16px 13px;display:flex;flex-direction:column;justify-content:space-between}
 .roman{font-size:11px;font-weight:500;color:#948e9d;letter-spacing:.02em}
@@ -42,18 +40,17 @@ body{background:#0e0e11;color:#e4e1e6;font-family:'Space Grotesk',sans-serif;pos
 </style>
 </head>
 <body>
-  <nav class="rail" aria-label="Primary">
-      <div class="ritem"><span class="material-symbols-outlined">home</span><span class="rlabel">Home</span></div>
-      <div class="ritem"><span class="material-symbols-outlined">graphic_eq</span><span class="rlabel">Timeline</span></div>
-      <div class="ritem sel"><span class="material-symbols-outlined fill">music_note</span><span class="rlabel">Tuner</span></div>
-      <div class="ritem"><span class="material-symbols-outlined">timer</span><span class="rlabel">Metronome</span></div>
-      <div class="ritem"><span class="material-symbols-outlined">folder</span><span class="rlabel">Projects</span></div>
-      <div class="ritem"><span class="material-symbols-outlined">person</span><span class="rlabel">Profile</span></div>
+  <nav class="rail" aria-label="Primary" data-purpose="navigation-rail">
+      <a class="ritem" href="#" aria-label="Timeline"><span class="material-symbols-outlined">graphic_eq</span></a>
+      <a class="ritem sel" href="#" aria-label="Tuner" aria-current="page"><span class="material-symbols-outlined">music_note</span></a>
+      <a class="ritem" href="#" aria-label="Metronome"><span class="material-symbols-outlined">av_timer</span></a>
+      <a class="ritem" href="#" aria-label="Projects"><span class="material-symbols-outlined">folder</span></a>
+      <a class="ritem" href="#" aria-label="Profile"><span class="material-symbols-outlined">person</span></a>
   </nav>
   <div class="content"></div>
 
   <!-- Selector row -->
-  <div class="seg" style="left:79px;top:66px;width:165px;height:39px;background:#0e0e11">
+  <div class="seg" style="left:111px;top:66px;width:165px;height:39px;background:#0e0e11">
     <button style="background:#85145a;color:#ff93c8;font-size:13px">Guitar</button>
     <button>Cello</button>
   </div>
@@ -64,11 +61,11 @@ body{background:#0e0e11;color:#e4e1e6;font-family:'Space Grotesk',sans-serif;pos
 
   <!-- By Ear card -->
   <section class="panel" aria-label="By Ear">
-    <div class="seg" style="left:87px;top:23px;width:122px;height:31px;background:#1b1b1e;padding:2px;border-radius:9px">
+    <div class="seg" style="left:71px;top:23px;width:122px;height:31px;background:#1b1b1e;padding:2px;border-radius:9px">
       <button style="font-size:11.5px;color:#cac4d4">6-String</button>
       <button style="background:#2a2a2d;color:#cebdff;font-size:11.5px;border-radius:7px">7-String</button>
     </div>
-    <div class="box flex items-center" style="left:217px;top:16px;width:290px;height:45px;padding:0 14px 0 12px">
+    <div class="box flex items-center" style="left:201px;top:16px;width:290px;height:45px;padding:0 14px 0 12px">
       <span class="material-symbols-outlined fill" style="color:#cebdff;font-size:22px">music_note</span>
       <div class="flex flex-col ml-[8px] flex-1 min-w-0">
         <span style="font-size:11px;font-weight:500;letter-spacing:.04em;color:#948e9d;text-transform:uppercase;line-height:14px">Tuning Preset</span>
@@ -76,13 +73,13 @@ body{background:#0e0e11;color:#e4e1e6;font-family:'Space Grotesk',sans-serif;pos
       </div>
       <span class="material-symbols-outlined" style="color:#948e9d;font-size:20px;margin-left:8px">expand_more</span>
     </div>
-    <div class="box flex items-center justify-between" style="left:515px;top:11px;width:137px;height:54px;padding:0 16px 0 11px">
+    <div class="box flex items-center justify-between" style="left:499px;top:11px;width:137px;height:54px;padding:0 16px 0 11px">
       <div class="flex flex-col">
         <span style="font-size:11px;font-weight:600;letter-spacing:.04em;color:#ff93c8;text-transform:uppercase;line-height:14px">Loop Tone</span>
         <span style="font-size:12px;font-weight:500;color:#e4e1e6;line-height:16px">Active</span>
       </div>
       <div style="width:32px;height:16px;border-radius:8px;background:#ffafd3;position:relative"><div style="position:absolute;right:2px;top:2px;width:12px;height:12px;border-radius:6px;background:#f472b6"></div></div>
     </div>
-    <div class="scard" style="left:91px;top:78px"><div class="flex justify-between items-start"><span class="roman">VII</span><span class="hz">61.7 Hz</span></div><div class="note">B<sub>1</sub></div><button class="aud"><span class="material-symbols-outlined" style="font-size:18px">play_arrow</span>Audition</button></div><div class="scard" style="left:283px;top:78px"><div class="flex justify-between items-start"><span class="roman">VI</span><span class="hz">82.4 Hz</span></div><div class="note">E<sub>2</sub></div><button class="aud"><span class="material-symbols-outlined" style="font-size:18px">play_arrow</span>Audition</button></div><div class="scard" style="left:476px;top:78px"><div class="flex justify-between items-start"><span class="roman">V</span><span class="hz">110.0 Hz</span></div><div class="note">A<sub>2</sub></div><button class="aud"><span class="material-symbols-outlined" style="font-size:18px">play_arrow</span>Audition</button></div><div class="scard" style="left:91px;top:271px"><div class="flex justify-between items-start"><span class="roman">IV</span><span class="hz">146.8 Hz</span></div><div class="note">D<sub>3</sub></div><button class="aud"><span class="material-symbols-outlined" style="font-size:18px">play_arrow</span>Audition</button></div><div class="scard" style="left:283px;top:271px"><div class="flex justify-between items-start"><span class="roman">III</span><span class="hz">196.0 Hz</span></div><div class="note">G<sub>3</sub></div><button class="aud"><span class="material-symbols-outlined" style="font-size:18px">play_arrow</span>Audition</button></div><div class="scard" style="left:476px;top:271px"><div class="flex justify-between items-start"><span class="roman">II</span><span class="hz">246.9 Hz</span></div><div class="note">B<sub>3</sub></div><button class="aud"><span class="material-symbols-outlined" style="font-size:18px">play_arrow</span>Audition</button></div><div class="scard" style="left:283px;top:464px"><div class="flex justify-between items-start"><span class="roman">I</span><span class="hz">329.6 Hz</span></div><div class="note">E<sub>4</sub></div><button class="aud"><span class="material-symbols-outlined" style="font-size:18px">play_arrow</span>Audition</button></div>
+    <div class="scard" style="left:75px;top:78px"><div class="flex justify-between items-start"><span class="roman">VII</span><span class="hz">61.7 Hz</span></div><div class="note">B<sub>1</sub></div><button class="aud"><span class="material-symbols-outlined" style="font-size:18px">play_arrow</span>Audition</button></div><div class="scard" style="left:267px;top:78px"><div class="flex justify-between items-start"><span class="roman">VI</span><span class="hz">82.4 Hz</span></div><div class="note">E<sub>2</sub></div><button class="aud"><span class="material-symbols-outlined" style="font-size:18px">play_arrow</span>Audition</button></div><div class="scard" style="left:460px;top:78px"><div class="flex justify-between items-start"><span class="roman">V</span><span class="hz">110.0 Hz</span></div><div class="note">A<sub>2</sub></div><button class="aud"><span class="material-symbols-outlined" style="font-size:18px">play_arrow</span>Audition</button></div><div class="scard" style="left:75px;top:271px"><div class="flex justify-between items-start"><span class="roman">IV</span><span class="hz">146.8 Hz</span></div><div class="note">D<sub>3</sub></div><button class="aud"><span class="material-symbols-outlined" style="font-size:18px">play_arrow</span>Audition</button></div><div class="scard" style="left:267px;top:271px"><div class="flex justify-between items-start"><span class="roman">III</span><span class="hz">196.0 Hz</span></div><div class="note">G<sub>3</sub></div><button class="aud"><span class="material-symbols-outlined" style="font-size:18px">play_arrow</span>Audition</button></div><div class="scard" style="left:460px;top:271px"><div class="flex justify-between items-start"><span class="roman">II</span><span class="hz">246.9 Hz</span></div><div class="note">B<sub>3</sub></div><button class="aud"><span class="material-symbols-outlined" style="font-size:18px">play_arrow</span>Audition</button></div><div class="scard" style="left:267px;top:464px"><div class="flex justify-between items-start"><span class="roman">I</span><span class="hz">329.6 Hz</span></div><div class="note">E<sub>4</sub></div><button class="aud"><span class="material-symbols-outlined" style="font-size:18px">play_arrow</span>Audition</button></div>
   </section>
 </body></html>

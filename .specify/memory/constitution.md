@@ -182,9 +182,13 @@ specifications technology-free and the test-first loop of Principle III intact.
   Maximilian as references. JUCE, Tracktion, Rubber Band, KFR, Superpowered and élastique are
   forbidden.
 - Design source of truth: `design/stitch/DESIGN.md` and `theme.json`. Primary DAW destinations
-  are Timeline, Tuner, Effects, Pads and Projects; the navigation also carries Home (the start
-  destination), Metronome and Profile. The transport bar is present on every DAW screen. Fonts
-  are Space Grotesk and Inter, bundled; live numbers use tabular figures.
+  are Timeline, Tuner, Effects, Pads and Projects; the navigation also carries Metronome and
+  Profile. Timeline, the first destination, is the start destination. The navigation items show
+  icons only: each item's name is its accessible name and its hover tooltip, and the bar and the
+  rail are the platform design system's standard components, sized by it (amended 2026-10-17:
+  Home, the earlier start destination, is removed and the items lost their visible labels;
+  specs 002, 003, 004, 007 and 008 were amended the same day). The transport bar is present on
+  every DAW screen. Fonts are Space Grotesk and Inter, bundled; live numbers use tabular figures.
 - The Metronome destination is a global, standalone metronome for playing along (amended
   2026-09-29). It runs on its own tempo and settings, kept in the app's preferences, and is not
   part of any recording session, project or timeline session: a project's tempo map never drives
@@ -251,4 +255,4 @@ specifications technology-free and the test-first loop of Principle III intact.
 - `CLAUDE.md` is the runtime guidance file for agents working in this repository; it MUST point
   at this constitution and MUST NOT restate rules in a way that drifts from it.
 
-**Version**: 1.3.0 | **Ratified**: 2026-09-19 | **Last Amended**: 2026-10-08
+**Version**: 1.3.3 | **Ratified**: 2026-09-19 | **Last Amended**: 2026-10-17

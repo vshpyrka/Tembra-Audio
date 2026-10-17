@@ -120,36 +120,11 @@
 
 
 <!-- LEFT NAVIGATION RAIL -->
-<aside class="fixed left-0 top-0 w-16 bg-surface-container-lowest z-40 flex flex-col items-center py-2.5 border-r border-outline-variant/30 shadow-[1px_0_12px_rgba(0,0,0,0.4)] bottom-0">
-<nav class="w-full px-2 flex flex-col gap-2">
-<a class="flex flex-col items-center justify-center py-2 px-1 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="timeline" href="#">
-<span class="material-symbols-outlined text-[22px] mb-0.5">waves</span>
-<span class="font-label-sm text-label-sm">Timeline</span>
-</a>
-<a aria-current="page" class="flex flex-col items-center justify-center py-2 px-1 transition-all group bg-secondary-container text-on-secondary-container font-bold rounded-lg shadow-sm" data-path="tuner" href="#">
-<span class="material-symbols-outlined text-[22px] mb-0.5">graphic_eq</span>
-<span class="font-label-sm text-label-sm">Tuner</span>
-</a>
-<a class="flex flex-col items-center justify-center py-2 px-1 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="effects" href="#">
-<span class="material-symbols-outlined text-[22px] mb-0.5">tune</span>
-<span class="font-label-sm text-label-sm">Effects</span>
-</a>
-<a class="flex flex-col items-center justify-center py-2 px-1 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="pads" href="#">
-<span class="material-symbols-outlined text-[22px] mb-0.5">grid_view</span>
-<span class="font-label-sm text-label-sm">Pads</span>
-</a>
-<a class="flex flex-col items-center justify-center py-2 px-1 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="remote" href="#">
-<span class="material-symbols-outlined text-[22px] mb-0.5">sensors</span>
-<span class="font-label-sm text-label-sm">Remote</span>
-</a>
-<a class="flex flex-col items-center justify-center py-2 px-1 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="projects" href="#">
-<span class="material-symbols-outlined text-[22px] mb-0.5">folder_open</span>
-<span class="font-label-sm text-label-sm">Projects</span>
-</a>
-</nav>
+<aside class="fixed left-0 top-0 bottom-0 w-24 bg-surface-container-lowest z-40 flex flex-col items-center pt-11 pb-2.5" data-purpose="navigation-rail">
+<nav class="w-full flex flex-col items-center gap-1" aria-label="Primary" data-active-classes="rounded-full bg-secondary-container text-on-secondary-container"><a class="w-14 h-14 rounded-full flex items-center justify-center text-on-surface-variant" data-path="timeline" href="#" aria-label="Timeline"><span class="material-symbols-outlined text-[24px] leading-none">waves</span></a><a aria-current="page" class="w-14 h-14 rounded-full flex items-center justify-center bg-secondary-container text-on-secondary-container" data-path="tuner" href="#" aria-label="Tuner"><span class="material-symbols-outlined text-[24px] leading-none">graphic_eq</span></a><a class="w-14 h-14 rounded-full flex items-center justify-center text-on-surface-variant" data-path="effects" href="#" aria-label="Effects"><span class="material-symbols-outlined text-[24px] leading-none">tune</span></a><a class="w-14 h-14 rounded-full flex items-center justify-center text-on-surface-variant" data-path="pads" href="#" aria-label="Pads"><span class="material-symbols-outlined text-[24px] leading-none">grid_view</span></a><a class="w-14 h-14 rounded-full flex items-center justify-center text-on-surface-variant" data-path="remote" href="#" aria-label="Remote"><span class="material-symbols-outlined text-[24px] leading-none">sensors</span></a><a class="w-14 h-14 rounded-full flex items-center justify-center text-on-surface-variant" data-path="projects" href="#" aria-label="Projects"><span class="material-symbols-outlined text-[24px] leading-none">folder_open</span></a></nav>
 </aside>
 <!-- MAIN TUNER WORKSPACE -->
-<div class="pl-16 flex-1 flex flex-col pt-0 h-screen overflow-hidden justify-between p-4">
+<div class="pl-24 flex-1 flex flex-col pt-0 h-screen overflow-hidden justify-between p-4">
 <main class="relative bg-surface w-full p-2 lg:p-3 flex-1 flex flex-col gap-3 max-w-7xl mx-auto overflow-hidden justify-between h-full">
 <!-- TOP CONTROL STRIP (STREAMLINED & HIGHLY LEGIBLE) -->
 <section class="w-full bg-surface-container-low rounded-xl p-3 lg:px-4 border border-outline-variant/30 flex flex-wrap xl:flex-nowrap items-center justify-between gap-3 shadow-md">

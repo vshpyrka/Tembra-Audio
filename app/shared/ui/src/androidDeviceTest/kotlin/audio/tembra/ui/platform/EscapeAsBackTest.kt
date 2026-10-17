@@ -16,7 +16,7 @@ import kotlin.test.assertFalse
 
 /**
  * A hardware keyboard's Escape goes back like the system back action, so a desktop window answers it (Pixel Tablet,
- * 2026-10-15: Compose consumed it and nothing happened), but from Home it never closes the app.
+ * 2026-10-15: Compose consumed it and nothing happened), but from the start destination (Timeline) it never closes the app.
  */
 class EscapeAsBackTest {
 
@@ -29,14 +29,14 @@ class EscapeAsBackTest {
     }
 
     @Test
-    fun escapeReturnsHomeAndStaysThere() {
+    fun escapeReturnsToTimelineAndStaysThere() {
         rule.setContent { TembraTheme { NavigationShell(viewModel = ShellViewModel(), layoutMode = LayoutMode.Rail) } }
         rule.onNodeWithTag("nav.item.projects").performClick()
         rule.onNodeWithTag("screen.projects").assertIsDisplayed()
         pressEscape()
-        rule.onNodeWithTag("screen.home").assertIsDisplayed()
+        rule.onNodeWithTag("screen.timeline").assertIsDisplayed()
         pressEscape()
-        rule.onNodeWithTag("screen.home").assertIsDisplayed()
-        assertFalse(rule.activity.isFinishing, "Escape on Home closed the app")
+        rule.onNodeWithTag("screen.timeline").assertIsDisplayed()
+        assertFalse(rule.activity.isFinishing, "Escape on Timeline closed the app")
     }
 }

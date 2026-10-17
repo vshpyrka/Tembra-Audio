@@ -18,15 +18,15 @@ class BaselineProfileCoverageTest {
             "# Startup path",
             "app.start    Laudio/tembra/android/TembraApplication;",
             "",
-            "home         Laudio/tembra/ui/home/HomeScreenKt;",
+            "timeline     Laudio/tembra/ui/timeline/TimelineScreenKt;",
             "tuner        Laudio/tembra/ui/tuner/TunerScreenKt;",
         ),
     )
 
     @Test
     fun ruleFileIgnoresBlankLinesAndComments() {
-        assertEquals(listOf("app.start", "home", "tuner"), rules.map { it.label })
-        assertEquals("Laudio/tembra/ui/home/HomeScreenKt;", rules[1].descriptor)
+        assertEquals(listOf("app.start", "timeline", "tuner"), rules.map { it.label })
+        assertEquals("Laudio/tembra/ui/timeline/TimelineScreenKt;", rules[1].descriptor)
     }
 
     @Test
@@ -38,22 +38,22 @@ class BaselineProfileCoverageTest {
     fun classRuleAndFlaggedMethodRuleCoverTheirDescriptors() {
         val profile = listOf(
             "Laudio/tembra/ui/tuner/TunerScreenKt;",
-            "HSPLaudio/tembra/ui/home/HomeScreenKt;->HomeScreen(Landroidx/compose/runtime/Composer;I)V",
+            "HSPLaudio/tembra/ui/timeline/TimelineScreenKt;->TimelineScreen(Landroidx/compose/runtime/Composer;I)V",
         )
         assertEquals(listOf("app.start"), BaselineProfileCoverage.uncovered(rules, profile).map { it.label })
     }
 
     @Test
     fun aDescriptorIsNotCoveredByALongerClassName() {
-        // `HomeScreenKt;` must not be satisfied by `HomeScreenKt$lambda;` or by a descriptor that only shares a prefix.
-        val profile = listOf("HSPLaudio/tembra/ui/home/HomeScreenKt\$HomeScreen\$1;->invoke()V")
-        assertTrue(BaselineProfileCoverage.uncovered(rules, profile).any { it.label == "home" })
+        // `TimelineScreenKt;` must not be satisfied by `TimelineScreenKt$lambda;` or by a descriptor that only shares a prefix.
+        val profile = listOf("HSPLaudio/tembra/ui/timeline/TimelineScreenKt\$TimelineScreen\$1;->invoke()V")
+        assertTrue(BaselineProfileCoverage.uncovered(rules, profile).any { it.label == "timeline" })
     }
 
     @Test
     fun missingProfileFailsNamingTheGenerationCommand() {
         val module = File.createTempFile("coverage", "").apply { delete(); mkdirs() }
-        File(module, BaselineProfileCoverage.RULES_FILE).writeText("home Laudio/tembra/ui/home/HomeScreenKt;\n")
+        File(module, BaselineProfileCoverage.RULES_FILE).writeText("timeline Laudio/tembra/ui/timeline/TimelineScreenKt;\n")
         val failure = BaselineProfileCoverage.failure(module)
         assertEquals(
             "baseline profile missing: run `uv run tracepulse profile generate --device <id>` from app/perf",
@@ -65,12 +65,12 @@ class BaselineProfileCoverageTest {
     fun uncoveredRulesAreListedInRuleFileOrder() {
         val module = File.createTempFile("coverage", "").apply { delete(); mkdirs() }
         File(module, BaselineProfileCoverage.RULES_FILE).writeText(
-            "home   Laudio/tembra/ui/home/HomeScreenKt;\ntuner  Laudio/tembra/ui/tuner/TunerScreenKt;\n",
+            "timeline Laudio/tembra/ui/timeline/TimelineScreenKt;\ntuner    Laudio/tembra/ui/tuner/TunerScreenKt;\n",
         )
         val profileDir = File(module, "src/main/generated/baselineProfiles").apply { mkdirs() }
         File(profileDir, "baseline-prof.txt").writeText("Landroidx/compose/runtime/Composer;\n")
         assertEquals(
-            "baseline profile does not cover: home (Laudio/tembra/ui/home/HomeScreenKt;), " +
+            "baseline profile does not cover: timeline (Laudio/tembra/ui/timeline/TimelineScreenKt;), " +
                 "tuner (Laudio/tembra/ui/tuner/TunerScreenKt;)",
             BaselineProfileCoverage.failure(module),
         )

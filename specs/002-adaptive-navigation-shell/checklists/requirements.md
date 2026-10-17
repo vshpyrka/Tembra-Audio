@@ -39,3 +39,8 @@
 - "Material Symbols", "Google Fonts", dp sizes and the 600 / 840 dp thresholds are design
   and product facts from the design source of truth and the user's request, not technology
   choices; packaging of the icons is explicitly left to the plan.
+- Amendment 2026-10-17 (Home removed, icon-only items, the platform design system's standard
+  bar and rail): re-checked against every item above, all still pass. The amended requirements
+  name "the platform design system's standard compact navigation bar and collapsed rail" and the
+  measured heights, not a library or component; the component names, versions and the slider
+  split are in plan.md and research R4 and R11.

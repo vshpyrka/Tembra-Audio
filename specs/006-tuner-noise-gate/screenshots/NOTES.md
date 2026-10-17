@@ -513,3 +513,98 @@ status bar time differs, and the louder tone reads 1.6 dB lower than in the orig
 
 Level probe (`probe.py`): track row y 2196, ends x 196 (−80 dB) and 986 (−20 dB); on the old images it reads handle −46.0,
 background −50.3 and instrument −24.2 dB, which agrees with the old NOTES.
+
+## Recaptured 2026-10-17: icon-only navigation, no Home (Android)
+
+Home was removed on 2026-10-17 (the app opens on Timeline) and the navigation items show icons only: the Material 3
+Expressive bottom bar (active item on a lavender pill) on the phone, a collapsed 96 dp rail (active item on a circle)
+on wide windows. Every Android capture here was retaken under the same name, on the same target and in the same
+state, from the debug APK of that morning (`:androidApp:assembleDebug`, no `tembra.perf`) with RECORD_AUDIO and
+POST_NOTIFICATIONS granted by `pm grant`.
+
+### Android, Pixel 6 Pro (15 retaken, 0 left)
+
+Pixel 6 Pro `19021FDEE001AH` (Android 17), fresh install (the app had been uninstalled from the phone, so the stored
+gate was Off), `adb exec-out screencap -p`. Upright captures differ from the 2026-10-16 ones only in the bar (1.4 % of
+the frame; the tuner is pixel-identical). Sideways the collapsed rail is wider than the old labelled one, so the
+settings column starts further right and is narrower: the control now spans (603, 692)–(1351, 846) instead of
+(491, 692)–(1279, 846), still clear of the gauge (1686, 168)–(2867, 1286).
+
+| File | How | Differs beyond the navigation |
+|---|---|---|
+| `pixel-6-pro-{upright,sideways}-{off,below,above}.png` | retaken with `tools/capture-noise-gate.sh --android 19021FDEE001AH --name pixel-6-pro --orientation upright|sideways --out <scratch>` (off = `e2-in-tune` + gate off, below = `e2-55db` + −50, above = `e2-45db` + −50); its layout check passed all six times | upright no; sideways the narrower column above |
+| `pixel-6-pro-turn-{1-upright,2-sideways,3-upright}.png` | retaken: `e2-45db`, −50, upright → `wm user-rotation lock 1` → `lock 0` | no; E2 and the handle at the middle each time |
+| `pixel-6-pro-upright-keyboard-focus.png` | retaken: `e2-45db`, gate off, `KEYCODE_TAB` × 5; the dump showed the focus on `tuner.noiseGate.slider` after the 5th (the bar's items come after the slider, as before) | no (focus ring and halo as before) |
+| `pixel-6-pro-upright-largest-font.png` | retaken: font 2.0, `e2-45db`, −50 | the bar does not grow with the font any more (no labels), so the meter card is taller: the gauge sits lower and the control is lower in the card; the readout row is still cut at the card's edges (pre-existing) |
+| `pixel-6-pro-upright-largest-font-scrolled.png` | retaken: the same after a swipe up on the card | the card does not scroll, so it shows the same view as the unscrolled one (as on 2026-10-16) |
+| `pixel-6-pro-sideways-largest-font.png` | retaken: font 2.0, rotation 1, `e2-45db`, −50 | the old rail's labels were cut ("Projec…" at the bottom); the icon-only rail fits whole; the TUNER CONTROLS heading is ellipsised a letter earlier in the narrower column |
+| `pixel-6-pro-live-background-gated.png` | retaken under the speaker lock: portrait, guitar, Auto Listen, no test signal, `--es tembra.tuner.noiseGate -68`; the quickstart §5 tone (196 Hz, four harmonics, `tembra-g3.wav` from the 2026-10-16 run) from the MacBook's loudspeaker at `afplay -v 0.25` with the output volume at 50 % (it was 31 % and was put back). The quiet room first (gate off): no fill. Background B with the gate off: −74.6 to −74.3 dB, G3 named. Behind the gate: 12 of 12 captures resting, fill held back at −74.3 to −74.2 dB; capture 6 kept | the background reads about 1.5 dB lower than on 2026-10-16 (−74.3 against −72.9 to −72.1 dB), so the gate at −68 dB sits 6 dB above it instead of 4; the picture is the same (Listening, handle at −68 dB, grey fill short of it) |
+| `pixel-6-pro-live-instrument-over-background.png` | the same run (lock held throughout): the same tone at `-v 1` added over B; from 1.5 s after it started, 6 of 6 captures named G3, 196.0 Hz, in tune, fill read past the handle at −64.8 to −65.7 dB; capture 1 kept (−64.8 dB) | the louder tone reads −64.8 dB against −63.2 dB on 2026-10-16; otherwise the same picture |
+
+### Android, Pixel 9 Pro Fold emulator (17 retaken, 0 left)
+
+Target `emulator-5554` (AVD `Pixel_9_Pro_Fold`, Android 16), inner display `4619827259835644672`, the same debug APK
+installed with `adb install -r -t` over the existing install (stored gate Off). Initial state, restored at the end:
+`device_state` 2 with no override, `accelerometer_rotation 1`, `user_rotation 0`, font 1.0, no `wm size` override; the
+app left on Timeline with guitar, 6-String, Auto Listen, gate Off. Postures as on 2026-10-16: flat = `device_state 2` +
+rotation 0; flat sideways = state 2 + rotation 1; tabletop = state 1 + rotation 1; book = state 1 + rotation 0.
+
+`tools/capture-noise-gate.sh` could not be used on the emulator today: its layout check runs `uiautomator dump`, which
+fails ("null root node returned by UiTestAutomationBridge") or hangs while a test signal animates the meter. The app
+rendered the meter at under 1 frame per second on the emulator (`dumpsys gfxinfo`: 50th percentile 1500 ms, 98 % janky
+frames; qemu at 200–340 % host CPU), and in that state the test-signal reading wobbles from frame to frame (e2-in-tune
+read 82.1–83.1 Hz in single frames). So the same launches were made by a script (force-stop, `am start` with
+`--es tembra.tuner.testSignal <id> --es tembra.tuner.noiseGate <gate>`), and each capture is a frame picked from a burst
+of up to 20 against a known-good reference of the same posture and reading (meter box and readout band, under 1 % and
+0.4 % of their pixels different): the new `upright-off` and `sideways-above` (both 82.4 Hz), feature 005's new
+`android-fold-tabletop-autolisten-r1.png` (the same tabletop state, 82.4 Hz) and the old book captures (the card after
+the hinge did not move). A first pass that matched against the old captures kept seven wrong frames (upright-above
+81.6 Hz, sideways-off 82.2, tabletop-off 83.1, book-off 82.5, book-above 82.6, tabletop-above with the content not
+yet drawn, book-below caught in the flat layout mid-change); those seven were retaken, and every kept frame shows
+E2 at 82.4 Hz (off, above) or "Listening" (below). The layout itself was checked on the dumps that did work (static
+screens) and by eye: in flat upright the control now spans (588, 1913)–(1703, 2020), 39 px right of the original's
+(549, 1913)–(1664, 2020), because the collapsed rail is wider; it is inside the display and clear of the gauge and the
+selectors in all seventeen captures.
+
+| File | How | Differs beyond the navigation |
+|---|---|---|
+| `pixel-9-pro-fold-upright-{off,below,above}.png` | retaken: state 2, rotation 0, off / below / above launches | the card is narrower (wider rail): gauge and control 39 px further right; otherwise no |
+| `pixel-9-pro-fold-sideways-{off,below,above}.png` | retaken: state 2, rotation 1 | as above |
+| `pixel-9-pro-fold-tabletop-{off,below,above}.png` | retaken: state 1, rotation 1 | as above (upper and lower cards) |
+| `pixel-9-pro-fold-book-{off,below,above}.png` | retaken: state 1, rotation 0 | the controls card before the hinge is narrower; the gauge card after it is unchanged |
+| `pixel-9-pro-fold-cycle-10-{flat,tabletop,book}.png` | retaken: launched flat with `e2-45db` + −50, then flat → tabletop → book ten times (thirty changes, 3 s apart); the tenth cycle's three postures captured (frames picked as above, no layout dump) | no; one control, one gauge, the handle at the middle in all three |
+| `pixel-9-pro-fold-keyboard-focus.png` | retaken: flat, `e2-55db` + −50; `KEYCODE_TAB` until the dump showed `tuner.noiseGate.slider` focused, then `KEYCODE_DPAD_RIGHT` × 2: handle at −46 dB (its centre 64 px right of the slider's, as in the original), focus halo and ring, "Listening", grey fill short of the handle | **yes, in the Tab order (not in the picture)**: the focus no longer goes through the rail first. On 2026-10-16 it took 11 Tabs (the six rail items, then Guitar, Cello, Auto Listen, By Ear); now the second Tab is already on Cello and the fifth on the slider, so the new rail's items are no longer ahead of the content in keyboard order. A first attempt with five quick Tabs on the slow emulator left the focus on Auto Listen and was discarded |
+| `pixel-9-pro-fold-remembered.png` | retaken: flat, launched with `e2-45db` and no gate argument, a tap at the middle of the slider (x 1145, −50 dB), force-stop, relaunched with `e2-55db` and no gate argument: the handle at the middle, "Listening", fill grey and short of it. Afterwards a tap at the track's start (x 664) set Off, which survived a restart (E2 read, handle at Off) | no |
+
+## Recaptured 2026-10-17: Home removed, icon-only navigation (iOS)
+
+All 33 iOS captures were retaken under the same file names, on the same targets and in the same states. The builds were
+Debug, made from the worktree `nav-icons-only` with the Xcode 27.1 SDK. Every capture with a rail was taken a second
+time from the build with 41fffa2, in which the collapsed rail centres its items: all 10 iPad, all 10 Duo, and the 4
+iPhone 17 sideways ones. The iPhone 17 upright, turn-1 / turn-3, live and largest-font captures, which show the bottom
+bar, are from the first build.
+
+- **Targets:** iPhone 17 and iPad Pro 13-inch (M5) (iOS 26.5); iPhone Duo (iOS 27.1; outer display `819E92C0…`,
+  inner `D5FE96E5…`).
+- **Launches (the capture tool's):** off = `e2-in-tune` with the gate off, below = `e2-55db` with −50, above =
+  `e2-45db` with −50. The turns used `e2-45db` with −50 and were rotated while running. Remembered used the stored gate
+  (iPhone −62 dB, iPad −50 dB) and a launch with `e2-55db` and no gate argument.
+- **Instrument:** cello on the iPhone 17, guitar elsewhere, as in the originals.
+- **Rotation:** the Simulator menu for the iPhone and iPad. The Duo used Device Hub's Open, Rotate Right and Closed
+  buttons, pressed through the accessibility API, and was put back to Closed and upright.
+
+| File | How | Differs beyond the navigation |
+|---|---|---|
+| `iphone-17-upright-{off,below,above}`, `iphone-17-remembered` | retaken: portrait, cello | no |
+| `iphone-17-sideways-{off,below,above}` | retaken (build with 41fffa2): Landscape Left, cello | **yes, from the wider rail**: the settings column is narrower, so the header reads "TUNER CONTRO…" beside the TEST SIGNAL pill and the gate track is shorter. The handle and fill sit at the same fractions. `-off` also shows the Dynamic Island's black pill, which simctl draws in some captures. |
+| `iphone-17-turn-1-upright`, `-turn-3-upright` | retaken: portrait → Landscape Left → portrait while running | no |
+| `iphone-17-turn-2-sideways` | retaken (build with 41fffa2): the sideways step of the same turn sequence, run again | the same narrower column as the sideways set |
+| `iphone-17-upright-largest-font` | retaken: largest text size, `e2-45db`, −50; text size back to `medium` | no. The bar stays one row of icons, so the card is taller. The readout row is still cut at the card edges; that is pre-existing. |
+| `iphone-17-live-background-gated` | retaken: portrait, cello, Auto Listen, real microphone, no test signal. Today's room alone read −75 to −72 dB, so the background was the original B (2026-10-06): quickstart §5's 196 Hz tone at output 13 %, `afplay -v 1`, which read −50.8 to −50.2 dB (named) with the gate off. With `--tembra-tuner-noise-gate=-40` (as the existing image): resting in 20 of 20 captures, fill muted at −50.8 to −50.0 dB. Capture 1 kept (−50.0 dB). Output volume back to 31. | no (handle −40 dB, muted fill to −50.0 dB; the old one was −50.1) |
+| `iphone-17-live-instrument-over-background` | retaken: same launch, the tone at output 50 %, `afplay -v 1`: G3, 196.0 Hz, in tune in 6 of 6 captures at −26.5 to −27.2 dB. Capture 6 kept (−27.2 dB). Output volume back to 31. | no (fill to −27.2 dB instead of −27.8) |
+| `ipad-pro-13-upright-{off,below,above}`, `-remembered`, `-turn-1-upright`, `-turn-3-upright` | retaken (build with 41fffa2): portrait, guitar | no |
+| `ipad-pro-13-sideways-{off,below,above}`, `-turn-2-sideways` | retaken (build with 41fffa2): Landscape Left | no |
+| `iphone-duo-closed-upright-{off,below,above}` | retaken (build with 41fffa2): Duo closed, upright, outer display | no |
+| `iphone-duo-open-sideways-{off,below,above}` | retaken (build with 41fffa2): Device Hub Open, inner display | no |
+| `iphone-duo-open-upright-{off,below,above}` | retaken (build with 41fffa2): Open, then one Rotate Right | no |
+| `iphone-duo-remembered-devicehub` (726 × 816) | retaken (build with 41fffa2): Duo closed, upright, stored gate −62 dB, launched with `e2-55db` and no gate argument. Device Hub's window was set to 1227 × 800 pt, captured with `screencapture -x -o -l 3880` and cropped at (1117, 400), 726 × 816. Rail matching puts the display at (117.7, 47.9) at 0.354 scale, as in the existing image. The window was put back to 1227 × 848. | no |

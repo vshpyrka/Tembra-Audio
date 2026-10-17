@@ -4,7 +4,7 @@ import XCTest
 /// identifier of its element (Compose Multiplatform maps `testTag` to `accessibilityIdentifier`). The values mirror
 /// `PerfAnchors` exactly; a tag that changes there changes here.
 enum Anchors {
-    static let homeRoot = "screen.home"
+    static let startRoot = "screen.timeline"
     static let navTuner = "nav.item.tuner"
     static let navMetronome = "nav.item.metronome"
     static let tunerRoot = "screen.tuner"

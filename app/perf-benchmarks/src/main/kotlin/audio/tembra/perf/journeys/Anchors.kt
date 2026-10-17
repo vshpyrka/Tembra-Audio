@@ -12,7 +12,7 @@ import androidx.test.uiautomator.Until
  * `PerfAnchors` exactly; a tag that changes there changes here.
  */
 object Anchors {
-    const val HOME_ROOT = "screen.home"
+    const val START_ROOT = "screen.timeline"
     const val NAV_TUNER = "nav.item.tuner"
     const val NAV_METRONOME = "nav.item.metronome"
     const val TUNER_ROOT = "screen.tuner"
