@@ -182,3 +182,53 @@ app stopped, backed up and restored) and real mouse clicks; rotation through the
 | `ios-expanded-home` | iPad Pro landscape, Home with the Library panel | no |
 | `ios-expanded-tuner` | iPad Pro landscape, Tuner (Auto Listen, real microphone, the iPad's own gate level −28 dB passed as the launch value) | **yes**: the old image showed feature 002's placeholder ("The instrument tuner arrives…"); now the real tuner ("MIC ACTIVE", "Listening", noise gate control) |
 | `ios-duo-closed-end-rail-home`, `-tuner` (By Ear, guitar 6), `ios-duo-closed-landscape-rail` | Duo closed, outer display; landscape via Device Hub's Rotate Right | tuner: instrument chips are text only now (no icons), otherwise no |
+
+## Recaptured 2026-10-17: icon-only navigation, no Home (Android)
+
+Home was removed on 2026-10-17 (the app opens on Timeline, five destinations) and the navigation items show icons
+only: a Material 3 Expressive bottom bar with the active item on a lavender pill on compact windows, a collapsed
+96 dp rail with the active item on a circle on wide windows. The Library side panel went with Home. Following
+quickstart §9, the five `android-*-home*.png` captures became `android-*-timeline*.png` (new file captured, old file removed); `android-expanded-tuner.png` keeps its
+name and is now reached from Timeline. Target: Pixel 6 Pro `19021FDEE001AH` (Android 17), the debug APK of that
+morning (`:androidApp:assembleDebug`, no `tembra.perf`), `adb exec-out screencap -p`, navigation by UiAutomator taps on
+the items' content descriptions. Every setting changed was put back (rotation lock 0, `wm density reset`, font scale
+1.0).
+
+### Android, Pixel 6 Pro (6 taken, 5 old files removed)
+
+| File | How | Differs beyond the navigation |
+|---|---|---|
+| `android-compact-timeline.png` | renamed from `android-compact-home.png`: portrait, cold launch (opens on Timeline) | Timeline's placeholder ("The timeline arranger arrives with the transport and timeline feature.") instead of Home's sentence |
+| `android-compact-timeline-largefont.png` | renamed from `android-compact-home-largefont.png`: `settings put system font_scale 2.0`, Timeline | same; the bar no longer grows with the font (no labels to wrap), so the old two-line "Timeli / ne", "Metro / nome" labels are gone |
+| `android-short-timeline.png` | renamed from `android-short-home.png`: `wm user-rotation lock 1` (891 × 411 dp), Timeline | Timeline content; the collapsed rail holds five icons spread down the height instead of six labelled items at the top |
+| `android-medium-timeline.png` | renamed from `android-medium-home.png`: portrait, `wm density 380` (606 dp) | Timeline content; rail as above |
+| `android-expanded-timeline.png` | renamed from `android-expanded-home.png`: landscape, density 380 (1313 × 606 dp) | **yes**: no Library panel on the right (it belonged to Home); Timeline's sentence runs across the whole content width |
+| `android-expanded-tuner.png` | retaken: landscape, density 380, launched on Timeline, Tuner tapped in the rail; Auto Listen on the real microphone (quiet room, gate Off), five frames a second apart under the speaker lock, the third kept (all five at rest) | no: same tuner (Guitar, MIC ACTIVE, "Listening", needle at rest, noise gate at Off). A first capture taken earlier caught the needle swinging back from a room sound and was discarded |
+
+Removed with `git rm` (replaced by the renamed captures above): `android-compact-home.png`,
+`android-compact-home-largefont.png`, `android-short-home.png`, `android-medium-home.png`, `android-expanded-home.png`.
+
+## Recaptured 2026-10-17: Home removed, icon-only navigation (iOS)
+
+All nine iOS captures were retaken on the same targets, in the same windows and poses. The start destination is now
+Timeline. As quickstart §9 names them, the six `ios-*-home*.png` files were captured as `ios-*-timeline*.png`, and the
+old files were removed with `git rm`. The builds were Debug, made from the worktree
+`nav-icons-only` with the Xcode 27.1 SDK. Every capture with a rail (all but the two compact ones) was taken a second
+time from the build with 41fffa2, in which the collapsed rail centres its items.
+
+- **Targets:** iPhone 17 and iPad Pro 13-inch (M5) (iOS 26.5); iPhone Duo (iOS 27.1, outer display `819E92C0…`); a
+  temporary iPad mini (A17 Pro) on iOS 26.5, created, captured and deleted, both times.
+- **Rotation:** the iPhone and iPad through the Simulator's Device ▸ Orientation menu; the Duo through Device Hub's
+  Rotate Right button, pressed through the accessibility API.
+
+| File | How | Differs beyond the navigation |
+|---|---|---|
+| `ios-compact-timeline.png` (was `ios-compact-home.png`) | retaken: iPhone 17, portrait, plain launch | no |
+| `ios-compact-timeline-largefont.png` (was `ios-compact-home-largefont.png`) | retaken: iPhone 17, `simctl ui content_size accessibility-extra-extra-extra-large`, plain launch; text size put back to `medium` | no. The bar no longer grows with the text, because there are no labels to wrap. |
+| `ios-short-timeline.png` (was `ios-short-home.png`) | retaken (build with 41fffa2): iPhone 17, Landscape Left, plain launch | no |
+| `ios-medium-timeline.png` (was `ios-medium-home.png`) | retaken (build with 41fffa2): temporary iPad mini (A17 Pro), iOS 26.5, portrait (744 pt, rail), plain launch | no |
+| `ios-expanded-timeline.png` (was `ios-expanded-home.png`) | retaken (build with 41fffa2): iPad Pro, Landscape Left, plain launch | no. The Library panel is gone with Home. |
+| `ios-expanded-tuner.png` | retaken (build with 41fffa2): iPad Pro, Landscape Left, Tuner (Auto Listen, real microphone, `--tembra-tuner-noise-gate=-28` as before) | no ("MIC ACTIVE", "Listening") |
+| `ios-duo-closed-end-rail-timeline.png` (was `ios-duo-closed-end-rail-home.png`) | retaken (build with 41fffa2): Duo closed, upright, outer display, plain launch | no. The end rail still fills the system column, with its items at the bottom, centred under the clock. |
+| `ios-duo-closed-end-rail-tuner.png` | retaken (build with 41fffa2): Duo closed, upright, By Ear, guitar, 6-String, Standard | no |
+| `ios-duo-closed-landscape-rail.png` | retaken (build with 41fffa2): Duo closed, Device Hub Rotate Right (three more turns brought it back upright), plain launch | no |

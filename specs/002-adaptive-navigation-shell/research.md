@@ -166,6 +166,18 @@ Material's inset focus ring: the bar and the rail provide `LocalRippleThemeConfi
 InsetFocusRing`, and the ring is drawn inside the item's indicator, outer stroke `secondary`,
 inner stroke `onSecondary`; hover shows Material's state layer plus the tooltip.
 
+Found while retaking the screenshots (2026-10-17): `WideNavigationRail` places its content at its
+start edge and measures it up to its 96 dp width; androidx beta01's items fill that width, but the
+JetBrains port's items are only as wide as their indicator, so the scrolling column sat flush left
+on the iPad and the iPhone Duo until it was given the rail's width with its items centred
+(`TembraNavigationRailTest.itemsAreCentredInTheRail`). Keyboard order: the Tab cycle is unchanged
+(the rail's items, then the destination's controls, then the rail again), but the first Tab from an
+unfocused window now lands on the destination's first control rather than on the first rail item
+(Pixel Tablet and Pixel 9 Pro Fold; with feature 002's own rail it was the first rail item).
+Placing the rail before the content in a `Row`, or making the content a traversal group, did not
+change that entry point, so the frame keeps `NavigationSuiteScaffoldLayout`; the controls' own
+order, which features 004 and 006 require, is unchanged.
+
 ## R5. Side panel component
 
 **Decision**: the panel is drawn by the Navigation 3 scene from R2 as a fixed 320 dp

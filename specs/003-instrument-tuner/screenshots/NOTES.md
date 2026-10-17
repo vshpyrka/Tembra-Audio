@@ -292,3 +292,64 @@ The status bar time is 2:12 instead of 11:58.
 | File | How | Shows now | Differs from the old one |
 |---|---|---|---|
 | `ios-landscape-byEar-before.png` (2622 × 1206) | iPhone 17 rotated Landscape Left (Simulator menu), prefs guitar / 6-String / `guitar6-standard` / `byEar` / loop on, launched with `--tembra-tuner-noise-gate=off` (opens the Tuner; not stored) | the settings column (TUNER CONTROLS: Guitar / Cello, Auto Listen / By Ear, 6- / 7-String, preset picker, loop toggle) beside six whole cards in two rows of three | The old image recorded the build before the landscape layout (top bar, one selector row across the top, the preset and loop card, the second row of cards cut off). The new one is today's landscape By Ear, pixel-identical to today's `ios-landscape-byEar.png`, so the "before" state is no longer shown. Also gone: the black Dynamic Island pill the old capture showed at the left edge, the instrument icons and the keyboard-focus tint on 6-String. |
+
+## Recaptured 2026-10-17: icon-only navigation, no Home (Android)
+
+Home was removed on 2026-10-17 and the navigation items show icons only (Material 3 Expressive bottom bar, active item
+on a lavender pill, on compact windows; a collapsed 96 dp rail, active item on a circle, on wide ones). Every Android
+capture here was retaken under the same name, on the same target and in the same state. Target: Pixel 6 Pro
+`19021FDEE001AH` (Android 17), the debug APK of that morning (`:androidApp:assembleDebug`, no `tembra.perf`),
+installed fresh (the app had been uninstalled from the phone), RECORD_AUDIO and POST_NOTIFICATIONS granted with
+`pm grant`; `adb exec-out screencap -p`; state set with the debug launch extras (`tembra.tuner.testSignal`,
+`tembra.tuner.noiseGate`) and UiAutomator taps on the resource ids (`tuner.mode.byEar`, `tuner.strings.7`,
+`tuner.instrument.cello`, …). A plain launch now opens Timeline, so screens without a test signal were reached by
+tapping Tuner. Bands as before: compact = portrait, landscape = `wm user-rotation lock 1` (891 × 411 dp), expanded =
+landscape at `wm density 380`; font 2.0 with `settings put system font_scale`. Everything was put back (rotation lock
+0, density reset, font 1.0; guitar, 6-String, Auto Listen, gate Off).
+
+Difference common to the compact captures: only the bar (icons, no labels, no Home); the content is pixel-identical to
+the 2026-10-16 images (1.4 % of the frame differs, all of it in the bar), readings included. Common to the landscape and
+expanded ones: the collapsed rail is wider than the old labelled one, so the content starts further right and the
+cards are a little narrower; nothing inside them reflows.
+
+### Android, Pixel 6 Pro (27 retaken, 0 left)
+
+| File | How | Differs beyond the navigation |
+|---|---|---|
+| `android-compact-autoListen-<id>.png` × 14 | retaken: portrait, `--es tembra.tuner.testSignal <id>`, 3 s (the order of `tools/capture-tuner-states.sh`) | no: every reading identical (A1 55.0, A2 112.6, B1 61.7, B3 246.9, C2 65.4, D3 146.4, E2 81.5/80.3/82.4/83.4, E4 329.6, E5 659.3, G3 196.0, 2 kHz "Listening") |
+| `android-compact-autoListen.png` | retaken: portrait, `e2-in-tune` | no |
+| `android-compact-autoListen-largefont.png` | retaken: font 2.0, `e2-in-tune` | the bar no longer grows with the font (no two-line labels), so the meter card is taller and the gauge sits a little lower; the readout row is still cut at the card's edges (pre-existing) |
+| `android-compact-byEar.png` | retaken: Timeline → Tuner, By Ear tapped; guitar, 6-String, Standard, loop on | no |
+| `android-compact-byEar-largefont.png` | retaken: the same at font 2.0 | the taller content shows the top of the third row of cards (II, I) above the bar |
+| `android-compact-denied.png` | retaken: `pm revoke … RECORD_AUDIO`, Tuner tapped (Auto Listen), "Don't allow" in the system prompt; granted again afterwards | no |
+| `android-landscape-autoListen.png` | retaken: rotation 1, `e2-in-tune` | settings column and meter card start further right (wider rail) |
+| `android-landscape-byEar.png`, `-byEar-guitar7.png`, `-byEar-cello.png` | retaken: rotation 1, By Ear; then 7-String; then 6-String and Cello (Guitar again afterwards) | as above; the 7-String preset name is ellipsised one word earlier ("Standard 7-String (B1 E2 …") |
+| `android-landscape-autoListen-before.png` | retaken: rotation 1, Tuner tapped from Timeline, guitar, Auto Listen, gate Off, no test signal, the phone's own microphone in the quiet room; three captures 2 s apart under the speaker lock, the second kept (all three alike) | as above; MIC ACTIVE, "Listening", needle at rest, no fill. Like the 2026-10-16 retake it shows today's fixed landscape layout, not the Phase 10 defect its caption describes |
+| `android-expanded-autoListen.png`, `-e2-flat-20.png` | retaken: landscape, density 380, `e2-in-tune` / `e2-flat-20` | no |
+| `android-expanded-byEar.png` | retaken: landscape, density 380, By Ear | no |
+
+## Recaptured 2026-10-17: Home removed, icon-only navigation (iOS)
+
+All 29 iOS captures were retaken under the same file names, on the same simulators (iPhone 17 and iPad Pro 13-inch
+(M5), iOS 26.5) and in the same states. The builds were Debug, made from the worktree `nav-icons-only` with the Xcode
+27.1 SDK. The ten captures with a rail (expanded and landscape) were taken a second time from the build with 41fffa2,
+in which the collapsed rail centres its items.
+
+- **State:** the stored preferences, written with the app stopped (backed up first, restored byte-for-byte afterwards),
+  and the debug launch arguments. Every Auto Listen capture used `--tembra-tuner-noise-gate=off`; the test-signal ones
+  also used `--tembra-tuner-test-signal=<id>`, with a 5 s settle.
+- **Rotation:** the Simulator's Device ▸ Orientation menu. No keyboard or taps were needed.
+
+| File | How | Differs beyond the navigation |
+|---|---|---|
+| `ios-compact-autoListen-<id>.png` × 14 | retaken: iPhone 17 portrait, guitar, `--tembra-tuner-test-signal=<id>` | no. The readings are identical: A1 55.0, A2 112.6, B1 61.7, B3 246.9, C2 65.4, D3 146.4, E2 81.5 / 80.3 / 82.4 / 83.4, E4 329.6, E5 659.3, G3 196.0, and "Listening" at 2 kHz. |
+| `ios-compact-autoListen.png` | retaken: iPhone 17 portrait, `e2-in-tune` (as the existing image) | no |
+| `ios-compact-autoListen-largefont.png` | retaken: iPhone 17, largest text size, `e2-in-tune`; text size back to `medium` | no. The bar no longer grows with the text, so the meter card is a little taller. The readout row ("2.4 Hz • REFERENCE 82.4 H") is still cut at the card edges; that is pre-existing. |
+| `ios-compact-byEar.png` | retaken: iPhone 17 portrait, By Ear, guitar, 6-String, Standard, loop on | no |
+| `ios-compact-byEar-largefont.png` | retaken: as above, largest text size | no. The card is a little taller, for the same reason as above. |
+| `ios-compact-denied.png` | retaken: `simctl privacy revoke microphone`, Tuner in Auto Listen; granted again afterwards | no |
+| `ios-expanded-autoListen.png`, `-autoListen-e2-flat-20.png` | retaken (build with 41fffa2): iPad Pro, Landscape Left, `e2-in-tune` / `e2-flat-20` | no |
+| `ios-expanded-byEar.png`, `-byEar-guitar7.png`, `-byEar-cello.png` | retaken (build with 41fffa2): iPad Pro, Landscape Left, By Ear; then 7-String; then Cello | no |
+| `ios-landscape-autoListen.png` | retaken (build with 41fffa2): iPhone 17, Landscape Left, `e2-in-tune` | **yes, from the wider rail**: the settings column is narrower, so the header reads "TUNER CONTRO…" beside the TEST SIGNAL pill, and the noise gate track is shorter. The Dynamic Island's black pill shows at the left edge; simctl draws it in some captures. |
+| `ios-landscape-byEar.png`, `-byEar-guitar7.png`, `-byEar-cello.png` | retaken (build with 41fffa2): iPhone 17, Landscape Left, By Ear (6-String, Standard, loop on); then 7-String; then Cello | the narrower column ellipsises the preset picker earlier: "Standard (E2 A2 D3 G…", "Standard 7-String (B…", "Standard (C2 G2 D3 A…". `ios-landscape-byEar` also shows the Dynamic Island's black pill. |
+| `ios-landscape-byEar-before.png` | retaken (build with 41fffa2): the same state as `ios-landscape-byEar.png`, as in the existing image | the same picture as `ios-landscape-byEar.png` |

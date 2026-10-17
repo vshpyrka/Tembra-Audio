@@ -273,3 +273,86 @@ on the dark bar), and the instrument selector with text only.
 | `android-fold-d2-book-byear-cello-before.png` | book; Cello tapped in By Ear (already selected) | before D2: the wide grid across the whole card (255 × 160 dp cards, the cello as 3 + 1), the selectors on a top row, the preset and loop tone in a row above the grid | the D3 hinge split: the controls card (heading, Guitar / Cello, Auto Listen / By Ear, preset, loop tone) before the hinge, and four square cards 2 + 2, centred, after it |
 | `android-fold-d2-flat-byear7-short-before.png` | flat, `wm size 2076x1700` (852 × 697 dp); guitar, By Ear, 7-String tapped; then 6-String and `wm size reset` | before the fit: wide three-column cards with the seventh card cut off below the card's edge | square cards 3 + 3 + 1, the last one centred, all seven visible. That is the same picture as today's `android-fold-d2-flat-byear7-short.png`: without the top bar this window fits three columns, so the 4 + 3 fallback does not appear here |
 | `android-fold-d3-book-autolisten-before-heading.png` | book; Guitar and Auto Listen tapped, then a cold launch with `e2-flat-20`, gate `off` | first D3 build: the heading clipped to "TUNER CONTROI" under the TEST SIGNAL pill | `CentredHeading`: "TUNER CONTROLS" whole and centred with the TEST SIGNAL pill centred under it, and the noise gate at Off under the selectors. The gauge after the hinge reads E2 81.5 Hz with the needle flat, as before. Same picture as today's `android-fold-d3-book-autolisten.png` |
+
+## Recaptured 2026-10-17: icon-only navigation, no Home (Android)
+
+Home was removed on 2026-10-17 (the app opens on Timeline) and the navigation items show icons only: the Material 3
+Expressive bottom bar (active item on a lavender pill) on the phone, a collapsed 96 dp rail (active item on a circle)
+on the fold. Every Android capture here was retaken under the same name, on the same target and in the same state.
+Builds: the debug APK of that morning (`:androidApp:assembleDebug`, no `tembra.perf`), installed with
+`adb install -r -t`; RECORD_AUDIO and POST_NOTIFICATIONS granted with `pm grant`.
+
+Pixel 6 Pro `19021FDEE001AH` (Android 17): fresh install (the app had been uninstalled), `adb exec-out screencap -p`,
+UiAutomator taps.
+
+Pixel 9 Pro Fold emulator `emulator-5554` (AVD `Pixel_9_Pro_Fold`, Android 16), inner display
+`4619827259835644672` (`screencap -p -d …`). Initial state, restored at the end: `device_state` 2 (OPENED, no
+override), `accelerometer_rotation 1`, `user_rotation 0`, font 1.0, no `wm size` override. Postures as on 2026-10-16:
+tabletop = `cmd device_state state 1` + rotation 1; book = state 1 + rotation 0; book at 180° = state 1 +
+`user_rotation 2`; flat = state 2 + rotation 0; flat sideways = state 2 + rotation 1 (rotation locked with
+`accelerometer_rotation 0`). The app's preferences were put back to guitar, 6-String, Auto Listen, gate Off and the
+metronome to 4/4 at 120 BPM.
+
+Two things about the emulator today, both affecting only how the captures were made: (1) `uiautomator dump` fails
+("null root node returned by UiTestAutomationBridge") or hangs while a test signal animates the meter (the emulator
+ran at 200–340 % host CPU with the meter on screen, a screencap took up to 10 s), so in Auto Listen screens the
+selectors were tapped at coordinates read off a capture, and UiAutomator was used only on static screens (By Ear, the
+stopped metronome, Timeline). (2) Under that load the test-signal reading wobbles from frame to frame (e2-in-tune read
+82.1–82.7 Hz, e2-flat-20 81.0–82.0 Hz in single frames), so each test-signal capture was picked from a burst: the
+steadiest of 6 frames (the one least different from the others) or the frame, out of 12–20, whose meter matches the
+2026-10-16 capture of the same state best (aligned for the wider rail). Every kept frame shows the reading of the
+original (82.4 Hz in tune, or 81.5 Hz flat); frames with other readings were discarded, and the first
+`tabletop-autolisten-r1` and `tabletop-autolisten-largefont` picks (82.6 and 81.0 Hz) were retaken.
+
+Common to every fold retake: the collapsed rail (five icons) is wider than the old labelled rail, so in flat and
+tabletop the content starts about 40 px further right and its cards are narrower; in book posture the cards after the
+hinge stay where they were and the card before it is narrower. The emulator's status bar showed no clock in today's
+captures.
+
+### Android, Pixel 6 Pro (4 retaken, 0 left)
+
+| File | How | Differs beyond the navigation |
+|---|---|---|
+| `android-pixel6pro-autolisten.png` | retaken: portrait, `e2-flat-20` | no (the content is pixel-identical; only the bar differs) |
+| `android-pixel6pro-byear.png`, `android-pixel6pro-d2-byear.png` | retaken: portrait, Tuner tapped from Timeline, By Ear, 6-String (the same state, as before) | no |
+| `android-pixel6pro-metronome.png` | retaken: portrait, Metronome stopped (4/4, 120) | no |
+
+### Android, Pixel 9 Pro Fold emulator (26 retaken, 0 left)
+
+| File | How | Differs beyond the navigation |
+|---|---|---|
+| `android-fold-tabletop-home-before.png` | retaken: tabletop, cold launch, Timeline tapped in the rail (Home no longer exists) | **yes**: Timeline's placeholder sentence instead of Home and its Library card (which crossed the fold); Timeline, like Home, has no tabletop form, so its text sits in the upper half and the rest is empty |
+| `android-fold-tabletop-metronome.png`, `-metronome-r1.png` | retaken: tabletop, Metronome stopped, 120 BPM, 4/4, 1/4, Standard, Classic Wood (the same state, as before) | no |
+| `android-fold-tabletop-autolisten-r1.png` | retaken: tabletop, cold launch with `e2-in-tune` + `noiseGate off`; best of 20 frames | no (E2, 82.4 Hz, in tune; D1 column as on 2026-10-16) |
+| `android-fold-tabletop-byear-r1.png`, `android-fold-tabletop-byear.png` | retaken: the same launch, By Ear tapped; guitar, 6-String, Standard, loop on | no |
+| `android-fold-tabletop-autolisten.png` | retaken: tabletop, guitar, `e2-flat-20`; steadiest of 6 | no (81.5 Hz, needle flat) |
+| `android-fold-d1-tabletop-autolisten.png` | retaken: Cello tapped in the same launch; steadiest of 6 | no (81.5 Hz) |
+| `android-fold-d1-tabletop-byear.png` | retaken: cello, By Ear tapped | no |
+| `android-fold-tabletop-byear-largefont.png` | retaken: font 2.0, tabletop, guitar 6-String, By Ear | no (the rail's labels no longer wrap: it has none) |
+| `android-fold-tabletop-autolisten-largefont.png` | retaken: font 2.0, tabletop, `e2-flat-20`; best of 15 frames | no (81.5 Hz) |
+| `android-fold-tabletop-metronome-largefont.png` | retaken: font 2.0, Metronome, "+" twice (122 BPM), 4/4, stopped | no |
+| `android-fold-d1-tabletop-metronome.png` | retaken: font 1.0, 6/8 from the signature menu (selects 1/8), 122 BPM, stopped | **yes (follows from the wider rail)**: the six tall cells above the fold lost their ACCENT / CLICK labels (the narrower cell card hides them); the original has them |
+| `android-fold-book-autolisten.png`, `android-fold-d3-book-autolisten.png` | retaken: book, `e2-flat-20`; each the best of 15 frames of one launch | no (81.5 Hz); the controls card before the hinge is narrower |
+| `android-fold-d3-book-autolisten-before-heading.png` | retaken: book, cold launch with `e2-flat-20` + `noiseGate off`; best of 12 | no: "TUNER CONTROLS" whole with the TEST SIGNAL pill under it, as on 2026-10-16 (the clipped heading its caption describes is a past state) |
+| `android-fold-d3-book-byear7.png` | retaken: book, By Ear (tapped by coordinates from Auto Listen), 7-String | no |
+| `android-fold-d2-book-byear-cello-before.png` | retaken: book, 6-String, then Cello, By Ear | no |
+| `android-fold-d1-book-metronome-hinge.png` | retaken: book, Metronome, 6/8, 122 BPM, stopped | **yes (follows from the wider rail)**: the settings column before the hinge is narrower, so the six 6/8 cells wrap into two rows of three, labelled, instead of one unlabelled row, and the STYLE pills wrap (Syncopated on a second line); the dial card after the hinge is unchanged |
+| `android-fold-d1-book-topbar-gap-before.png` | retaken: book at 180° (`user_rotation 2`), same metronome state | the same wrap as the hinge capture; no gap under the status bar (as on 2026-10-16) |
+| `android-fold-d2-flat-byear-cello.png` | retaken: flat, cello, By Ear | no |
+| `android-fold-d2-flat-byear7.png` | retaken: flat, guitar, 7-String | no (3 + 3 + 1) |
+| `android-fold-d2-flat-byear7-short.png`, `-short-before.png` | retaken: flat, 7-String, `wm size 2076x1700`, then `wm size reset` and 6-String | no: 3 + 3 + 1 as on 2026-10-16 (the 4 + 3 fallback and the cut-off seventh card in the captions are past states) |
+| `android-fold-tabletop-metronome-running.png` | retaken: 4/4 at 122 BPM, started in tabletop, ten `device_state 2` / `1` changes 1.2 s apart (rotation 1 throughout) ending half-opened; frames until beat 1's cell lit (frame 16) | no |
+| `android-fold-flat-metronome-running.png` | retaken: then `device_state 2` (flat, rotation 1), still running; frames until beat 3's cell lit (frame 6); stopped, "−" twice back to 120 | the dial card is narrower, so the dial is slightly smaller |
+
+## Recaptured 2026-10-17: Home removed, icon-only navigation (iOS)
+
+The three iOS captures were retaken under the same file names, on the same simulators and in the same states. The
+builds were Debug, made from the worktree `nav-icons-only` with the Xcode 27.1 SDK. The two iPad captures show the
+rail, so they were taken a second time from the build with 41fffa2, in which the collapsed rail centres its items. State
+came from the stored preferences (restored afterwards) and the debug launch arguments.
+
+| File | How | Differs beyond the navigation |
+|---|---|---|
+| `ios-iphone17-autolisten.png` | retaken: iPhone 17 portrait, guitar, `e2-flat-20`, gate off | no |
+| `ios-ipadpro-autolisten.png` | retaken (build with 41fffa2): iPad Pro 13-inch (M5) portrait, cello, `e2-flat-20`, gate off | no |
+| `ios-ipadpro-d2-byear.png` | retaken (build with 41fffa2): iPad Pro portrait, guitar, 6-String, By Ear | no |
