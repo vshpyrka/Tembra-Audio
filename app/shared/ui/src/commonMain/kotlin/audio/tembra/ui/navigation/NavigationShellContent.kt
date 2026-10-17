@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldLayout
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
@@ -23,7 +23,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.unit.max
 import audio.tembra.ui.designsystem.NavigationItemSpec
 import audio.tembra.ui.designsystem.TembraNavigationBar
 import audio.tembra.ui.designsystem.TembraNavigationRail
@@ -67,7 +66,7 @@ fun NavigationShellContent(
                     TembraNavigationRail(items = items, selectedId = state.selected.id, onSelect = select)
                 }
             },
-            navigationSuiteType = if (bottomBar) NavigationSuiteType.NavigationBar else NavigationSuiteType.NavigationRail,
+            navigationSuiteType = if (bottomBar) NavigationSuiteType.ShortNavigationBarCompact else NavigationSuiteType.WideNavigationRailCollapsed,
             state = rememberNavigationSuiteScaffoldState(),
         ) {
             // The content clears the top inset; the bar clears the bottom inset itself; beside a rail the content reaches
@@ -83,7 +82,7 @@ fun NavigationShellContent(
 
 /**
  * The iPhone Duo experiment's frame ([LayoutMode.EndRail]): the content clears the top, start and bottom insets, and the rail
- * fills the column iOS reserves at the end edge for the status bar and camera (at least the rail's own width), its
+ * fills the column iOS reserves at the end edge for the status bar and camera (at least Material's own rail width), its
  * items at the bottom of that column.
  */
 @Composable
@@ -102,7 +101,7 @@ private fun EndRailFrame(items: List<NavigationItemSpec>, state: ShellUiState, o
             items = items,
             selectedId = state.selected.id,
             onSelect = onSelect,
-            modifier = Modifier.width(max(endInset, TembraTheme.spacing.railWidth)),
+            modifier = Modifier.widthIn(min = endInset),
             itemsAlignment = Alignment.Bottom,
         )
     }

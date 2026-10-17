@@ -25,7 +25,7 @@ class IconAssetsTest {
     private val filledGlyphs = listOf("ic_play_arrow_fill_24.xml", "ic_pause_fill_24.xml")
     private val materialGlyphs = (
         listOf(
-            "ic_home_24.xml", "ic_graphic_eq_24.xml", "ic_music_note_24.xml",
+            "ic_graphic_eq_24.xml", "ic_music_note_24.xml",
             "ic_av_timer_24.xml", "ic_folder_24.xml", "ic_person_24.xml",
             "ic_mic_24.xml", "ic_mic_off_24.xml", "ic_hearing_24.xml", "ic_play_arrow_24.xml", "ic_pause_24.xml",
             "ic_volume_up_24.xml", "ic_expand_more_24.xml", "ic_arrow_left_24.xml", "ic_arrow_right_24.xml", "ic_settings_24.xml",

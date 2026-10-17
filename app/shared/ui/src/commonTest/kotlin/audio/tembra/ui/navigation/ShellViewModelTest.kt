@@ -30,8 +30,8 @@ class ShellViewModelTest {
     fun tearDown() = Dispatchers.resetMain()
 
     @Test
-    fun startsOnHome() = runTest {
-        assertEquals(Destination.Home, viewModel.uiState.value.selected)
+    fun startsOnTimeline() = runTest {
+        assertEquals(Destination.Timeline, viewModel.uiState.value.selected)
     }
 
     @Test
@@ -49,14 +49,14 @@ class ShellViewModelTest {
     }
 
     @Test
-    fun backFromADestinationReturnsHomeAndIsConsumed() = runTest {
+    fun backFromADestinationReturnsToTimelineAndIsConsumed() = runTest {
         viewModel.select(Destination.Tuner)
         assertTrue(viewModel.back())
-        assertEquals(Destination.Home, viewModel.uiState.value.selected)
+        assertEquals(Destination.Timeline, viewModel.uiState.value.selected)
     }
 
     @Test
-    fun backOnHomeIsNotConsumedAndChangesNothing() = runTest {
+    fun backOnTimelineIsNotConsumedAndChangesNothing() = runTest {
         val before = viewModel.uiState.value
         assertFalse(viewModel.back())
         assertSame(before, viewModel.uiState.value)

@@ -24,11 +24,11 @@ import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasAnyAncestor
-import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithTag
@@ -50,8 +50,9 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
- * Drives the stateless shell through every layout (spec FR-004 to FR-009, FR-020). The destination switched to is
- * Projects, a placeholder: the Tuner and Metronome screens obtain a ViewModel from the Metro graph, which these tests do not provide.
+ * Drives the stateless shell through every layout (spec FR-004 to FR-009, FR-020). The shell starts on Timeline (Home was
+ * removed on 2026-10-17) and the destination switched to is Projects, both placeholders: the Tuner and Metronome screens
+ * obtain a ViewModel from the Metro graph, which these tests do not provide.
  */
 @OptIn(ExperimentalTestApi::class)
 class NavigationShellTest {
@@ -89,7 +90,7 @@ class NavigationShellTest {
         for (destination in Destination.entries) {
             onNodeWithTag("nav.item.${destination.id}").assertExists()
         }
-        onNodeWithTag("screen.home").assertIsDisplayed()
+        onNodeWithTag("screen.timeline").assertIsDisplayed()
     }
 
     /**
@@ -101,10 +102,10 @@ class NavigationShellTest {
     fun noLayoutHasATopBarAndTheContentStartsAtTheTopInset() = runComposeUiTest {
         var layoutMode by mutableStateOf(LayoutMode.BottomBar)
         var topInset = 0.dp
-        var homeMargin = 0.dp
+        var placeholderMargin = 0.dp
         withShellLocals {
             topInset = with(LocalDensity.current) { WindowInsets.safeDrawing.getTop(this).toDp() }
-            homeMargin = TembraTheme.spacing.lg // the placeholder's own top margin, inside its tagged node
+            placeholderMargin = TembraTheme.spacing.lg // the placeholder's own top margin, inside its tagged node
             NavigationShellContent(ShellUiState(), layoutMode, onSelect = {}, onBack = {})
         }
         for (mode in LayoutMode.entries) {
@@ -112,9 +113,9 @@ class NavigationShellTest {
             waitForIdle()
             onNodeWithTag("chrome.topBar").assertDoesNotExist()
             val shell = onNodeWithTag("nav.shell").getUnclippedBoundsInRoot()
-            val home = onNodeWithTag("screen.home").getUnclippedBoundsInRoot()
-            val expected = topInset + homeMargin
-            assertTrue(abs((home.top - shell.top - expected).value) < 0.5f, "$mode: Home starts ${home.top - shell.top} below the shell's top, not $expected (inset $topInset)")
+            val start = onNodeWithTag("screen.timeline").getUnclippedBoundsInRoot()
+            val expected = topInset + placeholderMargin
+            assertTrue(abs((start.top - shell.top - expected).value) < 0.5f, "$mode: Timeline starts ${start.top - shell.top} below the shell's top, not $expected (inset $topInset)")
             if (mode == LayoutMode.BottomBar) continue
             assertTrue(abs((onNodeWithTag("chrome.rail").getUnclippedBoundsInRoot().top - shell.top).value) < 0.5f, "$mode: the rail does not reach the top edge")
             val firstItem = onNodeWithTag("nav.item.${Destination.entries.first().id}").getUnclippedBoundsInRoot()
@@ -131,7 +132,7 @@ class NavigationShellTest {
         for (destination in Destination.entries) {
             onNodeWithTag("nav.item.${destination.id}").assertExists()
         }
-        onNodeWithTag("screen.home").assertIsDisplayed()
+        onNodeWithTag("screen.timeline").assertIsDisplayed()
     }
 
     @Test
@@ -155,40 +156,42 @@ class NavigationShellTest {
         }
     }
 
+    /** Home and its Library panel were removed on 2026-10-17: no destination declares supporting content now. */
     @Test
-    fun railWithPanelShowsThePaneOnHomeOnly() = runComposeUiTest {
+    fun railWithPanelShowsNoPaneOnAnyDestination() = runComposeUiTest {
         var state by mutableStateOf(ShellUiState())
-        var layoutMode by mutableStateOf(LayoutMode.RailWithPanel)
-        withShellLocals { NavigationShellContent(state, layoutMode, onSelect = {}, onBack = {}) }
-        onNodeWithTag("chrome.supportingPane").assertIsDisplayed()
-        onNode(hasText("Library") and hasAnyAncestor(hasTestTag("chrome.supportingPane"))).assertIsDisplayed()
-        onNode(hasText("Loops and sounds will appear here.") and hasAnyAncestor(hasTestTag("chrome.supportingPane"))).assertIsDisplayed()
-        // On a phone-sized test window the forced panel leaves Home no width; its presence is what matters here.
-        onNodeWithTag("screen.home").assertExists()
-        state = ShellUiState(Destination.Projects)
-        waitForIdle()
-        onNodeWithTag("chrome.supportingPane").assertDoesNotExist()
-        onNodeWithTag("screen.projects").assertIsDisplayed()
-        state = ShellUiState()
-        layoutMode = LayoutMode.Rail
-        waitForIdle()
-        onNodeWithTag("chrome.supportingPane").assertDoesNotExist()
-        onNodeWithTag("screen.home").assertIsDisplayed()
+        withShellLocals { NavigationShellContent(state, LayoutMode.RailWithPanel, onSelect = {}, onBack = {}) }
+        for (destination in listOf(Destination.Timeline, Destination.Projects, Destination.Profile)) {
+            state = ShellUiState(destination)
+            waitForIdle()
+            onNodeWithTag("screen.${destination.id}").assertIsDisplayed()
+            onNodeWithTag("chrome.supportingPane").assertDoesNotExist()
+        }
     }
 
     @Test
-    fun homeShowsOnlyTitleAndSentence() = runComposeUiTest {
+    fun timelineShowsOnlyTitleAndSentence() = runComposeUiTest {
         withShellLocals { NavigationShellContent(ShellUiState(), LayoutMode.BottomBar, onSelect = {}, onBack = {}) }
         val textNodes = SemanticsMatcher.keyIsDefined(SemanticsProperties.Text)
-        onNode(hasText("Home") and hasAnyAncestor(hasTestTag("screen.home")), useUnmergedTree = true).assertIsDisplayed()
-        onNodeWithTag("screen.home.message").assertTextEquals("This is your starting point in Tembra Audio.")
-        onAllNodes(hasAnyAncestor(hasTestTag("screen.home")) and textNodes, useUnmergedTree = true).assertCountEquals(2)
+        onNode(hasText("Timeline") and hasAnyAncestor(hasTestTag("screen.timeline")), useUnmergedTree = true).assertIsDisplayed()
+        onNodeWithTag("screen.timeline.message").assertTextEquals("The timeline arranger arrives with the transport and timeline feature.")
+        onAllNodes(hasAnyAncestor(hasTestTag("screen.timeline")) and textNodes, useUnmergedTree = true).assertCountEquals(2)
     }
 
+    /** The items show icons only (2026-10-17): no text in the bar or the rail, each label is the item's description. */
     @Test
-    fun paneHasNoControls() = runComposeUiTest {
-        withShellLocals { NavigationShellContent(ShellUiState(), LayoutMode.RailWithPanel, onSelect = {}, onBack = {}) }
-        onAllNodes(hasAnyAncestor(hasTestTag("chrome.supportingPane")) and hasClickAction()).assertCountEquals(0)
+    fun navigationItemsShowIconsWithoutLabelsInBothLayouts() = runComposeUiTest {
+        var layoutMode by mutableStateOf(LayoutMode.BottomBar)
+        withShellLocals { NavigationShellContent(ShellUiState(), layoutMode, onSelect = {}, onBack = {}) }
+        val textNodes = SemanticsMatcher.keyIsDefined(SemanticsProperties.Text)
+        for ((mode, chrome) in listOf(LayoutMode.BottomBar to "chrome.bottomBar", LayoutMode.Rail to "chrome.rail")) {
+            layoutMode = mode
+            waitForIdle()
+            onAllNodes(hasAnyAncestor(hasTestTag(chrome)) and textNodes, useUnmergedTree = true).assertCountEquals(0)
+            for (destination in Destination.entries) {
+                onNodeWithTag("nav.item.${destination.id}").assertContentDescriptionEquals(destination.label)
+            }
+        }
     }
 
     @Test
@@ -201,7 +204,7 @@ class NavigationShellTest {
         state = ShellUiState(Destination.Projects)
         waitForIdle()
         onNodeWithTag("nav.item.projects").assertIsSelected()
-        onNodeWithTag("nav.item.home").assertIsNotSelected()
+        onNodeWithTag("nav.item.timeline").assertIsNotSelected()
         onNodeWithTag("screen.projects").assertIsDisplayed()
     }
 
@@ -209,7 +212,7 @@ class NavigationShellTest {
     fun reselectingTheActiveItemIsANoOp() = runComposeUiTest {
         var selected: Destination? = null
         withShellLocals { NavigationShellContent(ShellUiState(), LayoutMode.BottomBar, onSelect = { selected = it }, onBack = {}) }
-        onNodeWithTag("nav.item.home").performClick()
+        onNodeWithTag("nav.item.timeline").performClick()
         assertNull(selected)
     }
 
@@ -222,11 +225,11 @@ class NavigationShellTest {
         repeat(SETTLE_FRAMES) { mainClock.advanceTimeByFrame() }
         // Mid-fade both destinations are on screen: no blank frame (spec SC-002).
         onNodeWithTag("screen.projects").assertIsDisplayed()
-        onNodeWithTag("screen.home").assertExists()
+        onNodeWithTag("screen.timeline").assertExists()
         mainClock.advanceTimeBy(300)
         repeat(SETTLE_FRAMES) { mainClock.advanceTimeByFrame() }
         onNodeWithTag("screen.projects").assertIsDisplayed()
-        onNodeWithTag("screen.home").assertDoesNotExist()
+        onNodeWithTag("screen.timeline").assertDoesNotExist()
     }
 
     @Test
@@ -238,7 +241,7 @@ class NavigationShellTest {
         repeat(SETTLE_FRAMES) { mainClock.advanceTimeByFrame() }
         // A few frames later (well under the 300 ms fade) the switch is complete: no outgoing screen remains.
         onNodeWithTag("screen.projects").assertIsDisplayed()
-        onNodeWithTag("screen.home").assertDoesNotExist()
+        onNodeWithTag("screen.timeline").assertDoesNotExist()
     }
 
     @Test

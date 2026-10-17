@@ -27,6 +27,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import audio.tembra.core.metronome.Tempo
 import audio.tembra.core.metronome.TempoMarking
+import audio.tembra.ui.designsystem.TembraSlider
 import audio.tembra.ui.designsystem.TembraSliderDefaults
 import audio.tembra.ui.designsystem.TembraSliderThumb
 import audio.tembra.ui.metronome.MetronomeCopy
@@ -68,7 +69,7 @@ internal fun TempoSlider(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(text = Tempo.MIN.toString(), style = labelStyle, color = colors.outline)
-        Slider(
+        TembraSlider(
             value = tempo.bpm.toFloat(),
             onValueChange = { offer(Tempo.clamped(it.roundToInt())) },
             modifier = Modifier

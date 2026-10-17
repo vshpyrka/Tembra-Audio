@@ -7,17 +7,17 @@ import kotlin.test.assertEquals
 class ShellUiStateTest {
 
     @Test
-    fun startsOnHome() {
-        assertEquals(Destination.Home, ShellUiState().selected)
+    fun startsOnTimeline() {
+        assertEquals(Destination.Timeline, ShellUiState().selected)
     }
 
     @Test
-    fun homeAloneIsTheBackStackOnHome() {
-        assertEquals(listOf(Destination.Home), ShellUiState().backStack)
+    fun timelineAloneIsTheBackStackOnTimeline() {
+        assertEquals(listOf(Destination.Timeline), ShellUiState().backStack)
     }
 
     @Test
-    fun anotherDestinationSitsAboveHome() {
-        assertEquals(listOf(Destination.Home, Destination.Tuner), ShellUiState(selected = Destination.Tuner).backStack)
+    fun anotherDestinationSitsAboveTimeline() {
+        assertEquals(listOf(Destination.Timeline, Destination.Tuner), ShellUiState(selected = Destination.Tuner).backStack)
     }
 }

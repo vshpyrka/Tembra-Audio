@@ -30,6 +30,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextOverflow
 import audio.tembra.core.tuner.NoiseGate
 import audio.tembra.engine.PitchSnapshot
+import audio.tembra.ui.designsystem.TembraSlider
 import audio.tembra.ui.designsystem.TembraSliderDefaults
 import audio.tembra.ui.designsystem.TembraSliderThumb
 import audio.tembra.ui.designsystem.rememberFrameTick
@@ -96,7 +97,7 @@ internal fun NoiseGateSlider(
         // track, which is the distance the tempo slider keeps between its labels and its track.
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(text = TunerCopy.off, style = endLabelStyle, color = colors.outline, modifier = Modifier.semantics { hideFromAccessibility() })
-            Slider(
+            TembraSlider(
                 value = gate.step.toFloat(),
                 onValueChange = { value ->
                     val next = NoiseGate.ofStep(value.roundToInt())

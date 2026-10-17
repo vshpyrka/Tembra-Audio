@@ -33,6 +33,9 @@ kotlin {
         androidMain.dependencies {
             // ReportFirstContentDrawn's Android actual is activity-compose's ReportDrawnWhen (feature 007).
             implementation(libs.androidx.activity.compose)
+            // Raises the androidx Material 3 under the JetBrains artifacts to the Expressive beta on Android.
+            implementation(libs.androidx.compose.material3)
+            implementation(libs.androidx.compose.material3.adaptive.navigation.suite)
         }
         getByName("androidHostTest").dependencies {
             implementation(libs.kotlinx.serialization.json)
