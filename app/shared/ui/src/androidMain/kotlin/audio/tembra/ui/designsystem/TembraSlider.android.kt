@@ -9,7 +9,7 @@ import androidx.compose.ui.Modifier
 
 /** The 1.5.0-beta01 form, wired the way Material's own value-based slider wires its state. */
 @Composable
-internal actual fun TembraSlider(
+internal actual fun PlatformSlider(
     value: Float,
     onValueChange: (Float) -> Unit,
     modifier: Modifier,

@@ -8,7 +8,7 @@ import androidx.compose.ui.Modifier
 
 /** JetBrains' port of 1.5.0-alpha22 still has the value-based slider with a custom thumb and track. */
 @Composable
-internal actual fun TembraSlider(
+internal actual fun PlatformSlider(
     value: Float,
     onValueChange: (Float) -> Unit,
     modifier: Modifier,
