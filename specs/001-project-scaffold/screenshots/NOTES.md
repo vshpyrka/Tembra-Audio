@@ -38,3 +38,33 @@ time from the build with 41fffa2 (rail items centred in the rail). Screenshots: 
 |---|---|---|
 | `ios-compact.png` | retaken: iPhone 17 (iOS 26.5), portrait, plain launch: Timeline (title and one sentence) | no |
 | `ios-wide.png` | retaken (build with 41fffa2): iPad Pro 13-inch (M5) (iOS 26.5), portrait (1032 pt, rail with the items centred), plain launch: Timeline | no. The Library panel at the foot is gone with Home; that is part of the navigation change. |
+
+## Recaptured 2026-10-17 (2): hand-drawn Tuner and Metronome glyphs (Android)
+
+The Tuner and Metronome navigation items now show hand-drawn glyphs, a tuning fork with a sound arc on each side and a
+pyramid metronome, instead of Material's music_note and av_timer (branch `experiment/nav-glyphs`, 041819b). Both
+Android captures were retaken under the same names, on the same target and in the same state as the morning's pass.
+Target: Pixel 6 Pro `19021FDEE001AH` (Android 17), the debug APK built from HEAD 2a5d7dc (`:androidApp:assembleDebug`
+through the gradle-run wrapper), installed fresh (uninstalled first, so stored state started from the defaults), with
+RECORD_AUDIO and POST_NOTIFICATIONS granted by `pm grant`; `adb exec-out screencap -p`. Every new image was compared
+with the committed one pixel by pixel (threshold 40/255, status bar excluded): the only differences are the two
+glyphs in the bar or rail.
+
+### Android, Pixel 6 Pro (2 retaken, 0 left)
+
+| File | How | Differs beyond the two glyphs |
+|---|---|---|
+| `android-compact.png` | retaken: portrait, cold launch (Timeline) | no |
+| `android-wide.png` | retaken: launch, then `wm user-rotation lock 1` | no |
+
+## Recaptured 2026-10-17 (2): hand-drawn Tuner and Metronome glyphs (iOS)
+
+Both iOS captures were retaken under the same names, on the same simulators and in the same state (a plain launch, which
+opens Timeline). The build was Debug, made from 041819b (`experiment/nav-glyphs`) with the Xcode 27.1 SDK, in which the
+Tuner item shows a hand-drawn tuning fork and the Metronome item a hand-drawn pyramid metronome. Each image was compared
+with the previous one (HEAD) outside the navigation and the status bar.
+
+| File | How | Differs beyond the two glyphs |
+|---|---|---|
+| `ios-compact.png` | retaken: iPhone 17 (iOS 26.5), portrait, plain launch: Timeline, bar | no |
+| `ios-wide.png` | retaken: iPad Pro 13-inch (M5) (iOS 26.5), portrait, plain launch: Timeline, rail | no |

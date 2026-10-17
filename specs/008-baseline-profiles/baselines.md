@@ -187,6 +187,29 @@ metronome's beat light caught at a different moment). The two Auto Listen pairs 
 Nothing is missing in the shrunk build: text, icons, fonts, the TONE OUT pill and "Playing", the metronome's settings
 and sound name, the bar and the rail.
 
+### Recaptured 2026-10-17 (2): hand-drawn Tuner and Metronome glyphs (Android)
+
+The Tuner and Metronome navigation items now show hand-drawn glyphs, a tuning fork with a sound arc on each side and a
+pyramid metronome, instead of Material's music_note and av_timer (branch `experiment/nav-glyphs`, 041819b; baseline
+profiles regenerated in 2a5d7dc). All 24 images (12 pairs) were retaken under the same names on the Pixel 6 Pro
+`19021FDEE001AH` (Android 17) with the script of the morning's pass. Builds from HEAD 2a5d7dc, each in its own Gradle
+call through the gradle-run wrapper: `:androidApp:assembleDebug` and `-Ptembra.perf=true :androidApp:assemblePerf`.
+The debug APK was installed first, the perf APK over it with `adb install -r -t`, RECORD_AUDIO and POST_NOTIFICATIONS
+granted after each install, and the debug build reinstalled at the end. Auto Listen used the real microphone under
+the speaker lock (four frames a second apart, a frame at rest kept). Nothing to remove this time: the Home pairs were
+already gone.
+
+| File | How | Differs beyond the two glyphs |
+|---|---|---|
+| `compact-{timeline,tuner-autoListen,tuner-byEar-tone,metronome-running-settings,projects,profile}-{debug,perf}.png` (12) | retaken: portrait | no; in the running metronome a different beat cell is lit, as before the light depends on the moment of the capture |
+| `expanded-{…}-{debug,perf}.png` (12) | retaken: rotation 1, native density | no (same note on the running metronome) |
+
+Debug against perf, per pair (status bar excluded, threshold 40/255): 0.02 % for all twelve pairs (the perf build's
+8 dp "write engine health" dot at the top end corner). Nothing missing in the shrunk build: the two new glyphs, text,
+fonts, the TONE OUT pill and "Playing", the metronome's settings and sound name, the bar and the rail. The perf APK
+still carries `ic_av_timer_24.xml` in its assets although 041819b deleted it (the debug APK too; a stale file left
+by the incremental compose-resources copy, not referenced).
+
 ## T030 — `uv run tracepulse profile verify --device pixel6` (Pixel 6 Pro, 2026-10-12)
 
 Run 1 (builds `assemblePerf` itself, up to date): `profile present (8443 bytes, 0.1 %); recognised (result 1);
