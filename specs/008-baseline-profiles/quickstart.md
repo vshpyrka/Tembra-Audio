@@ -54,8 +54,9 @@ cd perf && uv run tracepulse run --device pixel6 --label baseline-profiles-shrin
 
 Expected: `assets/dexopt/baseline.prof` in the APK; the round succeeds (all four journeys) on the shrunk build; no
 crash in `logcat`. Then screenshots of every primary destination on the shrunk build (`adb shell am start -n
-audio.tembra.app/audio.tembra.android.MainActivity`, navigate, `android screen capture --output …`): Home, Timeline,
-Tuner (Auto Listen and By Ear), Effects, Pads, Projects, Metronome (settings open), Profile — on the Pixel (compact)
+audio.tembra.app/audio.tembra.android.MainActivity`, navigate, `android screen capture --output …`): Timeline,
+Tuner (Auto Listen and By Ear), Effects, Pads, Projects, Metronome (settings open), Profile (and Home until it was
+removed on 2026-10-17) — on the Pixel (compact)
 and on the tablet or fold emulator (expanded) — compared side by side with the debug build. A difference (missing
 text, icon, sound, a crash) is answered with one keep rule in `proguard-rules.pro` with a comment, then this step again.
 
@@ -92,12 +93,14 @@ new round and `git -C .history status` shows nothing to publish (the comparison 
 
 ```
 cd app && ./gradlew checkAndroidHost --warning-mode all            # passes; timing within 5 % of §0
-sed -i '' 's/^home .*/home Laudio\/tembra\/ui\/home\/MissingScreenKt;/' androidApp/baseline-profile-coverage.txt
-./gradlew checkAndroidHost                                           # fails naming "home (Laudio/tembra/ui/home/MissingScreenKt;)"
+sed -i '' 's/^timeline .*/timeline Laudio\/tembra\/ui\/timeline\/MissingScreenKt;/' androidApp/baseline-profile-coverage.txt
+./gradlew checkAndroidHost                                           # fails naming "timeline (Laudio/tembra/ui/timeline/MissingScreenKt;)"
 git checkout androidApp/baseline-profile-coverage.txt
 ```
 
-Expected: pass, fail-with-name, pass. `app/perf/README.md` "Every feature instruments itself" states the
+Expected: pass, fail-with-name, pass. Until 2026-10-17 the check edited the `home` rule
+(`Laudio/tembra/ui/home/MissingScreenKt;`); that rule became the `timeline` rule when Home was removed
+(contracts/coverage-rule.md). `app/perf/README.md` "Every feature instruments itself" states the
 regeneration sentence; the "Baseline profiles" section documents the three commands, the file locations, when to
 regenerate and commit, the `adb` verification and the keep-rule policy.
 

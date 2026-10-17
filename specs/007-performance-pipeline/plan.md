@@ -105,7 +105,7 @@ app/
 │       ├── PerfTrace.kt (expect)  PerfTrace.android.kt  PerfTrace.ios.kt  PerfTraceSink.kt  PerfSection.kt  PerfFamily.kt  PerfCounter.kt
 │       ├── AudioHealth.kt  AudioHealthPublisher.kt  (+ AudioEngine.audioHealth(), FakeAudioEngine.scriptAudioHealth)
 │       └── commonTest: PerfBuildTest.kt  PerfTraceTest.kt  PerfSectionCatalogueTest.kt  AudioHealthTelemetryTest.kt
-├── shared/ui/src/commonMain/kotlin/audio/tembra/ui/perf/PerfAnchors.kt  AudioHealthTicker.kt   # testTag constants; the one-second ticker (measurement builds); ReportDrawnWhen in Home/Tuner/Metronome wiring composables; devtools "write engine health" action in ui/devtools/
+├── shared/ui/src/commonMain/kotlin/audio/tembra/ui/perf/PerfAnchors.kt  AudioHealthTicker.kt   # testTag constants; the one-second ticker (measurement builds); ReportDrawnWhen in Home/Tuner/Metronome wiring composables (Timeline in Home's place since Home was removed on 2026-10-17); devtools "write engine health" action in ui/devtools/
 ├── engine/
 │   ├── include/tembra_engine.h            # + tembra_audio_health, tembra_engine_audio_health()
 │   ├── include/tembra_trace.h             # facade C API + macros; poison mode
