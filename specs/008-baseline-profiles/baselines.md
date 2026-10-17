@@ -160,6 +160,33 @@ fonts, the audition tone pill, the metronome's settings and sound name, the rail
 debug build showed By Ear: the tuner remembers its last mode across the two installs, which share the package's
 data; the script now selects Auto Listen explicitly.)
 
+### T028 screenshots, retaken 2026-10-17: icon-only navigation, no Home
+
+Home was removed on 2026-10-17 (the app opens on Timeline; destinations Timeline, Tuner, Metronome, Projects, Profile)
+and the navigation items show icons only (Material 3 Expressive bottom bar on compact windows, a collapsed 96 dp rail
+on wide ones). The set is now 12 pairs: timeline, tuner-autoListen, tuner-byEar-tone, metronome-running-settings,
+projects, profile, each compact (portrait, bottom bar) and expanded (the Pixel held sideways at native density,
+≈891 dp, rail). Target: Pixel 6 Pro `19021FDEE001AH` (Android 17). Builds of that morning from
+`worktree-nav-icons-only`, each in its own Gradle call through the gradle-run wrapper: `:androidApp:assembleDebug`
+and `-Ptembra.perf=true :androidApp:assemblePerf` (shrunk). The debug APK was installed first, the perf APK over it
+with `adb install -r -t` (same package and data), RECORD_AUDIO and POST_NOTIFICATIONS granted with `pm grant` after
+each install, and the debug build reinstalled at the end. One script made both sets: cold launch (Timeline), Projects,
+Profile, Tuner → By Ear → string VI's Audition (captured "Playing", then stopped), Auto Listen tapped explicitly (four
+frames a second apart on the real microphone, under the speaker lock; all at rest, one kept), Metronome → Play
+(captured running, then stopped); first in portrait, then with `wm user-rotation lock 1`.
+
+| File | How | Differs beyond the navigation |
+|---|---|---|
+| `compact-home-debug.png`, `compact-home-perf.png`, `expanded-home-debug.png`, `expanded-home-perf.png` | **removed** (`git rm`): Home no longer exists, so these states cannot be retaken | — |
+| `compact-{timeline,tuner-autoListen,tuner-byEar-tone,metronome-running-settings,projects,profile}-{debug,perf}.png` (12) | retaken as above, portrait | no: the content matches the 2026-10-16 images; only the bar differs (and which beat cell is lit in the running metronome) |
+| `expanded-{…}-{debug,perf}.png` (12) | retaken as above, rotation 1 | the collapsed rail is wider than the old labelled rail, so the content starts further right and the cards are slightly narrower; otherwise no |
+
+Debug against perf, per pair (status bar excluded, threshold 40/255): 0.02 % for eleven pairs (the perf build's 8 dp
+"write engine health" dot at the top end corner) and 0.19 % for `expanded-metronome-running-settings` (the running
+metronome's beat light caught at a different moment). The two Auto Listen pairs no longer differ beyond the dot (both meters at rest in a quiet room).
+Nothing is missing in the shrunk build: text, icons, fonts, the TONE OUT pill and "Playing", the metronome's settings
+and sound name, the bar and the rail.
+
 ## T030 — `uv run tracepulse profile verify --device pixel6` (Pixel 6 Pro, 2026-10-12)
 
 Run 1 (builds `assemblePerf` itself, up to date): `profile present (8443 bytes, 0.1 %); recognised (result 1);
