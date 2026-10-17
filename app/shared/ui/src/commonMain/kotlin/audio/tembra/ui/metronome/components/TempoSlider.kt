@@ -38,8 +38,8 @@ import kotlin.math.roundToInt
  * The tempo slider under the dial (research R8, R10): a Material [Slider] over 40–240 in whole numbers, restyled with
  * the design's 6 dp `surfaceContainerHighest` track and the design system's 16 dp `primary` handle
  * ([TembraSliderThumb], shared with the tuner's noise gate since feature 006), between the end labels "40" and "240";
- * the handle's box is 44 dp tall, so the slider is a whole touch target. The arrows come from Material; the page keys
- * move the tempo by ten, as on the dial. The handle keeps Material's feedback: a `primary` state layer on hover,
+ * the handle's box is 44 dp tall, so the slider is a whole touch target. Left and Right come from Material, Up and Down
+ * from [TembraSlider]; the page keys move the tempo by ten, as on the dial. The handle keeps Material's feedback: a `primary` state layer on hover,
  * press, drag and focus, and the focus ring.
  */
 @OptIn(ExperimentalMaterial3Api::class)
