@@ -232,3 +232,48 @@ time from the build with 41fffa2, in which the collapsed rail centres its items.
 | `ios-duo-closed-end-rail-timeline.png` (was `ios-duo-closed-end-rail-home.png`) | retaken (build with 41fffa2): Duo closed, upright, outer display, plain launch | no. The end rail still fills the system column, with its items at the bottom, centred under the clock. |
 | `ios-duo-closed-end-rail-tuner.png` | retaken (build with 41fffa2): Duo closed, upright, By Ear, guitar, 6-String, Standard | no |
 | `ios-duo-closed-landscape-rail.png` | retaken (build with 41fffa2): Duo closed, Device Hub Rotate Right (three more turns brought it back upright), plain launch | no |
+
+## Recaptured 2026-10-17 (2): hand-drawn Tuner and Metronome glyphs (Android)
+
+The Tuner and Metronome navigation items now show hand-drawn glyphs, a tuning fork with a sound arc on each side and a
+pyramid metronome, instead of Material's music_note and av_timer (branch `experiment/nav-glyphs`, 041819b). All six
+Android captures were retaken under the same names (the `*-timeline*` names of the morning's pass), on the same target
+and in the same states. Target: Pixel 6 Pro `19021FDEE001AH` (Android 17), the debug APK built from HEAD 2a5d7dc
+through the gradle-run wrapper, installed fresh; `adb exec-out screencap -p`, UiAutomator taps on content descriptions.
+Settings were put back afterwards (rotation lock 0, `wm density reset`, font 1.0). Each new image was compared with the
+committed one pixel by pixel (threshold 40/255, status bar excluded): the only differences are the two glyphs.
+
+### Android, Pixel 6 Pro (6 retaken, 0 left)
+
+| File | How | Differs beyond the two glyphs |
+|---|---|---|
+| `android-compact-timeline.png` | retaken: portrait, cold launch | no |
+| `android-compact-timeline-largefont.png` | retaken: `font_scale 2.0` | no |
+| `android-short-timeline.png` | retaken: `wm user-rotation lock 1` | no |
+| `android-medium-timeline.png` | retaken: portrait, `wm density 380` (rail) | no |
+| `android-expanded-timeline.png` | retaken: landscape, density 380 | no |
+| `android-expanded-tuner.png` | retaken: landscape, density 380, Tuner tapped in the rail; Auto Listen on the real microphone, five frames a second apart under the speaker lock; the room was not quiet this time (four frames named passing notes), the one frame at rest ("Listening", needle centred) kept | no |
+
+## Recaptured 2026-10-17 (2): hand-drawn Tuner and Metronome glyphs (iOS)
+
+All nine iOS captures were retaken under the same names, on the same targets, in the same windows and poses. The build
+was Debug, made from 041819b (`experiment/nav-glyphs`) with the Xcode 27.1 SDK: Tuner shows a hand-drawn tuning fork
+and Metronome a hand-drawn pyramid metronome. Each image was compared with the previous one (HEAD) outside the
+navigation and the status bar.
+
+- **Targets:** iPhone 17 and iPad Pro 13-inch (M5) (iOS 26.5); iPhone Duo (iOS 27.1, outer display); a temporary iPad
+  mini (A17 Pro) on iOS 26.5, created, captured and deleted.
+- **Rotation:** the iPhone and iPad through the Simulator's Device ▸ Orientation menu; the Duo through Device Hub's
+  Rotate Right, pressed through the accessibility API.
+
+| File | How | Differs beyond the two glyphs |
+|---|---|---|
+| `ios-compact-timeline.png` | retaken: iPhone 17, portrait, plain launch | no |
+| `ios-compact-timeline-largefont.png` | retaken: iPhone 17, `content_size accessibility-extra-extra-extra-large`, plain launch; text size back to `medium` | no |
+| `ios-short-timeline.png` | retaken: iPhone 17, Landscape Left, plain launch | no |
+| `ios-medium-timeline.png` | retaken: temporary iPad mini (A17 Pro), portrait | no |
+| `ios-expanded-timeline.png` | retaken: iPad Pro, Landscape Left, plain launch | no |
+| `ios-expanded-tuner.png` | retaken: iPad Pro, Landscape Left, Tuner on the real microphone, `--tembra-tuner-noise-gate=-28` | no. Only the gate track's fill, which shows the room's level at that moment, is a little shorter. |
+| `ios-duo-closed-end-rail-timeline.png` | retaken: Duo closed, upright, outer display, plain launch | no |
+| `ios-duo-closed-end-rail-tuner.png` | retaken: Duo closed, upright, By Ear, guitar, 6-String, Standard | no |
+| `ios-duo-closed-landscape-rail.png` | retaken: Duo closed, Device Hub Rotate Right (three more turns back upright), plain launch | no |

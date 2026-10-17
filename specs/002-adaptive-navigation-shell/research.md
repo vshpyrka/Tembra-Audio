@@ -229,6 +229,27 @@ Material Symbols); the Material Symbols variable font (about 8 MB, glyphs as tex
 and axis settings, awkward with `Icon`); SVG files (`.svg` is not supported on Android by the
 resource library).
 
+**Amended 2026-10-17**: two navigation glyphs are no longer Material Symbols. The owner compared
+candidates for Tuner and Metronome (the Material Symbols `music_note`, `speed`, `tonality_2`,
+`av_timer`, `cadence` and `pace`, the metronome glyphs of MDI, Tabler and Phosphor, and drafts
+generated with the Antigravity CLI) and adopted two drawn for the project, because Material
+Symbols has neither a tuning fork nor a metronome: a tuning fork (two prongs joined by a U, a
+stem, a sound arc on each side) and a pyramid metronome (body, scale plate, and a rod that leaves
+through a gap in the body's right edge so the crossing stays legible at 24 dp). Both are drawn on
+the Material Symbols 24 dp grid in the weight of Outlined 400: 2 dp strokes, round joins, flat
+ends, each line a stroked `<path>` with a literal `#FFFFFFFF` stroke that `Icon` tints, which
+Compose renders the same way on Android and iOS. `app/tools/make-nav-glyphs.py` writes them to
+`composeResources/drawable/ic_tuning_fork_24.xml` and `ic_metronome_24.xml`, writes the metronome
+again as the Android notification's status-bar icon
+`androidApp/src/main/res/drawable/ic_stat_metronome.xml` (it was `av_timer`), and with
+`--preview <dir>` a preview sheet (HTML and the SVG path data); re-running overwrites
+identically. `TembraIcon.Tuner` and `.Metronome` point at them, `ic_av_timer_24.xml` is deleted,
+and the tuner's preset picker keeps its music note through `TembraIcon.MusicNote`. The fetch
+script stays the way Material Symbols glyphs are added; `IconAssetsTest` checks that the two
+glyphs name their generator in the header and are white strokes
+(`navGlyphsNameTheirGeneratorAndAreWhiteStrokes`). The artwork is the project's own, so the
+licence inventory gains no row (R11).
+
 ## R7. Motion and reduce motion
 
 **Decision**: `TembraMotion(standardDuration = 300 ms, standardEasing = cubic-bezier(0.2, 0, 0, 1))`
@@ -349,7 +370,9 @@ an Android actual (the state-based slider) and an iOS actual (the value-based on
 inset focus-ring preset differently (`RippleDefaults.InsetFocusRingThemeConfiguration` in
 androidx 1.5.0-beta01, `RippleDefaults.InsetFocusRingRippleThemeConfiguration` in the JetBrains
 1.12.0-alpha03 port), so `InsetFocusRing` (R4) is an internal `expect val` with an Android and an
-iOS actual. The navigation glyphs are five since `ic_home_24.xml` was deleted on 2026-10-17.
+iOS actual. The navigation glyphs are five since `ic_home_24.xml` was deleted on 2026-10-17, and
+since the same day only three of them (Timeline, Projects, Profile) come under the Material
+Symbols row: the Tuner and Metronome glyphs are the project's own artwork (R6) and add no row.
 
 ## R12. What is removed or kept from feature 001
 
