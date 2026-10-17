@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.safeDrawing
@@ -54,9 +55,12 @@ fun TembraNavigationRail(
             arrangement = if (itemsAlignment == Alignment.Bottom) Arrangement.Bottom else Arrangement.Top,
         ) {
             // The rail does not scroll by itself: five items under its top space overflow a 360 dp phone in landscape.
+            // The rail places its content at its start edge: the column takes the rail's width and centres the items,
+            // which on iOS (the JetBrains port) are only as wide as their indicator.
             Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
+                modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(TembraTheme.spacing.xs),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 for (item in items) key(item.id) {
                     val source = item.interactionSource ?: remember { MutableInteractionSource() }
