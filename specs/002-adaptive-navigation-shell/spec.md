@@ -53,6 +53,11 @@ screen. Only elements that appear consistently were carried into this specificat
   Story 3 are reversed; FR-001, FR-002, FR-004 to FR-006, FR-008, FR-010, FR-014, FR-015, FR-017 to FR-020, User
   Stories 1, 2 and 5, the edge cases, the Destination, Navigation State and Icon Set entities, SC-001, SC-003,
   SC-006, SC-008 and the assumptions are amended to match.
+- Later the same day the owner adopted new Tuner and Metronome glyphs, after an experiment comparing the nearest
+  Material Symbols glyphs, metronome glyphs from other open icon sets and generated drafts: the Tuner item shows a
+  hand-drawn tuning fork and the Metronome item a hand-drawn pyramid metronome, both drawn for the project on the
+  Material Symbols 24 dp grid in the Outlined regular weight, because Material Symbols has neither. FR-016, User
+  Story 5, the Icon Set entity and the icon assumptions are amended.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -193,7 +198,8 @@ items with the platform screen reader on both platforms.
 A contributor building the next screen finds the navigation icons, the frame components (top
 bar, bottom bar, rail, side panel) and the type styles in the shared design system, uses them
 by name, and sees identical rendering on Android and iOS. The icons come from Google's
-Material Symbols set and the fonts from Google Fonts, bundled with the app.
+Material Symbols set and the fonts from Google Fonts, bundled with the app; since 2026-10-17
+the Tuner and Metronome glyphs are the project's own, drawn on the Material Symbols grid.
 
 **Why this priority**: Shared assets prevent per-platform drift, but they are only valuable
 once the shell that uses them exists.
@@ -205,7 +211,8 @@ the icon set; confirm the shell code contains no literal colour, size or font va
 **Acceptance Scenarios**:
 
 1. **Given** the app on both platforms, **When** the navigation control is rendered, **Then**
-   the five icons are the same Material Symbols glyphs at the same size on both.
+   the five icons are the same glyphs at the same size on both (Material Symbols glyphs, and
+   since 2026-10-17 the project's own Tuner and Metronome glyphs; all Material Symbols until then).
 2. **Given** the shared design system, **When** a contributor looks for an icon, a frame
    component or a label style, **Then** each is available by name without touching platform
    code.
@@ -301,10 +308,14 @@ the icon set; confirm the shell code contains no literal colour, size or font va
   2026-10-17 as the icon's accessible name, not drawn), its selected state and a stable test
   identifier to accessibility services and UI tests; the bottom bar, rail and side panel MUST
   each be identifiable the same way. The test identifiers did not change with the amendment.
-- **FR-016**: The icons MUST come from Google's Material Symbols set (Apache-2.0), MUST be
-  bundled with the app (never fetched at run time), MUST be added to the shared design system
-  as named icons, and MUST be used by screens only through those names. The licence inventory
-  MUST list the icon set with its version and source.
+- **FR-016** (amended 2026-10-17): The icons MUST come from Google's Material Symbols set
+  (Apache-2.0), except the Tuner and Metronome navigation glyphs, which are the project's own
+  artwork (a tuning fork and a pyramid metronome, neither of which Material Symbols has) drawn on
+  the same 24 dp grid in the same Outlined regular weight. All icons MUST be bundled with the app
+  (never fetched at run time), MUST be added to the shared design system as named icons, and
+  MUST be used by screens only through those names. The licence inventory MUST list the icon set
+  with its version and source; the project's own glyphs need no entry. Until 2026-10-17 every
+  icon, the Tuner's music note and the Metronome's timer included, came from Material Symbols.
 - **FR-017** (amended 2026-10-17): All text in the frame MUST use the shared design system's
   type styles (the bundled Space Grotesk and Inter families) and all colours, sizes, spacing and
   shapes MUST come from the shared design tokens, except the bottom bar's and the rail's own
@@ -358,9 +369,11 @@ the icon set; confirm the shell code contains no literal colour, size or font va
 - **Layout Mode**: the form the frame takes, derived from the window: bottom bar (under
   600 dp), rail (600 dp to 839 dp), or rail with side panel (840 dp and wider, height 480 dp
   or more).
-- **Icon Set**: the named Material Symbols glyphs available to screens through the shared
-  design system, with their source and licence. In this feature it contains at least the
-  navigation glyphs (five since 2026-10-17, when Home's glyph left the set; six before).
+- **Icon Set**: the named glyphs available to screens through the shared design system, with
+  their source and licence: Material Symbols glyphs and, since 2026-10-17, the project's own
+  Tuner and Metronome glyphs drawn on the same grid (only Material Symbols glyphs until then).
+  In this feature it contains at least the navigation glyphs (five since 2026-10-17, when
+  Home's glyph left the set; six before).
 
 ## Success Criteria *(mandatory)*
 
@@ -435,7 +448,12 @@ the icon set; confirm the shell code contains no literal colour, size or font va
   bottom bar); Tuner `music_note` (every phone bottom bar); Metronome `av_timer` (Material
   Symbols has no metronome glyph; the mockups show a custom pendulum glyph that the metronome
   feature may introduce later); Projects `folder` (every phone bottom bar); Profile `person`
-  (the design's avatar glyph).
+  (the design's avatar glyph). Amended 2026-10-17: Tuner shows a tuning fork (two prongs
+  joined by a U, a stem, a sound arc on each side) and Metronome a pyramid metronome (body,
+  scale plate, and a rod that leaves through a gap in the body's right edge so the crossing
+  stays legible), both the project's own artwork, because Material Symbols has neither; the
+  owner chose them after comparing the nearest Material Symbols glyphs, metronome glyphs from
+  other open icon sets and generated drafts (FR-016).
 - **Where the icons and fonts come from (decided at the user's request).** Icons are
   Material Symbols Outlined glyphs, the set the Stitch screens themselves use, taken from
   Google's `google/material-design-icons` repository as the ready-made vector asset the
@@ -446,7 +464,9 @@ the icon set; confirm the shell code contains no literal colour, size or font va
   hundred bytes each and render identically on both platforms. The repository is Apache-2.0
   and goes into the licence inventory. Fonts are unchanged: Space Grotesk and Inter are
   already bundled from Google Fonts under the SIL Open Font License and no new weight is
-  needed for the frame.
+  needed for the frame. Since 2026-10-17 the Tuner and Metronome glyphs are drawn for the
+  project on the Material Symbols 24 dp grid in the Outlined regular weight (2 dp strokes, round
+  joins, flat ends); being the project's own artwork they add no licence to the inventory.
 - **The first destination is always the start.** The last-visited destination is not
   remembered across launches. The user described Home as the starting point; since Home was
   removed on 2026-10-17 the first destination in order, Timeline, is the start.

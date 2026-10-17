@@ -17,7 +17,8 @@ class FakeBackgroundPlaybackHost(var allow: Boolean = true) : BackgroundPlayback
 
 - `MetronomeForegroundService : Service` — an OS entry point, holds no engine state.
   `onStartCommand(ACTION_START)`: creates the channel `metronome` (importance low, name
-  "Metronome"), builds an ongoing notification (small icon `ic_stat_metronome`, title
+  "Metronome"), builds an ongoing notification (small icon `ic_stat_metronome`: the `av_timer` glyph until 2026-10-17,
+  since then the navigation's hand-drawn metronome, generated in white by `app/tools/make-nav-glyphs.py`; title
   "Metronome", text "Running", a "Stop" action with a `PendingIntent` for `ACTION_STOP`, content
   intent opening `MainActivity`) and calls
   `startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)`
