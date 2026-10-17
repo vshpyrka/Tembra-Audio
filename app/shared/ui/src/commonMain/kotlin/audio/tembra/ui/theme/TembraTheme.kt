@@ -1,14 +1,19 @@
 package audio.tembra.ui.theme
 
 import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.MaterialExpressiveTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 
-/** The single design system (always dark; the design defines only a dark palette). */
+/**
+ * The single design system (always dark; the design defines only a dark palette) on Material 3 Expressive: Material's
+ * components animate with the expressive motion scheme.
+ */
 @Composable
 fun TembraTheme(content: @Composable () -> Unit) {
     CompositionLocalProvider(
@@ -18,8 +23,9 @@ fun TembraTheme(content: @Composable () -> Unit) {
         LocalTembraMotion provides TembraMotion(reduceMotion = rememberReduceMotion()),
         LocalTembraGradients provides TembraGradients.Default,
     ) {
-        MaterialTheme(
+        MaterialExpressiveTheme(
             colorScheme = TembraColorScheme.dark,
+            motionScheme = MotionScheme.expressive(),
             typography = TembraTypography.material(),
             shapes = TembraShapes.material,
             content = content,

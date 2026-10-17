@@ -24,16 +24,16 @@ class PerfJourneyTestCase: XCTestCase {
 
     private static let allowButton = NSPredicate(format: "label BEGINSWITH 'Allow' OR label == 'OK'")
 
-    /// A warm launch before each measured iteration: the app is on Home when the journey starts.
+    /// A warm launch before each measured iteration: the app is on its start destination (Timeline) when the journey starts.
     func launchWarm() {
         app.terminate()
         app.launch()
-        app.waitForAnchor(Anchors.homeRoot)
+        app.waitForAnchor(Anchors.startRoot)
     }
 
     /// Every round reinstalls the app, so every round is asked for the microphone once, with a SpringBoard alert that
-    /// sits over the app and swallows a journey's taps until it is answered (on a fresh install iOS 27 asks on Home
-    /// right after launch; otherwise when the tuner starts listening). XCTest's interruption monitors never see this
+    /// sits over the app and swallows a journey's taps until it is answered (on a fresh install iOS 27 asks on the
+    /// start destination right after launch; otherwise when the tuner starts listening). XCTest's interruption monitors never see this
     /// alert ("Failed to construct element query matching interruption"), so it is answered through SpringBoard
     /// directly, at both moments, outside any measurement; the granted permission holds for the rest of the round.
     /// Simulators are granted by the pipeline before the run, so there the visit costs a few seconds and sees no alert.
