@@ -100,7 +100,7 @@ Needs the C shim built first. Task order puts the shim and a device run of `XCTO
 
 ### D10. Journeys and anchors
 
-- **Decision**: four journeys, same names on both platforms: `startup` (cold), `tuner` (open Tuner, Auto Listen, switch to By Ear, back), `metronome` (open Metronome, start, change tempo, stop), `stress` (tuner and metronome together; audio health readout). Anchors are `Modifier.testTag` values listed in `PerfAnchors.kt` (`:shared:ui`), exposed to UiAutomator through `testTagsAsResourceId = true` on the root and to XCUITest through the accessibility identifier mapping (spike 5). `ReportDrawnWhen` on Home, Tuner and Metronome once their first content is composed.
+- **Decision**: four journeys, same names on both platforms: `startup` (cold), `tuner` (open Tuner, Auto Listen, switch to By Ear, back), `metronome` (open Metronome, start, change tempo, stop), `stress` (tuner and metronome together; audio health readout). Anchors are `Modifier.testTag` values listed in `PerfAnchors.kt` (`:shared:ui`), exposed to UiAutomator through `testTagsAsResourceId = true` on the root and to XCUITest through the accessibility identifier mapping (spike 5). `ReportDrawnWhen` on Home, Tuner and Metronome once their first content is composed. (Amended 2026-10-17: Home was removed from the app, so Timeline, the start destination, reports its first content drawn in Home's place, the startup journey's full display is Timeline's, and the journeys start from Timeline's root, `screen.timeline`, instead of `screen.home`.)
 
 ### D11. Android device discovery and the device registry
 

@@ -51,15 +51,15 @@ class PerfAnchorsTest {
     private fun ComposeUiTest.settle() = repeat(3) { mainClock.advanceTimeByFrame() }
 
     @Test
-    fun homeRootAndNavigationItemsAreTagged() = runComposeUiTest {
+    fun startRootAndNavigationItemsAreTagged() = runComposeUiTest {
         var selected: String? = null
         setContent {
             TembraTheme {
-                PlaceholderDestination(Destination.Home)
-                TembraNavigationBar(items = navItems, selectedId = Destination.Home.id, onSelect = { selected = it })
+                PlaceholderDestination(Destination.Timeline)
+                TembraNavigationBar(items = navItems, selectedId = Destination.Timeline.id, onSelect = { selected = it })
             }
         }
-        onNodeWithTag(PerfAnchors.HOME_ROOT).assertExists()
+        onNodeWithTag(PerfAnchors.START_ROOT).assertExists()
         onNodeWithTag(PerfAnchors.NAV_TUNER).assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab))
         onNodeWithTag(PerfAnchors.NAV_METRONOME).assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab))
         onNodeWithTag(PerfAnchors.NAV_TUNER).performClick()

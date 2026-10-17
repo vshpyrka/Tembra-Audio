@@ -21,7 +21,7 @@ All entities are files or command results; none is persisted in a database or in
 ## Coverage rule (committed file)
 
 - **Location**: `app/androidApp/baseline-profile-coverage.txt`; format in [contracts/coverage-rule.md](contracts/coverage-rule.md).
-- **Fields per line**: `label` (free identifier, e.g. `app.start`, `shell`, `home`), `descriptor` (a class descriptor exactly as it appears in a profile rule, ending in `;`).
+- **Fields per line**: `label` (free identifier, e.g. `app.start`, `shell`, `timeline`; `home` until 2026-10-17), `descriptor` (a class descriptor exactly as it appears in a profile rule, ending in `;`).
 - **Validation**: each descriptor must appear as a class rule or as the class part of a method rule in the baseline profile; a descriptor that does not fails the check naming the label and the descriptor.
 - **Lifecycle**: edited by hand when a primary destination or the startup path changes (the same feature regenerates the profile); read by the coverage test and, through it, by `profile generate`.
 

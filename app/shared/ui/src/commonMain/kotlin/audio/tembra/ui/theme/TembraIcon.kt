@@ -10,7 +10,6 @@ import audio.tembra.ui.resources.ic_expand_more_24
 import audio.tembra.ui.resources.ic_folder_24
 import audio.tembra.ui.resources.ic_graphic_eq_24
 import audio.tembra.ui.resources.ic_hearing_24
-import audio.tembra.ui.resources.ic_home_24
 import audio.tembra.ui.resources.ic_mic_24
 import audio.tembra.ui.resources.ic_mic_off_24
 import audio.tembra.ui.resources.ic_music_note_24
@@ -46,7 +45,6 @@ import org.jetbrains.compose.resources.DrawableResource
  * Screens use these names only (spec FR-016, FR-026); to add a glyph run the script and add a value.
  */
 enum class TembraIcon(internal val resource: DrawableResource) {
-    Home(Res.drawable.ic_home_24),
     Timeline(Res.drawable.ic_graphic_eq_24),
     Tuner(Res.drawable.ic_music_note_24),
     Metronome(Res.drawable.ic_av_timer_24),

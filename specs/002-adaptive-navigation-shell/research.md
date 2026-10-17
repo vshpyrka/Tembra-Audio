@@ -16,7 +16,7 @@ Multiplatform 1.12.1 changelog pairs with that release; it pulls Google's multip
 `org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-navigation3:2.11.0` (matches the catalog's
 lifecycle 2.11.0). No `kotlinx-serialization` plugin is added: the back stack is owned by a
 ViewModel and never saved by Navigation 3, so keys need not be `@Serializable` (spec: relaunch
-starts on Home).
+starts on Home; on Timeline since 2026-10-17).
 
 **Rationale**: the constitution and `docs/research/kmp-code-architecture.md` §4 fix Navigation 3
 as the navigation library; JetBrains lists `navigation3-ui` as stable on Android and iOS since
@@ -31,7 +31,8 @@ architecture brief: `NavHost` owns the stack, no scenes); Decompose (second navi
 `SavedStateConfiguration` with polymorphic serialisation (not used here); browser history is
 not integrated (no web target); predictive back on iOS is implemented by Navigation 3 as an
 edge swipe, which will pop a non-Home destination to Home (documented as the iOS mirror of
-FR-010 in contracts/navigation-shell.md).
+FR-010 in contracts/navigation-shell.md; since 2026-10-17 it pops to Timeline, the start
+destination).
 
 ## R2. Destinations as decoupled entries; the back stack; scenes
 
@@ -42,7 +43,8 @@ FR-010 in contracts/navigation-shell.md).
   in `DestinationContent.kt` mapping to one composable per feature package (`home`, `timeline`,
   `tuner`, `metronome`, `projects`, `profile`). Screens know nothing about the shell, the
   layout, or each other; the shell knows only the registry and that one mapping.
-- The back stack is derived from `ShellUiState`: `[Home]` or `[Home, selected]`. `NavDisplay`
+- The back stack is derived from `ShellUiState`: `[Home]` or `[Home, selected]` (since 2026-10-17
+  the start destination, the first enum entry, Timeline, takes Home's place). `NavDisplay`
   accepts any `List<T>` (its entry list is `remember(backStack.toList())`), so no
   `rememberNavBackStack` is needed; `onBack` is `() -> Unit` and is wired to
   `ShellViewModel.back()`. `NavDisplay` intercepts the platform back only while the list has
@@ -55,7 +57,8 @@ FR-010 in contracts/navigation-shell.md).
   `NavDisplay` compares scenes by equality) whose content is `Row { main.Content() (weight 1);
   TembraSupportingPane (320 dp) }`; otherwise it returns null and the built-in single-pane
   strategy renders the entry alone. Metadata is attached per key through the
-  `entry(metadata = (key) -> Map)` overload, so only Home carries the pane.
+  `entry(metadata = (key) -> Map)` overload, so only Home carries the pane (since Home was
+  removed on 2026-10-17 no destination carries one; the strategy stays for a later feature).
 - `ShellViewModel` is obtained above `NavDisplay` (root `ViewModelStoreOwner`) so it survives
   destination switches; `rememberViewModelStoreNavEntryDecorator` scopes any future
   per-destination ViewModel to its entry and clears it when the entry is popped. Metro's
@@ -101,7 +104,8 @@ on Jetpack Adaptive 1.3.0 stable) with `currentWindowAdaptiveInfoV2()`: works, b
 pins Material 3 at the latest stable 1.9.0, whose navigation-suite artifact pairs with adaptive
 1.2.0; mixing a release candidate into a stable set buys nothing this feature needs. Upgrade
 path: when Material 3 moves past 1.9.0, move adaptive to 1.3.x and switch to
-`currentWindowAdaptiveInfoV2()` in `RememberLayoutMode.kt` (one file).
+`currentWindowAdaptiveInfoV2()` in `RememberLayoutMode.kt` (one file). Material 3 moved past
+1.9.0 on 2026-10-17 (R4, R11) and adaptive stayed at 1.2.0; this upgrade has not been made.
 
 ## R4. Bar versus rail placement
 
@@ -129,6 +133,50 @@ type.
 is fixed to Material's); the newer `ShortNavigationBarCompact` / `WideNavigationRailCollapsed`
 types (Material 3 Expressive shapes, not the design); a hand-written `Column` / `Row` switch
 (works, but discards the adaptive API the user asked for at no saving).
+
+**Reversed 2026-10-17** (owner's decision; spec FR-003 reversed, FR-019 amended): the Expressive
+types rejected above are now the decision. The rejection rested on the design's active pill
+wrapping icon and label together; with the labels gone, Material's indicator behind the icon is
+the whole marked item, and the owner took Material's sizes in place of the design's 64 dp bar and
+rail. `navigationSuiteType` is `NavigationSuiteType.ShortNavigationBarCompact` for `BottomBar`
+and `NavigationSuiteType.WideNavigationRailCollapsed` otherwise, still from the width bucket only.
+`TembraNavigationBar` wraps `ShortNavigationBar` (container `surfaceContainerLowest`; insets: the
+navigation bars plus the horizontal safe-drawing insets) with one `ShortNavigationBarItem(label =
+null)` per item, coloured through `ShortNavigationBarItemDefaults.colors(selectedIconColor =
+onPrimaryContainer, selectedIndicatorColor = primaryContainer, unselectedIconColor =
+onSurfaceVariant)`. `TembraNavigationRail` wraps `WideNavigationRail` (container
+`surfaceContainerLowest`; insets: the safe-drawing top and start plus the bottom navigation inset;
+`Arrangement.Bottom` for the iPhone Duo's end rail) around a vertically scrolling `Column`, spaced
+`spacing.xs`, of `WideNavigationRailItem(label = null, railExpanded = false)` with Material's rail
+colours (active indicator `secondaryContainer`, icon `onSecondaryContainer`; inactive
+`onSurfaceVariant`). Measured on devices: with `label = null` the collapsed rail draws its active
+indicator as a 56 × 56 dp circle, while the bar's is a 56 × 32 dp pill. The label is each icon's `contentDescription`. The bar is Material's 64 dp
+minimum (`defaultMinSize`) plus the navigation inset (measured 88 dp on a Pixel 6 Pro and 98 pt on
+an iPhone 14); the collapsed rail is 96 dp wide below Material's 44 dp top space, and its items
+scroll because five of them do not otherwise fit a 360 dp-tall phone in landscape. The indicator
+moves with Material's own animation under `MotionScheme.expressive()`, which
+`MaterialExpressiveTheme` gives the whole app. `MaterialExpressiveTheme` and
+`MotionScheme.expressive()` are internal in Material 1.9.0 (androidx 1.4.0) and public in JetBrains
+1.12.0-alpha03 and androidx 1.5.0-beta01, hence the version change in R11. Because the items are
+icon-only, each icon is a `NavigationItemIcon`: Material's `TooltipBox` with a `PlainTooltip` of
+the label, its persistent tooltip state shown and dismissed by the item's hover interaction (the
+pattern of the metronome's `PlayPauseButton` and `TempoStepper`), above the glyph in the bar and
+at its end side in the rail, which meets Constitution IV's tooltip rule. Keyboard focus uses
+Material's inset focus ring: the bar and the rail provide `LocalRippleThemeConfiguration provides
+InsetFocusRing`, and the ring is drawn inside the item's indicator, outer stroke `secondary`,
+inner stroke `onSecondary`; hover shows Material's state layer plus the tooltip.
+
+Found while retaking the screenshots (2026-10-17): `WideNavigationRail` places its content at its
+start edge and measures it up to its 96 dp width; androidx beta01's items fill that width, but the
+JetBrains port's items are only as wide as their indicator, so the scrolling column sat flush left
+on the iPad and the iPhone Duo until it was given the rail's width with its items centred
+(`TembraNavigationRailTest.itemsAreCentredInTheRail`). Keyboard order: the Tab cycle is unchanged
+(the rail's items, then the destination's controls, then the rail again), but the first Tab from an
+unfocused window now lands on the destination's first control rather than on the first rail item
+(Pixel Tablet and Pixel 9 Pro Fold; with feature 002's own rail it was the first rail item).
+Placing the rail before the content in a `Row`, or making the content a traversal group, did not
+change that entry point, so the frame keeps `NavigationSuiteScaffoldLayout`; the controls' own
+order, which features 004 and 006 require, is unchanged.
 
 ## R5. Side panel component
 
@@ -189,7 +237,9 @@ in the theme, from Material 3's motion tokens (`duration.medium2`, `easing.stand
 `popTransitionSpec` and `predictivePopTransitionSpec` all return
 `fadeIn(tween(300, easing)) togetherWith fadeOut(tween(300, easing))`, replacing Navigation 3's
 platform defaults (a 700 ms fade on Android, a 500 ms slide on iOS) so both platforms behave the
-same. The active marker in the bar and rail animates its fill over the same token.
+same. The active marker in the bar and rail animates its fill over the same token (until
+2026-10-17; since then the marker is Material's indicator, animated by the theme's expressive
+motion scheme, R4).
 
 **Reduce motion**: no platform code is needed. Compose injects a `MotionDurationScale` into the
 composition's coroutine context on both platforms: Android mirrors
@@ -211,7 +261,10 @@ refreshes on scene activation, which is when the user returns from Settings; suf
 
 From `design/stitch/screens/instrument-tuner/phone/index.html` (bottom bar and top bar) and
 `design/stitch/screens/export-mastering/tablet/index.html` (rail), which agree with every other
-screen of their kind:
+screen of their kind. Since 2026-10-17 the bar and rail rows below are history: the app draws
+Material's components with their own metrics (R4) and keeps from this table only the
+`surfaceContainerLowest` containers, the bar's `primaryContainer` / `onPrimaryContainer` active
+colours and the `onSurfaceVariant` inactive colour; the top bar and panel rows still apply.
 
 | Element | Markup | Value used |
 |---|---|---|
@@ -252,8 +305,8 @@ framework per configuration; disproportionate for one preview).
 |---|---|
 | `commonTest` (JVM + iOS simulator) | `DestinationTest`, `ShellUiStateTest`, `ShellViewModelTest`, `LayoutModeTest`, `TembraMotionTest`, `ChromeMetricsTest`, `DeveloperViewRequestTest` |
 | `androidHostTest` (JVM, repository files) | `IconAssetsTest` (every `TembraIcon` file exists, contains no `@` or `?attr` references, header names the pinned commit); `ThemeJsonParityTest` unchanged |
-| `uiTest` (iOS simulator + Android device) | `NavigationShellTest` (three layouts, pane only on Home, select / reselect, layout switch keeps selection, keyboard, 44 dp, transition timing, reduce motion), `TembraNavigationBarTest`, `TembraNavigationRailTest`, `TembraTopBarTest`, `TembraSupportingPaneTest`, `ReduceMotionTest`, `AppContentTest` (developer view replaces the shell), `DesignTokenPreviewTest` (moved) |
-| `androidDeviceTest` | `AndroidBackTest` (`Espresso.pressBack()` returns to Home, then finishes the activity) |
+| `uiTest` (iOS simulator + Android device) | `NavigationShellTest` (three layouts, pane only on Home (on no destination since 2026-10-17), select / reselect, layout switch keeps selection, keyboard, 44 dp, transition timing, reduce motion), `TembraNavigationBarTest`, `TembraNavigationRailTest`, `TembraTopBarTest`, `TembraSupportingPaneTest`, `ReduceMotionTest`, `AppContentTest` (developer view replaces the shell), `DesignTokenPreviewTest` (moved) |
+| `androidDeviceTest` | `AndroidBackTest` (`Espresso.pressBack()` returns to Home, then finishes the activity; to Timeline since 2026-10-17) |
 
 Transition tests drive `mainClock` (`autoAdvance = false`, advance 300 ms) rather than waiting
 on wall time, so they never depend on animation timing (FR-020). Layout tests pass `LayoutMode`
@@ -273,6 +326,8 @@ the documented scoping without changes to the shell.
 | `compose-material3-adaptive-navigation-suite` | `org.jetbrains.compose.material3:material3-adaptive-navigation-suite` | 1.9.0 | Apache-2.0 | R4 |
 | (transitive) | `org.jetbrains.androidx.window:window-core` → `androidx.window:window-core` | 1.4.0 | Apache-2.0 | R3 |
 | asset | Material Symbols Outlined glyphs, `google/material-design-icons` | commit `27e9ef1d` | Apache-2.0 | R6 |
+| `compose-material3` (changed 2026-10-17) | `org.jetbrains.compose.material3:material3` and `material3-adaptive-navigation-suite` | 1.9.0 → 1.12.0-alpha03 | Apache-2.0 | R4 (Expressive components and theme); ports androidx material3 1.5.0-alpha22; common code and iOS |
+| `androidx-compose-material3` (added 2026-10-17, `androidMain`) | `androidx.compose.material3:material3` and `material3-adaptive-navigation-suite` | 1.5.0-beta01 | Apache-2.0 | R4; raises the androidx Material 3 under the JetBrains artifacts on Android |
 
 All are in the stack decided in `docs/research/kmp-code-architecture.md` (Navigation 3,
 Material 3 adaptive, multiplatform lifecycle). `THIRD_PARTY_LICENSES.md` gains one row each.
@@ -283,6 +338,18 @@ runtime; no exclusion was needed. `androidx.window.core.layout.WindowSizeClass` 
 `commonTest` on both the JVM and the iOS simulator (LayoutModeTest), and the six normalised glyphs
 generate `Res.drawable.ic_<glyph>_24` accessors (feature 001's benign KLIB name warning remains
 confined to the metadata compilation).
+
+Amended 2026-10-17: the two Material 3 rows added to the table that day are pre-releases, taken
+for the Expressive bar, rail and theme (R4). Android resolves androidx material3 1.5.0-beta01
+while iOS runs the JetBrains port of 1.5.0-alpha22. Beta01 removed the value-based
+`Slider(value, …, thumb, track)`, and the two releases share no slider signature that takes a
+custom thumb and track, so the design system gains `internal expect fun TembraSlider(...)` with
+an Android actual (the state-based slider) and an iOS actual (the value-based one); the tuner's
+`NoiseGateSlider` and the metronome's `TempoSlider` call it. The same split names Material's
+inset focus-ring preset differently (`RippleDefaults.InsetFocusRingThemeConfiguration` in
+androidx 1.5.0-beta01, `RippleDefaults.InsetFocusRingRippleThemeConfiguration` in the JetBrains
+1.12.0-alpha03 port), so `InsetFocusRing` (R4) is an internal `expect val` with an Android and an
+iOS actual. The navigation glyphs are five since `ic_home_24.xml` was deleted on 2026-10-17.
 
 ## R12. What is removed or kept from feature 001
 

@@ -27,9 +27,8 @@ import androidx.compose.ui.unit.dp
 import audio.tembra.ui.theme.TembraIcon
 import kotlin.test.assertTrue
 
-/** The six navigation items as the design-system components see them: no dependency on the destination registry. */
-internal val sixNavigationItems = listOf(
-    NavigationItemSpec("home", "Home", TembraIcon.Home),
+/** The five navigation items as the design-system components see them: no dependency on the destination registry. */
+internal val fiveNavigationItems = listOf(
     NavigationItemSpec("timeline", "Timeline", TembraIcon.Timeline),
     NavigationItemSpec("tuner", "Tuner", TembraIcon.Tuner),
     NavigationItemSpec("metronome", "Metronome", TembraIcon.Metronome),
@@ -100,6 +99,24 @@ internal fun ImageBitmap.containsColor(color: Color, tolerance: Float = 0.02f): 
         }
     }
     return false
+}
+
+/** True when [other] has the same size and every pixel matches this image's within [tolerance] per channel. */
+internal fun ImageBitmap.looksLike(other: ImageBitmap, tolerance: Float = 0.01f): Boolean {
+    if (width != other.width || height != other.height) return false
+    val a = toPixelMap()
+    val b = other.toPixelMap()
+    for (y in 0 until height) {
+        for (x in 0 until width) {
+            val p = a[x, y]
+            val q = b[x, y]
+            if (kotlin.math.abs(p.red - q.red) > tolerance ||
+                kotlin.math.abs(p.green - q.green) > tolerance ||
+                kotlin.math.abs(p.blue - q.blue) > tolerance
+            ) return false
+        }
+    }
+    return true
 }
 
 /** The pixel at ([x], [y]) of [image] as a colour, for corner and edge probes. */
