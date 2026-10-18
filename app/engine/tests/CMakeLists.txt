@@ -30,6 +30,9 @@ add_executable(tembra_engine_tests
     tempo_map_test.cpp
     transport_clock_test.cpp
     spsc_fifo_test.cpp
+    audio_decoder_test.cpp
+    clip_source_test.cpp
+    disk_streamer_test.cpp
 )
 target_include_directories(tembra_engine_tests PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../src
@@ -37,6 +40,9 @@ target_include_directories(tembra_engine_tests PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/dr_libs
 )
 target_compile_definitions(tembra_engine_tests PRIVATE TEMBRA_BUILD_TESTS)
+# The committed audio fixtures of feature 009 (specs/009-timeline-arranger/fixtures/README.md).
+target_compile_definitions(tembra_engine_tests PRIVATE
+    TEMBRA_FIXTURES_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../../../specs/009-timeline-arranger/fixtures")
 if(TEMBRA_TUNER_RECORDINGS_DIR)
     target_compile_definitions(tembra_engine_tests PRIVATE TEMBRA_TUNER_RECORDINGS_DIR="${TEMBRA_TUNER_RECORDINGS_DIR}")
 endif()
@@ -59,6 +65,8 @@ set(TEMBRA_RT_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/tuner/tuner_analyzer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/platform/null_audio_device.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/platform/synthetic_audio_device.cpp
+    # Feature 009: the clip source the callback pops, the mixer strip and bus, and the transport renderer.
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/timeline/clip_source.cpp
 )
 add_library(tembra_rt_poison OBJECT ${TEMBRA_RT_SOURCES})
 target_include_directories(tembra_rt_poison PRIVATE
