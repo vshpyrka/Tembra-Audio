@@ -71,6 +71,26 @@ TEST_CASE("a callback longer than its period counts as over budget", "[health]")
     CHECK(out.xruns == 2);
 }
 
+TEST_CASE("the revision-6 fields carry the running mean and the transport's counters", "[health]") {
+    tembra::AudioHealth health;
+    health.streamOpened(true);
+    health.record(0, 1000, 128, 48000);
+    health.record(0, 3000, 128, 48000);
+    tembra_audio_health out{};
+    REQUIRE(health.read(out));
+    CHECK(out.avg_us == 2000);
+    CHECK(out.starvation == 0);
+    CHECK(out.clips_active == 0);
+    health.setTransportCounters(3, 2);
+    REQUIRE(health.read(out));
+    CHECK(out.starvation == 3);
+    CHECK(out.clips_active == 2);
+    health.streamOpened(true);  // a new stream starts the counters over
+    REQUIRE(health.read(out));
+    CHECK(out.avg_us == 0);
+    CHECK(out.starvation == 0);
+}
+
 TEST_CASE("the ABI getter reports -1 without a stream and 0 with one", "[health][abi]") {
     tembra::FakeAudioDevice* fake = installFake();
     tembra_audio_health out{};
