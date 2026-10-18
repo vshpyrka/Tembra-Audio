@@ -43,6 +43,7 @@ import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import audio.tembra.ui.designsystem.enterKeyboardMode
 import audio.tembra.ui.theme.TembraTheme
+import dev.zacsweers.metrox.viewmodel.LocalMetroViewModelFactory
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -75,7 +76,8 @@ class NavigationShellTest {
         setContent {
             inputModeManager = LocalInputModeManager.current
             val owner = remember { TestViewModelStoreOwner() }
-            CompositionLocalProvider(LocalViewModelStoreOwner provides owner) {
+            val factory = remember { TestViewModelFactory() }
+            CompositionLocalProvider(LocalViewModelStoreOwner provides owner, LocalMetroViewModelFactory provides factory) {
                 TembraTheme(content)
             }
         }
@@ -169,13 +171,14 @@ class NavigationShellTest {
         }
     }
 
+    /** The start destination is the arranger itself (feature 009): its toolbar and transport bar, no placeholder sentence. */
     @Test
-    fun timelineShowsOnlyTitleAndSentence() = runComposeUiTest {
+    fun timelineShowsTheArrangerChrome() = runComposeUiTest {
         withShellLocals { NavigationShellContent(ShellUiState(), LayoutMode.BottomBar, onSelect = {}, onBack = {}) }
-        val textNodes = SemanticsMatcher.keyIsDefined(SemanticsProperties.Text)
-        onNode(hasText("Timeline") and hasAnyAncestor(hasTestTag("screen.timeline")), useUnmergedTree = true).assertIsDisplayed()
-        onNodeWithTag("screen.timeline.message").assertTextEquals("The timeline arranger arrives with the transport and timeline feature.")
-        onAllNodes(hasAnyAncestor(hasTestTag("screen.timeline")) and textNodes, useUnmergedTree = true).assertCountEquals(2)
+        onNodeWithTag("screen.timeline").assertIsDisplayed()
+        onNodeWithTag("timeline.toolbar").assertExists()
+        onNodeWithTag("transport.bar").assertExists()
+        onNodeWithTag("screen.timeline.message").assertDoesNotExist()
     }
 
     /** The items show icons only (2026-10-17): no text in the bar or the rail, each label is the item's description. */

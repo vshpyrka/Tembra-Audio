@@ -37,6 +37,8 @@ data class TimelineCallbacks(
     val onTrackSettings: (TrackId) -> Unit,
     val onMoveTrack: (TrackId, Int) -> Unit,
     val onDeleteTrack: (TrackId) -> Unit,
+    val onConfirmDeleteTrack: () -> Unit,
+    val onDismissDeleteTrack: () -> Unit,
     val onAddAudio: (TrackId?) -> Unit,
     val onAddAudioAsNewTrack: () -> Unit,
     val onExpandTrack: (TrackId?) -> Unit,
@@ -61,7 +63,7 @@ data class TimelineCallbacks(
             onMasterVolume = {}, onMetronomeToggle = {}, onMetronomeSettings = {},
             onViewportMeasured = { _, _ -> }, onZoomAround = { _, _ -> }, onZoomStep = {}, onFitProject = {}, onScrollBy = {}, onGrid = {},
             onAddTrack = {}, onSelectTrack = {}, onToggleMute = {}, onToggleSolo = {}, onGain = { _, _ -> }, onTrackSettings = {},
-            onMoveTrack = { _, _ -> }, onDeleteTrack = {}, onAddAudio = {}, onAddAudioAsNewTrack = {}, onExpandTrack = {},
+            onMoveTrack = { _, _ -> }, onDeleteTrack = {}, onConfirmDeleteTrack = {}, onDismissDeleteTrack = {}, onAddAudio = {}, onAddAudioAsNewTrack = {}, onExpandTrack = {},
             onSelectClip = { _, _ -> }, onClearSelection = {}, onSplit = {}, onMoveClip = { _, _, _ -> }, onDeleteClip = {}, onUndo = {}, onRedo = {},
             onOpenSheet = {}, onTempoDragging = {}, onTempoCommit = {}, onTapTempo = {}, onTimeSignature = {},
         )

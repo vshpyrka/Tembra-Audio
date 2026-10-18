@@ -27,6 +27,7 @@ import audio.tembra.ui.designsystem.NavigationItemSpec
 import audio.tembra.ui.designsystem.StopAndLeaveDialog
 import audio.tembra.ui.designsystem.TembraNavigationBar
 import audio.tembra.ui.designsystem.TembraNavigationRail
+import audio.tembra.core.project.TrackId
 import audio.tembra.ui.session.DialogRequest
 import audio.tembra.ui.theme.TembraTheme
 
@@ -45,6 +46,7 @@ fun NavigationShellContent(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     dialog: DialogRequest? = null,
+    onOpenTrackSettings: (TrackId) -> Unit = {},
 ) {
     when (dialog) {
         is DialogRequest.StopAndLeave -> StopAndLeaveDialog(onConfirm = { dialog.answer(true) }, onCancel = { dialog.answer(false) })
@@ -63,7 +65,7 @@ fun NavigationShellContent(
             .testTag("nav.shell"),
     ) {
         if (layoutMode == LayoutMode.EndRail) {
-            EndRailFrame(items = items, state = state, onSelect = select, onBack = onBack)
+            EndRailFrame(items = items, state = state, onSelect = select, onBack = onBack, onOpenTrackSettings = onOpenTrackSettings)
             return@Column
         }
         NavigationSuiteScaffoldLayout(
@@ -82,7 +84,7 @@ fun NavigationShellContent(
             val sides = if (bottomBar) WindowInsetsSides.Horizontal else WindowInsetsSides.End + WindowInsetsSides.Bottom
             val contentInsets = WindowInsetsSides.Top + sides
             Box(modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing.only(contentInsets))) {
-                TembraNavDisplay(backStack = state.backStack, layoutMode = layoutMode, onBack = onBack, modifier = Modifier.fillMaxSize())
+                TembraNavDisplay(backStack = state.backStack, layoutMode = layoutMode, onBack = onBack, modifier = Modifier.fillMaxSize(), onOpenTrackSettings = onOpenTrackSettings)
             }
         }
     }
@@ -94,7 +96,13 @@ fun NavigationShellContent(
  * items at the bottom of that column.
  */
 @Composable
-private fun EndRailFrame(items: List<NavigationItemSpec>, state: ShellUiState, onSelect: (String) -> Unit, onBack: () -> Unit) {
+private fun EndRailFrame(
+    items: List<NavigationItemSpec>,
+    state: ShellUiState,
+    onSelect: (String) -> Unit,
+    onBack: () -> Unit,
+    onOpenTrackSettings: (TrackId) -> Unit,
+) {
     val endInset = WindowInsets.safeDrawing.only(WindowInsetsSides.End).asPaddingValues().calculateEndPadding(LocalLayoutDirection.current)
     Row(modifier = Modifier.fillMaxSize()) {
         Box(
@@ -103,7 +111,7 @@ private fun EndRailFrame(items: List<NavigationItemSpec>, state: ShellUiState, o
                 .fillMaxHeight()
                 .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Start + WindowInsetsSides.Bottom)),
         ) {
-            TembraNavDisplay(backStack = state.backStack, layoutMode = LayoutMode.EndRail, onBack = onBack, modifier = Modifier.fillMaxSize())
+            TembraNavDisplay(backStack = state.backStack, layoutMode = LayoutMode.EndRail, onBack = onBack, modifier = Modifier.fillMaxSize(), onOpenTrackSettings = onOpenTrackSettings)
         }
         TembraNavigationRail(
             items = items,

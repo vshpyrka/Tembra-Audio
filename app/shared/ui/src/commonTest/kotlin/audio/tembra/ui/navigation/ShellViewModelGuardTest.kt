@@ -117,9 +117,9 @@ class ShellViewModelGuardTest {
     fun theBackStackIsAListOfNavKeys() = runTest(dispatcher) {
         viewModel.openTrackSettings(TrackId("t2"))
         val stack = viewModel.uiState.value.backStack
-        assertEquals(3, stack.size)
+        assertEquals(2, stack.size, "the Timeline is the start destination, so its settings sit right above it")
         assertIs<DestinationKey>(stack[0])
-        assertIs<TrackSettingsKey>(stack[2])
+        assertIs<TrackSettingsKey>(stack[1])
         assertFalse(viewModel.uiState.value.backStack.isEmpty())
     }
 }

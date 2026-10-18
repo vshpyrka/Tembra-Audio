@@ -38,5 +38,6 @@ fun NavigationShell(
         onBack = { viewModel.back() },
         modifier = modifier,
         dialog = dialog,
+        onOpenTrackSettings = viewModel::openTrackSettings,
     )
 }

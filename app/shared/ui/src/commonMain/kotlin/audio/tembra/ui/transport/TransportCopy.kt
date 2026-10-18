@@ -12,6 +12,8 @@ object TransportCopy {
     const val metronomeSettings = "Metronome settings"
     const val masterVolume = "Master volume"
     const val readout = "Position and length"
+    /** The background-playback notification's title; its subtitle is the project name. */
+    const val playing = "Playing"
     const val stateOn = "On"
     const val stateOff = "Off"
 

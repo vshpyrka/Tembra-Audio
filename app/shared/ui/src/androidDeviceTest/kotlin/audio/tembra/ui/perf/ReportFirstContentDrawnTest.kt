@@ -17,7 +17,7 @@ import audio.tembra.ui.metronome.MetronomeScreen
 import audio.tembra.ui.metronome.MetronomeViewModel
 import audio.tembra.ui.platform.FakeBackgroundPlaybackHost
 import audio.tembra.ui.platform.FakeMicrophonePermission
-import audio.tembra.ui.platform.FakeSoundFilePicker
+import audio.tembra.ui.platform.FakeAudioFilePicker
 import audio.tembra.ui.platform.MicrophonePermissionStatus
 import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.ui.timeline.TimelineScreen
@@ -100,7 +100,7 @@ class ReportFirstContentDrawnTest {
             FakeBackgroundPlaybackHost(),
             FakeMetronomePreferences(),
             store,
-            FakeSoundFilePicker(files = store.files),
+            FakeAudioFilePicker(),
             Dispatchers.Default,
         )
         setContent {

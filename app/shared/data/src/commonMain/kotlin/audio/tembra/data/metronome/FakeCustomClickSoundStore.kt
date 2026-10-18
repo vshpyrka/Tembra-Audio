@@ -17,7 +17,7 @@ class FakeCustomClickSoundStore(var present: Boolean = false) : CustomClickSound
 
     override suspend fun stage(open: suspend () -> okio.Source): StageResult {
         calls += "stage"
-        val bytes = okio.Buffer().also { buffer -> open().use { source -> while (source.read(buffer, 8192L) != -1L) Unit } }.readByteArray()
+        val bytes = okio.Buffer().also { buffer -> open().use { source -> buffer.writeAll(source) } }.readByteArray()
         files[stagingPath] = bytes
         return stageResult ?: StageResult.Staged
     }
