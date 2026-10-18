@@ -122,9 +122,14 @@ The Android measurement build is `./gradlew --console=plain -Ptembra.perf=true :
 
 ## What a round measures
 
-Four journeys on both platforms, same names: `startup` (cold), `tuner` (open, note readout, By Ear and
-back), `metronome` (start, tempo up ×5, down ×5, stop), `stress` (metronome running while the tuner
-listens; ends by writing the engine's audio-health counters). 20 iterations each. The catalogue
+Five journeys on both platforms, same names: `startup` (cold), `tuner` (open, note readout, By Ear and
+back), `metronome` (start, tempo up ×5, down ×5, stop), `timeline` (feature 009: Projects → the demo
+card, wait for the waveforms, play eight bars, seek, pinch in and out, split the first clip, open and
+close a track's settings, toggle the metronome twice, pause, skip to start) and `stress` (the demo
+project plays with the click on while the lane scrolls for five seconds, the tuner cycle then takes the
+audio through the stop-and-leave dialog, the metronome runs while the tuner listens; ends by writing
+the engine's audio-health counters — its duration stepped up at the 009 label boundary, as expected).
+20 iterations each. The catalogue
 (`tracepulse/catalogue.py`, contract `metric-catalogue.md`) names every series per platform with its unit,
 source, gate default and screening gate; families marked non-comparable (startup, frames, memory,
 cpu) never share an axis across platforms; sections and audio health are the same instrumentation
@@ -245,8 +250,12 @@ got 50 % slower (first hint)" for a 2 → 3 µs step.
 2. **Anchor**: a `testTag` on the control, named in `PerfAnchors` (`:shared:ui`), mirrored in
    `perf-benchmarks/.../journeys/Anchors.kt` and `TembraPerfTests/Anchors.swift`.
 3. **Journey**: a class in `perf-benchmarks/.../journeys/` + a benchmark class, a struct in
-   `TembraPerfTests/Journeys/` + a test case, the name in `tracepulse.yml` `journeys:` and in
-   `collect_android.BENCHMARK_CLASS_OF` / `collect_ios._TEST_JOURNEYS`. One journey definition, several
+   `TembraPerfTests/Journeys/` + a test case, the name in `tracepulse.yml` `journeys:`,
+   `config.DEFAULT_JOURNEYS`, `catalogue.JOURNEYS_MEASURED`, `orchestrate_android.BENCHMARK_CLASS_OF`,
+   `collect_android._JOURNEY_OF_CLASS` / `_REQUIRED`, `collect_ios._TEST_JOURNEYS` and its `order`,
+   `report._JOURNEY_ORDER`, the two JSON schemas' journey enums, `PerfMetrics.sectionsOf` and
+   `Metrics.sections(of:)`, and the pytest fixtures that enumerate journeys (feature 009 did this for
+   `timeline`; the list above is complete). One journey definition, several
    registrations (feature 008, spec FR-002): the same journey class is also run by
    `BaselineProfileGenerator.journeys()` and gets its own test in `ProfileComparisonBenchmark` (named after
    the journey; add the method to `collect_android._COMPARISON_METHODS`). When the journey visits a new
@@ -351,13 +360,15 @@ part of the warning gate.
 
 ## Audio-thread health
 
-`tembra_engine_audio_health` (C ABI revision 5) copies the counters the callback writes with relaxed
-atomics: callbacks, last/max callback duration, over-budget count, xruns (Oboe's counter, sampled off
-the callback), real-time status. `AudioHealthTicker` publishes them once per second through
+`tembra_engine_audio_health` (C ABI revision 6 since feature 009) copies the counters the callback writes
+with relaxed atomics: callbacks, last/max/mean callback duration, over-budget count, xruns (Oboe's
+counter, sampled off the callback), real-time status, fifo starvation (clips the transport found dry) and
+the clips active in the last block. `AudioHealthTicker` publishes the nine once per second through
 `PerfTrace.counter` in measurement builds; on Android they become counter tracks in each stress
 iteration's trace (`audio.*` series, one sample per iteration), on iOS the stress journey's last tap
-writes `engine-health.json`, which the collector pulls from the app container. Zeros with the current
-engine; the audio spine fills them.
+writes `engine-health.json`, which the collector pulls from the app container (a file from a revision-5
+build reads zeros for the three new fields). `audio.starvation` is expected to read 0 on the reference
+devices and flags on any increase.
 
 ## Lane times (SC-008)
 
