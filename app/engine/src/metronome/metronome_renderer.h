@@ -51,8 +51,14 @@ public:
     /** Plays one voice of the current set at [level] without ticking (the sound picker's preview). */
     void preview(tembra_click_level level);
 
-    /** Transport hook (not in the C ABI yet): at output frame [frame] the bar is at [beatPosition] beats. */
+    /** Transport hook (feature 009, research R4): at output frame [frame] the bar is at [beatPosition] beats. */
     void anchor(int64_t frame, double beatPosition);
+
+    /**
+     * The frame counter the next render() starts at, in the frame space anchor() expects. Audio thread only: the
+     * transport renderer, which renders this metronome every block, anchors relative to it.
+     */
+    int64_t framePosition() const { return framePos_; }
 
     /** True from start()/preview() until nothing sounds any more and the metronome is not running. */
     bool isActive() const;

@@ -31,17 +31,22 @@ public:
     void addXruns(uint32_t count);
     /** Sets the running xrun count from the platform stream's own counter (Oboe's getXRunCount, sampled off-callback). */
     void setXruns(uint32_t count);
+    /** The transport renderer's counters (feature 009, revision 6), sampled from its atomics on the host thread. */
+    void setTransportCounters(uint32_t starvation, uint32_t clipsActive);
 
-    /** Copies the counters into [out]; false (and [out] untouched) while no stream is open. */
+    /** Copies the counters into [out]; false (and [out] untouched) while no stream is open. avg_us is the running mean. */
     bool read(tembra_audio_health& out) const;
 
 private:
     std::atomic<bool> open_{false};
     std::atomic<uint64_t> callbacks_{0};
+    std::atomic<uint64_t> sumMicros_{0};
     std::atomic<uint32_t> lastMicros_{0};
     std::atomic<uint32_t> maxMicros_{0};
     std::atomic<uint32_t> overBudget_{0};
     std::atomic<uint32_t> xruns_{0};
+    std::atomic<uint32_t> starvation_{0};
+    std::atomic<uint32_t> clipsActive_{0};
     std::atomic<bool> realtime_{false};
 };
 
