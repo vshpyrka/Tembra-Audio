@@ -30,6 +30,14 @@ public:
         step_ = (target_ - current_) / static_cast<float>(rampFrames_);
     }
 
+    /** Sets the gain at once, without a ramp (the first value a strip ever receives). */
+    void snap(float value) {
+        current_ = value;
+        target_ = value;
+        remaining_ = 0;
+        step_ = 0.0f;
+    }
+
     /** The gain for the next sample. */
     float next() {
         if (remaining_ > 0) {
