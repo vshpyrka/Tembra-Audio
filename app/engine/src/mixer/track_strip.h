@@ -19,6 +19,9 @@ public:
     /** The target the next samples ramp toward: [gain] (0..2) when [audible], else 0. */
     void setTarget(float gain, bool audible) { ramp_.setTarget(audible ? gain : 0.0f); }
 
+    /** The first value a strip receives is taken at once (nothing has played through it yet). */
+    void snap(float gain, bool audible) { ramp_.snap(audible ? gain : 0.0f); }
+
     /** Writes [frames] stereo frames of [in] ([channels] interleaved) times the ramping gain into [outStereo]. */
     void process(const float* in, uint32_t channels, float* outStereo, uint32_t frames);
 

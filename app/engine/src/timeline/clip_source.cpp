@@ -83,16 +83,29 @@ void ClipSource::park(int64_t frame, int64_t neededAt) {
     request_.store(frame, std::memory_order_release);
 }
 
+void ClipSource::syncGeneration() {
+    const uint32_t generation = generation_.load(std::memory_order_acquire);
+    if (generation == seenGeneration_) return;
+    seenGeneration_ = generation;
+    const int64_t primed = primedFrom_.load(std::memory_order_relaxed);
+    readFrame_ = primed;
+    parked_ = primed < 0;
+}
+
+bool ClipSource::holds(int64_t frame) {
+    syncGeneration();
+    if (parked_ || frame < readFrame_) return false;
+    const bool eof = eof_.load(std::memory_order_acquire);
+    const size_t availableFrames = fifo_.available() / channels_;
+    return eof || frame - readFrame_ <= static_cast<int64_t>(availableFrames);
+}
+
 bool ClipSource::pop(int64_t frame, uint32_t frames, float* out) {
     const size_t samples = static_cast<size_t>(frames) * channels_;
-    const uint32_t generation = generation_.load(std::memory_order_acquire);
-    if (generation != seenGeneration_) {
-        seenGeneration_ = generation;
-        const int64_t primed = primedFrom_.load(std::memory_order_relaxed);
-        readFrame_ = primed;
-        parked_ = primed < 0;
-    }
+    syncGeneration();
     if (parked_) {
+        // Parked and nobody has asked yet (a source that was never primed): ask for what this pop wanted.
+        if (request_.load(std::memory_order_relaxed) < 0) park(frame, 0);
         std::memset(out, 0, samples * sizeof(float));
         starved_.fetch_add(1, std::memory_order_relaxed);
         return false;

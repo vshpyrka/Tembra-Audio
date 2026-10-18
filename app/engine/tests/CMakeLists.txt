@@ -35,6 +35,7 @@ add_executable(tembra_engine_tests
     disk_streamer_test.cpp
     track_strip_test.cpp
     master_bus_test.cpp
+    transport_renderer_test.cpp
 )
 target_include_directories(tembra_engine_tests PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../src
@@ -71,6 +72,7 @@ set(TEMBRA_RT_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/timeline/clip_source.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/mixer/track_strip.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/mixer/master_bus.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/transport/transport_renderer.cpp
 )
 add_library(tembra_rt_poison OBJECT ${TEMBRA_RT_SOURCES})
 target_include_directories(tembra_rt_poison PRIVATE

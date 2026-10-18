@@ -60,6 +60,9 @@ public:
     /** Parks the source and asks the streamer for [frame], needed at output frame [neededAt] (ordering only). */
     void park(int64_t frame, int64_t neededAt);
 
+    /** True when a pop at [frame] would read from the fifo (or lies past the end) rather than park. Callback only. */
+    bool holds(int64_t frame);
+
     // --- Streamer service and telemetry (any thread) -----------------------------------------------------------
 
     int64_t pendingRequest() const { return request_.load(std::memory_order_acquire); }
@@ -84,6 +87,7 @@ public:
 private:
     size_t decodeInto(size_t frames);
     int64_t consumedSincePrime() const;
+    void syncGeneration();
 
     std::unique_ptr<Decoder> decoder_;
     tembra_clip_info info_;
