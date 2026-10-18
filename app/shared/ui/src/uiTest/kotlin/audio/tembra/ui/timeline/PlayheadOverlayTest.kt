@@ -32,7 +32,7 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalTestApi::class)
 class PlayheadOverlayTest {
 
-    private var density = 1f
+    private var densityScale = 1f
     private var playhead: Color = Color.Unspecified
     private var background: Color = Color.Unspecified
     private lateinit var viewport: TimelineViewport
@@ -40,12 +40,12 @@ class PlayheadOverlayTest {
     private fun ComposeUiTest.setOverlay(playing: Boolean, positionBeats: Beats, telemetry: ScriptedTransportTelemetry) {
         setContent {
             TembraTheme {
-                density = LocalDensity.current.density
+                densityScale = LocalDensity.current.density
                 playhead = TembraTheme.daw.playhead
                 background = TembraTheme.colors.background
-                val widthPx = 400.0 * density
+                val widthPx = 400.0 * densityScale
                 // Ten beats across 400 dp: one beat is 40 dp.
-                viewport = TimelineViewport(pixelsPerBeat = 40.0, scrollBeats = Beats.Zero, widthPx = widthPx, densityScale = density.toDouble())
+                viewport = TimelineViewport(pixelsPerBeat = 40.0, scrollBeats = Beats.Zero, widthPx = widthPx, densityScale = densityScale.toDouble())
                 var position by remember { mutableStateOf(positionBeats) }
                 PlayheadOverlay(viewport = viewport, signature = TimeSignature.FourFour, playing = playing, positionBeats = position, telemetry = telemetry, modifier = Modifier.size(400.dp, 100.dp))
             }
@@ -86,6 +86,6 @@ class PlayheadOverlayTest {
         val later = playheadX()
         assertTrue(telemetry.reads > readsBefore, "the overlay stopped reading the telemetry")
         assertTrue(first != null && later != null, "no playhead line while playing")
-        assertTrue(later!! > first!! + (40 * density).toInt(), "the playhead did not move: $first → $later")
+        assertTrue(later!! > first!! + (40 * densityScale).toInt(), "the playhead did not move: $first → $later")
     }
 }

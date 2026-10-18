@@ -1,13 +1,20 @@
 package audio.tembra.ui.timeline
 
 import audio.tembra.core.metronome.Tempo
+import audio.tembra.core.project.AudioAsset
+import audio.tembra.core.project.AudioAssetId
+import audio.tembra.core.project.AudioFormat
 import audio.tembra.core.project.Beats
+import audio.tembra.core.project.ClipTemplate
+import audio.tembra.core.project.GainDb
 import audio.tembra.core.project.GridSize
 import audio.tembra.core.project.PlaybackState
 import audio.tembra.data.metronome.FakeMetronomePreferences
 import audio.tembra.data.projects.DemoProject
 import audio.tembra.data.projects.DemoProjectIds
 import audio.tembra.data.projects.FakeProjectRepository
+import audio.tembra.data.projects.ImportRefusal
+import audio.tembra.data.projects.ImportResult
 import audio.tembra.data.projects.OverviewStatus
 import audio.tembra.data.projects.WaveformOverview
 import audio.tembra.engine.FakeAudioEngine
@@ -37,6 +44,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /** The Timeline ViewModel over the session and the fakes (contracts/timeline-screen.md; T077, User Story 1). */
@@ -48,6 +56,7 @@ class TimelineViewModelTest {
     private val demo = DemoProject.build(DemoProjectIds.fixed())
     private val drumsTrack = demo.tracks[0].id
     private val drumsClip = demo.tracks[0].clips[0].id
+    private val bassTrack = demo.tracks[1].id
     private val drumsAsset = DemoProject.BUNDLED_ASSET_IDS.getValue("drums")
     private val overview = WaveformOverview(channels = 1, frames = 512, completedBaseBuckets = 2, levels = emptyList())
     private val engine = FakeAudioEngine()
@@ -259,6 +268,120 @@ class TimelineViewModelTest {
         assertEquals(Beats(port.visibleBeats + 1.0), paged.positionBeats)
         assertEquals(20.0, paged.positionSeconds)
         assertEquals(port.visibleBeats + 1.0, paged.viewport.scrollBeats.value, "the view paged to the playhead")
+    }
+
+    // --- User Story 2 (T090) --------------------------------------------------------------------------------------------
+
+    @Test
+    fun addTrackAppendsAndSelectsTheNewTrack() = test {
+        openDemo()
+        viewModel.addTrack()
+        val state = ui()
+        assertEquals(5, state.tracks.size)
+        assertEquals("Track 1", state.tracks.last().name)
+        assertEquals(Selection.TrackSelected(state.tracks.last().id), state.selection)
+        assertEquals("setArrangement(tracks=5,clips=5)", engine.calls.last())
+    }
+
+    @Test
+    fun headerTogglesAndTheGainAreSingleEdits() = test {
+        openDemo()
+        viewModel.selectTrack(drumsTrack)
+        assertEquals(Selection.TrackSelected(drumsTrack), ui().selection)
+        viewModel.toggleMute(drumsTrack)
+        assertTrue(ui().tracks[0].muted)
+        assertFalse(ui().tracks[0].audible)
+        viewModel.toggleSolo(drumsTrack)
+        assertTrue(ui().tracks[0].soloed)
+        assertFalse(ui().tracks[1].audible, "solo silences the others")
+        viewModel.setGain(drumsTrack, GainDb(-3f))
+        assertEquals(GainDb(-3f), ui().tracks[0].gainDb)
+        viewModel.undo()
+        assertEquals(GainDb.Unity, ui().tracks[0].gainDb, "each change is its own undo step")
+    }
+
+    @Test
+    fun theTrackMenuMovesAndDeletesWithConfirmation() = test {
+        openDemo()
+        viewModel.moveTrack(drumsTrack, 1)
+        assertEquals(drumsTrack, ui().tracks[1].id)
+        viewModel.moveTrack(drumsTrack, -1)
+        assertEquals(drumsTrack, ui().tracks[0].id)
+        viewModel.requestDeleteTrack(drumsTrack)
+        assertEquals(drumsTrack, ui().confirmDelete)
+        assertEquals(4, ui().tracks.size)
+        viewModel.dismissDeleteTrack()
+        assertNull(ui().confirmDelete)
+        viewModel.requestDeleteTrack(drumsTrack)
+        viewModel.confirmDeleteTrack()
+        val state = ui()
+        assertNull(state.confirmDelete)
+        assertEquals(3, state.tracks.size)
+        assertTrue(state.tracks.none { it.id == drumsTrack })
+    }
+
+    @Test
+    fun addAudioOnATrackPicksOneFileAndImportsOntoIt() = test {
+        openDemo()
+        val id = AudioAssetId("ee".repeat(32))
+        val asset = AudioAsset("lead.wav", AudioFormat.Wav, channels = 2, sampleRate = 48_000, frames = 48_000, byteSize = 192_044)
+        repository.importResults += ImportResult.Accepted(id, asset, ClipTemplate.forAsset(id, asset), true, "/fake/audio/lead.wav", "/fake/cache/lead.peaks")
+        picker.next = FakeAudioFilePicker.picked("lead.wav")
+        viewModel.seek(Beats(64.0))
+        viewModel.addAudio(drumsTrack)
+        val state = ui()
+        assertEquals(listOf("pickOne"), picker.calls)
+        assertTrue(repository.calls.any { it == "importAudio(${demo.id.value}, lead.wav)" })
+        assertEquals(2, state.tracks[0].clips.size)
+        assertEquals(64.0, state.tracks[0].clips.last().startBeats.value, 1e-3, "the clip lands at the playhead, after the loop that ends there")
+    }
+
+    @Test
+    fun addAudioAsNewTrackPicksManyAndAppendsOneTrackPerFile() = test {
+        openDemo()
+        repository.importResults += accepted("a.wav", "aa")
+        repository.importResults += accepted("b.wav", "bb")
+        picker.next = FakeAudioFilePicker.picked("a.wav" to ByteArray(0), "b.wav" to ByteArray(0))
+        viewModel.addAudioAsNewTrack()
+        val state = ui()
+        assertEquals(listOf("pickMany"), picker.calls)
+        assertEquals(listOf("Drums", "Bass", "Keys", "Pad", "a", "b"), state.tracks.map { it.name })
+    }
+
+    @Test
+    fun addAudioWithoutASelectionBehavesAsNewTrack() = test {
+        openDemo()
+        repository.importResults += accepted("c.wav", "cc")
+        picker.next = FakeAudioFilePicker.picked("c.wav")
+        viewModel.addAudio(null)
+        assertEquals(5, ui().tracks.size)
+        assertEquals(listOf("pickMany"), picker.calls)
+        viewModel.selectTrack(bassTrack)
+        repository.importResults += accepted("d.wav", "dd")
+        picker.next = FakeAudioFilePicker.picked("d.wav")
+        viewModel.addAudio(null)
+        assertEquals(2, ui().tracks[1].clips.size, "with a selection the file lands on the selected track")
+        assertEquals(listOf("pickMany", "pickOne"), picker.calls)
+    }
+
+    @Test
+    fun refusedImportsSurfaceAsOneMessage() = test {
+        val received = collectMessages()
+        openDemo()
+        repository.importResults += ImportResult.Refused("x.ogg", ImportRefusal.UnsupportedFormat)
+        repository.importResults += ImportResult.Refused("y.wav", ImportRefusal.TooManyChannels)
+        picker.next = FakeAudioFilePicker.picked("x.ogg" to ByteArray(0), "y.wav" to ByteArray(0))
+        viewModel.addAudioAsNewTrack()
+        runCurrent()
+        val message = assertIs<TimelineMessage.ImportRefused>(received.single())
+        assertEquals(listOf("x.ogg", "y.wav"), message.refusals.map { it.first })
+        assertEquals("2 files could not be added: x.ogg (not a WAV, FLAC or MP3 file), y.wav (more than two channels)", message.text)
+    }
+
+    private fun accepted(fileName: String, hex: String): ImportResult.Accepted {
+        val id = AudioAssetId(hex.repeat(32))
+        val asset = AudioAsset(fileName, AudioFormat.Wav, channels = 1, sampleRate = 48_000, frames = 48_000, byteSize = 96_044)
+        return ImportResult.Accepted(id, asset, ClipTemplate.forAsset(id, asset), true, "/fake/audio/$fileName", "/fake/cache/$fileName.peaks")
     }
 
     @Test

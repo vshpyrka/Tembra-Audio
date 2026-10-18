@@ -217,7 +217,11 @@ class TimelineViewModel(
 
     // --- Tracks ------------------------------------------------------------------------------------------------------
 
-    fun addTrack() = edit(AddTrack())
+    /** A new track at the bottom, selected so the next "Add audio…" lands on it (spec FR-019). */
+    fun addTrack() {
+        val add = AddTrack()
+        if (edit(add)) view.update { it.copy(selection = Selection.TrackSelected(add.id)) }
+    }
 
     fun selectTrack(id: TrackId) = view.update { it.copy(selection = Selection.TrackSelected(id)) }
 
@@ -251,10 +255,9 @@ class TimelineViewModel(
     /** The expanded layout's inline settings row: open for [id], closed for null (spec FR-041). */
     fun expandTrack(id: TrackId?) = view.update { it.copy(expandedTrack = id) }
 
-    /** Picks audio for [trackId], the selected track, or a new track when the project has none (spec FR-043). */
+    /** One file onto [trackId] or the selected track; with no selection the toolbar's entry behaves as "as new track" (spec FR-043). */
     fun addAudio(trackId: TrackId?) {
-        val ui = currentUi()
-        val target = trackId ?: ui.selection.trackIdOrNull ?: ui.tracks.firstOrNull()?.id
+        val target = trackId ?: currentUi().selection.trackIdOrNull
         pickAudio(if (target == null) ImportTarget.NewTracks(insertionPoint()) else ImportTarget.Track(target, insertionPoint()))
     }
 
@@ -450,7 +453,11 @@ class TimelineViewModel(
 
     private fun pickAudio(target: ImportTarget) {
         viewModelScope.launch(CoroutineName("pickAudio")) {
-            when (val result = picker.pickMany(AudioPickRequest.timelineAudio)) {
+            val picked = when (target) {
+                is ImportTarget.Track -> picker.pickOne(AudioPickRequest.timelineAudio)
+                is ImportTarget.NewTracks -> picker.pickMany(AudioPickRequest.timelineAudio)
+            }
+            when (val result = picked) {
                 is AudioPickResult.Picked -> session.importAudio(result.files, target)
                 AudioPickResult.Cancelled -> Unit
                 is AudioPickResult.Failed -> local.trySend(TimelineMessage.PickFailed)
