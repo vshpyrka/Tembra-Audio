@@ -18,6 +18,7 @@ ANDROID_KEYS = {
     "app.size_bytes",
     "audio.callbacks", "audio.last_callback_us", "audio.max_callback_us",
     "audio.over_budget", "audio.xruns", "audio.realtime",
+    "audio.avg_us", "audio.starvation", "audio.clips_active",
 }
 
 IOS_KEYS = {
@@ -29,6 +30,7 @@ IOS_KEYS = {
     "app.size_bytes", "app.size_uncompressed_bytes",
     "audio.callbacks", "audio.last_callback_us", "audio.max_callback_us",
     "audio.over_budget", "audio.xruns", "audio.realtime",
+    "audio.avg_us", "audio.starvation", "audio.clips_active",
     "audio.ioproc_p99_us",
 }
 

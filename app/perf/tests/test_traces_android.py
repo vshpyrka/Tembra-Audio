@@ -119,11 +119,10 @@ def test_counter_series_is_empty_without_counter_tracks():
 
 def test_audio_counter_keys_map_signpost_names_to_catalogue_keys():
     assert AUDIO_COUNTER_KEYS == {
-        "audio.callbacks": "audio.callbacks", "audio.lastUs": "audio.last_callback_us",
-        "audio.maxUs": "audio.max_callback_us", "audio.overBudget": "audio.over_budget",
-        "audio.xruns": "audio.xruns", "audio.realtime": "audio.realtime",
+        "audio.callbacks": "audio.callbacks", "audio.lastUs": "audio.last_callback_us", "audio.maxUs": "audio.max_callback_us",
+        "audio.overBudget": "audio.over_budget", "audio.xruns": "audio.xruns", "audio.realtime": "audio.realtime",
+        "audio.avgUs": "audio.avg_us", "audio.starvation": "audio.starvation", "audio.clipsActive": "audio.clips_active",
     }
-
 
 def test_counters_fixture_is_deterministic():
     gen = _load_gen_trace()

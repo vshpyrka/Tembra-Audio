@@ -20,6 +20,9 @@ AUDIO_COUNTER_KEYS: Dict[str, str] = {
     "audio.overBudget": "audio.over_budget",
     "audio.xruns": "audio.xruns",
     "audio.realtime": "audio.realtime",
+    "audio.avgUs": "audio.avg_us",
+    "audio.starvation": "audio.starvation",
+    "audio.clipsActive": "audio.clips_active",
 }
 
 

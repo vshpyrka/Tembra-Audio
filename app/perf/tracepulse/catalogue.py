@@ -11,7 +11,7 @@ from typing import Dict, Iterable, List, Mapping, Optional, Tuple
 
 PLATFORMS = ("android", "ios")
 FAMILIES = ("startup", "frames", "memory", "cpu", "journey", "section", "app", "audio")
-JOURNEYS_MEASURED = ("tuner", "metronome", "stress")
+JOURNEYS_MEASURED = ("tuner", "metronome", "timeline", "stress")
 
 
 class CatalogueError(Exception):
@@ -116,6 +116,11 @@ _AUDIO = (
     ("audio.over_budget", "count", dict(gate_limit_pct=50, screening_pct=10)),
     ("audio.xruns", "count", dict(gate_limit_pct=50, screening_pct=10)),
     ("audio.realtime", "flag", dict(gate_limit_abs=0.5, screening_abs=0.5)),
+    # Feature 009 (ABI revision 6): the transport's counters. The mean callback is under the same 100 us floor as the
+    # last and the max; starvation is expected to read 0 and is flagged on any increase (screening of one count).
+    ("audio.avg_us", "us", dict(gate_limit_pct=50, screening_pct=10, floor_abs=100.0)),
+    ("audio.starvation", "count", dict(gate_limit_abs=1.0, screening_abs=1.0)),
+    ("audio.clips_active", "count", dict(gate_limit_pct=50, screening_pct=10)),
 )
 for _key, _unit, _gates in _AUDIO:
     _ANDROID.append(_m("android", _key, "audio", "perfetto counter track (last value)", _unit, ("stress",),
