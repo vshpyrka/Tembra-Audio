@@ -4,11 +4,11 @@
     <!-- Auto Listen hears the instrument through the microphone (feature 003, spec FR-014). -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
-    <!-- The metronome keeps clicking with the screen off through a media-playback foreground service (feature 004). -->
+    <!-- The metronome (feature 004) and the project transport (feature 009) keep playing with the screen off through a media-playback foreground service. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <!--
-        On Android 13+ the service's "Metronome · Running" notification with its Stop action shows only with this
+        On Android 13+ the service's "Metronome" / "Playing" notification with its Stop action shows only with this
         permission; NotificationPermissionHost asks for it once when playback first starts the service
         (contracts/background-playback.md).
     -->
@@ -34,7 +34,7 @@
         </activity>
 
         <service
-            android:name=".MetronomeForegroundService"
+            android:name=".PlaybackForegroundService"
             android:foregroundServiceType="mediaPlayback"
             android:exported="false" />
     </application>

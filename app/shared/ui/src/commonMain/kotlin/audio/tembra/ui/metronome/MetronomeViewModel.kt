@@ -14,6 +14,7 @@ import audio.tembra.core.metronome.Tempo
 import audio.tembra.core.metronome.TimeSignature
 import audio.tembra.data.metronome.CustomClickSoundStore
 import audio.tembra.data.metronome.MetronomePreferences
+import audio.tembra.data.metronome.StageResult
 import audio.tembra.engine.AudioEvent
 import audio.tembra.engine.AudioResult
 import audio.tembra.engine.AudioState
@@ -25,10 +26,12 @@ import audio.tembra.engine.MetronomeGrid
 import audio.tembra.engine.TickSnapshot
 import audio.tembra.engine.perf.PerfSection
 import audio.tembra.engine.perf.PerfTrace
+import audio.tembra.ui.platform.AudioFilePicker
+import audio.tembra.ui.platform.AudioPickFailure
+import audio.tembra.ui.platform.AudioPickRequest
+import audio.tembra.ui.platform.AudioPickResult
 import audio.tembra.ui.platform.BackgroundPlaybackHost
-import audio.tembra.ui.platform.SoundFilePicker
-import audio.tembra.ui.platform.SoundPickFailure
-import audio.tembra.ui.platform.SoundPickResult
+import audio.tembra.ui.platform.PlaybackNotification
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
@@ -68,8 +71,9 @@ import kotlinx.coroutines.withContext
  * sequence at once.
  *
  * [store], [picker] and [prepareDispatcher] serve the custom-sound import (User Story 5): each import is one
- * `viewModelScope` launch that suspends on the picker, the store and the engine's preparation (on [prepareDispatcher]);
- * it outlives the screen's visibility, so a file picked while the app was in the picker is still prepared.
+ * `viewModelScope` launch that suspends on the picker (feature 009's [AudioFilePicker] with the WAV filter, which
+ * hands over a content handle), the store's staged copy and the engine's preparation (on [prepareDispatcher]); it
+ * outlives the screen's visibility, so a file picked while the app was in the picker is still prepared.
  */
 @Inject
 @ContributesIntoMap(AppScope::class)
@@ -79,7 +83,7 @@ class MetronomeViewModel(
     private val host: BackgroundPlaybackHost,
     private val preferences: MetronomePreferences,
     private val store: CustomClickSoundStore,
-    private val picker: SoundFilePicker,
+    private val picker: AudioFilePicker,
     /** Where a custom sound is decoded; an optional binding, so the graph provides nothing for it. */
     private val prepareDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
@@ -414,14 +418,21 @@ class MetronomeViewModel(
     }
 
     /**
-     * Picks into staging and has the engine prepare the staged file; the store commits it only once the engine has
-     * accepted it, so a refused file never replaces the previous copy (spec FR-025).
+     * Picks a WAV, stages its bytes (the store copies them with the 64 MB cap) and has the engine prepare the staged
+     * file; the store commits it only once the engine has accepted it, so a refused file never replaces the previous
+     * copy (spec FR-025).
      */
     private suspend fun pickAndPrepareCustomSound(): ImportOutcome {
-        val name = when (val picked = picker.pickWav(store.stagingPath)) {
-            is SoundPickResult.Picked -> picked.displayName
-            SoundPickResult.Cancelled -> return ImportOutcome.Cancelled
-            is SoundPickResult.Failed -> return ImportOutcome.Refused(messageOf(picked.reason))
+        val file = when (val picked = picker.pickOne(AudioPickRequest.wav)) {
+            is AudioPickResult.Picked -> picked.files.firstOrNull() ?: return ImportOutcome.Cancelled
+            AudioPickResult.Cancelled -> return ImportOutcome.Cancelled
+            is AudioPickResult.Failed -> return ImportOutcome.Refused(messageOf(picked.reason))
+        }
+        val name = file.displayName.substringBeforeLast('.').ifBlank { FALLBACK_NAME }
+        when (store.stage(file::open)) {
+            StageResult.Staged -> Unit
+            StageResult.TooLarge -> return ImportOutcome.Refused(MetronomeMessage.TooLarge)
+            StageResult.Unreadable -> return ImportOutcome.Refused(MetronomeMessage.ImportFailed)
         }
         return when (withContext(prepareDispatcher) { audio.loadCustomSound(store.stagingPath) }) {
             // The engine accepted the staged file; a commit that finds nothing staged is a failed import.
@@ -458,9 +469,8 @@ class MetronomeViewModel(
         }
     }
 
-    private fun messageOf(failure: SoundPickFailure): MetronomeMessage = when (failure) {
-        SoundPickFailure.TooLarge -> MetronomeMessage.TooLarge
-        SoundPickFailure.Unreadable -> MetronomeMessage.ImportFailed
+    private fun messageOf(failure: AudioPickFailure): MetronomeMessage = when (failure) {
+        AudioPickFailure.Unreadable -> MetronomeMessage.ImportFailed
     }
 
     /** Selects the sound the engine just loaded: from its next tick while running, with one preview while stopped. */
@@ -497,7 +507,8 @@ class MetronomeViewModel(
         // A preview click still sounding would make the engine refuse the start.
         if (audio.audioState == AudioState.Tone) audio.stopTone()
         _uiState.update { it.copy(playback = PlaybackState.Starting) }
-        val failure = if (host.keepAlive()) startFailureOf(audio.startMetronome()) else StartFailure.HostRefused
+        val notification = PlaybackNotification(MetronomeCopy.notificationTitle, MetronomeCopy.notificationSubtitle(_uiState.value.settings.tempo))
+        val failure = if (host.keepAlive(notification)) startFailureOf(audio.startMetronome()) else StartFailure.HostRefused
         if (failure != null) {
             onPlaybackEvent(PlaybackEvent.StartFailed(failure))
             return
@@ -597,5 +608,8 @@ class MetronomeViewModel(
 
         const val LIGHT_MAX_NANOS = 150_000_000L
         const val LIGHT_BEAT_SHARE = 0.6
+
+        /** The label of a picked sound whose file name is empty. */
+        const val FALLBACK_NAME = "Custom sound"
     }
 }

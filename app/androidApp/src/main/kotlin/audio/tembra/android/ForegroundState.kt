@@ -1,7 +1,7 @@
 package audio.tembra.android
 
 /**
- * Where [MetronomeForegroundService] is, as [AndroidBackgroundPlaybackHost] sees it. A service started with
+ * Where [PlaybackForegroundService] is, as [AndroidBackgroundPlaybackHost] sees it. A service started with
  * `startForegroundService` must reach `startForeground` before it may be stopped, so a release that arrives while the
  * start is still queued is recorded as [ReleaseRequested] and carried out by the service right after it has entered
  * the foreground.
