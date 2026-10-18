@@ -611,3 +611,231 @@ TEST_CASE("a gate set while idle holds back a test signal from its first hop, an
     REQUIRE(tembra_tuner_set_gate(0, 0.0f) == TEMBRA_OK);
 }
 
+// --- The project transport (feature 009, specs/009-timeline-arranger/contracts/engine-c-abi-v6.md "States") ---
+
+namespace {
+
+std::string transportWav() {
+    const std::string path = tembra::fixtures::tempPath("tembra-engine-transport-clip.wav");
+    REQUIRE(tembra::fixtures::writeTempWav(path, 48000, 1, 16, tembra::fixtures::sine(220.0, 48000.0, 1.0, 0.5)));
+    return path;
+}
+
+tembra_arrangement* oneClip(tembra_arrangement& arrangement, int32_t source) {
+    arrangement = tembra_arrangement{};
+    arrangement.track_count = 1;
+    arrangement.clip_count = 1;
+    arrangement.tracks[0].gain_linear = 1.0f;
+    arrangement.tracks[0].audible = 1;
+    arrangement.clips[0].track = 0;
+    arrangement.clips[0].source = source;
+    arrangement.clips[0].start_beats = 0.0;
+    arrangement.clips[0].offset_frames = 0;
+    arrangement.clips[0].length_frames = 48000;
+    return &arrangement;
+}
+
+}  // namespace
+
+TEST_CASE("the transport opens only from idle and excludes the other sources", "[engine][transport]") {
+    tembra::FakeAudioDevice* fake = installFake();
+    tembra_transport_config config{};
+    REQUIRE(tembra_transport_open(nullptr) == TEMBRA_ERR_ARGUMENT);
+    REQUIRE(tembra_transport_open(&config) == TEMBRA_OK);
+    REQUIRE(tembra_audio_state() == TEMBRA_AUDIO_TRANSPORT);
+    REQUIRE(fake->outputOpen);
+    REQUIRE(fake->requestedRate == 48000);
+    REQUIRE(tembra_transport_open(&config) == TEMBRA_ERR_STATE);
+
+    tembra_tuner_config tuner{};
+    tembra_tuner_default_config(&tuner);
+    REQUIRE(tembra_tuner_start(&tuner) == TEMBRA_ERR_STATE);
+    REQUIRE(tembra_tone_start(440.0, 0) == TEMBRA_ERR_STATE);
+    REQUIRE(tembra_sample_play(0, 0) == TEMBRA_ERR_STATE);
+    REQUIRE(tembra_metronome_start() == TEMBRA_ERR_STATE);
+    REQUIRE(tembra_metronome_preview(TEMBRA_CLICK_CLICK) == TEMBRA_ERR_STATE);
+    REQUIRE(tembra_audio_state() == TEMBRA_AUDIO_TRANSPORT);
+
+    // The standalone metronome's configuration stays callable: it is the click the transport uses.
+    tembra_metronome_grid grid = validGrid();
+    REQUIRE(tembra_metronome_set_grid(&grid) == TEMBRA_OK);
+    REQUIRE(tembra_metronome_select_sound(TEMBRA_SOUND_DIGITAL_BEEP) == TEMBRA_OK);
+    tembra_metronome_set_output_latency_ns(0);
+    REQUIRE(tembra_audio_state() == TEMBRA_AUDIO_TRANSPORT);
+
+    tembra_tone_stop();  // a stray tone stop leaves the transport open
+    tembra_metronome_stop();
+    tembra_tuner_stop();
+    REQUIRE(tembra_audio_state() == TEMBRA_AUDIO_TRANSPORT);
+    REQUIRE(fake->outputOpen);
+
+    tembra_transport_close();
+    REQUIRE(tembra_audio_state() == TEMBRA_AUDIO_IDLE);
+    REQUIRE(fake->closed);
+    tembra_transport_close();  // idempotent
+    REQUIRE(tembra_audio_state() == TEMBRA_AUDIO_IDLE);
+}
+
+TEST_CASE("the transport is refused while the tuner, a tone or the metronome runs", "[engine][transport]") {
+    installFake();
+    tembra_transport_config config{};
+    tembra_tuner_config tuner{};
+    tembra_tuner_default_config(&tuner);
+    REQUIRE(tembra_tuner_start(&tuner) == TEMBRA_OK);
+    REQUIRE(tembra_transport_open(&config) == TEMBRA_ERR_STATE);
+    tembra_tuner_stop();
+    REQUIRE(tembra_tone_start(440.0, 0) == TEMBRA_OK);
+    REQUIRE(tembra_transport_open(&config) == TEMBRA_ERR_STATE);
+    tembra_tone_stop();
+    REQUIRE(tembra_metronome_start() == TEMBRA_OK);
+    REQUIRE(tembra_transport_open(&config) == TEMBRA_ERR_STATE);
+    tembra_metronome_stop();
+    REQUIRE(tembra_transport_open(&config) == TEMBRA_OK);
+    tembra_transport_close();
+    REQUIRE(tembra_audio_state() == TEMBRA_AUDIO_IDLE);
+}
+
+TEST_CASE("transport commands need the transport and close returns to idle from any substate", "[engine][transport]") {
+    tembra::FakeAudioDevice* fake = installFake();
+    REQUIRE(tembra_transport_set_tempo(120, 4, 4) == TEMBRA_ERR_STATE);
+    REQUIRE(tembra_transport_play() == TEMBRA_ERR_STATE);
+    REQUIRE(tembra_transport_pause() == TEMBRA_ERR_STATE);
+    REQUIRE(tembra_transport_seek_beats(1.0) == TEMBRA_ERR_STATE);
+    REQUIRE(tembra_transport_set_master(1.0f) == TEMBRA_ERR_STATE);
+    REQUIRE(tembra_transport_set_metronome(1) == TEMBRA_ERR_STATE);
+    tembra_transport_snapshot snapshot{};
+    snapshot.playing = 7;
+    tembra_transport_read(&snapshot);
+    REQUIRE(snapshot.playing == 0);
+    REQUIRE(snapshot.sample_rate == 0);
+    tembra_transport_read(nullptr);  // tolerated
+
+    tembra_transport_config config{};
+    REQUIRE(tembra_transport_open(&config) == TEMBRA_OK);
+    REQUIRE(tembra_transport_set_tempo(39, 4, 4) == TEMBRA_ERR_ARGUMENT);
+    REQUIRE(tembra_transport_set_tempo(120, 33, 4) == TEMBRA_ERR_ARGUMENT);
+    REQUIRE(tembra_transport_set_tempo(120, 4, 16) == TEMBRA_ERR_ARGUMENT);
+    REQUIRE(tembra_transport_set_tempo(120, 4, 4) == TEMBRA_OK);
+    REQUIRE(tembra_transport_seek_beats(-1.0) == TEMBRA_ERR_ARGUMENT);
+    REQUIRE(tembra_transport_set_master(1.5f) == TEMBRA_ERR_ARGUMENT);
+    REQUIRE(tembra_transport_set_master(0.5f) == TEMBRA_OK);
+    REQUIRE(tembra_transport_pause() == TEMBRA_OK);  // idempotent while stopped
+    pullMono(fake, 512);
+    tembra_transport_read(&snapshot);
+    REQUIRE(snapshot.playing == 0);
+    REQUIRE(snapshot.position_frames == 0);
+    REQUIRE(snapshot.sample_rate == 48000);
+    REQUIRE(snapshot.block_time_ns > 0);
+
+    // An empty project plays: the clock advances and the readout follows it.
+    REQUIRE(tembra_transport_play() == TEMBRA_OK);
+    REQUIRE(tembra_transport_play() == TEMBRA_OK);  // idempotent
+    for (int block = 0; block < 4; ++block) REQUIRE(peakOf(pullMono(fake, 512)) == 0.0f);
+    tembra_transport_read(&snapshot);
+    REQUIRE(snapshot.playing == 1);
+    REQUIRE(snapshot.position_frames == 3 * 512);  // the last block's start
+    REQUIRE(std::abs(snapshot.position_beats - 1536.0 / 24000.0) < 1e-9);
+    REQUIRE(snapshot.audible_seconds >= 0.0);
+    REQUIRE(tembra_transport_seek_beats(2.0) == TEMBRA_OK);
+    pullMono(fake, 512);
+    tembra_transport_read(&snapshot);
+    REQUIRE(snapshot.position_frames == 48000);
+    REQUIRE(tembra_audio_state() == TEMBRA_AUDIO_TRANSPORT);
+    tembra_transport_close();  // from playing
+    REQUIRE(tembra_audio_state() == TEMBRA_AUDIO_IDLE);
+    REQUIRE(fake->closed);
+    tembra_transport_read(&snapshot);
+    REQUIRE(snapshot.playing == 0);
+    REQUIRE(snapshot.position_frames == 0);
+
+    REQUIRE(tembra_transport_open(&config) == TEMBRA_OK);  // a new open starts at 0, stopped
+    pullMono(fake, 512);
+    tembra_transport_read(&snapshot);
+    REQUIRE(snapshot.playing == 0);
+    REQUIRE(snapshot.position_frames == 0);
+    tembra_transport_close();
+}
+
+TEST_CASE("clip sources open in idle and in transport, and a referenced source is not closed", "[engine][transport]") {
+    tembra::FakeAudioDevice* fake = installFake();
+    const std::string path = transportWav();
+    tembra_clip_info info{};
+    REQUIRE(tembra_clip_source_open(nullptr, &info) == TEMBRA_ERR_ARGUMENT);
+    REQUIRE(tembra_clip_source_open(path.c_str(), nullptr) == TEMBRA_ERR_ARGUMENT);
+    REQUIRE(tembra_clip_source_open("/nonexistent/clip.wav", &info) == TEMBRA_ERR_DECODE);
+    const int32_t idle = tembra_clip_source_open(path.c_str(), &info);  // IDLE
+    REQUIRE(idle >= 0);
+    REQUIRE(info.channels == 1);
+    REQUIRE(info.sample_rate == 48000);
+    REQUIRE(info.frames == 48000);
+    REQUIRE(info.format == TEMBRA_FORMAT_WAV);
+
+    tembra_transport_config config{};
+    REQUIRE(tembra_transport_open(&config) == TEMBRA_OK);
+    const int32_t inTransport = tembra_clip_source_open(path.c_str(), &info);  // TRANSPORT
+    REQUIRE(inTransport >= 0);
+    REQUIRE(inTransport != idle);
+
+    auto arrangement = std::make_unique<tembra_arrangement>();
+    REQUIRE(tembra_transport_set_arrangement(nullptr) == TEMBRA_ERR_ARGUMENT);
+    REQUIRE(tembra_transport_set_arrangement(oneClip(*arrangement, idle)) == TEMBRA_OK);
+    oneClip(*arrangement, idle)->track_count = 65;
+    REQUIRE(tembra_transport_set_arrangement(arrangement.get()) == TEMBRA_ERR_ARGUMENT);
+    oneClip(*arrangement, 99);
+    REQUIRE(tembra_transport_set_arrangement(arrangement.get()) == TEMBRA_ERR_ARGUMENT);
+    oneClip(*arrangement, idle)->clips[0].length_frames = 48001;
+    REQUIRE(tembra_transport_set_arrangement(arrangement.get()) == TEMBRA_ERR_ARGUMENT);
+    oneClip(*arrangement, idle)->clips[0].start_beats = -1.0;
+    REQUIRE(tembra_transport_set_arrangement(arrangement.get()) == TEMBRA_ERR_ARGUMENT);
+    oneClip(*arrangement, idle)->clips[0].track = 1;
+    REQUIRE(tembra_transport_set_arrangement(arrangement.get()) == TEMBRA_ERR_ARGUMENT);
+    oneClip(*arrangement, idle);
+    REQUIRE(tembra_transport_set_arrangement(arrangement.get()) == TEMBRA_OK);
+
+    // The referenced source stays open: its handle slot is not reused.
+    tembra_clip_source_close(idle);
+    const int32_t another = tembra_clip_source_open(path.c_str(), &info);
+    REQUIRE(another >= 0);
+    REQUIRE(another != idle);
+    REQUIRE(another != inTransport);
+
+    // Track and master fast paths, the click, play, the readout and the health counters.
+    REQUIRE(tembra_transport_set_track(1, 1.0f, 1) == TEMBRA_ERR_ARGUMENT);  // one track only
+    REQUIRE(tembra_transport_set_track(0, 2.5f, 1) == TEMBRA_ERR_ARGUMENT);
+    REQUIRE(tembra_transport_set_track(0, 0.5f, 1) == TEMBRA_OK);
+    REQUIRE(tembra_transport_set_metronome(1) == TEMBRA_OK);
+    REQUIRE(tembra_transport_set_metronome(0) == TEMBRA_OK);
+    REQUIRE(tembra_transport_play() == TEMBRA_OK);
+    pullMono(fake, 1024);
+    const auto block = pullMono(fake, 1024);
+    REQUIRE(peakOf(block) > 0.2f);  // the sine at half gain
+    REQUIRE(peakOf(block) < 0.3f);
+    tembra_audio_health health{};
+    REQUIRE(tembra_engine_audio_health(&health) == 0);
+    REQUIRE(health.clips_active == 1);
+    REQUIRE(health.starvation == 0);
+    REQUIRE(health.callbacks == 2);
+    tembra_transport_snapshot snapshot{};
+    tembra_transport_read(&snapshot);
+    REQUIRE(snapshot.playing == 1);
+    REQUIRE(snapshot.position_frames == 1024);
+    REQUIRE(tembra_transport_pause() == TEMBRA_OK);
+    pullMono(fake, 1024);
+    REQUIRE(peakOf(pullMono(fake, 1024)) == 0.0f);
+
+    // Once no arrangement references it, the source closes and its slot is free again.
+    arrangement->clip_count = 0;
+    REQUIRE(tembra_transport_set_arrangement(arrangement.get()) == TEMBRA_OK);
+    tembra_clip_source_close(idle);
+    tembra_clip_source_close(idle);  // idempotent
+    tembra_clip_source_close(-1);
+    tembra_clip_source_close(1000);
+    const int32_t reused = tembra_clip_source_open(path.c_str(), &info);
+    REQUIRE(reused == idle);
+    tembra_transport_close();
+    REQUIRE(tembra_audio_state() == TEMBRA_AUDIO_IDLE);
+    tembra_clip_source_close(reused);
+    tembra_clip_source_close(inTransport);
+    tembra_clip_source_close(another);
+}
+
