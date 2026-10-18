@@ -105,30 +105,36 @@ app/
 │   ├── src/                engine_info.cpp (descriptor), third_party_check.cpp (compiles vendored libs)
 │   │   ├── core/           EngineCore state machine (owns the device and every renderer), miniaudio_impl.cpp
 │   │   ├── metronome/      MetronomeRenderer, click synth, sample builder, custom sound loader, resampler, triple buffer, C ABI forwarders
+│   │   ├── transport/      feature 009: TempoMap, TransportClock, TransportRenderer (the project's callback: clips → strips → bus → the anchored click), TransportRecord, C ABI forwarders
+│   │   ├── timeline/       feature 009: AudioDecoder (miniaudio's WAV/FLAC/MP3), ClipSource + SpscFifo, DiskStreamer (the reader thread), ArrangementSnapshot, OverviewBuilder (.peaks), C ABI forwarders
+│   │   ├── mixer/          feature 009: GainRamp, TrackStrip, MasterBus (the shape features 010 and later extend)
 │   │   ├── tuner/          C ABI forwarders, ring buffer, seqlock, band-pass, McLeod detector, smoother, analyzer, tone generator, sample player, WAV decoder
 │   │   └── platform/       AudioDevice seam: null (host), synthetic (test signals), android/oboe, apple/remote_io
 │   ├── third_party/        miniaudio, dr_wav, Signalsmith Stretch (+ licences)
 │   ├── tests/              Catch2 tests
 │   └── android/            :engine:android — com.android.library + CMake/NDK + Prefab Oboe → libtembra_engine.so + JNI shim
 ├── shared/
-│   ├── core/               :shared:core   — pure Kotlin domain (no Compose, no platform APIs, no project dependencies)
-│   ├── engine/             :shared:engine — AudioEngine facade (TunerAudio + MetronomeAudio): NativeAudioEngine (JNI / cinterop), FakeAudioEngine, parser
-│   ├── data/               :shared:data   — persistence: AppDirectories, tuner/ DataStore preferences (TunerPreferences, TembraDataStore), metronome/ (MetronomePreferences, CustomClickSoundStore)
+│   ├── core/               :shared:core   — pure Kotlin domain (no Compose, no platform APIs, no project dependencies; kotlinx.serialization + collections.immutable only): metronome/, tuner/, project/ (the document, ids, edits + ProjectEditor, EditHistory, TempoMap, PlaybackPolicy, LibraryQuery), timeline/ (TimelineViewport, RulerLabels, Snap, ClipHit, TimeFormat)
+│   ├── engine/             :shared:engine — AudioEngine facade (TunerAudio + MetronomeAudio + TimelineAudio): NativeAudioEngine (JNI / cinterop, ArrangementBuffer on Android), FakeAudioEngine, parser, perf/ (PerfTrace facade, catalogue enums, AudioHealth)
+│   ├── data/               :shared:data   — persistence: AppDirectories, tuner/ DataStore preferences (TunerPreferences, TembraDataStore), metronome/ (MetronomePreferences, CustomClickSoundStore), projects/ (ProjectRepository over Okio project folders + library.json, the ProjectDocumentCodec, AudioImporter, WaveformOverview, AutosaveScheduler, DemoProjectInstaller; depends on :shared:engine for the offline inspector and overview builder)
 │   └── ui/                 :shared:ui     — Compose screens, ViewModels, theme, Metro graph; iOS framework "TembraShared"
 │       ├── theme/          design tokens from design/stitch/theme.json: colours, type, shapes, spacing and chrome metrics, motion, TembraIcon registry (Material Symbols glyphs plus the project's own note figures and, since 2026-10-17, the navigation's hand-drawn tuning fork and metronome)
 │       ├── designsystem/   chrome components: TembraTopBar (not shown by the shell since 2026-10-16), TembraNavigationBar and TembraNavigationRail (icon-only, on Material 3 Expressive's ShortNavigationBar and collapsed WideNavigationRail since 2026-10-17; NavigationItemIcon shows the label as a hover tooltip, InsetFocusRing gives Material's inset focus ring), TembraSupportingPane, EmptyState, PlaceholderDestination, TembraSegmentedControl, TembraToggle, TembraStatusPill, TembraGradientCard, TembraChipRow, TembraPill, TembraSlider (expect/actual: Material's slider with a custom thumb and track), FocusRing, FrameTick
-│       ├── platform/       MicrophonePermission, BackgroundPlaybackHost, SoundFilePicker interfaces (+ IosMicrophonePermission, IosBackgroundPlaybackHost, IosSoundFilePicker in iosMain; the Android ones live in :androidApp)
+│       ├── platform/       MicrophonePermission, BackgroundPlaybackHost (+ PlaybackNotification), AudioFilePicker interfaces (+ IosMicrophonePermission, IosBackgroundPlaybackHost, IosAudioFilePicker in iosMain; the Android ones live in :androidApp)
+│       ├── session/        feature 009: ProjectSession (the open project, its history, autosave, engine binding and playback policy; the shell's PlaybackGuard), TransportTelemetry, DialogRequest, AppStartup
+│       ├── transport/      feature 009: TransportBar and its parts (TimeReadout reads the telemetry in draw, MasterVolumeSlider, MetronomeToggle, TransportButton)
+│       ├── tracksettings/  feature 009: the nested TrackSettingsScreen (TrackSettingsKey) and the inline form
 │       ├── navigation/     the shell: Destination registry, ShellViewModel, LayoutMode, NavigationShell, Navigation 3 wiring (TembraNavDisplay), SupportingPaneSceneStrategy
 │       ├── metronome/      MetronomeScreen + MetronomeViewModel, PlaybackPolicy, MetronomeSettingsPanel; components/ (TempoDial, TempoSlider, AccentCells, StyleRow, ClickSoundPicker, TapTempoButton, PlayPauseButton, MetronomeDefaults)
-│       ├── timeline/ projects/ profile/   one package per destination (TimelineScreen, ...); each independent of the shell; home/ keeps only LibraryPane, which no destination declares since Home was removed (2026-10-17)
+│       ├── timeline/ projects/ profile/   one package per destination; feature 009 fills timeline/ (TimelineScreen + TimelineViewModel, components/ with the Canvas ruler, lanes and playhead overlay) and projects/ (the library); each independent of the shell; home/ keeps only LibraryPane, which no destination declares since Home was removed (2026-10-17)
 │       ├── tuner/          TunerScreen + TunerViewModel, ListeningPolicy, TunerMeter (one Canvas), NoiseGateSlider (the noise gate control over the live input level), By Ear cards, ReferenceSoundRepository, test-signal and noise-gate requests
 │       └── devtools/       debug-only developer views (DesignTokenPreview behind a launch argument)
-├── androidApp/             :androidApp — TembraApplication (Metro graph), MainActivity, AndroidMicrophonePermission + MicrophonePermissionHost, MetronomeForegroundService + AndroidBackgroundPlaybackHost, SoundFilePickerHost + AndroidSoundFilePicker
+├── androidApp/             :androidApp — TembraApplication (Metro graph), MainActivity, AndroidMicrophonePermission + MicrophonePermissionHost, PlaybackForegroundService + AndroidBackgroundPlaybackHost (the metronome and the transport), AudioFilePickerHost + AndroidAudioFilePicker (OpenDocument / OpenMultipleDocuments)
 ├── iosApp/                 Xcode project; two Swift files host MainViewController()
 └── tools/                  fetch-material-symbols.sh (glyphs at a pinned commit); make-note-glyphs.py (the note-figure glyphs); make-nav-glyphs.py (the navigation's hand-drawn Tuner and Metronome glyphs and the metronome notification's status-bar icon; `--preview <dir>` writes a preview sheet); make-demo-audio.py (the demo project's four loops under shared/ui/src/commonMain/composeResources/files/demo/, regenerated with `uv run --with numpy python tools/make-demo-audio.py`); capture-tuner-states.sh (the tuner's test-signal screenshot matrix); capture-noise-gate.sh (the noise gate control on one target in one orientation, with a layout check on Android)
 ```
 
-Dependencies point inward: apps → `:shared:ui` → `:shared:engine` / `:shared:data` → `:shared:core`.
+Dependencies point inward: apps → `:shared:ui` → `:shared:data` → `:shared:engine` → `:shared:core` (`:shared:data` uses the engine's offline audio tools since feature 009).
 A dependency in the wrong direction fails configuration (`tembra.kmp.library`).
 
 ## Where does X go?
