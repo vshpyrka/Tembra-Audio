@@ -19,8 +19,8 @@ value class Beats(val value: Double) : Comparable<Beats> {
 
     override fun compareTo(other: Beats): Int = value.compareTo(other.value)
 
-    /** This position held at or after zero: a clip never starts before the project. */
-    fun coerceAtLeastZero(): Beats = if (value < 0.0) Zero else this
+    /** This position held at or after zero: a clip never starts before the project. A negative zero becomes [Zero] too. */
+    fun coerceAtLeastZero(): Beats = if (value <= 0.0) Zero else this
 
     companion object {
         val Zero: Beats = Beats(0.0)
