@@ -42,7 +42,7 @@ class MetronomeTabletopLayoutTest {
     private val cycled = mutableListOf<Int>()
     private val callbacks = MetronomeCallbacks.None.copy(onTogglePlayback = { toggles++ }, onCycleBeat = { cycled += it })
 
-    /** The Pixel 9 Pro Fold's inner screen half-opened, less the status bar, the top bar and the rail. */
+    /** The Pixel 9 Pro Fold's inner screen half-opened, less the status bar, the shell's former top bar and the rail. */
     private val foldContent = DpSize(800.dp, 720.dp)
 
     private val loaded = MetronomeUiState(loaded = true)

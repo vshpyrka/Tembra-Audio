@@ -52,7 +52,7 @@ internal fun ByEarPane(
         TunerLayout.Landscape, TunerLayout.Tabletop -> TembraGradientCard(glow = gradients.byEarWide, modifier = modifier, testTag = "tuner.byEar") {
             FilledStringCards(strings = strings, playingIndex = playingIndex, layout = layout, onAudition = callbacks.onAudition, onStop = callbacks.onStopAudition)
         }
-        TunerLayout.Stacked -> TembraGradientCard(glow = gradients.byEarCompact, modifier = modifier, testTag = "tuner.byEar") {
+        TunerLayout.Stacked, TunerLayout.Pocket -> TembraGradientCard(glow = gradients.byEarCompact, modifier = modifier, testTag = "tuner.byEar") {
             Column(
                 modifier = Modifier
                     .fillMaxSize()

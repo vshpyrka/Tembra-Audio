@@ -20,15 +20,15 @@ from tracepulse.profile_generate import EXIT_FAILED, EXIT_OK, EXIT_REFUSED, main
 FIXTURES = os.path.join(os.path.dirname(__file__), "fixtures", "profile")
 GENERATE_TASK = ":androidApp:generateBaselineProfile"
 COVERAGE_TASK = ":androidApp:testDebugUnitTest"
-OLD_BASELINE = "Laudio/tembra/ui/home/HomeScreenKt;\nHSPLaudio/tembra/android/MainActivity;->onCreate(Landroid/os/Bundle;)V\n"
+OLD_BASELINE = "Laudio/tembra/ui/timeline/TimelineScreenKt;\nHSPLaudio/tembra/android/MainActivity;->onCreate(Landroid/os/Bundle;)V\n"
 OLD_STARTUP = "Laudio/tembra/android/TembraApplication;\n"
 NEW_BASELINE = ("Laudio/tembra/android/TembraApplication;\nLaudio/tembra/android/MainActivity;\n"
-                "Laudio/tembra/ui/navigation/NavigationShellKt;\nLaudio/tembra/ui/home/HomeScreenKt;\n"
+                "Laudio/tembra/ui/navigation/NavigationShellKt;\nLaudio/tembra/ui/timeline/TimelineScreenKt;\n"
                 "HSPLaudio/tembra/ui/tuner/TunerScreenKt;->TunerScreen(Landroidx/compose/runtime/Composer;I)V\n"
                 "Laudio/tembra/ui/metronome/MetronomeScreenKt;\nLandroidx/compose/runtime/Composer;\n")
 NEW_STARTUP = "Laudio/tembra/android/TembraApplication;\nLaudio/tembra/android/MainActivity;\n"
 RULES = ("# startup\napp.start Laudio/tembra/android/TembraApplication;\napp.activity Laudio/tembra/android/MainActivity;\n"
-         "shell Laudio/tembra/ui/navigation/NavigationShellKt;\n\nhome Laudio/tembra/ui/home/HomeScreenKt;\n"
+         "shell Laudio/tembra/ui/navigation/NavigationShellKt;\n\ntimeline Laudio/tembra/ui/timeline/TimelineScreenKt;\n"
          "tuner Laudio/tembra/ui/tuner/TunerScreenKt;\nmetronome Laudio/tembra/ui/metronome/MetronomeScreenKt;\n")
 
 
@@ -211,11 +211,11 @@ def test_success_reports_rule_counts_and_covered_labels(cfg, paths, tmp_path, ca
     out = capsys.readouterr().out
     assert "baseline-prof.txt" in out and "7 rules" in out
     assert "startup-prof.txt" in out and "2 rules" in out
-    for label in ("app.start", "app.activity", "shell", "home", "tuner", "metronome"):
+    for label in ("app.start", "app.activity", "shell", "timeline", "tuner", "metronome"):
         assert label in out
     assert "commit when covered code changed" in out
     assert payload["baseline_rules"] == 7 and payload["startup_rules"] == 2
-    assert payload["covered"] == ["app.start", "app.activity", "shell", "home", "tuner", "metronome"]
+    assert payload["covered"] == ["app.start", "app.activity", "shell", "timeline", "tuner", "metronome"]
 
 
 def test_two_android_devices_and_no_name_is_a_usage_error(cfg, paths, tmp_path):

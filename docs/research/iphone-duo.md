@@ -34,7 +34,8 @@ the API reference pages linked below, and running Tembra Audio on the iPhone Duo
 - **Build with Xcode 27.1.** Built with Xcode 26.6 (iOS 26.5 SDK) the app runs in a portrait compatibility window
   with black bars on the open inner display; Apple's guide confirms that apps built with Xcode 26 and earlier do not
   extend under the status bar and camera. Built with the 27.1 SDK it fills both displays and the adaptive layout
-  picks the rail and the supporting pane on the inner display.
+  picks the rail and the supporting pane on the inner display (the pane showed only beside Home; since Home was
+  removed on 2026-10-17 the inner display shows the rail alone).
 - **The outer display keeps a system column at the end edge** (status bar and camera). The content cleared it
   through `WindowInsets.safeDrawing`, but the bottom bar padded only `navigationBars`, so its items ran under the
   column; fixed 2026-10-03 (`TembraNavigationBar` now also pads the horizontal safe-drawing insets).
@@ -86,5 +87,7 @@ the API reference pages linked below, and running Tembra Audio on the iPhone Duo
 1. A Swift bridge for the hinge status and the division region, so the feature 005 splits work on the Duo.
 2. A side rail instead of the bottom bar on the closed outer display (HIG vertical bars). Tried 2026-10-04 on
    branch `experiment/duo-side-rail` (`LayoutMode.EndRail`) and merged to main: the rail fills the end-edge system
-   column with its items at the bottom, under the clock and camera, and the content gains the bar's height.
+   column with its items at the bottom, under the clock and camera, and the content gains the bar's height. Since
+   2026-10-17 the rail is Material's collapsed `WideNavigationRail` with icon-only items: at least as wide as the end
+   inset, and Material's 96 dp where the inset is narrower.
 3. If the Pocket metronome is kept, select it from a short compact window rather than the device model.

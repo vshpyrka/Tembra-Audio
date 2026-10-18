@@ -1,9 +1,9 @@
 diff --git a/app/androidApp/src/main/kotlin/audio/tembra/android/MainActivity.kt b/app/androidApp/src/main/kotlin/audio/tembra/android/MainActivity.kt
-index 2e3872c..6e04c0b 100644
+index cc8a2a9..7a81ae5 100644
 --- a/app/androidApp/src/main/kotlin/audio/tembra/android/MainActivity.kt
 +++ b/app/androidApp/src/main/kotlin/audio/tembra/android/MainActivity.kt
-@@ -18,6 +18,15 @@ class MainActivity : ComponentActivity() {
-         enableEdgeToEdge()
+@@ -21,6 +21,15 @@ class MainActivity : ComponentActivity() {
+         enableEdgeToEdgeOverDarkContent()
          super.onCreate(savedInstanceState)
          appGraph = (application as TembraApplication).appGraph
 +        // tracepulse R1: deliberate startup regression (busy-spin 250 ms + 512 KiB write/fsync/read on the main thread).

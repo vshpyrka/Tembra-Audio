@@ -171,7 +171,7 @@ Typography prioritizes functional clarity, instant scanability, and precision te
 The arrangement layout uses an adaptable docked-panel architecture:
 
 - **Layout Grid Model:**
-  - **Desktop / Widescreen:** 3-column composite layout. A slim 64px vertical tool navigation rail on the far left, a central fluid sequencer canvas spanning track rows and automation curves, and a persistent right-hand 320px sound matrix / loop library inspector.
+  - **Desktop / Widescreen:** 3-column composite layout. A slim 96px vertical navigation rail of icon-only items on the far left (the collapsed Material 3 Expressive rail since 2026-10-17; it was 64px with labels before), a central fluid sequencer canvas spanning track rows and automation curves, and a persistent right-hand 320px sound matrix / loop library inspector.
   - **Tablet (Portrait / Landscape):** The sound matrix switches to a collapsible drawer or docks beneath the timeline, preserving horizontal real estate for 4–8 visible audio tracks.
   - **Mobile (~390px):** Single-column workspace. The bottom transport bar docks permanently above native system indicators, switching to an expandable thumb-accessible sheet for pad triggers, track controls, and category filters.
 - **Density Rhythm:** Spacing adopts a tight base module (4px/8px) to maximize track density and multi-track visibility while preserving standard 44px minimum touch targets across all transport buttons and sampler trigger pads.

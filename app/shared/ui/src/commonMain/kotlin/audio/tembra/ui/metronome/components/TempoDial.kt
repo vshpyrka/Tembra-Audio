@@ -172,7 +172,7 @@ internal fun TempoDial(
                     // Compose has no slider role: the range and the progress action make the node a slider (a SeekBar
                     // to TalkBack, an adjustable element to VoiceOver), as Material's own Slider does.
                     stateDescription = state
-                    progressBarRangeInfo = ProgressBarRangeInfo(tempo.bpm.toFloat(), Tempo.MIN.toFloat()..Tempo.MAX.toFloat(), steps = STEPS)
+                    progressBarRangeInfo = ProgressBarRangeInfo(tempo.bpm.toFloat(), Tempo.MIN.toFloat()..Tempo.MAX.toFloat(), steps = TEMPO_SLIDER_STEPS)
                     setProgress { value ->
                         offer(Tempo.clamped(value.roundToInt()))
                         true
@@ -196,10 +196,11 @@ internal fun TempoDial(
     }
 }
 
-private const val STEPS = Tempo.MAX - Tempo.MIN - 1
+/** The dial and the tempo row as a slider: one step per tempo between the ends. */
+internal const val TEMPO_SLIDER_STEPS = Tempo.MAX - Tempo.MIN - 1
 
 /** The tempo a focused dial moves to for [event], or null when the key is not the dial's. */
-private fun handleKey(event: KeyEvent, tempo: Tempo): Tempo? {
+internal fun handleKey(event: KeyEvent, tempo: Tempo): Tempo? {
     if (event.type != KeyEventType.KeyDown) return null
     val delta = when (event.key) {
         Key.DirectionUp, Key.DirectionRight -> 1

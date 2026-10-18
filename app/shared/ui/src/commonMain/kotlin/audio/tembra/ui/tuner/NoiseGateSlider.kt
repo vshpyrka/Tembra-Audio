@@ -30,6 +30,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextOverflow
 import audio.tembra.core.tuner.NoiseGate
 import audio.tembra.engine.PitchSnapshot
+import audio.tembra.ui.designsystem.TembraSlider
 import audio.tembra.ui.designsystem.TembraSliderDefaults
 import audio.tembra.ui.designsystem.TembraSliderThumb
 import audio.tembra.ui.designsystem.rememberFrameTick
@@ -41,8 +42,8 @@ import kotlin.math.roundToInt
  * a Material [Slider] between the end labels "Off" and "High". The handle's place is the gate level, in the steps of
  * [NoiseGate]; the start of the track is off. It is built like the metronome's tempo slider and shares its handle
  * ([TembraSliderThumb]), here in a touch-target box in both directions (spec FR-018). [onGate] is raised for every
- * step the handle reaches and [onGateSettled] when the move has ended; dragging, a touch on the track and the arrow
- * keys all come from Material.
+ * step the handle reaches and [onGateSettled] when the move has ended; dragging, a touch on the track, Left and Right
+ * come from Material, and Up and Down from [TembraSlider].
  *
  * The track is a live picture of the input (spec FR-011 to FR-013, research R10): while [listening] it fills from its
  * start to the input level on the handle's own scale, in `primary` while the sound is read and in `outline` while the
@@ -96,7 +97,7 @@ internal fun NoiseGateSlider(
         // track, which is the distance the tempo slider keeps between its labels and its track.
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(text = TunerCopy.off, style = endLabelStyle, color = colors.outline, modifier = Modifier.semantics { hideFromAccessibility() })
-            Slider(
+            TembraSlider(
                 value = gate.step.toFloat(),
                 onValueChange = { value ->
                     val next = NoiseGate.ofStep(value.roundToInt())

@@ -55,7 +55,7 @@
   .tnum { font-feature-settings: "tnum" 1; }
   .abs { position: absolute; }
   .card {
-    position: absolute; left: 80px; width: 787px; border-radius: 20px;
+    position: absolute; left: 112px; width: 755px; border-radius: 20px;
     border: 1px solid #2a2a2d;
   }
   .card-meter {
@@ -70,39 +70,26 @@
       radial-gradient(90% 100% at 10% 95%, rgba(133,20,90,0.14), transparent 65%),
       #151118;
   }
-  .rail-item { position: absolute; left: 0; width: 63px; display: flex; flex-direction: column; align-items: center; color: #cac4d4; }
-  .rail-item span.lbl { font-family: 'Space Grotesk', sans-serif; font-size: 10.5px; font-weight: 500; letter-spacing: 0.02em; margin-top: 3px; color: #e4e1e6; }
 </style>
 </head>
 <body class="font-body">
 
-<!-- Top chrome band (status bar area rendered as plain background) + header -->
-<div class="abs" style="left:0;top:0;width:883px;height:112px;background:#0e0e11;"></div>
 <!-- Navigation rail column -->
-<div class="abs" style="left:0;top:112px;width:64px;height:740px;background:#0e0e11;"></div>
-
-<header class="abs" style="left:16px;top:62px;">
-  <div class="font-label" style="font-size:10px;font-weight:600;letter-spacing:0.06em;color:#cebdff;text-transform:uppercase;line-height:14px;">Tembra Audio</div>
-  <div class="font-headline" style="font-size:18px;font-weight:500;color:#e4e1e6;line-height:24px;margin-top:2px;">Tuner</div>
-</header>
+<div class="abs" style="left:0;top:0;width:96px;height:852px;background:#0e0e11;"></div>
 
 <!-- BEGIN: NavigationRail -->
-<nav aria-label="Primary" data-purpose="navigation-rail">
-  <div class="rail-item" style="top:119px;"><span class="material-symbols-outlined" style="font-size:22px;">home</span><span class="lbl">Home</span></div>
-  <div class="rail-item" style="top:169px;"><span class="material-symbols-outlined" style="font-size:22px;">graphic_eq</span><span class="lbl">Timeline</span></div>
-  <div class="abs" style="left:8px;top:214px;width:47px;height:46px;border-radius:14px;background:#85145a;display:flex;flex-direction:column;align-items:center;justify-content:center;">
-    <span class="material-symbols-outlined fill" style="font-size:20px;color:#ffafd3;">music_note</span>
-    <span class="font-label" style="font-size:11px;font-weight:600;letter-spacing:0.04em;color:#ffafd3;margin-top:1px;">Tuner</span>
-  </div>
-  <div class="rail-item" style="top:269px;"><span class="material-symbols-outlined" style="font-size:22px;">av_timer</span><span class="lbl">Metronome</span></div>
-  <div class="rail-item" style="top:319px;"><span class="material-symbols-outlined" style="font-size:22px;">folder</span><span class="lbl">Projects</span></div>
-  <div class="rail-item" style="top:369px;"><span class="material-symbols-outlined" style="font-size:22px;">person</span><span class="lbl">Profile</span></div>
+<nav aria-label="Primary" data-purpose="navigation-rail" class="abs flex flex-col items-center gap-1" style="left:0;top:0;width:96px;height:852px;padding-top:97px;">
+  <a class="w-14 h-14 rounded-full flex items-center justify-center text-on-surface-variant" href="#" aria-label="Timeline"><span class="material-symbols-outlined" style="font-size:24px;">graphic_eq</span></a>
+  <a class="w-14 h-14 rounded-full flex items-center justify-center bg-secondary-container text-on-secondary-container" href="#" aria-label="Tuner" aria-current="page"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true" style="display:block;flex:none" data-glyph="tuning_fork"><path d="M9.5 3V10.5A2.5 2.5 0 0 0 14.5 10.5V3"></path><path d="M12 13V21.5"></path><path d="M5.6 4.5A6 6 0 0 0 5.6 10.5"></path><path d="M18.4 4.5A6 6 0 0 1 18.4 10.5"></path></svg></a>
+  <a class="w-14 h-14 rounded-full flex items-center justify-center text-on-surface-variant" href="#" aria-label="Metronome"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true" style="display:block;flex:none" data-glyph="metronome"><path d="M15.45 6.05L14.6 3H9.4L4.4 21H19.6L16.56 10.05"></path><path d="M7.34 14H16.66"></path><path d="M12 14L18.6 4.2"></path></svg></a>
+  <a class="w-14 h-14 rounded-full flex items-center justify-center text-on-surface-variant" href="#" aria-label="Projects"><span class="material-symbols-outlined" style="font-size:24px;">folder</span></a>
+  <a class="w-14 h-14 rounded-full flex items-center justify-center text-on-surface-variant" href="#" aria-label="Profile"><span class="material-symbols-outlined" style="font-size:24px;">person</span></a>
 </nav>
 <!-- END: NavigationRail -->
 
 <!-- BEGIN: MeterCard (upper half, above the fold) -->
-<section class="card card-meter" data-purpose="tuner-meter" style="top:120px;height:294px;">
-<div class="abs" style="left:0;top:-2px;width:769px;height:296px;">
+<section class="card card-meter" data-purpose="tuner-meter" style="top:64px;height:350px;">
+<div class="abs" style="left:-16px;top:26px;width:769px;height:296px;">
   <!-- IN TUNE chip -->
   <div class="abs" style="left:331px;top:13px;width:106px;height:24px;border-radius:12px;background:#28262b;border:1px solid #3a3840;display:flex;align-items:center;padding-left:11px;gap:6px;">
     <span style="width:6px;height:6px;border-radius:3px;background:#cac4d4;"></span>
@@ -159,7 +146,7 @@
 <!-- END: MeterCard -->
 
 <!-- Design annotation: hinge / fold line at y = 426 -->
-<div aria-hidden="true" class="abs" style="left:80px;top:425.5px;width:787px;height:0;border-top:1px dashed rgba(206,189,255,0.14);"></div>
+<div aria-hidden="true" class="abs" style="left:112px;top:425.5px;width:755px;height:0;border-top:1px dashed rgba(206,189,255,0.14);"></div>
 
 <!-- BEGIN: ControlsCard (lower half, below the fold) -->
 <section class="card card-controls" data-purpose="tuner-controls" style="top:438px;height:374px;">
@@ -175,7 +162,7 @@
   <!-- Seam -->
   <div class="abs" style="left:12px;right:12px;top:104px;height:1px;background:#231d27;"></div>
   <!-- Stacked controls column (centred, max 576 px) -->
-  <div class="abs" style="left:105px;width:576px;top:121px;display:flex;flex-direction:column;gap:21px;">
+  <div class="abs" style="left:89px;width:576px;top:121px;display:flex;flex-direction:column;gap:21px;">
     <!-- Instrument -->
     <div role="radiogroup" aria-label="Instrument" style="height:40px;box-sizing:border-box;background:#0e0e11;border-radius:10px;padding:4px;display:grid;grid-template-columns:1fr 1fr;gap:4px;">
       <button role="radio" aria-checked="false" style="border-radius:7px;display:flex;align-items:center;justify-content:center;gap:8px;color:#e4e1e6;">

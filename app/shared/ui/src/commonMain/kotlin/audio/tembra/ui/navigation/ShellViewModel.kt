@@ -18,7 +18,8 @@ import kotlinx.coroutines.launch
 
 /**
  * Holds the navigation state above the NavDisplay so it outlives destination switches, rotation and live resizes
- * (Constitution II). Intents are plain functions; a relaunch starts on Home (spec FR-001, FR-021 of feature 002).
+ * (Constitution II). Intents are plain functions; a relaunch starts on the start destination (spec FR-001, FR-021 of
+ * feature 002).
  *
  * Leaving the Timeline while a project plays asks the [guard] first (spec FR-008a of feature 009): [select] and
  * [back] navigate at once when nothing plays or the target stays on the Timeline (its track settings included);
@@ -45,18 +46,18 @@ class ShellViewModel(private val guard: PlaybackGuard) : ViewModel() {
     }
 
     /**
-     * Pops the top entry: the track settings back to the Timeline, or any destination back to Home. Reports true when
-     * consumed, false on Home so the platform handles back (spec FR-010). Leaving the Timeline is guarded; a "Keep
-     * playing" answer leaves the stack as it is, with back still consumed.
+     * Pops the top entry: the track settings back to the Timeline, or any destination back to the start destination.
+     * Reports true when consumed, false on the start destination so the platform handles back (spec FR-010). Leaving
+     * the Timeline is guarded; a "Keep playing" answer leaves the stack as it is, with back still consumed.
      */
     fun back(): Boolean {
         val state = _uiState.value
-        if (state.selected == Destination.Home) return false
-        if (state.trackSettings != null) {
+        if (state.trackSettings != null && state.selected == Destination.Timeline) {
             _uiState.value = state.copy(trackSettings = null)
             return true
         }
-        leaveGuarded(to = Destination.Home) { _uiState.value = ShellUiState() }
+        if (state.selected == StartDestination) return false
+        leaveGuarded(to = StartDestination) { _uiState.value = ShellUiState() }
         return true
     }
 

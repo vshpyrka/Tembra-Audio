@@ -347,6 +347,10 @@ bool EngineCore::readAudioHealth(tembra_audio_health& out) {
 
 void EngineCore::render(float* out, uint32_t frames) {
     // Audio thread: render the active sources, sum them, and report idle when all have finished (Constitution I).
+    // The state is read before the sources: a start publishes its sources and only then sets TONE, so a block that
+    // began in TONE sees that start's sources. A block that began before it (the first callbacks of a stream the start
+    // just opened) may hold sources from before the start; it never reports idle, the next block does if it must.
+    const bool toneAtStart = state() == TEMBRA_AUDIO_TONE;
     ToneGenerator* generator = callbackGenerator_.load(std::memory_order_acquire);
     SamplePlayer* player = callbackPlayer_.load(std::memory_order_acquire);
     MetronomeRenderer* metronome = callbackMetronome_.load(std::memory_order_acquire);
@@ -382,8 +386,10 @@ void EngineCore::render(float* out, uint32_t frames) {
     // Re-check after rendering: a one shot that finished inside this block reports idle now, not a block later.
     const bool stillActive = (generator != nullptr && generator->isActive()) || (player != nullptr && player->isActive()) ||
                              (metronome != nullptr && metronome->isActive());
-    if (!stillActive && state() == TEMBRA_AUDIO_TONE) {
-        state_.store(TEMBRA_AUDIO_IDLE, std::memory_order_release);
+    if (toneAtStart && !stillActive) {
+        // Only TONE becomes IDLE: a state the control thread set meanwhile (a metronome start) is left alone.
+        uint32_t expected = TEMBRA_AUDIO_TONE;
+        state_.compare_exchange_strong(expected, TEMBRA_AUDIO_IDLE, std::memory_order_acq_rel, std::memory_order_acquire);
     }
 }
 

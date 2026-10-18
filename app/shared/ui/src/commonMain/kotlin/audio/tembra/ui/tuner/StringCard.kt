@@ -77,11 +77,11 @@ internal fun StringCard(
     val border = if (playing) colors.secondary else colors.outlineVariant.copy(alpha = BORDER_ALPHA)
     val glow = gradients.playingGlow
     val sizeModifier = when (layout) {
-        TunerLayout.Stacked, TunerLayout.Wide -> Modifier.squareOrTaller()
+        TunerLayout.Stacked, TunerLayout.Wide, TunerLayout.Pocket -> Modifier.squareOrTaller()
         TunerLayout.Landscape, TunerLayout.Tabletop -> Modifier.fillMaxHeight()
     }
     val padding = when (layout) {
-        TunerLayout.Stacked -> spacing.md
+        TunerLayout.Stacked, TunerLayout.Pocket -> spacing.md
         TunerLayout.Wide -> spacing.md + spacing.xs / 2
         TunerLayout.Landscape, TunerLayout.Tabletop -> spacing.sm
     }

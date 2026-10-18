@@ -5,7 +5,6 @@ import audio.tembra.ui.resources.ic_add_24
 import audio.tembra.ui.resources.ic_arrow_left_24
 import audio.tembra.ui.resources.ic_arrow_right_24
 import audio.tembra.ui.resources.ic_audio_file_24
-import audio.tembra.ui.resources.ic_av_timer_24
 import audio.tembra.ui.resources.ic_check_24
 import audio.tembra.ui.resources.ic_content_copy_24
 import audio.tembra.ui.resources.ic_content_cut_24
@@ -17,8 +16,8 @@ import audio.tembra.ui.resources.ic_folder_24
 import audio.tembra.ui.resources.ic_graphic_eq_24
 import audio.tembra.ui.resources.ic_grid_on_24
 import audio.tembra.ui.resources.ic_hearing_24
-import audio.tembra.ui.resources.ic_home_24
 import audio.tembra.ui.resources.ic_library_music_24
+import audio.tembra.ui.resources.ic_metronome_24
 import audio.tembra.ui.resources.ic_mic_24
 import audio.tembra.ui.resources.ic_mic_off_24
 import audio.tembra.ui.resources.ic_more_vert_24
@@ -51,6 +50,7 @@ import audio.tembra.ui.resources.ic_sort_24
 import audio.tembra.ui.resources.ic_swap_horiz_24
 import audio.tembra.ui.resources.ic_touch_app_24
 import audio.tembra.ui.resources.ic_tune_24
+import audio.tembra.ui.resources.ic_tuning_fork_24
 import audio.tembra.ui.resources.ic_undo_24
 import audio.tembra.ui.resources.ic_volume_up_24
 import audio.tembra.ui.resources.ic_zoom_in_24
@@ -61,14 +61,14 @@ import org.jetbrains.compose.resources.DrawableResource
  * Bundled glyphs (24 dp), rendered through [TembraIcons.vector]. Most are Material Symbols Outlined (weight 400,
  * grade 0, unfilled) copied from google/material-design-icons at commit 27e9ef1dbeedc13d682fece4a58e1eda4cb0961a
  * (Apache-2.0) and normalised by `tools/fetch-material-symbols.sh` (research R6 of feature 002). The `Note*` figures
- * are hand-authored by `tools/make-note-glyphs.py`, not fetched Material Symbols.
+ * are hand-authored by `tools/make-note-glyphs.py`, and the navigation's [Tuner] tuning fork and [Metronome] by
+ * `tools/make-nav-glyphs.py` (2026-10-17): Material Symbols has neither glyph.
  * Screens use these names only (spec FR-016, FR-026); to add a glyph run the script and add a value.
  */
 enum class TembraIcon(internal val resource: DrawableResource) {
-    Home(Res.drawable.ic_home_24),
     Timeline(Res.drawable.ic_graphic_eq_24),
-    Tuner(Res.drawable.ic_music_note_24),
-    Metronome(Res.drawable.ic_av_timer_24),
+    Tuner(Res.drawable.ic_tuning_fork_24),
+    Metronome(Res.drawable.ic_metronome_24),
     Projects(Res.drawable.ic_folder_24),
     Profile(Res.drawable.ic_person_24),
     Mic(Res.drawable.ic_mic_24),

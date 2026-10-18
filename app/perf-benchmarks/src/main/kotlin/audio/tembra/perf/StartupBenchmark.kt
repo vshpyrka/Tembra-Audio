@@ -9,7 +9,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** Cold startup: time to initial display and to full display (`ReportFirstContentDrawn` on Home), 20 iterations. */
+/** Cold startup: time to initial display and to full display (`ReportFirstContentDrawn` on Timeline, the start destination), 20 iterations. */
 @RunWith(AndroidJUnit4::class)
 class StartupBenchmark {
     @get:Rule

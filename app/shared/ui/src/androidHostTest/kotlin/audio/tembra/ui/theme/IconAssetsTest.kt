@@ -33,8 +33,8 @@ class IconAssetsTest {
     private val filledGlyphs = listOf("ic_play_arrow_fill_24.xml", "ic_pause_fill_24.xml")
     private val materialGlyphs = (
         listOf(
-            "ic_home_24.xml", "ic_graphic_eq_24.xml", "ic_music_note_24.xml",
-            "ic_av_timer_24.xml", "ic_folder_24.xml", "ic_person_24.xml",
+            "ic_graphic_eq_24.xml", "ic_music_note_24.xml",
+            "ic_folder_24.xml", "ic_person_24.xml",
             "ic_mic_24.xml", "ic_mic_off_24.xml", "ic_hearing_24.xml", "ic_play_arrow_24.xml", "ic_pause_24.xml",
             "ic_volume_up_24.xml", "ic_expand_more_24.xml", "ic_arrow_left_24.xml", "ic_arrow_right_24.xml", "ic_settings_24.xml",
         ) + metronomeGlyphs + timelineGlyphs
@@ -45,7 +45,9 @@ class IconAssetsTest {
         "ic_note_quarter_24.xml", "ic_note_eighth_pair_24.xml", "ic_note_sixteenth_quad_24.xml", "ic_note_eighth_triplet_24.xml",
         "ic_note_eighth_24.xml", "ic_note_sixteenth_pair_24.xml", "ic_note_thirty_second_quad_24.xml", "ic_note_sixteenth_triplet_24.xml",
     )
-    private val glyphFiles = materialGlyphs + noteGlyphs
+    /** The navigation's Tuner and Metronome glyphs (2026-10-17), hand-drawn by `tools/make-nav-glyphs.py`. */
+    private val navGlyphs = listOf("ic_tuning_fork_24.xml", "ic_metronome_24.xml")
+    private val glyphFiles = materialGlyphs + noteGlyphs + navGlyphs
 
     /** The header comment names the source; the vector body must not reference any platform resource. */
     private fun bodyWithoutHeader(text: String): String = text.lines().filterNot { it.trimStart().startsWith("<!--") }.joinToString("\n")
@@ -57,6 +59,18 @@ class IconAssetsTest {
             assertTrue(header.startsWith("<!-- Tembra note glyph"), "$name header is not the note glyph header")
             assertTrue(header.contains("tools/make-note-glyphs.py"), "$name header does not name tools/make-note-glyphs.py")
             assertTrue(File(drawable, name).readText().contains("android:fillColor=\"#FFFFFFFF\""), "$name has no literal white fill")
+        }
+    }
+
+    @Test
+    fun navGlyphsNameTheirGeneratorAndAreWhiteStrokes() {
+        for (name in navGlyphs) {
+            val text = File(drawable, name).readText()
+            val header = text.lineSequence().first { it.trimStart().startsWith("<!--") }
+            assertTrue(header.startsWith("<!-- Tembra navigation glyph"), "$name header is not the navigation glyph header")
+            assertTrue(header.contains("tools/make-nav-glyphs.py"), "$name header does not name tools/make-nav-glyphs.py")
+            assertTrue(text.contains("android:strokeColor=\"#FFFFFFFF\""), "$name has no literal white stroke")
+            assertFalse(text.contains("android:fillColor"), "$name fills a path; its lines are strokes")
         }
     }
 

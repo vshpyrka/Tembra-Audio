@@ -4,8 +4,12 @@ import android.Manifest
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.provider.Settings
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.uiautomator.By
+import androidx.test.uiautomator.UiDevice
+import androidx.test.uiautomator.Until
 import audio.tembra.ui.platform.MicrophonePermissionStatus
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
@@ -16,6 +20,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.util.regex.Pattern
 
 /** The Android permission implementation behind the shared interface (research R6, analysis C1). */
 class AndroidMicrophonePermissionTest {
@@ -23,9 +28,33 @@ class AndroidMicrophonePermissionTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context: Context = instrumentation.targetContext
 
+    /**
+     * The runner's grant; where the platform refuses it (ColorOS on the OPPO CPH2239, Android 11, throws a
+     * SecurityException unless its "Disable permission monitoring" developer option is on) the system's own prompt,
+     * answered as a user would, so every test runs there too.
+     */
     @Before
     fun grantTheMicrophone() {
-        instrumentation.uiAutomation.grantRuntimePermission(context.packageName, Manifest.permission.RECORD_AUDIO)
+        if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) return
+        try {
+            instrumentation.uiAutomation.grantRuntimePermission(context.packageName, Manifest.permission.RECORD_AUDIO)
+        } catch (refused: SecurityException) {
+            grantThroughTheSystemPrompt()
+        }
+        assertEquals(PackageManager.PERMISSION_GRANTED, context.checkSelfPermission(Manifest.permission.RECORD_AUDIO))
+    }
+
+    private fun grantThroughTheSystemPrompt() {
+        val intent = Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        val activity = instrumentation.startActivitySync(intent)
+        instrumentation.runOnMainSync { activity.requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), 1) }
+        val device = UiDevice.getInstance(instrumentation)
+        val allow = By.text(Pattern.compile("While using the app|Allow", Pattern.CASE_INSENSITIVE))
+        val button = device.wait(Until.findObject(allow), 10_000)
+        assertNotNull("no microphone prompt appeared", button)
+        button.click()
+        device.wait(Until.gone(allow), 5_000)
+        instrumentation.runOnMainSync { activity.finish() }
     }
 
     @Test

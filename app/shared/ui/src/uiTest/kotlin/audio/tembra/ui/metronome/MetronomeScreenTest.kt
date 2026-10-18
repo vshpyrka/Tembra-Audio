@@ -535,7 +535,75 @@ class MetronomeScreenTest {
         assertTrue(bounds("metronome.dial").height >= 160.dp - 0.5.dp, "the dial is under 160 dp")
     }
 
-    /** A Pixel 6 Pro held sideways, less the status and top bars (quickstart §8): a pane under 320 dp tall. */
+    /**
+     * The Pocket form on the content areas the tablet survey measured (2026-10-16), the window less the 48 dp caption,
+     * the shell's former 56 dp top bar and the 64 dp rail or bar (the same windows have 56 dp more since the bar went;
+     * these heights stay as the tiers' short cases): tap and play are always whole and in view, the tempo always shows.
+     */
+    private fun ComposeUiTest.assertPocketTransportAndTempoInView(what: String) {
+        val screen = bounds("screen.metronome")
+        for (tag in listOf("metronome.tap", "metronome.play")) {
+            val control = bounds(tag)
+            assertTrue(screen.contains(control), "$what: $tag ($control) is outside the screen $screen")
+            assertTrue(control.height >= 48.dp - 0.5.dp, "$what: $tag is ${control.height} tall")
+        }
+        onNode(hasText("120") and hasAnyAncestor(hasTestTag("screen.metronome")), useUnmergedTree = true).assertIsDisplayed()
+    }
+
+    /** 772 × 511 dp window beside a rail: the ring dial at its 160 dp minimum or more, with the slider and the cells. */
+    @Test
+    fun pocketInA772x511WindowKeepsTheRingTheCellsAndTheSlider() = runComposeUiTest {
+        setScreen(layout = MetronomeLayout.Pocket, size = DpSize(708.dp, 407.dp))
+        assertPocketTransportAndTempoInView("708 × 407")
+        assertTrue(bounds("metronome.dial").height >= 160.dp - 0.5.dp, "the ring is ${bounds("metronome.dial").height}")
+        onNodeWithTag("metronome.tempoRow").assertDoesNotExist()
+        val screen = bounds("screen.metronome")
+        for (tag in listOf("metronome.cells", "metronome.slider")) assertTrue(screen.contains(bounds(tag)), "$tag is outside the screen")
+    }
+
+    /** 560 × 480 dp window over a bottom bar: no room for a 160 dp ring, so the tempo row stands in; the cells stay. */
+    @Test
+    fun pocketInA560x480WindowTradesTheRingForTheTempoRow() = runComposeUiTest {
+        setScreen(layout = MetronomeLayout.Pocket, size = DpSize(560.dp, 312.dp))
+        assertPocketTransportAndTempoInView("560 × 312")
+        onNodeWithTag("metronome.dial").assertDoesNotExist()
+        val screen = bounds("screen.metronome")
+        for (tag in listOf("metronome.tempoRow", "metronome.tempoRow.down", "metronome.tempoRow.up", "metronome.cells")) {
+            assertTrue(screen.contains(bounds(tag)), "$tag (${bounds(tag)}) is outside the screen $screen")
+        }
+    }
+
+    /** 420 × 380 dp window: the tempo row and the transport alone; the accent cells move into the settings sheet. */
+    @Test
+    fun pocketInA420x380WindowMovesTheCellsIntoTheSettingsSheet() = runComposeUiTest {
+        setScreen(layout = MetronomeLayout.Pocket, size = DpSize(420.dp, 212.dp))
+        assertPocketTransportAndTempoInView("420 × 212")
+        assertTrue(bounds("screen.metronome").contains(bounds("metronome.tempoRow")), "the tempo row is outside the screen")
+        onNodeWithTag("metronome.cells").assertDoesNotExist()
+        onNodeWithTag("metronome.pocket.settings").performClick()
+        settle()
+        onNodeWithTag("metronome.cells").assertExists()
+    }
+
+    /**
+     * A short desktop window (Pixel Tablet, 1000 × 362 dp less the caption and the former top bar, 2026-10-15): too short for
+     * the 160 dp ring over the row, so the dial card scrolls on its own while tap and play stay whole and in view.
+     */
+    @Test
+    fun aShortWindowKeepsTheTransportInViewAndScrollsOnlyTheDialCard() = runComposeUiTest {
+        setScreen(layout = MetronomeLayout.Landscape, size = DpSize(1000.dp, 240.dp))
+        val screen = bounds("screen.metronome")
+        for (tag in listOf("metronome.tap", "metronome.play")) {
+            val control = bounds(tag)
+            assertTrue(screen.contains(control), "$tag ($control) is outside the window $screen")
+            assertTrue(control.height >= 48.dp - 0.5.dp, "$tag is ${control.height} tall")
+            onNode(hasTestTag(tag) and hasAnyAncestor(hasScrollAction())).assertDoesNotExist()
+        }
+        onNode(hasTestTag("metronome.dial") and hasAnyAncestor(hasScrollAction())).assertExists()
+        assertTrue(bounds("metronome.dial").height >= 160.dp - 0.5.dp, "the ring is ${bounds("metronome.dial").height}")
+    }
+
+    /** A Pixel 6 Pro held sideways, less the status bar and the shell's former top bar (quickstart §8): a pane under 320 dp tall. */
     @Test
     fun aPhoneHeldSidewaysKeepsTheTransportInViewWithAReadableDial() = runComposeUiTest {
         setScreen(layout = MetronomeLayout.Landscape, size = DpSize(892.dp, 330.dp))
@@ -551,12 +619,13 @@ class MetronomeScreenTest {
     // --- Design iteration D1: the compact card keeps the dial on a phone screen (T144) ---------------------------------
 
     /**
-     * The screen's host on a Pixel 6 Pro in portrait: its 411 × 891 dp window less the status bar, the app header and
-     * the navigation bar (measured on the device, NOTES.md "Design iteration D1").
+     * The screen's host on a Pixel 6 Pro in portrait: its 411 × 891 dp window less the status bar, the shell's former
+     * 56 dp top bar and the navigation bar (measured on the device, NOTES.md "Design iteration D1"); without the bar the
+     * host is 56 dp taller, so these stay as the shorter case.
      */
     private val pixelHost = DpSize(411.dp, 700.dp)
 
-    /** The same on the iPhone 17 (402 × 874 dp less the safe areas, the header and the navigation bar). */
+    /** The same on the iPhone 17 (402 × 874 dp less the safe areas, the former top bar and the navigation bar). */
     private val iphoneHost = DpSize(402.dp, 652.dp)
 
     /** A 360 × 640 dp phone less the same chrome as the Pixel (191 dp): the dial cannot keep its size without scrolling. */
@@ -848,7 +917,7 @@ class MetronomeScreenTest {
     }
 
     /**
-     * The real content areas of a phone held sideways (the window less the navigation rail, the header, the safe areas
+     * The real content areas of a phone held sideways (the window less the navigation rail, the former top bar, the safe areas
      * and the page margin, measured on the devices, NOTES.md T152): Pixel 6 Pro 753 × 287 dp, iPhone 17 654 × 292 dp
      * (the hosts here add the 16 dp side and 8 dp top and bottom margins). The 2⁄5 column (301 and 262 dp) holds the
      * whole landscape card and the sound pill without scrolling at 4/4 and at 7/8, and the dial pane stays whole.

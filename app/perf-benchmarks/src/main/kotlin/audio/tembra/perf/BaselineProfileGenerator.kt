@@ -1,5 +1,6 @@
 package audio.tembra.perf
 
+import android.os.Build
 import androidx.benchmark.macro.junit4.BaselineProfileRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -30,7 +31,9 @@ import org.junit.runner.RunWith
  *
  * The plugin's task installs the app itself (and uninstalls it afterwards), so unlike a round, where the pipeline's
  * install step grants the microphone, the generator grants `RECORD_AUDIO` before collecting: without it the tuner
- * opens under the permission dialog and its anchor is never found (the second generation on 2026-10-12).
+ * opens under the permission dialog and its anchor is never found (the second generation on 2026-10-12). On Android
+ * 13+ it grants `POST_NOTIFICATIONS` too: the metronome asks for it on its first Play, and the dialog hid
+ * `metronome.dial.up` from the metronome journey (2026-10-16).
  *
  * A journey added to the pipeline is registered in [journeys] (and in [ProfileComparisonBenchmark]) once more; the
  * journey definition itself stays single (spec FR-002).
@@ -41,9 +44,12 @@ class BaselineProfileGenerator {
     val rule = BaselineProfileRule()
 
     @Before
-    fun grantMicrophone() {
-        UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-            .executeShellCommand("pm grant ${PerfMetrics.PACKAGE} android.permission.RECORD_AUDIO")
+    fun grantPermissions() {
+        val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+        device.executeShellCommand("pm grant ${PerfMetrics.PACKAGE} android.permission.RECORD_AUDIO")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            device.executeShellCommand("pm grant ${PerfMetrics.PACKAGE} android.permission.POST_NOTIFICATIONS")
+        }
     }
 
     @Test

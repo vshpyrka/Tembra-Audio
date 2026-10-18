@@ -13,7 +13,6 @@ import audio.tembra.data.metronome.FakeCustomClickSoundStore
 import audio.tembra.data.metronome.FakeMetronomePreferences
 import audio.tembra.data.tuner.FakeTunerPreferences
 import audio.tembra.engine.FakeAudioEngine
-import audio.tembra.ui.home.HomeScreen
 import audio.tembra.ui.metronome.MetronomeScreen
 import audio.tembra.ui.metronome.MetronomeViewModel
 import audio.tembra.ui.platform.FakeBackgroundPlaybackHost
@@ -21,6 +20,7 @@ import audio.tembra.ui.platform.FakeMicrophonePermission
 import audio.tembra.ui.platform.FakeSoundFilePicker
 import audio.tembra.ui.platform.MicrophonePermissionStatus
 import audio.tembra.ui.theme.TembraTheme
+import audio.tembra.ui.timeline.TimelineScreen
 import audio.tembra.ui.tuner.ReferenceSoundRepository
 import audio.tembra.ui.tuner.TunerScreen
 import audio.tembra.ui.tuner.TunerViewModel
@@ -31,8 +31,8 @@ import kotlinx.coroutines.Dispatchers
 
 /**
  * The Android actual of `ReportFirstContentDrawn` reports "fully drawn" to the Activity's reporter (what
- * Macrobenchmark's `timeToFullDisplayMs` measures) exactly when the predicate turns true, and the Home, Tuner and
- * Metronome wiring composables hand it their first-content state (spec FR-017).
+ * Macrobenchmark's `timeToFullDisplayMs` measures) exactly when the predicate turns true, and the Timeline (the start
+ * destination), Tuner and Metronome wiring composables hand it their first-content state (spec FR-017).
  */
 @OptIn(ExperimentalTestApi::class)
 class ReportFirstContentDrawnTest {
@@ -60,11 +60,11 @@ class ReportFirstContentDrawnTest {
     }
 
     @Test
-    fun homeReportsAtOnce() = runComposeUiTest {
+    fun timelineReportsAtOnce() = runComposeUiTest {
         val owner = Owner()
         setContent {
             CompositionLocalProvider(LocalFullyDrawnReporterOwner provides owner) {
-                TembraTheme { HomeScreen() }
+                TembraTheme { TimelineScreen() }
             }
         }
         waitForIdle()

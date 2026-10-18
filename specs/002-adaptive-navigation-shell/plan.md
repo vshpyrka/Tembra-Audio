@@ -22,6 +22,31 @@ normalised vector assets under a `TembraIcon` registry. The design-token preview
 debug-only developer view opened by a launch argument; the counter screen is deleted.
 Technology evidence and alternatives: [research.md](research.md) R1–R12.
 
+**Amended 2026-10-17** (spec Clarifications, Session 2026-10-17): Home is gone, so the registry has five
+destinations and the back stack is `[Timeline]` or `[Timeline, current]` (the start destination is the first enum
+entry); the Timeline placeholder reports the app's first content drawn (`ReportFirstContentDrawn`, feature 007) as
+Home did. No destination declares a supporting pane any more; the scene strategy and the 320 dp pane stay. The bar
+and the rail are Material 3 Expressive components placed by the same `NavigationSuiteScaffoldLayout`: under 600 dp
+`ShortNavigationBar` (`NavigationSuiteType.ShortNavigationBarCompact`) with `ShortNavigationBarItem(label = null)`,
+from 600 dp the collapsed `WideNavigationRail` (`WideNavigationRailCollapsed`) with
+`WideNavigationRailItem(label = null, railExpanded = false)`; the label is the icon's `contentDescription` and, on
+hover, a `PlainTooltip` in a `TooltipBox` whose persistent state follows the item's hover interaction (new
+`NavigationItemIcon.kt`, the pattern of the metronome's icon-only buttons), above the glyph in the bar and at its end
+side in the rail (Constitution IV). Both components provide `LocalRippleThemeConfiguration provides InsetFocusRing`,
+so keyboard focus draws Material's inset focus ring inside the item's indicator (the bar's 56 × 32 dp pill, the
+rail's 56 dp circle; outer stroke `secondary`,
+inner stroke `onSecondary`); `InsetFocusRing` is an internal `expect val` with Android and iOS actuals because the
+two Material releases name the preset differently. Their sizes
+come from Material's tokens (bar at least 64 dp plus the navigation inset, rail 96 dp wide with a 44 dp top space),
+so the custom 64 dp geometry and its seven chrome tokens are removed. The theme becomes
+`MaterialExpressiveTheme(colorScheme = TembraColorScheme.dark, motionScheme = MotionScheme.expressive(), …)`, which
+drives the indicator's animation; the destination fade keeps the 300 ms token. The Expressive API needs newer
+Material than 1.9.0 (research R4, R11): JetBrains `material3` and `material3-adaptive-navigation-suite`
+1.12.0-alpha03 in common code and on iOS, androidx `material3` and `material3-adaptive-navigation-suite`
+1.5.0-beta01 pinned in `androidMain`. Because those two releases share no slider signature with a custom thumb and
+track, a design-system `expect fun TembraSlider(...)` has an Android actual (state-based `Slider`) and an iOS actual
+(value-based `Slider`), and the tuner's noise-gate slider and the metronome's tempo slider call it.
+
 ## Technical Context
 
 **Language/Version**: Kotlin 2.4.20 (Multiplatform, Kotlin/Native for iOS); Swift 5 for a
@@ -34,9 +59,11 @@ one-line change in the iOS shell; Bash/Python for the glyph-fetch script.
 `org.jetbrains.compose.material3:material3-adaptive-navigation-suite:1.9.0`
 (+ `androidx.window:window-core:1.4.0` transitively). Unchanged: Compose Multiplatform 1.12.1,
 Material 3 1.9.0, lifecycle 2.11.0, Metro 1.4.4, compose resources. No serialization plugin,
-no icon library, no icon font.
+no icon library, no icon font. Since 2026-10-17: JetBrains Material 3 (and its navigation-suite
+artifact) 1.12.0-alpha03, which ports androidx material3 1.5.0-alpha22, and on Android androidx
+`material3` / `material3-adaptive-navigation-suite` 1.5.0-beta01; adaptive stays at 1.2.0.
 
-**Storage**: N/A (navigation state is in-memory; relaunch starts on Home).
+**Storage**: N/A (navigation state is in-memory; relaunch starts on Home, on Timeline since 2026-10-17).
 
 **Testing**: `kotlin.test` + `kotlinx-coroutines-test` in `commonTest`; `runComposeUiTest` in
 `uiTest` (iOS simulator and Android device) with `mainClock` control and a `MotionDurationScale`
@@ -56,8 +83,11 @@ vector icons parse once and are remembered.
 **Constraints**: nothing touches the audio engine; all visual values from `TembraTheme`
 (chrome metrics, motion and icons become tokens); one type per file; zero compiler and lint
 warnings (hence adaptive 1.2.0's non-deprecated `currentWindowAdaptiveInfo()`); stable Material
-3 pairing (no `@ExperimentalMaterial3AdaptiveApi` opt-in); developer view unreachable from any
-control and gated to debug builds; tests independent of animation timing.
+3 pairing (no `@ExperimentalMaterial3AdaptiveApi` opt-in; since 2026-10-17 Material 3 itself is a
+pre-release, alpha on iOS and beta on Android, for the Expressive components, and the bar, the
+rail and `NavigationItemIcon` opt in to `ExperimentalMaterial3Api` for the tooltip's
+`TooltipAnchorPosition` and `rememberTooltipState`); developer view unreachable from any control and gated to debug builds; tests
+independent of animation timing.
 
 **Scale/Scope**: about 35 new Kotlin files, 6 vector assets, 1 licence text, 1 script,
 about 20 test classes, 2 platform shell edits, 4 catalog entries, README and licence inventory
@@ -70,13 +100,13 @@ rows; 6 files deleted.
 | Principle | Check | Status |
 |---|---|---|
 | I. Real-Time Engine Isolation | No destination, ViewModel or component calls `AudioEngine`; `App` only forwards the graph. No audio thread exists. | PASS (not exercised) |
-| II. Shared Kotlin Control Plane, Compose UI | Everything new is in `:shared:ui` `commonMain`; module graph unchanged; platform code limited to reading a launch argument in `MainActivity` / `ContentView`. Navigation state follows MVVM: `ShellViewModel` exposes one immutable `ShellUiState` via `StateFlow`, intents are `select` / `back`; screens never touch the engine. Placeholder destinations have no state and therefore no ViewModel (Complexity Tracking #1); the entry-scoped ViewModel decorator is wired so later destinations get one each. No `expect`/`actual` added (reduce motion comes from Compose's own `MotionDurationScale`, R7). No high-frequency telemetry. | PASS |
+| II. Shared Kotlin Control Plane, Compose UI | Everything new is in `:shared:ui` `commonMain`; module graph unchanged; platform code limited to reading a launch argument in `MainActivity` / `ContentView`. Navigation state follows MVVM: `ShellViewModel` exposes one immutable `ShellUiState` via `StateFlow`, intents are `select` / `back`; screens never touch the engine. Placeholder destinations have no state and therefore no ViewModel (Complexity Tracking #1); the entry-scoped ViewModel decorator is wired so later destinations get one each. No `expect`/`actual` added (reduce motion comes from Compose's own `MotionDurationScale`, R7); the 2026-10-17 amendment adds two, `TembraSlider` and `InsetFocusRing`, because the Android and iOS Material releases share no custom-thumb slider signature and name the inset focus-ring preset differently (Summary). No high-frequency telemetry. | PASS |
 | III. Test-First | Every contract lists its tests before code: registry, state, layout mapping, motion, chrome metrics, developer-view parsing on JVM and iOS; UI tests for the three layouts, selection, layout switching, keyboard, touch targets, transitions and reduce motion; Android back on device; icon asset hygiene on the JVM. Kotlin tests use `FakeAudioEngine` only where a graph is needed (none in this feature). | PASS |
-| IV. Adaptive, Input-Agnostic UI | Layouts keyed on window size classes measured from the real window (R3), not device type; bottom bar under 600 dp, rail from 600 dp, rail and pane from 840 dp, pane hidden under 480 dp height. Hover, focus, keyboard activation, 44 dp targets and `role = Tab` / `selected` semantics on every item; no icon-only control (labels are always visible). All values from tokens (new chrome metrics and motion tokens). Items expose the `selected` semantics property, which is the state semantics for tab-like controls and is announced natively; `stateDescription` is not added to avoid double announcements. Screenshots at compact, medium and expanded widths on both platforms plus a large-font capture, reviewed against the Stitch bar and rail references (quickstart §9). | PASS |
+| IV. Adaptive, Input-Agnostic UI | Layouts keyed on window size classes measured from the real window (R3), not device type; bottom bar under 600 dp, rail from 600 dp, rail and pane from 840 dp, pane hidden under 480 dp height. Hover, focus, keyboard activation, 44 dp targets and `role = Tab` / `selected` semantics on every item; no icon-only control (labels are always visible). Amended 2026-10-17: the items are icon-only, the label is the icon's `contentDescription`; as Constitution IV asks of every icon-only control, hovering an item shows its label as a plain tooltip (`NavigationItemIcon`), and keyboard focus draws Material's inset focus ring inside the item's indicator (`InsetFocusRing`). All values from tokens (new chrome metrics and motion tokens; since 2026-10-17 the bar's and rail's sizes come from Material's own component tokens). Items expose the `selected` semantics property, which is the state semantics for tab-like controls and is announced natively; `stateDescription` is not added to avoid double announcements. Screenshots at compact, medium and expanded widths on both platforms plus a large-font capture, reviewed against the Stitch bar and rail references (quickstart §9). | PASS |
 | V. Document Model in Beats | No document or musical time. | PASS (not exercised) |
-| VI. Simplicity | Four dependencies, all named in `docs/research/kmp-code-architecture.md`, permissive licences (R11). No `SupportingPaneScaffold` (experimental, navigator state the spec forbids, R5), no Material scene strategy (needs two keys, R2), no serialization plugin, no icon library; the custom scene strategy is about 40 lines. Placeholder counter deleted. Custom bar/rail composables are required by the design geometry (Complexity Tracking #3). | PASS |
+| VI. Simplicity | Four dependencies, all named in `docs/research/kmp-code-architecture.md`, permissive licences (R11). No `SupportingPaneScaffold` (experimental, navigator state the spec forbids, R5), no Material scene strategy (needs two keys, R2), no serialization plugin, no icon library; the custom scene strategy is about 40 lines. Placeholder counter deleted. Custom bar/rail composables are required by the design geometry (Complexity Tracking #3; withdrawn 2026-10-17, when the bar and rail moved onto Material's `ShortNavigationBar` and `WideNavigationRail`). | PASS |
 | VII. Code Organisation | One type per file, listed in Project Structure; packages `navigation`, `designsystem`, `devtools`, `home`, `timeline`, `tuner`, `metronome`, `projects`, `profile`; `internal` by default except the contracts' public surface. | PASS |
-| Technology & Architecture Constraints | Navigation 3 + Material 3 adaptive + multiplatform ViewModel + Metro, as decided; design tokens from `design/stitch/theme.json` plus screen-derived chrome metrics with evidence (R8); fonts unchanged; product name "Tembra Audio". The constitution's primary-destination list stays as written: this feature ships Home, Timeline, Tuner, Metronome, Projects and Profile per the clarified spec, and Effects and Pads join with their features. | PASS |
+| Technology & Architecture Constraints | Navigation 3 + Material 3 adaptive + multiplatform ViewModel + Metro, as decided; design tokens from `design/stitch/theme.json` plus screen-derived chrome metrics with evidence (R8); fonts unchanged; product name "Tembra Audio". The constitution's primary-destination list stays as written: this feature ships Home, Timeline, Tuner, Metronome, Projects and Profile per the clarified spec (Timeline, Tuner, Metronome, Projects and Profile since Home was removed on 2026-10-17), and Effects and Pads join with their features. | PASS |
 | Development Workflow & Quality Gates | This feature sits between the scaffold and the audio spine in the build order; it implements no later feature's functionality (every destination except Home is a placeholder and there is no transport bar), so nothing is pulled forward. Definition of done maps to the four lanes plus screenshots (quickstart §2, §9). | PASS |
 
 **Post-design re-check (after Phase 1)**: unchanged. The three interpretations that a reviewer
@@ -118,25 +148,27 @@ app/
 └── shared/ui/
     ├── build.gradle.kts                            + the four dependencies in commonMain
     ├── src/commonMain/composeResources/
-    │   ├── drawable/ic_{home,graphic_eq,music_note,av_timer,folder,person}_24.xml     normalised Material Symbols Outlined glyphs
+    │   ├── drawable/ic_{home,graphic_eq,music_note,av_timer,folder,person}_24.xml     normalised Material Symbols Outlined glyphs (ic_home_24 removed 2026-10-17;
+    │   │       on 2026-10-17 ic_av_timer_24 was deleted and Tuner / Metronome moved to the project's own ic_tuning_fork_24 / ic_metronome_24, written by tools/make-nav-glyphs.py)
     │   └── files/LICENSE-MaterialSymbols.txt
     ├── src/commonMain/kotlin/audio/tembra/ui/
     │   ├── App.kt                                  App(appGraph, developerView = DeveloperViewRequest(null)); AppContent.kt (graph-free branch)
     │   ├── theme/
     │   │   ├── TembraIcon.kt, TembraIcons.kt       icon registry + vector accessor (contracts/design-system-additions.md)
     │   │   ├── TembraMotion.kt, LocalTembraMotion.kt, ReduceMotion.kt   motion tokens; rememberReduceMotion()
-    │   │   ├── TembraSpacing.kt                    + chrome metrics (data-model.md §6)
+    │   │   ├── TembraSpacing.kt                    + chrome metrics (data-model.md §6; only topBarHeight, supportingPaneWidth and focusRingWidth remain since 2026-10-17)
     │   │   ├── TembraTheme.kt                      + motion accessor, provides LocalTembraMotion
     │   │   └── WindowWidth.kt                      + from(WindowSizeClass)
     │   ├── designsystem/
     │   │   ├── NavigationItemSpec.kt, TembraTopBar.kt, TembraNavigationBar.kt, TembraNavigationRail.kt,
     │   │   ├── TembraSupportingPane.kt, EmptyState.kt, PlaceholderDestination.kt
+    │   │   │   (+ NavigationItemIcon.kt, InsetFocusRing.kt and TembraSlider.kt with Android / iOS actuals, 2026-10-17)
     │   ├── navigation/
     │   │   ├── Destination.kt, DestinationKey.kt, ShellUiState.kt, ShellViewModel.kt
     │   │   ├── LayoutMode.kt, RememberLayoutMode.kt
     │   │   ├── NavigationShell.kt, NavigationShellContent.kt, TembraNavDisplay.kt, DestinationContent.kt
     │   │   └── SupportingPane.kt, SupportingPaneKey.kt, SupportingPaneScene.kt, SupportingPaneSceneStrategy.kt, SupportingPaneContent.kt
-    │   ├── home/HomeScreen.kt, home/LibraryPane.kt
+    │   ├── home/HomeScreen.kt, home/LibraryPane.kt          (HomeScreen.kt deleted 2026-10-17; no destination declares the Library pane)
     │   ├── timeline/TimelineScreen.kt, tuner/TunerScreen.kt, metronome/MetronomeScreen.kt, projects/ProjectsScreen.kt, profile/ProfileScreen.kt
     │   ├── devtools/DeveloperView.kt, DeveloperViewRequest.kt, DeveloperViewScreen.kt, DesignTokenPreview.kt (moved from theme/)
     │   └── placeholder/                            DELETED (PlaceholderScreen, PlaceholderScreenContent, PlaceholderViewModel, PlaceholderUiState)
@@ -169,4 +201,4 @@ change to `:shared:core`, `:shared:engine` or `:shared:data`.
 |-----------|------------|-------------------------------------|
 | #1 Placeholder destinations have no ViewModel (Constitution II reads "one ViewModel per destination") | Five of the six destinations render a title and one sentence from the registry; they have no state, no intents and no dependencies. The navigation state itself does have a ViewModel (`ShellViewModel`). The entry-scoped decorator is already wired so each later feature adds its ViewModel to its entry without touching the shell. | Six empty ViewModels would be code without a consumer (Constitution VI) and would be deleted by the very features that replace the placeholders. |
 | #2 On iOS the developer view's composable remains in the release framework (spec FR-022 says "absent from release builds") | Kotlin Multiplatform common code has no per-configuration source set; the entry point is compiled out in the Swift shell (`#if DEBUG`), so nothing can open it, and on Android the `BuildConfig.DEBUG` branch and the composable it references are removed by the release shrinker. Recorded in quickstart §8. | A separate `:shared:ui-devtools` module linked only into Debug would need a second iOS framework flavour and Xcode configuration wiring for one preview composable. |
-| #3 Custom `TembraNavigationBar` / `TembraNavigationRail` instead of Material's `NavigationBar` / `NavigationRail` (Constitution VI "prefer the platform") | The design and spec FR-019 fix a 64 dp bar and rail whose active item is a pill or rounded square wrapping icon and label; Material's components enforce 80 dp minimums and draw an icon-only indicator. Placement still uses Material's `NavigationSuiteScaffoldLayout`; hover, focus and semantics use standard Compose modifiers. | Styling Material's items reaches neither the height nor the indicator shape; overriding their internals is not possible. |
+| #3 Custom `TembraNavigationBar` / `TembraNavigationRail` instead of Material's `NavigationBar` / `NavigationRail` (Constitution VI "prefer the platform"). **Withdrawn 2026-10-17**: with icon-only items the two components wrap Material 3 Expressive's `ShortNavigationBar` and collapsed `WideNavigationRail` and draw nothing of their own (spec FR-003 reversed, FR-019 amended; research R4) | The design and spec FR-019 fix a 64 dp bar and rail whose active item is a pill or rounded square wrapping icon and label; Material's components enforce 80 dp minimums and draw an icon-only indicator. Placement still uses Material's `NavigationSuiteScaffoldLayout`; hover, focus and semantics use standard Compose modifiers. | Styling Material's items reaches neither the height nor the indicator shape; overriding their internals is not possible. |

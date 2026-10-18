@@ -9,6 +9,8 @@ description: "Task list for feature 007: performance pipeline"
 
 **Prerequisites**: plan.md, spec.md, research.md, data-model.md, contracts/ (cli, round-record.schema.json, tracing-facade, engine-audio-health, metric-catalogue, report), quickstart.md
 
+**Amended 2026-10-17**: Home was removed from the app (feature 002's spec, Session 2026-10-17), so the tasks below that tag Home or report "fully drawn" on it (T020 to T023) now hold for Timeline, the start destination: the Timeline placeholder calls `ReportFirstContentDrawn`, the start anchor is `PerfAnchors.START_ROOT` = `screen.timeline` (`Anchors.START_ROOT` in `perf-benchmarks`, `Anchors.startRoot` in `TembraPerfTests`) in place of the Home root, the Android startup benchmark's full display is Timeline's, and the iOS journeys (T040) start each iteration on Timeline. `PerfAnchorsTest` checks the start anchor (`startRootAndNavigationItemsAreTagged`) and `ReportFirstContentDrawnTest` checks `TimelineScreen` (`timelineReportsAtOnce`). The tasks are kept as the record of what was done.
+
 **Tests**: Included for every story. The constitution's Principle III (test-first) is non-negotiable: each test task is written first and must fail before its implementation task. Kotlin tests never link the real engine (`FakeAudioEngine`); Python tests run on fixtures; Catch2 runs without an audio device.
 
 **Organization**: Tasks are grouped by user story so each story is an independently testable increment. Paths are relative to the repository root. Every Gradle invocation goes through the `gradle-run` wrapper (Principle VIII); Kotlin and Compose work is routed through `using-chrisbanes-skills` before coding (skill contracts named per task).
