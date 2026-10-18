@@ -33,6 +33,8 @@ add_executable(tembra_engine_tests
     audio_decoder_test.cpp
     clip_source_test.cpp
     disk_streamer_test.cpp
+    track_strip_test.cpp
+    master_bus_test.cpp
 )
 target_include_directories(tembra_engine_tests PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../src
@@ -67,6 +69,8 @@ set(TEMBRA_RT_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/platform/synthetic_audio_device.cpp
     # Feature 009: the clip source the callback pops, the mixer strip and bus, and the transport renderer.
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/timeline/clip_source.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/mixer/track_strip.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/mixer/master_bus.cpp
 )
 add_library(tembra_rt_poison OBJECT ${TEMBRA_RT_SOURCES})
 target_include_directories(tembra_rt_poison PRIVATE
