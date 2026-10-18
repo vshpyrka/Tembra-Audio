@@ -45,7 +45,7 @@ class TimelineRulerTest {
     private val tempoMap = TempoMap(Tempo(124), TimeSignature.FourFour)
     private var seeks = mutableListOf<Beats>()
     private var scrubs = mutableListOf<String>()
-    private var density = 1f
+    private var densityScale = 1f
     private var chip: Color = Color.Unspecified
     private var playhead: Color = Color.Unspecified
     private var viewport: TimelineViewport? = null
@@ -53,12 +53,12 @@ class TimelineRulerTest {
     private fun ComposeUiTest.setRuler(positionBeats: Beats = Beats(16.0), playing: Boolean = false, telemetry: ScriptedTransportTelemetry = ScriptedTransportTelemetry.stopped(0.0)) {
         setContent {
             TembraTheme {
-                density = LocalDensity.current.density
+                densityScale = LocalDensity.current.density
                 chip = TembraTheme.daw.playheadChip
                 playhead = TembraTheme.daw.playhead
                 // 32 bars across 600 dp: the widest zoom at this width.
-                val widthPx = 600.0 * density
-                val port = TimelineViewport.fitted(widthPx = widthPx, densityScale = density.toDouble(), projectLengthBeats = Beats(128.0), beatsPerBar = 4)
+                val widthPx = 600.0 * densityScale
+                val port = TimelineViewport.fitted(widthPx = widthPx, densityScale = densityScale.toDouble(), projectLengthBeats = Beats(128.0), beatsPerBar = 4)
                 viewport = port
                 TimelineRuler(
                     viewport = port,

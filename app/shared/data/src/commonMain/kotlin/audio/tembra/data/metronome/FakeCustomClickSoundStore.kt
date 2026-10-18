@@ -1,5 +1,9 @@
 package audio.tembra.data.metronome
 
+import okio.Buffer
+import okio.Source
+import okio.use
+
 /**
  * In-memory store for tests: [present] answers [exists], [calls] records the operations, [files] holds staged and
  * committed bytes by path. [stage] reads the picked bytes into [files] under [stagingPath]; [stageResult] forces a
@@ -15,9 +19,9 @@ class FakeCustomClickSoundStore(var present: Boolean = false) : CustomClickSound
     /** When set, what [stage] answers instead of [StageResult.Staged]. */
     var stageResult: StageResult? = null
 
-    override suspend fun stage(open: suspend () -> okio.Source): StageResult {
+    override suspend fun stage(open: suspend () -> Source): StageResult {
         calls += "stage"
-        val bytes = okio.Buffer().also { buffer -> open().use { source -> buffer.writeAll(source) } }.readByteArray()
+        val bytes = Buffer().also { buffer -> open().use { source -> buffer.writeAll(source) } }.readByteArray()
         files[stagingPath] = bytes
         return stageResult ?: StageResult.Staged
     }

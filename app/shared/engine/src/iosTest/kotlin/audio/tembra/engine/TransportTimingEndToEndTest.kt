@@ -22,7 +22,8 @@ import kotlin.time.TimeSource
 
 /**
  * Over ten seconds of real playback the audible position advances within 2 % of wall time and the health counters
- * report no starvation (spec SC-001, SC-003; T043). The Mac's output is muted by the run.
+ * report no starvation (spec SC-001, SC-003; T043). The Mac's output is muted by the run. The bare simulator test
+ * process has no output unit (feature 003): there the open reports the device error and the measurement is skipped.
  */
 @OptIn(ExperimentalForeignApi::class)
 class TransportTimingEndToEndTest {
@@ -41,7 +42,14 @@ class TransportTimingEndToEndTest {
 
     @Test
     fun audibleSecondsFollowWallTimeWithoutStarvation() = runBlocking {
-        assertEquals(TransportOpenResult.Opened, engine.openTransport())
+        when (val opened = engine.openTransport()) {
+            TransportOpenResult.Opened -> Unit
+            TransportOpenResult.DeviceFailed -> {
+                println("TransportTimingEndToEndTest: no output unit in this simulator process; timing skipped")
+                return@runBlocking
+            }
+            is TransportOpenResult.Busy -> throw AssertionError("the engine was busy before the test started: $opened")
+        }
         val bytes = TestWav.tone(12.0, channels = 2)
         val path = "$root/tone.wav"
         val data = bytes.usePinned { NSData.dataWithBytes(it.addressOf(0), bytes.size.toULong()) }

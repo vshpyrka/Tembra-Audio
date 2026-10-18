@@ -27,6 +27,9 @@ import kotlin.time.TimeSource
  * The real engine's transport through the cinterop actual on the simulator (contracts/timeline-audio-kotlin.md,
  * T042): open, two generated WAV sources, a two-clip arrangement, play, positions advancing, seek, pause, close; the
  * state exclusivity with the tuner; the offline inspector and the overview builder. The Mac's output is muted by the run.
+ * The bare simulator test process has no output unit (RemoteIO fails to initialise with -10851, feature 003): there
+ * the open reports the device error and the playback checks are skipped, as the tone and metronome round trips are;
+ * the simulator app and the devices run them (quickstart §3).
  */
 @OptIn(ExperimentalForeignApi::class)
 class NativeAudioEngineTransportTest {
@@ -55,9 +58,20 @@ class NativeAudioEngineTransportTest {
 
     private fun sleep(millis: Long) = NSThread.sleepForTimeInterval(millis / 1000.0)
 
+    /** True when the transport opened; false after the simulator process's device error, which leaves the engine idle. */
+    private suspend fun openOrSkip(test: String): Boolean = when (val result = engine.openTransport()) {
+        TransportOpenResult.Opened -> true
+        TransportOpenResult.DeviceFailed -> {
+            assertEquals(AudioState.Idle, engine.audioState, "a failed open must leave the engine idle")
+            println("NativeAudioEngineTransportTest: no output unit in this simulator process; $test skipped")
+            false
+        }
+        is TransportOpenResult.Busy -> throw AssertionError("the engine was busy before the test started: $result")
+    }
+
     @Test
     fun opensPlaysSeeksPausesAndCloses() = runBlocking {
-        assertEquals(TransportOpenResult.Opened, engine.openTransport())
+        if (!openOrSkip("playback")) return@runBlocking
         assertEquals(AudioState.Transport, engine.audioState)
         val mono = assertIs<ClipSourceResult.Opened>(engine.openClipSource(wav("mono.wav", 4.0)))
         val stereo = assertIs<ClipSourceResult.Opened>(engine.openClipSource(wav("stereo.wav", 4.0, channels = 2)))
@@ -116,7 +130,7 @@ class NativeAudioEngineTransportTest {
 
     @Test
     fun theTunerIsRefusedWhileTheTransportIsOpen() = runBlocking {
-        assertEquals(TransportOpenResult.Opened, engine.openTransport())
+        if (!openOrSkip("state exclusivity")) return@runBlocking
         assertEquals(AudioResult.Error(-1), engine.startListening())
         assertEquals(AudioResult.Error(-1), engine.startMetronome())
         engine.closeTransport()

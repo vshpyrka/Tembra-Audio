@@ -10,13 +10,18 @@ import okio.Buffer
 class FakeAudioFilePicker(var next: AudioPickResult = AudioPickResult.Cancelled) : AudioFilePicker {
     val requests: MutableList<AudioPickRequest> = mutableListOf()
 
+    /** "pickOne" / "pickMany" in call order. */
+    val calls: MutableList<String> = mutableListOf()
+
     override suspend fun pickOne(request: AudioPickRequest): AudioPickResult {
         requests += request
+        calls += "pickOne"
         return next
     }
 
     override suspend fun pickMany(request: AudioPickRequest): AudioPickResult {
         requests += request
+        calls += "pickMany"
         return next
     }
 

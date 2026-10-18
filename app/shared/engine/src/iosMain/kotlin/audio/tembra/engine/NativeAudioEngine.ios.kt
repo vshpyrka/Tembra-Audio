@@ -382,7 +382,8 @@ actual class NativeAudioEngine internal constructor(
         IosAudioSession.activateForPlayback()
         reportOutputLatencyNanos(IosAudioSession.outputLatencyNanos())
         transportConfig.reserved = 0u
-        val code = withContext(Dispatchers.IO) { tembra_transport_open(transportConfig.ptr) }
+        // On the caller's thread like the metronome's start: the RemoteIO unit is created and started here, not primed.
+        val code = tembra_transport_open(transportConfig.ptr)
         if (code != 0) {
             IosAudioSession.deactivate()
             return if (code == STATE_REFUSED.code) TransportOpenResult.Busy(audioState) else TransportOpenResult.DeviceFailed

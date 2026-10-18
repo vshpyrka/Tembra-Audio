@@ -71,7 +71,7 @@ internal fun TembraNavDisplay(
                 DestinationContent(key.destination, onOpenTrackSettings)
             }
             entry<TrackSettingsKey> { key ->
-                TrackSettingsScreen(key.trackId)
+                TrackSettingsScreen(trackId = key.trackId, onBack = onBack)
             }
         },
     )

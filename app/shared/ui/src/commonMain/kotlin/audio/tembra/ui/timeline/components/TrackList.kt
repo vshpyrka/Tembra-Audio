@@ -16,6 +16,7 @@ import audio.tembra.ui.timeline.TimelineCallbacks
 import audio.tembra.ui.timeline.TimelineLayout
 import audio.tembra.ui.timeline.TimelineTestTags
 import audio.tembra.ui.timeline.TimelineUiState
+import audio.tembra.ui.tracksettings.TrackSettingsInlineRow
 
 /**
  * The vertically scrolling list of [TrackRow]s (spec FR-015; contracts/timeline-screen.md): keyed by track id so a
@@ -51,6 +52,10 @@ internal fun TrackList(
                 layout = layout,
                 callbacks = callbacks,
             )
+            // The expanded layout's inline settings under the open track (spec FR-041); the chevron collapses it.
+            if (layout.inlineSettings && state.expandedTrack == track.id) {
+                TrackSettingsInlineRow(trackId = track.id, onCollapse = { callbacks.onExpandTrack(null) })
+            }
         }
     }
 }
