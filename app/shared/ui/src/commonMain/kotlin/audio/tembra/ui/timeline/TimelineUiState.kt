@@ -49,6 +49,8 @@ data class TimelineUiState(
     val isFirstContentReady: Boolean = false,
     /** Assets whose file is missing: their clips draw unavailable (spec FR-030). */
     val missingAssets: Int = 0,
+    /** The track whose deletion awaits confirmation (spec FR-021); the content renders the dialog while set. */
+    val confirmDelete: TrackId? = null,
 ) {
     val isEmpty: Boolean get() = loaded && tracks.isEmpty()
 

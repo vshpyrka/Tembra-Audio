@@ -6,6 +6,9 @@ import audio.tembra.data.metronome.CustomClickSoundStore
 import audio.tembra.data.metronome.DataStoreMetronomePreferences
 import audio.tembra.data.metronome.MetronomePreferences
 import audio.tembra.data.metronome.OkioCustomClickSoundStore
+import audio.tembra.data.projects.DemoAudioSource
+import audio.tembra.data.projects.OkioProjectRepository
+import audio.tembra.data.projects.ProjectRepository
 import audio.tembra.data.tuner.DataStoreTunerPreferences
 import audio.tembra.data.tuner.TembraDataStore
 import audio.tembra.data.tuner.TunerPreferences
@@ -13,7 +16,11 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import audio.tembra.engine.AudioEngine
 import audio.tembra.engine.MetronomeAudio
+import audio.tembra.engine.TimelineAudio
 import audio.tembra.engine.TunerAudio
+import audio.tembra.ui.projects.ComposeDemoAudioSource
+import audio.tembra.ui.session.PlaybackGuard
+import audio.tembra.ui.session.ProjectSession
 import audio.tembra.ui.tuner.ComposeResourceReader
 import audio.tembra.ui.tuner.ReferenceSoundRepository
 import dev.zacsweers.metro.AppScope
@@ -73,6 +80,35 @@ object AppBindings {
     /** The metronome programs against the [MetronomeAudio] seam; the engine is that seam. */
     @Provides
     fun provideMetronomeAudio(engine: AudioEngine): MetronomeAudio = engine
+
+    /** The timeline programs against the [TimelineAudio] seam (contracts/timeline-audio-kotlin.md); the engine is that seam. */
+    @Provides
+    fun provideTimelineAudio(engine: AudioEngine): TimelineAudio = engine
+
+    /**
+     * The project session's scope (contracts/project-session.md): main-immediate so engine commands follow UI intents
+     * without a dispatch hop, supervised so one failed observer never cancels the rest, and never cancelled because the
+     * session lives with the process. The session's `start()` is the one place work launches on it.
+     */
+    @Provides
+    @SingleIn(AppScope::class)
+    @Named("session")
+    fun provideSessionCoroutineScope(): CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+
+    /** The demo's loops come from the bundled Compose resources. */
+    @Provides
+    @SingleIn(AppScope::class)
+    fun provideDemoAudioSource(): DemoAudioSource = ComposeDemoAudioSource
+
+    /** The on-device project library (contracts/project-storage.md). */
+    @Provides
+    @SingleIn(AppScope::class)
+    fun provideProjectRepository(directories: AppDirectories, audio: TimelineAudio, demoAudio: DemoAudioSource): ProjectRepository =
+        OkioProjectRepository(directories, audio, demoAudio)
+
+    /** The navigation shell asks the session before leaving a playing timeline (spec FR-008a). */
+    @Provides
+    fun providePlaybackGuard(session: ProjectSession): PlaybackGuard = session
 
     /** Drop-in recordings or the synthesized tone (research R5). */
     @Provides

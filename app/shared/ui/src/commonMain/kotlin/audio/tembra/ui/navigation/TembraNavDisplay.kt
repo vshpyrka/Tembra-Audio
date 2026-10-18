@@ -17,6 +17,7 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SinglePaneSceneStrategy
 import androidx.navigation3.ui.NavDisplay
+import audio.tembra.core.project.TrackId
 import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.ui.tracksettings.TrackSettingsKey
 import audio.tembra.ui.tracksettings.TrackSettingsScreen
@@ -35,6 +36,7 @@ internal fun TembraNavDisplay(
     layoutMode: LayoutMode,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    onOpenTrackSettings: (TrackId) -> Unit = {},
 ) {
     val motion = TembraTheme.motion
     val instant = ContentTransform(EnterTransition.None, ExitTransition.None)
@@ -66,7 +68,7 @@ internal fun TembraNavDisplay(
             entry<DestinationKey>(
                 metadata = { key -> if (key.destination.hasSupportingPane) supportingPane(SupportingPane.Library) else emptyMap() },
             ) { key ->
-                DestinationContent(key.destination)
+                DestinationContent(key.destination, onOpenTrackSettings)
             }
             entry<TrackSettingsKey> { key ->
                 TrackSettingsScreen(key.trackId)

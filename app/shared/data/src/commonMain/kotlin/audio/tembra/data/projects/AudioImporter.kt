@@ -63,7 +63,7 @@ class AudioImporter(
             } else {
                 true
             }
-            ImportResult.Accepted(assetId, asset, ClipTemplate.forAsset(assetId, asset), overviewBuilt)
+            ImportResult.Accepted(assetId, asset, ClipTemplate.forAsset(assetId, asset), overviewBuilt, target.toString(), folder.overviewPath(assetId).toString())
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (failure: Exception) {

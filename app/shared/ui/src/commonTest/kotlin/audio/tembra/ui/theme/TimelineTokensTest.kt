@@ -40,7 +40,7 @@ class TimelineTokensTest {
         assertEquals(200.dp, spacing.headerColumnWidth)
         assertEquals(56.dp, spacing.cardOverviewHeight)
         // Three lanes, the ruler, the toolbar and the transport fit a 640 dp tall phone above its navigation bar.
-        assertTrue(3 * spacing.laneHeightCompact + spacing.rulerHeight + spacing.toolbarHeight + spacing.transportHeightCompact <= 640.dp)
+        assertTrue(spacing.laneHeightCompact * 3 + spacing.rulerHeight + spacing.toolbarHeight + spacing.transportHeightCompact <= 640.dp)
     }
 
     @Test

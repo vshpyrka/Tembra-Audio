@@ -19,8 +19,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
@@ -124,8 +124,18 @@ internal fun TimelineRuler(
                         },
                     )
                 }
-                .onPointerEvent(PointerEventType.Move) { event -> hoverX = event.changes.firstOrNull()?.position?.x }
-                .onPointerEvent(PointerEventType.Exit) { hoverX = null },
+                .pointerInput(Unit) {
+                    // Hover is a pointer that moves without pressing; a pressed move is the scrub above (Constitution IV).
+                    awaitPointerEventScope {
+                        while (true) {
+                            val event = awaitPointerEvent(PointerEventPass.Initial)
+                            when (event.type) {
+                                PointerEventType.Move -> if (event.changes.none { it.pressed }) hoverX = event.changes.firstOrNull()?.position?.x
+                                PointerEventType.Exit -> hoverX = null
+                            }
+                        }
+                    }
+                },
         ) {
             val rowHeight = size.height / 2
             val labels = RulerLabels.compute(viewport, tempoMap, barLabelWidth, timeLabelWidth, gapPx)
