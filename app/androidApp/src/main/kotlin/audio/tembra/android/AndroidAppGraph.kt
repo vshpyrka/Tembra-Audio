@@ -8,7 +8,7 @@ import audio.tembra.engine.NativeAudioEngine
 import audio.tembra.ui.di.AppGraph
 import audio.tembra.ui.platform.BackgroundPlaybackHost
 import audio.tembra.ui.platform.MicrophonePermission
-import audio.tembra.ui.platform.SoundFilePicker
+import audio.tembra.ui.platform.AudioFilePicker
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.DependencyGraph
 import dev.zacsweers.metro.Provides
@@ -21,8 +21,8 @@ interface AndroidAppGraph : AppGraph {
     /** The activity attaches its permission launcher here (research R6). */
     val microphonePermissionHost: MicrophonePermissionHost
 
-    /** The activity attaches its document-picker launcher here (contracts/click-sounds.md). */
-    val soundFilePickerHost: SoundFilePickerHost
+    /** The activity attaches its document-picker launchers here (contracts/project-storage.md). */
+    val audioFilePickerHost: AudioFilePickerHost
 
     /** The activity attaches its notifications-permission launcher here (contracts/background-playback.md). */
     val notificationPermissionHost: NotificationPermissionHost
@@ -45,7 +45,7 @@ interface AndroidAppGraph : AppGraph {
     fun provideMicrophonePermission(context: Context, host: MicrophonePermissionHost): MicrophonePermission =
         AndroidMicrophonePermission(context, host)
 
-    /** The media-playback foreground service keeps the metronome running with the screen off (research R6). */
+    /** The media-playback foreground service keeps the metronome and the transport running with the screen off (research R6). */
     @Provides
     @SingleIn(AppScope::class)
     fun provideBackgroundPlaybackHost(context: Context, notifications: NotificationPermissionHost): BackgroundPlaybackHost =
@@ -59,11 +59,12 @@ interface AndroidAppGraph : AppGraph {
 
     @Provides
     @SingleIn(AppScope::class)
-    fun provideSoundFilePickerHost(): SoundFilePickerHost = SoundFilePickerHost()
+    fun provideAudioFilePickerHost(): AudioFilePickerHost = AudioFilePickerHost()
 
+    /** The document picker for the timeline's audio and the metronome's custom click sound. */
     @Provides
     @SingleIn(AppScope::class)
-    fun provideSoundFilePicker(host: SoundFilePickerHost, context: Context): SoundFilePicker = AndroidSoundFilePicker(host, context)
+    fun provideAudioFilePicker(host: AudioFilePickerHost, context: Context): AudioFilePicker = AndroidAudioFilePicker(host, context)
 
     @DependencyGraph.Factory
     fun interface Factory {

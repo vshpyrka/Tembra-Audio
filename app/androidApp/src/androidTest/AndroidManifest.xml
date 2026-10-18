@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <application>
-        <!-- Serves content:// sound documents to AndroidSoundFilePickerTest (feature 004): display names, a blank name, a failing query. -->
+        <!-- Serves content:// audio documents to AudioFilePickerHostTest (feature 004, generalised by feature 009): display names, a blank name, a failing query. -->
         <provider
             android:name="audio.tembra.android.TestSoundProvider"
             android:authorities="audio.tembra.android.test.sounds"

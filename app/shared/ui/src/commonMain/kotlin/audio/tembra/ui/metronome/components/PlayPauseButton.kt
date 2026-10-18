@@ -45,8 +45,10 @@ import audio.tembra.ui.theme.TembraTheme
  * Play and pause (research R10): a [diameter] (64 dp; 48–64 dp in the landscape block's row) round `secondaryContainer` button (hover `secondary`) with the play or pause
  * glyph (filled, as the design) and the `playGlow` drawn around it as a radial brush, never a shadow. While [running]
  * the glow breathes; it is static under reduce motion. Keyboard focus draws the `primary` ring, and hovering shows
- * the button's description ("Start metronome" / "Stop metronome") as a tooltip, as the icon-only steppers do. The glyph
- * node carries `<testTag>.icon.<glyph>` so tests can tell the two apart.
+ * the button's description ("Start metronome" / "Stop metronome", or the transport's "Play" / "Pause" through
+ * [startDescription] and [stopDescription]) as a tooltip, as the icon-only steppers do. The glyph node carries
+ * `<testTag>.icon.<glyph>` so tests can tell the two apart. Feature 009's transport bar reuses it (Constitution: the
+ * metronome's parts are built for the transport).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,6 +59,8 @@ internal fun PlayPauseButton(
     diameter: Dp = TembraTheme.spacing.playButton,
     interactionSource: MutableInteractionSource? = null,
     testTag: String = "metronome.play",
+    startDescription: String = MetronomeCopy.startMetronome,
+    stopDescription: String = MetronomeCopy.stopMetronome,
 ) {
     val colors = TembraTheme.colors
     val spacing = TembraTheme.spacing
@@ -71,7 +75,7 @@ internal fun PlayPauseButton(
     val ring = spacing.focusRingWidth
     val icon = if (running) TembraIcon.PauseFilled else TembraIcon.PlayArrowFilled
 
-    val description = if (running) MetronomeCopy.stopMetronome else MetronomeCopy.startMetronome
+    val description = if (running) stopDescription else startDescription
     val tooltip = rememberTooltipState(isPersistent = true)
     LaunchedEffect(hovered, tooltip) {
         if (hovered) tooltip.show() else tooltip.dismiss()

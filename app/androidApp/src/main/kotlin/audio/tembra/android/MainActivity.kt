@@ -25,9 +25,13 @@ class MainActivity : ComponentActivity() {
         val host = appGraph.microphonePermissionHost
         val launcher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted -> host.onResult(granted) }
         host.attach(this, launcher)
-        // The custom click sound is picked through this activity's document picker (feature 004, contracts/click-sounds.md).
-        val pickerHost = appGraph.soundFilePickerHost
-        pickerHost.attach(registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> pickerHost.onResult(uri) })
+        // Audio files (the timeline's imports, the metronome's custom click sound) are picked through this activity's
+        // document pickers (feature 009, contracts/project-storage.md): one document, or several in picker order.
+        val pickerHost = appGraph.audioFilePickerHost
+        pickerHost.attach(
+            one = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> pickerHost.onResult(uri) },
+            many = registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris -> pickerHost.onResult(uris) },
+        )
         // The notifications prompt for the metronome's "Running" notification (Android 13+, contracts/background-playback.md).
         val notificationHost = appGraph.notificationPermissionHost
         notificationHost.attach(this, registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted -> notificationHost.onResult(granted) })
@@ -61,7 +65,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         appGraph.microphonePermissionHost.detach()
-        appGraph.soundFilePickerHost.detach()
+        appGraph.audioFilePickerHost.detach()
         appGraph.notificationPermissionHost.detach()
         super.onDestroy()
     }

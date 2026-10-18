@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Tembra Audio</string>
-    <string name="metronome_channel_name">Metronome</string>
-    <string name="metronome_notification_title">Metronome</string>
-    <string name="metronome_notification_text">Running</string>
-    <string name="metronome_notification_stop">Stop</string>
+    <string name="playback_channel_name">Playback</string>
+    <string name="playback_notification_title">Playing</string>
+    <string name="playback_notification_stop">Stop</string>
 </resources>
