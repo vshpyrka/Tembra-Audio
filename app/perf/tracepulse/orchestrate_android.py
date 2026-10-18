@@ -394,6 +394,7 @@ BENCHMARK_CLASS_OF = {
     "startup": "StartupBenchmark",
     "tuner": "TunerJourneyBenchmark",
     "metronome": "MetronomeJourneyBenchmark",
+    "timeline": "TimelineJourneyBenchmark",
     "stress": "StressJourneyBenchmark",
 }
 _INSTRUMENT_FAILURE_MARKERS = ("FAILURES!!!", "INSTRUMENTATION_FAILED", "Process crashed", "shortMsg=")

@@ -188,7 +188,7 @@ def test_round_runs_install_warm_up_test_and_collects(cfg, tmp_path):
     assert "-only-testing:TembraPerfTests" in twb
     assert runner.index_of("xcresulttool", "get", "test-results", "metrics", "--compact") > test
     assert runner.index_of("xcresulttool", "export", "attachments") > test
-    assert [j.journey for j in outcome.journeys] == ["startup", "tuner", "metronome", "stress"]
+    assert [j.journey for j in outcome.journeys] == ["startup", "tuner", "metronome", "timeline", "stress"]
     assert outcome.fingerprint["thermal_state"] == "nominal" and outcome.fingerprint["network_state"] == "none"
     assert outcome.fingerprint["os_version"] == "27.0.1" and outcome.fingerprint["battery_level"] == 0.83
     assert outcome.checks and all(c["passed"] for c in outcome.checks)
