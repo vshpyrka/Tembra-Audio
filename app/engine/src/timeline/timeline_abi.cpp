@@ -4,6 +4,7 @@
 // STUB (T052/T053 replace the clip-source and overview bodies): inspect is live.
 #include "tembra_engine.h"
 #include "timeline/audio_decoder.h"
+#include "timeline/overview_builder.h"
 
 extern "C" {
 
@@ -21,7 +22,7 @@ int32_t tembra_audio_inspect(const char* path, tembra_audio_info* out) {
 
 int32_t tembra_audio_overview_build(const char* path, const char* out_path) {
     if (path == nullptr || out_path == nullptr) return TEMBRA_ERR_ARGUMENT;
-    return TEMBRA_ERR_DECODE;
+    return tembra::OverviewBuilder::build(path, out_path);
 }
 
 }  // extern "C"

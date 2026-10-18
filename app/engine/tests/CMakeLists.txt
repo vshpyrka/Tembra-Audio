@@ -36,6 +36,7 @@ add_executable(tembra_engine_tests
     track_strip_test.cpp
     master_bus_test.cpp
     transport_renderer_test.cpp
+    overview_builder_test.cpp
 )
 target_include_directories(tembra_engine_tests PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../src
