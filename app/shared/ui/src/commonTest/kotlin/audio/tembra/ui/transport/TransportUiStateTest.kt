@@ -24,7 +24,7 @@ class TransportUiStateTest {
         assertFalse(stopped.isPlaying)
         assertEquals(TransportCopy.pause, stopped.copy(playback = PlaybackState.Playing).playLabel)
         assertTrue(stopped.copy(playback = PlaybackState.Playing).isPlaying)
-        assertTrue(stopped.copy(playback = PlaybackState.Starting).isPlaying)
+        assertTrue(stopped.copy(playback = PlaybackState.Starting(Beats.Zero)).isPlaying)
         assertFalse(stopped.copy(playback = PlaybackState.Pausing).isPlaying)
     }
 
