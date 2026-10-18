@@ -30,7 +30,6 @@ import androidx.compose.ui.unit.dp
 import audio.tembra.core.project.Beats
 import audio.tembra.core.project.PlaybackState
 import audio.tembra.ui.designsystem.containsColor
-import audio.tembra.ui.designsystem.enterKeyboardMode
 import audio.tembra.ui.perf.PerfAnchors
 import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.ui.timeline.ScriptedTransportTelemetry
