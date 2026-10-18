@@ -22,6 +22,8 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.requestFocus
@@ -79,6 +81,14 @@ class TransportBarTest {
             }
         }
         mainClock.autoAdvance = false
+    }
+
+    /** A long press on the toggle opens the metronome settings sheet (spec FR-040; T108, US5). */
+    @Test
+    fun aLongPressOnTheMetronomeToggleOpensItsSettings() = runComposeUiTest {
+        setBar()
+        onNodeWithTag(PerfAnchors.TRANSPORT_METRONOME).performTouchInput { longClick() }
+        assertEquals(listOf("metronomeSettings"), calls)
     }
 
     @Test

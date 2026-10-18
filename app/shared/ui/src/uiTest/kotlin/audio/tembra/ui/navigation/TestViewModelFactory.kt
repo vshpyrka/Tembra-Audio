@@ -23,18 +23,19 @@ import kotlin.reflect.KClass
  */
 class TestViewModelFactory : MetroViewModelFactory() {
     private val engine = FakeAudioEngine()
+    private val preferences = FakeMetronomePreferences()
     private val session = ProjectSession(
         repository = FakeProjectRepository(),
         audio = engine,
         metronome = engine,
-        preferences = FakeMetronomePreferences(),
+        preferences = preferences,
         host = FakeBackgroundPlaybackHost(),
         scope = CoroutineScope(SupervisorJob() + Dispatchers.Main),
     )
 
     override val viewModelProviders: Map<KClass<out ViewModel>, () -> ViewModel>
         get() = mapOf(
-            TimelineViewModel::class to { TimelineViewModel(session, FakeAudioFilePicker()) },
+            TimelineViewModel::class to { TimelineViewModel(session, FakeAudioFilePicker(), preferences) },
             TrackSettingsViewModel::class to { TrackSettingsViewModel(session) },
         )
 

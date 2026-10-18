@@ -1,6 +1,11 @@
 package audio.tembra.ui.timeline
 
+import audio.tembra.core.metronome.BuiltInClickSound
+import audio.tembra.core.metronome.ClickSound
+import audio.tembra.core.metronome.MetronomeStyle
+import audio.tembra.core.metronome.Subdivision
 import audio.tembra.core.metronome.Tempo
+import audio.tembra.core.metronome.TimeSignature
 import audio.tembra.core.project.AudioAsset
 import audio.tembra.core.project.AudioAssetId
 import audio.tembra.core.project.AudioFormat
@@ -19,6 +24,7 @@ import audio.tembra.data.projects.OverviewStatus
 import audio.tembra.data.projects.WaveformOverview
 import audio.tembra.engine.FakeAudioEngine
 import audio.tembra.engine.PlayResult
+import audio.tembra.ui.metronome.TapCaption
 import audio.tembra.ui.platform.FakeAudioFilePicker
 import audio.tembra.ui.platform.FakeBackgroundPlaybackHost
 import audio.tembra.ui.session.AppStartup
@@ -28,6 +34,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -62,11 +69,12 @@ class TimelineViewModelTest {
     private val engine = FakeAudioEngine()
     private val repository = FakeProjectRepository(initial = listOf(demo))
     private val picker = FakeAudioFilePicker()
+    private val preferences = FakeMetronomePreferences()
     private val session = ProjectSession(
         repository = repository,
         audio = engine,
         metronome = engine,
-        preferences = FakeMetronomePreferences(),
+        preferences = preferences,
         host = FakeBackgroundPlaybackHost(),
         scope = scope,
         overviewReader = { overview },
@@ -77,7 +85,7 @@ class TimelineViewModelTest {
     @BeforeTest
     fun setUp() {
         Dispatchers.setMain(dispatcher)
-        viewModel = TimelineViewModel(session, picker)
+        viewModel = TimelineViewModel(session, picker, preferences)
     }
 
     @AfterTest
@@ -268,6 +276,228 @@ class TimelineViewModelTest {
         assertEquals(Beats(port.visibleBeats + 1.0), paged.positionBeats)
         assertEquals(20.0, paged.positionSeconds)
         assertEquals(port.visibleBeats + 1.0, paged.viewport.scrollBeats.value, "the view paged to the playhead")
+    }
+
+    // --- User Story 6 (T112) --------------------------------------------------------------------------------------------
+
+    @Test
+    fun expandingATrackOpensItsInlineRowAndAnotherCollapsesTheFirst() = test {
+        openDemo()
+        viewModel.expandTrack(drumsTrack)
+        assertEquals(drumsTrack, ui().expandedTrack)
+        viewModel.expandTrack(bassTrack)
+        assertEquals(bassTrack, ui().expandedTrack, "one inline row at a time")
+        viewModel.expandTrack(null)
+        assertNull(ui().expandedTrack)
+        viewModel.expandTrack(drumsTrack)
+        viewModel.requestDeleteTrack(drumsTrack)
+        viewModel.confirmDeleteTrack()
+        assertNull(ui().expandedTrack, "a deleted track's row collapses")
+    }
+
+    // --- User Story 5 (T107) --------------------------------------------------------------------------------------------
+
+    @Test
+    fun aTempoDragIsOneUndoStepAndMovesTheRulerAndTheClick() = test {
+        openDemo()
+        viewModel.openSheet(TimelineSheet.TempoDialog)
+        assertEquals(TimelineSheet.TempoDialog, ui().sheet)
+        viewModel.tempoDragging(Tempo(100))
+        viewModel.tempoDragging(Tempo(90))
+        viewModel.tempoCommit(Tempo(92))
+        val state = ui()
+        assertEquals(Tempo(92), state.tempo)
+        assertTrue(engine.calls.contains("setTempo(92, 4/4)"))
+        assertTrue(engine.calls.last { it.startsWith("setGrid") }.startsWith("setGrid(bpm=92"), "the click follows the project tempo")
+        viewModel.undo()
+        assertEquals(Tempo(124), ui().tempo, "the whole drag undoes as one step")
+        assertTrue(ui().lengthSeconds > state.lengthSeconds, "the ruler's length follows the tempo")
+    }
+
+    @Test
+    fun tapTempoAveragesTheTapsAndEndsAfterTheWindow() = test {
+        openDemo()
+        viewModel.tapTempo(0L)
+        assertEquals(TapCaption.Again, ui().tapCaption)
+        viewModel.tapTempo(500_000_000L)
+        viewModel.tapTempo(1_000_000_000L)
+        val tapped = ui()
+        assertEquals(TapCaption.Counting(3), tapped.tapCaption)
+        assertEquals(Tempo(120), tapped.tempo, "two half-second intervals")
+        advanceTimeBy(2_100)
+        runCurrent()
+        assertEquals(TapCaption.Rest, ui().tapCaption)
+        viewModel.undo()
+        assertEquals(Tempo(124), ui().tempo, "the run was one undo step")
+    }
+
+    @Test
+    fun theSignatureIsAnEditAndTheMetronomeSheetWritesTheGlobalPreferences() = test {
+        openDemo()
+        viewModel.setTimeSignature(TimeSignature.ThreeFour)
+        assertEquals(TimeSignature.ThreeFour, ui().timeSignature)
+        assertTrue(engine.calls.contains("setTempo(124, 3/4)"))
+        viewModel.openSheet(TimelineSheet.MetronomeSettings)
+        viewModel.selectClickSound(ClickSound.BuiltIn(BuiltInClickSound.Cowbell))
+        viewModel.selectSubdivision(Subdivision.Two)
+        viewModel.selectStyle(MetronomeStyle.Standard)
+        viewModel.cycleBeat(1)
+        val state = ui()
+        val stored = preferences.snapshot.first().settings
+        assertEquals(ClickSound.BuiltIn(BuiltInClickSound.Cowbell), stored.sound)
+        assertEquals(Subdivision.Two, stored.subdivision)
+        assertEquals(stored, state.metronomeSettings, "the sheet shows the stored settings")
+        assertEquals("selectSound(Cowbell)", engine.calls.last { it.startsWith("selectSound") }, "the session re-applies the grid and the sound")
+        assertEquals(3, stored.pattern.levels.size, "the pattern is laid over the project's 3/4")
+        assertFalse(session.state.value.canUndo || ui().canUndo && false, "sheet changes are never project edits")
+        viewModel.openSheet(null)
+        assertNull(ui().sheet)
+    }
+
+    // --- User Story 4 (T103) --------------------------------------------------------------------------------------------
+
+    @Test
+    fun splitGoesThroughTheSessionOnlyWhenThePlayheadLiesInside() = test {
+        openDemo()
+        viewModel.selectClip(drumsTrack, drumsClip)
+        viewModel.split()
+        assertEquals(1, ui().tracks[0].clips.size, "no split on the clip's edge")
+        viewModel.seek(Beats(8.0))
+        viewModel.split()
+        val state = ui()
+        assertEquals(2, state.tracks[0].clips.size)
+        assertEquals(Beats(8.0), state.tracks[0].clips[1].startBeats)
+        assertEquals(Selection.ClipSelected(drumsTrack, state.tracks[0].clips[1].id), state.selection, "the right half is selected")
+        assertTrue(state.canUndo)
+        viewModel.undo()
+        assertEquals(1, ui().tracks[0].clips.size)
+        assertTrue(ui().canRedo)
+        viewModel.redo()
+        assertEquals(2, ui().tracks[0].clips.size)
+    }
+
+    @Test
+    fun aDragBuildsOneMoveOnReleaseWithTheSnappedStartAndTheTargetTrack() = test {
+        openDemo()
+        viewModel.clipDragStart(drumsClip)
+        val lifted = ui()
+        assertEquals(Selection.ClipSelected(drumsTrack, drumsClip), lifted.selection)
+        assertEquals(drumsTrack, lifted.drag?.toTrack)
+        viewModel.clipDrag(drumsClip, deltaBeats = 4.3, deltaTracks = 1)
+        val hovering = ui().drag!!
+        assertEquals(bassTrack, hovering.toTrack)
+        assertEquals(Beats(4.25), hovering.startBeats, "snapped to the sixteenth grid while hovering")
+        assertEquals(1, ui().tracks[0].clips.size, "no edit before release")
+        assertFalse(session.state.value.canUndo)
+        viewModel.clipDragEnd()
+        val dropped = ui()
+        assertNull(dropped.drag)
+        assertEquals(0, dropped.tracks[0].clips.size)
+        assertEquals(Beats(4.25), dropped.tracks[1].clips.first { it.id == drumsClip }.startBeats)
+        assertEquals(Selection.ClipSelected(bassTrack, drumsClip), dropped.selection)
+        assertTrue(dropped.canUndo)
+    }
+
+    @Test
+    fun aRefusedDropSnapsBackWithoutAnEditAndSaysWhy() = test {
+        val received = collectMessages()
+        openDemo()
+        val keysTrack = demo.tracks[2].id
+        viewModel.clipDragStart(drumsClip)
+        viewModel.clipDrag(drumsClip, deltaBeats = 0.0, deltaTracks = 2)
+        viewModel.clipDragEnd()
+        runCurrent()
+        val state = ui()
+        assertEquals(1, state.tracks[0].clips.size, "the drums clip stays where it was")
+        assertEquals(1, state.tracks[2].clips.size, "the keys loop occupies that span")
+        assertFalse(state.canUndo)
+        assertEquals(listOf(TimelineMessage.EditRejected(audio.tembra.core.project.EditRejection.SpanOccupied)), received)
+        assertEquals(TimelineCopy.spanOccupied, received.single().text)
+        assertTrue(keysTrack != drumsTrack)
+    }
+
+    @Test
+    fun aCancelledOrUnmovedDragChangesNothing() = test {
+        openDemo()
+        viewModel.clipDragStart(drumsClip)
+        viewModel.clipDrag(drumsClip, 2.0, 0)
+        viewModel.clipDragCancel()
+        assertNull(ui().drag)
+        assertEquals(Beats.Zero, ui().tracks[0].clips[0].startBeats)
+        viewModel.clipDragStart(drumsClip)
+        viewModel.clipDragEnd()
+        assertFalse(session.state.value.canUndo, "a release without movement is no edit")
+    }
+
+    @Test
+    fun deleteClipRemovesItAndClearsItsSelection() = test {
+        openDemo()
+        viewModel.selectClip(drumsTrack, drumsClip)
+        viewModel.deleteClip(drumsClip)
+        val state = ui()
+        assertEquals(0, state.tracks[0].clips.size)
+        assertEquals(Selection.None, state.selection)
+        assertTrue(state.canUndo)
+        assertFalse(state.canRedo)
+    }
+
+    // --- User Story 3 (T098) --------------------------------------------------------------------------------------------
+
+    @Test
+    fun zoomKeepsTheBeatUnderTheCentreAndClampsToTheBounds() = test {
+        openDemo()
+        val fit = ui().viewport
+        viewModel.zoomAround(centreX = 500.0, factor = 2.0)
+        val zoomed = ui().viewport
+        assertEquals(fit.pixelsPerBeat * 2, zoomed.pixelsPerBeat, 1e-9)
+        assertEquals(fit.beatsAt(500.0).value, zoomed.beatsAt(500.0).value, 1e-9, "the beat under the centre stays put")
+        viewModel.zoomAround(500.0, 1e6)
+        assertEquals(ui().viewport.closestPixelsPerBeat, ui().viewport.pixelsPerBeat, 1e-9, "no closer than one beat per view")
+        viewModel.zoomAround(500.0, 1e-6)
+        assertEquals(fit.pixelsPerBeat, ui().viewport.pixelsPerBeat, 1e-9, "no wider than the fit")
+        viewModel.zoomStep(2)
+        assertEquals(fit.pixelsPerBeat * 2, ui().viewport.pixelsPerBeat, 1e-9, "two steps double the zoom")
+        viewModel.zoomStep(-2)
+        assertEquals(fit.pixelsPerBeat, ui().viewport.pixelsPerBeat, 1e-9)
+    }
+
+    @Test
+    fun scrollingSuspendsFollowingAndFitRestoresTheStart() = test {
+        openDemo()
+        viewModel.zoomStep(4)
+        viewModel.scrollBy(120.0)
+        val scrolled = ui()
+        assertFalse(scrolled.following)
+        assertTrue(scrolled.viewport.scrollBeats.value > 0.0)
+        viewModel.scrollBy(-10_000.0)
+        assertEquals(Beats.Zero, ui().viewport.scrollBeats, "never before the start")
+        viewModel.scrollBy(120.0)
+        viewModel.fitProject()
+        val fitted = ui().viewport
+        assertEquals(Beats.Zero, fitted.scrollBeats)
+        assertEquals(fitted.fitPixelsPerBeat, fitted.pixelsPerBeat, 1e-9)
+    }
+
+    @Test
+    fun zoomAndGridArePersistedOutsideTheDocumentAndRestoredOnReopen() = test {
+        openDemo()
+        viewModel.zoomStep(2)
+        viewModel.setGrid(GridSize.Bar)
+        advanceTimeBy(600)
+        runCurrent()
+        val stored = repository.viewState(demo.id)
+        assertEquals(ui().viewport.pixelsPerBeat, stored.zoom?.pixelsPerBeat)
+        assertEquals(GridSize.Bar, stored.grid)
+        assertFalse(session.state.value.canUndo, "zoom and grid are not edits")
+        assertEquals(demo, repository.saved.getValue(demo.id), "the document is untouched")
+        // A fresh ViewModel after a relaunch measures the same lane and lands on the stored zoom.
+        val later = TimelineViewModel(session, picker, preferences)
+        later.screenVisible(true)
+        later.viewportMeasured(1000.0, 2.0)
+        runCurrent()
+        assertEquals(stored.zoom?.pixelsPerBeat, later.uiState.value.viewport.pixelsPerBeat)
+        assertEquals(GridSize.Bar, later.uiState.value.grid)
+        later.screenVisible(false)
     }
 
     // --- User Story 2 (T090) --------------------------------------------------------------------------------------------

@@ -29,6 +29,12 @@ object TimelineCopy {
     const val addToBegin = "Add a track or audio to begin"
 
     const val pickFailed = "The file could not be opened"
+    const val tempo = "Tempo"
+    const val tempoDown = "Tempo down"
+    const val tempoUp = "Tempo up"
+    const val done = "Done"
+    const val fromTheProject = "from the project"
+    const val customSoundFromMetronome = "Custom click sounds are imported from the Metronome"
     const val spanOccupied = "Another clip is in the way"
     const val trackLimit = "A project holds at most 64 tracks"
     const val clipLimit = "A project holds at most 1024 clips"

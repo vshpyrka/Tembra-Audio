@@ -63,6 +63,8 @@ internal fun TimelineRuler(
     onScrubEnd: (Beats) -> Unit,
     modifier: Modifier = Modifier,
     leftPills: @Composable () -> Unit = {},
+    onZoomAround: (centreX: Double, factor: Double) -> Unit = { _, _ -> },
+    onScrollBy: (px: Double) -> Unit = {},
 ) {
     val colors = TembraTheme.colors
     val daw = TembraTheme.daw
@@ -108,6 +110,7 @@ internal fun TimelineRuler(
                 .pointerInput(Unit) {
                     detectTapGestures(onTap = { offset -> currentOnSeek(currentViewport.beatsAt(offset.x.toDouble())) })
                 }
+                .viewportGestures(dragScrolls = false, onZoomAround = onZoomAround, onScrollBy = onScrollBy)
                 .pointerInput(Unit) {
                     var last = Beats.Zero
                     detectHorizontalDragGestures(

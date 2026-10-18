@@ -2,6 +2,11 @@ package audio.tembra.ui.timeline
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import audio.tembra.core.metronome.ClickSound
+import audio.tembra.core.metronome.MetronomeSettings
+import audio.tembra.core.metronome.MetronomeStyle
+import audio.tembra.core.metronome.Subdivision
+import audio.tembra.core.metronome.TapTempoSequence
 import audio.tembra.core.metronome.Tempo
 import audio.tembra.core.metronome.TimeSignature
 import audio.tembra.core.project.AddTrack
@@ -34,8 +39,10 @@ import audio.tembra.core.project.findTrack
 import audio.tembra.core.project.lengthBeats
 import audio.tembra.core.project.lengthSeconds
 import audio.tembra.core.project.tempoMap
+import audio.tembra.core.project.trackOf
 import audio.tembra.core.timeline.Snap
 import audio.tembra.core.timeline.TimelineViewport
+import audio.tembra.data.metronome.MetronomePreferences
 import audio.tembra.data.projects.OverviewStatus
 import audio.tembra.data.projects.ProjectViewState
 import audio.tembra.engine.TransportSnapshot
@@ -43,6 +50,7 @@ import audio.tembra.engine.perf.PerfSection
 import audio.tembra.engine.perf.PerfTrace
 import audio.tembra.ui.platform.AudioFilePicker
 import audio.tembra.ui.platform.AudioPickRequest
+import audio.tembra.ui.metronome.TapCaption
 import audio.tembra.ui.platform.AudioPickResult
 import audio.tembra.ui.session.ImportTarget
 import audio.tembra.ui.session.ProjectSession
@@ -85,6 +93,7 @@ import kotlin.math.pow
 class TimelineViewModel(
     private val session: ProjectSession,
     private val picker: AudioFilePicker,
+    private val preferences: MetronomePreferences,
 ) : ViewModel() {
 
     private val view = MutableStateFlow(TimelineViewState())
@@ -101,6 +110,8 @@ class TimelineViewModel(
 
     private val snapshot = TransportSnapshot()
     private var observeProjectJob: Job? = null
+    private var observePreferencesJob: Job? = null
+    private var tapWindowJob: Job? = null
     private var pollJob: Job? = null
     private var saveViewStateJob: Job? = null
     private var resumeAfterScrub = false
@@ -112,9 +123,12 @@ class TimelineViewModel(
         if (visible) {
             if (observeProjectJob == null) observeProjectJob = viewModelScope.launch(CoroutineName("observeProject")) { observeProject() }
             if (pollJob == null) pollJob = viewModelScope.launch(CoroutineName("pollPosition")) { pollPosition() }
+            if (observePreferencesJob == null) observePreferencesJob = viewModelScope.launch(CoroutineName("observePreferences")) { observePreferences() }
         } else {
             observeProjectJob?.cancel()
             observeProjectJob = null
+            observePreferencesJob?.cancel()
+            observePreferencesJob = null
             pollJob?.cancel()
             pollJob = null
             session.closeEditGroup()
@@ -287,6 +301,34 @@ class TimelineViewModel(
         if (edit(MoveClip(clipId, toTrack, target))) view.update { it.copy(selection = Selection.ClipSelected(toTrack, clipId)) }
     }
 
+    /** A long press (touch) or a press past the slop (pointer) lifts the clip; it is selected and follows the finger (spec FR-033). */
+    fun clipDragStart(clipId: ClipId) {
+        val project = session.state.value.project ?: return
+        val track = project.trackOf(clipId) ?: return
+        val clip = project.findClip(clipId) ?: return
+        session.closeEditGroup()
+        view.update { it.copy(selection = Selection.ClipSelected(track.id, clipId), drag = ClipDragState(clipId, track.id, clip.startBeats)) }
+    }
+
+    fun clipDrag(clipId: ClipId, deltaBeats: Double, deltaTracks: Int) {
+        view.update { current ->
+            val drag = current.drag
+            if (drag == null || drag.clipId != clipId) current else current.copy(drag = drag.copy(deltaBeats = deltaBeats, deltaTracks = deltaTracks))
+        }
+    }
+
+    /** Release: one MoveClip with the snapped start and the target track; an unchanged or refused drop leaves the clip where it was. */
+    fun clipDragEnd() {
+        val drag = view.value.drag ?: return
+        view.update { it.copy(drag = null) }
+        val project = session.state.value.project ?: return
+        val target = dropTarget(project, drag) ?: return
+        if (target.first == drag.originTrack && target.second == drag.originStart) return
+        moveClip(drag.clipId, target.first, target.second)
+    }
+
+    fun clipDragCancel() = view.update { it.copy(drag = null) }
+
     fun deleteClip(clipId: ClipId) {
         if (edit(DeleteClip(clipId))) view.update { current -> current.copy(selection = current.selection.takeUnless { it is Selection.ClipSelected && it.clipId == clipId } ?: Selection.None) }
     }
@@ -308,6 +350,51 @@ class TimelineViewModel(
     }
 
     fun setTimeSignature(signature: TimeSignature) = edit(SetTimeSignature(signature))
+
+    /** A tap in the tempo dialog: the run's average becomes the tempo at once; the run ends two seconds after the last tap, as one undo step. */
+    fun tapTempo(atNanos: Long) {
+        val sequence = view.value.tap.tap(atNanos)
+        val counted = when (val previous = view.value.tapCaption) {
+            TapCaption.Rest -> 0
+            TapCaption.Again -> 1
+            is TapCaption.Counting -> previous.taps
+        }
+        val caption = if (sequence.count < 2) TapCaption.Again else TapCaption.Counting(counted + 1)
+        view.update { it.copy(tap = sequence, tapCaption = caption) }
+        sequence.tempo?.let { edit(SetTempo(it)) }
+        tapWindowJob?.cancel()
+        tapWindowJob = viewModelScope.launch(CoroutineName("tapWindow")) {
+            delay(TapTempoSequence.WINDOW_NANOS / 1_000_000)
+            view.update { it.copy(tap = TapTempoSequence(), tapCaption = TapCaption.Rest) }
+            session.closeEditGroup()
+        }
+    }
+
+    // --- Metronome settings sheet: the global metronome's preferences (spec FR-038, FR-039) ----------------------------
+
+    fun selectClickSound(sound: ClickSound) = updateMetronome { it.copy(sound = sound) }
+
+    fun selectSubdivision(subdivision: Subdivision) = updateMetronome { it.copy(subdivision = subdivision) }
+
+    /** Cycles one accent cell of the pattern laid over the project's signature; a hand-edited pattern has no named style. */
+    fun cycleBeat(index: Int) {
+        val signature = session.state.value.project?.timeSignature ?: return
+        updateMetronome { settings ->
+            val laid = settings.style?.pattern(signature) ?: settings.pattern.resizedTo(signature.beats)
+            if (index !in laid.levels.indices) return@updateMetronome settings
+            val pattern = laid.cycle(index)
+            settings.copy(pattern = pattern, style = MetronomeStyle.matching(pattern, signature))
+        }
+    }
+
+    fun selectStyle(style: MetronomeStyle) {
+        val signature = session.state.value.project?.timeSignature ?: return
+        updateMetronome { it.copy(style = style, pattern = style.pattern(signature)) }
+    }
+
+    fun importCustomSound() {
+        local.trySend(TimelineMessage.CustomSoundFromMetronome)
+    }
 
     // --- Mapping -----------------------------------------------------------------------------------------------------
 
@@ -387,7 +474,24 @@ class TimelineViewModel(
             isFirstContentReady = ready,
             missingAssets = state.missingAssets.size,
             confirmDelete = view.confirmDelete?.takeIf { project.findTrack(it) != null },
+            metronomeSettings = view.metronomeSettings,
+            tapCaption = view.tapCaption,
+            drag = view.drag?.let { drag ->
+                val clip = project.findClip(drag.clipId) ?: return@let null
+                val target = dropTarget(project, drag) ?: return@let null
+                ClipDragUi(drag.clipId, drag.originTrack, target.first, target.second, project.clipLengthBeats(clip), clip.name)
+            },
         )
+    }
+
+    /** Where a drag would drop: the row offset clamped to the tracks, the start snapped to the grid and never before zero. */
+    private fun dropTarget(project: Project, drag: ClipDragState): Pair<TrackId, Beats>? {
+        val originIndex = project.tracks.indexOfFirst { it.id == drag.originTrack }
+        if (originIndex < 0) return null
+        val track = project.tracks[(originIndex + drag.deltaTracks).coerceIn(0, project.tracks.lastIndex)]
+        val grid = view.value.grid ?: session.state.value.viewState.grid
+        val start = Snap.snap(Beats(drag.originStart.value + drag.deltaBeats).coerceAtLeastZero(), grid, project.timeSignature)
+        return track.id to start
     }
 
     private fun Selection.validated(project: Project): Selection = when (this) {
@@ -434,6 +538,16 @@ class TimelineViewModel(
         val stored = session.state.value.viewState.zoom
         val fitted = measured.fit()
         return if (stored == null) fitted else fitted.withZoom(stored)
+    }
+
+    private fun updateMetronome(transform: (MetronomeSettings) -> MetronomeSettings) {
+        viewModelScope.launch(CoroutineName("updateMetronome")) {
+            preferences.update { snapshot -> snapshot.copy(settings = transform(snapshot.settings)) }
+        }
+    }
+
+    private suspend fun observePreferences() {
+        preferences.snapshot.collect { snapshot -> view.update { it.copy(metronomeSettings = snapshot.settings) } }
     }
 
     private fun scheduleViewStateSave() {

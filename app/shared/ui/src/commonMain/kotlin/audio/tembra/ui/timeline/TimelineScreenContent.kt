@@ -25,7 +25,9 @@ import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.ui.timeline.components.DeleteTrackDialog
 import audio.tembra.ui.timeline.components.EmptyTimeline
 import audio.tembra.ui.timeline.components.PlayheadOverlay
-import audio.tembra.ui.timeline.components.SignaturePill
+import audio.tembra.ui.metronome.components.TimeSignatureMenu
+import audio.tembra.ui.timeline.components.MetronomeSettingsSheet
+import audio.tembra.ui.timeline.components.TempoDialog
 import audio.tembra.ui.timeline.components.TempoPill
 import audio.tembra.ui.timeline.components.TimelineRuler
 import audio.tembra.ui.timeline.components.TimelineToolbar
@@ -97,6 +99,8 @@ internal fun TimelineScreenContent(
                     onScrubStart = callbacks.onScrubStart,
                     onScrub = callbacks.onScrub,
                     onScrubEnd = callbacks.onScrubEnd,
+                    onZoomAround = callbacks.onZoomAround,
+                    onScrollBy = callbacks.onScrollBy,
                     leftPills = {
                         if (layout.pinnedHeaders) {
                             RulerPills(state, callbacks, modifier = Modifier.width(spacing.headerColumnWidth))
@@ -135,6 +139,28 @@ internal fun TimelineScreenContent(
             DeleteTrackDialog(trackName = deleting.name, onConfirm = callbacks.onConfirmDeleteTrack, onCancel = callbacks.onDismissDeleteTrack)
         }
         SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = transportHeight))
+        when (state.sheet) {
+            TimelineSheet.TempoDialog -> TempoDialog(
+                tempo = state.tempo,
+                tapCaption = state.tapCaption,
+                onTempoDragging = callbacks.onTempoDragging,
+                onTempoCommit = callbacks.onTempoCommit,
+                onTapTempo = callbacks.onTapTempo,
+                onDismiss = { callbacks.onOpenSheet(null) },
+            )
+            TimelineSheet.MetronomeSettings -> MetronomeSettingsSheet(
+                settings = state.metronomeSettings,
+                tempo = state.tempo,
+                signature = state.timeSignature,
+                onClickSound = callbacks.onClickSound,
+                onImportCustomSound = callbacks.onImportCustomSound,
+                onSubdivision = callbacks.onSubdivision,
+                onCycleBeat = callbacks.onCycleBeat,
+                onStyle = callbacks.onStyle,
+                onDismiss = { callbacks.onOpenSheet(null) },
+            )
+            TimelineSheet.SignatureMenu, TimelineSheet.GridMenu, TimelineSheet.ZoomMenu, null -> Unit
+        }
     }
 }
 
@@ -143,7 +169,7 @@ private fun RulerPills(state: TimelineUiState, callbacks: TimelineCallbacks, mod
     val spacing = TembraTheme.spacing
     Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(spacing.xs), verticalAlignment = Alignment.CenterVertically) {
         TempoPill(tempo = state.tempo, onClick = { callbacks.onOpenSheet(TimelineSheet.TempoDialog) }, enabled = state.loaded)
-        SignaturePill(signature = state.timeSignature, onClick = { callbacks.onOpenSheet(TimelineSheet.SignatureMenu) }, enabled = state.loaded)
+        TimeSignatureMenu(selected = state.timeSignature, onSelect = callbacks.onTimeSignature, testTag = TimelineTestTags.SIGNATURE_PILL)
     }
 }
 

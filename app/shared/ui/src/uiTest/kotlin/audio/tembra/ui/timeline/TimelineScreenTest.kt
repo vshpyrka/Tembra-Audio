@@ -30,6 +30,7 @@ import audio.tembra.ui.perf.PerfAnchors
 import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.ui.timeline.components.DELETE_CONFIRM_TAG
 import audio.tembra.ui.timeline.components.DELETE_DIALOG_TAG
+import audio.tembra.ui.timeline.components.TEMPO_DIALOG_TAG
 import kotlinx.collections.immutable.persistentListOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -79,6 +80,8 @@ class TimelineScreenTest {
                         onPlayPause = { calls += "play" },
                         onConfirmDeleteTrack = { calls += "deleteConfirmed" },
                         onDismissDeleteTrack = { calls += "deleteDismissed" },
+                        onOpenSheet = { calls += "sheet($it)" },
+                        onTimeSignature = { calls += "signature(${it.label})" },
                     ),
                     telemetry = ScriptedTransportTelemetry.stopped(0.0),
                     layout = layout,
@@ -116,6 +119,49 @@ class TimelineScreenTest {
         onNodeWithTag(TimelineTestTags.gain(0)).assertExists()
         onNodeWithTag(TimelineTestTags.lane(1)).assertHeightIsEqualTo(96.dp)
         onNodeWithTag(TimelineTestTags.clip(1)).assertExists()
+    }
+
+    @Test
+    fun theWidestAndTheClosestZoomBothRenderTheClips() = runComposeUiTest {
+        val widest = demoState()
+        setScreen(widest.copy(viewport = widest.viewport.fit()), TimelineLayout.Compact)
+        onNodeWithTag(TimelineTestTags.clip(0)).assertExists()
+        onNodeWithTag(TimelineTestTags.clip(2)).assertExists()
+    }
+
+    @Test
+    fun theClosestZoomShowsOnlyWhatIsInView() = runComposeUiTest {
+        val base = demoState()
+        val closest = base.viewport.withZoom(audio.tembra.core.project.ZoomLevel(base.viewport.closestPixelsPerBeat))
+        setScreen(base.copy(viewport = closest), TimelineLayout.Compact)
+        onNodeWithTag(TimelineTestTags.clip(0)).assertExists()
+        onNodeWithTag(TimelineTestTags.clip(2)).assertDoesNotExist()
+    }
+
+    @Test
+    fun expandedKeepsTheRulerPillsInTheHeaderColumn() = runComposeUiTest {
+        setScreen(demoState(), TimelineLayout.Expanded)
+        onNodeWithTag(TimelineTestTags.TEMPO_PILL).assertExists()
+        onNodeWithTag(TimelineTestTags.SIGNATURE_PILL).assertExists()
+        onNodeWithTag(PerfAnchors.TIMELINE_RULER).assertExists()
+        onNodeWithTag(TimelineTestTags.header(1)).assertWidthIsEqualTo(200.dp)
+    }
+
+    /** The tempo pill opens the dialog and the signature pill is the menu (spec FR-035; T108, US5). */
+    @Test
+    fun theRulerPillsOpenTheTempoDialogAndTheSignatureMenu() = runComposeUiTest {
+        setScreen(demoState(), TimelineLayout.Compact)
+        onNodeWithTag(TimelineTestTags.TEMPO_PILL).performClick()
+        assertEquals(listOf("sheet(TempoDialog)"), calls)
+        onNodeWithTag(TimelineTestTags.SIGNATURE_PILL).performClick()
+        onNodeWithTag("${TimelineTestTags.SIGNATURE_PILL}.${TimeSignature.ThreeFour.id}").performClick()
+        assertEquals(listOf("sheet(TempoDialog)", "signature(3/4)"), calls)
+    }
+
+    @Test
+    fun anOpenTempoDialogAndTheMetronomeSheetRender() = runComposeUiTest {
+        setScreen(demoState().copy(sheet = TimelineSheet.TempoDialog), TimelineLayout.Compact)
+        onNodeWithTag(TEMPO_DIALOG_TAG).assertExists()
     }
 
     @Test

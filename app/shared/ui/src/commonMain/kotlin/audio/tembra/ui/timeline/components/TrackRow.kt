@@ -31,6 +31,8 @@ internal fun TrackRow(
     val selected = state.selection.trackIdOrNull == track.id
     val isFirst = index == 0
     val isLast = index == state.tracks.lastIndex
+    // One row's pitch: what a vertical drag divides by to count the tracks crossed.
+    val rowPitch = if (layout.pinnedHeaders) spacing.laneHeightExpanded else HeaderHeight + spacing.laneHeightCompact
     if (layout.pinnedHeaders) {
         Row(modifier = modifier.fillMaxWidth().height(spacing.laneHeightExpanded)) {
             TrackHeader(
@@ -61,6 +63,17 @@ internal fun TrackRow(
                 height = spacing.laneHeightExpanded,
                 onSelectClip = { callbacks.onSelectClip(track.id, it) },
                 onClearSelection = callbacks.onClearSelection,
+                onZoomAround = callbacks.onZoomAround,
+                onScrollBy = callbacks.onScrollBy,
+                drag = state.drag,
+                rowPitch = rowPitch,
+                canSplit = state.canSplit,
+                onClipDragStart = callbacks.onClipDragStart,
+                onClipDrag = callbacks.onClipDrag,
+                onClipDragEnd = callbacks.onClipDragEnd,
+                onClipDragCancel = callbacks.onClipDragCancel,
+                onSplit = callbacks.onSplit,
+                onDeleteClip = callbacks.onDeleteClip,
                 modifier = Modifier.weight(1f),
             )
         }
@@ -91,6 +104,17 @@ internal fun TrackRow(
                 height = spacing.laneHeightCompact,
                 onSelectClip = { callbacks.onSelectClip(track.id, it) },
                 onClearSelection = callbacks.onClearSelection,
+                onZoomAround = callbacks.onZoomAround,
+                onScrollBy = callbacks.onScrollBy,
+                drag = state.drag,
+                rowPitch = rowPitch,
+                canSplit = state.canSplit,
+                onClipDragStart = callbacks.onClipDragStart,
+                onClipDrag = callbacks.onClipDrag,
+                onClipDragEnd = callbacks.onClipDragEnd,
+                onClipDragCancel = callbacks.onClipDragCancel,
+                onSplit = callbacks.onSplit,
+                onDeleteClip = callbacks.onDeleteClip,
             )
         }
     }
