@@ -21,8 +21,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import audio.tembra.ui.theme.TembraTheme
 
 /**
- * The frame's top bar (spec FR-007, FR-019): the product name as an overline above the destination title, on
- * surfaceContainerLowest, 56 dp tall below the status and cutout insets. Nothing else may be added here.
+ * A top bar (feature 002, spec FR-019): the product name as an overline above a title, on surfaceContainerLowest,
+ * 56 dp tall below the status and cutout insets. The navigation shell stopped showing it on 2026-10-16 (the selected
+ * item already names the destination, and the bar only took height); it stays in the design system for a later
+ * screen that needs a title bar.
  */
 @Composable
 fun TembraTopBar(title: String, modifier: Modifier = Modifier) {

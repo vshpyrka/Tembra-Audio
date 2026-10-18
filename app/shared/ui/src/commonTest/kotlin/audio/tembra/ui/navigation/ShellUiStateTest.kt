@@ -10,19 +10,20 @@ import kotlin.test.assertEquals
 class ShellUiStateTest {
 
     @Test
-    fun startsOnHome() {
-        assertEquals(Destination.Home, ShellUiState().selected)
+    fun startsOnTheStartDestination() {
+        assertEquals(StartDestination, ShellUiState().selected)
+        assertEquals(Destination.Timeline, StartDestination)
     }
 
     @Test
-    fun homeAloneIsTheBackStackOnHome() {
-        assertEquals(listOf<NavKey>(DestinationKey(Destination.Home)), ShellUiState().backStack)
+    fun timelineAloneIsTheBackStackOnTimeline() {
+        assertEquals(listOf<NavKey>(DestinationKey(Destination.Timeline)), ShellUiState().backStack)
     }
 
     @Test
-    fun anotherDestinationSitsAboveHome() {
+    fun anotherDestinationSitsAboveTimeline() {
         assertEquals(
-            listOf<NavKey>(DestinationKey(Destination.Home), DestinationKey(Destination.Tuner)),
+            listOf<NavKey>(DestinationKey(Destination.Timeline), DestinationKey(Destination.Tuner)),
             ShellUiState(selected = Destination.Tuner).backStack,
         )
     }
@@ -31,11 +32,11 @@ class ShellUiStateTest {
     fun trackSettingsSitAboveTheTimelineOnly() {
         val key = TrackSettingsKey(TrackId("t1"))
         assertEquals(
-            listOf<NavKey>(DestinationKey(Destination.Home), DestinationKey(Destination.Timeline), key),
+            listOf<NavKey>(DestinationKey(Destination.Timeline), key),
             ShellUiState(selected = Destination.Timeline, trackSettings = key).backStack,
         )
         assertEquals(
-            listOf<NavKey>(DestinationKey(Destination.Home), DestinationKey(Destination.Tuner)),
+            listOf<NavKey>(DestinationKey(Destination.Timeline), DestinationKey(Destination.Tuner)),
             ShellUiState(selected = Destination.Tuner, trackSettings = key).backStack,
         )
     }

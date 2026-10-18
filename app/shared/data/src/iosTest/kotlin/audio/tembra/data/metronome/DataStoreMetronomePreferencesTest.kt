@@ -15,7 +15,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.job
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -57,12 +58,12 @@ class DataStoreMetronomePreferencesTest {
         val written = first.snapshot.first()
         assertEquals(Tempo(75), written.settings.tempo)
         assertEquals(ClickSound.Custom("clap"), written.settings.sound)
-        firstScope.cancel()
+        firstScope.coroutineContext.job.cancelAndJoin()
 
         val secondScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
         val second = DataStoreMetronomePreferences(TembraDataStore.preferences(directory, secondScope))
         assertEquals(written, second.snapshot.first())
-        secondScope.cancel()
+        secondScope.coroutineContext.job.cancelAndJoin()
     }
 
     @Test
@@ -72,7 +73,7 @@ class DataStoreMetronomePreferencesTest {
         preferences.update { it.copy(settings = it.settings.copy(customSound = CustomSoundRef("clap", "/p"))) }
         preferences.update { it.copy(settings = it.settings.copy(customSound = null, sound = ClickSound.BuiltIn(BuiltInClickSound.Cowbell))) }
         assertEquals(null, preferences.snapshot.first().settings.customSound)
-        scope.cancel()
+        scope.coroutineContext.job.cancelAndJoin()
     }
 
     @Test
@@ -81,6 +82,6 @@ class DataStoreMetronomePreferencesTest {
         val dataStore = TembraDataStore.preferences(freshDirectory(), scope)
         dataStore.edit { it[stringPreferencesKey(MetronomePreferenceKeys.TEMPO)] = "x" }
         assertEquals(Tempo(120), DataStoreMetronomePreferences(dataStore).snapshot.first().settings.tempo)
-        scope.cancel()
+        scope.coroutineContext.job.cancelAndJoin()
     }
 }

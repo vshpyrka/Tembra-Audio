@@ -8,7 +8,8 @@ package audio.tembra.ui.perf
  * (constitution: every feature instruments itself).
  */
 object PerfAnchors {
-    const val HOME_ROOT = "screen.home"
+    /** The start destination's root, where every journey begins: Timeline since Home was removed (2026-10-17). */
+    const val START_ROOT = "screen.timeline"
     const val NAV_TUNER = "nav.item.tuner"
     const val NAV_METRONOME = "nav.item.metronome"
     const val TUNER_ROOT = "screen.tuner"
@@ -48,7 +49,7 @@ object PerfAnchors {
 
     /** Every anchor, for the parity test and the journey drivers' documentation. */
     val all: List<String> = listOf(
-        HOME_ROOT, NAV_TUNER, NAV_METRONOME,
+        START_ROOT, NAV_TUNER, NAV_METRONOME,
         TUNER_ROOT, TUNER_MODE_AUTO_LISTEN, TUNER_MODE_BY_EAR, TUNER_NOTE_READOUT,
         METRONOME_ROOT, METRONOME_START_STOP, METRONOME_TEMPO_UP, METRONOME_TEMPO_DOWN, METRONOME_TEMPO_READOUT,
         DEVTOOLS_WRITE_HEALTH,

@@ -22,7 +22,7 @@ xcrun simctl boot "iPhone 17"; xcrun simctl install "iPhone 17" "build/Build/Pro
 xcrun simctl launch "iPhone 17" "$BUNDLE"
 ```
 
-Expected: the app opens on Home. Tap **Metronome**: the top bar reads "Metronome"; the dial shows
+Expected: the app opens on Timeline (Home until 2026-10-17). Tap **Metronome** (the timer icon; the navigation items have no text labels since 2026-10-17): the Metronome item is marked (no top bar since 2026-10-16); the dial shows
 120 BPM "Moderato (108-120)", 4/4, 1/4, four cells reading Accent, Click, Click, Click, "Standard"
 selected, the sound pill "Classic Wood", the slider knob at 40 % and a play button. No transport
 bar, no right-hand panel.

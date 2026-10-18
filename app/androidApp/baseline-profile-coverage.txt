@@ -8,6 +8,6 @@ app.start    Laudio/tembra/android/TembraApplication;
 app.activity Laudio/tembra/android/MainActivity;
 shell        Laudio/tembra/ui/navigation/NavigationShellKt;
 # Primary destinations the journeys visit
-home         Laudio/tembra/ui/home/HomeScreenKt;
+timeline     Laudio/tembra/ui/timeline/TimelineScreenKt;
 tuner        Laudio/tembra/ui/tuner/TunerScreenKt;
 metronome    Laudio/tembra/ui/metronome/MetronomeScreenKt;

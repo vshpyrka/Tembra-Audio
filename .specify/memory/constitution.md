@@ -182,13 +182,17 @@ specifications technology-free and the test-first loop of Principle III intact.
   Maximilian as references. JUCE, Tracktion, Rubber Band, KFR, Superpowered and élastique are
   forbidden.
 - Design source of truth: `design/stitch/DESIGN.md` and `theme.json`. Primary DAW destinations
-  are Timeline, Tuner, Effects, Pads and Projects; the navigation also carries Home (the start
-  destination), Metronome and Profile. The transport bar is present on every DAW screen: the
-  Timeline, Effects and Pads destinations and the screens opened from them (such as a track's
-  settings); Home, Tuner, Metronome, Projects and Profile carry none (clarified 2026-10-13,
-  feature 009: Tuner and Metronome own their audio, and Projects opens a project into Timeline
-  rather than playing it in place). Fonts are Space Grotesk and Inter, bundled; live numbers use
-  tabular figures.
+  are Timeline, Tuner, Effects, Pads and Projects; the navigation also carries Metronome and
+  Profile. Timeline, the first destination, is the start destination. The navigation items show
+  icons only: each item's name is its accessible name and its hover tooltip, and the bar and the
+  rail are the platform design system's standard components, sized by it (amended 2026-10-17:
+  Home, the earlier start destination, is removed and the items lost their visible labels;
+  specs 002, 003, 004, 007 and 008 were amended the same day). The transport bar is present on
+  every DAW screen: the Timeline, Effects and Pads destinations and the screens opened from them
+  (such as a track's settings); Tuner, Metronome, Projects and Profile carry none (clarified
+  2026-10-13, feature 009: Tuner and Metronome own their audio, and Projects opens a project into
+  Timeline rather than playing it in place). Fonts are Space Grotesk and Inter, bundled; live
+  numbers use tabular figures.
 - The Metronome destination is a global, standalone metronome for playing along (amended
   2026-09-29). It runs on its own tempo and settings, kept in the app's preferences, and is not
   part of any recording session, project or timeline session: a project's tempo map never drives
@@ -196,10 +200,10 @@ specifications technology-free and the test-first loop of Principle III intact.
   timeline feature: the click sound set and its configuration (the built-in sounds, the custom
   sound import and preparation, the Accent, Click and Sub levels), the tempo and tempo-name
   model, the time signature, subdivision and accent-pattern model, and the engine's
-  sample-accurate click scheduler. When the transport and timeline feature (feature 009, the
-  audio spine with transport and timeline) lands, its transport bar metronome toggle MUST drive
-  that same click from the project tempo map, it takes over the tempo and time signature from
-  the project, and it MUST NOT duplicate the sound set, the models or the scheduler.
+  sample-accurate click scheduler. When the transport and timeline feature lands, its transport
+  bar metronome toggle MUST drive that same click from the project tempo map, it takes over the
+  tempo and time signature from the project, and it MUST NOT duplicate the sound set, the models
+  or the scheduler.
 - Product name is "Tembra Audio".
 
 ## Development Workflow & Quality Gates
@@ -208,22 +212,14 @@ specifications technology-free and the test-first loop of Principle III intact.
   `/speckit-plan` (how, technology), `/speckit-tasks`, `/speckit-implement`. Specifications
   MUST NOT contain technology choices; plans MUST cite this constitution's principles in their
   Constitution Check and justify any deviation.
-- Build order is fixed: project scaffold, navigation shell, tuner, metronome, audio spine with
-  transport and timeline (one feature), mixer, recording, effects and automation, loops and
-  speed, collaboration. A plan MUST NOT pull later work forward without amending this order
-  here. The tuner precedes the audio spine (amended 2026-09-26): it is the first feature to
-  capture audio and produce sound, and its input and output paths MUST obey Principle I so the
-  audio spine can grow from them. The metronome follows the tuner (amended 2026-09-29): it is
-  the second feature to produce sound and the first to schedule it sample-accurately, and its
-  click path MUST obey Principle I so the audio spine and the transport can grow from it. The
-  audio spine and the transport and timeline are one feature, and recording precedes effects
-  (amended 2026-10-13, feature 009): the spine's only user-facing proof is a project that plays,
-  so the engine's first multi-clip playback, the transport bar and the timeline ship together;
-  the mixer follows as its own feature; recording moves ahead of effects and automation because
-  the owner wants the microphone as a track source before effects and because recording reuses
-  the mixer's meters; loops and speed stay after effects. This amendment invalidates no spec or
-  plan: `specs/009-timeline-arranger/spec.md` is written to the new order and the order quoted in
-  earlier specs is historical.
+- Build order is fixed: project scaffold, navigation shell, tuner, metronome, audio spine,
+  transport and timeline, mixer, effects and automation, recording and loops and speed,
+  collaboration. A plan MUST NOT pull later work forward without amending this order here. The
+  tuner precedes the audio spine (amended 2026-09-26): it is the first feature to capture audio
+  and produce sound, and its input and output paths MUST obey Principle I so the audio spine can
+  grow from them. The metronome follows the tuner (amended 2026-09-29): it is the second feature
+  to produce sound and the first to schedule it sample-accurately, and its click path MUST obey
+  Principle I so the audio spine and the transport can grow from it.
 - Every feature instruments itself (amended 2026-10-08): every feature after the performance
   pipeline (feature 007) that adds a user-facing interaction or an engine path MUST add, in the
   same feature, its performance instrumentation: catalogue sections for its main interactions,
@@ -263,4 +259,4 @@ specifications technology-free and the test-first loop of Principle III intact.
 - `CLAUDE.md` is the runtime guidance file for agents working in this repository; it MUST point
   at this constitution and MUST NOT restate rules in a way that drifts from it.
 
-**Version**: 1.3.2 | **Ratified**: 2026-09-19 | **Last Amended**: 2026-10-13
+**Version**: 1.3.3 | **Ratified**: 2026-09-19 | **Last Amended**: 2026-10-17

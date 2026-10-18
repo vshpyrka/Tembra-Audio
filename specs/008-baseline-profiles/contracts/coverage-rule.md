@@ -6,7 +6,7 @@ One entry per line: `<label> <descriptor>`, separated by one or more spaces. Bla
 are ignored. `descriptor` is a JVM class descriptor exactly as the profile format writes it (`L` + slashed binary
 name + `;`). Labels are free identifiers used only in messages.
 
-Initial content (the startup path and the primary destinations the journeys visit):
+Content (the startup path and the primary destinations the journeys visit):
 
 ```
 # Startup path (app start, the activity, the navigation shell)
@@ -14,10 +14,14 @@ app.start    Laudio/tembra/android/TembraApplication;
 app.activity Laudio/tembra/android/MainActivity;
 shell        Laudio/tembra/ui/navigation/NavigationShellKt;
 # Primary destinations the journeys visit
-home         Laudio/tembra/ui/home/HomeScreenKt;
+timeline     Laudio/tembra/ui/timeline/TimelineScreenKt;
 tuner        Laudio/tembra/ui/tuner/TunerScreenKt;
 metronome    Laudio/tembra/ui/metronome/MetronomeScreenKt;
 ```
+
+Until 2026-10-17 the first destination line was `home         Laudio/tembra/ui/home/HomeScreenKt;`. Home was
+removed from the app that day and Timeline, the start destination, took its place on the startup path, so the
+`home` rule was replaced by the `timeline` rule and the profiles are regenerated with it (FR-012).
 
 A later feature that adds a primary destination the journeys visit appends a line and regenerates the profile in the
 same feature (spec FR-012). Extra coverage in the profile never fails the check.

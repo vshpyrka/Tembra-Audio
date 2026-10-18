@@ -33,7 +33,6 @@ class ShellViewModelGuardTest {
         Dispatchers.setMain(dispatcher)
         guard = FakePlaybackGuard(isPlaying = true)
         viewModel = ShellViewModel(guard)
-        viewModel.select(Destination.Timeline)
     }
 
     @AfterTest
@@ -84,14 +83,22 @@ class ShellViewModelGuardTest {
     }
 
     @Test
-    fun backFromTheTimelineToHomePromptsWhilePlaying() = runTest(dispatcher) {
+    fun backOnTheTimelineIsNotConsumedAndNeverPrompts() = runTest(dispatcher) {
+        assertFalse(viewModel.back())
+        runCurrent()
+        assertEquals(0, guard.asked)
+        assertEquals(Destination.Timeline, viewModel.uiState.value.selected)
+    }
+
+    @Test
+    fun backToTheTimelineNeverPrompts() = runTest(dispatcher) {
+        guard.isPlaying = false
+        viewModel.select(Destination.Tuner)
+        guard.isPlaying = true
         assertTrue(viewModel.back())
         runCurrent()
-        assertEquals(1, guard.asked)
+        assertEquals(0, guard.asked)
         assertEquals(Destination.Timeline, viewModel.uiState.value.selected)
-        guard.answerLeave(true)
-        runCurrent()
-        assertEquals(Destination.Home, viewModel.uiState.value.selected)
     }
 
     @Test

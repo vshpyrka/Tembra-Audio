@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0..1,0&amp;display=block" rel="stylesheet"/>
 <!-- Tailwind CSS v3 with forms & container queries -->
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <script>
@@ -52,6 +53,13 @@
     .gauge-needle-glow {
       filter: drop-shadow(0 0 8px rgba(184, 42, 103, 0.75));
     }
+    /* Navigation rail glyphs: Material Symbols Outlined, unfilled, 24 px */
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: 400; font-style: normal; line-height: 1; letter-spacing: normal;
+      text-transform: none; display: inline-block; white-space: nowrap; direction: ltr;
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
     .indicator-crosshair {
       filter: drop-shadow(0 0 6px rgba(157, 114, 249, 0.45));
     }
@@ -70,9 +78,6 @@
 <svg class="w-3 h-3 text-zinc-400 inline" fill="none" stroke="currentColor" viewbox="0 0 24 24">
 <path d="M12 4v1m0 14v1m8-8h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
 </svg>
-</div>
-<div class="flex items-center space-x-2">
-<span class="text-[10px] tracking-wider text-zinc-400">TEMBRA AUDIO <span class="text-zinc-600">/</span> <span class="text-brand-magenta font-semibold">TUNER</span></span>
 </div>
 <div class="flex items-center space-x-2 text-zinc-400">
 <!-- Wi-Fi Icon -->
@@ -97,53 +102,12 @@
 <div class="flex-1 flex overflow-hidden w-full relative" data-purpose="main-layout-area">
 <!-- BEGIN: LeftmostNavRail -->
 <!-- Matches https://lh3.googleusercontent.com/aida-public/AB6AXuB-L7LGmPHvUVQZUXV97PBVcVyxA42MgaXWnyPeN0VE8N-Fxm2bi8F0ZQq2N9P5kLP9YMODnocSGdSIc3P1RPL3c-CwZLgKE-qb-7y6JmzuyYIgnzn5YiRr8fG2OO39UHZZjvJm5wFtNX7orpBpPW3aQScdvxWYHGh7AxRE_IgjB4rCKKOBy8DjC50JLdMUbUsAdwric5aX_Gm1h3wuhgW0eSCSPu2PtHNNobjPXkt_8wnD314iyJVf2gJlLwuN8FgWgL4 Navigation Rail -->
-<nav class="w-16 bg-[#0c0c0f] border-r border-[#1e1e24] flex flex-col items-center justify-between py-2 shrink-0 z-10 select-none" data-purpose="left-navigation-rail">
-<div class="flex flex-col items-center space-y-2.5 w-full">
-<!-- Home -->
-<button class="flex flex-col items-center justify-center w-full py-1 text-zinc-400 hover:text-zinc-200 transition-colors" title="Home">
-<svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24">
-<path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke-linecap="round" stroke-linejoin="round"></path>
-</svg>
-<span class="text-[9px] font-medium tracking-tight">Home</span>
-</button>
-<!-- Timeline -->
-<button class="flex flex-col items-center justify-center w-full py-1 text-zinc-400 hover:text-zinc-200 transition-colors" title="Timeline">
-<svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24">
-<path d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" stroke-linecap="round" stroke-linejoin="round"></path>
-</svg>
-<span class="text-[9px] font-medium tracking-tight">Timeline</span>
-</button>
-<!-- Tuner (Active) -->
-<div class="flex flex-col items-center justify-center w-full px-1" title="Tuner">
-<div class="w-12 h-10 bg-brand-magenta rounded-xl flex flex-col items-center justify-center text-white shadow-md shadow-pink-950/40">
-<svg class="w-4 h-4 mb-0.5" fill="currentColor" viewbox="0 0 24 24">
-<path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"></path>
-</svg>
-<span class="text-[8.5px] font-bold tracking-tight">Tuner</span>
-</div>
-</div>
-<!-- Metronome -->
-<button class="flex flex-col items-center justify-center w-full py-1 text-zinc-400 hover:text-zinc-200 transition-colors" title="Metronome">
-<svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24">
-<path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"></path>
-</svg>
-<span class="text-[8.5px] font-medium tracking-tight">Metronome</span>
-</button>
-<!-- Projects -->
-<button class="flex flex-col items-center justify-center w-full py-1 text-zinc-400 hover:text-zinc-200 transition-colors" title="Projects">
-<svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24">
-<path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" stroke-linecap="round" stroke-linejoin="round"></path>
-</svg>
-<span class="text-[8.5px] font-medium tracking-tight">Projects</span>
-</button>
-</div>
-<!-- Profile (bottom) -->
-<button class="flex flex-col items-center justify-center w-full py-1 text-zinc-400 hover:text-zinc-200 transition-colors" title="Profile">
-<svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24">
-<path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-linecap="round" stroke-linejoin="round"></path>
-</svg>
-<span class="text-[8.5px] font-medium tracking-tight">Profile</span>
-</button>
+<nav class="w-24 bg-[#0e0e11] flex flex-col items-center gap-1 pt-11 shrink-0 z-10 select-none" aria-label="Primary" data-purpose="left-navigation-rail">
+<a class="w-14 h-14 rounded-full flex items-center justify-center text-[#cac4d4]" href="#" aria-label="Timeline"><span class="material-symbols-outlined text-[24px] leading-none">graphic_eq</span></a>
+<a class="w-14 h-14 rounded-full flex items-center justify-center bg-[#85145a] text-[#ff93c8]" href="#" aria-label="Tuner" aria-current="page"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true" style="display:block;flex:none" data-glyph="tuning_fork"><path d="M9.5 3V10.5A2.5 2.5 0 0 0 14.5 10.5V3"></path><path d="M12 13V21.5"></path><path d="M5.6 4.5A6 6 0 0 0 5.6 10.5"></path><path d="M18.4 4.5A6 6 0 0 1 18.4 10.5"></path></svg></a>
+<a class="w-14 h-14 rounded-full flex items-center justify-center text-[#cac4d4]" href="#" aria-label="Metronome"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true" style="display:block;flex:none" data-glyph="metronome"><path d="M15.45 6.05L14.6 3H9.4L4.4 21H19.6L16.56 10.05"></path><path d="M7.34 14H16.66"></path><path d="M12 14L18.6 4.2"></path></svg></a>
+<a class="w-14 h-14 rounded-full flex items-center justify-center text-[#cac4d4]" href="#" aria-label="Projects"><span class="material-symbols-outlined text-[24px] leading-none">folder</span></a>
+<a class="w-14 h-14 rounded-full flex items-center justify-center text-[#cac4d4]" href="#" aria-label="Profile"><span class="material-symbols-outlined text-[24px] leading-none">person</span></a>
 </nav>
 <!-- END: LeftmostNavRail -->
 <!-- BEGIN: ControlsPanel -->

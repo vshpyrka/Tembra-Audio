@@ -119,33 +119,26 @@
     };
   </script>
 <meta content="web_dashboard" name="shell-type">
-<!-- STATUS BAR AREA (plain) + APP HEADER -->
-<header class="absolute left-0 top-0 w-[883px] h-[109px] bg-surface-container-lowest flex flex-col justify-end pl-margin pb-[10px]">
-  <span class="font-label-sm text-[11px] leading-[14px] tracking-wide font-semibold text-primary uppercase">TEMBRA AUDIO</span>
-  <h1 class="font-headline-md text-[20px] leading-[24px] text-on-surface font-medium">Metronome</h1>
-</header>
-
-<!-- NAVIGATION RAIL -->
-<aside class="absolute left-0 top-[109px] w-16 h-[743px] bg-surface-container-lowest flex flex-col items-center pt-[7px]">
-  <nav class="w-full flex flex-col items-center gap-[2px]">
-    <a class="w-[58px] h-12 flex flex-col items-center justify-center rounded-xl text-on-surface" href="#"><span class="material-symbols-outlined !text-[24px] leading-6">home</span><span class="font-label-md text-[11px] leading-[14px] font-medium">Home</span></a>
-    <a class="w-[58px] h-12 flex flex-col items-center justify-center rounded-xl text-on-surface" href="#"><span class="material-symbols-outlined !text-[24px] leading-6">graphic_eq</span><span class="font-label-md text-[11px] leading-[14px] font-medium">Timeline</span></a>
-    <a class="w-[58px] h-12 flex flex-col items-center justify-center rounded-xl text-on-surface" href="#"><span class="material-symbols-outlined !text-[24px] leading-6" style="font-variation-settings:'FILL' 1">music_note</span><span class="font-label-md text-[11px] leading-[14px] font-medium">Tuner</span></a>
-    <a class="w-[58px] h-12 flex flex-col items-center justify-center rounded-xl bg-secondary-container text-secondary" href="#" aria-current="page"><span class="material-symbols-outlined !text-[24px] leading-6">av_timer</span><span class="font-label-md text-[11px] leading-[14px] font-medium">Metronome</span></a>
-    <a class="w-[58px] h-12 flex flex-col items-center justify-center rounded-xl text-on-surface" href="#"><span class="material-symbols-outlined !text-[24px] leading-6">folder</span><span class="font-label-md text-[11px] leading-[14px] font-medium">Projects</span></a>
-    <a class="w-[58px] h-12 flex flex-col items-center justify-center rounded-xl text-on-surface" href="#"><span class="material-symbols-outlined !text-[24px] leading-6">person</span><span class="font-label-md text-[11px] leading-[14px] font-medium">Profile</span></a>
+<!-- NAVIGATION RAIL (M3 Expressive WideNavigationRail, collapsed): icon-only, Metronome selected -->
+<aside class="absolute left-0 top-0 w-24 h-[852px] bg-surface-container-lowest flex flex-col items-center pt-[97px]">
+  <nav class="w-full flex flex-col items-center gap-1" aria-label="Primary" data-purpose="wide-navigation-rail" data-active-classes="rounded-full bg-secondary-container text-on-secondary-container">
+    <a class="w-14 h-14 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" href="#" aria-label="Timeline"><span class="material-symbols-outlined !text-[24px] leading-none">graphic_eq</span></a>
+    <a class="w-14 h-14 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" href="#" aria-label="Tuner"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true" style="display:block;flex:none" data-glyph="tuning_fork"><path d="M9.5 3V10.5A2.5 2.5 0 0 0 14.5 10.5V3"></path><path d="M12 13V21.5"></path><path d="M5.6 4.5A6 6 0 0 0 5.6 10.5"></path><path d="M18.4 4.5A6 6 0 0 1 18.4 10.5"></path></svg></a>
+    <a class="w-14 h-14 flex-shrink-0 flex items-center justify-center rounded-full bg-secondary-container text-on-secondary-container" href="#" aria-label="Metronome" aria-current="page"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true" style="display:block;flex:none" data-glyph="metronome"><path d="M15.45 6.05L14.6 3H9.4L4.4 21H19.6L16.56 10.05"></path><path d="M7.34 14H16.66"></path><path d="M12 14L18.6 4.2"></path></svg></a>
+    <a class="w-14 h-14 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" href="#" aria-label="Projects"><span class="material-symbols-outlined !text-[24px] leading-none">folder</span></a>
+    <a class="w-14 h-14 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" href="#" aria-label="Profile"><span class="material-symbols-outlined !text-[24px] leading-none">person</span></a>
   </nav>
 </aside>
 
 <!-- TABLETOP LAYOUT: upper row above the fold (y=426), lower row below it -->
-<main class="absolute left-16 top-[109px] w-[819px] h-[743px] bg-surface">
+<main class="absolute left-24 top-[53px] w-[787px] h-[799px] bg-surface">
 
   <!-- Fold guide (design annotation) -->
-  <div aria-hidden="true" class="absolute left-0 right-0 top-[316.5px] border-t border-dashed border-outline-variant/40 pointer-events-none"></div>
+  <div aria-hidden="true" class="absolute left-0 right-0 top-[372.5px] border-t border-dashed border-outline-variant/40 pointer-events-none"></div>
 
-  <!-- UPPER ROW: what the musician watches (y 118-414) -->
+  <!-- UPPER ROW: what the musician watches (y 62-414) -->
   <!-- Dial card -->
-  <section class="absolute left-[15px] top-[9px] w-[379px] h-[296px] relative-none overflow-hidden rounded-xl border border-outline-variant/40"
+  <section class="absolute left-[15px] top-[9px] w-[363px] h-[352px] relative-none overflow-hidden rounded-xl border border-outline-variant/40"
        style="background: radial-gradient(circle at 50% 50%, rgba(167,139,250,0.08) 0%, rgba(30,27,46,0.4) 40%, rgba(19,19,22,0.95) 100%), #1b1b1e;">
     <div class="absolute -top-24 -right-24 w-80 h-80 rounded-full bg-secondary-container/10 blur-3xl pointer-events-none"></div>
     <div class="absolute -bottom-24 -left-24 w-80 h-80 rounded-full bg-primary-container/10 blur-3xl pointer-events-none"></div>
@@ -173,7 +166,7 @@
   <!-- Accent card (beat 1 lit) -->
 
   <!-- Accent card: 6/8, beats 1 and 4 accented -->
-  <section class="absolute left-[406px] top-[9px] w-[379px] h-[296px] bg-surface-container-low rounded-xl px-2 flex items-center">
+  <section class="absolute left-[390px] top-[9px] w-[363px] h-[352px] bg-surface-container-low rounded-xl px-2 flex items-center">
     <div class="w-full grid grid-cols-6 gap-[9px]">
       <div class="flex flex-col items-center gap-1.5 p-1.5 rounded-lg bg-surface-container-lowest">
         <div class="w-full h-[157px] bg-surface-container rounded-md flex items-end p-1 shadow-[inset_0_0_10px_4px_rgba(255,175,211,0.45),0_0_8px_rgba(255,175,211,0.25)]"><div class="w-full h-[95%] bg-secondary rounded-sm shadow-[0_-4px_12px_rgba(255,175,211,0.6)]"></div></div>
@@ -203,7 +196,7 @@
   </section>
 
   <!-- LOWER ROW: one Metronome Controls card spanning the width -->
-  <section class="absolute left-[15px] top-[322px] w-[770px] h-[366px] bg-surface-container-low rounded-xl">
+  <section class="absolute left-[15px] top-[378px] w-[738px] h-[366px] bg-surface-container-low rounded-xl">
     <div class="absolute left-[11px] right-[11px] top-[44px] text-center font-label-md text-[11px] leading-[16px] font-semibold tracking-[0.04em] uppercase text-on-surface-variant">METRONOME CONTROLS</div>
     <div class="absolute left-[11px] right-[11px] top-[71px] border-t border-outline-variant/30"></div>
     <!-- meter, subdivision, sound -->

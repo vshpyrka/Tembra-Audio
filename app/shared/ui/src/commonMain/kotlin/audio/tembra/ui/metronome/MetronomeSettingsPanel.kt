@@ -52,6 +52,7 @@ internal fun MetronomeSettingsPanel(
     telemetry: BeatTelemetry,
     layout: MetronomeLayout,
     modifier: Modifier = Modifier,
+    pocketCells: Boolean = false,
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(TembraTheme.spacing.md)) {
         when (layout) {
@@ -61,7 +62,7 @@ internal fun MetronomeSettingsPanel(
                 SoundPicker(state, callbacks, ClickSoundPickerLayout.Dropdown, Modifier.align(Alignment.CenterHorizontally))
             }
             MetronomeLayout.Pocket -> {
-                PocketSettingsCard(state = state, callbacks = callbacks)
+                PocketSettingsCard(state = state, callbacks = callbacks, telemetry = telemetry, cells = pocketCells)
                 SoundPicker(state, callbacks, ClickSoundPickerLayout.Dropdown, Modifier.align(Alignment.CenterHorizontally))
             }
             MetronomeLayout.Landscape -> {
@@ -135,11 +136,11 @@ private fun LandscapeBarShapeCard(state: MetronomeUiState, callbacks: MetronomeC
 }
 
 /**
- * The iPhone Duo experiment's settings sheet card: [BarShapeCard] without the accent cells, which stay on the screen
- * over the dial.
+ * The Pocket form's settings sheet card: [BarShapeCard] without the accent cells, which stay on the screen over the
+ * dial, unless the screen is too short to show them ([cells]: the shortest Pocket screens), when they sit here.
  */
 @Composable
-private fun PocketSettingsCard(state: MetronomeUiState, callbacks: MetronomeCallbacks) {
+private fun PocketSettingsCard(state: MetronomeUiState, callbacks: MetronomeCallbacks, telemetry: BeatTelemetry, cells: Boolean) {
     val settings = state.settings
     val spacing = TembraTheme.spacing
     SectionCard(gap = spacing.sm, modifier = barShapeSemantics()) {
@@ -152,6 +153,16 @@ private fun PocketSettingsCard(state: MetronomeUiState, callbacks: MetronomeCall
             TimeSignatureMenu(selected = settings.signature, onSelect = callbacks.onSignature)
             Spacer(Modifier.weight(1f))
             SubdivisionTiles(selected = settings.subdivision, unit = settings.signature.unit, onSelect = callbacks.onSubdivision)
+        }
+        if (cells) {
+            AccentCells(
+                pattern = settings.pattern,
+                running = state.running,
+                currentBeat = state.currentBeat,
+                telemetry = telemetry,
+                onCycle = callbacks.onCycleBeat,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
         StyleRow(selected = settings.style, onSelect = callbacks.onStyle, modifier = Modifier.fillMaxWidth())
     }

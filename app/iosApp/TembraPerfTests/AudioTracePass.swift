@@ -11,7 +11,7 @@ final class AudioTracePass: XCTestCase {
         continueAfterFailure = false
         let app = XCUIApplication()
         app.activate()
-        app.waitForAnchor(Anchors.homeRoot)
+        app.waitForAnchor(Anchors.startRoot)
         StressJourney().run(app)
     }
 }

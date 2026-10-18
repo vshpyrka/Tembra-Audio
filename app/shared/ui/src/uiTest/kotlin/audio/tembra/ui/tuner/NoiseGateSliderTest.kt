@@ -433,6 +433,23 @@ class NoiseGateSliderTest {
         assertEquals(listOf(2, 1, 0), reported.map { it.step })
     }
 
+    /** Up and Down step too (spec FR-018: every arrow key), though Material 1.5 moves a horizontal slider with Left and Right only. */
+    @Test
+    fun upAndDownMoveTheHandleOneStepAndSettleEachTime() = runComposeUiTest {
+        val gate = setSlider(NoiseGate.ofStep(1))
+        if (!enterKeyboardMode(inputModeManager)) return@runComposeUiTest
+        val slider = onNodeWithTag("tuner.noiseGate.slider")
+        slider.requestFocus()
+        slider.performKeyInput { pressKey(Key.DirectionUp) }
+        waitForIdle()
+        assertEquals(NoiseGate.ofStep(2), gate())
+        assertEquals(1, settled, "a key press must end its move")
+        slider.performKeyInput { pressKey(Key.DirectionDown) }
+        waitForIdle()
+        assertEquals(NoiseGate.ofStep(1), gate())
+        assertEquals(listOf(2, 1), reported.map { it.step })
+    }
+
     @Test
     fun theArrowKeysStopAtTheLoudEnd() = runComposeUiTest {
         val gate = setSlider(NoiseGate.ofStep(NoiseGate.STEPS - 1))

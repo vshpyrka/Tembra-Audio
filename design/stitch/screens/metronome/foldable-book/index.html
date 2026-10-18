@@ -123,29 +123,22 @@
 </head>
 <body class="bg-surface font-body-md text-on-surface select-none overflow-hidden relative" style="width:852px;height:883px">
 
-<!-- APP HEADER (top 24 px = status-bar inset, left plain) -->
-<header class="absolute left-0 top-0 w-[852px] h-[92px] bg-surface-container-lowest flex flex-col pt-[45px] px-margin">
-  <span class="font-label-sm text-[11px] leading-[14px] tracking-wide font-semibold text-primary uppercase">TEMBRA AUDIO</span>
-  <h1 class="font-headline-md text-[18px] leading-[24px] text-on-surface font-medium">Metronome</h1>
-</header>
-
-<!-- NAVIGATION RAIL -->
-<aside class="absolute left-0 top-[92px] w-16 h-[791px] bg-surface-container-lowest flex flex-col items-center pt-[5px]">
-  <nav class="w-full flex flex-col items-center gap-[3px]">
-    <a class="w-[58px] h-12 flex flex-col items-center justify-center rounded-xl text-on-surface" href="#"><span class="material-symbols-outlined !text-[24px] leading-6">home</span><span class="font-label-md text-[11px] leading-[14px] font-medium">Home</span></a>
-    <a class="w-[58px] h-12 flex flex-col items-center justify-center rounded-xl text-on-surface" href="#"><span class="material-symbols-outlined !text-[24px] leading-6">graphic_eq</span><span class="font-label-md text-[11px] leading-[14px] font-medium">Timeline</span></a>
-    <a class="w-[58px] h-12 flex flex-col items-center justify-center rounded-xl text-on-surface" href="#"><span class="material-symbols-outlined !text-[24px] leading-6" style="font-variation-settings:'FILL' 1">music_note</span><span class="font-label-md text-[11px] leading-[14px] font-medium">Tuner</span></a>
-    <a class="w-[58px] h-12 flex flex-col items-center justify-center rounded-xl bg-secondary-container text-secondary" href="#" aria-current="page"><span class="material-symbols-outlined !text-[24px] leading-6">av_timer</span><span class="font-label-md text-[11px] leading-[14px] font-medium">Metronome</span></a>
-    <a class="w-[58px] h-12 flex flex-col items-center justify-center rounded-xl text-on-surface" href="#"><span class="material-symbols-outlined !text-[24px] leading-6">folder</span><span class="font-label-md text-[11px] leading-[14px] font-medium">Projects</span></a>
-    <a class="w-[58px] h-12 flex flex-col items-center justify-center rounded-xl text-on-surface" href="#"><span class="material-symbols-outlined !text-[24px] leading-6">person</span><span class="font-label-md text-[11px] leading-[14px] font-medium">Profile</span></a>
+<!-- NAVIGATION RAIL (M3 Expressive WideNavigationRail, collapsed): icon-only, Metronome selected -->
+<aside class="absolute left-0 top-0 w-24 h-[883px] bg-surface-container-lowest flex flex-col items-center pt-[80px]">
+  <nav class="w-full flex flex-col items-center gap-1" aria-label="Primary" data-purpose="wide-navigation-rail" data-active-classes="rounded-full bg-secondary-container text-on-secondary-container">
+    <a class="w-14 h-14 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" href="#" aria-label="Timeline"><span class="material-symbols-outlined !text-[24px] leading-none">graphic_eq</span></a>
+    <a class="w-14 h-14 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" href="#" aria-label="Tuner"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true" style="display:block;flex:none" data-glyph="tuning_fork"><path d="M9.5 3V10.5A2.5 2.5 0 0 0 14.5 10.5V3"></path><path d="M12 13V21.5"></path><path d="M5.6 4.5A6 6 0 0 0 5.6 10.5"></path><path d="M18.4 4.5A6 6 0 0 1 18.4 10.5"></path></svg></a>
+    <a class="w-14 h-14 flex-shrink-0 flex items-center justify-center rounded-full bg-secondary-container text-on-secondary-container" href="#" aria-label="Metronome" aria-current="page"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true" style="display:block;flex:none" data-glyph="metronome"><path d="M15.45 6.05L14.6 3H9.4L4.4 21H19.6L16.56 10.05"></path><path d="M7.34 14H16.66"></path><path d="M12 14L18.6 4.2"></path></svg></a>
+    <a class="w-14 h-14 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" href="#" aria-label="Projects"><span class="material-symbols-outlined !text-[24px] leading-none">folder</span></a>
+    <a class="w-14 h-14 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" href="#" aria-label="Profile"><span class="material-symbols-outlined !text-[24px] leading-none">person</span></a>
   </nav>
 </aside>
 
-<!-- BOOK POSTURE: settings column left of the hinge (80-414), dial + tap right of it (438-836) -->
-<main class="absolute left-16 top-[92px] w-[788px] h-[791px] bg-surface">
+<!-- BOOK POSTURE: settings column left of the hinge (112-414), dial + tap right of it (438-836) -->
+<main class="absolute left-24 top-[36px] w-[756px] h-[847px] bg-surface">
 
 <!-- SETTINGS COLUMN (left half) -->
-<section class="absolute left-4 top-4 w-[334px] flex flex-col gap-space-md">
+<section class="absolute left-4 top-4 w-[302px] flex flex-col gap-space-md">
 
   <!-- TIME SIGNATURE -->
   <div class="h-[79px] bg-surface-container-low rounded-xl px-space-sm pt-[9px] flex flex-col gap-[10px]">
@@ -177,9 +170,9 @@
     <div class="flex items-center justify-between pl-1.5 mt-[13px]">
       <span class="font-label-sm text-[10px] leading-[14px] text-outline uppercase font-medium tracking-wider">STYLE</span>
       <div class="flex items-center gap-1.5">
-        <button class="h-7 px-2.5 rounded-full bg-secondary-container text-secondary font-label-lg text-[11px] tracking-[0.02em] font-normal">Standard</button>
-        <button class="h-7 px-2.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-lg text-[11px] tracking-[0.02em] font-normal">Downbeat</button>
-        <button class="h-7 px-2.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-lg text-[11px] tracking-[0.02em] font-normal">Syncopated</button>
+        <button class="h-7 px-2 rounded-full bg-secondary-container text-secondary font-label-lg text-[11px] tracking-[0.02em] font-normal">Standard</button>
+        <button class="h-7 px-2 rounded-full bg-surface-container-high text-on-surface-variant font-label-lg text-[11px] tracking-[0.02em] font-normal">Downbeat</button>
+        <button class="h-7 px-2 rounded-full bg-surface-container-high text-on-surface-variant font-label-lg text-[11px] tracking-[0.02em] font-normal">Syncopated</button>
       </div>
     </div>
   </div>
@@ -198,12 +191,12 @@
 </section>
 
 <!-- DIAL COLUMN (right half) -->
-<section class="absolute left-[374px] top-4 w-[398px] flex flex-col gap-[14px]">
-  <div class="h-[600px] relative overflow-hidden rounded-[28px] border border-outline-variant/40"
+<section class="absolute left-[342px] top-4 w-[398px] flex flex-col gap-[14px]">
+  <div class="h-[656px] relative overflow-hidden rounded-[28px] border border-outline-variant/40"
        style="background: radial-gradient(circle at 50% 46%, rgba(167,139,250,0.06) 0%, rgba(30,27,46,0.45) 45%, rgba(19,19,22,0.9) 100%), #1b1b1e;">
     <div class="absolute inset-0 bg-gradient-to-b from-primary/10 via-transparent to-secondary/10 pointer-events-none"></div>
 
-    <div class="absolute left-1/2 top-[275px] -translate-x-1/2 -translate-y-1/2 w-[379px] h-[379px]">
+    <div class="absolute left-1/2 top-[303px] -translate-x-1/2 -translate-y-1/2 w-[379px] h-[379px]">
       <svg class="absolute inset-0 w-full h-full" viewBox="0 0 240 240">
         <defs><linearGradient id="tempoArc" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#d9b2f2"/><stop offset="55%" stop-color="#d8a3e8"/><stop offset="100%" stop-color="#ab88ff"/></linearGradient></defs>
         <g transform="rotate(-90 120 120)">
@@ -224,7 +217,7 @@
     </div>
 
     <!-- 40-240 slider -->
-    <div class="absolute left-3 right-3 top-[559px] flex items-center gap-4">
+    <div class="absolute left-3 right-3 top-[615px] flex items-center gap-4">
       <span class="font-label-md text-label-md font-normal text-outline">40</span>
       <div class="relative flex-1 h-1.5 rounded-full bg-surface-container-highest">
         <div class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 left-[41%] w-4 h-4 rounded-full bg-primary"></div>

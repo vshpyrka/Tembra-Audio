@@ -92,6 +92,19 @@ Rotated to landscape the closed Duo is 678 dp wide, so it takes the Landscape fo
 ModalBottomSheet (surfaceContainerLowest) while open, closed by the scrim or a drag: MetronomeSettingsPanel(layout = Pocket),
 scrolling: the bar-shape card without the cells (TimeSignatureMenu + SubdivisionTiles, StyleRow), then ClickSoundPicker(Dropdown)   "metronome.settings"
 
+Pocket for short screens (2026-10-16, owner's request after the tablet window-size survey; not yet in spec.md): on any
+device, MetronomeScreen measures its own content height (BoxWithConstraints, after the shell's bar or rail, the status
+bar and a desktop caption) and takes Pocket in place of Stacked under `MetronomeLayout.PocketBelow` (506 dp): a
+772 × 511 dp desktop window had 407 dp under the shell's former top bar and showed 14 dp of the Stacked dial; it has
+463 dp without the bar. The line was 450 dp until the bar was removed (2026-10-16) and moved by the bar's 56 dp, so
+the same windows take Pocket; Stacked itself fits whole from 618 dp at 4/4 and scrolls under that. Pocket then steps down with its height (`pocketTier`,
+weighed from the parts' tokens): cells + ring (ring ≥ 160 dp) → cells + TempoRow ("−", the readout with the marking
+beside it, "+", the settings button; the dial's slider node, tagged "metronome.tempoRow", steppers ".down"/".up") +
+slider → TempoRow + slider → TempoRow alone; when the cells leave the screen the sheet's card holds them. Tap and play
+keep their pinned row in every tier. Tests: MetronomeLayoutTest (the rule), MetronomeScreenTest `pocketIn…` (708 × 407,
+560 × 312, 420 × 212 dp hosts, the content areas of 772 × 511, 560 × 480 and 420 × 380 dp windows under the former
+top bar, kept as the tiers' short cases).
+
 Wide (840 dp or wider and 480 dp or taller):
 Row(testTag "screen.metronome", padding pageMargin, gap md)
 ├── Column(width max(1/3, wideSettingsMinWidth), verticalScroll): MetronomeSettingsPanel with ClickSoundPicker(layout = Tiles) in a "CLICK TIMBRE" card

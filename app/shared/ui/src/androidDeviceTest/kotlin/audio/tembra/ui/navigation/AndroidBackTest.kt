@@ -12,19 +12,19 @@ import org.junit.Rule
 import org.junit.Test
 import kotlin.test.assertFailsWith
 
-/** The Android system back action returns to Home, then leaves the app (spec FR-010). */
+/** The Android system back action returns to Timeline, the start destination, then leaves the app (spec FR-010). */
 class AndroidBackTest {
 
     @get:Rule
     val rule = createAndroidComposeRule<ComponentActivity>()
 
     @Test
-    fun backReturnsToHomeThenFinishesTheActivity() {
+    fun backReturnsToTimelineThenFinishesTheActivity() {
         rule.setContent { TembraTheme { NavigationShell(viewModel = ShellViewModel(), layoutMode = LayoutMode.BottomBar) } }
         rule.onNodeWithTag("nav.item.projects").performClick()
         rule.onNodeWithTag("screen.projects").assertIsDisplayed()
         Espresso.pressBack()
-        rule.onNodeWithTag("screen.home").assertIsDisplayed()
+        rule.onNodeWithTag("screen.timeline").assertIsDisplayed()
         assertFailsWith<NoActivityResumedException> { Espresso.pressBack() }
     }
 }

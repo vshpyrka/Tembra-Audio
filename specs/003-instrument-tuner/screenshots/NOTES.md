@@ -212,3 +212,190 @@ code added since was read again against the skills it was written under, with th
    about two seconds, re-arm when the toggle flips), compare against a second tuner app.
 3. quickstart §6 on the physical iPhone (the real prompt) and §7 item 5 (a call, another app's audio, unplugging headphones).
 4. quickstart §9: TalkBack / VoiceOver announcements and a mouse hover pass on Android desktop mode.
+
+## Recaptured 2026-10-16: the shell has no top bar
+
+The navigation shell's top bar was removed on 2026-10-16 (spec 002 FR-007 reversed at the owner's request), so every
+capture here that showed the shell was retaken from that day's build, under the same file name, on the same target
+and in the same state. Content now starts right under the status bar (56 dp / pt higher). Other differences come from
+features that landed after the original captures and are named below. `*-before*` images and captures from targets
+that no longer exist were kept as they were. Android: Pixel 6 Pro `19021FDEE001AH`, the debug APK (no `tembra.perf`
+property), `adb exec-out screencap`, app state set with the debug launch extras and UiAutomator taps. iOS: the Debug app
+built with the Xcode 27.1 SDK on the iPhone 17 / iPad Pro 13" (M5) (iOS 26.5) / iPhone Duo (iOS 27.1) simulators,
+`simctl io screenshot`, app state set with the debug launch arguments, the app's stored preferences (written with the
+app stopped, backed up and restored) and real mouse clicks; rotation through the Simulator menu or Device Hub.
+
+### Android, Pixel 6 Pro (26 retaken, 1 left)
+
+Left: `android-landscape-autoListen-before.png` (a "before" capture, by instruction).
+
+| File | How | Differs beyond the top bar |
+|---|---|---|
+| `android-compact-autoListen-<id>.png` × 14 | portrait, `--es tembra.tuner.testSignal <id>`, 3 s | noise gate at the card's foot, text-only selector; readings identical (A1 55.0, A2 112.6, B1 61.7, B3 246.9, C2 65.4, D3 146.4, E2 81.5/80.3/82.4/83.4, E4 329.6, E5 659.3, G3 196.0, 2 kHz "Listening") |
+| `android-compact-autoListen.png` | portrait, `e2-in-tune` (the old file showed the TEST SIGNAL pill and E2 too) | same as the matrix |
+| `android-compact-autoListen-largefont.png` | font 2.0, `e2-in-tune` | same; the readout row is still cut at the card edges (pre-existing) |
+| `android-compact-byEar.png`, `-byEar-largefont.png` | By Ear, guitar, 6-String, Standard | text-only selector |
+| `android-compact-denied.png` | `pm revoke … RECORD_AUDIO`, Tuner in Auto Listen, "Don't allow" in the system prompt; granted again afterwards | text-only selector |
+| `android-expanded-autoListen.png`, `-e2-flat-20.png` | landscape, density 380, `e2-in-tune` / `e2-flat-20` | the meter card is now whole (it was cut and scrolled), noise gate |
+| `android-expanded-byEar.png` | landscape, density 380, By Ear | **yes**: square cards in a centred 3 × 2 grid (feature 005 D2) instead of the full-width cards |
+| `android-landscape-autoListen.png` | rotation 1, `e2-in-tune` | noise gate in the column, larger meter |
+| `android-landscape-byEar.png`, `-byEar-guitar7.png`, `-byEar-cello.png` | rotation 1, By Ear; 7-String; Cello | text-only selector |
+
+### iOS simulators (28 retaken, 1 left (`ios-landscape-byEar-before.png`, as asked))
+
+All Auto Listen captures were launched with `--tembra-tuner-noise-gate=off`. `ios-compact-autoListen` (and its large-text
+twin) was retaken with the test signal `e2-in-tune`, as the existing image shows (TEST SIGNAL pill), although the notes
+call it a microphone capture. The 14 state-matrix captures follow `tools/capture-tuner-states.sh` (5 s settle) with the
+gate argument added; every reading matches the table in NOTES.md.
+
+Differs beyond the top bar (all from later features, not from the top bar):
+- every Auto Listen capture (compact, expanded, landscape, large text, the 14 matrix ones) now has the **noise gate
+  control** under the meter / in the settings column (feature 006 came later);
+- instrument chips are text only (icons removed after feature 003);
+- `ios-compact-denied`: the old image was from before Phase 11 (6-String / 7-String in the selector bar); now none;
+- `ios-expanded-byEar`, `-guitar7`, `-cello`: the D2 square, centred card grid (feature 005) instead of full-width rows;
+- `ios-landscape-byEar*`, `ios-expanded-byEar*`: the old images carry keyboard focus rings (they were driven from the
+  keyboard); the new ones were set through stored preferences, so no ring.
+
+### Every remaining capture retaken, 2026-10-16 (the owner's request: update all recorded screenshots)
+
+The files kept above as records of past states (`*-before*`, `stacked-cut`, `bar-insets`, the 005 `-r1` set), the
+live-sound captures, the notification crop and the Device Hub window shot were retaken too, in the original
+configuration with today's build, so no image here shows the removed top bar any more. Where a file recorded a
+defect or a first build, it now shows today's app in the same configuration, and the caption written for it above
+describes the original image, which stays in git: `git show 42d8e92:<path>` (main at the start of this work).
+The live captures used quickstart §5's 196 Hz tone with four harmonics from the MacBook's loudspeaker, as the
+originals did; the output volume was put back to 31 % after every run.
+
+#### Android (Pixel 6 Pro, fold emulator): `android-landscape-autoListen-before.png`
+
+**How.** Pixel 6 Pro, `wm user-rotation lock 1` (landscape, the same side as the old file: rail on the left). Tuner tab
+from the stored preferences: guitar, Auto Listen, gate Off. No test signal: its own microphone in the quiet room, as
+the old file's "MIC ACTIVE" and "Listening" show. Under the speaker lock, 4 s of settling, then three captures 2 s
+apart. All three are the same; the second one is used. Then `wm user-rotation lock 0` for the portrait work and
+`free` at the end.
+
+**What it shows now.** The Phase 10 landscape layout under the status bar, with no top bar. On the left, the TUNER
+CONTROLS card: the MIC ACTIVE pill, Guitar / Cello, Auto Listen / By Ear, and NOISE GATE at Off with no fill (the
+room is under −78 dB). On the right, the whole meter card: IN TUNE pill, "Listening", the gauge with the needle at 0,
+and Flat / Sharp.
+
+**What the old one recorded and what differs.** The old file showed the defect that Phase 10 fixed. A sideways phone
+got the wide layout in a window too short for it: one row of selectors (Guitar / Cello with icons, MIC ACTIVE,
+6-String / 7-String, Auto Listen / By Ear) under the 56 dp top bar, and the meter card cut through the gauge (it
+scrolled). Today's build shows the fixed landscape layout instead, with nothing cut. Other differences: the noise
+gate control (feature 006), the instrument selector with text only, and no string count in Auto Listen (Phase 11).
+The status bar time is 2:12 instead of 11:58.
+
+#### iOS (iPhone 17, iPhone Duo simulators): 1 retaken, 0 left
+
+| File | How | Shows now | Differs from the old one |
+|---|---|---|---|
+| `ios-landscape-byEar-before.png` (2622 × 1206) | iPhone 17 rotated Landscape Left (Simulator menu), prefs guitar / 6-String / `guitar6-standard` / `byEar` / loop on, launched with `--tembra-tuner-noise-gate=off` (opens the Tuner; not stored) | the settings column (TUNER CONTROLS: Guitar / Cello, Auto Listen / By Ear, 6- / 7-String, preset picker, loop toggle) beside six whole cards in two rows of three | The old image recorded the build before the landscape layout (top bar, one selector row across the top, the preset and loop card, the second row of cards cut off). The new one is today's landscape By Ear, pixel-identical to today's `ios-landscape-byEar.png`, so the "before" state is no longer shown. Also gone: the black Dynamic Island pill the old capture showed at the left edge, the instrument icons and the keyboard-focus tint on 6-String. |
+
+## Recaptured 2026-10-17: icon-only navigation, no Home (Android)
+
+Home was removed on 2026-10-17 and the navigation items show icons only (Material 3 Expressive bottom bar, active item
+on a lavender pill, on compact windows; a collapsed 96 dp rail, active item on a circle, on wide ones). Every Android
+capture here was retaken under the same name, on the same target and in the same state. Target: Pixel 6 Pro
+`19021FDEE001AH` (Android 17), the debug APK of that morning (`:androidApp:assembleDebug`, no `tembra.perf`),
+installed fresh (the app had been uninstalled from the phone), RECORD_AUDIO and POST_NOTIFICATIONS granted with
+`pm grant`; `adb exec-out screencap -p`; state set with the debug launch extras (`tembra.tuner.testSignal`,
+`tembra.tuner.noiseGate`) and UiAutomator taps on the resource ids (`tuner.mode.byEar`, `tuner.strings.7`,
+`tuner.instrument.cello`, …). A plain launch now opens Timeline, so screens without a test signal were reached by
+tapping Tuner. Bands as before: compact = portrait, landscape = `wm user-rotation lock 1` (891 × 411 dp), expanded =
+landscape at `wm density 380`; font 2.0 with `settings put system font_scale`. Everything was put back (rotation lock
+0, density reset, font 1.0; guitar, 6-String, Auto Listen, gate Off).
+
+Difference common to the compact captures: only the bar (icons, no labels, no Home); the content is pixel-identical to
+the 2026-10-16 images (1.4 % of the frame differs, all of it in the bar), readings included. Common to the landscape and
+expanded ones: the collapsed rail is wider than the old labelled one, so the content starts further right and the
+cards are a little narrower; nothing inside them reflows.
+
+### Android, Pixel 6 Pro (27 retaken, 0 left)
+
+| File | How | Differs beyond the navigation |
+|---|---|---|
+| `android-compact-autoListen-<id>.png` × 14 | retaken: portrait, `--es tembra.tuner.testSignal <id>`, 3 s (the order of `tools/capture-tuner-states.sh`) | no: every reading identical (A1 55.0, A2 112.6, B1 61.7, B3 246.9, C2 65.4, D3 146.4, E2 81.5/80.3/82.4/83.4, E4 329.6, E5 659.3, G3 196.0, 2 kHz "Listening") |
+| `android-compact-autoListen.png` | retaken: portrait, `e2-in-tune` | no |
+| `android-compact-autoListen-largefont.png` | retaken: font 2.0, `e2-in-tune` | the bar no longer grows with the font (no two-line labels), so the meter card is taller and the gauge sits a little lower; the readout row is still cut at the card's edges (pre-existing) |
+| `android-compact-byEar.png` | retaken: Timeline → Tuner, By Ear tapped; guitar, 6-String, Standard, loop on | no |
+| `android-compact-byEar-largefont.png` | retaken: the same at font 2.0 | the taller content shows the top of the third row of cards (II, I) above the bar |
+| `android-compact-denied.png` | retaken: `pm revoke … RECORD_AUDIO`, Tuner tapped (Auto Listen), "Don't allow" in the system prompt; granted again afterwards | no |
+| `android-landscape-autoListen.png` | retaken: rotation 1, `e2-in-tune` | settings column and meter card start further right (wider rail) |
+| `android-landscape-byEar.png`, `-byEar-guitar7.png`, `-byEar-cello.png` | retaken: rotation 1, By Ear; then 7-String; then 6-String and Cello (Guitar again afterwards) | as above; the 7-String preset name is ellipsised one word earlier ("Standard 7-String (B1 E2 …") |
+| `android-landscape-autoListen-before.png` | retaken: rotation 1, Tuner tapped from Timeline, guitar, Auto Listen, gate Off, no test signal, the phone's own microphone in the quiet room; three captures 2 s apart under the speaker lock, the second kept (all three alike) | as above; MIC ACTIVE, "Listening", needle at rest, no fill. Like the 2026-10-16 retake it shows today's fixed landscape layout, not the Phase 10 defect its caption describes |
+| `android-expanded-autoListen.png`, `-e2-flat-20.png` | retaken: landscape, density 380, `e2-in-tune` / `e2-flat-20` | no |
+| `android-expanded-byEar.png` | retaken: landscape, density 380, By Ear | no |
+
+## Recaptured 2026-10-17: Home removed, icon-only navigation (iOS)
+
+All 29 iOS captures were retaken under the same file names, on the same simulators (iPhone 17 and iPad Pro 13-inch
+(M5), iOS 26.5) and in the same states. The builds were Debug, made from the worktree `nav-icons-only` with the Xcode
+27.1 SDK. The ten captures with a rail (expanded and landscape) were taken a second time from the build with 41fffa2,
+in which the collapsed rail centres its items.
+
+- **State:** the stored preferences, written with the app stopped (backed up first, restored byte-for-byte afterwards),
+  and the debug launch arguments. Every Auto Listen capture used `--tembra-tuner-noise-gate=off`; the test-signal ones
+  also used `--tembra-tuner-test-signal=<id>`, with a 5 s settle.
+- **Rotation:** the Simulator's Device ▸ Orientation menu. No keyboard or taps were needed.
+
+| File | How | Differs beyond the navigation |
+|---|---|---|
+| `ios-compact-autoListen-<id>.png` × 14 | retaken: iPhone 17 portrait, guitar, `--tembra-tuner-test-signal=<id>` | no. The readings are identical: A1 55.0, A2 112.6, B1 61.7, B3 246.9, C2 65.4, D3 146.4, E2 81.5 / 80.3 / 82.4 / 83.4, E4 329.6, E5 659.3, G3 196.0, and "Listening" at 2 kHz. |
+| `ios-compact-autoListen.png` | retaken: iPhone 17 portrait, `e2-in-tune` (as the existing image) | no |
+| `ios-compact-autoListen-largefont.png` | retaken: iPhone 17, largest text size, `e2-in-tune`; text size back to `medium` | no. The bar no longer grows with the text, so the meter card is a little taller. The readout row ("2.4 Hz • REFERENCE 82.4 H") is still cut at the card edges; that is pre-existing. |
+| `ios-compact-byEar.png` | retaken: iPhone 17 portrait, By Ear, guitar, 6-String, Standard, loop on | no |
+| `ios-compact-byEar-largefont.png` | retaken: as above, largest text size | no. The card is a little taller, for the same reason as above. |
+| `ios-compact-denied.png` | retaken: `simctl privacy revoke microphone`, Tuner in Auto Listen; granted again afterwards | no |
+| `ios-expanded-autoListen.png`, `-autoListen-e2-flat-20.png` | retaken (build with 41fffa2): iPad Pro, Landscape Left, `e2-in-tune` / `e2-flat-20` | no |
+| `ios-expanded-byEar.png`, `-byEar-guitar7.png`, `-byEar-cello.png` | retaken (build with 41fffa2): iPad Pro, Landscape Left, By Ear; then 7-String; then Cello | no |
+| `ios-landscape-autoListen.png` | retaken (build with 41fffa2): iPhone 17, Landscape Left, `e2-in-tune` | **yes, from the wider rail**: the settings column is narrower, so the header reads "TUNER CONTRO…" beside the TEST SIGNAL pill, and the noise gate track is shorter. The Dynamic Island's black pill shows at the left edge; simctl draws it in some captures. |
+| `ios-landscape-byEar.png`, `-byEar-guitar7.png`, `-byEar-cello.png` | retaken (build with 41fffa2): iPhone 17, Landscape Left, By Ear (6-String, Standard, loop on); then 7-String; then Cello | the narrower column ellipsises the preset picker earlier: "Standard (E2 A2 D3 G…", "Standard 7-String (B…", "Standard (C2 G2 D3 A…". `ios-landscape-byEar` also shows the Dynamic Island's black pill. |
+| `ios-landscape-byEar-before.png` | retaken (build with 41fffa2): the same state as `ios-landscape-byEar.png`, as in the existing image | the same picture as `ios-landscape-byEar.png` |
+
+## Recaptured 2026-10-17 (2): hand-drawn Tuner and Metronome glyphs (Android)
+
+The Tuner and Metronome navigation items now show hand-drawn glyphs, a tuning fork with a sound arc on each side and a
+pyramid metronome, instead of Material's music_note and av_timer (branch `experiment/nav-glyphs`, 041819b); the
+tuning preset picker keeps its music note. All 27 Android captures were retaken under the same names, on the same
+target and in the same states, with the procedure of the morning's pass. Target: Pixel 6 Pro `19021FDEE001AH`
+(Android 17), the debug APK built from HEAD 2a5d7dc through the gradle-run wrapper, installed fresh (uninstalled
+first) with RECORD_AUDIO and POST_NOTIFICATIONS granted; `adb exec-out screencap -p`; state set with
+`tembra.tuner.testSignal` / `tembra.tuner.noiseGate` and UiAutomator taps. Settings were put back (rotation lock 0,
+density reset, font 1.0; guitar, 6-String, Auto Listen, gate Off). Each new image was compared with the committed one
+pixel by pixel (threshold 40/255, status bar excluded) and checked by eye: the only differences are the two glyphs in
+the bar or rail.
+
+### Android, Pixel 6 Pro (27 retaken, 0 left)
+
+| File | How | Differs beyond the two glyphs |
+|---|---|---|
+| `android-compact-autoListen-<id>.png` × 14 | retaken: portrait, `--es tembra.tuner.testSignal <id>`, 3 s; `c2`, `e4` and `e5` retaken with 5 s and a few frames, because the IN TUNE pill's dot lights a moment after the reading settles and the 3 s frame caught it unlit | `e5-in-tune` now reads **659.3 Hz** with the in-tune marker lit, where the committed image (morning pass) reads 659.2 Hz with the pill unlit; 659.3 Hz is the reading the 2026-09-26 table records, so the new image is the expected one. All others no |
+| `android-compact-autoListen.png`, `-largefont.png` | retaken: `e2-in-tune` (font 2.0 for the second; kept the frame with the pill lit, as committed) | no |
+| `android-compact-byEar.png`, `-byEar-largefont.png` | retaken: By Ear, guitar, 6-String, Standard | no (the preset picker's music note is unchanged) |
+| `android-compact-denied.png` | retaken: `pm revoke … RECORD_AUDIO`, Tuner, "Don't allow"; granted again afterwards | no |
+| `android-landscape-autoListen.png`, `-byEar.png`, `-byEar-guitar7.png`, `-byEar-cello.png` | retaken: rotation 1 | no |
+| `android-landscape-autoListen-before.png` | retaken: rotation 1, Tuner from Timeline, Auto Listen, gate Off, the phone's microphone, under the speaker lock; the room was not quiet (the first burst named passing notes), so frames were taken until one at rest matched the committed image outside the rail (frame 3) | no |
+| `android-expanded-autoListen.png`, `-e2-flat-20.png`, `-byEar.png` | retaken: landscape, density 380 | no |
+
+## Recaptured 2026-10-17 (2): hand-drawn Tuner and Metronome glyphs (iOS)
+
+All 29 iOS captures were retaken under the same names, on the same simulators (iPhone 17 and iPad Pro 13-inch (M5),
+iOS 26.5) and in the same states. The build was Debug, made from 041819b (`experiment/nav-glyphs`) with the Xcode 27.1
+SDK: Tuner shows a hand-drawn tuning fork and Metronome a hand-drawn pyramid metronome. The By Ear preset picker keeps
+its music note.
+
+- **State:** the stored preferences (written with the app stopped, restored byte-for-byte afterwards) and the debug
+  launch arguments: `--tembra-tuner-noise-gate=off`, plus `--tembra-tuner-test-signal=<id>` with a 5 s settle.
+- **Rotation:** the Simulator menu.
+- **Check:** each image was compared with the previous one (HEAD) outside the navigation and the status bar.
+
+| File | How | Differs beyond the two glyphs |
+|---|---|---|
+| `ios-compact-autoListen-<id>.png` × 14 | retaken: iPhone 17 portrait, guitar, test signal `<id>` | no; the readings are as before. `e5-in-tune` first read 659.2 Hz. Three more launches all read 659.3 Hz, as before, and the first of those was kept. |
+| `ios-compact-autoListen.png`, `-autoListen-largefont.png` | retaken: portrait, `e2-in-tune`; largest text size for the second (back to `medium`) | no |
+| `ios-compact-byEar.png`, `-byEar-largefont.png` | retaken: portrait, By Ear, guitar, 6-String, Standard, loop on; largest text for the second | no |
+| `ios-compact-denied.png` | retaken: microphone revoked, Tuner in Auto Listen; granted again afterwards | no |
+| `ios-expanded-autoListen.png`, `-autoListen-e2-flat-20.png`, `-byEar.png`, `-byEar-guitar7.png`, `-byEar-cello.png` | retaken: iPad Pro, Landscape Left | no |
+| `ios-landscape-autoListen.png`, `-byEar.png`, `-byEar-before.png`, `-byEar-guitar7.png`, `-byEar-cello.png` | retaken: iPhone 17, Landscape Left (`-byEar-before` = the same state as `-byEar`) | no. The Dynamic Island's black pill, which simctl draws in some captures only, is absent from `-autoListen` and `-byEar` this time. |

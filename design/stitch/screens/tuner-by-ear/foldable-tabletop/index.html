@@ -20,19 +20,14 @@ html,body{width:883px;height:852px;overflow:hidden}
 body{background:#0e0e11;color:#e4e1e6;font-family:'Space Grotesk',sans-serif;position:relative}
 .material-symbols-outlined{font-family:'Material Symbols Outlined';font-weight:300;font-style:normal;font-size:24px;line-height:1;display:inline-block;white-space:nowrap;-webkit-font-smoothing:antialiased;font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 24}
 .material-symbols-outlined.fill{font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24}
-.header{position:absolute;left:16px;top:62px}
-.brand{font-size:10px;font-weight:600;letter-spacing:.04em;color:#cebdff;text-transform:uppercase;line-height:14px}
-.title{font-size:18px;font-weight:500;line-height:24px;color:#e4e1e6}
-.rail{position:absolute;left:0;top:110px;width:64px;bottom:0;background:#0e0e11;display:flex;flex-direction:column;align-items:center;padding-top:8px}
-.ritem{width:48px;height:47px;margin-bottom:4px;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#cac4d4}
-.ritem .material-symbols-outlined{font-size:22px}
+.rail{position:absolute;left:0;top:0;width:96px;bottom:0;background:#0e0e11;display:flex;flex-direction:column;align-items:center;gap:4px;padding-top:97px}
+.ritem{width:56px;height:56px;border-radius:28px;display:flex;align-items:center;justify-content:center;color:#cac4d4}
+.ritem .material-symbols-outlined{font-size:24px;font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24}
 .ritem.sel{background:#85145a;color:#ff93c8}
-.ritem.sel .rlabel{font-weight:600}
-.rlabel{font-size:10px;font-weight:500;letter-spacing:.04em;line-height:12px}
-.content{position:absolute;left:64px;top:110px;right:0;bottom:0;background:#131316}
-.panel{position:absolute;left:80px;right:31px;border-radius:24px;border:1px solid #1f1a24;
+.content{position:absolute;left:96px;top:0;right:0;bottom:0;background:#131316}
+.panel{position:absolute;left:112px;right:31px;border-radius:24px;border:1px solid #1f1a24;
   background:radial-gradient(120% 140% at 50% 50%,#1a1622 0%,#151219 55%,#120e13 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.02)}
-.upper{top:119px;height:287px;padding:11px;display:grid;grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(2,1fr);gap:10px}
+.upper{top:63px;height:343px;padding:11px;display:grid;grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(2,1fr);gap:10px}
 .lower{top:431px;height:367px;padding:0 11px;display:flex;flex-direction:column;justify-content:center}
 .scard{background:#1b1b1e;border:1px solid #26252b;border-radius:16px;padding:12px 8px 8px 8px;display:flex;flex-direction:column;justify-content:space-between}
 .roman{font-size:11px;font-weight:500;color:#948e9d;padding-left:0;letter-spacing:.02em}
@@ -47,18 +42,16 @@ body{background:#0e0e11;color:#e4e1e6;font-family:'Space Grotesk',sans-serif;pos
 .seg button{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;border-radius:8px;font-family:'Space Grotesk';font-size:13px;font-weight:500;letter-spacing:.02em;color:#cac4d4;background:transparent;border:0}
 .seg svg{width:16px;height:16px}
 .box{border:1px solid #2a2a2d;background:#16131a;border-radius:14px}
-.fold-guide{position:absolute;left:64px;right:0;top:426px;height:0;border-top:1px dashed rgba(206,189,255,.10);pointer-events:none}
+.fold-guide{position:absolute;left:96px;right:0;top:426px;height:0;border-top:1px dashed rgba(206,189,255,.10);pointer-events:none}
 </style>
 </head>
 <body>
-  <div class="header"><div class="brand">Tembra Audio</div><div class="title">Tuner</div></div>
-  <nav class="rail" aria-label="Primary">
-      <div class="ritem"><span class="material-symbols-outlined">home</span><span class="rlabel">Home</span></div>
-      <div class="ritem"><span class="material-symbols-outlined">graphic_eq</span><span class="rlabel">Timeline</span></div>
-      <div class="ritem sel"><span class="material-symbols-outlined fill">music_note</span><span class="rlabel">Tuner</span></div>
-      <div class="ritem"><span class="material-symbols-outlined">timer</span><span class="rlabel">Metronome</span></div>
-      <div class="ritem"><span class="material-symbols-outlined">folder</span><span class="rlabel">Projects</span></div>
-      <div class="ritem"><span class="material-symbols-outlined">person</span><span class="rlabel">Profile</span></div>
+  <nav class="rail" aria-label="Primary" data-purpose="navigation-rail">
+      <a class="ritem" href="#" aria-label="Timeline"><span class="material-symbols-outlined">graphic_eq</span></a>
+      <a class="ritem sel" href="#" aria-label="Tuner" aria-current="page"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true" style="display:block;flex:none" data-glyph="tuning_fork"><path d="M9.5 3V10.5A2.5 2.5 0 0 0 14.5 10.5V3"></path><path d="M12 13V21.5"></path><path d="M5.6 4.5A6 6 0 0 0 5.6 10.5"></path><path d="M18.4 4.5A6 6 0 0 1 18.4 10.5"></path></svg></a>
+      <a class="ritem" href="#" aria-label="Metronome"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true" style="display:block;flex:none" data-glyph="metronome"><path d="M15.45 6.05L14.6 3H9.4L4.4 21H19.6L16.56 10.05"></path><path d="M7.34 14H16.66"></path><path d="M12 14L18.6 4.2"></path></svg></a>
+      <a class="ritem" href="#" aria-label="Projects"><span class="material-symbols-outlined">folder</span></a>
+      <a class="ritem" href="#" aria-label="Profile"><span class="material-symbols-outlined">person</span></a>
   </nav>
   <div class="content"></div>
 

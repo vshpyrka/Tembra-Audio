@@ -66,7 +66,7 @@ internal fun TuningPresetPicker(current: TuningPreset, presets: List<TuningPrese
             horizontalArrangement = Arrangement.spacedBy(spacing.sm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(imageVector = TembraIcons.vector(TembraIcon.Tuner), contentDescription = null, tint = colors.primary, modifier = Modifier.size(spacing.pickerIconSize))
+            Icon(imageVector = TembraIcons.vector(TembraIcon.MusicNote), contentDescription = null, tint = colors.primary, modifier = Modifier.size(spacing.pickerIconSize))
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = TunerCopy.tuningPreset.uppercase(), style = TembraTheme.typographyExtras.microLabel, color = colors.outline, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(

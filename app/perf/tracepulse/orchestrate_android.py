@@ -366,9 +366,13 @@ def install(cfg: Config, device: Device, runner: Runner, app_apk: str, test_apk:
         res = runner.run(adb + ["install", "-r", "-t", apk], timeout=600)
         if res.returncode != 0 or "Success" not in res.stdout:
             raise BuildError(f"adb install {apk} failed (rc={res.returncode}): {res.stderr.strip() or res.stdout.strip()}")
-    res = runner.run(adb + ["shell", "pm", "grant", cfg.android.package, "android.permission.RECORD_AUDIO"], timeout=60)
-    if res.returncode != 0:
-        logger.warning("pm grant RECORD_AUDIO failed (rc=%s): %s", res.returncode, res.stderr.strip())
+    # The tuner opens under the microphone dialog without the first; Android 13+ asks for notifications on the
+    # metronome's first Play, and its dialog would cover the journey's anchors. Below API 33 the second is not a
+    # runtime permission and the grant fails harmlessly.
+    for permission in ("android.permission.RECORD_AUDIO", "android.permission.POST_NOTIFICATIONS"):
+        res = runner.run(adb + ["shell", "pm", "grant", cfg.android.package, permission], timeout=60)
+        if res.returncode != 0:
+            logger.warning("pm grant %s failed (rc=%s): %s", permission, res.returncode, res.stderr.strip())
 
 
 def warm_up(cfg: Config, device: Device, runner: Runner, clock: Clock) -> None:

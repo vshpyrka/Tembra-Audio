@@ -149,3 +149,131 @@ pose, outer display 466 × 678 pt. Background: `docs/research/iphone-duo.md`; la
 Observed: "Metronome" fills its selected rail pill edge to edge; the rail's secondaryContainer highlight differs
 from the bottom bar's primaryContainer one, now visible on the same device. checkIos on the Duo (660) and
 checkAndroidHost (380) passed with the change.
+
+## Recaptured 2026-10-16: the shell has no top bar
+
+The navigation shell's top bar was removed on 2026-10-16 (spec 002 FR-007 reversed at the owner's request), so every
+capture here that showed the shell was retaken from that day's build, under the same file name, on the same target
+and in the same state. Content now starts right under the status bar (56 dp / pt higher). Other differences come from
+features that landed after the original captures and are named below. `*-before*` images and captures from targets
+that no longer exist were kept as they were. Android: Pixel 6 Pro `19021FDEE001AH`, the debug APK (no `tembra.perf`
+property), `adb exec-out screencap`, app state set with the debug launch extras and UiAutomator taps. iOS: the Debug app
+built with the Xcode 27.1 SDK on the iPhone 17 / iPad Pro 13" (M5) (iOS 26.5) / iPhone Duo (iOS 27.1) simulators,
+`simctl io screenshot`, app state set with the debug launch arguments, the app's stored preferences (written with the
+app stopped, backed up and restored) and real mouse clicks; rotation through the Simulator menu or Device Hub.
+
+### Android, Pixel 6 Pro (6 retaken, 0 left)
+
+| File | How | Differs beyond the top bar |
+|---|---|---|
+| `android-compact-home.png` | portrait, Home | no |
+| `android-compact-home-largefont.png` | `font_scale 2.0`, Home | no |
+| `android-short-home.png` | `wm user-rotation lock 1` (891 × 411 dp), Home | no; the rail now starts at the top |
+| `android-medium-home.png` | portrait, `wm density 380` | no |
+| `android-expanded-home.png` | landscape, density 380 | no; Library panel as before |
+| `android-expanded-tuner.png` | landscape, density 380, Tuner tapped from Home | **yes**: the old one showed the placeholder ("The instrument tuner arrives with the tuner feature."); now the real tuner (Auto Listen on the microphone, "Listening", noise gate; the system's green microphone dot in the status bar) |
+
+### iOS simulators (9 retaken, 0 left)
+
+| File | How | Differs beyond the top bar |
+|---|---|---|
+| `ios-compact-home`, `ios-compact-home-largefont`, `ios-short-home` | iPhone 17, Home (portrait / largest text / Landscape Left) | no |
+| `ios-medium-home` | temporary iPad mini (A17 Pro), iOS 26.5, portrait, as the original; created, captured, deleted | no |
+| `ios-expanded-home` | iPad Pro landscape, Home with the Library panel | no |
+| `ios-expanded-tuner` | iPad Pro landscape, Tuner (Auto Listen, real microphone, the iPad's own gate level −28 dB passed as the launch value) | **yes**: the old image showed feature 002's placeholder ("The instrument tuner arrives…"); now the real tuner ("MIC ACTIVE", "Listening", noise gate control) |
+| `ios-duo-closed-end-rail-home`, `-tuner` (By Ear, guitar 6), `ios-duo-closed-landscape-rail` | Duo closed, outer display; landscape via Device Hub's Rotate Right | tuner: instrument chips are text only now (no icons), otherwise no |
+
+## Recaptured 2026-10-17: icon-only navigation, no Home (Android)
+
+Home was removed on 2026-10-17 (the app opens on Timeline, five destinations) and the navigation items show icons
+only: a Material 3 Expressive bottom bar with the active item on a lavender pill on compact windows, a collapsed
+96 dp rail with the active item on a circle on wide windows. The Library side panel went with Home. Following
+quickstart §9, the five `android-*-home*.png` captures became `android-*-timeline*.png` (new file captured, old file removed); `android-expanded-tuner.png` keeps its
+name and is now reached from Timeline. Target: Pixel 6 Pro `19021FDEE001AH` (Android 17), the debug APK of that
+morning (`:androidApp:assembleDebug`, no `tembra.perf`), `adb exec-out screencap -p`, navigation by UiAutomator taps on
+the items' content descriptions. Every setting changed was put back (rotation lock 0, `wm density reset`, font scale
+1.0).
+
+### Android, Pixel 6 Pro (6 taken, 5 old files removed)
+
+| File | How | Differs beyond the navigation |
+|---|---|---|
+| `android-compact-timeline.png` | renamed from `android-compact-home.png`: portrait, cold launch (opens on Timeline) | Timeline's placeholder ("The timeline arranger arrives with the transport and timeline feature.") instead of Home's sentence |
+| `android-compact-timeline-largefont.png` | renamed from `android-compact-home-largefont.png`: `settings put system font_scale 2.0`, Timeline | same; the bar no longer grows with the font (no labels to wrap), so the old two-line "Timeli / ne", "Metro / nome" labels are gone |
+| `android-short-timeline.png` | renamed from `android-short-home.png`: `wm user-rotation lock 1` (891 × 411 dp), Timeline | Timeline content; the collapsed rail holds five icons spread down the height instead of six labelled items at the top |
+| `android-medium-timeline.png` | renamed from `android-medium-home.png`: portrait, `wm density 380` (606 dp) | Timeline content; rail as above |
+| `android-expanded-timeline.png` | renamed from `android-expanded-home.png`: landscape, density 380 (1313 × 606 dp) | **yes**: no Library panel on the right (it belonged to Home); Timeline's sentence runs across the whole content width |
+| `android-expanded-tuner.png` | retaken: landscape, density 380, launched on Timeline, Tuner tapped in the rail; Auto Listen on the real microphone (quiet room, gate Off), five frames a second apart under the speaker lock, the third kept (all five at rest) | no: same tuner (Guitar, MIC ACTIVE, "Listening", needle at rest, noise gate at Off). A first capture taken earlier caught the needle swinging back from a room sound and was discarded |
+
+Removed with `git rm` (replaced by the renamed captures above): `android-compact-home.png`,
+`android-compact-home-largefont.png`, `android-short-home.png`, `android-medium-home.png`, `android-expanded-home.png`.
+
+## Recaptured 2026-10-17: Home removed, icon-only navigation (iOS)
+
+All nine iOS captures were retaken on the same targets, in the same windows and poses. The start destination is now
+Timeline. As quickstart §9 names them, the six `ios-*-home*.png` files were captured as `ios-*-timeline*.png`, and the
+old files were removed with `git rm`. The builds were Debug, made from the worktree
+`nav-icons-only` with the Xcode 27.1 SDK. Every capture with a rail (all but the two compact ones) was taken a second
+time from the build with 41fffa2, in which the collapsed rail centres its items.
+
+- **Targets:** iPhone 17 and iPad Pro 13-inch (M5) (iOS 26.5); iPhone Duo (iOS 27.1, outer display `819E92C0…`); a
+  temporary iPad mini (A17 Pro) on iOS 26.5, created, captured and deleted, both times.
+- **Rotation:** the iPhone and iPad through the Simulator's Device ▸ Orientation menu; the Duo through Device Hub's
+  Rotate Right button, pressed through the accessibility API.
+
+| File | How | Differs beyond the navigation |
+|---|---|---|
+| `ios-compact-timeline.png` (was `ios-compact-home.png`) | retaken: iPhone 17, portrait, plain launch | no |
+| `ios-compact-timeline-largefont.png` (was `ios-compact-home-largefont.png`) | retaken: iPhone 17, `simctl ui content_size accessibility-extra-extra-extra-large`, plain launch; text size put back to `medium` | no. The bar no longer grows with the text, because there are no labels to wrap. |
+| `ios-short-timeline.png` (was `ios-short-home.png`) | retaken (build with 41fffa2): iPhone 17, Landscape Left, plain launch | no |
+| `ios-medium-timeline.png` (was `ios-medium-home.png`) | retaken (build with 41fffa2): temporary iPad mini (A17 Pro), iOS 26.5, portrait (744 pt, rail), plain launch | no |
+| `ios-expanded-timeline.png` (was `ios-expanded-home.png`) | retaken (build with 41fffa2): iPad Pro, Landscape Left, plain launch | no. The Library panel is gone with Home. |
+| `ios-expanded-tuner.png` | retaken (build with 41fffa2): iPad Pro, Landscape Left, Tuner (Auto Listen, real microphone, `--tembra-tuner-noise-gate=-28` as before) | no ("MIC ACTIVE", "Listening") |
+| `ios-duo-closed-end-rail-timeline.png` (was `ios-duo-closed-end-rail-home.png`) | retaken (build with 41fffa2): Duo closed, upright, outer display, plain launch | no. The end rail still fills the system column, with its items at the bottom, centred under the clock. |
+| `ios-duo-closed-end-rail-tuner.png` | retaken (build with 41fffa2): Duo closed, upright, By Ear, guitar, 6-String, Standard | no |
+| `ios-duo-closed-landscape-rail.png` | retaken (build with 41fffa2): Duo closed, Device Hub Rotate Right (three more turns brought it back upright), plain launch | no |
+
+## Recaptured 2026-10-17 (2): hand-drawn Tuner and Metronome glyphs (Android)
+
+The Tuner and Metronome navigation items now show hand-drawn glyphs, a tuning fork with a sound arc on each side and a
+pyramid metronome, instead of Material's music_note and av_timer (branch `experiment/nav-glyphs`, 041819b). All six
+Android captures were retaken under the same names (the `*-timeline*` names of the morning's pass), on the same target
+and in the same states. Target: Pixel 6 Pro `19021FDEE001AH` (Android 17), the debug APK built from HEAD 2a5d7dc
+through the gradle-run wrapper, installed fresh; `adb exec-out screencap -p`, UiAutomator taps on content descriptions.
+Settings were put back afterwards (rotation lock 0, `wm density reset`, font 1.0). Each new image was compared with the
+committed one pixel by pixel (threshold 40/255, status bar excluded): the only differences are the two glyphs.
+
+### Android, Pixel 6 Pro (6 retaken, 0 left)
+
+| File | How | Differs beyond the two glyphs |
+|---|---|---|
+| `android-compact-timeline.png` | retaken: portrait, cold launch | no |
+| `android-compact-timeline-largefont.png` | retaken: `font_scale 2.0` | no |
+| `android-short-timeline.png` | retaken: `wm user-rotation lock 1` | no |
+| `android-medium-timeline.png` | retaken: portrait, `wm density 380` (rail) | no |
+| `android-expanded-timeline.png` | retaken: landscape, density 380 | no |
+| `android-expanded-tuner.png` | retaken: landscape, density 380, Tuner tapped in the rail; Auto Listen on the real microphone, five frames a second apart under the speaker lock; the room was not quiet this time (four frames named passing notes), the one frame at rest ("Listening", needle centred) kept | no |
+
+## Recaptured 2026-10-17 (2): hand-drawn Tuner and Metronome glyphs (iOS)
+
+All nine iOS captures were retaken under the same names, on the same targets, in the same windows and poses. The build
+was Debug, made from 041819b (`experiment/nav-glyphs`) with the Xcode 27.1 SDK: Tuner shows a hand-drawn tuning fork
+and Metronome a hand-drawn pyramid metronome. Each image was compared with the previous one (HEAD) outside the
+navigation and the status bar.
+
+- **Targets:** iPhone 17 and iPad Pro 13-inch (M5) (iOS 26.5); iPhone Duo (iOS 27.1, outer display); a temporary iPad
+  mini (A17 Pro) on iOS 26.5, created, captured and deleted.
+- **Rotation:** the iPhone and iPad through the Simulator's Device ▸ Orientation menu; the Duo through Device Hub's
+  Rotate Right, pressed through the accessibility API.
+
+| File | How | Differs beyond the two glyphs |
+|---|---|---|
+| `ios-compact-timeline.png` | retaken: iPhone 17, portrait, plain launch | no |
+| `ios-compact-timeline-largefont.png` | retaken: iPhone 17, `content_size accessibility-extra-extra-extra-large`, plain launch; text size back to `medium` | no |
+| `ios-short-timeline.png` | retaken: iPhone 17, Landscape Left, plain launch | no |
+| `ios-medium-timeline.png` | retaken: temporary iPad mini (A17 Pro), portrait | no |
+| `ios-expanded-timeline.png` | retaken: iPad Pro, Landscape Left, plain launch | no |
+| `ios-expanded-tuner.png` | retaken: iPad Pro, Landscape Left, Tuner on the real microphone, `--tembra-tuner-noise-gate=-28` | no. Only the gate track's fill, which shows the room's level at that moment, is a little shorter. |
+| `ios-duo-closed-end-rail-timeline.png` | retaken: Duo closed, upright, outer display, plain launch | no |
+| `ios-duo-closed-end-rail-tuner.png` | retaken: Duo closed, upright, By Ear, guitar, 6-String, Standard | no |
+| `ios-duo-closed-landscape-rail.png` | retaken: Duo closed, Device Hub Rotate Right (three more turns back upright), plain launch | no |
