@@ -6,6 +6,9 @@ import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -103,6 +106,16 @@ class TrackSettingsScreenTest {
     }
 
     private fun ComposeUiTest.setContentWithState(state: TrackSettingsUiState) = setScreen(state)
+
+    /** The Effects section is a heading and exactly one sentence, no controls (spec FR-048; T112, US6). */
+    @Test
+    fun theEffectsSectionIsAHeadingAndOneSentence() = runComposeUiTest {
+        setScreen()
+        onNodeWithTag(TrackSettingsTestTags.EFFECTS).assertExists()
+        onNodeWithTag(TrackSettingsTestTags.EFFECTS_TEXT).assertTextEquals("Effects for this track arrive in a later version.")
+        onNodeWithText("Effects").assertExists()
+        onNode(hasAnyAncestor(hasTestTag(TrackSettingsTestTags.EFFECTS)) and hasClickAction()).assertDoesNotExist()
+    }
 
     @Test
     fun backLeavesTheScreen() = runComposeUiTest {

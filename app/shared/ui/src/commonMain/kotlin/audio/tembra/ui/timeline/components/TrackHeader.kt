@@ -95,9 +95,9 @@ internal fun TrackHeader(
                 onMoveUp = onMoveUp,
                 onMoveDown = onMoveDown,
                 onDelete = onDelete,
-                testTag = TimelineTestTags.trackMenu(index),
+                testTag = TimelineTestTags.TRACK_MENU,
             ) {
-                TransportButton(icon = TembraIcon.MoreVert, description = TRACK_MENU_DESCRIPTION, onClick = { menuOpen = true }, testTag = "${TimelineTestTags.trackMenu(index)}.button")
+                TransportButton(icon = TembraIcon.MoreVert, description = TRACK_MENU_DESCRIPTION, onClick = { menuOpen = true }, testTag = TimelineTestTags.trackMenu(index))
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(spacing.xs), verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {

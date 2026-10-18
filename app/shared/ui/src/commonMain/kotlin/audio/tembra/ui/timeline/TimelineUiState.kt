@@ -1,6 +1,7 @@
 package audio.tembra.ui.timeline
 
 import androidx.compose.runtime.Immutable
+import audio.tembra.core.metronome.MetronomeSettings
 import audio.tembra.core.metronome.Tempo
 import audio.tembra.core.metronome.TimeSignature
 import audio.tembra.core.project.Beats
@@ -8,6 +9,7 @@ import audio.tembra.core.project.GridSize
 import audio.tembra.core.project.PlaybackState
 import audio.tembra.core.project.TrackId
 import audio.tembra.core.timeline.TimelineViewport
+import audio.tembra.ui.metronome.TapCaption
 import audio.tembra.ui.transport.TransportUiState
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -51,6 +53,12 @@ data class TimelineUiState(
     val missingAssets: Int = 0,
     /** The track whose deletion awaits confirmation (spec FR-021); the content renders the dialog while set. */
     val confirmDelete: TrackId? = null,
+    /** The clip move in progress, drawn by the lanes (spec FR-033). */
+    val drag: ClipDragUi? = null,
+    /** The global metronome's settings as the sheet edits them (spec FR-038). */
+    val metronomeSettings: MetronomeSettings = MetronomeSettings(),
+    /** The tap-tempo run's caption in the tempo dialog. */
+    val tapCaption: TapCaption = TapCaption.Rest,
 ) {
     val isEmpty: Boolean get() = loaded && tracks.isEmpty()
 

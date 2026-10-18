@@ -90,10 +90,10 @@ class TrackHeaderTest {
     @Test
     fun theMenuListsItsEntriesWithMoveUpUnavailableOnTheFirstTrack() = runComposeUiTest {
         setCompact(isFirst = true, isLast = false)
-        onNodeWithTag("${TimelineTestTags.trackMenu(1)}.button").performClick()
-        onNodeWithTag("${TimelineTestTags.trackMenu(1)}.$MENU_MOVE_UP").assertIsNotEnabled()
-        onNodeWithTag("${TimelineTestTags.trackMenu(1)}.$MENU_MOVE_DOWN").assertIsEnabled()
-        onNodeWithTag("${TimelineTestTags.trackMenu(1)}.$MENU_SETTINGS").performClick()
+        onNodeWithTag(TimelineTestTags.trackMenu(1)).performClick()
+        onNodeWithTag("${TimelineTestTags.TRACK_MENU}.$MENU_MOVE_UP").assertIsNotEnabled()
+        onNodeWithTag("${TimelineTestTags.TRACK_MENU}.$MENU_MOVE_DOWN").assertIsEnabled()
+        onNodeWithTag("${TimelineTestTags.TRACK_MENU}.$MENU_SETTINGS").performClick()
         assertEquals(listOf("settings"), calls)
     }
 
@@ -103,8 +103,8 @@ class TrackHeaderTest {
         onNodeWithTag(TimelineTestTags.header(1)).assertWidthIsEqualTo(200.dp).assertContentDescriptionEquals("Track 2, Guitar, −2.4dB, muted")
         onNodeWithTag(TimelineTestTags.gain(1)).assertExists()
         onNodeWithTag(TimelineTestTags.chevron(1)).assertContentDescriptionEquals(TimelineCopy.trackSettings).performClick()
-        onNodeWithTag("${TimelineTestTags.trackMenu(1)}.button").performClick()
-        onNodeWithTag("${TimelineTestTags.trackMenu(1)}.$MENU_MOVE_DOWN").assertIsNotEnabled()
+        onNodeWithTag(TimelineTestTags.trackMenu(1)).performClick()
+        onNodeWithTag("${TimelineTestTags.TRACK_MENU}.$MENU_MOVE_DOWN").assertIsNotEnabled()
         assertEquals(listOf("expand(true)"), calls)
     }
 }

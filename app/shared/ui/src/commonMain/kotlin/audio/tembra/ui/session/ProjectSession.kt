@@ -188,7 +188,7 @@ class ProjectSession(
     // --- Edits -------------------------------------------------------------------------------------------------------
 
     /**
-     * Applies [edit] to the open project: the history grows (a gain or master-volume change following one of the same
+     * Applies [edit] to the open project: the history grows (a gain, volume or tempo change following one of the same
      * kind replaces the last snapshot instead, so a drag is one undo step), the engine receives the smallest matching
      * update, and a save is scheduled. Returns the editor's reason when it refused; null when applied or no project.
      */
@@ -431,6 +431,7 @@ class ProjectSession(
     private fun coalesces(edit: ProjectEdit, last: ProjectEdit?): Boolean = when (edit) {
         is SetGain -> last is SetGain && last.id == edit.id
         is SetMasterVolume -> last is SetMasterVolume
+        is SetTempo -> last is SetTempo
         else -> false
     }
 

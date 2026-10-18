@@ -27,6 +27,8 @@ fun TimelineScreen(
     modifier: Modifier = Modifier,
     viewModel: TimelineViewModel = metroViewModel(),
     onOpenTrackSettings: (TrackId) -> Unit = {},
+    nestedTrackSettings: TrackId? = null,
+    onCloseTrackSettings: () -> Unit = {},
 ) {
     DisposableEffect(viewModel) {
         viewModel.screenVisible(true)
@@ -44,6 +46,18 @@ fun TimelineScreen(
     val layoutMode = rememberLayoutMode()
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val layout = TimelineLayout.from(maxWidth, maxHeight, layoutMode)
+        // The hand-off across 840 dp (spec FR-042): the open form moves between the nested entry and the inline row;
+        // the typed draft travels through the session, so nothing is lost either way.
+        LaunchedEffect(layout.inlineSettings, nestedTrackSettings, state.expandedTrack) {
+            if (layout.inlineSettings && nestedTrackSettings != null) {
+                viewModel.expandTrack(nestedTrackSettings)
+                onCloseTrackSettings()
+            } else if (!layout.inlineSettings && state.expandedTrack != null) {
+                val id = state.expandedTrack
+                viewModel.expandTrack(null)
+                if (id != null) onOpenTrackSettings(id)
+            }
+        }
         val callbacks = remember(viewModel, layout, onOpenTrackSettings) {
             TimelineCallbacks(
                 onPlayPause = viewModel::playPause,
@@ -85,8 +99,13 @@ fun TimelineScreen(
                 onOpenSheet = viewModel::openSheet,
                 onTempoDragging = viewModel::tempoDragging,
                 onTempoCommit = viewModel::tempoCommit,
-                onTapTempo = {},
+                onTapTempo = viewModel::tapTempo,
                 onTimeSignature = viewModel::setTimeSignature,
+                onClickSound = viewModel::selectClickSound,
+                onImportCustomSound = viewModel::importCustomSound,
+                onSubdivision = viewModel::selectSubdivision,
+                onCycleBeat = viewModel::cycleBeat,
+                onStyle = viewModel::selectStyle,
             )
         }
         TimelineScreenContent(

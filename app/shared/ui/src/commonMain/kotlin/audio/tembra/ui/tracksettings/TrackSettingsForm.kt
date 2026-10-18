@@ -32,7 +32,7 @@ import audio.tembra.ui.timeline.components.MuteSoloButton
 /**
  * The fields of one track (spec FR-020, FR-023 to FR-025, FR-041), shared by the nested screen and the inline row:
  * the name (40 characters, committed when the field loses focus), the instrument label menu, the gain slider with
- * its readout, the M/S toggles and "Delete track" behind its confirmation. Effects arrive with User Story 6.
+ * its readout, the M/S toggles, the Effects placeholder and "Delete track" behind its confirmation.
  */
 @Composable
 internal fun TrackSettingsForm(
@@ -88,6 +88,7 @@ internal fun TrackSettingsForm(
             MuteSoloButton(letter = "M", description = TrackSettingsCopy.mute, checked = state.muted, tint = tint, onCheckedChange = callbacks.onMute, testTag = TrackSettingsTestTags.MUTE)
             MuteSoloButton(letter = "S", description = TrackSettingsCopy.solo, checked = state.soloed, tint = tint, onCheckedChange = callbacks.onSolo, testTag = TrackSettingsTestTags.SOLO)
         }
+        EffectsPlaceholder()
         TextButton(onClick = callbacks.onDelete, modifier = Modifier.testTag(TrackSettingsTestTags.DELETE)) {
             Text(TrackSettingsCopy.deleteTrack, color = colors.error)
         }

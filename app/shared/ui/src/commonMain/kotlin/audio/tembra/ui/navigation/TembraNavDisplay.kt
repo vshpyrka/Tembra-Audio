@@ -37,6 +37,8 @@ internal fun TembraNavDisplay(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     onOpenTrackSettings: (TrackId) -> Unit = {},
+    nestedTrackSettings: TrackId? = null,
+    onCloseTrackSettings: () -> Unit = {},
 ) {
     val motion = TembraTheme.motion
     val instant = ContentTransform(EnterTransition.None, ExitTransition.None)
@@ -68,7 +70,7 @@ internal fun TembraNavDisplay(
             entry<DestinationKey>(
                 metadata = { key -> if (key.destination.hasSupportingPane) supportingPane(SupportingPane.Library) else emptyMap() },
             ) { key ->
-                DestinationContent(key.destination, onOpenTrackSettings)
+                DestinationContent(key.destination, onOpenTrackSettings, nestedTrackSettings, onCloseTrackSettings)
             }
             entry<TrackSettingsKey> { key ->
                 TrackSettingsScreen(trackId = key.trackId, onBack = onBack)

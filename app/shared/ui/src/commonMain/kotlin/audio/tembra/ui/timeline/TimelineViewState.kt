@@ -1,10 +1,13 @@
 package audio.tembra.ui.timeline
 
+import audio.tembra.core.metronome.MetronomeSettings
+import audio.tembra.core.metronome.TapTempoSequence
 import audio.tembra.core.project.Beats
 import audio.tembra.core.project.GridSize
 import audio.tembra.core.project.ProjectId
 import audio.tembra.core.project.TrackId
 import audio.tembra.core.timeline.TimelineViewport
+import audio.tembra.ui.metronome.TapCaption
 
 /**
  * What the Timeline ViewModel owns beside the session (data-model.md §5): the viewport, the selection, the grid
@@ -21,6 +24,10 @@ internal data class TimelineViewState(
     val sheet: TimelineSheet? = null,
     val expandedTrack: TrackId? = null,
     val confirmDelete: TrackId? = null,
+    val drag: ClipDragState? = null,
+    val tap: TapTempoSequence = TapTempoSequence(),
+    val tapCaption: TapCaption = TapCaption.Rest,
+    val metronomeSettings: MetronomeSettings = MetronomeSettings(),
     val positionBeats: Beats = Beats.Zero,
     val positionSeconds: Double = 0.0,
 )

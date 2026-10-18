@@ -17,4 +17,6 @@ object TrackSettingsTestTags {
     const val MUTE = "trackSettings.mute"
     const val SOLO = "trackSettings.solo"
     const val DELETE = "trackSettings.delete"
+    const val EFFECTS = "trackSettings.effects"
+    const val EFFECTS_TEXT = "trackSettings.effects.text"
 }

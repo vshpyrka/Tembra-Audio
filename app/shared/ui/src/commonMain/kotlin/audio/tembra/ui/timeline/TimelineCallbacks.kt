@@ -1,5 +1,8 @@
 package audio.tembra.ui.timeline
 
+import audio.tembra.core.metronome.ClickSound
+import audio.tembra.core.metronome.MetronomeStyle
+import audio.tembra.core.metronome.Subdivision
 import audio.tembra.core.metronome.Tempo
 import audio.tembra.core.metronome.TimeSignature
 import audio.tembra.core.project.Beats
@@ -48,6 +51,10 @@ data class TimelineCallbacks(
     val onSplit: () -> Unit,
     val onMoveClip: (ClipId, TrackId, Beats) -> Unit,
     val onDeleteClip: (ClipId) -> Unit,
+    val onClipDragStart: (ClipId) -> Unit,
+    val onClipDrag: (ClipId, deltaBeats: Double, deltaTracks: Int) -> Unit,
+    val onClipDragEnd: () -> Unit,
+    val onClipDragCancel: () -> Unit,
     val onUndo: () -> Unit,
     val onRedo: () -> Unit,
     // Tempo and signature (US5)
@@ -56,6 +63,12 @@ data class TimelineCallbacks(
     val onTempoCommit: (Tempo) -> Unit,
     val onTapTempo: (nanos: Long) -> Unit,
     val onTimeSignature: (TimeSignature) -> Unit,
+    // Metronome settings sheet (US5)
+    val onClickSound: (ClickSound) -> Unit,
+    val onImportCustomSound: () -> Unit,
+    val onSubdivision: (Subdivision) -> Unit,
+    val onCycleBeat: (Int) -> Unit,
+    val onStyle: (MetronomeStyle) -> Unit,
 ) {
     companion object {
         val None = TimelineCallbacks(
@@ -64,8 +77,9 @@ data class TimelineCallbacks(
             onViewportMeasured = { _, _ -> }, onZoomAround = { _, _ -> }, onZoomStep = {}, onFitProject = {}, onScrollBy = {}, onGrid = {},
             onAddTrack = {}, onSelectTrack = {}, onToggleMute = {}, onToggleSolo = {}, onGain = { _, _ -> }, onTrackSettings = {},
             onMoveTrack = { _, _ -> }, onDeleteTrack = {}, onConfirmDeleteTrack = {}, onDismissDeleteTrack = {}, onAddAudio = {}, onAddAudioAsNewTrack = {}, onExpandTrack = {},
-            onSelectClip = { _, _ -> }, onClearSelection = {}, onSplit = {}, onMoveClip = { _, _, _ -> }, onDeleteClip = {}, onUndo = {}, onRedo = {},
+            onSelectClip = { _, _ -> }, onClearSelection = {}, onSplit = {}, onMoveClip = { _, _, _ -> }, onDeleteClip = {}, onClipDragStart = {}, onClipDrag = { _, _, _ -> }, onClipDragEnd = {}, onClipDragCancel = {}, onUndo = {}, onRedo = {},
             onOpenSheet = {}, onTempoDragging = {}, onTempoCommit = {}, onTapTempo = {}, onTimeSignature = {},
+            onClickSound = {}, onImportCustomSound = {}, onSubdivision = {}, onCycleBeat = {}, onStyle = {},
         )
     }
 }

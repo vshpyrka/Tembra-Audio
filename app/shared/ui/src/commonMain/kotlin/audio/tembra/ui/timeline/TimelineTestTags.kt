@@ -31,6 +31,8 @@ object TimelineTestTags {
     fun solo(index: Int): String = "timeline.header.$index.solo"
     fun gain(index: Int): String = "timeline.header.$index.gain"
     fun chevron(index: Int): String = "timeline.header.$index.chevron"
+    /** The button that opens a track's menu; the open menu is [TRACK_MENU] and its rows `timeline.track.menu.<id>`. */
     fun trackMenu(index: Int): String = "timeline.track.menu.$index"
+    const val TRACK_MENU = "timeline.track.menu"
     fun clip(index: Int): String = if (index == 0) PerfAnchors.TIMELINE_CLIP_FIRST else "timeline.clip.$index"
 }

@@ -16,6 +16,8 @@ sealed interface TimelineMessage {
     data class EditRejected(val reason: EditRejection) : TimelineMessage
     /** The platform picker could not hand over the chosen file. */
     data object PickFailed : TimelineMessage
+    /** The sheet offers the sounds the Metronome holds; importing a new one is the Metronome's job. */
+    data object CustomSoundFromMetronome : TimelineMessage
 
     val text: String
         get() = when (this) {
@@ -27,5 +29,6 @@ sealed interface TimelineMessage {
             ProjectTooLarge -> "The project has more tracks or clips than can play at once"
             is EditRejected -> TimelineCopy.rejected(reason)
             PickFailed -> TimelineCopy.pickFailed
+            CustomSoundFromMetronome -> TimelineCopy.customSoundFromMetronome
         }
 }

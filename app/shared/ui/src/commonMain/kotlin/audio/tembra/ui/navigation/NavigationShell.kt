@@ -39,5 +39,6 @@ fun NavigationShell(
         modifier = modifier,
         dialog = dialog,
         onOpenTrackSettings = viewModel::openTrackSettings,
+        onCloseTrackSettings = viewModel::closeTrackSettings,
     )
 }

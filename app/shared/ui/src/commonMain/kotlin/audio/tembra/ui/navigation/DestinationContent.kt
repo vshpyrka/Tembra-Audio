@@ -10,9 +10,14 @@ import audio.tembra.ui.tuner.TunerScreen
 
 /** The single mapping from the registry to the feature packages; a new destination fails to compile until mapped. */
 @Composable
-fun DestinationContent(destination: Destination, onOpenTrackSettings: (TrackId) -> Unit = {}) {
+fun DestinationContent(
+    destination: Destination,
+    onOpenTrackSettings: (TrackId) -> Unit = {},
+    nestedTrackSettings: TrackId? = null,
+    onCloseTrackSettings: () -> Unit = {},
+) {
     when (destination) {
-        Destination.Timeline -> TimelineScreen(onOpenTrackSettings = onOpenTrackSettings)
+        Destination.Timeline -> TimelineScreen(onOpenTrackSettings = onOpenTrackSettings, nestedTrackSettings = nestedTrackSettings, onCloseTrackSettings = onCloseTrackSettings)
         Destination.Tuner -> TunerScreen()
         Destination.Metronome -> MetronomeScreen()
         Destination.Projects -> ProjectsScreen()
