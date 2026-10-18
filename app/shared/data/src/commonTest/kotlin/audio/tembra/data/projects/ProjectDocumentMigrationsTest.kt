@@ -50,7 +50,7 @@ class ProjectDocumentMigrationsTest {
             DocumentMigration(1) { JsonObject(it + ("one" to JsonPrimitive(true))) },
             DocumentMigration(0) { JsonObject(it + ("zero" to JsonPrimitive(true))) },
         )
-        val migrated = ProjectDocumentMigrations(steps).migrate(JsonObject(mapOf("formatVersion" to JsonPrimitive(0))), fromVersion = 0)
+        val migrated = ProjectDocumentMigrations(steps).migrate(JsonObject(mapOf("formatVersion" to JsonPrimitive(0))), fromVersion = 0, toVersion = 2)
         assertEquals(JsonPrimitive(true), migrated?.get("zero"))
         assertEquals(JsonPrimitive(true), migrated?.get("one"))
         assertEquals(JsonPrimitive(2), migrated?.get("formatVersion"))
