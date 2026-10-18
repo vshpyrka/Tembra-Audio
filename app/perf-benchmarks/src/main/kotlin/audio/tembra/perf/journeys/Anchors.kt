@@ -48,8 +48,11 @@ object Anchors {
     const val TRANSPORT_READOUT = "transport.readout"
     const val DIALOG_STOP_AND_LEAVE_CONFIRM = "dialog.stopAndLeave.confirm"
 
-    /** The `screen.timeline` state once every visible overview is built; "loading" before (not an anchor of its own). */
-    const val TIMELINE_READY_STATE = "ready"
+    /**
+     * A 1 dp marker node the Timeline shows once every visible overview is built (the `stateDescription` "ready" the
+     * contract names is not reachable through UiAutomator's selectors; XCUITest reads it as the root's `value`).
+     */
+    const val TIMELINE_READY_MARKER = "screen.timeline.ready"
 
     /** Default wait for an anchor to appear, generous for a cold process on a cool phone. */
     const val TIMEOUT_MS = 10_000L
