@@ -17,14 +17,26 @@ enum Metrics {
 
     static let tunerSections = ["tuner.load", "tuner.modeSwitch", "tuner.frame"]
     static let metronomeSections = ["metronome.load", "metronome.tempoChange"]
+    /// Feature 009 (contracts/perf-instrumentation.md): the timeline journey's sections; the engine's own are emitted
+    /// from C++ under the "engine" category.
+    static let timelineSections = ["timeline.projectOpen", "timeline.waveform", "transport.play", "transport.seek",
+                                   "timeline.zoom", "timeline.scroll", "timeline.clipSplit", "timeline.playheadFrame"]
+    static let timelineEngineSections = ["engine.prime", "engine.loadClip"]
+    static let stressTimelineSections = ["timeline.scroll", "timeline.playheadFrame", "transport.play"]
 
     static func section(_ name: String) -> XCTOSSignpostMetric {
-        XCTOSSignpostMetric(subsystem: subsystem, category: "ui", name: name)
+        section(name, category: "ui")
+    }
+
+    /// A section under another category: the engine's C++ sections are recorded under "engine".
+    static func section(_ name: String, category: String) -> XCTOSSignpostMetric {
+        XCTOSSignpostMetric(subsystem: subsystem, category: category, name: name)
     }
 
     static func journey(_ name: String, app: XCUIApplication) -> [XCTMetric] {
         var metrics: [XCTMetric] = [XCTClockMetric(), XCTCPUMetric(application: app), XCTMemoryMetric(application: app)]
-        metrics += sections(of: name).map(section)
+        metrics += sections(of: name).map { section($0) }
+        metrics += engineSections(of: name).map { section($0, category: "engine") }
         return metrics
     }
 
@@ -32,7 +44,15 @@ enum Metrics {
         switch journey {
         case "tuner": return tunerSections
         case "metronome": return metronomeSections
-        case "stress": return tunerSections + metronomeSections
+        case "timeline": return timelineSections
+        case "stress": return tunerSections + metronomeSections + stressTimelineSections
+        default: return []
+        }
+    }
+
+    static func engineSections(of journey: String) -> [String] {
+        switch journey {
+        case "timeline": return timelineEngineSections
         default: return []
         }
     }

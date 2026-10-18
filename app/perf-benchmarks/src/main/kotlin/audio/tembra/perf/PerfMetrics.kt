@@ -20,7 +20,12 @@ object PerfMetrics {
 
     private val tunerSections = listOf("tuner.load", "tuner.modeSwitch", "tuner.frame")
     private val metronomeSections = listOf("metronome.load", "metronome.tempoChange")
-    private val stressSections = tunerSections + metronomeSections
+    // Feature 009 (contracts/perf-instrumentation.md): the ten sections the timeline journey exercises.
+    private val timelineSections = listOf(
+        "timeline.projectOpen", "timeline.waveform", "transport.play", "transport.seek", "timeline.zoom", "timeline.scroll",
+        "timeline.clipSplit", "timeline.playheadFrame", "engine.prime", "engine.loadClip",
+    )
+    private val stressSections = tunerSections + metronomeSections + listOf("timeline.scroll", "timeline.playheadFrame", "transport.play")
 
     fun journey(name: String): List<Metric> = listOf(
         FrameTimingMetric(),
@@ -32,6 +37,7 @@ object PerfMetrics {
     private fun sectionsOf(name: String): List<String> = when (name) {
         "tuner" -> tunerSections
         "metronome" -> metronomeSections
+        "timeline" -> timelineSections
         "stress" -> stressSections
         else -> emptyList()
     }
