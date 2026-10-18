@@ -14,9 +14,10 @@ class DemoProjectGoldenFileTest {
 
     @Test
     fun theFixtureMatchesTheCodecOutput() {
-        var directory: File? = File(System.getProperty("user.dir")).absoluteFile
+        val workingDirectory = System.getProperty("user.dir") ?: "."
+        var directory: File? = File(workingDirectory).absoluteFile
         while (directory != null && !File(directory, "specs/009-timeline-arranger").isDirectory) directory = directory.parentFile
-        val root = assertNotNull(directory, "repository root not found above ${System.getProperty("user.dir")}")
+        val root = assertNotNull(directory, "repository root not found above $workingDirectory")
         val fixture = File(root, "specs/009-timeline-arranger/fixtures/demo-project.json").readText()
         assertEquals(DemoProjectGolden.TEXT, fixture)
     }

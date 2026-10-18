@@ -12,6 +12,7 @@ import audio.tembra.data.metronome.FakeAppDirectories
 import audio.tembra.engine.FakeAudioEngine
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentMapOf
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.toList
@@ -33,6 +34,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /** The project folders, the library index and the document round trip over a fake file system (contracts/project-storage.md). */
+@OptIn(ExperimentalCoroutinesApi::class)
 class OkioProjectRepositoryTest {
 
     private val clock = FakeClock()
@@ -51,6 +53,8 @@ class OkioProjectRepositoryTest {
         OkioProjectRepository(directories, engine, demoAudio, fileSystem, StandardTestDispatcher(testScheduler), clock = { clock.nowMs })
 
     private fun readDocument(path: Path): Project = assertIs<DecodeResult.Decoded>(codec.decode(fileSystem.read(path) { readUtf8() })).document.project
+
+    private fun documentSize(folder: ProjectFolder): Long = fileSystem.metadata(folder.document).size ?: 0L
 
     /** Puts the loop asset's bytes and a complete overview in place and returns the project holding one clip of it. */
     private fun withLoop(project: Project): Project {
@@ -107,7 +111,7 @@ class OkioProjectRepositoryTest {
         assertEquals(32.0, entry.lengthSeconds)
         assertEquals(clock.nowMs, entry.lastEdited)
         assertEquals(48, entry.overview.spans)
-        assertEquals(fileSystem.metadata(folder.document).size + loopBytes.size, entry.byteSize)
+        assertEquals(documentSize(folder) + loopBytes.size, entry.byteSize)
     }
 
     @Test
@@ -280,7 +284,7 @@ class OkioProjectRepositoryTest {
         repository.save(project)
         val folder = folders.folder(created.id)
         assertTrue(fileSystem.exists(folder.overviewPath(loopId)))
-        assertEquals(fileSystem.metadata(folder.document).size + loopBytes.size, repository.sizeOnDevice(created.id))
+        assertEquals(documentSize(folder) + loopBytes.size, repository.sizeOnDevice(created.id))
         assertEquals(0L, repository.sizeOnDevice(ProjectId("nope")))
     }
 

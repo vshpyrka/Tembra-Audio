@@ -1,5 +1,6 @@
 package audio.tembra.data.projects
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
@@ -10,6 +11,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /** 500 ms debounce, 2 s cap, flush and coalescing on virtual time (contracts/project-storage.md, Autosave; spec FR-046). */
+@OptIn(ExperimentalCoroutinesApi::class)
 class AutosaveSchedulerTest {
 
     @Test
