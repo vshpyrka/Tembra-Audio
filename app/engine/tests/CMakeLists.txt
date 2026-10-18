@@ -27,6 +27,9 @@ add_executable(tembra_engine_tests
     audio_health_test.cpp
     trace_poison_test.cpp
     trace_shim_test.cpp
+    tempo_map_test.cpp
+    transport_clock_test.cpp
+    spsc_fifo_test.cpp
 )
 target_include_directories(tembra_engine_tests PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../src
