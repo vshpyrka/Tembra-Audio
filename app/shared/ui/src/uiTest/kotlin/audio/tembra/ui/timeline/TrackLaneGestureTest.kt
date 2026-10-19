@@ -100,6 +100,8 @@ class TrackLaneGestureTest {
     fun aSecondaryClickOpensTheClipMenu() = runComposeUiTest {
         setLane()
         onNodeWithTag(TimelineTestTags.clip(0)).performMouseInput { rightClick(Offset(40f, 44f)) }
+        waitForIdle()
+        assertEquals(listOf("select"), taps, "the secondary press reached the clip")
         onNodeWithTag("${TimelineTestTags.clip(0)}.menu.delete").assertExists().performClick()
         assertEquals(listOf("delete"), moves)
     }

@@ -111,7 +111,9 @@ class TimelineRulerTest {
         val port = assertNotNull(viewport)
         onNodeWithTag(TimelineTestTags.RULER).performTouchInput { click(Offset(width / 2f, height / 2f)) }
         assertEquals(1, seeks.size)
-        val expected = port.beatsAt(port.widthPx / 2).value
+        // The canvas sits after the pills, so its centre is not the 600 dp row's centre.
+        val canvasWidthPx = onNodeWithTag(TimelineTestTags.RULER).fetchSemanticsNode().size.width.toDouble()
+        val expected = port.beatsAt(canvasWidthPx / 2).value
         assertTrue(abs(seeks.single().value - expected) < 0.5, "seeked to ${seeks.single().value}, expected about $expected")
     }
 

@@ -101,13 +101,13 @@ class TimelineScreenTest {
         onNodeWithTag(TimelineTestTags.TEMPO_PILL).assertExists()
         onNodeWithTag(TimelineTestTags.header(0)).assertContentDescriptionEquals("Drums, Drums, +0.0dB").assertHeightIsEqualTo(56.dp)
         onNodeWithTag(TimelineTestTags.header(1)).assertContentDescriptionEquals("Pad, Synth, −2.4dB, muted")
-        onNodeWithTag(TimelineTestTags.gain(0)).assertDoesNotExist()
+        onNodeWithTag(TimelineTestTags.gain(0), useUnmergedTree = true).assertDoesNotExist()
         onNodeWithTag(TimelineTestTags.lane(0)).assertHeightIsEqualTo(88.dp)
         onNodeWithTag(TimelineTestTags.clip(0)).assertContentDescriptionEquals("drums, track 1, bar 1 beat 1, 31 seconds")
         onNodeWithTag(TimelineTestTags.clip(2)).assertContentDescriptionEquals("pad, track 2, bar 9 beat 1, 15 seconds")
         onNodeWithTag(TimelineTestTags.PLAYHEAD).assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "1.1"))
         onNodeWithTag(PerfAnchors.TRANSPORT_READOUT).assertExists()
-        onNodeWithText("00:00.00 / 00:30.96", useUnmergedTree = true).assertExists()
+        onNodeWithTag(PerfAnchors.TRANSPORT_READOUT).assertContentDescriptionEquals("00:00.00 of 00:30.00")
         onNodeWithTag(PerfAnchors.TRANSPORT_PLAY).assertIsEnabled().performClick()
         assertEquals(listOf("play"), calls)
     }
@@ -116,7 +116,7 @@ class TimelineScreenTest {
     fun expandedPinsTheHeaderColumnWithTheGainReadout() = runComposeUiTest {
         setScreen(demoState(), TimelineLayout.Expanded)
         onNodeWithTag(TimelineTestTags.header(0)).assertWidthIsEqualTo(200.dp).assertHeightIsEqualTo(96.dp)
-        onNodeWithTag(TimelineTestTags.gain(0)).assertExists()
+        onNodeWithTag(TimelineTestTags.gain(0), useUnmergedTree = true).assertExists()
         onNodeWithTag(TimelineTestTags.lane(1)).assertHeightIsEqualTo(96.dp)
         onNodeWithTag(TimelineTestTags.clip(1)).assertExists()
     }
@@ -151,6 +151,7 @@ class TimelineScreenTest {
     @Test
     fun theRulerPillsOpenTheTempoDialogAndTheSignatureMenu() = runComposeUiTest {
         setScreen(demoState(), TimelineLayout.Compact)
+        mainClock.autoAdvance = true // the signature menu is a popup that needs frames to appear
         onNodeWithTag(TimelineTestTags.TEMPO_PILL).performClick()
         assertEquals(listOf("sheet(TempoDialog)"), calls)
         onNodeWithTag(TimelineTestTags.SIGNATURE_PILL).performClick()

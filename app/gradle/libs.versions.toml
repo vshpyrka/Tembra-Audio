@@ -18,6 +18,8 @@ kotlinx-coroutines = "1.11.0"
 kotlinx-serialization = "1.11.0"
 # Persistent collections for the project document and its undo history (feature 009, research R19).
 kotlinx-collections-immutable = "0.4.0"
+# Local date-time for the Projects library's relative times (feature 009, FR-051).
+kotlinx-datetime = "0.7.1"
 metro = "1.4.4"
 androidx-activity = "1.13.0"
 androidx-compose = "1.12.1"
@@ -67,6 +69,7 @@ kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-t
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 # Persistent collections for the project document (feature 009, research R19).
 kotlinx-collections-immutable = { module = "org.jetbrains.kotlinx:kotlinx-collections-immutable", version.ref = "kotlinx-collections-immutable" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 # The JUnit 4 variant of kotlin-test for :androidApp's host test (feature 008): a plain Android module has no
 # commonTest, so the Kotlin plugin's framework inference does not pick it (the KMP modules get it automatically).

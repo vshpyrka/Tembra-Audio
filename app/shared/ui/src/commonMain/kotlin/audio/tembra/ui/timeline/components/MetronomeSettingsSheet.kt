@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -58,7 +57,6 @@ internal fun MetronomeSettingsSheet(
     val customSound = settings.customSound?.let { CustomSoundState.Available(it.displayName) } ?: CustomSoundState.None
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         modifier = modifier.testTag(METRONOME_SHEET_TAG),
         containerColor = colors.surfaceContainerHigh,
     ) {

@@ -62,9 +62,9 @@ internal fun TimelineRuler(
     onScrub: (Beats) -> Unit,
     onScrubEnd: (Beats) -> Unit,
     modifier: Modifier = Modifier,
-    leftPills: @Composable () -> Unit = {},
     onZoomAround: (centreX: Double, factor: Double) -> Unit = { _, _ -> },
     onScrollBy: (px: Double) -> Unit = {},
+    leftPills: @Composable () -> Unit = {},
 ) {
     val colors = TembraTheme.colors
     val daw = TembraTheme.daw

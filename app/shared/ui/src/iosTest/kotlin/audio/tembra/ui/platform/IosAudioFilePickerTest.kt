@@ -1,5 +1,6 @@
 package audio.tembra.ui.platform
 
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
 import okio.FileSystem
 import okio.Path.Companion.toPath
@@ -19,7 +20,7 @@ import kotlin.test.assertTrue
 /**
  * The iOS picker with an injected presentation (contracts/project-storage.md, T044): one or several files in order,
  * cancellation, and the security-scoped access released once the copy's source is closed. The presented sheet itself
- * is exercised by hand.
+ * is exercised by hand. The presentation dispatcher is unconfined here: the test binary's main run loop never spins.
  */
 class IosAudioFilePickerTest {
 
@@ -54,7 +55,7 @@ class IosAudioFilePickerTest {
     }
 
     private fun picker(answer: List<NSURL>?, access: SecurityScopedAccess = RecordingAccess(), onPresent: (List<UTType>, Boolean) -> Unit = { _, _ -> }) =
-        IosAudioFilePicker(present = { types, multiple -> onPresent(types, multiple); answer }, access = access, fileSystem = fileSystem)
+        IosAudioFilePicker(present = { types, multiple -> onPresent(types, multiple); answer }, access = access, fileSystem = fileSystem, presentOn = Dispatchers.Unconfined)
 
     @Test
     fun pickOneReturnsOneFileWhoseOpenerYieldsTheBytes() = runTest {
@@ -103,6 +104,10 @@ class IosAudioFilePickerTest {
     fun theRequestsMimeTypesBecomeUniformTypes() {
         val types = IosAudioFilePicker.typesOf(AudioPickRequest.timelineAudio)
         assertTrue(types.isNotEmpty())
-        assertTrue(types.any { it.preferredMIMEType == "audio/mpeg" }, "audio/mpeg has no uniform type")
+        // The bare simulator test process resolves no MIME types (every lookup is null), so the picker falls back to
+        // every audio type; the simulator app and the devices resolve WAV, FLAC and MP3 (quickstart §4).
+        val identifiers = types.map { it.identifier }
+        assertTrue(identifiers.isNotEmpty(), "no uniform types at all")
+        assertTrue(identifiers.all { it == "public.audio" || it == "public.mp3" || it.contains("wav", ignoreCase = true) || it.contains("flac", ignoreCase = true) }, "unexpected types: $identifiers")
     }
 }

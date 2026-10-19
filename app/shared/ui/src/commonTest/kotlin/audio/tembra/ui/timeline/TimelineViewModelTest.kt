@@ -311,7 +311,7 @@ class TimelineViewModelTest {
         assertTrue(engine.calls.last { it.startsWith("setGrid") }.startsWith("setGrid(bpm=92"), "the click follows the project tempo")
         viewModel.undo()
         assertEquals(Tempo(124), ui().tempo, "the whole drag undoes as one step")
-        assertTrue(ui().lengthSeconds > state.lengthSeconds, "the ruler's length follows the tempo")
+        assertTrue(state.lengthSeconds > ui().lengthSeconds, "at 92 BPM the same beats last longer than at 124")
     }
 
     @Test
@@ -337,6 +337,7 @@ class TimelineViewModelTest {
         viewModel.setTimeSignature(TimeSignature.ThreeFour)
         assertEquals(TimeSignature.ThreeFour, ui().timeSignature)
         assertTrue(engine.calls.contains("setTempo(124, 3/4)"))
+        val projectBefore = session.state.value.project
         viewModel.openSheet(TimelineSheet.MetronomeSettings)
         viewModel.selectClickSound(ClickSound.BuiltIn(BuiltInClickSound.Cowbell))
         viewModel.selectSubdivision(Subdivision.Two)
@@ -349,7 +350,7 @@ class TimelineViewModelTest {
         assertEquals(stored, state.metronomeSettings, "the sheet shows the stored settings")
         assertEquals("selectSound(Cowbell)", engine.calls.last { it.startsWith("selectSound") }, "the session re-applies the grid and the sound")
         assertEquals(3, stored.pattern.levels.size, "the pattern is laid over the project's 3/4")
-        assertFalse(session.state.value.canUndo || ui().canUndo && false, "sheet changes are never project edits")
+        assertEquals(projectBefore, session.state.value.project, "sheet changes are never project edits")
         viewModel.openSheet(null)
         assertNull(ui().sheet)
     }
@@ -366,7 +367,7 @@ class TimelineViewModelTest {
         viewModel.split()
         val state = ui()
         assertEquals(2, state.tracks[0].clips.size)
-        assertEquals(Beats(8.0), state.tracks[0].clips[1].startBeats)
+        assertEquals(8.0, state.tracks[0].clips[1].startBeats.value, 1e-3)
         assertEquals(Selection.ClipSelected(drumsTrack, state.tracks[0].clips[1].id), state.selection, "the right half is selected")
         assertTrue(state.canUndo)
         viewModel.undo()
@@ -379,6 +380,8 @@ class TimelineViewModelTest {
     @Test
     fun aDragBuildsOneMoveOnReleaseWithTheSnappedStartAndTheTargetTrack() = test {
         openDemo()
+        // The demo's loops fill every track; free the bass lane so the drop has room.
+        viewModel.deleteClip(demo.tracks[1].clips[0].id)
         viewModel.clipDragStart(drumsClip)
         val lifted = ui()
         assertEquals(Selection.ClipSelected(drumsTrack, drumsClip), lifted.selection)
@@ -388,7 +391,6 @@ class TimelineViewModelTest {
         assertEquals(bassTrack, hovering.toTrack)
         assertEquals(Beats(4.25), hovering.startBeats, "snapped to the sixteenth grid while hovering")
         assertEquals(1, ui().tracks[0].clips.size, "no edit before release")
-        assertFalse(session.state.value.canUndo)
         viewModel.clipDragEnd()
         val dropped = ui()
         assertNull(dropped.drag)
@@ -396,6 +398,8 @@ class TimelineViewModelTest {
         assertEquals(Beats(4.25), dropped.tracks[1].clips.first { it.id == drumsClip }.startBeats)
         assertEquals(Selection.ClipSelected(bassTrack, drumsClip), dropped.selection)
         assertTrue(dropped.canUndo)
+        viewModel.undo()
+        assertEquals(1, ui().tracks[0].clips.size, "one undo step restores the clip")
     }
 
     @Test

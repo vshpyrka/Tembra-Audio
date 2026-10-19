@@ -106,7 +106,7 @@ internal fun GainReadout(
                 offer(numeric(current) + delta)
                 true
             }
-            .semantics {
+            .semantics(mergeDescendants = true) {
                 contentDescription = GAIN_DESCRIPTION
                 stateDescription = readout
                 progressBarRangeInfo = ProgressBarRangeInfo(numeric(gain), SILENCE_DB..GainDb.MAX, 0)

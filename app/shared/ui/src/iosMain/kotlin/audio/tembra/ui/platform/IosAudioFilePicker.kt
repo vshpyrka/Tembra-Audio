@@ -1,6 +1,7 @@
 package audio.tembra.ui.platform
 
 import audio.tembra.data.projects.PickedFile
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okio.FileSystem
@@ -30,16 +31,18 @@ class IosAudioFilePicker internal constructor(
     private val present: suspend (types: List<UTType>, multiple: Boolean) -> List<NSURL>?,
     private val access: SecurityScopedAccess,
     private val fileSystem: FileSystem,
+    /** Where the sheet is presented: UIKit's main queue; a test passes an unconfined dispatcher, its run loop never spins. */
+    private val presentOn: CoroutineDispatcher,
 ) : AudioFilePicker {
 
-    constructor() : this(present = ::presentPicker, access = SecurityScopedAccess.System, fileSystem = FileSystem.SYSTEM)
+    constructor() : this(present = ::presentPicker, access = SecurityScopedAccess.System, fileSystem = FileSystem.SYSTEM, presentOn = Dispatchers.Main)
 
     override suspend fun pickOne(request: AudioPickRequest): AudioPickResult = pick(request, multiple = false)
 
     override suspend fun pickMany(request: AudioPickRequest): AudioPickResult = pick(request, multiple = true)
 
     private suspend fun pick(request: AudioPickRequest, multiple: Boolean): AudioPickResult {
-        val urls = withContext(Dispatchers.Main) { present(typesOf(request), multiple) } ?: return AudioPickResult.Cancelled
+        val urls = withContext(presentOn) { present(typesOf(request), multiple) } ?: return AudioPickResult.Cancelled
         val files = urls.map { url -> pickedFile(url) }
         return if (files.isEmpty()) AudioPickResult.Cancelled else AudioPickResult.Picked(files)
     }

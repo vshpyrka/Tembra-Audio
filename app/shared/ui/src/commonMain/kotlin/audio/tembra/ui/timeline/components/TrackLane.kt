@@ -3,12 +3,10 @@ package audio.tembra.ui.timeline.components
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.awaitLongPressOrCancellation
 import androidx.compose.foundation.gestures.awaitTouchSlopOrCancellation
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.drag
-import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,6 +25,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.input.pointer.PointerType
+import androidx.compose.ui.input.pointer.changedToDown
 import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
@@ -111,8 +110,8 @@ internal fun TrackLane(
     }
     val tint = style.tintOf(track.colorIndex)
     val gridColor = daw.gridOverlayFaint
-    val isDropTarget = drag != null && drag.toTrack == track.id
-    val background = if (isDropTarget) daw.surfaceLevel1 else daw.canvasLevel0
+    val dropTarget = drag?.takeIf { it.toTrack == track.id }
+    val background = if (dropTarget != null) daw.surfaceLevel1 else daw.canvasLevel0
     val selectedClipId = (selection as? Selection.ClipSelected)?.takeIf { it.trackId == track.id }?.clipId
     val heightPx = with(density) { height.toPx() }
     val rowPitchPx = with(density) { rowPitch.toPx() }
@@ -124,14 +123,12 @@ internal fun TrackLane(
         modifier = modifier
             .fillMaxWidth()
             .height(height)
-            .testTag(TimelineTestTags.lane(index)),
+            .testTag(TimelineTestTags.lane(index))
+            // On the lane itself, the clips' ancestor: a drag that starts on a clip still scrolls (clarification 3).
+            .pointerInput(onClearSelection) { detectTapGestures(onTap = { onClearSelection() }) }
+            .viewportGestures(dragScrolls = true, onZoomAround = onZoomAround, onScrollBy = onScrollBy),
     ) {
-        Canvas(
-            modifier = Modifier
-                .fillMaxSize()
-                .pointerInput(onClearSelection) { detectTapGestures(onTap = { onClearSelection() }) }
-                .viewportGestures(dragScrolls = true, onZoomAround = onZoomAround, onScrollBy = onScrollBy),
-        ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
             drawRect(background)
             val beatsPerBar = viewport.beatsPerBar.toDouble()
             var bar = floor(viewport.scrollBeats.value / beatsPerBar) * beatsPerBar
@@ -156,13 +153,13 @@ internal fun TrackLane(
                 }
             }
             // The lifted copy on the lane under the finger (spec FR-033): the drop position, snapped, outlined.
-            if (isDropTarget && drag != null) {
-                val source = track.clips.firstOrNull { it.id == drag.clipId } ?: ClipUi(
-                    id = drag.clipId, assetId = AudioAssetId(""), name = drag.name, startBeats = drag.startBeats,
-                    lengthBeats = drag.lengthBeats, offsetFrames = 0, lengthFrames = 1, sampleRate = 1, overview = null,
+            if (dropTarget != null) {
+                val source = track.clips.firstOrNull { it.id == dropTarget.clipId } ?: ClipUi(
+                    id = dropTarget.clipId, assetId = AudioAssetId(""), name = dropTarget.name, startBeats = dropTarget.startBeats,
+                    lengthBeats = dropTarget.lengthBeats, offsetFrames = 0, lengthFrames = 1, sampleRate = 1, overview = null,
                     overviewStatus = OverviewStatus.Ready, available = true,
                 )
-                val lifted = source.copy(startBeats = drag.startBeats, lengthBeats = drag.lengthBeats)
+                val lifted = source.copy(startBeats = dropTarget.startBeats, lengthBeats = dropTarget.lengthBeats)
                 val left = viewport.xOf(lifted.startBeats).toFloat()
                 val right = viewport.xOf(lifted.endBeats).toFloat()
                 if (right >= 0f && left <= size.width) drawClip(lifted, left, right, tint, selected = true, style = style, measurer = measurer)
@@ -203,9 +200,11 @@ internal fun TrackLane(
                         .clickable(interactionSource = interaction, indication = null, role = Role.Button) { onSelectClip(clip.id) }
                         .pointerInput(clip.id, rowPitchPx) {
                             awaitEachGesture {
-                                val down = awaitFirstDown(requireUnconsumed = false)
-                                if (currentEvent.buttons.isSecondaryPressed) {
-                                    waitForUpOrCancellation()
+                                var event = awaitPointerEvent()
+                                while (event.changes.none { it.changedToDown() }) event = awaitPointerEvent()
+                                val down = event.changes.first { it.changedToDown() }
+                                if (event.buttons.isSecondaryPressed) {
+                                    down.consume()
                                     onSelectClip(clip.id)
                                     menuClip = clip.id
                                     return@awaitEachGesture

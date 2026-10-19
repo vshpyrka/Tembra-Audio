@@ -44,6 +44,7 @@ class TrackLaneTest {
     private val pad = FakeOverviews.clip("c2", "pad", startBeats = 12.0, lengthBeats = 4.0)
     private val viewport = TimelineViewport(pixelsPerBeat = 20.0, scrollBeats = Beats.Zero, widthPx = 320.0, densityScale = 1.0, projectLengthBeats = Beats(16.0))
     private val calls = mutableListOf<String>()
+    private var densityScale = 1f
 
     private fun track(vararg clips: ClipUi) = TrackUi(
         id = trackId, name = "Drums", label = InstrumentLabel.Drums, colorIndex = 0, gainDb = GainDb.Unity,
@@ -53,6 +54,7 @@ class TrackLaneTest {
     private fun ComposeUiTest.setLane(track: TrackUi, selection: Selection = Selection.None) {
         setContent {
             TembraTheme {
+                densityScale = androidx.compose.ui.platform.LocalDensity.current.density
                 TrackLane(
                     track = track, index = 0, firstClipIndex = 0, viewport = viewport, selection = selection,
                     signature = TimeSignature.FourFour, height = 88.dp,
@@ -96,7 +98,7 @@ class TrackLaneTest {
     fun waveformColumnsAreDrawnInTheTintOnceTheOverviewIsReady() = runComposeUiTest {
         setLane(track(drums))
         val tint = DawColors.Default.trackTints[0]
-        assertTrue(laneHasPixelNear(tint), "a column in the track tint inside the clip body")
+        assertTrue(laneHasPixelNear(tint), "a column in the track tint $tint inside the clip body")
     }
 
     @Test
@@ -105,11 +107,11 @@ class TrackLaneTest {
         assertFalse(laneHasPixelNear(DawColors.Default.trackTints[0]))
     }
 
-    /** Scans the first clip's body (x 10..70 px of 80, below the caption band) for a pixel within 0.04 of [color]. */
+    /** Scans the first clip's body (x 10..70 dp of 80, below the caption band) for a pixel within 0.04 of [color]. */
     private fun ComposeUiTest.laneHasPixelNear(color: Color): Boolean {
         val image = onNodeWithTag(TimelineTestTags.lane(0)).captureToImage()
         val pixels = image.toPixelMap()
-        val density = image.width / 320f
+        val density = densityScale
         val left = (10 * density).toInt()
         val right = (70 * density).toInt().coerceAtMost(pixels.width - 1)
         val top = (30 * density).toInt()

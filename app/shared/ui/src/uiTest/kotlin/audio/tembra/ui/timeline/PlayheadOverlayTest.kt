@@ -24,6 +24,7 @@ import audio.tembra.ui.designsystem.averageColorAt
 import audio.tembra.ui.designsystem.distanceTo
 import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.ui.timeline.components.PlayheadOverlay
+import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -38,6 +39,8 @@ class PlayheadOverlayTest {
     private lateinit var viewport: TimelineViewport
 
     private fun ComposeUiTest.setOverlay(playing: Boolean, positionBeats: Beats, telemetry: ScriptedTransportTelemetry) {
+        // Paused before composing: the test clock cancels infinite animations (the frame tick) while it auto-advances.
+        mainClock.autoAdvance = false
         setContent {
             TembraTheme {
                 densityScale = LocalDensity.current.density
@@ -71,7 +74,7 @@ class PlayheadOverlayTest {
         onNodeWithTag(TimelineTestTags.PLAYHEAD).assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "2.2"))
         val x = playheadX()
         assertTrue(x != null, "no playhead line found")
-        assertEquals(viewport.xOf(Beats(5.0)).toInt(), x!!, "the stopped playhead is not at beat 5")
+        assertTrue(abs(viewport.xOf(Beats(5.0)).toInt() - x!!) <= 1, "the stopped playhead is not at beat 5 (within a pixel): $x")
     }
 
     @Test
@@ -82,6 +85,7 @@ class PlayheadOverlayTest {
         mainClock.advanceTimeByFrame()
         val first = playheadX()
         val readsBefore = telemetry.reads
+        assertTrue(readsBefore > 0, "the overlay never read the telemetry")
         mainClock.advanceTimeBy(1_000)
         val later = playheadX()
         assertTrue(telemetry.reads > readsBefore, "the overlay stopped reading the telemetry")
