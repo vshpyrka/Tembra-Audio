@@ -6,6 +6,8 @@ import audio.tembra.data.projects.FakeProjectRepository
 import audio.tembra.engine.FakeAudioEngine
 import audio.tembra.ui.platform.FakeAudioFilePicker
 import audio.tembra.ui.platform.FakeBackgroundPlaybackHost
+import audio.tembra.ui.projects.LibraryViewStateHolder
+import audio.tembra.ui.projects.ProjectsViewModel
 import audio.tembra.ui.session.ProjectSession
 import audio.tembra.ui.timeline.TimelineViewModel
 import audio.tembra.ui.tracksettings.TrackSettingsViewModel
@@ -24,8 +26,10 @@ import kotlin.reflect.KClass
 class TestViewModelFactory : MetroViewModelFactory() {
     private val engine = FakeAudioEngine()
     private val preferences = FakeMetronomePreferences()
+    private val repository = FakeProjectRepository()
+    private val holder = LibraryViewStateHolder()
     private val session = ProjectSession(
-        repository = FakeProjectRepository(),
+        repository = repository,
         audio = engine,
         metronome = engine,
         preferences = preferences,
@@ -37,6 +41,7 @@ class TestViewModelFactory : MetroViewModelFactory() {
         get() = mapOf(
             TimelineViewModel::class to { TimelineViewModel(session, FakeAudioFilePicker(), preferences) },
             TrackSettingsViewModel::class to { TrackSettingsViewModel(session) },
+            ProjectsViewModel::class to { ProjectsViewModel(repository, session, holder) },
         )
 
     override val assistedFactoryProviders: Map<KClass<out ViewModel>, () -> ViewModelAssistedFactory>

@@ -86,7 +86,7 @@ class TembraMenuTest {
         assertTrue(hover.tryEmit(HoverInteraction.Enter()))
         mainClock.advanceTimeBy(FRAMES_MS)
         val hovered = onNodeWithTag("menu.a").captureToImage().averageColor()
-        assertTrue(hovered.isCloserTo(surfaceContainerHigh, resting), "the hovered row $hovered did not move toward surfaceContainerHigh")
+        assertTrue(hovered.isCloserTo(surfaceContainerHigh, resting), "the hovered row $hovered did not move toward surfaceContainerHigh $surfaceContainerHigh from $resting")
         assertTrue(focus.tryEmit(FocusInteraction.Focus()))
         mainClock.advanceTimeBy(FRAMES_MS)
         assertTrue(onNodeWithTag("menu.b").captureToImage().containsColor(primary), "the focused row draws no primary ring")

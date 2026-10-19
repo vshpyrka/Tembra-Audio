@@ -15,12 +15,13 @@ fun DestinationContent(
     onOpenTrackSettings: (TrackId) -> Unit = {},
     nestedTrackSettings: TrackId? = null,
     onCloseTrackSettings: () -> Unit = {},
+    onSelectDestination: (Destination) -> Unit = {},
 ) {
     when (destination) {
         Destination.Timeline -> TimelineScreen(onOpenTrackSettings = onOpenTrackSettings, nestedTrackSettings = nestedTrackSettings, onCloseTrackSettings = onCloseTrackSettings)
         Destination.Tuner -> TunerScreen()
         Destination.Metronome -> MetronomeScreen()
-        Destination.Projects -> ProjectsScreen()
+        Destination.Projects -> ProjectsScreen(onOpenTimeline = { onSelectDestination(Destination.Timeline) })
         Destination.Profile -> ProfileScreen()
     }
 }

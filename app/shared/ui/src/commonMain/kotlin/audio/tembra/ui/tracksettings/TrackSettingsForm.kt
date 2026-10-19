@@ -44,6 +44,7 @@ internal fun TrackSettingsForm(
     val colors = TembraTheme.colors
     val tint = TembraTheme.daw.trackTints[state.colorIndex % TembraTheme.daw.trackTints.size]
     var labelMenuOpen by remember { mutableStateOf(false) }
+    var nameHadFocus by remember { mutableStateOf(false) }
     Column(
         modifier = modifier.fillMaxWidth().padding(horizontal = spacing.pageMargin, vertical = spacing.md).testTag(TrackSettingsTestTags.FORM),
         verticalArrangement = Arrangement.spacedBy(spacing.md),
@@ -54,7 +55,12 @@ internal fun TrackSettingsForm(
             label = TrackSettingsCopy.name,
             maxLength = ProjectNames.MAX_TRACK_NAME,
             testTag = TrackSettingsTestTags.NAME,
-            modifier = Modifier.fillMaxWidth().onFocusChanged { if (!it.isFocused) callbacks.onNameCommit() },
+            modifier = Modifier.fillMaxWidth().onFocusChanged { focus ->
+                if (focus.isFocused) nameHadFocus = true else if (nameHadFocus) {
+                    nameHadFocus = false
+                    callbacks.onNameCommit()
+                }
+            },
         )
         InstrumentLabelMenu(
             expanded = labelMenuOpen,

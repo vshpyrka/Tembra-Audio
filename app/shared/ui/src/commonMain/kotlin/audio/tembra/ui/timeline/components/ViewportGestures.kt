@@ -37,6 +37,8 @@ internal fun Modifier.viewportGestures(
             var mode: GestureMode? = null
             while (mode == null) {
                 val event = awaitPointerEvent()
+                // A clip that consumed the change owns this gesture (its lift and move); the lane stays out of it.
+                if (event.changes.any { it.isConsumed }) return@awaitEachGesture
                 val pressed = event.changes.filter { it.pressed }
                 if (pressed.isEmpty()) return@awaitEachGesture
                 zoomAccumulated *= event.calculateZoom()
@@ -55,6 +57,7 @@ internal fun Modifier.viewportGestures(
                     val event = awaitPointerEvent()
                     val pressed = event.changes.filter { it.pressed }
                     if (pressed.isEmpty()) break
+                    if (event.changes.any { it.isConsumed }) continue
                     val zoom = event.calculateZoom()
                     val pan = event.calculatePan()
                     if (mode == GestureMode.Zoom && zoom != 1f) onZoomAround(event.calculateCentroid().x.toDouble(), zoom.toDouble())

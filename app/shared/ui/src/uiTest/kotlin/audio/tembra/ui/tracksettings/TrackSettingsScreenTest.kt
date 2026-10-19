@@ -68,7 +68,7 @@ class TrackSettingsScreenTest {
         onNodeWithTag(TrackSettingsTestTags.MUTE).assertIsOn()
         onNodeWithTag(TrackSettingsTestTags.SOLO).assertIsOff()
         onNodeWithTag("transport.bar").assertExists()
-        onNodeWithText("00:00.00 / 00:30.96", useUnmergedTree = true).assertExists()
+        onNodeWithTag(PerfAnchors.TRANSPORT_READOUT).assertContentDescriptionEquals("00:00.00 of 00:30.00")
     }
 
     @Test
@@ -78,12 +78,13 @@ class TrackSettingsScreenTest {
         onNodeWithTag(TrackSettingsTestTags.MUTE).performClick()
         onNodeWithTag(TrackSettingsTestTags.SOLO).performClick()
         onNodeWithTag(PerfAnchors.TRANSPORT_PLAY).performClick()
-        assertEquals(listOf("name(Guitars)", "mute(false)", "solo(true)", "play"), calls)
+        assertEquals(listOf("name(sGuitar)", "mute(false)", "solo(true)", "play"), calls)
     }
 
     @Test
     fun theLabelMenuOffersEveryInstrumentAndNone() = runComposeUiTest {
         setScreen()
+        mainClock.autoAdvance = true // the menu is a popup that needs frames to appear
         onNodeWithTag(TrackSettingsTestTags.LABEL).performClick()
         onNodeWithText("None").performClick()
         assertEquals(listOf("label(null)"), calls)

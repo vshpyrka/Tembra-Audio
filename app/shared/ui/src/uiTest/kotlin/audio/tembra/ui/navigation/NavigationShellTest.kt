@@ -104,10 +104,8 @@ class NavigationShellTest {
     fun noLayoutHasATopBarAndTheContentStartsAtTheTopInset() = runComposeUiTest {
         var layoutMode by mutableStateOf(LayoutMode.BottomBar)
         var topInset = 0.dp
-        var placeholderMargin = 0.dp
         withShellLocals {
             topInset = with(LocalDensity.current) { WindowInsets.safeDrawing.getTop(this).toDp() }
-            placeholderMargin = TembraTheme.spacing.lg // the placeholder's own top margin, inside its tagged node
             NavigationShellContent(ShellUiState(), layoutMode, onSelect = {}, onBack = {})
         }
         for (mode in LayoutMode.entries) {
@@ -116,7 +114,7 @@ class NavigationShellTest {
             onNodeWithTag("chrome.topBar").assertDoesNotExist()
             val shell = onNodeWithTag("nav.shell").getUnclippedBoundsInRoot()
             val start = onNodeWithTag("screen.timeline").getUnclippedBoundsInRoot()
-            val expected = topInset + placeholderMargin
+            val expected = topInset // the Timeline's root fills its entry from the inset down (feature 009)
             assertTrue(abs((start.top - shell.top - expected).value) < 0.5f, "$mode: Timeline starts ${start.top - shell.top} below the shell's top, not $expected (inset $topInset)")
             if (mode == LayoutMode.BottomBar) continue
             assertTrue(abs((onNodeWithTag("chrome.rail").getUnclippedBoundsInRoot().top - shell.top).value) < 0.5f, "$mode: the rail does not reach the top edge")

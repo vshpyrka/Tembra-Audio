@@ -14,6 +14,10 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.LocalRippleConfiguration
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -69,21 +73,25 @@ fun TembraMenu(
 }
 
 /** One 44 dp row; hover and focus come from the item's injected source or a remembered one. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TembraMenuRow(item: MenuItemSpec, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val colors = TembraTheme.colors
     val spacing = TembraTheme.spacing
     val source = item.interactionSource ?: remember { MutableInteractionSource() }
     val hovered by source.collectIsHoveredAsState()
+    val pressed by source.collectIsPressedAsState()
     val focused by source.collectIsFocusedAsState()
     val content = when {
         !item.enabled -> colors.onSurfaceVariant.copy(alpha = DisabledAlpha)
-        hovered -> colors.onSurface
+        hovered || pressed -> colors.onSurface
         else -> colors.onSurfaceVariant
     }
-    val fill = if (hovered && item.enabled) colors.surfaceContainerHigh else colors.surfaceContainerHighest
+    val fill = if ((hovered || pressed) && item.enabled) colors.surfaceContainerHigh else colors.surfaceContainerHighest
     val ring = spacing.focusRingWidth
     val ringColor = colors.primary
+    // Material's ripple would lay its lighter hover overlay over the row's own tint; the row draws its states itself.
+    CompositionLocalProvider(LocalRippleConfiguration provides null) {
     DropdownMenuItem(
         text = {
             Text(
@@ -115,6 +123,7 @@ private fun TembraMenuRow(item: MenuItemSpec, onClick: () -> Unit, modifier: Mod
         interactionSource = source,
         contentPadding = PaddingValues(horizontal = spacing.md),
     )
+    }
 }
 
 private val MenuMaxHeight = androidx.compose.ui.unit.Dp(360f)
