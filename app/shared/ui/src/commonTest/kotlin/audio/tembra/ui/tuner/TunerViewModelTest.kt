@@ -65,10 +65,17 @@ class TunerViewModelTest {
 
     private var created: TunerViewModel? = null
 
-    /** Builds the ViewModel over the fakes as configured so far; nothing runs until the screen shows it. */
-    private fun TestScope.viewModel(decodeDispatcher: CoroutineDispatcher = dispatcher): TunerViewModel {
+    /**
+     * Builds the ViewModel over the fakes as configured so far; nothing runs until the screen shows it. The engine's
+     * transitions run unconfined unless a test holds them, so each intent's engine commands have happened when it
+     * returns.
+     */
+    private fun TestScope.viewModel(
+        decodeDispatcher: CoroutineDispatcher = dispatcher,
+        audioDispatcher: CoroutineDispatcher = Dispatchers.Unconfined,
+    ): TunerViewModel {
         val repository = ReferenceSoundRepository { path -> recordings[path] }
-        val viewModel = TunerViewModel(audio, permission, preferences, repository, decodeDispatcher)
+        val viewModel = TunerViewModel(audio, permission, preferences, repository, decodeDispatcher, audioDispatcher)
         created = viewModel
         runCurrent()
         return viewModel
@@ -272,6 +279,50 @@ class TunerViewModelTest {
         enterAutoListen(viewModel)
         viewModel.clear()
         assertEquals(listOf("startListening", "stopListening"), audio.calls)
+    }
+
+    // --- Transitions on the audio dispatcher ----------------------------------------------------------------------
+
+    @Test
+    fun theStreamOpensOnTheAudioDispatcherNotTheCaller() = viewModelTest {
+        val held = HeldDispatcher()
+        val viewModel = viewModel(audioDispatcher = held)
+        enterAutoListen(viewModel)
+        assertTrue(audio.calls.isEmpty(), "the stream opened on the caller's thread")
+        held.release()
+        runCurrent()
+        assertEquals(listOf("startListening"), audio.calls)
+        assertEquals(AudioState.Listening, viewModel.uiState.value.audio)
+    }
+
+    @Test
+    fun aChangeDuringATransitionIsAppliedWhenItReturns() = viewModelTest {
+        val held = HeldDispatcher()
+        val viewModel = viewModel(audioDispatcher = held)
+        enterAutoListen(viewModel)
+        viewModel.selectMode(TunerMode.ByEar)
+        runCurrent()
+        held.release()
+        runCurrent()
+        held.release()
+        runCurrent()
+        assertEquals(listOf("startListening", "stopListening"), audio.calls)
+        assertEquals(AudioState.Idle, viewModel.uiState.value.audio)
+    }
+
+    @Test
+    fun clearingWhileAStreamOpensLeavesTheEngineIdle() = viewModelTest {
+        val held = HeldDispatcher()
+        val viewModel = viewModel(audioDispatcher = held)
+        enterAutoListen(viewModel)
+        // The stream opens; its result has not reached the main thread when the screen's store clears the ViewModel.
+        held.release()
+        viewModel.clear()
+        created = null
+        held.release()
+        runCurrent()
+        assertEquals(listOf("startListening", "stopListening"), audio.calls)
+        assertEquals(AudioState.Idle, audio.audioState)
     }
 
     @Test
