@@ -48,6 +48,21 @@ xcrun simctl launch "iPhone 17" audio.tembra.app
 Or open `app/iosApp/iosApp.xcodeproj` in Xcode and press Run. Signing: `Configuration/Config.xcconfig`
 (`TEAM_ID` empty is fine for the simulator).
 
+Release builds, the way users get the app. Debug builds are debuggable on Android and link an unoptimised Kotlin
+framework on iOS, so Compose runs far slower there; judge smoothness on these only:
+
+```bash
+cd app
+tools/release-android.sh   # assembleRelease, signed with the debug key, compiled from the baseline profile, on every adb target
+tools/release-ios.sh       # Release configuration on every connected iPhone/iPad and every booted simulator
+```
+
+Both install over a debug or perf build in place and launch the app. `--serial`/`--device` pick one target,
+`--no-build` reuses the last build, `--clean` uninstalls first (which deletes the app's projects and settings);
+`--help` lists the rest. A physical iPhone needs a team: `TEAM_ID` in `Config.xcconfig`, `--team-id` or
+`TEMBRA_TEAM_ID`. When a target runs a newer iOS than the default Xcode's SDK (an iOS 27 phone, the iPhone Duo), the
+iOS script switches to the Xcode whose SDK covers it.
+
 ## Test lanes
 
 One command per lane; each aggregates every `:shared:*` module.
