@@ -12,6 +12,7 @@ Commands (run from `app/`, Gradle wrapper 9.7.0; prerequisites in `app/README.md
 
 - Build and run Android: `./gradlew :androidApp:installDebug` then `adb shell am start -n audio.tembra.app/audio.tembra.android.MainActivity`
 - Build and run iOS: `cd iosApp && xcodebuild -project iosApp.xcodeproj -scheme iosApp -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath build build`, then `xcrun simctl install/launch "iPhone 17" … audio.tembra.app`
+- Release builds on every attached target (judge smoothness only on these; debug builds are much slower): `tools/release-android.sh` (`release` type signed with the debug key, baseline profile compiled) and `tools/release-ios.sh` (`Release` configuration, devices and booted simulators); `--help` for options, details in `app/README.md` § Build and run.
 - Test lanes: `./gradlew checkAndroidHost` (JVM), `./gradlew checkIos` (simulator), `./gradlew checkAndroidDevice` (connected device), `./gradlew engineHostTest` (C++ Catch2). Compose UI tests live in the `uiTest` source set and run only on the simulator and the device.
 - Screenshots: `android screen capture --output <file>`; `xcrun simctl io "<device>" screenshot <file>`
 - Zero compiler warnings is a gate; run with `--warning-mode all`.

@@ -1,6 +1,5 @@
 package audio.tembra.ui.metronome
 
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
@@ -10,7 +9,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import audio.tembra.ui.designsystem.PreparedLayout
 import audio.tembra.ui.perf.ReportFirstContentDrawn
 import audio.tembra.ui.platform.isIphoneDuo
 import audio.tembra.ui.posture.currentTabletopFold
@@ -60,8 +61,10 @@ fun MetronomeScreen(modifier: Modifier = Modifier, viewModel: MetronomeViewModel
     }
     if (state.loaded) {
         // The screen's own height, not the window's: under 506 dp of content the dial-first Pocket form takes the place
-        // of a Stacked one whose dial would end under the fold (a short desktop window, 2026-10-16).
-        BoxWithConstraints(modifier = modifier) {
+        // of a Stacked one whose dial would end under the fold (a short desktop window, 2026-10-16). Prepared over a few
+        // frames before it shows (PreparedLayout), so opening the screen drops no frame.
+        PreparedLayout(modifier = modifier) { constraints ->
+            val maxHeight = with(LocalDensity.current) { constraints.maxHeight.toDp() }
             MetronomeScreenContent(
                 state = state,
                 callbacks = callbacks,
