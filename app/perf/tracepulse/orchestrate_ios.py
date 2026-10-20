@@ -38,6 +38,8 @@ TOOL_TIMEOUT_S = 300
 # One unmeasured stress journey (~25 s of taps) plus the runner's attach and set-up; xctrace stops by itself.
 AUDIO_TRACE_SECONDS = 75
 AUDIO_TRACE_TEST = "AudioTracePass"
+# The cold-launch hitch driver runs only by hand under a system-wide Hitches recording; a round never runs it.
+COLD_LAUNCH_HITCH_TEST = "ColdLaunchHitchTests"
 # A "not trusted" runner launch is retried this many times, this far apart, before the round refuses.
 TRUST_RETRIES = 2
 TRUST_RETRY_WAIT_S = 120
@@ -229,11 +231,13 @@ def warm_up(cfg: Config, device: Device, runner: Runner, clock: Clock) -> None:
 
 def test_without_building(cfg: Config, device: Device, runner: Runner, xctestrun: str, result_bundle: str,
                           log_path: str, only: Optional[str] = None) -> Completed:
-    """The measured run (`only=None`: the whole target minus the audio-trace pass) or one named test."""
+    """The measured run (`only=None`: the whole target minus the audio-trace pass and the cold-launch hitch driver)
+    or one named test."""
     cmd = ["xcodebuild", "test-without-building", "-xctestrun", xctestrun, "-destination", _destination(device),
            "-resultBundlePath", result_bundle]
     if only is None:
-        cmd += [f"-only-testing:{cfg.ios.test_target}", f"-skip-testing:{cfg.ios.test_target}/{AUDIO_TRACE_TEST}"]
+        cmd += [f"-only-testing:{cfg.ios.test_target}", f"-skip-testing:{cfg.ios.test_target}/{AUDIO_TRACE_TEST}",
+                f"-skip-testing:{cfg.ios.test_target}/{COLD_LAUNCH_HITCH_TEST}"]
     else:
         cmd += [f"-only-testing:{only}"]
     res = runner.run(cmd, cwd=_ios_dir(cfg), timeout=TEST_TIMEOUT_S)
