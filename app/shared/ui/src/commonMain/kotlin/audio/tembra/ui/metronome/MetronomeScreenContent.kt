@@ -137,28 +137,28 @@ fun MetronomeScreenContent(
 private fun StackedMetronome(state: MetronomeUiState, callbacks: MetronomeCallbacks, telemetry: BeatTelemetry, modifier: Modifier) {
     val spacing = TembraTheme.spacing
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(spacing.md)) {
-        BoxWithConstraints(modifier = Modifier.fillMaxWidth().weight(1f)) {
-            SettingsOverDial(
-                viewportHeight = maxHeight,
-                gap = spacing.md,
-                minDialCardHeight = compactDialMin() + dialCardChrome(),
-                modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
-                settings = {
-                    MetronomeSettingsPanel(
-                        state = state,
-                        callbacks = callbacks,
-                        telemetry = telemetry,
-                        layout = MetronomeLayout.Stacked,
-                        modifier = Modifier.fillMaxWidth().testTag(SETTINGS_TAG),
-                    )
-                },
-                dialCard = {
-                    DialCard(state = state, callbacks = callbacks, discs = CardDiscs.None, modifier = Modifier.fillMaxSize()) {
-                        DialInCard(state, callbacks, cap = MetronomeDefaults.CompactDialMax)
-                    }
-                },
-            )
-        }
+        // The column's weighted height fixes the scroll container, which passes it on to SettingsOverDial as the
+        // minimum height: the viewport arrives without a BoxWithConstraints, so this composes in the composition and
+        // can be prepared ahead (PreparedLayout), not in a measure pass.
+        SettingsOverDial(
+            gap = spacing.md,
+            minDialCardHeight = compactDialMin() + dialCardChrome(),
+            modifier = Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()),
+            settings = {
+                MetronomeSettingsPanel(
+                    state = state,
+                    callbacks = callbacks,
+                    telemetry = telemetry,
+                    layout = MetronomeLayout.Stacked,
+                    modifier = Modifier.fillMaxWidth().testTag(SETTINGS_TAG),
+                )
+            },
+            dialCard = {
+                DialCard(state = state, callbacks = callbacks, discs = CardDiscs.None, modifier = Modifier.fillMaxSize()) {
+                    DialInCard(state, callbacks, cap = MetronomeDefaults.CompactDialMax)
+                }
+            },
+        )
         TransportRow(state = state, callbacks = callbacks, modifier = Modifier.fillMaxWidth())
     }
 }
@@ -338,12 +338,13 @@ private fun SettingsButton(onClick: () -> Unit, modifier: Modifier) {
 }
 
 /**
- * [settings] at their own height, then [dialCard] [gap] under them filling the rest of [viewportHeight], but never
+ * [settings] at their own height, then [dialCard] [gap] under them filling the rest of the viewport, but never
  * shorter than [minDialCardHeight]: past that the layout is taller than the viewport and its scrolling parent scrolls.
+ * The viewport is the minimum height a vertical scroll passes on (it lifts only the maximum), or the maximum height
+ * when nothing scrolls.
  */
 @Composable
 private fun SettingsOverDial(
-    viewportHeight: Dp,
     gap: Dp,
     minDialCardHeight: Dp,
     modifier: Modifier,
@@ -353,9 +354,10 @@ private fun SettingsOverDial(
     Layout(contents = listOf(settings, dialCard), modifier = modifier) { (settingsMeasurables, dialMeasurables), constraints ->
         val width = constraints.maxWidth
         val gapPx = gap.roundToPx()
+        val viewport = if (constraints.hasBoundedHeight) constraints.maxHeight else constraints.minHeight
         val settingsPlaceables = settingsMeasurables.map { it.measure(Constraints(minWidth = width, maxWidth = width)) }
         val settingsHeight = settingsPlaceables.sumOf { it.height }
-        val cardHeight = maxOf(viewportHeight.roundToPx() - settingsHeight - gapPx, minDialCardHeight.roundToPx())
+        val cardHeight = maxOf(viewport - settingsHeight - gapPx, minDialCardHeight.roundToPx())
         val dialPlaceables = dialMeasurables.map { it.measure(Constraints.fixed(width, cardHeight)) }
         layout(width, settingsHeight + gapPx + cardHeight) {
             var y = 0

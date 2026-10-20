@@ -25,6 +25,8 @@ import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metrox.viewmodel.ViewModelKey
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
@@ -42,10 +44,11 @@ import kotlinx.coroutines.withContext
 /**
  * The Tuner destination's ViewModel (contracts/tuner-screen.md). It owns the microphone lease through
  * [ListeningPolicy]: every input change recomputes what the audio should do and applies the transition (stop the
- * current stream, then start the desired one). A 10 Hz poll mirrors the engine's state and reading for semantics
- * and notices when the engine stopped by itself (watchdog, one-shot tone); frame-rate telemetry goes through
- * [telemetry] straight into the meter's draw phase (Constitution II). Selector choices persist through
- * [TunerPreferences]. Nothing is launched from the constructor: the first [screenVisible] call is the launch site.
+ * current stream, then start the desired one) on [audioDispatcher], one transition at a time. A 10 Hz poll mirrors
+ * the engine's state and reading for semantics and notices when the engine stopped by itself (watchdog, one-shot
+ * tone); frame-rate telemetry goes through [telemetry] straight into the meter's draw phase (Constitution II).
+ * Selector choices persist through [TunerPreferences]. Nothing is launched from the constructor: the first
+ * [screenVisible] call is the launch site.
  */
 @Inject
 @ContributesIntoMap(AppScope::class)
@@ -57,6 +60,12 @@ class TunerViewModel(
     private val sounds: ReferenceSoundRepository,
     /** Where recordings are decoded (analysis M6); an optional binding, so the graph provides nothing for it. */
     private val decodeDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    /**
+     * Where the engine's streams start and stop. Opening the microphone blocks while the platform brings the device
+     * up (about 70 ms on a Pixel 6 Pro, 130 ms on an iPhone 14), which on the main thread dropped the first frames of
+     * the screen that asked for it. One thread, so stops and starts keep their order; an optional binding.
+     */
+    private val audioDispatcher: CoroutineDispatcher = Dispatchers.Default.limitedParallelism(1),
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TunerUiState())
@@ -68,7 +77,17 @@ class TunerViewModel(
     private var screenVisible = false
     private var foreground = false
     private var requestedThisVisibility = false
+
+    /** What the last finished transition reached, as this (main) thread knows it. */
     private var current: DesiredAudio = DesiredAudio.Idle
+
+    /** True while a transition runs on [audioDispatcher]; inputs that change meanwhile are applied when it returns. */
+    private var transitioning = false
+    private var pendingApply = false
+    private var pendingRestart = Restart.None
+
+    /** What the engine runs for this ViewModel; read and written only on [audioDispatcher]. */
+    private var engineAudio: DesiredAudio = DesiredAudio.Idle
     private var startJob: Job? = null
     private var pollJob: Job? = null
 
@@ -284,25 +303,70 @@ class TunerViewModel(
 
     // --- Applying the policy ----------------------------------------------------------------------------------------
 
-    private fun applyAudio() {
+    /**
+     * Recomputes the desired audio and, when it differs from [current] (or [restart] says the engine's own record is
+     * stale), moves the engine there on [audioDispatcher]. The caller's thread never waits for a stream to open; the
+     * state and the poll follow when the transition returns.
+     */
+    private fun applyAudio(restart: Restart = Restart.None) {
         val state = _uiState.value
         if (!state.loaded) return
+        requestPermissionIfNeeded(state)
+        if (transitioning) {
+            pendingApply = true
+            if (restart != Restart.None) pendingRestart = restart
+            return
+        }
         val inputs = PolicyInputs(state.mode, screenVisible, foreground, state.microphone, state.audition, state.interrupted, state.testSignal)
         val desired = ListeningPolicy.desired(inputs)
-        requestPermissionIfNeeded(state)
-        if (desired != current) {
-            val previous = current
-            if (previous is DesiredAudio.Tone && desired is DesiredAudio.Tone && previous.sound == desired.sound && desired.sound is ReferenceSound.Synth) {
-                // Same tone, other loop setting: the engine re-arms without a restart (spec FR-019).
-                current = if (startTone(desired)) desired else DesiredAudio.Idle
-            } else {
-                stopAudio(previous)
-                current = startAudio(desired)
-            }
-            if (current == DesiredAudio.Idle && desired is DesiredAudio.Tone) _uiState.update { it.copy(audition = null) }
+        if (desired == current && restart == Restart.None) {
+            _uiState.update { it.copy(audio = audio.audioState) }
+            updatePolling()
+            return
         }
-        _uiState.update { it.copy(audio = audio.audioState) }
-        updatePolling()
+        // Read on this thread, where the decodes store them.
+        val sample = ((desired as? DesiredAudio.Tone)?.sound as? ReferenceSound.Recording)?.let { sampleHandles[it.resourceName] }
+        transitioning = true
+        viewModelScope.launch(start = CoroutineStart.UNDISPATCHED) {
+            val reached = withContext(audioDispatcher) { switchEngine(desired, sample, restart) }
+            current = reached
+            transitioning = false
+            if (reached == DesiredAudio.Idle && desired is DesiredAudio.Tone) _uiState.update { it.copy(audition = null) }
+            _uiState.update { it.copy(audio = audio.audioState) }
+            updatePolling()
+            if (pendingApply) {
+                val again = pendingRestart
+                pendingApply = false
+                pendingRestart = Restart.None
+                applyAudio(again)
+            }
+        }
+    }
+
+    /** On [audioDispatcher]: moves the engine from [engineAudio] to [desired] and returns what it reached. */
+    private fun switchEngine(desired: DesiredAudio, sample: SampleHandle?, restart: Restart): DesiredAudio {
+        when (restart) {
+            Restart.None -> Unit
+            // The engine stopped by itself (watchdog, one-shot tone): nothing is left to stop.
+            Restart.EngineStopped -> engineAudio = DesiredAudio.Idle
+            Restart.StopFirst -> {
+                stopAudio(engineAudio)
+                engineAudio = DesiredAudio.Idle
+            }
+        }
+        val previous = engineAudio
+        val reached = when {
+            previous == desired -> desired
+            // Same tone, other loop setting: the engine re-arms without a restart (spec FR-019).
+            previous is DesiredAudio.Tone && desired is DesiredAudio.Tone && previous.sound == desired.sound &&
+                desired.sound is ReferenceSound.Synth -> if (startTone(desired, sample)) desired else DesiredAudio.Idle
+            else -> {
+                stopAudio(previous)
+                startAudio(desired, sample)
+            }
+        }
+        engineAudio = reached
+        return reached
     }
 
     private fun requestPermissionIfNeeded(state: TunerUiState) {
@@ -321,20 +385,17 @@ class TunerViewModel(
         }
     }
 
-    private fun startAudio(desired: DesiredAudio): DesiredAudio = when (desired) {
+    private fun startAudio(desired: DesiredAudio, sample: SampleHandle?): DesiredAudio = when (desired) {
         DesiredAudio.Idle -> DesiredAudio.Idle
         DesiredAudio.Listening -> if (audio.startListening() == AudioResult.Ok) desired else DesiredAudio.Idle
         is DesiredAudio.TestListening -> if (audio.startTestSignal(desired.signal) == AudioResult.Ok) desired else DesiredAudio.Idle
-        is DesiredAudio.Tone -> if (startTone(desired)) desired else DesiredAudio.Idle
+        is DesiredAudio.Tone -> if (startTone(desired, sample)) desired else DesiredAudio.Idle
     }
 
-    /** True when the engine sounds [tone]; a recording whose decode failed has no sample to play. */
-    private fun startTone(tone: DesiredAudio.Tone): Boolean = when (val sound = tone.sound) {
+    /** True when the engine sounds [tone]; a recording whose decode failed has no [sample] to play. */
+    private fun startTone(tone: DesiredAudio.Tone, sample: SampleHandle?): Boolean = when (val sound = tone.sound) {
         is ReferenceSound.Synth -> audio.startTone(sound.frequencyHz, if (tone.loop) 0 else ONE_SHOT_MILLIS) == AudioResult.Ok
-        is ReferenceSound.Recording -> {
-            val handle = sampleHandles[sound.resourceName]
-            handle != null && audio.playSample(handle, tone.loop) == AudioResult.Ok
-        }
+        is ReferenceSound.Recording -> sample != null && audio.playSample(sample, tone.loop) == AudioResult.Ok
     }
 
     private fun updatePolling() {
@@ -362,11 +423,12 @@ class TunerViewModel(
         // A gate is only ever closed while listening; any other state reads as open.
         val gateOpen = engineState != AudioState.Listening || snapshot.gateOpen
         _uiState.update { it.copy(audio = engineState, reading = reading, gateOpen = gateOpen) }
-        if (engineState == AudioState.Idle && current != DesiredAudio.Idle) {
+        // Mid-transition the engine is briefly idle between the stop and the start; only a settled state counts.
+        if (!transitioning && engineState == AudioState.Idle && current != DesiredAudio.Idle) {
             val wasTone = current is DesiredAudio.Tone
             current = DesiredAudio.Idle
             if (wasTone) _uiState.update { it.copy(audition = null) }
-            applyAudio()
+            applyAudio(Restart.EngineStopped)
         }
     }
 
@@ -382,9 +444,8 @@ class TunerViewModel(
                 applyAudio()
             }
             AudioEvent.DeviceLost -> {
-                stopAudio(current)
                 current = DesiredAudio.Idle
-                applyAudio()
+                applyAudio(Restart.StopFirst)
             }
             AudioEvent.OutputRouteLost -> {
                 cancelPendingAudition()
@@ -418,12 +479,31 @@ class TunerViewModel(
         cancelPendingAudition()
         pollJob?.cancel()
         pollJob = null
-        stopAudio(current)
         current = DesiredAudio.Idle
         // The engine keeps a gate for the life of the process; one this ViewModel set must not outlive it.
-        if (!_uiState.value.noiseGate.isOff) audio.setNoiseGate(null)
-        unloadSamples()
+        val gateSet = !_uiState.value.noiseGate.isOff
+        val samples = sampleHandles.values.toList()
+        sampleHandles.clear()
+        // The release is the one launch outside viewModelScope, which is already cancelled here: it queues on
+        // audioDispatcher behind a transition still in flight, so the engine always ends idle.
+        CoroutineScope(audioDispatcher).launch {
+            stopAudio(engineAudio)
+            engineAudio = DesiredAudio.Idle
+            if (gateSet) audio.setNoiseGate(null)
+            for (handle in samples) audio.unloadSample(handle)
+        }
         super.onCleared()
+    }
+
+    /** How a transition treats the engine's own record before it moves on. */
+    private enum class Restart {
+        None,
+
+        /** The engine stopped by itself; there is nothing to stop. */
+        EngineStopped,
+
+        /** The device was lost; stop what ran before starting again. */
+        StopFirst,
     }
 
     private companion object {
