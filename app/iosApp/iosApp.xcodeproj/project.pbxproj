@@ -24,6 +24,7 @@
 		7E5F000000000000000000D2 /* MetronomeJourney.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F0000000000000000006E /* MetronomeJourney.swift */; };
 		7E5F000000000000000000D3 /* StressJourney.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F0000000000000000006F /* StressJourney.swift */; };
 		7E5F000000000000000000D4 /* AudioTracePass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F00000000000000000070 /* AudioTracePass.swift */; };
+		7E5F000000000000000000D5 /* ColdLaunchHitchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F00000000000000000071 /* ColdLaunchHitchTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -61,6 +62,7 @@
 		7E5F0000000000000000006A /* MetronomePerfTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetronomePerfTests.swift; sourceTree = "<group>"; };
 		7E5F0000000000000000006B /* StressPerfTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StressPerfTests.swift; sourceTree = "<group>"; };
 		7E5F00000000000000000070 /* AudioTracePass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioTracePass.swift; sourceTree = "<group>"; };
+		7E5F00000000000000000071 /* ColdLaunchHitchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColdLaunchHitchTests.swift; sourceTree = "<group>"; };
 		7E5F0000000000000000006C /* FacadeSelfCheckTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FacadeSelfCheckTests.swift; sourceTree = "<group>"; };
 		7E5F0000000000000000006D /* TunerJourney.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunerJourney.swift; sourceTree = "<group>"; };
 		7E5F0000000000000000006E /* MetronomeJourney.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetronomeJourney.swift; sourceTree = "<group>"; };
@@ -154,6 +156,7 @@
 				7E5F0000000000000000006B /* StressPerfTests.swift */,
 				7E5F0000000000000000006C /* FacadeSelfCheckTests.swift */,
 				7E5F00000000000000000070 /* AudioTracePass.swift */,
+				7E5F00000000000000000071 /* ColdLaunchHitchTests.swift */,
 				7E5F0000000000000000000D /* Journeys */,
 			);
 			path = TembraPerfTests;
@@ -321,6 +324,7 @@
 				7E5F000000000000000000D2 /* MetronomeJourney.swift in Sources */,
 				7E5F000000000000000000D3 /* StressJourney.swift in Sources */,
 				7E5F000000000000000000D4 /* AudioTracePass.swift in Sources */,
+				7E5F000000000000000000D5 /* ColdLaunchHitchTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
