@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.TextAutoSize
+import audio.tembra.ui.designsystem.stepBasedFitFirst
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -88,7 +88,7 @@ private fun NumberLine(tempo: Tempo) {
                 style = number,
                 color = colors.onSurface,
                 maxLines = 1,
-                autoSize = TextAutoSize.StepBased(maxFontSize = number.fontSize),
+                autoSize = stepBasedFitFirst(maxFontSize = number.fontSize),
                 modifier = textModifier.semantics { hideFromAccessibility() },
             )
         }
@@ -132,7 +132,7 @@ private fun MarkingLine(marking: TempoMarking) {
             textAlign = TextAlign.Center,
             maxLines = 1,
             softWrap = false,
-            autoSize = TextAutoSize.StepBased(minFontSize = MetronomeDefaults.MarkingMinSize, maxFontSize = style.fontSize),
+            autoSize = stepBasedFitFirst(minFontSize = MetronomeDefaults.MarkingMinSize, maxFontSize = style.fontSize),
             modifier = Modifier.semantics { hideFromAccessibility() },
         )
     }

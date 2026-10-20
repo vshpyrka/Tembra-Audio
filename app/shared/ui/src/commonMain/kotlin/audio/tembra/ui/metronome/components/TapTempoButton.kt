@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.TextAutoSize
+import audio.tembra.ui.designsystem.stepBasedFitFirst
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -136,7 +136,7 @@ internal fun TapTempoButton(
                 color = colors.primary,
                 textAlign = TextAlign.Center,
                 maxLines = if (oneLine) 1 else 2,
-                autoSize = if (oneLine) TextAutoSize.StepBased(minFontSize = MetronomeDefaults.TapTextMinSize, maxFontSize = title.fontSize) else null,
+                autoSize = if (oneLine) stepBasedFitFirst(minFontSize = MetronomeDefaults.TapTextMinSize, maxFontSize = title.fontSize) else null,
                 // The description and the state say these: the drawn title and caption are not read a second time.
                 modifier = Modifier.weight(1f, fill = false).testTag("$testTag.title").clearAndSetSemantics {},
             )
@@ -148,7 +148,7 @@ internal fun TapTempoButton(
             color = colors.outline,
             textAlign = TextAlign.Center,
             maxLines = if (oneLine) 1 else 2,
-            autoSize = if (oneLine) TextAutoSize.StepBased(minFontSize = MetronomeDefaults.TapTextMinSize, maxFontSize = captionStyle.fontSize) else null,
+            autoSize = if (oneLine) stepBasedFitFirst(minFontSize = MetronomeDefaults.TapTextMinSize, maxFontSize = captionStyle.fontSize) else null,
             modifier = Modifier.testTag("$testTag.caption").clearAndSetSemantics {},
         )
     }
