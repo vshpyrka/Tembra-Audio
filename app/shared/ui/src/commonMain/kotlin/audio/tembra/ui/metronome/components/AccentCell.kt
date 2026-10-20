@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.TextAutoSize
+import audio.tembra.ui.designsystem.stepBasedFitFirst
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -187,7 +187,7 @@ internal fun AccentCellLabel(level: BeatLevel, modifier: Modifier = Modifier) {
         },
         maxLines = 1,
         overflow = TextOverflow.Clip,
-        autoSize = TextAutoSize.StepBased(minFontSize = MetronomeDefaults.CellLabelMinSize, maxFontSize = style.fontSize),
+        autoSize = stepBasedFitFirst(minFontSize = MetronomeDefaults.CellLabelMinSize, maxFontSize = style.fontSize),
         modifier = modifier,
     )
 }

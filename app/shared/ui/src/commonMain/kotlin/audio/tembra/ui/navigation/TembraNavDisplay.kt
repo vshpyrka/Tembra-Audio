@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.get
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SinglePaneSceneStrategy
@@ -40,8 +41,20 @@ internal fun TembraNavDisplay(
         fadeIn(tween(motion.effectiveDuration, easing = motion.standardEasing)) togetherWith
             fadeOut(tween(motion.effectiveDuration, easing = motion.standardEasing))
     }
+    // A screen that prepares itself over a few frames fades itself in once it is ready (FadesItselfInKey), with no
+    // offscreen layer; the navigation fades out only the screen it leaves.
+    val fadeOutOnly = if (motion.reduceMotion) {
+        instant
+    } else {
+        EnterTransition.None togetherWith fadeOut(tween(motion.effectiveDuration, easing = motion.standardEasing))
+    }
     val transition: AnimatedContentTransitionScope<Scene<DestinationKey>>.() -> ContentTransform = {
-        if (initialState.entries.lastOrNull()?.contentKey == targetState.entries.lastOrNull()?.contentKey) instant else fade
+        val target = targetState.entries.lastOrNull()
+        when {
+            initialState.entries.lastOrNull()?.contentKey == target?.contentKey -> instant
+            target?.metadata?.get(FadesItselfInKey) == true -> fadeOutOnly
+            else -> fade
+        }
     }
     NavDisplay(
         backStack = backStack.map(::DestinationKey),
@@ -60,10 +73,16 @@ internal fun TembraNavDisplay(
         predictivePopTransitionSpec = { transition() },
         entryProvider = entryProvider {
             entry<DestinationKey>(
-                metadata = { key -> if (key.destination.hasSupportingPane) supportingPane(SupportingPane.Library) else emptyMap() },
+                metadata = { key ->
+                    val pane = if (key.destination.hasSupportingPane) supportingPane(SupportingPane.Library) else emptyMap()
+                    pane + if (key.destination in PreparesItself) fadesItselfIn() else emptyMap()
+                },
             ) { key ->
                 DestinationContent(key.destination)
             }
         },
     )
 }
+
+/** The destinations whose screens prepare themselves before they show (PreparedLayout) and fade themselves in. */
+private val PreparesItself = setOf(Destination.Metronome)
