@@ -19,6 +19,7 @@ import audio.tembra.ui.perf.AudioHealthTicker
 import audio.tembra.ui.perf.AudioHealthWriteButton
 import audio.tembra.ui.perf.anchorRoot
 import audio.tembra.ui.theme.TembraTheme
+import audio.tembra.ui.theme.WarmUpText
 import audio.tembra.ui.tuner.LocalTunerNoiseGate
 import audio.tembra.ui.tuner.LocalTunerTestSignal
 import audio.tembra.ui.tuner.TunerNoiseGateRequest
@@ -47,6 +48,7 @@ fun App(
         TembraTheme {
             Box(Modifier.anchorRoot()) {
                 AppContent(developerView) { NavigationShell() }
+                WarmUpText()
                 // Measurement builds only (feature 007): the one-second audio-health publisher and the stress journey's
                 // "write engine health" control; PERF_ENABLED is a compile-time constant, so release builds carry neither.
                 if (PerfBuild.PERF_ENABLED) {
