@@ -40,3 +40,7 @@ app/perf/**/__pycache__/
 app/perf/**/*.pyc
 app/perf/.pytest_cache/
 app/perf/*.egg-info/
+
+# Instruments recordings (xctrace record writes <template>_<bundle>_<date>.trace bundles to the
+# current directory); the perf pipeline keeps its own under app/perf/data/
+*.trace/
