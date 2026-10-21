@@ -6,6 +6,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.LongState
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.staticCompositionLocalOf
 
 /**
  * A frame tick that only draw lambdas read (feature 003 research R8, feature 004 research R7): while [active], every
@@ -16,10 +17,14 @@ import androidx.compose.runtime.remember
 @Composable
 fun rememberFrameTick(active: Boolean): LongState {
     val tick = remember { mutableLongStateOf(0L) }
-    LaunchedEffect(active) {
-        while (active) {
+    val running = active && !LocalFrameTicksPaused.current
+    LaunchedEffect(running) {
+        while (running) {
             withInfiniteAnimationFrameNanos { tick.longValue = it }
         }
     }
     return tick
 }
+
+/** True inside content drawn ahead ([DrawAhead]): its ticks hold still, so it asks the window for no frame of its own. */
+internal val LocalFrameTicksPaused = staticCompositionLocalOf { false }

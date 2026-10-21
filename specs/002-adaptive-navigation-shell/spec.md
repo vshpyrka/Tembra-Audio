@@ -273,7 +273,7 @@ the icon set; confirm the shell code contains no literal colour, size or font va
   (or a desktop window's caption), and a rail runs the full window height. Until 2026-10-16 a
   full-width top bar above the rail showed the product name "Tembra Audio" and the current
   destination's title.
-- **FR-008** (amended 2026-10-17, 2026-10-20): Selecting an item MUST show its destination and
+- **FR-008** (amended 2026-10-17, 2026-10-20, 2026-10-21): Selecting an item MUST show its destination and
   mark that item as the only active item; selecting the already active item MUST have no effect.
   The switch MUST be animated: the outgoing destination fades into the incoming one using the
   standard transition duration of the platform's design guidelines (a few hundred milliseconds,
@@ -281,10 +281,10 @@ the icon set; confirm the shell code contains no literal colour, size or font va
   active marker moves to the new item with the navigation component's own standard animation.
   When the platform's reduce-motion setting is on, the switch MUST be instant. A destination that
   prepares its content over the frames after the switch, so that no single frame carries the
-  whole screen (the Metronome since 2026-10-20), starts its fade-in, with the same duration, once
-  that content is ready, a few frames after the outgoing destination starts to fade out; under
-  reduce motion it appears without animation once ready. Until 2026-10-17 the marker's move used
-  the same standard transition duration as the fade.
+  whole screen (the Metronome since 2026-10-20, the Tuner since 2026-10-21), starts its fade-in,
+  with the same duration, once that content is ready, a few frames after the outgoing destination
+  starts to fade out; under reduce motion it appears without animation once ready. Until
+  2026-10-17 the marker's move used the same standard transition duration as the fade.
 - **FR-009**: A change of layout caused by resizing MUST preserve the selected destination and
   its content state.
 - **FR-010** (amended 2026-10-17): On Android the system back action from any destination other

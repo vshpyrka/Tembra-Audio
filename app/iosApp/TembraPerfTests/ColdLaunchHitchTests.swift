@@ -29,7 +29,11 @@ final class ColdLaunchHitchTests: PerfJourneyTestCase {
     private func measureColdLaunch(opening navItem: String) {
         launchWarm()
         let frame = app.waitForAnchor(navItem).frame
-        let target = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: frame.midX, dy: frame.midY))
+        // The tap is placed in SpringBoard's screen space, not the app's: resolving an app coordinate makes XCTest take an
+        // accessibility snapshot of the app before every tap, and Compose then keeps its accessibility tree in sync while
+        // the screen opens, work no user without an assistive technology causes (iPhone 14, 2026-10-21).
+        let screen = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let target = screen.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: frame.midX, dy: frame.midY))
 
         let options = XCTMeasureOptions()
         options.iterationCount = Self.iterations

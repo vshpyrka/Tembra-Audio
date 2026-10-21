@@ -13,6 +13,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Constraints
@@ -103,7 +104,8 @@ private fun MeterOverFooter(
     val currentReading by rememberUpdatedState(reading)
     val currentListening by rememberUpdatedState(listening)
     val currentFooter by rememberUpdatedState(footer)
-    SubcomposeLayout(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) { constraints ->
+    // A layer of its own: each reading measures and places the card again, which re-records only this layer.
+    SubcomposeLayout(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).graphicsLayer()) { constraints ->
         val width = constraints.maxWidth
         // A scroll container hands its own height down as the minimum height: the viewport this content should fill.
         val viewport = constraints.minHeight
