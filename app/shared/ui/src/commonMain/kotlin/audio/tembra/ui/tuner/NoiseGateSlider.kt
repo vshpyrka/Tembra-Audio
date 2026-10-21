@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.hideFromAccessibility
@@ -117,6 +118,8 @@ internal fun NoiseGateSlider(
                         Modifier
                             .fillMaxWidth()
                             .height(TembraSliderDefaults.TrackHeight)
+                            // A layer of its own: the frame tick then re-records the track alone, not the screen.
+                            .graphicsLayer()
                             .background(emptyTrack, CircleShape)
                             .drawBehind {
                                 if (!listening) return@drawBehind
