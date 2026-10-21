@@ -24,3 +24,16 @@ interface AppGraph : ViewModelGraph {
     val backgroundPlaybackHost: BackgroundPlaybackHost
     val soundFilePicker: SoundFilePicker
 }
+
+/**
+ * The app-wide objects the screens' ViewModels are built from: the directories, the preferences file and the stores on
+ * it, the engine, the playback host and the microphone permission. Metro builds each on its first use, which was the
+ * frame that opened a screen: building the DataStore alone (its file, the first use of `Dispatchers.IO`) was half of
+ * the frame that opened the Metronome on a Pixel 6 Pro, and the permission's first look at the audio session 8 ms of
+ * the frame that opened the Tuner on an iPhone 14. [App] asks for them once off the main thread after the first frame;
+ * each is built once, on whichever thread asks first.
+ */
+internal fun AppGraph.prebuiltForScreens(): List<Any> = listOf(
+    appDirectories, tunerPreferences, metronomePreferences, customClickSoundStore, audioEngine, backgroundPlaybackHost,
+    microphonePermission,
+)

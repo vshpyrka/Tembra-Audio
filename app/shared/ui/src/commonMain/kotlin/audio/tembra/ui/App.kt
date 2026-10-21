@@ -6,12 +6,15 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import audio.tembra.engine.TestSignal
 import audio.tembra.engine.perf.PerfBuild
 import audio.tembra.ui.devtools.DeveloperViewRequest
 import audio.tembra.ui.di.AppGraph
+import audio.tembra.ui.di.prebuiltForScreens
 import audio.tembra.ui.metronome.LocalMetronomeDebug
 import audio.tembra.ui.metronome.MetronomeDebugRequest
 import audio.tembra.ui.navigation.NavigationShell
@@ -24,6 +27,9 @@ import audio.tembra.ui.tuner.LocalTunerNoiseGate
 import audio.tembra.ui.tuner.LocalTunerTestSignal
 import audio.tembra.ui.tuner.TunerNoiseGateRequest
 import dev.zacsweers.metrox.viewmodel.LocalMetroViewModelFactory
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.withContext
 
 /**
  * Root composable hosted by both platform shells. [developerView] (feature 002, spec FR-022), [tunerTestSignal]
@@ -45,6 +51,12 @@ fun App(
         LocalTunerNoiseGate provides tunerNoiseGate?.gate,
         LocalMetronomeDebug provides metronomeDebug,
     ) {
+        // The objects the screens' ViewModels are built from, built off the main thread once the first frame is up, so
+        // the frame that opens a screen does not build them (AppGraph.prebuiltForScreens).
+        LaunchedEffect(appGraph) {
+            withFrameNanos { }
+            withContext(Dispatchers.IO) { appGraph.prebuiltForScreens() }
+        }
         TembraTheme {
             Box(Modifier.anchorRoot()) {
                 AppContent(developerView) { NavigationShell() }
