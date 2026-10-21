@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.layout
@@ -122,7 +123,9 @@ fun TunerMeter(
                 contentDescription = TunerCopy.tunerMeter
                 stateDescription = description
                 liveRegion = LiveRegionMode.Polite
-            },
+            }
+            // A layer of its own: the frame tick then re-records the meter alone, not the screen around it.
+            .graphicsLayer(),
     ) {
         val frameNanos = tick.longValue
         // `size` is the meter size; the canvas size is the draw scope's.

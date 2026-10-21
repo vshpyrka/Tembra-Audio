@@ -6,14 +6,22 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import audio.tembra.engine.TestSignal
 import audio.tembra.engine.perf.PerfBuild
 import audio.tembra.ui.devtools.DeveloperViewRequest
 import audio.tembra.ui.di.AppGraph
+import audio.tembra.ui.di.prebuiltForScreens
 import audio.tembra.ui.metronome.LocalMetronomeDebug
 import audio.tembra.ui.metronome.MetronomeDebugRequest
+import audio.tembra.ui.navigation.DestinationsDrawnAhead
 import audio.tembra.ui.navigation.NavigationShell
 import audio.tembra.ui.perf.AudioHealthTicker
 import audio.tembra.ui.perf.AudioHealthWriteButton
@@ -24,6 +32,9 @@ import audio.tembra.ui.tuner.LocalTunerNoiseGate
 import audio.tembra.ui.tuner.LocalTunerTestSignal
 import audio.tembra.ui.tuner.TunerNoiseGateRequest
 import dev.zacsweers.metrox.viewmodel.LocalMetroViewModelFactory
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.withContext
 
 /**
  * Root composable hosted by both platform shells. [developerView] (feature 002, spec FR-022), [tunerTestSignal]
@@ -45,10 +56,21 @@ fun App(
         LocalTunerNoiseGate provides tunerNoiseGate?.gate,
         LocalMetronomeDebug provides metronomeDebug,
     ) {
+        // The objects the screens' ViewModels are built from, built off the main thread once the first frame is up, so
+        // the frame that opens a screen does not build them (AppGraph.prebuiltForScreens).
+        LaunchedEffect(appGraph) {
+            withFrameNanos { }
+            withContext(Dispatchers.IO) { appGraph.prebuiltForScreens() }
+        }
         TembraTheme {
             Box(Modifier.anchorRoot()) {
+                // After launch, first the text is laid out and then the Tuner and the Metronome are drawn once ahead
+                // (DestinationsDrawnAhead), while the start screen is idle; beneath everything, so nothing of it is seen
+                // or touched.
+                var textWarm by remember { mutableStateOf(false) }
+                if (textWarm) DestinationsDrawnAhead()
                 AppContent(developerView) { NavigationShell() }
-                WarmUpText()
+                WarmUpText(onWarm = { textWarm = true })
                 // Measurement builds only (feature 007): the one-second audio-health publisher and the stress journey's
                 // "write engine health" control; PERF_ENABLED is a compile-time constant, so release builds carry neither.
                 if (PerfBuild.PERF_ENABLED) {

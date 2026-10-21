@@ -85,4 +85,4 @@ internal fun TembraNavDisplay(
 }
 
 /** The destinations whose screens prepare themselves before they show (PreparedLayout) and fade themselves in. */
-private val PreparesItself = setOf(Destination.Metronome)
+private val PreparesItself = setOf(Destination.Tuner, Destination.Metronome)

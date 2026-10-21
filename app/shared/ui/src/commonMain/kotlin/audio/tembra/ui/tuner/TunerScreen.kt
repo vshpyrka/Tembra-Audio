@@ -1,6 +1,5 @@
 package audio.tembra.ui.tuner
 
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
@@ -8,9 +7,11 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import audio.tembra.ui.designsystem.PreparedLayout
 import audio.tembra.ui.perf.ReportFirstContentDrawn
 import audio.tembra.ui.posture.currentTabletopFold
 import audio.tembra.ui.posture.currentVerticalFold
@@ -67,7 +68,10 @@ fun TunerScreen(modifier: Modifier = Modifier, viewModel: TunerViewModel = metro
     if (state.loaded) {
         // The screen's own height, not the window's: under 506 dp of content the one-row Pocket form takes the place of
         // a Stacked one whose second selector row pushed the meter and the noise gate down (a short desktop window).
-        BoxWithConstraints(modifier = modifier) {
+        // The content is composed for that height over the frames before it shows (PreparedLayout), so opening the
+        // screen drops no frame.
+        PreparedLayout(modifier = modifier) { constraints ->
+            val maxHeight = with(LocalDensity.current) { constraints.maxHeight.toDp() }
             TunerScreenContent(
                 state = state,
                 callbacks = callbacks,
