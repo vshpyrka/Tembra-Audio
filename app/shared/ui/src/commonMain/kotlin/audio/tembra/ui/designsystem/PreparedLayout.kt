@@ -13,8 +13,10 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.layout.SubcomposeLayoutState
+import androidx.compose.ui.layout.SubcomposeMeasureScope
 import androidx.compose.ui.unit.Constraints
 import audio.tembra.ui.theme.TembraTheme
 import kotlinx.coroutines.yield
@@ -40,25 +42,8 @@ fun PreparedLayout(modifier: Modifier = Modifier, content: @Composable (Constrai
     val motion = TembraTheme.motion
     val alpha = remember { Animatable(0f) }
     LaunchedEffect(state) {
-        var constraints = slots.measured
-        while (constraints == null) {
-            withFrameNanos { }
-            constraints = slots.measured
-        }
-        // One slice per frame, run after that frame's work (the yield leaves the frame callback), the way lazy lists
-        // prefetch: the frames of the fade keep their turn, and each carries at most a slice besides its own work.
-        val slot = slots.slotFor(constraints) { latest(it) }
-        val paused = state.createPausedPrecomposition(SLOT_KEY, slot)
-        while (!paused.isComplete) {
-            withFrameNanos { }
-            yield()
-            val started = TimeSource.Monotonic.markNow()
-            paused.resume { started.elapsedNow() > SLICE }
-        }
-        val handle = paused.apply()
-        withFrameNanos { }
-        yield()
-        repeat(handle.placeablesCount) { handle.premeasure(it, constraints) }
+        val constraints = slots.awaitConstraints()
+        state.prepare(slots.slotFor(constraints) { latest(it) }, constraints)
         shown = true
         alpha.animateTo(1f, tween(motion.effectiveDuration, easing = motion.standardEasing))
     }
@@ -69,11 +54,45 @@ fun PreparedLayout(modifier: Modifier = Modifier, content: @Composable (Constrai
     SubcomposeLayout(state, faded) { constraints ->
         slots.measured = constraints
         if (!shown) return@SubcomposeLayout layout(constraints.minWidth, constraints.minHeight) {}
-        val placeables = subcompose(SLOT_KEY, slots.slotFor(constraints) { latest(it) }).map { it.measure(constraints) }
-        val width = (placeables.maxOfOrNull { it.width } ?: 0).coerceIn(constraints.minWidth, constraints.maxWidth)
-        val height = (placeables.maxOfOrNull { it.height } ?: 0).coerceIn(constraints.minHeight, constraints.maxHeight)
-        layout(width, height) { placeables.forEach { it.place(0, 0) } }
+        placePrepared(constraints, slots.slotFor(constraints) { latest(it) })
     }
+}
+
+/** Waits, a frame at a time, for the first measure pass to bring the constraints. */
+internal suspend fun PreparedSlots.awaitConstraints(): Constraints {
+    var constraints = measured
+    while (constraints == null) {
+        withFrameNanos { }
+        constraints = measured
+    }
+    return constraints
+}
+
+/**
+ * Composes [slot] a [SLICE] per frame, run after that frame's work (the yield leaves the frame callback), the way lazy
+ * lists prefetch: the frames around it keep their turn, and each carries at most a slice besides its own work. Then it
+ * measures the result for [constraints] in a turn of its own, so the frame that places it measures nothing new.
+ */
+internal suspend fun SubcomposeLayoutState.prepare(slot: @Composable () -> Unit, constraints: Constraints) {
+    val paused = createPausedPrecomposition(SLOT_KEY, slot)
+    while (!paused.isComplete) {
+        withFrameNanos { }
+        yield()
+        val started = TimeSource.Monotonic.markNow()
+        paused.resume { started.elapsedNow() > SLICE }
+    }
+    val handle = paused.apply()
+    withFrameNanos { }
+    yield()
+    repeat(handle.placeablesCount) { handle.premeasure(it, constraints) }
+}
+
+/** Measures and places the prepared [slot] at the top start, as a BoxWithConstraints places its content. */
+internal fun SubcomposeMeasureScope.placePrepared(constraints: Constraints, slot: @Composable () -> Unit): MeasureResult {
+    val placeables = subcompose(SLOT_KEY, slot).map { it.measure(constraints) }
+    val width = (placeables.maxOfOrNull { it.width } ?: 0).coerceIn(constraints.minWidth, constraints.maxWidth)
+    val height = (placeables.maxOfOrNull { it.height } ?: 0).coerceIn(constraints.minHeight, constraints.maxHeight)
+    return layout(width, height) { placeables.forEach { it.place(0, 0) } }
 }
 
 /**
@@ -81,7 +100,7 @@ fun PreparedLayout(modifier: Modifier = Modifier, content: @Composable (Constrai
  * pass writes them and the preparation reads them, and no composition reads them, so nothing is fed back across
  * phases. The same lambda for the same constraints is what lets the measure pass reuse the prepared slot as it is.
  */
-private class PreparedSlots {
+internal class PreparedSlots {
     var measured: Constraints? = null
     private var slotConstraints: Constraints? = null
     private var slot: (@Composable () -> Unit)? = null
@@ -99,9 +118,10 @@ private class PreparedSlots {
 private const val SLOT_KEY = "prepared"
 
 /**
- * How the fade-in composites. Android: [CompositingStrategy.ModulateAlpha], the alpha applied to each draw, which spares
- * the first frame a full-screen offscreen layer (13 ms of a Pixel 6 Pro's render thread). iOS: the default, because
- * ModulateAlpha left the Metronome's play button undrawn there (Compose Multiplatform 1.12.1, iPhone 14).
+ * How a fading layer composites: this fade-in and the status pill's pulsing dot. Android:
+ * [CompositingStrategy.ModulateAlpha], the alpha applied to each draw, which spares the first frame a full-screen
+ * offscreen layer (13 ms of a Pixel 6 Pro's render thread) and the dot a layer rendered afresh every pulse. iOS: the
+ * default, because ModulateAlpha left the Metronome's play button undrawn there (Compose Multiplatform 1.12.1, iPhone 14).
  */
 internal expect val FadeInCompositing: CompositingStrategy
 
