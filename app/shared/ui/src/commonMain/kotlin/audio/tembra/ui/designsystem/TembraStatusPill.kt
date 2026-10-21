@@ -69,7 +69,13 @@ fun TembraStatusPill(
             modifier = Modifier
                 .testTagIfSet(testTag?.let { "$it.dot" })
                 .size(spacing.statusDot)
-                .graphicsLayer { this.alpha = alpha.value }
+                // The alpha on the dot's own draw where that is safe (FadeInCompositing): on Android an offscreen layer
+                // was dropped each time the pulse reached full opacity and rendered afresh as it left it, a layer render
+                // and an extra GPU submission every two seconds.
+                .graphicsLayer {
+                    this.alpha = alpha.value
+                    compositingStrategy = FadeInCompositing
+                }
                 .background(color, CircleShape),
         )
         if (icon != null) {
