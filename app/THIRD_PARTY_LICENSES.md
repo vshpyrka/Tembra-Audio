@@ -8,7 +8,7 @@ Last reviewed: 2026-09-30 (feature 004, metronome).
 
 | Dependency | Version | Licence | Source |
 |---|---|---|---|
-| Kotlin standard library, kotlinx-coroutines | 2.4.20, 1.11.0 | Apache-2.0 | https://github.com/JetBrains/kotlin, https://github.com/Kotlin/kotlinx.coroutines |
+| Kotlin standard library, kotlinx-coroutines | 2.4.21, 1.11.0 | Apache-2.0 | https://github.com/JetBrains/kotlin, https://github.com/Kotlin/kotlinx.coroutines |
 | Compose Multiplatform (runtime, foundation, material3, ui, components-resources) | 1.12.1 | Apache-2.0 | https://github.com/JetBrains/compose-multiplatform |
 | Jetpack Compose (Android artifacts used by Compose Multiplatform) | 1.12.1 | Apache-2.0 | https://developer.android.com/jetpack/androidx |
 | AndroidX Lifecycle multiplatform (`lifecycle-viewmodel-compose`, `lifecycle-runtime-compose`) | 2.11.0 | Apache-2.0 | https://github.com/JetBrains/compose-multiplatform-core |
@@ -35,7 +35,7 @@ Last reviewed: 2026-09-30 (feature 004, metronome).
 
 | Dependency | Version | Licence | Source |
 |---|---|---|---|
-| kotlin-test, kotlinx-coroutines-test | 2.4.20, 1.11.0 | Apache-2.0 | JetBrains |
+| kotlin-test, kotlinx-coroutines-test | 2.4.21, 1.11.0 | Apache-2.0 | JetBrains |
 | kotlinx-serialization-json (theme parity test on the JVM) | 1.11.0 | Apache-2.0 | https://github.com/Kotlin/kotlinx.serialization |
 | Compose UI test (`org.jetbrains.compose.ui:ui-test`, `ui-test-junit4-android`, `ui-test-manifest`) | 1.12.1 | Apache-2.0 | JetBrains, AndroidX |
 | AndroidX Test runner, rules, Espresso core | 1.7.0, 1.7.0, 3.7.0 | Apache-2.0 | https://developer.android.com/testing |
@@ -47,7 +47,7 @@ Last reviewed: 2026-09-30 (feature 004, metronome).
 |---|---|---|
 | Gradle (wrapper) | 9.7.0 | Apache-2.0 |
 | Android Gradle Plugin | 9.3.3 | Apache-2.0 |
-| Kotlin Gradle Plugin, Compose Multiplatform Gradle plugin, Metro Gradle plugin | 2.4.20, 1.12.1, 1.4.4 | Apache-2.0 |
+| Kotlin Gradle Plugin, Compose Multiplatform Gradle plugin, Metro Gradle plugin | 2.4.21, 1.12.1, 1.4.4 | Apache-2.0 |
 | CMake (Android SDK package), Ninja | 3.31.6 | BSD-3-Clause, Apache-2.0 |
 | Android NDK | 29.0.14206865 | Apache-2.0 / NDK licence |
 | fontTools (used once to instance the static font files) | 4.x | MIT |
