@@ -102,7 +102,7 @@ void tembra_transport_read(tembra_transport_snapshot* out);  /* lock-free seqloc
 
 ### Health (revision 6 fields appended to `tembra_audio_health`)
 
-`uint32_t avg_us` (mean callback duration since open), `uint32_t starvation` (fifo underruns),
+`uint32_t avg_us` (mean callback duration since open), `uint32_t starvation` (fifo underruns since the transport opened),
 `uint32_t clips_active` (clips rendered in the last block). Existing fields unchanged.
 
 ## Offline audio tools (any thread, no stream needed)

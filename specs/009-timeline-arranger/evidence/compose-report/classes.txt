@@ -1,0 +1,1715 @@
+stable class audio.tembra.ui.resources.Res.drawable {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.resources.Res.string {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.resources.Res.array {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.resources.Res.plurals {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.resources.Res.font {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.resources.Res {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.designsystem.ChipSpec {
+  stable val id: String
+  stable val label: String
+  stable val icon: TembraIcon?
+  stable val interactionSource: MutableInteractionSource?
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.designsystem.DialogAction {
+  stable val label: String
+  stable val onClick: Function0<Unit>
+  stable val testTag: String?
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.designsystem.FoldSplitGeometry.Regions {
+  stable val upperHeight: Int
+  stable val lowerTop: Int
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.designsystem.FoldSplitGeometry {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.designsystem.MenuItemSpec {
+  stable val id: String
+  stable val label: String
+  stable val icon: TembraIcon?
+  stable val enabled: Boolean
+  stable val interactionSource: MutableInteractionSource?
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.designsystem.NavigationItemSpec {
+  stable val id: String
+  stable val label: String
+  stable val icon: TembraIcon
+  stable val interactionSource: MutableInteractionSource?
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.designsystem.SegmentSpec {
+  stable val id: String
+  stable val label: String
+  stable val icon: TembraIcon?
+  stable val interactionSource: MutableInteractionSource?
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.designsystem.TembraSliderDefaults {
+  stable val TrackHeight: Dp
+  stable val ThumbSize: Dp
+  stable val THUMB_HALO_ALPHA: Float
+  stable val THUMB_HALO_SCALE: Float
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.devtools.DeveloperViewRequest {
+  stable val view: DeveloperView?
+  <runtime stability> = Stable
+}
+runtime class audio.tembra.ui.di.AppBindings.ProvideTunerAudioMetroFactory {
+  runtime var engine: Provider<AudioEngine>
+  <runtime stability> = Uncertain(Provider)
+}
+stable class audio.tembra.ui.di.AppBindings.ProvideAppCoroutineScopeMetroFactory {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.di.AppBindings.ProvidePreferencesDataStoreMetroFactory {
+  runtime var directories: Provider<AppDirectories>
+  runtime var scope: Provider<CoroutineScope>
+  <runtime stability> = 
+}
+runtime class audio.tembra.ui.di.AppBindings.ProvideTunerPreferencesMetroFactory {
+  runtime var dataStore: Provider<DataStore<Preferences>>
+  <runtime stability> = Uncertain(Provider)
+}
+runtime class audio.tembra.ui.di.AppBindings.ProvideMetronomePreferencesMetroFactory {
+  runtime var dataStore: Provider<DataStore<Preferences>>
+  <runtime stability> = Uncertain(Provider)
+}
+runtime class audio.tembra.ui.di.AppBindings.ProvideCustomClickSoundStoreMetroFactory {
+  runtime var directories: Provider<AppDirectories>
+  <runtime stability> = Uncertain(Provider)
+}
+runtime class audio.tembra.ui.di.AppBindings.ProvideMetronomeAudioMetroFactory {
+  runtime var engine: Provider<AudioEngine>
+  <runtime stability> = Uncertain(Provider)
+}
+runtime class audio.tembra.ui.di.AppBindings.ProvideTimelineAudioMetroFactory {
+  runtime var engine: Provider<AudioEngine>
+  <runtime stability> = Uncertain(Provider)
+}
+stable class audio.tembra.ui.di.AppBindings.ProvideSessionCoroutineScopeMetroFactory {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.di.AppBindings.ProvideDemoAudioSourceMetroFactory {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.di.AppBindings.ProvideProjectRepositoryMetroFactory {
+  runtime var directories: Provider<AppDirectories>
+  runtime var audio: Provider<TimelineAudio>
+  runtime var demoAudio: Provider<DemoAudioSource>
+  <runtime stability> = 
+}
+runtime class audio.tembra.ui.di.AppBindings.ProvidePlaybackGuardMetroFactory {
+  runtime var session: Provider<ProjectSession>
+  <runtime stability> = Uncertain(Provider)
+}
+stable class audio.tembra.ui.di.AppBindings.ProvideReferenceSoundRepositoryMetroFactory {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.di.AppBindings.ProvideMetroViewModelFactoryMetroFactory {
+  runtime var viewModelProviders: Provider<Map<KClass<out ViewModel>, Function0<ViewModel>>>
+  runtime var assistedFactoryProviders: Provider<Map<KClass<out ViewModel>, Function0<ViewModelAssistedFactory>>>
+  runtime var manualAssistedFactoryProviders: Provider<Map<KClass<out ManualViewModelAssistedFactory>, Function0<ManualViewModelAssistedFactory>>>
+  <runtime stability> = 
+}
+stable class audio.tembra.ui.di.AppBindings {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.metronome.CustomSoundState.None {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.metronome.CustomSoundState.Importing {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.metronome.CustomSoundState.Available {
+  stable val displayName: String
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.metronome.CustomSoundState.Unavailable {
+  stable val displayName: String
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.metronome.MetronomeCallbacks {
+  stable val onTempo: Function1<Tempo, Unit>
+  stable val onStep: Function1<Int, Unit>
+  stable val onSignature: Function1<TimeSignature, Unit>
+  stable val onSubdivision: Function1<Subdivision, Unit>
+  stable val onCycleBeat: Function1<Int, Unit>
+  stable val onStyle: Function1<MetronomeStyle, Unit>
+  stable val onSound: Function1<ClickSound, Unit>
+  stable val onImportCustom: Function0<Unit>
+  stable val onReplaceCustom: Function0<Unit>
+  stable val onTap: Function1<Long, Unit>
+  stable val onTogglePlayback: Function0<Unit>
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.metronome.MetronomeCopy {
+  stable val timeSignature: String
+  stable val commonAndComplex: String
+  stable val rhythmSubdivision: String
+  stable val style: String
+  stable val clickTimbre: String
+  stable val barShape: String
+  stable val metronomeControls: String
+  stable val metronomeSettings: String
+  stable val expanded: String
+  stable val collapsed: String
+  stable val bpm: String
+  stable val increaseTempo: String
+  stable val decreaseTempo: String
+  stable val tapTempo: String
+  stable val tapRest: String
+  stable val tapAgain: String
+  stable val startMetronome: String
+  stable val stopMetronome: String
+  stable val playing: String
+  stable val custom: String
+  stable val replace: String
+  stable val replaceCustomSound: String
+  stable val empty: String
+  stable val none: String
+  stable val notWav: String
+  stable val silent: String
+  stable val tooLarge: String
+  stable val importFailed: String
+  stable val customSoundMissing: String
+  stable val focusDenied: String
+  stable val deviceUnavailable: String
+  stable val notificationTitle: String
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.metronome.MetronomeDebugRequest {
+  stable val syncopation: SyncopationReading
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.metronome.MetronomeMessage.NotWav {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.metronome.MetronomeMessage.Silent {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.metronome.MetronomeMessage.TooLarge {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.metronome.MetronomeMessage.ImportFailed {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.metronome.MetronomeMessage.CustomSoundMissing {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.metronome.MetronomeMessage.FocusDenied {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.metronome.MetronomeMessage.DeviceUnavailable {
+  <runtime stability> = Stable
+}
+unstable class audio.tembra.ui.metronome.MetronomeUiState {
+  stable val loaded: Boolean
+  unstable val settings: MetronomeSettings
+  stable val playback: PlaybackState
+  stable val currentBeat: Int
+  unstable val tap: TapTempoSequence
+  runtime val tapCaption: TapCaption
+  runtime val customSound: CustomSoundState
+  stable val syncopationReading: SyncopationReading
+  <runtime stability> = Unstable
+}
+stable class audio.tembra.ui.metronome.MetronomeViewModel.ImportOutcome.Imported {
+  stable val name: String
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.metronome.MetronomeViewModel.ImportOutcome.Cancelled {
+  <runtime stability> = Stable
+}
+runtime class audio.tembra.ui.metronome.MetronomeViewModel.ImportOutcome.Refused {
+  runtime val message: MetronomeMessage
+  <runtime stability> = Uncertain(MetronomeMessage)
+}
+runtime class audio.tembra.ui.metronome.MetronomeViewModel.MetroContributionToDevzacsweersmetroappScopeocf15.BindsMirror {
+  <runtime stability> = Uncertain(BindsMirror)
+}
+stable class audio.tembra.ui.metronome.MetronomeViewModel.MetroFactory {
+  runtime var audio: Provider<MetronomeAudio>
+  runtime var host: Provider<BackgroundPlaybackHost>
+  runtime var preferences: Provider<MetronomePreferences>
+  runtime var store: Provider<CustomClickSoundStore>
+  runtime var picker: Provider<AudioFilePicker>
+  runtime var prepareDispatcher: Provider<CoroutineDispatcher>
+  <runtime stability> = 
+}
+unstable class audio.tembra.ui.metronome.MetronomeViewModel {
+  runtime val audio: MetronomeAudio
+  runtime val host: BackgroundPlaybackHost
+  runtime val preferences: MetronomePreferences
+  runtime val store: CustomClickSoundStore
+  runtime val picker: AudioFilePicker
+  unstable val prepareDispatcher: CoroutineDispatcher
+  runtime val _uiState: MutableStateFlow<MetronomeUiState>
+  runtime val uiState: StateFlow<MetronomeUiState>
+  runtime val _messages: Channel<MetronomeMessage>
+  runtime val messages: Flow<MetronomeMessage>
+  runtime val telemetry: BeatTelemetry
+  unstable val frameTick: TickSnapshot
+  stable var lastFrameNanos: Long
+  stable var lastLitBeat: Int
+  unstable val pollTick: TickSnapshot
+  stable var pollsSinceStart: Int
+  runtime var preferencesJob: Job?
+  runtime var audioEventsJob: Job?
+  runtime var stopRequestsJob: Job?
+  runtime var pollJob: Job?
+  runtime var tapCaptionJob: Job?
+  runtime var customBeforeImport: CustomSoundState
+  <runtime stability> = Unstable
+}
+stable class audio.tembra.ui.metronome.PlaybackEvent.PlayPressed {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.metronome.PlaybackEvent.PausePressed {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.metronome.PlaybackEvent.ScreenHidden {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.metronome.PlaybackEvent.AudioInterrupted {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.metronome.PlaybackEvent.OutputRouteLost {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.metronome.PlaybackEvent.DeviceLost {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.metronome.PlaybackEvent.StopRequested {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.metronome.PlaybackEvent.StartFailed {
+  stable val reason: StartFailure
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.metronome.PlaybackPolicy {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.metronome.PlaybackTransition.Start {
+  <runtime stability> = Stable
+}
+runtime class audio.tembra.ui.metronome.PlaybackTransition.Stop {
+  runtime val message: MetronomeMessage?
+  <runtime stability> = Uncertain(MetronomeMessage)
+}
+stable class audio.tembra.ui.metronome.PlaybackTransition.Ignore {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.metronome.TapCaption.Rest {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.metronome.TapCaption.Again {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.metronome.TapCaption.Counting {
+  stable val taps: Int
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.metronome.components.ClickSoundGlyphs {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.metronome.components.MenuEntry {
+  stable val id: String
+  stable val label: String
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.metronome.components.MetronomeDefaults {
+  stable val RingStroke: Dp
+  stable val RingGlowStroke: Dp
+  stable val RING_GLOW_ALPHA: Float
+  stable val TickStroke: Dp
+  stable val TICK_ALPHA: Float
+  stable val StepperIconSize: Dp
+  stable val StepperInset: Dp
+  stable val DISABLED_ALPHA: Float
+  stable val HOLD_DELAY_MILLIS: Long
+  stable val HOLD_INTERVAL_MILLIS: Long
+  stable val ReadoutNumberFloor: TextUnit
+  stable val MarkingMinSize: TextUnit
+  stable val TapTextMinSize: TextUnit
+  stable val PAGE_STEP: Int
+  stable val CellLabelMinSize: TextUnit
+  stable val CellGap: Dp
+  stable val CellPadding: Dp
+  stable val BarBoxPadding: Dp
+  stable val BarBoxRadius: Dp
+  stable val BarRadius: Dp
+  stable val ACCENT_BAR_FRACTION: Float
+  stable val CLICK_BAR_FRACTION: Float
+  stable val SUB_BAR_FRACTION: Float
+  stable val SUB_BAR_ALPHA: Float
+  stable val LitOutlineWidth: Dp
+  stable val GLOW_LIT_BOOST: Float
+  stable val GLOW_PULSE_MIN: Float
+  stable val GLOW_PULSE_MILLIS: Int
+  stable val PillGap: Dp
+  stable val SectionGap: Dp
+  stable val CellsStyleGap: Dp
+  stable val PlayIconSize: Dp
+  stable val TapIconSize: Dp
+  stable val TAP_FLASH_ALPHA: Float
+  stable val TAP_FLASH_MILLIS: Int
+  stable val SoundPillIconSize: Dp
+  stable val SoundPillChevronSize: Dp
+  stable val SoundPillVerticalPadding: Dp
+  stable val MenuMaxHeight: Dp
+  stable val SoundGlyphSize: Dp
+  stable val SoundTileGap: Dp
+  stable val SoundTilePadding: Dp
+  stable val SOUND_TINT_ALPHA: Float
+  stable val DASHED_BORDER_ALPHA: Float
+  stable val DashLength: Dp
+  stable val TransportMaxWidth: Dp
+  stable val WIDE_SETTINGS_FRACTION: Float
+  stable val LANDSCAPE_SETTINGS_FRACTION: Float
+  stable val LandscapeSettingsMinWidth: Dp
+  stable val LandscapeRowMin: Dp
+  stable val LandscapeRowMax: Dp
+  stable val LandscapeRowScaleFrom: Dp
+  stable val LandscapeRowScaleTo: Dp
+  stable val DialMin: Dp
+  stable val CompactDialMax: Dp
+  stable val TabletopCellBarMax: Dp
+  stable val TabletopSideBySideMinWidth: Dp
+  stable val TabletopCellLabelRoom: Dp
+  stable val SubdivisionGlyphSize: Dp
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.metronome.components.SubdivisionGlyphs {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.metronome.components.TempoDialGeometry {
+  stable val RING_RADIUS: Float
+  stable val SWEEP: Float
+  stable val START_ANGLE: Float
+  stable val TICK_INNER: Float
+  stable val TICK_OUTER: Float
+  stable val FOCUS_RING_RADIUS: Float
+  stable val RING_BAND: Float
+  runtime val tickAngles: List<Float>
+  stable val SPAN: Int
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.navigation.DestinationKey {
+  stable val destination: Destination
+  <runtime stability> = Stable
+}
+runtime class audio.tembra.ui.navigation.ShellUiState {
+  stable val selected: Destination
+  runtime val trackSettings: TrackSettingsKey?
+  <runtime stability> = Runtime(TrackSettingsKey)
+}
+runtime class audio.tembra.ui.navigation.ShellViewModel.MetroContributionToDevzacsweersmetroappScopeocf15.BindsMirror {
+  <runtime stability> = Uncertain(BindsMirror)
+}
+runtime class audio.tembra.ui.navigation.ShellViewModel.MetroFactory {
+  runtime var guard: Provider<PlaybackGuard>
+  <runtime stability> = Uncertain(Provider)
+}
+unstable class audio.tembra.ui.navigation.ShellViewModel {
+  runtime val guard: PlaybackGuard
+  runtime val _uiState: MutableStateFlow<ShellUiState>
+  runtime val uiState: StateFlow<ShellUiState>
+  runtime val dialog: StateFlow<DialogRequest?>
+  runtime var pendingLeave: Job?
+  <runtime stability> = Unstable
+}
+stable class audio.tembra.ui.navigation.SupportingPaneKey {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.navigation.SupportingPaneScene {
+  unstable val key: Any
+  stable val main: NavEntry<T>
+  stable val pane: SupportingPane
+  runtime val previousEntries: List<NavEntry<T>>
+  stable val content: Function2<Composer, Int, Unit>
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.navigation.SupportingPaneSceneStrategy {
+  stable val enabled: Boolean
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.perf.PerfAnchors {
+  stable val START_ROOT: String
+  stable val NAV_TUNER: String
+  stable val NAV_METRONOME: String
+  stable val TUNER_ROOT: String
+  stable val TUNER_MODE_AUTO_LISTEN: String
+  stable val TUNER_MODE_BY_EAR: String
+  stable val TUNER_NOTE_READOUT: String
+  stable val METRONOME_ROOT: String
+  stable val METRONOME_START_STOP: String
+  stable val METRONOME_TEMPO_UP: String
+  stable val METRONOME_TEMPO_DOWN: String
+  stable val METRONOME_TEMPO_READOUT: String
+  stable val DEVTOOLS_WRITE_HEALTH: String
+  stable val NAV_PROJECTS: String
+  stable val PROJECTS_ROOT: String
+  stable val PROJECTS_SEARCH: String
+  stable val PROJECTS_CARD_DEMO: String
+  stable val NAV_TIMELINE: String
+  stable val TIMELINE_ROOT: String
+  stable val TIMELINE_ADD_TRACK: String
+  stable val TIMELINE_SPLIT: String
+  stable val TIMELINE_UNDO: String
+  stable val TIMELINE_RULER: String
+  stable val TIMELINE_LANE_FIRST: String
+  stable val TIMELINE_CLIP_FIRST: String
+  stable val TIMELINE_TRACK_MENU_FIRST: String
+  stable val TIMELINE_TRACK_SETTINGS: String
+  stable val TIMELINE_SETTINGS_CLOSE: String
+  stable val TRANSPORT_PLAY: String
+  stable val TRANSPORT_SKIP_START: String
+  stable val TRANSPORT_METRONOME: String
+  stable val TRANSPORT_READOUT: String
+  stable val DIALOG_STOP_AND_LEAVE_CONFIRM: String
+  runtime val all: List<String>
+  <runtime stability> = Stable
+}
+runtime class audio.tembra.ui.platform.AudioPickRequest {
+  runtime val mimeTypes: List<String>
+  <runtime stability> = Uncertain(List)
+}
+runtime class audio.tembra.ui.platform.AudioPickResult.Picked {
+  runtime val files: List<PickedFile>
+  <runtime stability> = Uncertain(List)
+}
+stable class audio.tembra.ui.platform.AudioPickResult.Cancelled {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.platform.AudioPickResult.Failed {
+  stable val reason: AudioPickFailure
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.platform.PlaybackNotification {
+  stable val title: String
+  stable val subtitle: String
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.posture.TabletopFold {
+  stable val top: Float
+  stable val bottom: Float
+}
+stable class audio.tembra.ui.posture.VerticalFold {
+  stable val left: Float
+  stable val right: Float
+}
+stable class audio.tembra.ui.projects.ComposeDemoAudioSource {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.projects.LibraryViewStateHolder.MetroFactory {
+  <runtime stability> = Stable
+}
+runtime class audio.tembra.ui.projects.LibraryViewStateHolder {
+  runtime val query: MutableStateFlow<LibraryQuery>
+  <runtime stability> = Uncertain(MutableStateFlow)
+}
+stable class audio.tembra.ui.projects.ProjectCardUi {
+  stable val id: ProjectId
+  stable val name: String
+  stable val description: String
+  stable val tempoText: String
+  stable val keyText: String
+  stable val lengthText: String
+  stable val tracksText: String
+  stable val sizeText: String
+  stable val relativeTime: String
+  stable val isActive: Boolean
+  stable val isDemo: Boolean
+  unstable val overview: CardOverview
+  stable val key: MusicalKey?
+}
+stable class audio.tembra.ui.projects.ProjectsCallbacks {
+  stable val onQuery: Function1<String, Unit>
+  stable val onFilter: Function1<LibraryFilter, Unit>
+  stable val onSort: Function1<LibrarySort, Unit>
+  stable val onNewProject: Function0<Unit>
+  stable val onOpen: Function1<ProjectId, Unit>
+  stable val onRename: Function1<ProjectId, Unit>
+  stable val onDescribe: Function1<ProjectId, Unit>
+  stable val onKey: Function1<ProjectId, Unit>
+  stable val onDuplicate: Function1<ProjectId, Unit>
+  stable val onDelete: Function1<ProjectId, Unit>
+  stable val onRestoreDemo: Function0<Unit>
+  stable val onDialogDismiss: Function0<Unit>
+  stable val onRenameConfirm: Function1<String, Unit>
+  stable val onDescribeConfirm: Function1<String, Unit>
+  stable val onKeyConfirm: Function1<MusicalKey?, Unit>
+  stable val onDeleteConfirm: Function0<Unit>
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.projects.ProjectsCopy {
+  stable val title: String
+  stable val newProject: String
+  stable val search: String
+  stable val clearSearch: String
+  stable val filterAll: String
+  stable val filterRecent: String
+  stable val sortLastEdited: String
+  stable val sortName: String
+  stable val sortBy: String
+  stable val open: String
+  stable val resume: String
+  stable val active: String
+  stable val demo: String
+  stable val menu: String
+  stable val rename: String
+  stable val description: String
+  stable val key: String
+  stable val duplicate: String
+  stable val delete: String
+  stable val restoreDemo: String
+  stable val noProjects: String
+  stable val noMatch: String
+  stable val noKey: String
+  stable val keyNone: String
+  stable val cancel: String
+  stable val save: String
+  stable val deleteTitle: String
+  stable val nameLabel: String
+  stable val nameEmpty: String
+  stable val nameTooLong: String
+  stable val descriptionLabel: String
+  stable val descriptionTooLong: String
+  stable val justNow: String
+  stable val couldNotDuplicate: String
+  stable val couldNotOpen: String
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.projects.ProjectsDialog.Rename {
+  stable val projectId: ProjectId
+  stable val name: String
+  stable val error: String?
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.projects.ProjectsDialog.Describe {
+  stable val projectId: ProjectId
+  stable val description: String
+  stable val error: String?
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.projects.ProjectsDialog.Key {
+  stable val projectId: ProjectId
+  stable val key: MusicalKey?
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.projects.ProjectsDialog.Delete {
+  stable val projectId: ProjectId
+  stable val name: String
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.projects.ProjectsEvent.OpenedInTimeline {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.projects.ProjectsMessage.CouldNotDuplicate {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.projects.ProjectsMessage.CouldNotOpen {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.projects.ProjectsSeedRequest {
+  stable val count: Int
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.projects.ProjectsSeeder.MetroFactory {
+  runtime var repository: Provider<ProjectRepository>
+  runtime var scope: Provider<CoroutineScope>
+  <runtime stability> = 
+}
+unstable class audio.tembra.ui.projects.ProjectsSeeder {
+  runtime val repository: ProjectRepository
+  runtime val scope: CoroutineScope
+  runtime var job: Job?
+  <runtime stability> = Unstable
+}
+stable class audio.tembra.ui.projects.ProjectsTestTags {
+  stable val ROOT: String
+  stable val COUNT: String
+  stable val NEW_PROJECT: String
+  stable val SEARCH: String
+  stable val SEARCH_CLEAR: String
+  stable val FILTER: String
+  stable val SORT: String
+  stable val GRID: String
+  stable val EMPTY: String
+  stable val EMPTY_RESTORE: String
+  stable val NO_MATCH: String
+  stable val CARD_DEMO: String
+  stable val RENAME_DIALOG: String
+  stable val DESCRIBE_DIALOG: String
+  stable val KEY_DIALOG: String
+  stable val DELETE_DIALOG: String
+  stable val DIALOG_FIELD: String
+  stable val DIALOG_CONFIRM: String
+  stable val DIALOG_CANCEL: String
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.projects.ProjectsUiState {
+  stable val loaded: Boolean
+  stable val cards: ImmutableList<ProjectCardUi>
+  stable val total: Int
+  unstable val query: LibraryQuery
+  stable val countText: String
+  runtime val dialog: ProjectsDialog?
+}
+runtime class audio.tembra.ui.projects.ProjectsViewModel.MetroContributionToDevzacsweersmetroappScopeocf15.BindsMirror {
+  <runtime stability> = Uncertain(BindsMirror)
+}
+stable class audio.tembra.ui.projects.ProjectsViewModel.MetroFactory {
+  runtime var repository: Provider<ProjectRepository>
+  runtime var session: Provider<ProjectSession>
+  runtime var holder: Provider<LibraryViewStateHolder>
+  runtime var clock: Provider<Clock>
+  <runtime stability> = 
+}
+unstable class audio.tembra.ui.projects.ProjectsViewModel {
+  runtime val repository: ProjectRepository
+  runtime val session: ProjectSession
+  runtime val holder: LibraryViewStateHolder
+  runtime val clock: Clock
+  runtime val dialog: MutableStateFlow<ProjectsDialog?>
+  stable var firstMapping: Boolean
+  runtime val uiState: StateFlow<ProjectsUiState>
+  runtime val _events: Channel<ProjectsEvent>
+  runtime val events: Flow<ProjectsEvent>
+  runtime val _messages: Channel<ProjectsMessage>
+  runtime val messages: Flow<ProjectsMessage>
+  <runtime stability> = Unstable
+}
+stable class audio.tembra.ui.projects.components.RelativeTime {
+  stable val MINUTE_MS: Long
+  stable val HOUR_MS: Long
+  runtime val MONTHS: List<String>
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.session.AppStartup.MetroFactory {
+  runtime var session: Provider<ProjectSession>
+  runtime var repository: Provider<ProjectRepository>
+  runtime var scope: Provider<CoroutineScope>
+  <runtime stability> = 
+}
+unstable class audio.tembra.ui.session.AppStartup {
+  runtime val session: ProjectSession
+  runtime val repository: ProjectRepository
+  runtime val scope: CoroutineScope
+  runtime var job: Job?
+  <runtime stability> = Unstable
+}
+stable class audio.tembra.ui.session.ArrangementMapper {
+  <runtime stability> = Stable
+}
+unstable class audio.tembra.ui.session.ArrangementResult.Mapped {
+  unstable val snapshot: ArrangementSnapshot
+  <runtime stability> = Unstable
+}
+stable class audio.tembra.ui.session.ArrangementResult.TooLarge {
+  <runtime stability> = Stable
+}
+unstable class audio.tembra.ui.session.ClipSourceRegistry {
+  runtime val audio: TimelineAudio
+  unstable val open: LinkedHashMap<AudioAssetId, ClipSourceHandle>
+  <runtime stability> = Unstable
+}
+stable class audio.tembra.ui.session.DialogRequest.StopAndLeave {
+  stable val answer: Function1<Boolean, Unit>
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.session.ImportTarget.Track {
+  stable val trackId: TrackId
+  stable val atBeats: Beats
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.session.ImportTarget.NewTracks {
+  stable val atBeats: Beats
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.session.MetronomeBridge {
+  runtime val metronome: MetronomeAudio
+  runtime val transport: TimelineAudio
+  <runtime stability> = 
+}
+unstable class audio.tembra.ui.session.OverviewTracker {
+  runtime val repository: ProjectRepository
+  runtime val reader: OverviewReader
+  unstable val ioDispatcher: CoroutineDispatcher
+  runtime val scope: CoroutineScope
+  stable val onChange: Function3<AudioAssetId, OverviewStatus, WaveformOverview?, Unit>
+  unstable val jobs: HashMap<AudioAssetId, Job>
+  <runtime stability> = Unstable
+}
+stable class audio.tembra.ui.session.ProjectSession.MetroFactory {
+  runtime var repository: Provider<ProjectRepository>
+  runtime var audio: Provider<TimelineAudio>
+  runtime var metronome: Provider<MetronomeAudio>
+  runtime var preferences: Provider<MetronomePreferences>
+  runtime var host: Provider<BackgroundPlaybackHost>
+  runtime var scope: Provider<CoroutineScope>
+  runtime var overviewReader: Provider<OverviewReader>
+  runtime var ioDispatcher: Provider<CoroutineDispatcher>
+  <runtime stability> = 
+}
+unstable class audio.tembra.ui.session.ProjectSession {
+  runtime val repository: ProjectRepository
+  runtime val audio: TimelineAudio
+  runtime val preferences: MetronomePreferences
+  runtime val host: BackgroundPlaybackHost
+  runtime val scope: CoroutineScope
+  runtime val _state: MutableStateFlow<SessionState>
+  runtime val state: StateFlow<SessionState>
+  runtime val _messages: Channel<SessionMessage>
+  runtime val messages: Flow<SessionMessage>
+  runtime val _dialog: MutableStateFlow<DialogRequest?>
+  runtime val dialog: StateFlow<DialogRequest?>
+  runtime val settingsDraft: MutableStateFlow<TrackSettingsDraft?>
+  runtime val transportTelemetry: TransportTelemetry
+  runtime val sources: ClipSourceRegistry
+  runtime val bridge: MetronomeBridge
+  runtime val overviews: OverviewTracker
+  unstable val autosave: AutosaveScheduler
+  runtime val seekRequests: Channel<Beats>
+  runtime val importMutex: Mutex
+  stable var started: Boolean
+  unstable var history: EditHistory?
+  unstable var opened: OpenedProject?
+  stable var transportOpen: Boolean
+  unstable var settings: MetronomeSettings
+  runtime var lastEdit: ProjectEdit?
+  runtime var referencedAssets: Set<AudioAssetId>
+  unstable val pendingRetired: LinkedHashSet<AudioAssetId>
+  unstable val frameSnapshot: TransportSnapshot
+  stable var lastFrameNanos: Long
+  unstable val positionSnapshot: TransportSnapshot
+  <runtime stability> = Unstable
+}
+runtime class audio.tembra.ui.session.SessionMessage.ImportRefused {
+  runtime val files: List<Pair<String, String>>
+  <runtime stability> = Uncertain(List)
+}
+stable class audio.tembra.ui.session.SessionMessage.StartFailed {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.session.SessionMessage.DocumentUnavailable {
+  stable val reason: String
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.session.SessionMessage.AssetsMissing {
+  stable val count: Int
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.session.SessionMessage.SaveFailed {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.session.SessionMessage.ProjectTooLarge {
+  <runtime stability> = Stable
+}
+runtime class audio.tembra.ui.session.SessionMessage.EditRejected {
+  runtime val reason: EditRejection
+  <runtime stability> = Uncertain(EditRejection)
+}
+unstable class audio.tembra.ui.session.SessionState {
+  unstable val project: Project?
+  unstable val viewState: ProjectViewState
+  runtime val assetsReady: PersistentMap<AudioAssetId, OverviewStatus>
+  unstable val overviews: PersistentMap<AudioAssetId, WaveformOverview>
+  stable val missingAssets: PersistentSet<AudioAssetId>
+  runtime val playback: PlaybackState
+  stable val canUndo: Boolean
+  stable val canRedo: Boolean
+  stable val saving: Boolean
+  stable val metronomeOn: Boolean
+  stable val unavailable: String?
+  <runtime stability> = Unstable
+}
+stable class audio.tembra.ui.session.SystemOverviewReader {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.theme.DawColors {
+  stable val canvasLevel0: Color
+  stable val surfaceLevel1: Color
+  stable val surfaceLevel2: Color
+  stable val surfaceLevel2Border: Color
+  stable val surfaceLevel3: Color
+  stable val surfaceLevel4: Color
+  stable val lavenderPrimary: Color
+  stable val lavenderLight: Color
+  stable val playhead: Color
+  stable val rose: Color
+  stable val roseLight: Color
+  stable val magenta: Color
+  stable val winePad: Color
+  stable val winePadMid: Color
+  stable val winePadActive: Color
+  stable val gridOverlayFaint: Color
+  stable val gridOverlay: Color
+  stable val clipGlow: Color
+  stable val clipGlowBlur: Dp
+  runtime val trackTints: List<Color>
+  stable val clipCaptionBand: Color
+  stable val playheadChip: Color
+  stable val selectionOutline: Color
+  stable val unavailableClip: Color
+}
+stable class audio.tembra.ui.theme.Glow {
+  stable val color: Color
+  stable val radius: Dp
+}
+stable class audio.tembra.ui.theme.LinearGlow {
+  stable val start: Offset
+  stable val end: Offset
+  runtime val stops: List<Pair<Float, Color>>
+}
+stable class audio.tembra.ui.theme.RadialGlow {
+  stable val center: Offset
+  runtime val stops: List<Pair<Float, Color>>
+}
+stable class audio.tembra.ui.theme.TembraColorScheme {
+  stable val dark: ColorScheme
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.theme.TembraFonts {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.theme.TembraGradients {
+  stable val meterCompact: RadialGlow
+  stable val byEarCompact: RadialGlow
+  stable val byEarWide: RadialGlow
+  stable val discTopStart: Color
+  stable val discBottomEnd: Color
+  stable val discRadius: Dp
+  stable val discOffset: Dp
+  stable val needleGlow: Glow
+  stable val playingGlow: Glow
+  stable val tempoArc: LinearGlow
+  stable val tempoDialCard: RadialGlow
+  stable val tempoDialOverlay: LinearGlow
+  stable val accentGlow: Glow
+  stable val playGlow: Glow
+}
+stable class audio.tembra.ui.theme.TembraIcons {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.theme.TembraMotion {
+  stable val standardDuration: Int
+  stable val standardEasing: Easing
+  stable val reduceMotion: Boolean
+}
+stable class audio.tembra.ui.theme.TembraShapes {
+  stable val small: Dp
+  stable val default: Dp
+  stable val medium: Dp
+  stable val large: Dp
+  stable val extraLarge: Dp
+  stable val clip: Dp
+  stable val material: Shapes
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.theme.TembraSpacing {
+  stable val xs: Dp
+  stable val sm: Dp
+  stable val md: Dp
+  stable val lg: Dp
+  stable val xl: Dp
+  stable val gutter: Dp
+  stable val pageMargin: Dp
+  stable val touchTargetMin: Dp
+  stable val seam: Dp
+  stable val wideContentMaxWidth: Dp
+  stable val topBarHeight: Dp
+  stable val supportingPaneWidth: Dp
+  stable val focusRingWidth: Dp
+  stable val segmentHeightLarge: Dp
+  stable val segmentHeightSmall: Dp
+  stable val meterMaxWidth: Dp
+  stable val meterMaxWidthWide: Dp
+  stable val byEarGridMaxWidth: Dp
+  stable val byEarGridMaxWidthWide: Dp
+  stable val stringCardMinWide: Dp
+  stable val toggleWidth: Dp
+  stable val toggleHeight: Dp
+  stable val toggleKnob: Dp
+  stable val statusDot: Dp
+  stable val segmentIconLarge: Dp
+  stable val segmentIconSmall: Dp
+  stable val pickerIconSize: Dp
+  stable val meterArrowSize: Dp
+  stable val deniedIconSize: Dp
+  stable val deniedTextMaxWidth: Dp
+  stable val cardButtonHeight: Dp
+  stable val presetPickerMinWidth: Dp
+  stable val segmentPaddingLarge: Dp
+  stable val segmentPaddingSmall: Dp
+  stable val stringCardHeightLandscape: Dp
+  stable val landscapeSettingsMinWidth: Dp
+  stable val landscapeSettingsMaxWidth: Dp
+  stable val meterMinWidth: Dp
+  stable val chipHeight: Dp
+  stable val pillHeight: Dp
+  stable val accentCellBarHeight: Dp
+  stable val tempoDialMaxWidth: Dp
+  stable val tempoDialMaxWidthWide: Dp
+  stable val tempoStepper: Dp
+  stable val tapTempoHeight: Dp
+  stable val playButton: Dp
+  stable val soundMenuWidth: Dp
+  stable val soundTileHeight: Dp
+  stable val soundTileGlyphBox: Dp
+  stable val wideSettingsMinWidth: Dp
+  stable val laneHeightCompact: Dp
+  stable val laneHeightExpanded: Dp
+  stable val rulerHeight: Dp
+  stable val toolbarHeight: Dp
+  stable val transportHeightCompact: Dp
+  stable val transportHeightExpanded: Dp
+  stable val headerColumnWidth: Dp
+  stable val cardOverviewHeight: Dp
+}
+stable class audio.tembra.ui.theme.TembraTextStyleSpec {
+  stable val family: TembraFont
+  stable val sizeSp: Float
+  stable val lineHeightSp: Float
+  stable val weight: Int
+  stable val letterSpacingEm: Float
+  stable val tabularFigures: Boolean
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.theme.TembraTheme {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.theme.TembraTypeScale {
+  runtime val headlineLg: TembraTextStyleSpec
+  runtime val headlineLgMobile: TembraTextStyleSpec
+  runtime val headlineMd: TembraTextStyleSpec
+  runtime val headlineSm: TembraTextStyleSpec
+  runtime val bodyLg: TembraTextStyleSpec
+  runtime val bodyMd: TembraTextStyleSpec
+  runtime val bodySm: TembraTextStyleSpec
+  runtime val labelLg: TembraTextStyleSpec
+  runtime val labelMd: TembraTextStyleSpec
+  runtime val labelSm: TembraTextStyleSpec
+  runtime val tabularTimecode: TembraTextStyleSpec
+  runtime val tabularParam: TembraTextStyleSpec
+  runtime val tunerNote: TembraTextStyleSpec
+  runtime val tunerOctave: TembraTextStyleSpec
+  runtime val tunerCardNote: TembraTextStyleSpec
+  runtime val tunerCardOctave: TembraTextStyleSpec
+  runtime val tunerReadout: TembraTextStyleSpec
+  runtime val microLabel: TembraTextStyleSpec
+  runtime val tempoNumber: TembraTextStyleSpec
+  runtime val sectionLabel: TembraTextStyleSpec
+  runtime val byThemeName: Map<String, TembraTextStyleSpec>
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.theme.TembraTypography {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.theme.TembraTypographyExtras {
+  stable val headlineLgMobile: TextStyle
+  stable val tabularTimecode: TextStyle
+  stable val tabularParam: TextStyle
+  stable val tunerNote: TextStyle
+  stable val tunerOctave: TextStyle
+  stable val tunerCardNote: TextStyle
+  stable val tunerCardOctave: TextStyle
+  stable val tunerReadout: TextStyle
+  stable val microLabel: TextStyle
+  stable val tempoNumber: TextStyle
+  stable val sectionLabel: TextStyle
+}
+stable class audio.tembra.ui.timeline.ClipDragState {
+  stable val clipId: ClipId
+  stable val originTrack: TrackId
+  stable val originStart: Beats
+  stable val deltaBeats: Double
+  stable val deltaTracks: Int
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.timeline.ClipDragUi {
+  stable val clipId: ClipId
+  stable val fromTrack: TrackId
+  stable val toTrack: TrackId
+  stable val startBeats: Beats
+  stable val lengthBeats: Beats
+  stable val name: String
+}
+stable class audio.tembra.ui.timeline.ClipUi {
+  stable val id: ClipId
+  stable val assetId: AudioAssetId
+  stable val name: String
+  stable val startBeats: Beats
+  stable val lengthBeats: Beats
+  stable val offsetFrames: Long
+  stable val lengthFrames: Long
+  stable val sampleRate: Int
+  unstable val overview: WaveformOverview?
+  runtime val overviewStatus: OverviewStatus
+  stable val available: Boolean
+}
+stable class audio.tembra.ui.timeline.Selection.None {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.timeline.Selection.TrackSelected {
+  stable val trackId: TrackId
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.timeline.Selection.ClipSelected {
+  stable val trackId: TrackId
+  stable val clipId: ClipId
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.timeline.TimelineCallbacks {
+  stable val onPlayPause: Function0<Unit>
+  stable val onSkipToStart: Function0<Unit>
+  stable val onStepBar: Function1<@[ParameterName(name = 'delta')] Int, Unit>
+  stable val onSeek: Function1<@[ParameterName(name = 'beats')] Beats, Unit>
+  stable val onScrubStart: Function0<Unit>
+  stable val onScrub: Function1<@[ParameterName(name = 'beats')] Beats, Unit>
+  stable val onScrubEnd: Function1<@[ParameterName(name = 'beats')] Beats, Unit>
+  stable val onMasterVolume: Function1<@[ParameterName(name = 'percent')] Int, Unit>
+  stable val onMetronomeToggle: Function0<Unit>
+  stable val onMetronomeSettings: Function0<Unit>
+  stable val onViewportMeasured: Function2<@[ParameterName(name = 'widthPx')] Double, @[ParameterName(name = 'densityScale')] Double, Unit>
+  stable val onZoomAround: Function2<@[ParameterName(name = 'centreX')] Double, @[ParameterName(name = 'factor')] Double, Unit>
+  stable val onZoomStep: Function1<@[ParameterName(name = 'steps')] Int, Unit>
+  stable val onFitProject: Function0<Unit>
+  stable val onScrollBy: Function1<@[ParameterName(name = 'px')] Double, Unit>
+  stable val onGrid: Function1<GridSize, Unit>
+  stable val onAddTrack: Function0<Unit>
+  stable val onSelectTrack: Function1<TrackId, Unit>
+  stable val onToggleMute: Function1<TrackId, Unit>
+  stable val onToggleSolo: Function1<TrackId, Unit>
+  stable val onGain: Function2<TrackId, GainDb, Unit>
+  stable val onTrackSettings: Function1<TrackId, Unit>
+  stable val onMoveTrack: Function2<TrackId, Int, Unit>
+  stable val onDeleteTrack: Function1<TrackId, Unit>
+  stable val onConfirmDeleteTrack: Function0<Unit>
+  stable val onDismissDeleteTrack: Function0<Unit>
+  stable val onAddAudio: Function1<TrackId?, Unit>
+  stable val onAddAudioAsNewTrack: Function0<Unit>
+  stable val onExpandTrack: Function1<TrackId?, Unit>
+  stable val onSelectClip: Function2<TrackId, ClipId, Unit>
+  stable val onClearSelection: Function0<Unit>
+  stable val onSplit: Function0<Unit>
+  stable val onMoveClip: Function3<ClipId, TrackId, Beats, Unit>
+  stable val onDeleteClip: Function1<ClipId, Unit>
+  stable val onClipDragStart: Function1<ClipId, Unit>
+  stable val onClipDrag: Function3<ClipId, @[ParameterName(name = 'deltaBeats')] Double, @[ParameterName(name = 'deltaTracks')] Int, Unit>
+  stable val onClipDragEnd: Function0<Unit>
+  stable val onClipDragCancel: Function0<Unit>
+  stable val onUndo: Function0<Unit>
+  stable val onRedo: Function0<Unit>
+  stable val onOpenSheet: Function1<TimelineSheet?, Unit>
+  stable val onTempoDragging: Function1<Tempo, Unit>
+  stable val onTempoCommit: Function1<Tempo, Unit>
+  stable val onTapTempo: Function1<@[ParameterName(name = 'nanos')] Long, Unit>
+  stable val onTimeSignature: Function1<TimeSignature, Unit>
+  stable val onClickSound: Function1<ClickSound, Unit>
+  stable val onImportCustomSound: Function0<Unit>
+  stable val onSubdivision: Function1<Subdivision, Unit>
+  stable val onCycleBeat: Function1<Int, Unit>
+  stable val onStyle: Function1<MetronomeStyle, Unit>
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.timeline.TimelineCopy {
+  stable val addTrack: String
+  stable val addAudio: String
+  stable val addAudioAsNewTrack: String
+  stable val split: String
+  stable val undo: String
+  stable val redo: String
+  stable val grid: String
+  stable val fitProject: String
+  stable val trackSettings: String
+  stable val moveUp: String
+  stable val moveDown: String
+  stable val deleteTrack: String
+  stable val deleteClip: String
+  stable val metronomeSettings: String
+  stable val effects: String
+  stable val effectsLater: String
+  stable val stopPlaybackTitle: String
+  stable val stopPlaybackText: String
+  stable val stopAndLeave: String
+  stable val keepPlaying: String
+  stable val couldNotStart: String
+  stable val noTracksYet: String
+  stable val addToBegin: String
+  stable val pickFailed: String
+  stable val tempo: String
+  stable val tempoDown: String
+  stable val tempoUp: String
+  stable val done: String
+  stable val fromTheProject: String
+  stable val customSoundFromMetronome: String
+  stable val spanOccupied: String
+  stable val trackLimit: String
+  stable val clipLimit: String
+  stable val splitOutside: String
+  stable val splitTooClose: String
+  stable val nameTooLong: String
+  <runtime stability> = Stable
+}
+runtime class audio.tembra.ui.timeline.TimelineMessage.ImportRefused {
+  runtime val refusals: List<Pair<String, String>>
+  <runtime stability> = Uncertain(List)
+}
+stable class audio.tembra.ui.timeline.TimelineMessage.StartFailed {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.timeline.TimelineMessage.DocumentUnavailable {
+  stable val reason: String
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.timeline.TimelineMessage.AssetsMissing {
+  stable val count: Int
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.timeline.TimelineMessage.SaveFailed {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.timeline.TimelineMessage.ProjectTooLarge {
+  <runtime stability> = Stable
+}
+runtime class audio.tembra.ui.timeline.TimelineMessage.EditRejected {
+  runtime val reason: EditRejection
+  <runtime stability> = Uncertain(EditRejection)
+}
+stable class audio.tembra.ui.timeline.TimelineMessage.PickFailed {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.timeline.TimelineMessage.CustomSoundFromMetronome {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.timeline.TimelineTestTags {
+  stable val ROOT: String
+  stable val READY_MARKER: String
+  stable val TOOLBAR: String
+  stable val ADD_TRACK: String
+  stable val ADD_AUDIO: String
+  stable val ADD_AUDIO_NEW_TRACK: String
+  stable val SPLIT: String
+  stable val UNDO: String
+  stable val REDO: String
+  stable val OVERFLOW: String
+  stable val GRID: String
+  stable val ZOOM: String
+  stable val RULER: String
+  stable val TEMPO_PILL: String
+  stable val SIGNATURE_PILL: String
+  stable val TRACK_LIST: String
+  stable val PLAYHEAD: String
+  stable val EMPTY: String
+  stable val TRACK_MENU: String
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.timeline.TimelineUiState {
+  stable val loaded: Boolean
+  stable val projectName: String
+  stable val tempo: Tempo
+  stable val timeSignature: TimeSignature
+  stable val tracks: ImmutableList<TrackUi>
+  stable val lengthBeats: Beats
+  stable val lengthSeconds: Double
+  runtime val selection: Selection
+  unstable val viewport: TimelineViewport
+  stable val grid: GridSize
+  stable val following: Boolean
+  runtime val playback: PlaybackState
+  stable val positionBeats: Beats
+  stable val positionSeconds: Double
+  stable val metronomeOn: Boolean
+  stable val masterVolume: Int
+  stable val canUndo: Boolean
+  stable val canRedo: Boolean
+  stable val canSplit: Boolean
+  stable val expandedTrack: TrackId?
+  stable val sheet: TimelineSheet?
+  stable val isFirstContentReady: Boolean
+  stable val missingAssets: Int
+  stable val confirmDelete: TrackId?
+  stable val drag: ClipDragUi?
+  unstable val metronomeSettings: MetronomeSettings
+  runtime val tapCaption: TapCaption
+}
+runtime class audio.tembra.ui.timeline.TimelineViewModel.MetroContributionToDevzacsweersmetroappScopeocf15.BindsMirror {
+  <runtime stability> = Uncertain(BindsMirror)
+}
+stable class audio.tembra.ui.timeline.TimelineViewModel.MetroFactory {
+  runtime var session: Provider<ProjectSession>
+  runtime var picker: Provider<AudioFilePicker>
+  runtime var preferences: Provider<MetronomePreferences>
+  <runtime stability> = 
+}
+unstable class audio.tembra.ui.timeline.TimelineViewModel {
+  runtime val session: ProjectSession
+  runtime val picker: AudioFilePicker
+  runtime val preferences: MetronomePreferences
+  runtime val view: MutableStateFlow<TimelineViewState>
+  runtime val uiState: StateFlow<TimelineUiState>
+  runtime val local: Channel<TimelineMessage>
+  runtime val messages: Flow<TimelineMessage>
+  unstable val snapshot: TransportSnapshot
+  runtime var observeProjectJob: Job?
+  runtime var observePreferencesJob: Job?
+  runtime var tapWindowJob: Job?
+  runtime var pollJob: Job?
+  runtime var saveViewStateJob: Job?
+  stable var resumeAfterScrub: Boolean
+  <runtime stability> = Unstable
+}
+unstable class audio.tembra.ui.timeline.TimelineViewState {
+  stable val projectId: ProjectId?
+  unstable val viewport: TimelineViewport
+  runtime val selection: Selection
+  stable val grid: GridSize?
+  stable val following: Boolean
+  stable val sheet: TimelineSheet?
+  stable val expandedTrack: TrackId?
+  stable val confirmDelete: TrackId?
+  runtime val drag: ClipDragState?
+  unstable val tap: TapTempoSequence
+  runtime val tapCaption: TapCaption
+  unstable val metronomeSettings: MetronomeSettings
+  stable val positionBeats: Beats
+  stable val positionSeconds: Double
+  <runtime stability> = Unstable
+}
+stable class audio.tembra.ui.timeline.TrackUi {
+  stable val id: TrackId
+  stable val name: String
+  stable val label: InstrumentLabel?
+  stable val colorIndex: Int
+  stable val gainDb: GainDb
+  stable val muted: Boolean
+  stable val soloed: Boolean
+  stable val audible: Boolean
+  stable val clips: ImmutableList<ClipUi>
+}
+runtime class audio.tembra.ui.timeline.components.ClipStyle {
+  runtime val tints: List<Color>
+  stable val captionBand: Color
+  stable val selectionOutline: Color
+  stable val unavailable: Color
+  stable val cornerRadiusPx: Float
+  stable val outlineWidthPx: Float
+  stable val captionStyle: TextStyle
+  stable val captionColor: Color
+  stable val placeholderColor: Color
+  <runtime stability> = Uncertain(List)
+}
+stable class audio.tembra.ui.timeline.components.InstrumentGlyphs {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.tracksettings.TrackSettingsCallbacks {
+  stable val onName: Function1<String, Unit>
+  stable val onNameCommit: Function0<Unit>
+  stable val onLabel: Function1<InstrumentLabel?, Unit>
+  stable val onGain: Function1<GainDb, Unit>
+  stable val onMute: Function1<Boolean, Unit>
+  stable val onSolo: Function1<Boolean, Unit>
+  stable val onDelete: Function0<Unit>
+  stable val onConfirmDelete: Function0<Unit>
+  stable val onDismissDelete: Function0<Unit>
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.tracksettings.TrackSettingsCopy {
+  stable val back: String
+  stable val name: String
+  stable val label: String
+  stable val noLabel: String
+  stable val gain: String
+  stable val mute: String
+  stable val solo: String
+  stable val deleteTrack: String
+  stable val collapse: String
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.tracksettings.TrackSettingsDraft {
+  stable val trackId: TrackId
+  stable val name: String
+  stable val label: InstrumentLabel?
+  stable val gainDb: GainDb
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.tracksettings.TrackSettingsKey {
+  stable val trackId: TrackId
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.tracksettings.TrackSettingsTestTags {
+  stable val ROOT: String
+  stable val INLINE: String
+  stable val TITLE: String
+  stable val CLOSE: String
+  stable val FORM: String
+  stable val NAME: String
+  stable val LABEL: String
+  stable val LABEL_MENU: String
+  stable val GAIN_SLIDER: String
+  stable val GAIN: String
+  stable val MUTE: String
+  stable val SOLO: String
+  stable val DELETE: String
+  stable val EFFECTS: String
+  stable val EFFECTS_TEXT: String
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.tracksettings.TrackSettingsUiState {
+  stable val trackId: TrackId?
+  stable val name: String
+  stable val label: InstrumentLabel?
+  stable val colorIndex: Int
+  stable val gainDb: GainDb
+  stable val muted: Boolean
+  stable val soloed: Boolean
+  stable val nameDraft: String?
+  stable val confirmDelete: Boolean
+  stable val closed: Boolean
+  stable val transport: TransportUiState
+}
+runtime class audio.tembra.ui.tracksettings.TrackSettingsViewModel.MetroContributionToDevzacsweersmetroappScopeocf15.BindsMirror {
+  <runtime stability> = Uncertain(BindsMirror)
+}
+runtime class audio.tembra.ui.tracksettings.TrackSettingsViewModel.MetroFactory {
+  runtime var session: Provider<ProjectSession>
+  <runtime stability> = Uncertain(Provider)
+}
+unstable class audio.tembra.ui.tracksettings.TrackSettingsViewModel {
+  runtime val session: ProjectSession
+  runtime val view: MutableStateFlow<TrackSettingsViewState>
+  runtime val uiState: StateFlow<TrackSettingsUiState>
+  unstable val snapshot: TransportSnapshot
+  runtime var pollJob: Job?
+  <runtime stability> = Unstable
+}
+stable class audio.tembra.ui.tracksettings.TrackSettingsViewState {
+  stable val trackId: TrackId?
+  stable val nameDraft: String?
+  stable val confirmDelete: Boolean
+  stable val positionBeats: Beats
+  stable val positionSeconds: Double
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.transport.TransportCallbacks {
+  stable val onPlayPause: Function0<Unit>
+  stable val onSkipToStart: Function0<Unit>
+  stable val onStepBar: Function1<@[ParameterName(name = 'delta')] Int, Unit>
+  stable val onMasterVolume: Function1<@[ParameterName(name = 'percent')] Int, Unit>
+  stable val onMetronomeToggle: Function0<Unit>
+  stable val onMetronomeSettings: Function0<Unit>
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.transport.TransportCopy {
+  stable val play: String
+  stable val pause: String
+  stable val skipToStart: String
+  stable val stepBack: String
+  stable val stepForward: String
+  stable val metronomeOn: String
+  stable val metronomeOff: String
+  stable val metronomeSettings: String
+  stable val masterVolume: String
+  stable val readout: String
+  stable val playing: String
+  stable val stateOn: String
+  stable val stateOff: String
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.transport.TransportUiState {
+  runtime val playback: PlaybackState
+  stable val positionSeconds: Double
+  stable val lengthSeconds: Double
+  stable val masterVolume: Int
+  stable val metronomeOn: Boolean
+  stable val hasProject: Boolean
+}
+runtime class audio.tembra.ui.tuner.AuditionState {
+  stable val stringIndex: Int
+  stable val loop: Boolean
+  runtime val sound: ReferenceSound
+  <runtime stability> = Uncertain(ReferenceSound)
+}
+stable class audio.tembra.ui.tuner.ComposeResourceReader {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.tuner.DesiredAudio.Idle {
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.tuner.DesiredAudio.Listening {
+  <runtime stability> = Stable
+}
+runtime class audio.tembra.ui.tuner.DesiredAudio.TestListening {
+  runtime val signal: TestSignal
+  <runtime stability> = Uncertain(TestSignal)
+}
+runtime class audio.tembra.ui.tuner.DesiredAudio.Tone {
+  runtime val sound: ReferenceSound
+  stable val loop: Boolean
+  <runtime stability> = Uncertain(ReferenceSound)
+}
+unstable class audio.tembra.ui.tuner.LevelSmoother {
+  stable var levelDb: Float
+  stable var lastNanos: Long
+  <runtime stability> = Unstable
+}
+stable class audio.tembra.ui.tuner.ListeningPolicy {
+  <runtime stability> = Stable
+}
+runtime class audio.tembra.ui.tuner.MeterFrame {
+  runtime val reading: MeterReading?
+  stable val angle: Float
+  <runtime stability> = Runtime(MeterReading)
+}
+stable class audio.tembra.ui.tuner.MeterGeometry {
+  stable val width: Float
+  stable val scale: Float
+  stable val height: Float
+  stable val pivotX: Float
+  stable val pivotY: Float
+  stable val outerRadius: Float
+  stable val endMarkLength: Float
+  stable val quarterMarkLength: Float
+  stable val topMarkLength: Float
+  stable val dashedCircleRadius: Float
+  stable val innerArcRadius: Float
+  stable val needleLength: Float
+  stable val needleBackLength: Float
+  stable val pivotRingRadius: Float
+  stable val pivotDotRadius: Float
+  stable val outerStroke: Float
+  stable val endMarkStroke: Float
+  stable val quarterMarkStroke: Float
+  stable val topMarkStroke: Float
+  stable val zoneStroke: Float
+  stable val dashedStroke: Float
+  stable val innerArcStroke: Float
+  stable val dashedInnerStroke: Float
+  stable val needleStroke: Float
+  stable val pivotRingStroke: Float
+  stable val innerArcHalfAngle: Float
+  stable val dashedInnerHalfAngle: Float
+  stable val inTuneHalfAngle: Float
+  <runtime stability> = Stable
+}
+runtime class audio.tembra.ui.tuner.MeterLayout {
+  stable val width: Float
+  stable val density: Float
+  stable val fontScale: Float
+  stable val size: MeterSize
+  stable val textScale: Float
+  stable val pillRowHeight: Float
+  stable val noteRowHeight: Float
+  stable val readoutRowHeight: Float
+  stable val labelRowHeight: Float
+  stable val textRowsHeight: Float
+  stable val arcHeight: Float
+  stable val height: Float
+  stable val arcTop: Float
+  runtime val geometry: MeterGeometry
+  stable val geometryLeft: Float
+  stable val geometryTop: Float
+  stable val pillWidth: Float
+  stable val pillHeight: Float
+  stable val pillPaddingX: Float
+  stable val pillDotRadius: Float
+  stable val pillGap: Float
+  stable val pillCenter: Pair<Float, Float>
+  stable val pillLeft: Float
+  stable val pillDotCenter: Pair<Float, Float>
+  stable val pillTextLeft: Float
+  stable val noteBaseline: Float
+  stable val readoutCenterY: Float
+  stable val labelRowTop: Float
+  stable val labelCenterY: Float
+  stable val flatLabelCenter: Pair<Float, Float>
+  stable val sharpLabelCenter: Pair<Float, Float>
+  stable val labelProbeHalfWidth: Float
+  stable val labelProbeHalfHeight: Float
+  <runtime stability> = Runtime(MeterGeometry)
+}
+stable class audio.tembra.ui.tuner.MeterPalette {
+  stable val onSurface: Color
+  stable val onSurfaceVariant: Color
+  stable val primary: Color
+  stable val secondary: Color
+  stable val outline: Color
+  stable val outlineVariant: Color
+  stable val surfaceContainerHigh: Color
+  stable val surfaceContainerHighest: Color
+  stable val secondaryContainer: Color
+  stable val needleGlow: Color
+  stable val needleGlowRadius: Dp
+  <runtime stability> = Stable
+}
+unstable class audio.tembra.ui.tuner.MeterReading {
+  unstable val note: Note
+  stable val cents: Double
+  stable val direction: PitchDirection
+  stable val isInTune: Boolean
+  stable val frequencyHz: Double
+  stable val referenceHz: Double
+  <runtime stability> = Unstable
+}
+stable class audio.tembra.ui.tuner.MeterStyles {
+  stable val note: TextStyle
+  stable val octave: TextStyle
+  stable val readout: TextStyle
+  stable val micro: TextStyle
+  stable val label: TextStyle
+  stable val pill: TextStyle
+  stable val resting: TextStyle
+  <runtime stability> = Stable
+}
+unstable class audio.tembra.ui.tuner.NeedleSmoother {
+  stable var angle: Float
+  stable var lastNanos: Long
+  <runtime stability> = Unstable
+}
+runtime class audio.tembra.ui.tuner.PolicyInputs {
+  stable val mode: TunerMode
+  stable val screenVisible: Boolean
+  stable val foreground: Boolean
+  stable val permission: MicrophonePermissionStatus
+  runtime val audition: AuditionState?
+  stable val interrupted: Boolean
+  runtime val testSignal: TestSignal?
+  <runtime stability> = Runtime(AuditionState)
+}
+stable class audio.tembra.ui.tuner.ReferenceSound.Synth {
+  stable val frequencyHz: Double
+  <runtime stability> = Stable
+}
+unstable class audio.tembra.ui.tuner.ReferenceSound.Recording {
+  stable val resourceName: String
+  unstable val bytes: ByteArray
+  <runtime stability> = Unstable
+}
+stable class audio.tembra.ui.tuner.ReferenceSoundRepository {
+  runtime val reader: ResourceReader
+  runtime val cache: MutableMap<String, ByteArray?>
+  runtime val mutex: Mutex
+  <runtime stability> = 
+}
+stable class audio.tembra.ui.tuner.TunerCallbacks {
+  stable val onInstrument: Function1<Instrument, Unit>
+  stable val onGuitarStrings: Function1<GuitarStringCount, Unit>
+  stable val onPreset: Function1<String, Unit>
+  stable val onMode: Function1<TunerMode, Unit>
+  stable val onLoopTone: Function1<Boolean, Unit>
+  stable val onAudition: Function1<Int, Unit>
+  stable val onStopAudition: Function0<Unit>
+  stable val onRequestMicrophone: Function0<Unit>
+  stable val onNoiseGate: Function1<NoiseGate, Unit>
+  stable val onNoiseGateSettled: Function0<Unit>
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.tuner.TunerCopy {
+  stable val micActive: String
+  stable val toneOut: String
+  stable val testSignal: String
+  stable val inTune: String
+  stable val listening: String
+  stable val reference: String
+  stable val flat: String
+  stable val sharp: String
+  stable val tuningPreset: String
+  stable val loopTone: String
+  stable val active: String
+  stable val off: String
+  stable val audition: String
+  stable val playing: String
+  stable val stop: String
+  stable val tunerMeter: String
+  stable val deniedTitle: String
+  stable val deniedText: String
+  stable val deniedButton: String
+  stable val hertz: String
+  stable val tunerControls: String
+  stable val noiseGate: String
+  stable val gateHigh: String
+  stable val soundAboveGate: String
+  stable val soundBelowGate: String
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.tuner.TunerNoiseGateRequest {
+  stable val gate: NoiseGate
+  <runtime stability> = Stable
+}
+stable class audio.tembra.ui.tuner.TunerTestSignalRequest {
+  unstable val NOTE_CENTS: Regex
+  stable val LEVELS: ClosedFloatingPointRange<Float>
+  <runtime stability> = Stable
+}
+unstable class audio.tembra.ui.tuner.TunerUiState {
+  stable val loaded: Boolean
+  stable val instrument: Instrument
+  stable val guitarStrings: GuitarStringCount
+  unstable val preset: TuningPreset
+  runtime val presets: List<TuningPreset>
+  stable val mode: TunerMode
+  stable val loopTone: Boolean
+  stable val noiseGate: NoiseGate
+  stable val microphone: MicrophonePermissionStatus
+  stable val audio: AudioState
+  stable val interrupted: Boolean
+  runtime val reading: MeterReading?
+  stable val gateOpen: Boolean
+  runtime val audition: AuditionState?
+  runtime val testSignal: TestSignal?
+  <runtime stability> = Unstable
+}
+runtime class audio.tembra.ui.tuner.TunerViewModel.MetroContributionToDevzacsweersmetroappScopeocf15.BindsMirror {
+  <runtime stability> = Uncertain(BindsMirror)
+}
+stable class audio.tembra.ui.tuner.TunerViewModel.MetroFactory {
+  runtime var audio: Provider<TunerAudio>
+  runtime var permission: Provider<MicrophonePermission>
+  runtime var preferences: Provider<TunerPreferences>
+  runtime var sounds: Provider<ReferenceSoundRepository>
+  runtime var decodeDispatcher: Provider<CoroutineDispatcher>
+  <runtime stability> = 
+}
+unstable class audio.tembra.ui.tuner.TunerViewModel {
+  runtime val audio: TunerAudio
+  runtime val permission: MicrophonePermission
+  runtime val preferences: TunerPreferences
+  runtime val sounds: ReferenceSoundRepository
+  unstable val decodeDispatcher: CoroutineDispatcher
+  runtime val _uiState: MutableStateFlow<TunerUiState>
+  runtime val uiState: StateFlow<TunerUiState>
+  runtime val telemetry: PitchTelemetry
+  stable var screenVisible: Boolean
+  stable var foreground: Boolean
+  stable var requestedThisVisibility: Boolean
+  runtime var current: DesiredAudio
+  runtime var startJob: Job?
+  runtime var pollJob: Job?
+  stable var launchGate: NoiseGate?
+  runtime var auditionJob: Job?
+  unstable val snapshot: PitchSnapshot
+  runtime val sampleHandles: MutableMap<String, SampleHandle>
+  <runtime stability> = Unstable
+}
+stable class audio.tembra.ui.tuner.WideStringGrid {
+  stable val columns: Int
+  stable val card: Dp
+  <runtime stability> = Stable
+}

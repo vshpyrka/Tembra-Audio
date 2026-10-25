@@ -75,7 +75,7 @@ Files: Android `journeys/TimelineJourney.kt`, `TimelineJourneyBenchmark.kt`,
 Before the existing steps: open Projects → demo → Timeline, play with `transport.metronome` on,
 scroll the lane for five seconds (animation), then the existing tuner/metronome cycle (which
 pauses playback through the dialog: the journey taps "Stop and leave" by tag
-`dialog.stopAndLeave.confirm`), finishing with `devtools.writeHealth`. The 75 s xctrace window
+`dialog.stopAndLeave.confirm`); the timeline journey undoes its split at once (the document persists between iterations) and restarts playback before it so the playhead is inside the first clip whatever the saved zoom; `devtools.writeHealth` is tapped right after the playback phase, while the transport still owns the device (a later write would carry the metronome's counters). The 75 s xctrace window
 is rechecked against the new length and widened if the taps exceed 60 s.
 
 ## Baseline profile
