@@ -3,9 +3,7 @@ package audio.tembra.ui.projects.components
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -14,9 +12,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import audio.tembra.core.project.MusicalKey
+import audio.tembra.ui.perf.anchorRoot
 import audio.tembra.ui.projects.ProjectsCopy
 import audio.tembra.ui.projects.ProjectsTestTags
 import audio.tembra.ui.theme.TembraShapes
@@ -43,26 +41,9 @@ internal fun KeyPickerDialog(selected: MusicalKey?, onConfirm: (MusicalKey?) -> 
                 }
             }
         },
-        modifier = modifier.testTag(ProjectsTestTags.KEY_DIALOG),
+        modifier = modifier.anchorRoot().testTag(ProjectsTestTags.KEY_DIALOG),
         shape = RoundedCornerShape(TembraShapes.large),
         containerColor = colors.surfaceContainerHigh,
-    )
-}
-
-@Composable
-private fun KeyRow(label: String, selected: Boolean, onClick: () -> Unit, testTag: String) {
-    val colors = TembraTheme.colors
-    val spacing = TembraTheme.spacing
-    Text(
-        text = label,
-        style = TembraTheme.typography.bodyLarge,
-        color = if (selected) colors.primary else colors.onSurface,
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = spacing.touchTargetMin)
-            .selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
-            .padding(horizontal = spacing.sm, vertical = spacing.sm)
-            .testTag(testTag),
     )
 }
 

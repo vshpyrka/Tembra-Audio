@@ -1,6 +1,7 @@
 package audio.tembra.ui.session
 
 import audio.tembra.core.metronome.Tempo
+import audio.tembra.core.metronome.Subdivision
 import audio.tembra.core.project.AudioAsset
 import audio.tembra.core.project.AudioAssetId
 import audio.tembra.core.project.AudioFormat
@@ -26,10 +27,12 @@ import audio.tembra.data.projects.PickedFile
 import audio.tembra.data.projects.WaveformOverview
 import audio.tembra.engine.AudioEvent
 import audio.tembra.engine.FakeAudioEngine
+import audio.tembra.engine.AudioState
 import audio.tembra.engine.PlayResult
 import audio.tembra.engine.TransportSnapshot
 import audio.tembra.ui.platform.FakeBackgroundPlaybackHost
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
@@ -101,6 +104,246 @@ class ProjectSessionTest {
     private fun callNames(): List<String> = engine.calls.map { it.substringBefore('(') }
 
     // --- Open --------------------------------------------------------------------------------------------------------
+
+    /** Leaving the Timeline hands the device over (the tuner and the metronome need an idle engine); returning takes it back at the position (spec FR-008a). */
+    @Test
+    fun leavingTheTransportHostClosesTheTransportAndReturningReopensItAtThePosition() = runTest(dispatcher) {
+        openDemo()
+        session.seek(Beats(8.0))
+        advanceUntilIdle()
+        val before = engine.calls.size
+        session.transportHostVisible(false)
+        assertEquals(listOf("closeTransport"), callNames().drop(before), "the hand-over is synchronous")
+        session.transportHostVisible(true)
+        advanceUntilIdle()
+        assertEquals(
+            listOf("closeTransport", "openTransport", "setTempo", "setMaster", "setArrangement", "setGrid", "selectSound", "setMetronome", "seek"),
+            callNames().drop(before),
+        )
+        assertEquals("seek(8.0)", engine.calls.last())
+        assertEquals(PlaybackState.Stopped(Beats(8.0)), session.state.value.playback)
+    }
+
+    /** Play right after returning queues behind the reopen: the device is held open by the fake until the test lets go. */
+    @Test
+    fun playRightAfterReturningWaitsForTheTransportToBeBack() = runTest(dispatcher) {
+        openDemo()
+        session.transportHostVisible(false)
+        engine.openTransportGate = CompletableDeferred()
+        session.transportHostVisible(true)
+        runCurrent() // the attach is suspended inside the open
+        val before = engine.calls.size
+        session.play()
+        runCurrent()
+        assertFalse("play" in callNames().drop(before), "play ran before the transport was back")
+        engine.openTransportGate?.complete(Unit)
+        advanceUntilIdle()
+        assertEquals(listOf("setTempo", "setMaster", "setArrangement", "setGrid", "selectSound", "setMetronome", "seek", "play"), callNames().drop(before))
+        assertEquals(PlaybackState.Playing, session.state.value.playback)
+        session.pause()
+        advanceUntilIdle()
+    }
+
+    /** A seek while another screen holds the device moves the stored position only; the return pushes it. */
+    @Test
+    fun aSeekWhileDetachedStaysAwayFromTheEngine() = runTest(dispatcher) {
+        openDemo()
+        session.transportHostVisible(false)
+        val before = engine.calls.size
+        session.seek(Beats(12.0))
+        advanceUntilIdle()
+        assertEquals(emptyList(), callNames().drop(before), "nothing reaches the closed transport")
+        assertEquals(PlaybackState.Stopped(Beats(12.0)), session.state.value.playback)
+        session.transportHostVisible(true)
+        advanceUntilIdle()
+        assertEquals("seek(12.0)", engine.calls.last())
+    }
+
+    /** A leave that lands while the device is still opening: the open finishes and is closed again at once. */
+    @Test
+    fun leavingWhileTheTransportReopensClosesItAgain() = runTest(dispatcher) {
+        openDemo()
+        session.transportHostVisible(false)
+        engine.openTransportGate = CompletableDeferred()
+        session.transportHostVisible(true)
+        runCurrent()
+        val before = engine.calls.size
+        session.transportHostVisible(false)
+        engine.openTransportGate?.complete(Unit)
+        advanceUntilIdle()
+        assertEquals(listOf("closeTransport"), callNames().drop(before), "the late open is closed and nothing is pushed")
+        assertEquals(AudioState.Idle, engine.audioState, "the engine is free for the other screen")
+    }
+
+    /** The screen that held the device lets go as it leaves: a busy engine is retried until the open succeeds. */
+    @Test
+    fun aBusyEngineIsRetriedUntilTheOtherScreenLetsGo() = runTest(dispatcher) {
+        openDemo()
+        session.transportHostVisible(false)
+        engine.transportBusyFor = 3
+        val before = engine.calls.size
+        session.transportHostVisible(true)
+        advanceUntilIdle()
+        val names = callNames().drop(before)
+        assertEquals(4, names.count { it == "openTransport" }, "three busy answers, then the open: $names")
+        assertTrue("setArrangement" in names && names.last() == "seek", "the transport is bound after the retries: $names")
+        assertEquals(AudioState.Transport, engine.audioState)
+    }
+
+    /** When the retries give up, play binds the transport in full rather than opening a bare one. */
+    @Test
+    fun playAfterAFailedReattachBindsTheTransportFully() = runTest(dispatcher) {
+        openDemo()
+        session.seek(Beats(8.0))
+        advanceUntilIdle()
+        session.transportHostVisible(false)
+        engine.transportBusyFor = 60
+        session.transportHostVisible(true)
+        advanceUntilIdle()
+        assertEquals(AudioState.Idle, engine.audioState, "the attach gave up")
+        engine.transportBusyFor = 0
+        val before = engine.calls.size
+        session.play()
+        advanceUntilIdle()
+        assertEquals(listOf("openTransport", "setTempo", "setMaster", "setArrangement", "setGrid", "selectSound", "setMetronome", "seek", "play"), callNames().drop(before))
+        assertEquals("seek(8.0)", engine.calls.dropLast(1).last(), "play resumes where the user left, not at the start")
+        assertEquals(PlaybackState.Playing, session.state.value.playback)
+        session.pause()
+        advanceUntilIdle()
+    }
+
+    /** A tap on Tuner or Metronome while the start-up open runs leaves the device to that screen; the return takes it back. */
+    @Test
+    fun aTapOnAnotherDestinationDuringStartupLeavesTheDeviceToIt() = runTest(dispatcher) {
+        session.start()
+        runCurrent()
+        engine.openTransportGate = CompletableDeferred()
+        val opening = launch { session.open(demo.id) }
+        runCurrent() // the start-up open is in flight
+        session.transportHostVisible(false)
+        engine.openTransportGate?.complete(Unit)
+        opening.join()
+        runCurrent()
+        assertEquals(listOf("openTransport", "closeTransport"), callNames().filter { it.endsWith("Transport") }, "the late open is closed again")
+        assertEquals(AudioState.Idle, engine.audioState, "the device is free for the other screen")
+        assertEquals(demo, session.state.value.project)
+        val before = engine.calls.size
+        session.transportHostVisible(true)
+        advanceUntilIdle()
+        assertEquals(listOf("openTransport", "setTempo", "setMaster", "setArrangement", "setGrid", "selectSound", "setMetronome", "seek"), callNames().drop(before))
+    }
+
+    /** Leaving and returning while one open is in flight: that open is kept, no second one starts, the position lands. */
+    @Test
+    fun leavingAndReturningDuringOneOpenKeepsThatOpenAndThePosition() = runTest(dispatcher) {
+        openDemo()
+        session.seek(Beats(8.0))
+        advanceUntilIdle()
+        session.transportHostVisible(false)
+        engine.openTransportGate = CompletableDeferred()
+        session.transportHostVisible(true)
+        runCurrent() // the attach is inside its open
+        val before = engine.calls.size
+        session.transportHostVisible(false)
+        session.transportHostVisible(true)
+        runCurrent()
+        engine.openTransportGate?.complete(Unit)
+        advanceUntilIdle()
+        val names = callNames().drop(before)
+        assertEquals(0, names.count { it == "openTransport" }, "no second open while one is in flight: $names")
+        assertEquals("seek(8.0)", engine.calls.last())
+        assertEquals(AudioState.Transport, engine.audioState)
+        session.transportHostVisible(false)
+        assertEquals("closeTransport", engine.calls.last(), "the next leave hands the device over")
+        assertEquals(AudioState.Idle, engine.audioState)
+    }
+
+    /** A pause while play waits for the transport: the stored position stays, nothing plays, the host is let go. */
+    @Test
+    fun pauseWhilePlayWaitsForTheTransportStartsNothingAndKeepsThePosition() = runTest(dispatcher) {
+        openDemo()
+        session.seek(Beats(8.0))
+        advanceUntilIdle()
+        session.transportHostVisible(false)
+        engine.openTransportGate = CompletableDeferred()
+        session.transportHostVisible(true)
+        runCurrent()
+        session.play()
+        runCurrent()
+        assertEquals(PlaybackState.Starting(Beats(8.0)), session.state.value.playback)
+        session.pause()
+        runCurrent()
+        assertEquals(PlaybackState.Stopped(Beats(8.0)), session.state.value.playback, "the position the user left, not the engine's")
+        val before = engine.calls.size
+        engine.openTransportGate?.complete(Unit)
+        advanceUntilIdle()
+        assertFalse("play" in callNames().drop(before), "nothing plays after the pause")
+        assertFalse(host.alive, "the playback host is not kept alive")
+        assertEquals("seek(8.0)", engine.calls.last(), "the bind still lands the stored position")
+    }
+
+    /** Play, pause, play while the transport comes back: one start, and the engine plays when the state says so. */
+    @Test
+    fun playPausePlayWhileTheTransportComesBackEndsPlaying() = runTest(dispatcher) {
+        openDemo()
+        session.transportHostVisible(false)
+        engine.openTransportGate = CompletableDeferred()
+        session.transportHostVisible(true)
+        runCurrent()
+        session.play()
+        runCurrent()
+        session.pause()
+        runCurrent()
+        session.play()
+        runCurrent()
+        val before = engine.calls.size
+        engine.openTransportGate?.complete(Unit)
+        advanceUntilIdle()
+        val names = callNames().drop(before)
+        assertEquals(1, names.count { it == "play" }, "one start: $names")
+        assertEquals(0, names.count { it == "pause" }, "no pause after it: $names")
+        assertEquals(PlaybackState.Playing, session.state.value.playback)
+        assertTrue(engine.transportPlaying, "the engine plays")
+        assertTrue(host.alive)
+        session.pause()
+        advanceUntilIdle()
+    }
+
+    /** Opening a project while the transport reattaches: that open lands, closes with the old project, and the new project opens the device once. */
+    @Test
+    fun openingAProjectWhileTheTransportReattachesEndsWithOneOpenTransport() = runTest(dispatcher) {
+        openDemo()
+        session.transportHostVisible(false)
+        engine.openTransportGate = CompletableDeferred()
+        session.transportHostVisible(true)
+        runCurrent() // the attach is inside its open
+        val before = engine.calls.size
+        val reopening = launch { session.open(demo.id) }
+        runCurrent() // the close waits for the open in flight
+        engine.openTransportGate?.complete(Unit)
+        reopening.join()
+        advanceUntilIdle()
+        val transport = callNames().drop(before).filter { it.endsWith("Transport") }
+        assertEquals(listOf("closeTransport", "openTransport"), transport, "closed with the old project, opened once for the new: $transport")
+        assertEquals(AudioState.Transport, engine.audioState)
+        session.transportHostVisible(false)
+        assertEquals("closeTransport", engine.calls.last(), "the session still knows it holds the device")
+        assertEquals(AudioState.Idle, engine.audioState)
+    }
+
+    /** The click settings changed on the Metronome destination stay away from the engine while it belongs to that screen. */
+    @Test
+    fun metronomeSettingsChangedWhileDetachedStayAwayFromTheEngine() = runTest(dispatcher) {
+        openDemo()
+        session.transportHostVisible(false)
+        val before = engine.calls.size
+        preferences.update { it.copy(settings = it.settings.copy(subdivision = Subdivision.Two)) }
+        advanceUntilIdle()
+        assertEquals(emptyList(), callNames().drop(before), "nothing reaches the engine while detached")
+        session.transportHostVisible(true)
+        advanceUntilIdle()
+        assertTrue(engine.calls.drop(before).any { it.startsWith("setGrid(") && "ticks=2" in it }, "the attach applies the changed click settings: ${engine.calls.drop(before)}")
+    }
 
     @Test
     fun openBindsTheEngineInTheContractsOrderThenRecordsTheOpenProject() = runTest(dispatcher) {

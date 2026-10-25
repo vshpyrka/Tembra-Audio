@@ -30,6 +30,7 @@ internal fun DrawScope.drawClip(
     selected: Boolean,
     style: ClipStyle,
     measurer: TextMeasurer,
+    hovered: Boolean = false,
 ) {
     val width = right - left
     if (width <= 0f) return
@@ -40,7 +41,7 @@ internal fun DrawScope.drawClip(
     val height = size.height - CLIP_INSET * 2
     val radius = CornerRadius(style.cornerRadiusPx)
     val blockSize = Size(width, height)
-    val fill = if (clip.available) tint.copy(alpha = BLOCK_ALPHA) else style.unavailable
+    val fill = if (clip.available) tint.copy(alpha = if (hovered) HOVER_ALPHA else BLOCK_ALPHA) else style.unavailable
     drawRoundRect(fill, topLeft = Offset(left, top), size = blockSize, cornerRadius = radius)
 
     // The caption band: the rounded block clipped to the band's height keeps the top corners.
@@ -96,6 +97,8 @@ internal fun DrawScope.drawClip(
 
 internal const val CLIP_INSET = 4f
 private const val BLOCK_ALPHA = 0.35f
+/** A pointer over the clip lifts the block's tint (Constitution IV hover states). */
+private const val HOVER_ALPHA = 0.5f
 private const val CAPTION_PADDING = 6f
 private const val WAVE_INSET = 3f
 private const val COLUMN_WIDTH = 2f

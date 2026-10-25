@@ -3,10 +3,43 @@
 #include <algorithm>
 #include <chrono>
 
+#if defined(__ANDROID__)
+#include <pthread.h>
+#include <sys/resource.h>
+#include <unistd.h>
+#elif defined(__APPLE__)
+#include <pthread.h>
+#include <pthread/qos.h>
+#endif
+
 #include "tembra_trace.h"
 #include "tembra_trace_names.h"
 
 namespace tembra {
+
+namespace {
+
+#if defined(__ANDROID__)
+/** Android's THREAD_PRIORITY_AUDIO: what the platform's own media threads run at. */
+constexpr int kAndroidAudioNice = -16;
+#endif
+
+/**
+ * The streamer feeds the real-time thread, so it runs above the app's other threads (decoding an import, building
+ * overviews, composing): Android's audio priority, Apple's user-interactive QoS. A refusal keeps the default; the
+ * name shows the thread in traces.
+ */
+void raiseStreamerPriority() {
+#if defined(__ANDROID__)
+    static_cast<void>(setpriority(PRIO_PROCESS, static_cast<id_t>(gettid()), kAndroidAudioNice));
+    pthread_setname_np(pthread_self(), "tembra-streamer");
+#elif defined(__APPLE__)
+    pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, 0);
+    pthread_setname_np("tembra-streamer");
+#endif
+}
+
+}  // namespace
 
 DiskStreamer::DiskStreamer(uint32_t rate, const std::atomic<bool>* readersActive) : rate_(rate), readersActive_(readersActive) {}
 
@@ -107,6 +140,7 @@ void DiskStreamer::stop() {
 }
 
 void DiskStreamer::stream() {
+    raiseStreamerPriority();
     while (running_.load(std::memory_order_acquire)) {
         std::unique_lock<std::mutex> lock(work_);
         const bool did = serviceLocked();

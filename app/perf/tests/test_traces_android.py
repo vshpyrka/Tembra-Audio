@@ -105,7 +105,7 @@ def test_gen_trace_is_deterministic(tmp_path):
 
 # --- counter tracks: the audio-health series (feature 007, US5) -----------------
 
-def test_counter_series_reads_the_last_value_of_every_audio_counter():
+def test_counter_series_reads_the_peak_of_every_cumulative_audio_counter_and_the_last_moment_values():
     series = counter_series(COUNTERS_FIXTURE, list(AUDIO_COUNTER_KEYS))
     assert series == {
         "audio.callbacks": 1200.0, "audio.lastUs": 850.0, "audio.maxUs": 1900.0,

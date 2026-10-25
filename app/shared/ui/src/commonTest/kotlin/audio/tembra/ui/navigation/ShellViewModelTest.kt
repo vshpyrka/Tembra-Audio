@@ -35,6 +35,17 @@ class ShellViewModelTest {
         assertEquals(Destination.Timeline, viewModel.uiState.value.selected)
     }
 
+    /** The device changes hands with the destination: away from the Timeline before the new screen shows, back on return. */
+    @Test
+    fun leavingTheTimelineHandsTheTransportOverAndReturningTakesItBack() = runTest {
+        val guard = FakePlaybackGuard()
+        val shell = ShellViewModel(guard)
+        shell.select(Destination.Tuner)
+        shell.select(Destination.Metronome)
+        shell.select(Destination.Timeline)
+        assertEquals(listOf(false, false, true), guard.hostVisibility)
+    }
+
     @Test
     fun selectShowsTheDestination() = runTest {
         viewModel.select(Destination.Tuner)

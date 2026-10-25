@@ -9,6 +9,7 @@ import audio.tembra.engine.AudioEngine
 import audio.tembra.ui.platform.AudioFilePicker
 import audio.tembra.ui.platform.BackgroundPlaybackHost
 import audio.tembra.ui.platform.MicrophonePermission
+import audio.tembra.ui.projects.ProjectsSeeder
 import audio.tembra.ui.session.AppStartup
 import audio.tembra.ui.session.ProjectSession
 import dev.zacsweers.metrox.viewmodel.ViewModelGraph
@@ -29,4 +30,5 @@ interface AppGraph : ViewModelGraph {
     val projectRepository: ProjectRepository
     val projectSession: ProjectSession
     val appStartup: AppStartup
+    val projectsSeeder: ProjectsSeeder
 }

@@ -1,5 +1,6 @@
 package audio.tembra.ui.tuner
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
@@ -86,7 +87,9 @@ class TunerMeterTest {
                 val meter: @androidx.compose.runtime.Composable () -> Unit = {
                     fontScale = LocalDensity.current.fontScale
                     pixelDensity = LocalDensity.current.density
-                    Box(Modifier.width(width)) {
+                    // The theme's lowest surface behind the meter: the pixel probes read it where nothing is drawn, whatever the
+                    // window (black on Android) or the off-screen surface (iOS) would show.
+                    Box(Modifier.width(width).background(TembraTheme.colors.surfaceContainerLowest)) {
                         TunerMeter(telemetry = telemetry, reading = reading, listening = listening, testTag = "tuner.meter", modifier = Modifier.widthIn(max = maxWidth))
                     }
                 }
@@ -97,11 +100,12 @@ class TunerMeterTest {
         settle()
     }
 
-    /** Lets the needle settle: the smoothing has an 80 ms time constant. */
+    /**
+     * Lets the needle settle: the smoothing has an 80 ms time constant and steps at most 100 ms per frame, so one long
+     * jump of the clock leaves the needle short of its target; forty frames (640 ms) bring it within a hundredth of a degree.
+     */
     private fun ComposeUiTest.settle() {
-        repeat(3) { mainClock.advanceTimeByFrame() }
-        mainClock.advanceTimeBy(800)
-        repeat(3) { mainClock.advanceTimeByFrame() }
+        repeat(40) { mainClock.advanceTimeByFrame() }
     }
 
     private fun ComposeUiTest.meterImage(): Pair<ImageBitmap, MeterLayout> {

@@ -8,6 +8,9 @@ class PerfJourneyTestCase: XCTestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
+        // A round runs at the lowest brightness (the owner's rule for every target); the runner is the only remote
+        // control a physical phone offers, and simulators ignore the value.
+        UIScreen.main.brightness = 0
         let preflight = Preflight.run()
         let attachment = XCTAttachment(string: preflight.json)
         attachment.name = "preflight.json"

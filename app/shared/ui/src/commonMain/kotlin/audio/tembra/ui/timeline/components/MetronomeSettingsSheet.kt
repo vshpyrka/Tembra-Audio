@@ -28,6 +28,7 @@ import audio.tembra.ui.metronome.components.ClickSoundPicker
 import audio.tembra.ui.metronome.components.ClickSoundPickerLayout
 import audio.tembra.ui.metronome.components.StyleMenu
 import audio.tembra.ui.metronome.components.SubdivisionTiles
+import audio.tembra.ui.perf.anchorRoot
 import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.ui.timeline.TimelineCopy
 
@@ -57,7 +58,7 @@ internal fun MetronomeSettingsSheet(
     val customSound = settings.customSound?.let { CustomSoundState.Available(it.displayName) } ?: CustomSoundState.None
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        modifier = modifier.testTag(METRONOME_SHEET_TAG),
+        modifier = modifier.anchorRoot().testTag(METRONOME_SHEET_TAG),
         containerColor = colors.surfaceContainerHigh,
     ) {
         Column(

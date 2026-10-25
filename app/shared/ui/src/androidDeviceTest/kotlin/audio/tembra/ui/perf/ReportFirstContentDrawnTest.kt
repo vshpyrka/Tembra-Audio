@@ -15,6 +15,7 @@ import audio.tembra.data.tuner.FakeTunerPreferences
 import audio.tembra.engine.FakeAudioEngine
 import audio.tembra.ui.metronome.MetronomeScreen
 import audio.tembra.ui.metronome.MetronomeViewModel
+import audio.tembra.ui.navigation.TestViewModelFactory
 import audio.tembra.ui.platform.FakeBackgroundPlaybackHost
 import audio.tembra.ui.platform.FakeMicrophonePermission
 import audio.tembra.ui.platform.FakeAudioFilePicker
@@ -27,7 +28,9 @@ import audio.tembra.ui.tuner.TunerViewModel
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import dev.zacsweers.metrox.viewmodel.LocalMetroViewModelFactory
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 
 /**
  * The Android actual of `ReportFirstContentDrawn` reports "fully drawn" to the Activity's reporter (what
@@ -59,16 +62,18 @@ class ReportFirstContentDrawnTest {
         assertTrue(owner.reported)
     }
 
+    /** The Timeline reports once its first content is ready (feature 009: the open project's clips with their overviews). */
     @Test
-    fun timelineReportsAtOnce() = runComposeUiTest {
+    fun timelineReportsOnceTheOpenProjectIsReady() = runComposeUiTest {
         val owner = Owner()
+        val factory = TestViewModelFactory()
+        runBlocking(Dispatchers.Main) { factory.openDemo() }
         setContent {
-            CompositionLocalProvider(LocalFullyDrawnReporterOwner provides owner) {
+            CompositionLocalProvider(LocalFullyDrawnReporterOwner provides owner, LocalMetroViewModelFactory provides factory) {
                 TembraTheme { TimelineScreen() }
             }
         }
-        waitForIdle()
-        assertTrue(owner.reported)
+        waitUntil(timeoutMillis = 5_000) { owner.reported }
     }
 
     @Test

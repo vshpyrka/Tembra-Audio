@@ -8,6 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import audio.tembra.ui.App
 import audio.tembra.ui.devtools.DeveloperViewRequest
 import audio.tembra.ui.metronome.MetronomeDebugRequest
+import audio.tembra.ui.projects.ProjectsSeedRequest
 import audio.tembra.ui.platform.ProvideLaidOutWindowSize
 import audio.tembra.ui.platform.dispatchEscapeAsBack
 import audio.tembra.ui.platform.enableEdgeToEdgeOverDarkContent
@@ -51,11 +52,13 @@ class MainActivity : ComponentActivity() {
         } else {
             null
         }
+        // "tembra.projects.seed" fills the library for the SC-010 timing (feature 009, T121).
+        val projectsSeed = if (BuildConfig.DEBUG) ProjectsSeedRequest.parse(intent.getStringExtra("tembra.projects.seed")) else null
         setContent {
             // This activity rotates in place (configChanges), which leaves Compose's window size one rotation behind on some
             // devices (API 28 and 30 seen); the wrapper hands every adaptive layout the laid-out window instead.
             ProvideLaidOutWindowSize {
-                App(appGraph = appGraph, developerView = request, tunerTestSignal = testSignal, tunerNoiseGate = noiseGate, metronomeDebug = metronomeDebug)
+                App(appGraph = appGraph, developerView = request, tunerTestSignal = testSignal, tunerNoiseGate = noiseGate, metronomeDebug = metronomeDebug, projectsSeed = projectsSeed)
             }
         }
     }

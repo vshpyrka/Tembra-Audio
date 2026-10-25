@@ -15,6 +15,7 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.dp
 import audio.tembra.core.metronome.TimeSignature
@@ -25,6 +26,7 @@ import audio.tembra.ui.designsystem.distanceTo
 import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.ui.timeline.components.PlayheadOverlay
 import kotlin.math.abs
+import kotlin.math.roundToInt
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -56,16 +58,11 @@ class PlayheadOverlayTest {
         mainClock.autoAdvance = false
     }
 
+    /** The centre of the columns in the playhead colour, or null without one (the stroke spans several pixels at device densities). */
     private fun ComposeUiTest.playheadX(): Int? {
-        val image = onNodeWithTag(TimelineTestTags.PLAYHEAD).captureToImage()
-        var best: Int? = null
-        var bestDistance = Float.MAX_VALUE
-        for (x in 0 until image.width step 1) {
-            val c = image.averageColorAt(x, image.height / 2, radius = 0)
-            val d = c.distanceTo(playhead)
-            if (d < bestDistance) { bestDistance = d; best = x }
-        }
-        return if (bestDistance < 0.15f) best else null
+        val image = onRoot().captureToImage() // the overlay fills the test's box; the tagged node is the narrow accessible line
+        val columns = (0 until image.width).filter { x -> image.averageColorAt(x, image.height / 2, radius = 0).distanceTo(playhead) < 0.15f }
+        return if (columns.isEmpty()) null else (columns.sum().toDouble() / columns.size).roundToInt()
     }
 
     @Test
@@ -74,7 +71,7 @@ class PlayheadOverlayTest {
         onNodeWithTag(TimelineTestTags.PLAYHEAD).assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "2.2"))
         val x = playheadX()
         assertTrue(x != null, "no playhead line found")
-        assertTrue(abs(viewport.xOf(Beats(5.0)).toInt() - x!!) <= 1, "the stopped playhead is not at beat 5 (within a pixel): $x")
+        assertTrue(abs(viewport.xOf(Beats(5.0)).toInt() - x) <= 1, "the stopped playhead is not at beat 5 (within a pixel): $x")
     }
 
     @Test
@@ -90,6 +87,6 @@ class PlayheadOverlayTest {
         val later = playheadX()
         assertTrue(telemetry.reads > readsBefore, "the overlay stopped reading the telemetry")
         assertTrue(first != null && later != null, "no playhead line while playing")
-        assertTrue(later!! > first!! + (40 * densityScale).toInt(), "the playhead did not move: $first → $later")
+        assertTrue(later > first + (40 * densityScale).toInt(), "the playhead did not move: $first → $later")
     }
 }

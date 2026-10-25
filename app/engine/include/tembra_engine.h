@@ -182,7 +182,7 @@ typedef struct tembra_audio_health {
     uint8_t  realtime;      /* 1 when the audio thread holds real-time status             */
     uint8_t  _reserved[3];
     uint32_t avg_us;        /* revision 6: mean callback duration since stream start, microseconds */
-    uint32_t starvation;    /* revision 6: clip fifos found dry by the callback (silence rendered)  */
+    uint32_t starvation;    /* revision 6: clip fifos found dry by the callback since the transport opened */
     uint32_t clips_active;  /* revision 6: clips rendered in the last block                        */
 } tembra_audio_health;
 /* Non-real-time. Copies the counters into *out (the callback writes them with atomic stores; the xrun count is

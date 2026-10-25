@@ -11,3 +11,4 @@ shell        Laudio/tembra/ui/navigation/NavigationShellKt;
 timeline     Laudio/tembra/ui/timeline/TimelineScreenKt;
 tuner        Laudio/tembra/ui/tuner/TunerScreenKt;
 metronome    Laudio/tembra/ui/metronome/MetronomeScreenKt;
+projects     Laudio/tembra/ui/projects/ProjectsScreenKt;

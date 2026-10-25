@@ -25,6 +25,10 @@ class StressJourney {
             lane.scroll(androidx.test.uiautomator.Direction.RIGHT, SCROLL_PERCENT, SCROLL_SPEED)
             lane.scroll(androidx.test.uiautomator.Direction.LEFT, SCROLL_PERCENT, SCROLL_SPEED)
         }
+        // The measurement build dumps the audio-health counters here, while the transport still owns the device (the
+        // engine restarts them per stream session and the metronome and the tuner take the device next; feature 007,
+        // US5); the release baseline (-Ptembra.perf=release) has no devtools, so the control is tapped only when it exists.
+        device.tapIfPresent(Anchors.DEVTOOLS_WRITE_HEALTH)
         device.tap(Anchors.NAV_METRONOME)
         // Leaving the Timeline while it plays: the stop-and-leave dialog (spec FR-008a of feature 009).
         device.tap(Anchors.DIALOG_STOP_AND_LEAVE_CONFIRM)
@@ -39,9 +43,6 @@ class StressJourney {
         device.anchor(Anchors.TUNER_NOTE_READOUT)
         device.tap(Anchors.NAV_METRONOME)
         device.tap(Anchors.METRONOME_START_STOP)
-        // Last step: the measurement build dumps the audio-health counters (feature 007, US5); the release
-        // baseline (-Ptembra.perf=release) has no devtools, so the control is tapped only when it exists.
-        device.tapIfPresent(Anchors.DEVTOOLS_WRITE_HEALTH)
     }
 
     private companion object {

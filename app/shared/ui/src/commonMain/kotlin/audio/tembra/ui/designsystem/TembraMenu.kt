@@ -25,6 +25,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
+import audio.tembra.ui.perf.anchorRoot
 import audio.tembra.ui.theme.TembraIcons
 import audio.tembra.ui.theme.TembraShapes
 import audio.tembra.ui.theme.TembraTheme
@@ -54,7 +55,7 @@ fun TembraMenu(
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = onDismiss,
-            modifier = Modifier.testTagIfSet(testTag).widthIn(min = spacing.soundMenuWidth).heightIn(max = MenuMaxHeight),
+            modifier = Modifier.anchorRoot().testTagIfSet(testTag).widthIn(min = spacing.soundMenuWidth).heightIn(max = MenuMaxHeight),
             shape = RoundedCornerShape(TembraShapes.medium),
             containerColor = colors.surfaceContainerHighest,
         ) {

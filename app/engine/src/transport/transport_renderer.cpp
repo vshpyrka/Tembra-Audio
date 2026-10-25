@@ -28,10 +28,12 @@ void TransportRenderer::silence() {
     releasing_ = false;
     releaseRemaining_ = 0;
     clickRunning_ = false;
+    // A renderer outlives its transport sessions (one per stream rate): the health counters start each one at zero.
+    starvation_.store(0, std::memory_order_relaxed);
+    clipsActive_.store(0, std::memory_order_relaxed);
     command_.store(kNone, std::memory_order_release);
     playing_.store(false, std::memory_order_release);
     readersActive_.store(false, std::memory_order_release);
-    clipsActive_.store(0, std::memory_order_relaxed);
 }
 
 // --- Audio thread -----------------------------------------------------------------------------------------------

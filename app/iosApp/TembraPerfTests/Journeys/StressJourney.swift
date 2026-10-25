@@ -19,6 +19,12 @@ struct StressJourney {
             lane.swipeLeft(velocity: .fast)
             lane.swipeRight(velocity: .fast)
         }
+        // The audio-health counters are written here, while the transport still owns the device: the metronome and the
+        // tuner take it next and the engine restarts the counters per stream session (the release build has no devtools).
+        let writeHealth = app.anchor(Anchors.devtoolsWriteHealth)
+        if writeHealth.waitForExistence(timeout: 2) {
+            writeHealth.tap()
+        }
         app.tapAnchor(Anchors.navMetronome)
         // Leaving the Timeline while it plays: the stop-and-leave dialog (spec FR-008a of feature 009).
         app.tapAnchor(Anchors.dialogStopAndLeaveConfirm)
@@ -33,9 +39,5 @@ struct StressJourney {
         app.waitForAnchor(Anchors.tunerNoteReadout)
         app.tapAnchor(Anchors.navMetronome)
         app.tapAnchor(Anchors.metronomeStartStop)
-        let writeHealth = app.anchor(Anchors.devtoolsWriteHealth)
-        if writeHealth.waitForExistence(timeout: 2) {
-            writeHealth.tap()
-        }
     }
 }

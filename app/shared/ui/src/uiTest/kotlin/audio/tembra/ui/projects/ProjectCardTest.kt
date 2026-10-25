@@ -1,6 +1,8 @@
 package audio.tembra.ui.projects
 
+import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertHasClickAction
@@ -13,6 +15,7 @@ import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.test.v2.runComposeUiTest
 import audio.tembra.core.project.ProjectId
 import audio.tembra.data.projects.CardOverview
+import audio.tembra.ui.designsystem.enterKeyboardMode
 import audio.tembra.ui.projects.components.ProjectCard
 import audio.tembra.ui.theme.TembraTheme
 import kotlin.test.Test
@@ -42,7 +45,15 @@ class ProjectCardTest {
     @Test
     fun enterOnTheFocusedCardOpensIt() = runComposeUiTest {
         val calls = mutableListOf<String>()
-        setContent { TembraTheme { ProjectCard(card = card, layout = ProjectsLayout.OneColumn, callbacks = ProjectsCallbacks.None.copy(onOpen = { calls += "open" })) } }
+        var manager: InputModeManager? = null
+        setContent {
+            TembraTheme {
+                manager = LocalInputModeManager.current
+                ProjectCard(card = card, layout = ProjectsLayout.OneColumn, callbacks = ProjectsCallbacks.None.copy(onOpen = { calls += "open" }))
+            }
+        }
+        // Focus by key needs keyboard input mode; the Android device lane declares none and skips here.
+        if (!enterKeyboardMode(manager)) return@runComposeUiTest
         onNodeWithTag(ProjectsTestTags.card(id)).requestFocus().assertIsFocused().performKeyInput { pressKey(Key.Enter) }
         assertEquals(listOf("open"), calls)
     }

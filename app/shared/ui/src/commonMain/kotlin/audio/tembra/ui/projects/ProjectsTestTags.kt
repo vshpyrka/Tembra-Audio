@@ -25,6 +25,7 @@ object ProjectsTestTags {
     const val DIALOG_CONFIRM = "dialog.confirm"
     const val DIALOG_CANCEL = "dialog.cancel"
 
+    /** A card's tag; the demo card is [CARD_DEMO] and its children (`.open`, `.menu`, `.overview`) hang off that. */
     fun card(id: ProjectId): String = "projects.card.${id.value}"
     fun cardOpen(id: ProjectId): String = "projects.card.${id.value}.open"
     fun cardMenu(id: ProjectId): String = "projects.card.${id.value}.menu"

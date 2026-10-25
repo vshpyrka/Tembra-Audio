@@ -28,15 +28,26 @@ class TimelineJourney {
         check(readout.wait(Until.descMatches("00:1[5-9].*|00:[2-5].*"), PLAY_TIMEOUT_MS)) { "the readout never passed 00:15" }
         val ruler = device.anchor(Anchors.TIMELINE_RULER)
         val bounds = ruler.visibleBounds
-        device.click(bounds.left + bounds.width() / 4, bounds.centerY())
+        // Past the tempo and signature pills, which overlay the ruler's left third on a phone (they would open a menu), and
+        // early enough in the demo's clips (they end at bar 17 of the 32 the fitted ruler shows) that the playhead, still
+        // moving through the two pinches, is inside the first clip when the split comes.
+        device.click(bounds.left + bounds.width() * 2 / 5, bounds.centerY())
         device.waitForIdle()
         val lane = device.anchor(Anchors.TIMELINE_LANE_FIRST)
         lane.pinchOpen(PINCH_PERCENT, PINCH_SPEED)
         device.waitForIdle()
         lane.pinchClose(PINCH_PERCENT, PINCH_SPEED)
         device.waitForIdle()
+        // The split needs the playhead inside the first clip whatever zoom the pinches (and the saved view state) left:
+        // back to the start, then past bar 1 while still playing (00:02 is bar 2 at 124 BPM), both through anchors.
+        device.tap(Anchors.TRANSPORT_SKIP_START)
+        check(readout.wait(Until.descMatches("00:0[01].*"), PLAY_TIMEOUT_MS)) { "skip-to-start never reached the readout" }
+        check(readout.wait(Until.descMatches("00:0[2-9].*"), PLAY_TIMEOUT_MS)) { "the readout never passed 00:02 after skip-to-start" }
         device.tap(Anchors.TIMELINE_CLIP_FIRST)
         device.tap(Anchors.TIMELINE_SPLIT)
+        // The split is undone at once: the document persists between iterations and rounds, and a demo that keeps
+        // its five clips is what every later iteration (and `timeline.clip.first`) relies on.
+        device.tap(Anchors.TIMELINE_UNDO)
         device.tap(Anchors.TIMELINE_TRACK_MENU_FIRST)
         device.tap(Anchors.TIMELINE_TRACK_SETTINGS)
         device.tap(Anchors.TIMELINE_SETTINGS_CLOSE)

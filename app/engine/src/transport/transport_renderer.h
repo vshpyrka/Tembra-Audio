@@ -58,7 +58,10 @@ public:
     void pause() { command_.store(kPause, std::memory_order_release); }
     uint64_t seek(int64_t frame) { return clock_.requestSeek(frame); }
 
-    /** Drops every voice, command and the position. Host thread, only while no callback can run (the stream is closed). */
+    /**
+     * Drops every voice, command, the position and the session's health counters. Host thread, only while no callback
+     * can run (the stream is closed, or the transport is being opened).
+     */
     void silence();
 
     // --- Telemetry (any thread) ----------------------------------------------------------------------------------

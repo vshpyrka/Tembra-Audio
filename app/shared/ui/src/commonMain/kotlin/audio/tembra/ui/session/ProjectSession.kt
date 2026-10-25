@@ -70,6 +70,10 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -138,6 +142,14 @@ class ProjectSession(
     private var history: EditHistory? = null
     private var opened: OpenedProject? = null
     private var transportOpen = false
+    /** The shell shows a destination that hosts the transport (the Timeline is the start destination). */
+    private var hostVisible = true
+    /** The device was handed over to another destination; [attachTransport] takes it back. */
+    private var detached = false
+    private var attachJob: Job? = null
+    /** Opens and closes of the transport, one at a time: a second open while one is in flight would be refused by the engine and drop the audio focus with it. */
+    private val transportMutex = Mutex()
+    private var startJob: Job? = null
     private var settings = MetronomeSettings()
     private var lastEdit: ProjectEdit? = null
     private var referencedAssets: Set<AudioAssetId> = emptySet()
@@ -286,25 +298,112 @@ class ProjectSession(
         return true
     }
 
+    override fun transportHostVisible(visible: Boolean) {
+        hostVisible = visible
+        if (visible) {
+            launchAttach()
+        } else {
+            // A running attach is left alone: its loop ends on [hostVisible], and an open in flight closes itself.
+            detachTransport()
+        }
+    }
+
+    private fun launchAttach() {
+        if (opened == null || !detached || attachJob?.isActive == true) return
+        attachJob = scope.launch(CoroutineName("attachTransport")) { attachTransport() }
+    }
+
+    /**
+     * Hands the audio device over (the tuner or the standalone metronome opens its stream next); the project stays
+     * open. Also what an open that finishes after the host has gone does to itself.
+     */
+    private fun detachTransport() {
+        if (transportOpen) {
+            audio.closeTransport()
+            transportOpen = false
+        }
+        if (opened != null) detached = true
+    }
+
+    /**
+     * Takes the device back while the host is on screen. The screen that held it lets go as it leaves (after the
+     * navigation fade, longer under a system animator scale), so a busy engine is retried for a while; a host that
+     * goes away again ends the attempts.
+     */
+    private suspend fun attachTransport() {
+        var attempts = 0
+        while (hostVisible && opened != null && !transportOpen) {
+            if (bindTransport()) return
+            if (++attempts >= ATTACH_ATTEMPTS) return
+            delay(ATTACH_RETRY_MS)
+        }
+    }
+
+    /**
+     * Opens the engine's transport for the open project and gives it everything a fresh transport forgets (tempo,
+     * master, arrangement, click) and the stopped position; true when the transport is open and bound. One open at a
+     * time, and never cancelled once begun: a leave that lands while it runs closes it again as soon as it returns.
+     * False when the host is hidden, the device is busy or it failed.
+     */
+    private suspend fun bindTransport(): Boolean = transportMutex.withLock {
+        withContext(NonCancellable) {
+            if (transportOpen) return@withContext true // bound when it was opened
+            if (!openTransportLocked()) return@withContext false
+            detached = false
+            val project = history?.present ?: return@withContext true
+            pushEngine(project, _state.value.metronomeOn)
+            // Play may already have moved the state on from Stopped; either way the engine resumes where the user left.
+            when (val playback = _state.value.playback) {
+                is PlaybackState.Stopped -> audio.seek(playback.positionBeats)
+                is PlaybackState.Starting -> audio.seek(playback.positionBeats)
+                PlaybackState.Playing, PlaybackState.Pausing -> Unit // never with a transport opened a moment ago
+            }
+            true
+        }
+    }
+
+    /**
+     * The transport open while the host shows, under [transportMutex]: true when it is open afterwards. A host that
+     * went away while the engine opened gets the device closed again at once; [transportOpen] only ever turns true here.
+     */
+    private suspend fun openTransportLocked(): Boolean {
+        if (transportOpen) return true
+        if (!hostVisible) return false
+        if (audio.openTransport() != TransportOpenResult.Opened) return false
+        if (!hostVisible) {
+            audio.closeTransport()
+            return false
+        }
+        transportOpen = true
+        return true
+    }
+
+    /** Everything the engine's transport must hold for [project], in the contract's order. */
+    private fun pushEngine(project: Project, metronomeOn: Boolean) {
+        audio.setTempo(project.tempo, project.timeSignature)
+        audio.setMaster(project.masterVolume.toLinear())
+        pushArrangement(project)
+        bridge.apply(settings, project.tempo, project.timeSignature)
+        bridge.setEnabled(metronomeOn)
+    }
+
     // --- Open and close ----------------------------------------------------------------------------------------------
 
     private suspend fun install(id: ProjectId, opened: OpenedProject) {
         val project = opened.project
-        transportOpen = ensureTransport()
+        // A tap on Tuner or Metronome during the start-up open leaves the device to that screen; the attach takes it back.
+        transportMutex.withLock { withContext(NonCancellable) { openTransportLocked() } }
         val missing = LinkedHashSet(opened.missingAssets)
         for (assetId in project.assets.keys) {
             if (assetId in missing) continue
             val path = opened.audioPath(assetId)
             if (path == null || !sources.open(assetId, path)) missing += assetId
         }
-        audio.setTempo(project.tempo, project.timeSignature)
-        audio.setMaster(project.masterVolume.toLinear())
-        pushArrangement(project)
-        bridge.apply(settings, project.tempo, project.timeSignature)
-        bridge.setEnabled(project.metronomeOn)
+        if (transportOpen) pushEngine(project, project.metronomeOn)
         val started = EditHistory.start(project)
         history = started
         this.opened = opened
+        detached = !transportOpen
         lastEdit = null
         referencedAssets = project.assets.keys
         pendingRetired.clear()
@@ -321,15 +420,22 @@ class ProjectSession(
         }
         repository.setOpen(id)
         if (missing.isNotEmpty()) _messages.trySend(SessionMessage.AssetsMissing(missing.size))
+        // The host may have gone and come back while the sources opened: take the device back now.
+        if (hostVisible) launchAttach()
     }
 
-    private fun closeCurrent() {
+    private suspend fun closeCurrent() {
         overviews.clear()
-        sources.closeAll()
-        if (transportOpen) {
-            audio.closeTransport()
-            transportOpen = false
+        attachJob?.cancel()
+        attachJob = null
+        detached = false
+        transportMutex.withLock { // after an open in flight, so the device never stays with a closed project
+            if (transportOpen) {
+                audio.closeTransport() // before the sources: the engine refuses to close a source its arrangement still references
+                transportOpen = false
+            }
         }
+        sources.closeAll()
         history = null
         opened = null
         lastEdit = null
@@ -340,14 +446,6 @@ class ProjectSession(
     private fun publishUnavailable(reason: String) {
         _state.value = SessionState(unavailable = reason)
         _messages.trySend(SessionMessage.DocumentUnavailable(reason))
-    }
-
-    private suspend fun ensureTransport(): Boolean {
-        if (transportOpen) return true
-        return when (audio.openTransport()) {
-            TransportOpenResult.Opened -> true
-            is TransportOpenResult.Busy, TransportOpenResult.DeviceFailed -> false
-        }
     }
 
     // --- Engine binding ----------------------------------------------------------------------------------------------
@@ -438,43 +536,58 @@ class ProjectSession(
     // --- Playback policy ---------------------------------------------------------------------------------------------
 
     private fun dispatch(event: PlaybackEvent) {
-        val outcome = PlaybackPolicy.onEvent(_state.value.playback, event)
+        val before = _state.value.playback
+        val outcome = PlaybackPolicy.onEvent(before, event)
         _state.update { it.copy(playback = outcome.state) }
         when (val transition = outcome.transition) {
-            PlaybackTransition.Start -> scope.launch(CoroutineName("startPlayback")) { startPlayback() }
+            PlaybackTransition.Start -> if (startJob?.isActive != true) startJob = scope.launch(CoroutineName("startPlayback")) { startPlayback() }
             PlaybackTransition.BecomePlaying -> Unit
             PlaybackTransition.StopWithMessage -> {
                 host.release()
                 _messages.trySend(SessionMessage.StartFailed)
             }
-            PlaybackTransition.Pause -> stopEngine()
+            PlaybackTransition.Pause -> stopEngine(before)
             is PlaybackTransition.Seek -> seekRequests.trySend(transition.beats)
             PlaybackTransition.None -> Unit
         }
     }
 
+    /** Runs once per Start; a pause that lands while it waits for the transport ends it before the engine plays. */
     private suspend fun startPlayback() {
+        attachJob?.join() // play right after returning to the Timeline waits for the transport to be back
+        if (_state.value.playback !is PlaybackState.Starting) return
         val project = history?.present
         val result = PerfTrace.section(PerfSection.TRANSPORT_PLAY) {
-            if (project == null || !ensureTransport()) {
+            if (project == null || !bindTransport()) {
                 PlayResult.Failed(NO_TRANSPORT)
+            } else if (_state.value.playback !is PlaybackState.Starting) {
+                return@section null
             } else {
-                transportOpen = true
                 host.keepAlive(PlaybackNotification(TransportCopy.playing, project.name))
                 audio.play()
             }
         }
         when (result) {
-            PlayResult.Started -> if (_state.value.playback is PlaybackState.Starting) dispatch(PlaybackEvent.Started) else audio.pause()
+            null -> Unit // paused while the transport was being bound: nothing started
+            PlayResult.Started -> if (_state.value.playback is PlaybackState.Starting) {
+                dispatch(PlaybackEvent.Started)
+            } else {
+                audio.pause()
+                host.release()
+            }
             is PlayResult.Failed -> dispatch(PlaybackEvent.Failed)
         }
     }
 
-    /** Pause is synchronous in the seam: the engine stops at its next block and the position is final at once. */
-    private fun stopEngine() {
+    /**
+     * Pause is synchronous in the seam: the engine stops at its next block and the position is final at once. From
+     * [PlaybackState.Starting] the engine has not taken the stored position yet, so that position stays.
+     */
+    private fun stopEngine(before: PlaybackState) {
         audio.pause()
         host.release()
-        dispatch(PlaybackEvent.Paused(readEnginePosition()))
+        val position = if (before is PlaybackState.Starting) before.positionBeats else readEnginePosition()
+        dispatch(PlaybackEvent.Paused(position))
     }
 
     private fun readEnginePosition(): Beats {
@@ -506,7 +619,8 @@ class ProjectSession(
         preferences.snapshot.collect { snapshot ->
             if (snapshot.settings == settings) return@collect
             settings = snapshot.settings
-            history?.present?.let { bridge.apply(settings, it.tempo, it.timeSignature) }
+            // Not while detached: the shared click renderer then belongs to the standalone metronome; the attach re-applies.
+            if (transportOpen) history?.present?.let { bridge.apply(settings, it.tempo, it.timeSignature) }
         }
     }
 
@@ -517,7 +631,9 @@ class ProjectSession(
     /** Seeks are conflated: a scrub lands on the latest position and never queues the engine's re-prime. */
     private suspend fun observeSeekRequests() {
         for (beats in seekRequests) {
-            PerfTrace.section(PerfSection.TRANSPORT_SEEK) { audio.seek(beats) }
+            // While another screen holds the device the stored position moves alone; the bind pushes it on return.
+            // Under the transport mutex, so a scrub never overtakes the bind's own seek.
+            transportMutex.withLock { if (transportOpen) PerfTrace.section(PerfSection.TRANSPORT_SEEK) { audio.seek(beats) } }
         }
     }
 
@@ -603,3 +719,8 @@ class ProjectSession(
         const val NO_TRANSPORT = -1
     }
 }
+
+/** Taking the device back: the previous screen's stream closes as it leaves (after the navigation fade, longer under an
+ * animator scale), so the open is retried for up to five seconds. */
+private const val ATTACH_ATTEMPTS = 50
+private const val ATTACH_RETRY_MS = 100L

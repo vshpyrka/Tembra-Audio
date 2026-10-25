@@ -7,8 +7,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
@@ -30,9 +32,9 @@ import audio.tembra.ui.timeline.TimelineTestTags
 import audio.tembra.ui.timeline.TimelineUiState
 import audio.tembra.ui.timeline.TrackUi
 import dev.zacsweers.metrox.viewmodel.LocalMetroViewModelFactory
-import kotlinx.collections.immutable.persistentListOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlinx.collections.immutable.persistentListOf
 
 /** The expanded layout's inline settings (spec FR-041; T112, US6): the chevron expands under the header, the form sits inside, one row at a time. */
 @OptIn(ExperimentalTestApi::class)
@@ -79,6 +81,8 @@ class TrackSettingsInlineRowTest {
         onNodeWithTag(TimelineTestTags.chevron(0)).performClick()
         onNodeWithTag(TrackSettingsTestTags.INLINE).assertExists()
         onNodeWithTag(TrackSettingsTestTags.FORM).assertExists()
+        // On a phone-sized window the open form pushes the second header below the fold; a tap must land on screen.
+        onNodeWithTag(TimelineTestTags.TRACK_LIST).performScrollToNode(hasTestTag(TimelineTestTags.chevron(1)))
         onNodeWithTag(TimelineTestTags.chevron(1)).performClick()
         assertEquals(listOf("expand(t1)", "expand(t2)"), calls)
         onNodeWithTag(TrackSettingsTestTags.INLINE).assertExists()

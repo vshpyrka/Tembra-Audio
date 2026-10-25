@@ -2,6 +2,7 @@ package audio.tembra.ui.transport
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -24,6 +25,8 @@ import audio.tembra.ui.theme.TembraTheme
  * `surface_level2_border` seam above, [height] tall, the master volume at the start, skip-to-start, one bar back,
  * the metronome's play/pause button (tagged `transport.play`), one bar forward, the time readout and the metronome
  * toggle. Stateless: [state] and [callbacks] come from the owning screen, [telemetry] feeds the readout per frame.
+ * Narrower than [ReadoutStacksBelow] (a phone in portrait) the readout stacks its two values so that every control
+ * keeps its 48 dp target and nothing overlaps (spec FR-004 names all seven, left to right).
  */
 @Composable
 internal fun TransportBar(
@@ -36,65 +39,84 @@ internal fun TransportBar(
     val daw = TembraTheme.daw
     val spacing = TembraTheme.spacing
     val enabled = state.transportEnabled
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(height)
-            .background(daw.surfaceLevel1)
-            .padding(horizontal = spacing.sm)
-            .testTag(ROOT_TAG),
-        horizontalArrangement = Arrangement.spacedBy(spacing.xs),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        MasterVolumeSlider(
-            percent = state.masterVolume,
-            onVolume = callbacks.onMasterVolume,
-            modifier = Modifier.widthIn(min = MasterSliderMinWidth, max = MasterSliderMaxWidth).weight(1f, fill = false),
-        )
-        TransportButton(
-            icon = TembraIcon.SkipPrevious,
-            description = TransportCopy.skipToStart,
-            onClick = callbacks.onSkipToStart,
-            enabled = enabled,
-            testTag = PerfAnchors.TRANSPORT_SKIP_START,
-        )
-        TransportButton(
-            icon = TembraIcon.FastRewind,
-            description = TransportCopy.stepBack,
-            onClick = { callbacks.onStepBar(-1) },
-            enabled = enabled,
-            testTag = STEP_BACK_TAG,
-        )
-        PlayPauseButton(
-            running = state.isPlaying,
-            onToggle = callbacks.onPlayPause,
-            diameter = PlayDiameter,
-            testTag = PerfAnchors.TRANSPORT_PLAY,
-            startDescription = TransportCopy.play,
-            stopDescription = TransportCopy.pause,
-        )
-        TransportButton(
-            icon = TembraIcon.FastForward,
-            description = TransportCopy.stepForward,
-            onClick = { callbacks.onStepBar(1) },
-            enabled = enabled,
-            testTag = STEP_FORWARD_TAG,
-        )
-        TimeReadout(
-            positionSeconds = state.positionSeconds,
-            lengthSeconds = state.lengthSeconds,
-            playing = state.isPlaying,
-            telemetry = telemetry,
-            modifier = Modifier.weight(1f, fill = false),
-        )
-        MetronomeToggle(
-            on = state.metronomeOn,
-            onToggle = callbacks.onMetronomeToggle,
-            onSettings = callbacks.onMetronomeSettings,
-            enabled = enabled,
-        )
+    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
+        // A phone in portrait: tighter gaps, a shorter slider and the stacked readout, so the seven controls fit.
+        val narrow = maxWidth < ReadoutStacksBelow
+        val sidePadding = if (narrow) spacing.xs else spacing.sm
+        val gap = if (narrow) NarrowGap else spacing.xs
+        val sliderMin = if (narrow) MasterSliderNarrowMinWidth else MasterSliderMinWidth
+        // What is left for the readout once the slider's floor and the five targets have theirs (a doubled font shrinks to
+        // it). The readout carries no weight: it is measured at its own width and the slider's weight absorbs the rest.
+        val readoutMax = maxWidth - sidePadding * 2 - gap * 6 - sliderMin - spacing.touchTargetMin * 4 - PlayDiameter
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(height)
+                .background(daw.surfaceLevel1)
+                .padding(horizontal = sidePadding)
+                .testTag(ROOT_TAG),
+            horizontalArrangement = Arrangement.spacedBy(gap),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            MasterVolumeSlider(
+                percent = state.masterVolume,
+                onVolume = callbacks.onMasterVolume,
+                modifier = Modifier
+                    .widthIn(min = sliderMin, max = MasterSliderMaxWidth)
+                    .weight(1f, fill = false),
+            )
+            TransportButton(
+                icon = TembraIcon.SkipPrevious,
+                description = TransportCopy.skipToStart,
+                onClick = callbacks.onSkipToStart,
+                enabled = enabled,
+                testTag = PerfAnchors.TRANSPORT_SKIP_START,
+            )
+            TransportButton(
+                icon = TembraIcon.FastRewind,
+                description = TransportCopy.stepBack,
+                onClick = { callbacks.onStepBar(-1) },
+                enabled = enabled,
+                testTag = STEP_BACK_TAG,
+            )
+            PlayPauseButton(
+                running = state.isPlaying,
+                onToggle = callbacks.onPlayPause,
+                diameter = PlayDiameter,
+                testTag = PerfAnchors.TRANSPORT_PLAY,
+                startDescription = TransportCopy.play,
+                stopDescription = TransportCopy.pause,
+            )
+            TransportButton(
+                icon = TembraIcon.FastForward,
+                description = TransportCopy.stepForward,
+                onClick = { callbacks.onStepBar(1) },
+                enabled = enabled,
+                testTag = STEP_FORWARD_TAG,
+            )
+            TimeReadout(
+                positionSeconds = state.positionSeconds,
+                lengthSeconds = state.lengthSeconds,
+                playing = state.isPlaying,
+                telemetry = telemetry,
+                stacked = narrow,
+                maxWidth = readoutMax,
+            )
+            MetronomeToggle(
+                on = state.metronomeOn,
+                onToggle = callbacks.onMetronomeToggle,
+                onSettings = callbacks.onMetronomeSettings,
+                enabled = enabled,
+            )
+        }
     }
 }
+
+/** Below this width the one-line readout (about 150 dp) no longer fits beside the slider and the five targets. */
+private val ReadoutStacksBelow = 520.dp
+/** The narrow bar's gap and its slider's floor: 4 + 6 × 2 + 56 + 3 × 44 + 48 + 44 + a 56 dp stacked readout fit 360 dp. */
+private val NarrowGap = 2.dp
+private val MasterSliderNarrowMinWidth = 56.dp
 
 internal const val ROOT_TAG = "transport.bar"
 internal const val STEP_BACK_TAG = "transport.stepBack"

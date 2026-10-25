@@ -18,4 +18,12 @@ interface PlaybackGuard {
 
     /** The question awaiting an answer, or null. */
     val dialog: StateFlow<DialogRequest?>
+
+    /**
+     * Whether the destination the shell is about to show hosts the transport (`Destination.hostsTransport`). The
+     * engine's states are exclusive, so while the Timeline is not on screen the session hands the audio device over
+     * (synchronously, before the tuner or the standalone metronome opens its stream) and takes it back, at the stopped
+     * position, when the Timeline returns; the project stays open throughout.
+     */
+    fun transportHostVisible(visible: Boolean)
 }
