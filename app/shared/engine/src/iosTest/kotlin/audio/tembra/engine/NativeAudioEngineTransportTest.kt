@@ -92,6 +92,14 @@ class NativeAudioEngineTransportTest {
         )
         assertEquals(PlayResult.Started, engine.play())
         val snapshot = TransportSnapshot()
+        // The callback publishes the playing record on its next block (research R7); wait for it, at most half a second.
+        val armed = TimeSource.Monotonic.markNow()
+        while (armed.elapsedNow().inWholeMilliseconds < 500) {
+            engine.readTransport(snapshot)
+            if (snapshot.playing) break
+            sleep(5)
+        }
+        assertTrue(snapshot.playing, "the transport never reported playing within half a second of play()")
         var previous = -1L
         var advanced = 0
         val started = TimeSource.Monotonic.markNow()

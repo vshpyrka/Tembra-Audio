@@ -20,4 +20,12 @@ enum class Destination(
     Metronome("metronome", "Metronome", "Metronome", TembraIcon.Metronome, hasSupportingPane = false, "The metronome arrives with the metronome feature."),
     Projects("projects", "Projects", "Projects", TembraIcon.Projects, hasSupportingPane = false, "Your projects and library arrive with the projects feature."),
     Profile("profile", "Profile", "Profile", TembraIcon.Profile, hasSupportingPane = false, "Your profile and sign-in arrive with the collaboration feature."),
+    ;
+
+    /**
+     * Whether the destination shows the transport bar and so keeps the engine's transport (constitution v1.3.2: the
+     * Timeline, and Effects and Pads once they exist; never Tuner, Metronome, Projects or Profile, whose audio needs
+     * an idle engine).
+     */
+    val hostsTransport: Boolean get() = this == Timeline
 }

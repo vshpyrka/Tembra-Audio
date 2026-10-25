@@ -6,6 +6,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import audio.tembra.ui.perf.anchorRoot
 import audio.tembra.ui.theme.TembraShapes
 import audio.tembra.ui.theme.TembraTheme
 
@@ -39,7 +40,7 @@ fun TembraDialog(
         },
         title = { Text(title, style = TembraTheme.typography.headlineSmall, color = colors.onSurface) },
         text = { Text(text, style = TembraTheme.typography.bodyMedium, color = colors.onSurfaceVariant) },
-        modifier = modifier.testTagIfSet(testTag),
+        modifier = modifier.anchorRoot().testTagIfSet(testTag),
         shape = RoundedCornerShape(TembraShapes.large),
         containerColor = colors.surfaceContainerHigh,
     )

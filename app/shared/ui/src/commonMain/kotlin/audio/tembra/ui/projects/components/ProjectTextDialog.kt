@@ -12,6 +12,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import audio.tembra.ui.designsystem.TembraTextField
+import audio.tembra.ui.perf.anchorRoot
 import audio.tembra.ui.projects.ProjectsCopy
 import audio.tembra.ui.projects.ProjectsTestTags
 import audio.tembra.ui.theme.TembraShapes
@@ -59,7 +60,7 @@ internal fun ProjectTextDialog(
                 testTag = ProjectsTestTags.DIALOG_FIELD,
             )
         },
-        modifier = modifier.testTag(testTag),
+        modifier = modifier.anchorRoot().testTag(testTag),
         shape = RoundedCornerShape(TembraShapes.large),
         containerColor = colors.surfaceContainerHigh,
     )

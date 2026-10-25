@@ -75,14 +75,19 @@ class ShellViewModel(private val guard: PlaybackGuard) : ViewModel() {
     }
 
     private fun leaveGuarded(to: Destination, navigate: () -> Unit) {
-        val leavingPlayback = guard.isPlaying && to != Destination.Timeline
-        if (!leavingPlayback) {
+        // The device changes hands before the destination does: the next screen's audio starts on an idle engine.
+        val go = {
+            guard.transportHostVisible(to.hostsTransport)
             navigate()
+        }
+        val leavingPlayback = guard.isPlaying && !to.hostsTransport
+        if (!leavingPlayback) {
+            go()
             return
         }
         if (pendingLeave?.isActive == true) return
         pendingLeave = viewModelScope.launch {
-            if (guard.confirmLeave()) navigate()
+            if (guard.confirmLeave()) go()
         }
     }
 }

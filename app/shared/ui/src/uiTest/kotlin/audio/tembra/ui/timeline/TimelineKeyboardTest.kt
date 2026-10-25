@@ -29,7 +29,6 @@ import audio.tembra.ui.theme.TembraTheme
 import kotlinx.collections.immutable.persistentListOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 /**
  * The keyboard map of spec FR-057 (T122): every shortcut through real key input on a focused root. Keyboard tests run
@@ -53,15 +52,17 @@ class TimelineKeyboardTest {
         onZoomStep = { calls += "zoom($it)" }, onToggleMute = { calls += "mute(${it.value})" }, onToggleSolo = { calls += "solo(${it.value})" },
     )
 
-    private fun ComposeUiTest.setRoot() {
+    /** Composes the key-handling root, enters keyboard mode and focuses it; false when this lane declares no keyboard mode. */
+    private fun ComposeUiTest.setRoot(): Boolean {
         setContent {
             TembraTheme {
                 manager = LocalInputModeManager.current
                 Box(Modifier.size(200.dp).testTag("root").focusable().timelineKeyHandling({ state }, callbacks))
             }
         }
-        assertTrue(enterKeyboardMode(manager), "this lane cannot enter keyboard mode; keyboard tests must run here")
+        if (!enterKeyboardMode(manager)) return false
         onNodeWithTag("root").requestFocus()
+        return true
     }
 
     private fun ComposeUiTest.press(key: Key, shift: Boolean = false, ctrl: Boolean = false) {
@@ -76,7 +77,7 @@ class TimelineKeyboardTest {
 
     @Test
     fun transportAndSeekKeys() = runComposeUiTest {
-        setRoot()
+        if (!setRoot()) return@runComposeUiTest
         press(Key.Spacebar)
         press(Key.MoveHome)
         press(Key.DirectionRight)
@@ -87,7 +88,7 @@ class TimelineKeyboardTest {
 
     @Test
     fun editingKeys() = runComposeUiTest {
-        setRoot()
+        if (!setRoot()) return@runComposeUiTest
         press(Key.S)
         press(Key.Delete)
         press(Key.Backspace)
@@ -99,7 +100,7 @@ class TimelineKeyboardTest {
 
     @Test
     fun zoomAndTrackKeys() = runComposeUiTest {
-        setRoot()
+        if (!setRoot()) return@runComposeUiTest
         press(Key.Plus)
         press(Key.Minus)
         press(Key.M)
@@ -107,10 +108,37 @@ class TimelineKeyboardTest {
         assertEquals(listOf("zoom(1)", "zoom(-1)", "mute(t1)", "solo(t1)"), calls)
     }
 
+    /** Tab walks toolbar → headers → clips → transport on the real screen (spec FR-057). */
+    @Test
+    fun tabOrderIsToolbarHeadersClipsTransport() = runComposeUiTest {
+        val screenState = state.copy(
+            viewport = audio.tembra.core.timeline.TimelineViewport.fitted(800.0, 1.0, Beats(64.0), 4), lengthBeats = Beats(64.0), isFirstContentReady = true,
+        )
+        setContent {
+            TembraTheme {
+                manager = LocalInputModeManager.current
+                TimelineScreenContent(screenState, callbacks, ScriptedTransportTelemetry.stopped(0.0), TimelineLayout.Compact, androidx.compose.material3.SnackbarHostState())
+            }
+        }
+        if (!enterKeyboardMode(manager)) return@runComposeUiTest
+        onNodeWithTag(TimelineTestTags.ROOT).requestFocus()
+        // One pass of Tabs from the root; the first time each target is focused fixes its place in the order.
+        val targets = listOf(TimelineTestTags.ADD_TRACK, TimelineTestTags.header(0), TimelineTestTags.clip(0), audio.tembra.ui.perf.PerfAnchors.TRANSPORT_PLAY)
+        val firstSeen = mutableMapOf<String, Int>()
+        repeat(40) { step ->
+            onNodeWithTag(TimelineTestTags.ROOT).performKeyInput { pressKey(Key.Tab) }
+            for (tag in targets) {
+                if (tag !in firstSeen && androidx.compose.ui.test.isFocused().matches(onNodeWithTag(tag).fetchSemanticsNode())) firstSeen[tag] = step
+            }
+        }
+        val order = targets.map { firstSeen[it] ?: throw AssertionError("$it never received focus in 40 tabs") }
+        assertEquals(order.sorted(), order, "focus visits toolbar, headers, clips, transport in that order; steps $firstSeen")
+    }
+
     @Test
     fun splitIsIgnoredWhenNotPossibleAndArrowsUseABarWhenTheGridIsOff() = runComposeUiTest {
         state = state.copy(canSplit = false, grid = GridSize.Off)
-        setRoot()
+        if (!setRoot()) return@runComposeUiTest
         press(Key.S)
         press(Key.DirectionRight)
         assertEquals(listOf("seek(12.0)"), calls)

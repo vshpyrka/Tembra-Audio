@@ -1,15 +1,21 @@
 package audio.tembra.ui.projects
 
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -31,7 +37,7 @@ import kotlin.test.assertEquals
 class ProjectsScreenTest {
 
     private val calls = mutableListOf<String>()
-    private val demoId = ProjectId("demo")
+    private val demoId = ProjectId("d1") // not "demo": the demo card reads `projects.card.demo` whatever its id
     private val activeId = ProjectId("active")
 
     private fun card(id: String, name: String, description: String = "", key: String = "—", active: Boolean = false, demo: Boolean = false) = ProjectCardUi(
@@ -41,7 +47,7 @@ class ProjectsScreenTest {
     )
 
     private val six = persistentListOf(
-        card("demo", "Demo project", "Four loops to play with", "Dmin", demo = true),
+        card("d1", "Demo project", "Four loops to play with", "Dmin", demo = true),
         card("active", "Live take", "Verse and chorus", "Amin", active = true),
         card("p3", "Sketch 3", key = "Cmaj"),
         card("p4", "Sketch 4", description = "No key here"),
@@ -77,10 +83,15 @@ class ProjectsScreenTest {
         onNodeWithTag(ProjectsTestTags.ROOT).assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, READY))
         onNodeWithTag(ProjectsTestTags.COUNT).assertTextEquals("6 projects")
         onNodeWithTag(ProjectsTestTags.CARD_DEMO).assertExists()
-        for (id in listOf("active", "p3", "p4", "p5", "p6")) onNodeWithTag(ProjectsTestTags.card(ProjectId(id))).assertExists()
-        onNodeWithTag(ProjectsTestTags.cardOpen(activeId)).assert(hasText("Resume"))
-        onNodeWithTag(ProjectsTestTags.cardOpen(ProjectId("p3"))).assert(hasText("Open"))
         onNodeWithText("Four loops to play with").assertExists()
+        onNodeWithTag(ProjectsTestTags.card(activeId)).assertExists()
+        onNodeWithTag(ProjectsTestTags.cardOpen(activeId)).assert(hasText("Resume"))
+        // The grid composes what fits; the later cards exist once scrolled to.
+        onNodeWithTag(ProjectsTestTags.GRID).performScrollToNode(hasTestTag(ProjectsTestTags.card(ProjectId("p6"))))
+        onNodeWithTag(ProjectsTestTags.card(ProjectId("p6"))).assertExists()
+        onNodeWithTag(ProjectsTestTags.GRID).performScrollToNode(hasTestTag(ProjectsTestTags.card(ProjectId("p3"))))
+        onNodeWithTag(ProjectsTestTags.cardOpen(ProjectId("p3"))).assert(hasText("Open"))
+        onNodeWithTag(ProjectsTestTags.GRID).performScrollToNode(hasTestTag(ProjectsTestTags.card(activeId)))
         onNodeWithTag(ProjectsTestTags.NEW_PROJECT).performClick()
         onNodeWithTag(ProjectsTestTags.cardOpen(activeId)).performClick()
         assertEquals(listOf("new", "open(active)"), calls)
@@ -88,7 +99,20 @@ class ProjectsScreenTest {
 
     @Test
     fun searchChipsAndSortAreIntents() = runComposeUiTest {
-        setScreen(state())
+        // The search field is controlled: the typed text comes back through the state, or the device's IME resets it to "".
+        setContent {
+            TembraTheme {
+                var text by remember { mutableStateOf("") }
+                ProjectsScreenContent(
+                    state = state(query = LibraryQuery(text = text)),
+                    callbacks = ProjectsCallbacks.None.copy(
+                        onQuery = { calls += "query($it)"; text = it }, onFilter = { calls += "filter($it)" }, onSort = { calls += "sort($it)" },
+                    ),
+                    layout = ProjectsLayout.OneColumn,
+                    snackbarHostState = SnackbarHostState(),
+                )
+            }
+        }
         onNodeWithTag(ProjectsTestTags.SEARCH).performTextInput("ske")
         onNodeWithTag("${ProjectsTestTags.FILTER}.recent").performClick()
         onNodeWithTag(ProjectsTestTags.SORT).performClick()
@@ -99,10 +123,10 @@ class ProjectsScreenTest {
     @Test
     fun theCardMenuOpensAndTheDemoOffersRestore() = runComposeUiTest {
         setScreen(state())
-        onNodeWithTag("${ProjectsTestTags.cardMenu(demoId)}.button").performClick()
-        onNodeWithTag("${ProjectsTestTags.cardMenu(demoId)}.$MENU_RESTORE").assertExists()
-        onNodeWithTag("${ProjectsTestTags.cardMenu(demoId)}.$MENU_RENAME").performClick()
-        assertEquals(listOf("rename(demo)"), calls)
+        onNodeWithTag("${ProjectsTestTags.CARD_DEMO}.menu.button").performClick()
+        onNodeWithTag("${ProjectsTestTags.CARD_DEMO}.menu.$MENU_RESTORE").assertExists()
+        onNodeWithTag("${ProjectsTestTags.CARD_DEMO}.menu.$MENU_RENAME").performClick()
+        assertEquals(listOf("rename(d1)"), calls)
     }
 
     @Test

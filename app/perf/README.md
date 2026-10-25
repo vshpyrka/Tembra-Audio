@@ -127,8 +127,10 @@ back), `metronome` (start, tempo up ×5, down ×5, stop), `timeline` (feature 00
 card, wait for the waveforms, play eight bars, seek, pinch in and out, split the first clip, open and
 close a track's settings, toggle the metronome twice, pause, skip to start) and `stress` (the demo
 project plays with the click on while the lane scrolls for five seconds, the tuner cycle then takes the
-audio through the stop-and-leave dialog, the metronome runs while the tuner listens; ends by writing
-the engine's audio-health counters — its duration stepped up at the 009 label boundary, as expected).
+audio through the stop-and-leave dialog, the metronome runs while the tuner listens; the engine's audio-health
+counters are written right after the playback phase, while the transport still owns the device (on Android the
+counter tracks keep their peak over the trace, since the engine restarts them per stream session) — its duration
+stepped up at the 009 label boundary, as expected).
 20 iterations each. The catalogue
 (`tracepulse/catalogue.py`, contract `metric-catalogue.md`) names every series per platform with its unit,
 source, gate default and screening gate; families marked non-comparable (startup, frames, memory,

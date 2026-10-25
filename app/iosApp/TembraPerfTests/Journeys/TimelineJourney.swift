@@ -20,12 +20,25 @@ struct TimelineJourney {
         XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: passed, object: readout)], timeout: 30), .completed,
                        "the readout never passed 00:15")
         let ruler = app.waitForAnchor(Anchors.timelineRuler)
-        ruler.coordinate(withNormalizedOffset: CGVector(dx: 0.25, dy: 0.5)).tap()
+        // Past the tempo and signature pills, which overlay the ruler's left third on a phone (they would open a menu), and
+        // early enough in the demo's clips (they end at bar 17 of the 32 the fitted ruler shows) that the playhead, still
+        // moving through the two pinches, is inside the first clip when the split comes.
+        ruler.coordinate(withNormalizedOffset: CGVector(dx: 0.4, dy: 0.5)).tap()
         let lane = app.waitForAnchor(Anchors.timelineLaneFirst)
         lane.pinch(withScale: 1.6, velocity: 1.0)
         lane.pinch(withScale: 0.6, velocity: -1.0)
+        // The split needs the playhead inside the first clip whatever zoom the pinches (and the saved view state) left:
+        // back to the start, then past bar 1 while still playing (00:02 is bar 2 at 124 BPM), both through anchors.
+        app.tapAnchor(Anchors.transportSkipStart)
+        let restarted = NSPredicate(format: "label MATCHES %@", "00:0[01].*")
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: restarted, object: readout)], timeout: 10), .completed, "skip-to-start never reached the readout")
+        let pastBarOne = NSPredicate(format: "label MATCHES %@", "00:0[2-9].*")
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: pastBarOne, object: readout)], timeout: 10), .completed, "the readout never passed 00:02 after skip-to-start")
         app.tapAnchor(Anchors.timelineClipFirst)
         app.tapAnchor(Anchors.timelineSplit)
+        // The split is undone at once: the document persists between iterations and rounds, and a demo that keeps
+        // its five clips is what every later iteration (and `timeline.clip.first`) relies on.
+        app.tapAnchor(Anchors.timelineUndo)
         app.tapAnchor(Anchors.timelineTrackMenuFirst)
         app.tapAnchor(Anchors.timelineTrackSettings)
         app.tapAnchor(Anchors.timelineSettingsClose)

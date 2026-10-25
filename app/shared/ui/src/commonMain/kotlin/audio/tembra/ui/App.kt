@@ -20,6 +20,7 @@ import audio.tembra.ui.session.AppStartup
 import audio.tembra.ui.perf.AudioHealthTicker
 import audio.tembra.ui.perf.AudioHealthWriteButton
 import audio.tembra.ui.perf.anchorRoot
+import audio.tembra.ui.projects.ProjectsSeedRequest
 import audio.tembra.ui.session.AppLifecycleObserver
 import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.ui.tuner.LocalTunerNoiseGate
@@ -30,7 +31,7 @@ import dev.zacsweers.metrox.viewmodel.LocalMetroViewModelFactory
 /**
  * Root composable hosted by both platform shells. [developerView] (feature 002, spec FR-022), [tunerTestSignal]
  * (feature 003, spec FR-032), [tunerNoiseGate] (feature 006, spec FR-023) and [metronomeDebug] (feature 004, spec
- * FR-037) are set only by debug builds from their launch arguments. The root carries [anchorRoot] so the benchmark
+ * FR-037) and [projectsSeed] (feature 009, T121) are set only by debug builds from their launch arguments. The root carries [anchorRoot] so the benchmark
  * journeys can reach the perf anchors (feature 007). The first composition starts the project session once
  * ([AppStartup]) and installs the lifecycle observer that saves on backgrounding (feature 009, spec FR-046).
  */
@@ -41,8 +42,11 @@ fun App(
     tunerTestSignal: TestSignal? = null,
     tunerNoiseGate: TunerNoiseGateRequest? = null,
     metronomeDebug: MetronomeDebugRequest? = null,
+    projectsSeed: ProjectsSeedRequest? = null,
 ) {
     LaunchedEffect(appGraph) { appGraph.appStartup.start() }
+    // A debug seed (T121) fills the library once; it runs on the session scope, so a recreated activity never repeats it.
+    LaunchedEffect(appGraph, projectsSeed) { if (projectsSeed != null) appGraph.projectsSeeder.seed(projectsSeed) }
     AppLifecycleObserver(appGraph.projectSession)
     CompositionLocalProvider(
         LocalMetroViewModelFactory provides appGraph.metroViewModelFactory,

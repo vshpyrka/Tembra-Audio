@@ -312,6 +312,23 @@ TEST_CASE("a seek while playing resumes within 100 ms of audio at the new positi
     REQUIRE(h.renderer().record().frame == target + 4800 - 192);  // the last (192-frame) block's start
 }
 
+TEST_CASE("silence() starts the next transport session's health counters at zero", "[transport][renderer]") {
+    // The engine keeps one renderer per stream rate across transport sessions; a seek's silent parks must not be
+    // reported as the next session's starvation.
+    Harness h;
+    tembra::ClipSource* source = h.addSource(kLongSource, offsetRamp(0.2f));
+    h.arrange({{0, source, 0.0, 0, kLongSource}});
+    h.play();
+    h.render(48000, 256);
+    h.seek(tempoOf(124.0).beatsToFrame(60.0));
+    h.render(4800, 256);
+    REQUIRE(h.renderer().starvation() > 0);  // the parked source rendered silence until the streamer served it
+    REQUIRE(h.renderer().clipsActive() == 1);
+    h.renderer().silence();
+    REQUIRE(h.renderer().starvation() == 0);
+    REQUIRE(h.renderer().clipsActive() == 0);
+}
+
 TEST_CASE("an arrangement swap applies at a block boundary", "[transport][renderer]") {
     Harness h;
     tembra::ClipSource* a = h.addSource(kLongSource, offsetRamp(0.2f));

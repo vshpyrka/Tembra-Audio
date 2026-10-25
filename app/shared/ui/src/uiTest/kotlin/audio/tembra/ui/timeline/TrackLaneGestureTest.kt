@@ -3,6 +3,7 @@ package audio.tembra.ui.timeline
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.ComposeUiTest
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -42,10 +43,12 @@ class TrackLaneGestureTest {
     private val taps = mutableListOf<String>()
 
     private val moves = mutableListOf<String>()
+    private var densityScale = 1f
 
     private fun ComposeUiTest.setLane() {
         setContent {
             TembraTheme {
+                densityScale = LocalDensity.current.density
                 TrackLane(
                     track = track, index = 0, firstClipIndex = 0, viewport = viewport, selection = Selection.None,
                     signature = TimeSignature.FourFour, height = 88.dp,
@@ -85,15 +88,16 @@ class TrackLaneGestureTest {
             down(Offset(40f, 44f))
             advanceEventTime(viewConfiguration.longPressTimeoutMillis + 100)
             moveBy(Offset(0f, 0f))
-            moveTo(Offset(80f, 44f))
-            moveTo(Offset(120f, 44f + 144f))
+            // The stops stay clear of the 24 dp edge auto-scroll zones at any density; the last lands 80 px (four beats) right.
+            moveTo(Offset(100f + 24f * densityScale, 44f))
+            moveTo(Offset(120f, 44f + 144f * densityScale)) // one row pitch down, in device pixels
             up()
         }
         assertEquals("start", moves.first(), "the long press lifted the clip: $moves")
         assertEquals("end", moves.last())
         assertTrue(moves.any { it.startsWith("drag(") }, "the drag reported positions: $moves")
         assertEquals("drag(4.0,1)", moves[moves.lastIndex - 1], "80 px at 20 px per beat and one row down")
-        assertTrue(scrolls.isEmpty(), "a lifted clip does not scroll the lane")
+        assertTrue(scrolls.isEmpty(), "a lifted clip does not scroll the lane: scrolls $scrolls, moves $moves")
     }
 
     @Test

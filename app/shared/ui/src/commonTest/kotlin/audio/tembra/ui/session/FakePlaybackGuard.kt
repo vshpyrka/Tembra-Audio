@@ -15,6 +15,13 @@ class FakePlaybackGuard(override var isPlaying: Boolean = false) : PlaybackGuard
 
     private var pending: CompletableDeferred<Boolean>? = null
 
+    /** Every [transportHostVisible] call, in order. */
+    val hostVisibility = mutableListOf<Boolean>()
+
+    override fun transportHostVisible(visible: Boolean) {
+        hostVisibility += visible
+    }
+
     override suspend fun confirmLeave(): Boolean {
         asked++
         val answer = CompletableDeferred<Boolean>()

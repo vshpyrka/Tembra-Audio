@@ -47,6 +47,8 @@ internal fun ProjectCard(
     callbacks: ProjectsCallbacks,
     modifier: Modifier = Modifier,
 ) {
+    // The demo reads `projects.card.demo` whatever its id (a journey anchor); every child tag hangs off the card's tag.
+    val cardTag = if (card.isDemo) ProjectsTestTags.CARD_DEMO else ProjectsTestTags.card(card.id)
     val spacing = TembraTheme.spacing
     val colors = TembraTheme.colors
     val source = remember { MutableInteractionSource() }
@@ -60,7 +62,7 @@ internal fun ProjectCard(
             .semantics(mergeDescendants = true) { contentDescription = description }
             .clickable(interactionSource = source, indication = null, role = Role.Button) { callbacks.onOpen(card.id) },
         elevated = hovered,
-        testTag = if (card.isDemo) ProjectsTestTags.CARD_DEMO else ProjectsTestTags.card(card.id),
+        testTag = cardTag,
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(spacing.md), verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
             Row(horizontalArrangement = Arrangement.spacedBy(spacing.sm), verticalAlignment = Alignment.CenterVertically) {
@@ -78,7 +80,7 @@ internal fun ProjectCard(
                     onDuplicate = { callbacks.onDuplicate(card.id) },
                     onDelete = { callbacks.onDelete(card.id) },
                     onRestoreDemo = callbacks.onRestoreDemo,
-                    testTag = ProjectsTestTags.cardMenu(card.id),
+                    testTag = "$cardTag.menu",
                 ) {
                     TembraTooltip(text = ProjectsCopy.menu, interactionSource = menuSource) {
                         TransportButton(
@@ -86,7 +88,7 @@ internal fun ProjectCard(
                             description = ProjectsCopy.menu,
                             onClick = { menuOpen = true },
                             interactionSource = menuSource,
-                            testTag = "${ProjectsTestTags.cardMenu(card.id)}.button",
+                            testTag = "$cardTag.menu.button",
                         )
                     }
                 }
@@ -95,7 +97,7 @@ internal fun ProjectCard(
             if (card.description.isNotBlank()) {
                 Text(card.description, style = TembraTheme.typography.bodySmall, color = colors.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
-            ProjectOverviewChart(overview = card.overview, asLine = layout.overviewAsLine, testTag = ProjectsTestTags.cardOverview(card.id))
+            ProjectOverviewChart(overview = card.overview, asLine = layout.overviewAsLine, testTag = "$cardTag.overview")
             Row(horizontalArrangement = Arrangement.spacedBy(spacing.xs), verticalAlignment = Alignment.CenterVertically) {
                 ProjectStat(card.tempoText)
                 ProjectStat(card.keyText)
@@ -109,7 +111,7 @@ internal fun ProjectCard(
                     text = if (card.isActive) ProjectsCopy.resume else ProjectsCopy.open,
                     selected = card.isActive,
                     onClick = { callbacks.onOpen(card.id) },
-                    testTag = ProjectsTestTags.cardOpen(card.id),
+                    testTag = "$cardTag.open",
                 )
             }
         }

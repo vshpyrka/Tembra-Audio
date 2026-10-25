@@ -5,6 +5,7 @@ import audio.tembra.core.metronome.TimeSignature
 import audio.tembra.core.project.Beats
 import audio.tembra.core.version.SemanticVersion
 import audio.tembra.engine.perf.AudioHealth
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlin.math.round
@@ -250,19 +251,31 @@ class FakeAudioEngine(
 
     private var nextClipHandle = 1
 
+    /** When set, [openTransport] suspends on it before changing state: a test can leave while the device opens. */
+    var openTransportGate: CompletableDeferred<Unit>? = null
+
+    /** How many of the next [openTransport] calls answer `Busy(Listening)`, as a tuner still letting go of the device would. */
+    var transportBusyFor: Int = 0
+
     override suspend fun openTransport(): TransportOpenResult {
         _calls += "openTransport"
+        openTransportGate?.await()
         val failure = failNextStart
         if (failure != null) {
             failNextStart = null
             return TransportOpenResult.DeviceFailed
         }
+        if (transportBusyFor > 0) {
+            transportBusyFor--
+            return TransportOpenResult.Busy(AudioState.Listening)
+        }
         return when (audioState) {
-            AudioState.Idle, AudioState.Transport -> {
+            AudioState.Idle -> {
                 audioState = AudioState.Transport
                 TransportOpenResult.Opened
             }
-            AudioState.Listening, AudioState.Tone, AudioState.Metronome -> TransportOpenResult.Busy(audioState)
+            // Like the engine: a transport that is already open refuses a second open.
+            AudioState.Transport, AudioState.Listening, AudioState.Tone, AudioState.Metronome -> TransportOpenResult.Busy(audioState)
         }
     }
 

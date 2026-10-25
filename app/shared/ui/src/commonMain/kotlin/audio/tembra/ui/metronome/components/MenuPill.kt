@@ -39,6 +39,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import audio.tembra.ui.designsystem.drawFocusRing
 import audio.tembra.ui.metronome.MetronomeCopy
+import audio.tembra.ui.perf.anchorRoot
 import audio.tembra.ui.theme.TembraIcon
 import audio.tembra.ui.theme.TembraIcons
 import audio.tembra.ui.theme.TembraShapes
@@ -122,7 +123,7 @@ internal fun MenuPill(
             expanded = open,
             onDismissRequest = { open = false },
             // Bounded height: see MetronomeDefaults.MenuMaxHeight (iOS popup layers can offer infinite height).
-            modifier = Modifier.width(spacing.soundMenuWidth).heightIn(max = MetronomeDefaults.MenuMaxHeight),
+            modifier = Modifier.anchorRoot().width(spacing.soundMenuWidth).heightIn(max = MetronomeDefaults.MenuMaxHeight),
             shape = RoundedCornerShape(TembraShapes.medium),
             containerColor = colors.surfaceContainerHighest,
         ) {

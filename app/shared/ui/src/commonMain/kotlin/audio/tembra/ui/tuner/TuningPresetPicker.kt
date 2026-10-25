@@ -33,6 +33,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import audio.tembra.core.tuner.TuningPreset
+import audio.tembra.ui.perf.anchorRoot
 import audio.tembra.ui.theme.TembraIcon
 import audio.tembra.ui.theme.TembraIcons
 import audio.tembra.ui.theme.TembraShapes
@@ -83,7 +84,7 @@ internal fun TuningPresetPicker(current: TuningPreset, presets: List<TuningPrese
             expanded = open,
             onDismissRequest = { open = false },
             // Bounded height: see MetronomeDefaults.MenuMaxHeight (iOS popup layers can offer infinite height).
-            modifier = Modifier.heightIn(max = MenuMaxHeight),
+            modifier = Modifier.anchorRoot().heightIn(max = MenuMaxHeight),
         ) {
             for (preset in presets) {
                 val selected = preset.id == current.id

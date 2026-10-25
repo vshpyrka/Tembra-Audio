@@ -24,6 +24,7 @@ import audio.tembra.ui.metronome.components.TapTempoButton
 import audio.tembra.ui.metronome.components.TempoDial
 import audio.tembra.ui.metronome.components.TempoSlider
 import audio.tembra.ui.metronome.components.TempoStepper
+import audio.tembra.ui.perf.anchorRoot
 import audio.tembra.ui.theme.TembraIcon
 import audio.tembra.ui.theme.TembraShapes
 import audio.tembra.ui.theme.TembraTheme
@@ -52,7 +53,7 @@ internal fun TempoDialog(
     }
     Dialog(onDismissRequest = commit) {
         Surface(
-            modifier = modifier.testTag(TEMPO_DIALOG_TAG),
+            modifier = modifier.anchorRoot().testTag(TEMPO_DIALOG_TAG),
             shape = RoundedCornerShape(TembraShapes.large),
             color = colors.surfaceContainerHigh,
         ) {

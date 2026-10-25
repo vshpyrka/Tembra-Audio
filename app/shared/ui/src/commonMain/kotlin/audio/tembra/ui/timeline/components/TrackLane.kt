@@ -8,6 +8,7 @@ import androidx.compose.foundation.gestures.awaitTouchSlopOrCancellation
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -119,6 +121,7 @@ internal fun TrackLane(
     val currentViewport by rememberUpdatedState(viewport)
     val currentOnScrollBy by rememberUpdatedState(onScrollBy)
     var menuClip by remember { mutableStateOf<ClipId?>(null) }
+    var hoveredClip by remember { mutableStateOf<ClipId?>(null) }
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -149,7 +152,7 @@ internal fun TrackLane(
                     drawClip(clip, left, right, tint, selected = false, style = style, measurer = measurer)
                     drawContext.canvas.restore()
                 } else {
-                    drawClip(clip, left, right, tint, selected = clip.id == selectedClipId, style = style, measurer = measurer)
+                    drawClip(clip, left, right, tint, selected = clip.id == selectedClipId, style = style, measurer = measurer, hovered = clip.id == hoveredClip)
                 }
             }
             // The lifted copy on the lane under the finger (spec FR-033): the drop position, snapped, outlined.
@@ -172,6 +175,8 @@ internal fun TrackLane(
             val description = clipDescription(clip, index, signature)
             val state = clipState(clip)
             val interaction = remember(clip.id) { MutableInteractionSource() }
+            val hovered by interaction.collectIsHoveredAsState()
+            LaunchedEffect(hovered, clip.id) { if (hovered) hoveredClip = clip.id else if (hoveredClip == clip.id) hoveredClip = null }
             ClipMenu(
                 expanded = menuClip == clip.id,
                 canSplit = canSplit && selectedClipId == clip.id,

@@ -1,5 +1,9 @@
 package audio.tembra.ui.tracksettings
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertContentDescriptionEquals
@@ -41,10 +45,12 @@ class TrackSettingsScreenTest {
         mainClock.autoAdvance = false
         setContent {
             TembraTheme {
+                // The name field is controlled: the typed text comes back through the state, or the device's IME resets it.
+                var current by remember { mutableStateOf(state) }
                 TrackSettingsScreenContent(
-                    state = state,
+                    state = current,
                     callbacks = TrackSettingsCallbacks(
-                        onName = { calls += "name($it)" }, onNameCommit = { calls += "commit" }, onLabel = { calls += "label($it)" },
+                        onName = { calls += "name($it)"; current = current.copy(name = it) }, onNameCommit = { calls += "commit" }, onLabel = { calls += "label($it)" },
                         onGain = { calls += "gain(${it.readout})" }, onMute = { calls += "mute($it)" }, onSolo = { calls += "solo($it)" },
                         onDelete = { calls += "delete" }, onConfirmDelete = { calls += "confirm" }, onDismissDelete = { calls += "dismiss" },
                     ),
@@ -95,18 +101,16 @@ class TrackSettingsScreenTest {
         setScreen()
         onNodeWithTag(TrackSettingsTestTags.DELETE).performClick()
         assertEquals(listOf("delete"), calls)
-        setScreenWithPendingDelete()
     }
 
-    private fun ComposeUiTest.setScreenWithPendingDelete() {
-        calls.clear()
-        setContentWithState(state.copy(confirmDelete = true))
+    @Test
+    fun thePendingDeleteShowsTheDialogAndConfirms() = runComposeUiTest {
+        setScreen(state.copy(confirmDelete = true))
+        mainClock.autoAdvance = true // the dialog is a popup that needs frames to appear
         onNodeWithTag(DELETE_DIALOG_TAG).assertExists()
         onNodeWithTag(DELETE_CONFIRM_TAG).performClick()
         assertEquals(listOf("confirm"), calls)
     }
-
-    private fun ComposeUiTest.setContentWithState(state: TrackSettingsUiState) = setScreen(state)
 
     /** The Effects section is a heading and exactly one sentence, no controls (spec FR-048; T112, US6). */
     @Test

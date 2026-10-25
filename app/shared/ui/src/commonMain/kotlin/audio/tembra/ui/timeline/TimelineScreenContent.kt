@@ -1,10 +1,8 @@
 package audio.tembra.ui.timeline
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -12,7 +10,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.foundation.focusable
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -25,10 +28,9 @@ import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.ui.timeline.components.DeleteTrackDialog
 import audio.tembra.ui.timeline.components.EmptyTimeline
 import audio.tembra.ui.timeline.components.PlayheadOverlay
-import audio.tembra.ui.metronome.components.TimeSignatureMenu
 import audio.tembra.ui.timeline.components.MetronomeSettingsSheet
 import audio.tembra.ui.timeline.components.TempoDialog
-import audio.tembra.ui.timeline.components.TempoPill
+import audio.tembra.ui.timeline.components.RulerPills
 import audio.tembra.ui.timeline.components.TimelineRuler
 import audio.tembra.ui.timeline.components.TimelineToolbar
 import audio.tembra.ui.timeline.components.TrackList
@@ -57,6 +59,11 @@ internal fun TimelineScreenContent(
     val tempoMap = TempoMap(state.tempo, state.timeSignature)
     val ready = state.isFirstContentReady
     val transportHeight = if (layout == TimelineLayout.Expanded) spacing.transportHeightExpanded else spacing.transportHeightCompact
+    // Keyboard shortcuts need a focused node: the root takes focus once the project is in, never again after (compose-focus-navigation).
+    val rootFocus = remember { FocusRequester() }
+    LaunchedEffect(state.loaded) {
+        if (state.loaded) rootFocus.requestFocus()
+    }
     val transportCallbacks = TransportCallbacks(
         onPlayPause = callbacks.onPlayPause,
         onSkipToStart = callbacks.onSkipToStart,
@@ -71,6 +78,8 @@ internal fun TimelineScreenContent(
             .background(daw.canvasLevel0)
             .testTag(TimelineTestTags.ROOT)
             .semantics { stateDescription = if (ready) READY else LOADING }
+            .focusRequester(rootFocus)
+            .focusable()
             .timelineKeyHandling({ state }, callbacks),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -161,15 +170,6 @@ internal fun TimelineScreenContent(
             )
             TimelineSheet.SignatureMenu, TimelineSheet.GridMenu, TimelineSheet.ZoomMenu, null -> Unit
         }
-    }
-}
-
-@Composable
-private fun RulerPills(state: TimelineUiState, callbacks: TimelineCallbacks, modifier: Modifier = Modifier) {
-    val spacing = TembraTheme.spacing
-    Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(spacing.xs), verticalAlignment = Alignment.CenterVertically) {
-        TempoPill(tempo = state.tempo, onClick = { callbacks.onOpenSheet(TimelineSheet.TempoDialog) }, enabled = state.loaded)
-        TimeSignatureMenu(selected = state.timeSignature, onSelect = callbacks.onTimeSignature, testTag = TimelineTestTags.SIGNATURE_PILL)
     }
 }
 

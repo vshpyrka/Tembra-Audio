@@ -56,6 +56,35 @@ tembra_metronome_read (UI thread, every frame) ◀─Seqlock<MetronomeTick>─�
 - `EngineCore` adds the `METRONOME` state (it refuses listening, tones, samples and previews); the metronome ignores
   `deviceLost()` because `OboeAudioDevice` reopens a disconnected output itself.
 
+## The transport, timeline and mixer (feature 009)
+
+```
+host: tembra_transport_set_tempo / set_arrangement / set_track / set_master / set_metronome ─TripleBuffer─▶ TransportRenderer::render
+      tembra_transport_play / pause / seek_beats (atomics, a seek sequence)                                 │  (output callback)
+      DiskStreamer thread: prime(position) then refill each ClipSource's SpscFifo<float>  ─SPSC─▶ ClipSource::pop ─▶ TrackStrip (gain ramp, audible) ─▶ MasterBus (gain, metronome voice)
+tembra_transport_read (UI thread, every frame) ◀─Seqlock<TransportRecord>───────────────────────────────────┘
+```
+
+- `src/transport/`: `TempoMap` (beats ↔ frames at the stream rate), `TransportClock` (frame position, playing, a
+  pending seek applied at a block boundary), `TransportRenderer` (the arrangement's clips at their beat positions,
+  the strips, the master bus and the metronome voice anchored to the beat grid), `TransportRecord` (what `read` copies).
+- `src/timeline/`: `AudioDecoder` (miniaudio over WAV, FLAC and MP3, resampling to the stream rate; MP3 seek points),
+  `ClipSource` (one decoder, one `SpscFifo<float>`, `primedFrom`, `eof`, `starved`; `pop` is RT-safe),
+  `DiskStreamer` (one `std::thread` named `tembra-streamer` at audio priority — nice −16 on Android, user-interactive QoS on Apple — so the app's own decoding, overview and UI threads cannot stall it: a synchronous `prime` of two seconds, then a refill loop that sleeps 10 ms when
+  every fifo is full; `TEMBRA_TRACE_ENGINE_PRIME`), `ArrangementSnapshot` (the published arrangement with the clip-source
+  table), `OverviewBuilder` (the `.peaks` file: `TPK1`, four levels of int8 min/max pairs, a partial header while it writes).
+- `src/mixer/`: `GainRamp` (10 ms linear ramps), `TrackStrip` (gain target and audibility from the solo/mute table,
+  computed by Kotlin), `MasterBus` (master gain, soft limit, the click mixed in).
+- `EngineCore` adds the `TRANSPORT` state (it refuses listening, tones, samples, the standalone metronome and previews):
+  `openTransport` opens the output at the device rate, re-opens every clip source at that rate and starts the streamer;
+  `closeTransport` pauses with the 5 ms release, joins the streamer and closes the stream. Sources opened while idle decode
+  for the preferred rate; the stream's rate wins. `set_track` needs an arrangement published first.
+- The RT-source list in `tests/CMakeLists.txt` (`TEMBRA_RT_SOURCES`, compiled with the allocation and locking poison)
+  gained `clip_source.cpp`, `track_strip.cpp`, `master_bus.cpp` and `transport_renderer.cpp`; `disk_streamer.cpp`,
+  `audio_decoder.cpp` and `overview_builder.cpp` stay off it (they allocate and block, on their own thread).
+- Health (`tembra_audio_health`, 40 bytes since revision 6) adds `avg_us`, `starvation` and `clips_active`; the
+  perf pipeline publishes them as `audio.avg_us`, `audio.starvation` and `audio.clips_active`.
+
 ## Host build and tests
 
 ```bash
@@ -68,13 +97,19 @@ CM="$HOME/Library/Android/sdk/cmake/3.31.6/bin"
 `./gradlew engineHostTest` runs the same three commands (build dir `app/shared/engine/build/engine/host`) and passes
 `-DTEMBRA_TUNER_RECORDINGS_DIR=<repo>/app/shared/ui/src/commonMain/composeResources/files/tuner` so
 `recordings_on_pitch_test` checks every drop-in recording within 1 cent of its note (it passes vacuously, and says so,
-when the folder is empty). Tests run with `TEMBRA_BUILD_TESTS`, which compiles the `EngineCore::setDevice` hook that
+when the folder is empty). Feature 009's tests: `tempo_map_test`, `transport_clock_test`, `spsc_fifo_test`, `clip_source_test`
+(with `fake_decoder.h`), `disk_streamer_test`, `audio_decoder_test` (the `specs/009-timeline-arranger/fixtures` files),
+`overview_builder_test`, `track_strip_test`, `master_bus_test`, `transport_renderer_test` and the extended
+`engine_core_state_test`, `audio_health_test` and `trace_shim_test`. Tests run with `TEMBRA_BUILD_TESTS`, which compiles the `EngineCore::setDevice` hook that
 swaps the platform device for `tests/fake_audio_device.h`.
 
 ## Adding a function
 
 1. Write the Catch2 test in `tests/` (it must fail first).
 2. Declare the function in `include/tembra_engine.h`, bump `TEMBRA_ENGINE_ABI_VERSION` if the ABI changes.
+   Revision 6 (feature 009) put the transport functions in `src/transport/transport_abi.cpp` and the clip-source,
+   inspector and overview functions in `src/timeline/timeline_abi.cpp`: thin forwarders with argument checks, never
+   called on an audio callback; a new transport or timeline function goes beside them.
 3. Implement it under `src/`, add the JNI forwarder in `android/src/main/cpp/tembra_jni.cpp`, and the
    Kotlin side in `:shared:engine` (`NativeAudioEngine.android.kt`, `NativeAudioEngine.ios.kt`,
    `FakeAudioEngine`). The cinterop picks up the header automatically.

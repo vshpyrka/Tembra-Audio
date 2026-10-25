@@ -2,7 +2,7 @@ package audio.tembra.ui.timeline.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
@@ -26,7 +26,7 @@ internal fun InstrumentChip(label: InstrumentLabel, modifier: Modifier = Modifie
     val fill = colors.surfaceContainerHighest
     Row(
         modifier = modifier
-            .height(ChipHeight)
+            .heightIn(min = ChipHeight) // grows with the system font so descenders are never cut (spec FR-059)
             .drawBehind { drawRoundRect(fill, cornerRadius = CornerRadius(size.height / 2)) }
             .padding(horizontal = spacing.sm)
             .clearAndSetSemantics {},

@@ -21,7 +21,8 @@ import kotlin.reflect.KClass
 
 /**
  * The ViewModel factory a shell test installs in place of the Metro graph: the Timeline's ViewModel over the fakes,
- * with a session that is never started, so the destination composes with no project and no engine.
+ * with a session that is not started, so the destination composes with no project and no engine; a test that needs
+ * content calls [openDemo] first.
  */
 class TestViewModelFactory : MetroViewModelFactory() {
     private val engine = FakeAudioEngine()
@@ -36,6 +37,12 @@ class TestViewModelFactory : MetroViewModelFactory() {
         host = FakeBackgroundPlaybackHost(),
         scope = CoroutineScope(SupervisorJob() + Dispatchers.Main),
     )
+
+    /** Starts the session and opens the fake repository's demo project, so the Timeline composes with its clips. */
+    suspend fun openDemo() {
+        session.start()
+        session.open(repository.installDemo().id)
+    }
 
     override val viewModelProviders: Map<KClass<out ViewModel>, () -> ViewModel>
         get() = mapOf(
