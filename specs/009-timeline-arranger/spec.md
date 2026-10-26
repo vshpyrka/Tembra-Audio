@@ -28,15 +28,15 @@ mixing behaviour used in the requirements and success criteria.
 
 | Element | Where it appears | Verdict |
 |---|---|---|
-| Toolbar above the tracks: "+ Track" primary button; a scissors button titled "Split / Scissors"; a "Grid 1/16" pill; a zoom pill with a magnifier and "1x"; an "Arrange" pill | Both timeline screens | **Kept**: add track (FR-019), split (FR-032), grid picker (FR-018), zoom readout (FR-015). The "Arrange" pill is **excluded**: it would switch to a second view (session or clip-launch) that does not exist yet |
+| Toolbar above the tracks: "+ Track" primary button; a scissors button titled "Split / Scissors"; a "Grid 1/16" pill; a zoom pill with a magnifier and "1x"; an "Arrange" pill | Both timeline screens | **Kept**: add track (FR-019), split (FR-032), grid picker (FR-018), zoom readout (FR-015; D1 replaced the readout with an always-visible zoom control). The "Arrange" pill is **excluded**: it would switch to a second view (session or clip-launch) that does not exist yet |
 | Headphones button and a muted-speaker button in the toolbar | Tablet timeline screen | **Excluded**: input monitoring belongs to the recording feature (011) and the second glyph has no stated meaning on either screen |
-| Ruler: "BPM 124.0" and "4/4" at the left, bar numbers 1 to 10 with small beat ticks, a playhead marker (a rounded tab) above the vertical playhead line | Both timeline screens (the phone shows bars 1 to 8) | **Kept**: the ruler shows bars and beats and, as the user asked, a time scale whose labels follow the zoom (FR-013, FR-014); the tempo and time signature are shown and edited from the ruler's left end (FR-036, FR-037); the tempo is a whole number as in the metronome, the ".0" is drift |
+| Ruler: "BPM 124.0" and "4/4" at the left, bar numbers 1 to 10 with small beat ticks, a playhead marker (a rounded tab) above the vertical playhead line | Both timeline screens (the phone shows bars 1 to 8) | **Kept**: the ruler shows bars and beats and, as the user asked, a time scale whose labels follow the zoom (FR-013, FR-014); the tempo and time signature were shown and edited from the ruler's left end until D1 (2026-10-26) moved the tempo into the toolbar and the signature into the metronome sheet, since on a phone the two pills covered the first bars (FR-036, FR-037); the tempo is a whole number as in the metronome, the ".0" is drift |
 | Track header: a colour dot, the name ("Lead Vocal", "Bass 808", "Perc / Loops", "Pad Filter"), "M" and "S" toggles titled "Mute" and "Solo Listen", a gain readout ("−0.5dB", "−2.4dB", "+0.8dB", "−3.2dB"), a "…" menu; the phone shows the name as "Track 1" followed by a chip "Lead Vocal" | Both timeline screens | **Kept** as the phone shows it: a free name and an instrument label chip from a fixed list (FR-020, FR-021), colour (FR-022), mute and solo (FR-024), gain (FR-023) and the track menu (FR-026) |
 | Clips: rounded blocks tinted with the track colour, a file-name caption ("TAKE_01_VOX.WAV", "808_Sub_A.wav"), a waveform drawn inside; a track with four short identical clips | Both timeline screens | **Kept** (FR-027 to FR-030). The caption is the clip's name |
 | Vertical playhead line through the ruler and every track | Both timeline screens | **Kept** (FR-009) |
 | Expanded fourth track ("Pad Filter" with a chevron) showing an automation curve with "LPF Cutoff", "Resonance", "Drive" and a Speed/Ease/Blend tooltip | Both timeline screens | Automation is **excluded** (effects and automation feature). The **inline expansion itself is kept** for expanded windows as the place where a track's settings and the effects placeholder open (FR-042) |
 | Right-hand "Categories" / "Bass loops" panel with a bank of loop tiles | Tablet timeline screen (a strip of the same tiles under the tracks on the phone) | **Excluded**: the loop library is the Pads feature |
-| Transport bar at the bottom: a speaker glyph with a volume slider ("78%"); skip-to-start, rewind, play/pause and fast-forward buttons; the readout "00:00.00 / 00:42.20"; a metronome toggle reading "Off"; a speed pill "1x"; on the tablet projects screen also a loop button, a "preview bus" slider, "124 BPM", "DSP 4%" and "Offline cache OK" | Tablet timeline screen in full; the phone timeline and both projects screens show parts of it | **Kept** on Timeline and the track settings screen: master volume (FR-007), skip to start, step back and forward by one bar, play/pause (FR-004 to FR-006), the position and length readout (FR-010), the metronome toggle (FR-038). Playback speed, loop, the preview bus, the load and cache readouts are **excluded** (later features or drift). The transport bar is **not** shown on Projects in this feature (Assumptions) |
+| Transport bar at the bottom: a speaker glyph with a volume slider ("78%"); skip-to-start, rewind, play/pause and fast-forward buttons; the readout "00:00.00 / 00:42.20"; a metronome toggle reading "Off"; a speed pill "1x"; on the tablet projects screen also a loop button, a "preview bus" slider, "124 BPM", "DSP 4%" and "Offline cache OK" | Tablet timeline screen in full; the phone timeline and both projects screens show parts of it | **Kept** on Timeline and the track settings screen: master volume (FR-007; D1: a speaker button with a popup slider on phones), skip to start, step back and forward by one bar, play/pause (FR-004 to FR-006), the position and length readout (FR-010), the metronome toggle (FR-038). Playback speed, loop, the preview bus, the load and cache readouts are **excluded** (later features or drift). The transport bar is **not** shown on Projects in this feature (Assumptions) |
 | Top bar with menu, logo, the project name ("Music project - 001") with a cloud glyph, help, sync, share and avatar | Both timeline screens | **Kept** only as feature 002 already decided it: the top bar shows the project name as the Timeline title (FR-002). Cloud, sync, share, help and the avatar are collaboration and are **excluded** |
 | Bottom navigation (phone) and rail (tablet) with Timeline, Tuner, Effects, Pads, Remote, Projects | Both timeline screens | **Excluded**: the navigation was decided in feature 002 |
 | Track effects screen: a header "Track 1: Lead Guitar" with an A/B switch and a preset menu, then a rack of effect cards (Distortion, Parametric EQ, Compressor, Studio Reverb) each with a power button and controls, and an "Insert FX plugin" button | Both track-effects screens | **Deferred**: this feature opens the place where this screen will live, with the track's settings at the top and a placeholder for the effects rack (FR-041 to FR-043); the effects themselves are the effects and automation feature |
@@ -133,6 +133,33 @@ they are). The amendment names this specification.
   never round (FR-010); a file larger than 500 MB is refused before decoding with its own reason
   (FR-044); the library-open section measures the Projects list as it is, with no seeded
   project count.
+
+### Session 2026-10-26 (design iteration D1: the owner's review of the release build on every target)
+
+- Q: On a phone the tempo and signature pills at the ruler's left end cover the first bars. →
+  A: The ruler shows bars and time only. The tempo pill moves into the toolbar at every width
+  (on phones between redo and the overflow menu; "Add audio…" goes into the overflow menu, as
+  FR-055 already says); the time signature leaves the ruler and the toolbar and is chosen in
+  the metronome sheet, which also shows the tempo (FR-013, FR-036, FR-037, FR-039, FR-055).
+- Q: The master volume slider takes much of a phone's transport bar. → A: Below 600 dp the bar
+  shows a speaker button whose state is the percentage; tapping it opens a popup above the bar
+  with the horizontal slider and the percentage, closed by a tap outside, Escape or Back; from
+  600 dp the slider stays inline (FR-007).
+- Q: "Grid: Bar" changes nothing visible. → A: The picker reads "Snap" with its value; the snap
+  lines are drawn in the track area at the picked resolution in a stroke distinct from the
+  faint density grid, so a change is visible at once; "Off" draws none (FR-018).
+- Q: Zoom in and out sit in the overflow menu on phones and the pinch is easy to miss. → A: Two
+  always-visible zoom controls are built for a comparison on different devices, chosen per
+  device from the overflow menu's "Zoom control" entry: "−" and "+" buttons at the ruler's right
+  end with the level between them (the default; a tap on the level fits the project), or an
+  overview strip above the transport bar (the whole project with its clips as blocks, the
+  playhead and a draggable window for the visible span whose edges zoom). The owner keeps one;
+  the other is removed afterwards (FR-015, FR-055).
+- Q: The playhead marker's text is barely visible. → A: Text in a theme colour that contrasts
+  with the chip at 4.5:1 or better, and a 1 dp outline on the chip (FR-009).
+- Q: There is no way to record into a track. → A: Out of scope here (FR-064). The owner chose
+  recording as the next feature, before the mixer, as its own spec with its own input level
+  meter on the track header; the constitution's order is amended for it.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -663,7 +690,10 @@ clips, overlaps or hides behind the transport bar.
   playing, continuing from the new position within 100 ms with no artefact.
 - **FR-007**: The master volume MUST range from silence to full with a default of 80 %, shown
   as a percentage, applied to the sum of all tracks, smoothed so that dragging it produces no
-  steps or crackle, and remembered per project.
+  steps or crackle, and remembered per project. In windows narrower than 600 dp the transport
+  bar MUST show it as a speaker button whose state is the percentage; tapping the button MUST
+  open a popup above the bar holding the same slider and the percentage, closed by a tap
+  outside, Escape or Back; from 600 dp the slider MUST be inline in the bar (D1, 2026-10-26).
 - **FR-008**: Playback MUST continue while the screen is locked or another app is in front until
   the user pauses it, a call or another app takes the audio, or the output route is lost
   (headphones unplugged); after an interruption it MUST NOT resume by itself. Connecting a new
@@ -681,7 +711,9 @@ clips, overlaps or hides behind the transport bar.
 
 - **FR-009**: A vertical playhead line MUST be drawn through the ruler and every track at the
   position being heard, moving smoothly every frame during playback, with a draggable rounded
-  marker in the ruler's bar row that shows the playhead's bar and beat (for example "5.1"). The
+  marker in the ruler's bar row that shows the playhead's bar and beat (for example "5.1") in a
+  theme colour that contrasts with the chip at 4.5:1 or better, with a 1 dp outline, legible at
+  the smallest size (D1). The
   displayed position MUST be within 30 ms of the audible position on a wired output.
 - **FR-010**: The readout MUST show the playhead position and the project length as
   minutes:seconds.hundredths in the form "00:00.00 / 00:42.20" in tabular figures (hundredths
@@ -703,8 +735,8 @@ clips, overlaps or hides behind the transport bar.
 
 - **FR-013**: The ruler MUST show, above the tracks and pinned while the tracks scroll
   vertically, a bar row (bar numbers from 1 and beat ticks) and a time row (minutes and
-  seconds) on one shared horizontal scale with the clips, and at its left end the project tempo
-  and time signature (FR-036, FR-037).
+  seconds) on one shared horizontal scale with the clips; it MUST NOT carry the tempo or the time
+  signature, which live in the toolbar and the metronome sheet (D1; FR-036, FR-037, FR-039).
 - **FR-014**: The labels MUST follow the zoom so that no two labels in a row overlap and the
   densest legible level is shown: at the widest zooms only every Nth bar is numbered (N a power
   of two) and the time row shows whole minutes; as the zoom closes, every bar, then every beat
@@ -715,9 +747,15 @@ clips, overlaps or hides behind the transport bar.
   least 32 bars, fits the window and a closest level at which one beat spans at least the
   window width; it MUST be driven by a pinch on the ruler or the track area (zooming around the
   pinch centre), by the scroll wheel with the platform's modifier key and by a trackpad pinch
-  (zooming around the pointer), by the "+" and "−" keys, and by the toolbar's zoom readout
-  which MUST show the current level and offer "Fit project" on tap. The level MUST be
-  remembered per project.
+  (zooming around the pointer), by the "+" and "−" keys, and by an always-visible zoom control (D1) chosen per device from
+  the overflow menu's "Zoom control" entry and remembered on the device: either "−" and "+"
+  buttons at the ruler's right end with the level between them, a tap on the level fitting the
+  project (the default), or an overview strip above the transport bar that draws the whole
+  project with its clips as blocks, the playhead and a window for the visible span, where
+  dragging the window scrolls and dragging its edges zooms. The two are built for the owner's
+  side-by-side comparison on different devices; the one not chosen is removed afterwards. The
+  overflow menu's zoom readout is replaced by the control. The level MUST be remembered per
+  project.
 - **FR-016**: The timeline MUST scroll horizontally by drag, by the scroll wheel without the
   modifier and by a two-finger trackpad swipe; the track list MUST scroll vertically when the
   tracks exceed the height, with the ruler pinned at the top and, in expanded windows, the
@@ -725,10 +763,12 @@ clips, overlaps or hides behind the transport bar.
 - **FR-017**: The playhead, the clips and the waveforms MUST stay aligned with the ruler at
   every zoom level and scroll position, with no visible drift between the ruler's time row and
   the readout.
-- **FR-018**: The toolbar's grid picker MUST offer Bar, 1/4, 1/8, 1/16 and Off, default 1/16,
-  remembered per project; when on, the grid MUST snap ruler taps, playhead drags, clip moves and
-  splits to the nearest grid line; the grid MUST be drawn faintly in the track area at the
-  labelled density of FR-014.
+- **FR-018**: The toolbar's grid picker, labelled "Snap" with its value (for example
+  "Snap: Bar"; D1), MUST offer Bar, 1/4, 1/8, 1/16 and Off, default 1/16, remembered per
+  project; when on, the grid MUST snap ruler taps, playhead drags, clip moves and splits to the
+  nearest grid line; the faint density grid of FR-014 MUST be drawn in the track area and, over
+  it, the snap lines at the picked resolution in a distinct stronger stroke, so that a change of
+  the picker is visible at once; "Off" draws no snap lines (D1).
 
 **Tracks**
 
@@ -814,13 +854,14 @@ clips, overlaps or hides behind the transport bar.
 
 **Tempo, time signature and metronome**
 
-- **FR-036**: The ruler MUST show the project tempo as "<N> BPM"; tapping it MUST open the tempo
+- **FR-036**: The toolbar MUST show the project tempo as "<N> BPM" at every width (D1: on
+  phones between redo and the overflow menu); tapping it MUST open the tempo
   control reusing the Metronome destination's tempo entry (dial, steppers, slider, tap tempo,
   tempo name) over the range 40 to 240; a change MUST redraw the ruler and reposition clips by
   their beat positions, keep each clip's audio speed, update the project length, apply to the
   running click on its next tick, and be one undo step on release.
-- **FR-037**: The ruler MUST show the time signature; tapping it MUST offer the metronome's six
-  signatures; a change MUST redraw the bars and beat ticks, follow the metronome's accent rules
+- **FR-037**: The metronome sheet (FR-039) MUST show the time signature and offer the
+  metronome's six signatures (D1: it is no longer on the ruler or in the toolbar); a change MUST redraw the bars and beat ticks, follow the metronome's accent rules
   for the signature, and leave clip positions in beats unchanged.
 - **FR-038**: The transport bar's metronome toggle MUST switch the click on and off, remembered
   per project, default off; the click MUST be the Metronome destination's click (the same sound
@@ -830,7 +871,8 @@ clips, overlaps or hides behind the transport bar.
   when playback starts with it on; it MUST be silent while playback is stopped.
 - **FR-039**: A long press on the toggle, or "Metronome settings" in the toolbar menu, MUST open
   a sheet with the Metronome destination's sound picker, subdivision, accent cells and style
-  controls, with the tempo and time signature shown read-only as the project's; changes made
+  controls, with the tempo shown read-only as the project's and the time signature chosen there
+  (FR-037, D1); changes made
   there MUST be the same settings the Metronome destination shows and changes.
 - **FR-040**: The standalone Metronome destination MUST keep its own tempo and settings as
   feature 004 defined; it is reached only after project playback has stopped (FR-008a); the
@@ -930,8 +972,8 @@ clips, overlaps or hides behind the transport bar.
 **Layout, input and accessibility**
 
 - **FR-055**: In windows narrower than 600 dp the toolbar MUST show "+ Track", the scissors,
-  undo, redo and an overflow menu holding "Add audio…", "Add audio as new track", the grid
-  picker, the zoom readout and "Metronome settings"; headers MUST be compact (colour dot, name,
+  undo, redo, the tempo pill (D1) and an overflow menu holding "Add audio…", "Add audio as new
+  track", the "Snap" picker, the "Zoom control" choice and "Metronome settings" (D1); headers MUST be compact (colour dot, name,
   label chip, M, S, menu) at least 56 dp tall with the gain in the settings; at least three
   tracks and the ruler MUST be visible above the transport bar on a phone in portrait at the
   default font scale. In windows 840 dp or wider every toolbar control MUST be visible, headers
