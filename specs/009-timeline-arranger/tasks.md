@@ -321,6 +321,78 @@ Gradle root `app/`. `CORE` = `app/shared/core/src/commonMain/kotlin/audio/tembra
 
 ---
 
+## Phase 12: Design iteration D1 (2026-10-26, the owner's review of the release build on every target)
+
+**Goal**: The six findings of the owner's review (spec Clarifications, session 2026-10-26): the tempo pill in the toolbar and the
+signature in the metronome sheet (the ruler shows bars only), a speaker button with a popup master slider on phones, a visible
+snap grid behind a "Snap" picker, two always-visible zoom controls to compare on different devices, a legible playhead chip.
+Recording stays out (FR-064): its own spec next, before the mixer (T145).
+
+**Independent Test**: On a 360 dp phone the ruler's first bar and the playhead chip are never covered; the transport bar shows a
+speaker button whose popup slider reads the percentage; choosing "Snap: Bar" draws bar lines over the lanes at once; the zoom
+buttons and the overview strip each zoom and scroll the same viewport; the chip text contrasts at 4.5:1. Every lane green on
+every target with zero warnings.
+
+### Components (disjoint files; parallel)
+
+- [X] T137 Spec: Clarifications session 2026-10-26 and the D1 amendments of FR-007, FR-009, FR-013, FR-015, FR-018, FR-036,
+  FR-037, FR-039, FR-055 and the design-evidence rows (`specs/009-timeline-arranger/spec.md`)
+- [ ] T138 [P] Transport bar on phones: below 600 dp of bar width `UI/transport/TransportBar.kt` shows a 44 dp speaker button
+  (tag `transport.master.button`, state description "80 percent") in place of the inline `MasterVolumeSlider`; tapping it opens
+  `UI/transport/MasterVolumePopup.kt` (new): a card anchored above the bar with the same slider at 200 dp, the percentage as
+  text, closed by a tap outside, Escape or Back; from 600 dp the slider stays inline and shows its percentage (FR-004, FR-007).
+  The readout budget drops the slider's minimum. Tests first in `UI_UITEST/transport/TransportBarTest.kt` (the 360 and 411 dp
+  tests, a popup open/close/adjust test, semantics) and `UI_UITEST/transport/MasterVolumePopupTest.kt` (new); KDoc FR ids fixed
+- [ ] T139 [P] Snap grid and chip: `UI/timeline/components/TrackLane.kt` draws, over the faint per-bar lines, the snap lines at
+  `TimelineUiState.grid` in `daw.gridOverlay` (none for Off, FR-018); `UI/timeline/components/SnapSheet.kt` (new): a modal
+  sheet "Snap to grid" with the five `GridSize` rows, the current one checked, tags `timeline.snapSheet` and
+  `timeline.snapSheet.<name>`, rendered for `TimelineSheet.GridMenu`; `UI/timeline/components/TimelineRuler.kt` draws the chip
+  text in a theme colour contrasting with `daw.playheadChip` at 4.5:1 and a 1 dp outline (FR-009). Tests first:
+  `UI_UITEST/timeline/TrackLaneTest.kt` (snap lines per grid value), `TimelineRulerTest.kt` (chip colour by pixel),
+  `UI_UITEST/timeline/SnapSheetTest.kt` (new); `GridPickerTest` KDoc FR id fixed
+- [ ] T140 [P] Zoom controls: `UI/timeline/components/ZoomButtons.kt` (new; "−", the level label, "+"; the label fits the
+  project on tap; tags `timeline.zoom.out`, `timeline.zoom.level`, `timeline.zoom.in`) and `UI/timeline/components/
+  OverviewStrip.kt` (new; 24 dp on compact, 28 dp otherwise: the whole project at the fit scale with clip blocks in the track
+  colours, the playhead line, a window for the visible span with 8 dp edge handles; drag inside scrolls, drag an edge zooms
+  around the opposite edge, a tap outside centres the window; tag `timeline.overview`, window `timeline.overview.window`);
+  `ZoomControl { Buttons, OverviewStrip }` in `CORE/project/ZoomControl.kt` (new), remembered per device in the app
+  preferences (`DATA`, default Buttons) and exposed as `TimelineUiState.zoomControl` with `setZoomControl` in
+  `TimelineViewModel.kt` (FR-015). Tests first: `UI_UITEST/timeline/ZoomButtonsTest.kt`, `OverviewStripTest.kt` (new),
+  `UI_TEST/ui/timeline/TimelineViewModelTest.kt` (the preference round-trip); `ZoomReadoutTest` KDoc FR id fixed
+
+### Integration (after T138–T140 merge)
+
+- [ ] T141 `UI/timeline/components/TimelineToolbar.kt` and `UI/timeline/TimelineScreenContent.kt`: the tempo pill (tag
+  `timeline.toolbar.tempo`) in the toolbar at every width (compact and landscape: between redo and the overflow button; full
+  layouts: at the right end before the overflow) opening the tempo dialog; `RulerPills` and the signature leave the ruler (the
+  Expanded header-column slot stays empty so the canvas aligns with the lanes); `UI/timeline/components/
+  MetronomeSettingsSheet.kt` shows the tempo read-only and a `TimeSignatureMenu` (tag `timeline.metronomeSheet.signature`)
+  wired to `onTimeSignature` (FR-037, FR-039); the overflow menu holds "Add audio…", "Add audio as new track",
+  "Snap: <value>" (opens the SnapSheet), "Zoom control: Buttons" and "Zoom control: Overview strip" (the current one marked)
+  and "Metronome settings"; the five grid items and the zoom items go; full layouts show the `GridPicker` pill as "Snap
+  <value>", drop the `ZoomReadout` and gain an overflow with the two "Zoom control" items (FR-055); the chosen control renders
+  (`ZoomButtons` in a new right slot of `TimelineRuler`, or `OverviewStrip` between the lanes and the transport bar);
+  `TimelineViewModel.scrubEnd` and `split` snap to the grid (FR-011, FR-032); tags in `TimelineTestTags.kt`, KDoc FR ids of
+  `RulerPills`, `TempoDialog`, `PlayheadOverlay`, `MetronomeToggle`, `ViewportGestures` fixed. Tests: `TimelineScreenTest`,
+  `TimelineRulerTest`, `TimelineSemanticsTest`, `TimelineKeyboardTest` (tab order), `MetronomeSettingsSheetTest`,
+  `TimelineLargeFontTest` (three tracks and the ruler still visible with the strip), `TimelineViewModelTest`;
+  `checkAndroidHost` and `checkIos` green with zero warnings
+- [ ] T142 Lanes on every target with `--warning-mode all` (`checkAndroidHost`, `checkIos` on the iPhone 18 Pro, iPad and Duo
+  simulators, `checkAndroidDevice` on all six Android targets); the screenshot matrix rows the change touches (compact and
+  expanded, both zoom controls) re-captured under `specs/009-timeline-arranger/screenshots/` with a D1 section in `NOTES.md`;
+  one commit `feat(timeline): design iteration D1 …`
+- [ ] T143 Release build installed on every target with the zoom control set per device for the owner's comparison (Buttons on
+  the Pixel 6 Pro, Pixel Tablet, iPhone 18 Pro and iPad; Overview strip on the Pixel 7 Pro, OPPO, Redmi, fold emulator, iPhone
+  Duo and iPhone 14), the assignment recorded in `NOTES.md`
+
+### After the owner's verdict
+
+- [ ] T144 Remove the zoom control the owner did not choose, its preference and its tests; spec FR-015 names the survivor
+- [ ] T145 `/speckit-constitution`: recording before the mixer (its own input level meter on the track header); then
+  `/speckit-specify` the recording feature
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
