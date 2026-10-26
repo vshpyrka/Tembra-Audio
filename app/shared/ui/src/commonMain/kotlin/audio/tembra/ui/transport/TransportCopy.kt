@@ -19,4 +19,7 @@ object TransportCopy {
 
     /** "Master volume 80 percent". */
     fun masterVolumeState(percent: Int): String = "$percent percent"
+
+    /** "80%": the percentage drawn beside the master slider (spec FR-007). */
+    fun masterVolumePercent(percent: Int): String = "$percent%"
 }
