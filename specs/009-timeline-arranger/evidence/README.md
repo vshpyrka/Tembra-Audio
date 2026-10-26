@@ -1,6 +1,6 @@
 # Feature 009 — Timeline Arranger: evidence for the pull request (T136)
 
-Branch `009-timeline-arranger`, 2026-10-19, final pass 2026-10-25. What the reviewer can open:
+Branch `009-timeline-arranger`, 2026-10-19, final pass 2026-10-25, rerun on the final code on every target 2026-10-26. What the reviewer can open:
 
 | Evidence | Where |
 |---|---|
@@ -8,7 +8,7 @@ Branch `009-timeline-arranger`, 2026-10-19, final pass 2026-10-25. What the revi
 | Baseline profile regenerated with the Projects destination, verified on the perf build | `profile.md`, `app/androidApp/src/main/generated/baselineProfiles/` |
 | Compose compiler report: 59 feature composables, all restartable and skippable | `compose-report.md`, `compose-report/` |
 | Trial perf rounds (`timeline` journey, the extended `stress` journey, the three audio counters) on the Pixel 6 Pro and the iPhone 14 | `trial-round.md` |
-| Test lanes, final pass with `--warning-mode all`, on the Pixel 6 Pro and every other attached Android target, the iPhone 18 Pro and iPad simulators | `../screenshots/NOTES.md` § Gates and § Final pass |
+| Test lanes, final pass with `--warning-mode all`, on the Pixel 6 Pro and every other attached Android target, the iPhone 18 Pro, iPad and iPhone Duo simulators; the final code rerun on every target on 2026-10-26 | `../screenshots/NOTES.md` § Gates, § Final pass and § Final pass, continued |
 | Device-test window: the Compose host and androidx.test's bootstrap activities declared black (the owner watches the matrix run), the tuner meter's needle probes made honest by it | `app/shared/ui/src/androidDeviceTest/AndroidManifest.xml`, `res/values/themes.xml`; `TunerMeterTest`; `device-test-window-before.png` (one capture per focused window during the 20:16 lane: androidx.test's `EmptyActivity` white) and `device-test-window.png` (the same windows during the 20:35 lane: black) |
 
 ## The principle each non-obvious decision serves (plan Complexity #1–#3, research R5, R8, R9, R13)
