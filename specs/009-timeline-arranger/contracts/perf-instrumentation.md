@@ -90,7 +90,7 @@ feature's evidence.
 
 `uv run tracepulse run --device pixel6 --label 009-timeline --rounds 5` (through `gradle-run`
 artefacts with `--no-build --apk … --test-apk …`), the same on `iphone14` with
-`DEVELOPER_DIR` for Xcode 27.1 beta, and the Pixel 7 Pro by serial from the second Mac;
+the default Xcode 27.1, and the Pixel 7 Pro by serial from the second Mac;
 `sync`, `report`. Expected: a duration step in `stress` at the label boundary (documented), the
 `timeline` journey present on every device, zero `audio.starvation` and `audio.xruns` on the
 reference devices, no family above its gate in the worse direction.

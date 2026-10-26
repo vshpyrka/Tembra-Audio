@@ -48,8 +48,8 @@ for DEVICE in "iPhone 17" "iPad Pro 13-inch (M5)"; do
   xcrun simctl install "$DEVICE" "build/Build/Products/Debug-iphonesimulator/Tembra Audio.app"
 done
 BUNDLE=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "build/Build/Products/Debug-iphonesimulator/Tembra Audio.app/Info.plist")
-# iPhone Duo: the same two commands with Xcode 27.1 beta, so the app fills both displays (docs/research/iphone-duo.md)
-DEVELOPER_DIR=/Applications/Xcode-27.1-beta.app/Contents/Developer xcodebuild -project iosApp.xcodeproj -scheme iosApp \
+# iPhone Duo: the same two commands; Xcode 27.1 builds an app that fills both displays (docs/research/iphone-duo.md)
+xcodebuild -project iosApp.xcodeproj -scheme iosApp \
   -configuration Debug -destination 'platform=iOS Simulator,name=iPhone Duo' -derivedDataPath build-duo build
 ```
 
