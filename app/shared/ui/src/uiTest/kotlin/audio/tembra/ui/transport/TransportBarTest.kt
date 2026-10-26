@@ -6,10 +6,14 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -19,6 +23,7 @@ import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -28,7 +33,9 @@ import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.requestFocus
+import androidx.compose.ui.test.swipe
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.ui.test.assertWidthIsEqualTo
@@ -36,6 +43,8 @@ import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.dp
 import audio.tembra.core.project.Beats
@@ -51,7 +60,9 @@ import kotlin.test.assertTrue
 /**
  * The transport bar driven with controlled state and scripted telemetry (contracts/timeline-screen.md; T079):
  * semantics of every control, the readout from the telemetry under a frozen clock, the master slider's keys, hover
- * and focus through injected sources, and the play button's toggle.
+ * and focus through injected sources, and the play button's toggle. Each test fixes the bar's width so the master
+ * volume's form does not follow the device: below 600 dp a speaker button with a pop-up slider, from 600 dp the inline
+ * slider with its percentage (spec FR-007, D1 2026-10-26; T138).
  */
 @OptIn(ExperimentalTestApi::class)
 class TransportBarTest {
@@ -76,9 +87,11 @@ class TransportBarTest {
         hasProject = true,
     )
 
+    /** The bar at [width], a phone's 360 dp unless a test needs the wide form: `requiredWidth`, so no device window changes it. */
     private fun ComposeUiTest.setBar(
         state: TransportUiState = demo,
         telemetry: ScriptedTransportTelemetry = ScriptedTransportTelemetry.stopped(0.0),
+        width: Dp = PHONE_WIDTH,
         stateHolder: ((TransportUiState) -> Unit) -> Unit = {},
     ) {
         setContent {
@@ -86,13 +99,16 @@ class TransportBarTest {
                 primary = TembraTheme.colors.primary
                 var current by androidx.compose.runtime.remember { mutableStateOf(state) }
                 stateHolder { current = it }
-                TransportBar(state = current, callbacks = callbacks, telemetry = telemetry)
+                Box(Modifier.requiredWidth(width)) { TransportBar(state = current, callbacks = callbacks, telemetry = telemetry) }
             }
         }
         mainClock.autoAdvance = false
     }
 
-    /** At a phone's width (360 dp) every control keeps its target and the stacked readout sits between its neighbours (spec FR-004). */
+    /**
+     * At a phone's width (360 dp) every control keeps its target, the master volume is the 44 dp speaker button instead of
+     * the slider, and the stacked readout sits between its neighbours (spec FR-004, FR-007).
+     */
     @Test
     fun atPhoneWidthNothingOverlapsAndTheReadoutStacks() = runComposeUiTest {
         setContent {
@@ -103,11 +119,22 @@ class TransportBarTest {
         val readout = onNodeWithTag(PerfAnchors.TRANSPORT_READOUT).getUnclippedBoundsInRoot()
         val forward = onNodeWithTag(STEP_FORWARD_TAG).getUnclippedBoundsInRoot()
         val metronome = onNodeWithTag(PerfAnchors.TRANSPORT_METRONOME).getUnclippedBoundsInRoot()
-        val slider = onNodeWithTag(TAG).getUnclippedBoundsInRoot()
+        val speaker = onNodeWithTag(MASTER_BUTTON_TAG).getUnclippedBoundsInRoot()
         assertTrue(readout.left >= forward.right, "the readout (${readout.left}) overlaps the step-forward button (${forward.right})")
         assertTrue(readout.right <= metronome.left, "the readout (${readout.right}) overlaps the metronome toggle (${metronome.left})")
         assertTrue(metronome.right <= 360.dp, "the metronome toggle leaves the 360 dp bar: ${metronome.right}")
-        assertTrue(slider.right - slider.left >= 56.dp, "the master slider is too short to use: ${slider.right - slider.left}")
+        assertTrue(speaker.left >= 0.dp, "the speaker button leaves the bar: ${speaker.left}")
+        val order = listOf(
+            MASTER_BUTTON_TAG, PerfAnchors.TRANSPORT_SKIP_START, STEP_BACK_TAG, PerfAnchors.TRANSPORT_PLAY, STEP_FORWARD_TAG,
+            PerfAnchors.TRANSPORT_READOUT, PerfAnchors.TRANSPORT_METRONOME,
+        )
+        for ((a, b) in order.zipWithNext()) {
+            val left = onNodeWithTag(a).getUnclippedBoundsInRoot()
+            val right = onNodeWithTag(b).getUnclippedBoundsInRoot()
+            assertTrue(left.right <= right.left, "$a ($left) overlaps $b ($right)")
+        }
+        onNodeWithTag(TAG).assertDoesNotExist()
+        onNodeWithTag(MASTER_BUTTON_TAG).assertWidthIsEqualTo(44.dp).assertHeightIsEqualTo(44.dp)
         onNodeWithTag(PerfAnchors.TRANSPORT_PLAY).assertWidthIsEqualTo(48.dp)
         onNodeWithTag(PerfAnchors.TRANSPORT_SKIP_START).assertWidthIsEqualTo(44.dp)
         onNodeWithTag(PerfAnchors.TRANSPORT_READOUT).assertContentDescriptionEquals("00:00.00 of 00:30.00")
@@ -149,11 +176,13 @@ class TransportBarTest {
         val readout = onNodeWithTag(PerfAnchors.TRANSPORT_READOUT).getUnclippedBoundsInRoot()
         val forward = onNodeWithTag(STEP_FORWARD_TAG).getUnclippedBoundsInRoot()
         val metronome = onNodeWithTag(PerfAnchors.TRANSPORT_METRONOME).getUnclippedBoundsInRoot()
+        val speaker = onNodeWithTag(MASTER_BUTTON_TAG).getUnclippedBoundsInRoot()
         val width = readout.right - readout.left
         assertTrue(readout.left >= forward.right && readout.right <= metronome.left, "the readout ($readout) runs under its neighbours ($forward, $metronome)")
-        // 411 − 2 × 4 padding − 6 × 2 gaps − 56 slider − 3 × 44 − 48 − 44 = 111 dp is the budget; the doubled digits use most of it.
-        assertTrue(width >= 80.dp && width <= 111.dp, "the readout's width is not its budget: $width")
+        // 411 − 2 × 4 padding − 6 × 2 gaps − 44 speaker − 3 × 44 − 48 − 44 = 123 dp is the budget; the doubled digits use most of it.
+        assertTrue(width >= 80.dp && width <= 123.dp, "the readout's width is not its budget: $width")
         assertTrue(metronome.right <= 411.dp, "the metronome toggle leaves the bar: ${metronome.right}")
+        assertTrue(speaker.left >= 0.dp && speaker.right - speaker.left == 44.dp, "the speaker button is not a 44 dp target inside the bar: $speaker")
     }
 
     /** A long press on the toggle opens the metronome settings sheet (spec FR-040; T108, US5). */
@@ -175,11 +204,99 @@ class TransportBarTest {
         onNodeWithTag(PerfAnchors.TRANSPORT_METRONOME)
             .assertContentDescriptionEquals(TransportCopy.metronomeOn)
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, TransportCopy.stateOff))
+        onNodeWithTag(MASTER_BUTTON_TAG)
+            .assertContentDescriptionEquals(TransportCopy.masterVolume)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "80 percent"))
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
+            .assertHeightIsEqualTo(44.dp)
+        onNodeWithTag(PerfAnchors.TRANSPORT_READOUT).assertContentDescriptionEquals("00:00.00 of 00:30.00")
+    }
+
+    /**
+     * The phone bar's speaker button opens the pop-up above the bar: its 200 dp slider reads and changes the volume
+     * through the bar's callback, and Escape or a tap outside closes it (spec FR-007, D1 2026-10-26).
+     */
+    @Test
+    fun thePhoneBarOpensThePopupWhoseSliderChangesTheVolumeAndCloses() = runComposeUiTest {
+        setContent {
+            TembraTheme {
+                var state by androidx.compose.runtime.remember { mutableStateOf(demo) }
+                val wired = callbacks.copy(onMasterVolume = {
+                    calls += "master($it)"
+                    state = state.copy(masterVolume = it)
+                })
+                // At the window's bottom, as on Timeline: the pop-up has the room above the bar.
+                Box(Modifier.fillMaxSize().testTag(WINDOW), contentAlignment = Alignment.BottomStart) {
+                    Box(Modifier.requiredWidth(PHONE_WIDTH)) { TransportBar(state = state, callbacks = wired, telemetry = ScriptedTransportTelemetry.stopped(0.0)) }
+                }
+            }
+        }
+        onNodeWithTag(TAG).assertDoesNotExist()
+        onNodeWithTag(MASTER_BUTTON_TAG).performClick()
+        onNodeWithTag(MASTER_POPUP_TAG).assertExists()
+        onNodeWithTag(MASTER_PERCENT_TAG).assertTextEquals("80%")
+        val slot = onNodeWithTag(TAG).getUnclippedBoundsInRoot()
+        assertTrue(slot.isSliderSlotOf(200.dp), "the pop-up's slider $slot is not 200 dp wide")
+        val card = screenBounds(MASTER_POPUP_TAG)
+        val bar = screenBounds(ROOT_TAG)
+        val window = screenBounds(WINDOW)
+        assertTrue(card.bottom <= bar.top, "the pop-up $card covers the bar $bar")
+        assertTrue(card.left >= window.left && card.right <= window.right && card.top >= window.top, "the pop-up $card leaves the window $window")
+
+        // Dragging the slider to its end sets full volume through the bar's callback; the arrows step from there. The drag
+        // starts at the centre: the node's own edges are Material's focus-ring room, outside the slider's touch area.
+        onNodeWithTag(TAG).performTouchInput { swipe(start = center, end = centerRight) }
+        assertEquals("master(100)", calls.last())
+        onNodeWithTag(MASTER_PERCENT_TAG).assertTextEquals("100%")
+        onNodeWithTag(TAG).requestFocus()
+        onNodeWithTag(TAG).performKeyInput { pressKey(Key.DirectionLeft) }
+        assertEquals("master(99)", calls.last())
+        onNodeWithTag(MASTER_PERCENT_TAG).assertTextEquals("99%")
+        onNodeWithTag(MASTER_BUTTON_TAG).assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "99 percent"))
+
+        onNodeWithTag(TAG).performKeyInput { pressKey(Key.Escape) }
+        onNodeWithTag(MASTER_POPUP_TAG).assertDoesNotExist()
+
+        onNodeWithTag(MASTER_BUTTON_TAG).performClick()
+        onNodeWithTag(MASTER_POPUP_TAG).assertExists()
+        tapThroughTheWindow(onNodeWithTag(PerfAnchors.TRANSPORT_READOUT))
+        onNodeWithTag(MASTER_POPUP_TAG).assertDoesNotExist()
+        onNodeWithTag(MASTER_BUTTON_TAG).assertExists()
+    }
+
+    /** From 600 dp the slider stays inline with its percentage after it, and no speaker button is drawn (spec FR-004, FR-007). */
+    @Test
+    fun theWideBarKeepsTheInlineSliderWithItsPercent() = runComposeUiTest {
+        setBar(width = WIDE_WIDTH)
+        onNodeWithTag(MASTER_BUTTON_TAG).assertDoesNotExist()
         onNodeWithTag(TAG)
             .assertContentDescriptionEquals(TransportCopy.masterVolume)
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "80 percent"))
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.ProgressBarRangeInfo, ProgressBarRangeInfo(80f, 0f..100f, 99)))
-        onNodeWithTag(PerfAnchors.TRANSPORT_READOUT).assertContentDescriptionEquals("00:00.00 of 00:30.00")
+        onNodeWithTag(MASTER_PERCENT_TAG).assertTextEquals("80%")
+        val slider = onNodeWithTag(TAG).getUnclippedBoundsInRoot()
+        val percent = onNodeWithTag(MASTER_PERCENT_TAG).getUnclippedBoundsInRoot()
+        val skip = onNodeWithTag(PerfAnchors.TRANSPORT_SKIP_START).getUnclippedBoundsInRoot()
+        assertTrue(slider.right - slider.left >= 72.dp, "the inline slider is too short to use: $slider")
+        // Clear of the slider's whole node, Material's focus-ring room included: neither the ring nor its bounds cover the label.
+        assertTrue(percent.left >= slider.right && percent.right <= skip.left, "the percentage $percent is not between the slider $slider and skip-to-start $skip")
+    }
+
+    /** The form changes at exactly 600 dp of bar width: 599 dp is a phone's, 600 dp keeps the slider inline. */
+    @Test
+    fun theSliderIsInlineFrom600dp() = runComposeUiTest {
+        var width by mutableStateOf(599.dp)
+        setContent {
+            TembraTheme {
+                Box(Modifier.requiredWidth(width)) { TransportBar(state = demo, callbacks = callbacks, telemetry = ScriptedTransportTelemetry.stopped(0.0)) }
+            }
+        }
+        onNodeWithTag(MASTER_BUTTON_TAG).assertExists()
+        onNodeWithTag(TAG).assertDoesNotExist()
+        width = 600.dp
+        onNodeWithTag(MASTER_BUTTON_TAG).assertDoesNotExist()
+        onNodeWithTag(TAG).assertExists()
+        onNodeWithTag(MASTER_PERCENT_TAG).assertTextEquals("80%")
     }
 
     @Test
@@ -218,18 +335,22 @@ class TransportBarTest {
         assertEquals(0, telemetry.reads)
     }
 
+    /** Without a project only the master volume works: the phone bar's speaker button and the slider it opens. */
     @Test
     fun controlsAreDisabledWithoutAProjectExceptTheMaster() = runComposeUiTest {
         setBar(state = demo.copy(hasProject = false))
         onNodeWithTag(PerfAnchors.TRANSPORT_SKIP_START).assertIsNotEnabled()
         onNodeWithTag(STEP_BACK_TAG).assertIsNotEnabled()
         onNodeWithTag(PerfAnchors.TRANSPORT_METRONOME).assertIsNotEnabled()
+        onNodeWithTag(MASTER_BUTTON_TAG).assertIsEnabled()
+        mainClock.autoAdvance = true
+        onNodeWithTag(MASTER_BUTTON_TAG).performClick()
         onNodeWithTag(TAG).assertIsEnabled()
     }
 
     @Test
     fun masterSliderMovesOnePercentWithArrowsAndTenWithPageKeys() = runComposeUiTest {
-        setBar()
+        setBar(width = WIDE_WIDTH)
         mainClock.autoAdvance = true
         onNodeWithTag(TAG).requestFocus()
         onNodeWithTag(TAG).performKeyInput { pressKey(Key.DirectionRight) }
@@ -257,7 +378,17 @@ class TransportBarTest {
         assertTrue(onNodeWithTag("button").captureToImage().containsColor(primary), "the focused button draws no primary ring")
     }
 
+    private fun ComposeUiTest.screenBounds(tag: String): Rect {
+        val node = onNodeWithTag(tag).fetchSemanticsNode()
+        return Rect(node.positionOnScreen, node.size.toSize())
+    }
+
     private companion object {
         const val FRAMES_MS = 100L
+        const val WINDOW = "test.window"
+        /** The narrowest phone among the targets (the OPPO), so a phone-width bar fits every device's window. */
+        val PHONE_WIDTH = 360.dp
+        /** Past the 600 dp threshold, as a foldable's inner screen or a tablet's bar. */
+        val WIDE_WIDTH = 640.dp
     }
 }
