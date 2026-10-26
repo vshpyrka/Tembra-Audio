@@ -183,7 +183,9 @@ class TransportBarTest {
         // 411 − 2 × 4 padding − 6 × 2 gaps − 44 speaker − 3 × 44 − 48 − 44 = 123 dp is the budget; the doubled digits use most of it.
         assertTrue(width >= 80.dp && width <= 123.dp, "the readout's width is not its budget: $width")
         assertTrue(metronome.right <= 411.dp, "the metronome toggle leaves the bar: ${metronome.right}")
-        assertTrue(speaker.left >= 0.dp && speaker.right - speaker.left == 44.dp, "the speaker button is not a 44 dp target inside the bar: $speaker")
+        // One pixel of rounding room: the fold emulator's 2.44 density lays 44 dp out as 43.9 dp.
+        val speakerWidth = speaker.right - speaker.left
+        assertTrue(speaker.left >= 0.dp && speakerWidth >= 44.dp - 1.dp && speakerWidth <= 44.dp + 1.dp, "the speaker button is not a 44 dp target inside the bar: $speaker")
     }
 
     /** A long press on the toggle opens the metronome settings sheet (spec FR-040; T108, US5). */
