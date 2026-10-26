@@ -61,9 +61,50 @@ final class ScreenshotMatrix: XCTestCase {
         element.tap(); return true
     }
 
+    /// Opens the toolbar's overflow menu and taps its row `timeline.toolbar.overflow.<row>`; false when either is missing.
+    @discardableResult
+    private func overflow(_ row: String) -> Bool {
+        tapIfPresent("timeline.toolbar.overflow.button") && tapIfPresent("timeline.toolbar.overflow.\(row)")
+    }
+
+    /// The device's zoom control (design iteration D1), chosen through the overflow menu: "buttons" (the default, at the
+    /// ruler's right end) or "overviewStrip" (above the transport bar). A device preference, so every run leaves the buttons.
+    private func zoomControl(_ id: String) {
+        guard overflow("zoomControl.\(id)") else { return }
+        let control = app.anchor(id == "overviewStrip" ? Anchors.timelineOverview : "timeline.zoom.level")
+        _ = control.waitForExistence(timeout: 5)
+    }
+
     func testMatrix() {
         waitReady()
+        // Every state but `overview-strip` shows the default zoom buttons, the fitted view and the playhead at the start.
+        if app.anchor(Anchors.timelineOverview).exists { zoomControl("buttons") }
+        tapIfPresent("timeline.zoom.level", timeout: 2)
+        tapIfPresent(Anchors.transportSkipStart, timeout: 2)
         if want("demo-stopped") { shot("demo-stopped") }
+        if want("overview-strip") {
+            zoomControl("overviewStrip")
+            if app.anchor(Anchors.timelineOverview).exists { shot("overview-strip") }
+            zoomControl("buttons")
+        }
+        if want("overflow-menu"), tapIfPresent("timeline.toolbar.overflow.button") {
+            _ = app.anchor("timeline.toolbar.overflow.zoomControl.buttons").waitForExistence(timeout: 5); shot("overflow-menu"); dismiss()
+        }
+        if want("snap-sheet") {
+            // The full toolbar's "Snap" pill opens its menu of sizes; compact and landscape windows open the snap sheet
+            // from the overflow menu's "Snap: <value>".
+            if app.anchor("timeline.toolbar.grid").exists {
+                if tapIfPresent("timeline.toolbar.grid"), app.anchor("timeline.toolbar.grid.sixteenth").waitForExistence(timeout: 5) { shot("snap-sheet") }
+            } else if overflow("snap"), app.anchor("timeline.snapSheet").waitForExistence(timeout: 5) {
+                shot("snap-sheet")
+            }
+            dismiss()
+        }
+        // Phones only: from 600 pt of bar width the slider is inline and there is no speaker button.
+        if want("master-popup"), tapIfPresent(Anchors.transportMasterButton, timeout: 2) {
+            if app.anchor("transport.master.popup").waitForExistence(timeout: 5) { shot("master-popup") }
+            dismiss()
+        }
         if want("demo-playing") {
             tapIfPresent(Anchors.transportPlay); sleep(6); shot("demo-playing")
             tapIfPresent(Anchors.transportPlay); tapIfPresent(Anchors.transportSkipStart)
@@ -71,7 +112,8 @@ final class ScreenshotMatrix: XCTestCase {
         if want("tempo-dialog"), tapIfPresent("timeline.toolbar.tempo") { _ = app.anchor("dialog.tempo").waitForExistence(timeout: 5); shot("tempo-dialog"); tapIfPresent("timeline.tempo.done") }
         if want("metronome-sheet") {
             app.anchor(Anchors.transportMetronome).press(forDuration: 0.8)
-            if app.anchor("timeline.metronomeSheet").waitForExistence(timeout: 5) { shot("metronome-sheet"); app.swipeDown(); sleep(1) }
+            if app.anchor("timeline.metronomeSheet").waitForExistence(timeout: 5) { shot("metronome-sheet") }
+            dismiss()
         }
         if want("settings-screen"), tapIfPresent(Anchors.timelineTrackMenuFirst), tapIfPresent(Anchors.timelineTrackSettings) {
             sleep(1); shot(app.anchor("timeline.settings.inline").exists ? "settings-inline" : "settings-screen")
@@ -82,10 +124,6 @@ final class ScreenshotMatrix: XCTestCase {
             if app.anchor("dialog.stopAndLeave").waitForExistence(timeout: 5) { shot("stop-and-leave"); tapIfPresent("dialog.stopAndLeave.cancel") }
             sleep(1); tapIfPresent(Anchors.transportPlay); tapIfPresent(Anchors.transportSkipStart)
         }
-        if want("grid-picker") {
-            if app.anchor("timeline.toolbar.grid").exists { tapIfPresent("timeline.toolbar.grid") } else if tapIfPresent("timeline.toolbar.overflow.button") { tapIfPresent("timeline.toolbar.overflow.snap") }
-            sleep(1); shot("grid-picker"); dismiss()
-        }
         if want("clip-selected"), tapIfPresent(Anchors.timelineClipFirst) { shot("clip-selected") }
         if want("split-result") {
             // The seek lands on the ruler's left: the zoom buttons overlay its right end (D1).
@@ -95,9 +133,19 @@ final class ScreenshotMatrix: XCTestCase {
                 if tapIfPresent(Anchors.timelineClipFirst), tapIfPresent(Anchors.timelineSplit) { shot("split-result"); tapIfPresent(Anchors.timelineUndo) }
             }
         }
-        let lane = app.anchor(Anchors.timelineLaneFirst)
-        if want("zoom-closest"), lane.exists { for _ in 0..<4 { lane.pinch(withScale: 2.5, velocity: 2.0) }; shot("zoom-closest") }
-        if want("zoom-widest"), lane.exists { for _ in 0..<6 { lane.pinch(withScale: 0.3, velocity: -2.0) }; shot("zoom-widest") }
+        if want("zoom-widest") || want("zoom-closest"), tapIfPresent("timeline.zoom.level") {
+            // The level segment fits the project (the widest view); "+" steps by √2 up to 128×, fourteen steps from the fit.
+            sleep(1)
+            if want("zoom-widest") { shot("zoom-widest") }
+            if want("zoom-closest") {
+                let zoomIn = app.anchor("timeline.zoom.in")
+                for _ in 0..<16 where zoomIn.exists { zoomIn.tap() }
+                // Zooming keeps the view's centre: skip to start so the closest view shows bar 1.
+                tapIfPresent(Anchors.transportSkipStart); sleep(1)
+                shot("zoom-closest")
+            }
+            tapIfPresent("timeline.zoom.level")
+        }
         if want("empty-project"), tapIfPresent(Anchors.navProjects) {
             app.waitForAnchor(Anchors.projectsRoot); if tapIfPresent("projects.new") { waitReady(); shot("empty-project") }
         }
