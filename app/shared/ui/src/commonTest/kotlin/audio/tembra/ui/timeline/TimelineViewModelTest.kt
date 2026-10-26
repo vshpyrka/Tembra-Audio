@@ -14,6 +14,7 @@ import audio.tembra.core.project.ClipTemplate
 import audio.tembra.core.project.GainDb
 import audio.tembra.core.project.GridSize
 import audio.tembra.core.project.PlaybackState
+import audio.tembra.core.project.ZoomControl
 import audio.tembra.data.metronome.FakeMetronomePreferences
 import audio.tembra.data.projects.DemoProject
 import audio.tembra.data.projects.DemoProjectIds
@@ -22,6 +23,7 @@ import audio.tembra.data.projects.ImportRefusal
 import audio.tembra.data.projects.ImportResult
 import audio.tembra.data.projects.OverviewStatus
 import audio.tembra.data.projects.WaveformOverview
+import audio.tembra.data.timeline.FakeTimelinePreferences
 import audio.tembra.engine.FakeAudioEngine
 import audio.tembra.engine.PlayResult
 import audio.tembra.ui.metronome.TapCaption
@@ -70,6 +72,7 @@ class TimelineViewModelTest {
     private val repository = FakeProjectRepository(initial = listOf(demo))
     private val picker = FakeAudioFilePicker()
     private val preferences = FakeMetronomePreferences()
+    private val timelinePreferences = FakeTimelinePreferences()
     private val session = ProjectSession(
         repository = repository,
         audio = engine,
@@ -85,7 +88,7 @@ class TimelineViewModelTest {
     @BeforeTest
     fun setUp() {
         Dispatchers.setMain(dispatcher)
-        viewModel = TimelineViewModel(session, picker, preferences)
+        viewModel = TimelineViewModel(session, picker, preferences, timelinePreferences)
     }
 
     @AfterTest
@@ -495,12 +498,42 @@ class TimelineViewModelTest {
         assertFalse(session.state.value.canUndo, "zoom and grid are not edits")
         assertEquals(demo, repository.saved.getValue(demo.id), "the document is untouched")
         // A fresh ViewModel after a relaunch measures the same lane and lands on the stored zoom.
-        val later = TimelineViewModel(session, picker, preferences)
+        val later = TimelineViewModel(session, picker, preferences, timelinePreferences)
         later.screenVisible(true)
         later.viewportMeasured(1000.0, 2.0)
         runCurrent()
         assertEquals(stored.zoom?.pixelsPerBeat, later.uiState.value.viewport.pixelsPerBeat)
         assertEquals(GridSize.Bar, later.uiState.value.grid)
+        later.screenVisible(false)
+    }
+
+    /** Spec FR-015 (D1): the zoom control is chosen per device, outside every project, and read back when the timeline shows. */
+    @Test
+    fun theZoomControlIsADevicePreferenceRestoredOnStart() = test {
+        openDemo()
+        assertEquals(ZoomControl.Buttons, ui().zoomControl, "the buttons are the default")
+        viewModel.setZoomControl(ZoomControl.OverviewStrip)
+        assertEquals(ZoomControl.OverviewStrip, ui().zoomControl)
+        assertEquals(ZoomControl.OverviewStrip, timelinePreferences.stored, "the choice is written to the device preferences")
+        advanceTimeBy(600)
+        runCurrent()
+        assertFalse(session.state.value.canUndo, "choosing a control is not an edit")
+        assertEquals(demo, repository.saved.getValue(demo.id), "the document is untouched")
+        // Another project keeps the device's choice: it belongs to no project.
+        scope.launch { session.open(repository.create("Second").id) }
+        advanceTimeBy(200)
+        runCurrent()
+        assertEquals("Second", ui().projectName)
+        assertEquals(ZoomControl.OverviewStrip, ui().zoomControl)
+        // A fresh ViewModel after a relaunch reads the stored choice once the timeline shows.
+        val later = TimelineViewModel(session, picker, preferences, timelinePreferences)
+        later.screenVisible(true)
+        runCurrent()
+        assertEquals(ZoomControl.OverviewStrip, later.uiState.value.zoomControl)
+        later.setZoomControl(ZoomControl.Buttons)
+        runCurrent()
+        assertEquals(ZoomControl.Buttons, timelinePreferences.stored)
+        assertEquals(ZoomControl.Buttons, later.uiState.value.zoomControl)
         later.screenVisible(false)
     }
 
