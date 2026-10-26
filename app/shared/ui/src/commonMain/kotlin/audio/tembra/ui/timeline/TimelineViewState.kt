@@ -1,6 +1,5 @@
 package audio.tembra.ui.timeline
 
-import audio.tembra.core.metronome.MetronomeSettings
 import audio.tembra.core.metronome.TapTempoSequence
 import audio.tembra.core.project.Beats
 import audio.tembra.core.project.GridSize
@@ -13,7 +12,8 @@ import audio.tembra.ui.metronome.TapCaption
  * What the Timeline ViewModel owns beside the session (data-model.md §5): the viewport, the selection, the grid
  * override (null until the user changes it: the project's stored grid applies), following, the open sheet, the
  * expanded inline-settings track, the pending delete confirmation and the 10 Hz playhead mirror. Reset when another
- * project opens ([projectId]).
+ * project opens ([projectId]), so nothing global lives here: the device's zoom control and the metronome settings sit
+ * beside it in the ViewModel.
  */
 internal data class TimelineViewState(
     val projectId: ProjectId? = null,
@@ -27,7 +27,6 @@ internal data class TimelineViewState(
     val drag: ClipDragState? = null,
     val tap: TapTempoSequence = TapTempoSequence(),
     val tapCaption: TapCaption = TapCaption.Rest,
-    val metronomeSettings: MetronomeSettings = MetronomeSettings(),
     val positionBeats: Beats = Beats.Zero,
     val positionSeconds: Double = 0.0,
 )

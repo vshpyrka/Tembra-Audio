@@ -106,8 +106,11 @@ class TimelineViewModel(
     /** The device's zoom control (spec FR-015, D1): outside [view], so opening another project keeps it. */
     private val deviceZoomControl = MutableStateFlow(ZoomControl.Default)
 
-    val uiState: StateFlow<TimelineUiState> = combine(session.state, view, deviceZoomControl, ::mapState)
-        .stateIn(viewModelScope, SharingStarted.Eagerly, mapState(session.state.value, view.value, deviceZoomControl.value))
+    /** The last global metronome settings the preferences emitted: outside [view] for the same reason (T147). */
+    private val metronomeSettings = MutableStateFlow(MetronomeSettings())
+
+    val uiState: StateFlow<TimelineUiState> = combine(session.state, view, deviceZoomControl, metronomeSettings, ::mapState)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, currentUi())
 
     /** One-shot snackbar messages: the session's, mapped, merged with the ViewModel's own, to the one collector. */
     private val local = Channel<TimelineMessage>(Channel.BUFFERED)
@@ -432,8 +435,13 @@ class TimelineViewModel(
 
     // --- Mapping -----------------------------------------------------------------------------------------------------
 
-    private fun mapState(state: SessionState, view: TimelineViewState, zoomControl: ZoomControl): TimelineUiState {
-        val project = state.project ?: return TimelineUiState(loaded = state.unavailable != null, playback = state.playback, zoomControl = zoomControl)
+    private fun mapState(state: SessionState, view: TimelineViewState, zoomControl: ZoomControl, metronomeSettings: MetronomeSettings): TimelineUiState {
+        val project = state.project ?: return TimelineUiState(
+            loaded = state.unavailable != null,
+            playback = state.playback,
+            zoomControl = zoomControl,
+            metronomeSettings = metronomeSettings,
+        )
         val tempoMap = project.tempoMap
         val audible = project.audibleTracks
         val tracks = project.tracks.map { track ->
@@ -511,7 +519,7 @@ class TimelineViewModel(
             isFirstContentReady = ready,
             missingAssets = state.missingAssets.size,
             confirmDelete = view.confirmDelete?.takeIf { project.findTrack(it) != null },
-            metronomeSettings = view.metronomeSettings,
+            metronomeSettings = metronomeSettings,
             tapCaption = view.tapCaption,
             drag = view.drag?.let { drag ->
                 val clip = project.findClip(drag.clipId) ?: return@let null
@@ -550,7 +558,7 @@ class TimelineViewModel(
     // --- Helpers -----------------------------------------------------------------------------------------------------
 
     /** The state an intent acts on, mapped now from the sources of truth: [uiState] is derived asynchronously. */
-    private fun currentUi(): TimelineUiState = mapState(session.state.value, view.value, deviceZoomControl.value)
+    private fun currentUi(): TimelineUiState = mapState(session.state.value, view.value, deviceZoomControl.value, metronomeSettings.value)
 
     /** Applies [edit] through the session; a refusal with a reason the user can act on becomes a message. True when applied. */
     private fun edit(edit: ProjectEdit): Boolean {
@@ -585,7 +593,7 @@ class TimelineViewModel(
 
     private suspend fun observePreferences() = coroutineScope {
         launch(CoroutineName("observeZoomControl")) { timelinePreferences.zoomControl.collect { deviceZoomControl.value = it } }
-        preferences.snapshot.collect { snapshot -> view.update { it.copy(metronomeSettings = snapshot.settings) } }
+        preferences.snapshot.collect { snapshot -> metronomeSettings.value = snapshot.settings }
     }
 
     private fun scheduleViewStateSave() {

@@ -622,6 +622,26 @@ class TimelineViewModelTest {
         later.screenVisible(false)
     }
 
+    /** T147: the metronome settings are global, so opening another project keeps the sheet's settings and their updates. */
+    @Test
+    fun theMetronomeSettingsSurviveOpeningAnotherProject() = test {
+        openDemo()
+        viewModel.selectClickSound(ClickSound.BuiltIn(BuiltInClickSound.Cowbell))
+        viewModel.selectSubdivision(Subdivision.Two)
+        runCurrent()
+        val stored = preferences.snapshot.first().settings
+        assertEquals(stored, ui().metronomeSettings, "project A shows the emitted settings")
+        scope.launch { session.open(repository.create("Second").id) }
+        advanceTimeBy(200)
+        runCurrent()
+        assertEquals("Second", ui().projectName)
+        assertEquals(stored, ui().metronomeSettings, "project B still carries the settings, no defaults until the next emission")
+        // The preferences still drive the sheet after the switch.
+        preferences.update { it.copy(settings = it.settings.copy(subdivision = Subdivision.Triplet)) }
+        assertEquals(Subdivision.Triplet, ui().metronomeSettings.subdivision)
+        assertEquals(ClickSound.BuiltIn(BuiltInClickSound.Cowbell), ui().metronomeSettings.sound)
+    }
+
     // --- User Story 2 (T090) --------------------------------------------------------------------------------------------
 
     @Test
