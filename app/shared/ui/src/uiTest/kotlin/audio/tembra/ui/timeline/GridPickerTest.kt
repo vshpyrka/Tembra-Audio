@@ -11,7 +11,7 @@ import audio.tembra.ui.timeline.components.GridPicker
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-/** The grid pill (spec FR-034; T099, US3): the five sizes, the current one described, a choice reported once. */
+/** The grid pill (spec FR-018; T099, US3): the five sizes, the current one described, a choice reported once. */
 @OptIn(ExperimentalTestApi::class)
 class GridPickerTest {
 

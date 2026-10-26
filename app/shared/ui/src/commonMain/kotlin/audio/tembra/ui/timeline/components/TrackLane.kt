@@ -25,7 +25,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.changedToDown
 import androidx.compose.ui.input.pointer.isSecondaryPressed
@@ -46,6 +48,7 @@ import audio.tembra.core.metronome.TimeSignature
 import audio.tembra.core.project.AudioAssetId
 import audio.tembra.core.project.Beats
 import audio.tembra.core.project.ClipId
+import audio.tembra.core.project.GridSize
 import audio.tembra.core.timeline.TimelineViewport
 import audio.tembra.data.projects.OverviewStatus
 import audio.tembra.ui.theme.TembraShapes
@@ -55,18 +58,23 @@ import audio.tembra.ui.timeline.ClipUi
 import audio.tembra.ui.timeline.Selection
 import audio.tembra.ui.timeline.TimelineTestTags
 import audio.tembra.ui.timeline.TrackUi
+import kotlin.math.abs
+import kotlin.math.ceil
 import kotlin.math.floor
+import kotlin.math.round
 import kotlin.math.roundToInt
 
 /**
- * One track's clips (spec FR-016, FR-033; contracts/timeline-screen.md): a single `Canvas` draws the faint bar lines
- * and every clip in view through [drawClip]; over it, one transparent node per visible clip carries the clip's
- * semantics ("drums, track 1, bar 1 beat 1, 31 seconds", `Role.Button`, selected) and its gestures: a tap selects,
- * a long press (touch) or a press past the slop (pointer) lifts the clip and the drag moves it in beats and rows
- * until release, a secondary click opens the [ClipMenu]. A tap on empty lane clears the selection; a plain drag
- * scrolls, a pinch zooms and a wheel does either ([viewportGestures]). While a [drag] is on, the lane it came from
- * draws the clip ghosted and the lane it hovers draws the lifted copy and highlights itself; near its edges the view
- * auto-scrolls. Tagged `timeline.lane.<index>`; clips `timeline.clip.first` then `timeline.clip.<n>` in project order.
+ * One track's clips (spec FR-016, FR-033; contracts/timeline-screen.md): a single `Canvas` draws the faint bar lines,
+ * over them the snap lines of [grid] (spec FR-018, D1: 1 px in `gridOverlay`, thinned by [snapLineStep] so they never
+ * crowd closer than 4 dp; none when Off), and every clip in view through [drawClip]; over it, one transparent node per
+ * visible clip carries the clip's semantics ("drums, track 1, bar 1 beat 1, 31 seconds", `Role.Button`, selected) and
+ * its gestures: a tap selects, a long press (touch) or a press past the slop (pointer) lifts the clip and the drag
+ * moves it in beats and rows until release, a secondary click opens the [ClipMenu]. A tap on empty lane clears the
+ * selection; a plain drag scrolls, a pinch zooms and a wheel does either ([viewportGestures]). While a [drag] is on,
+ * the lane it came from draws the clip ghosted and the lane it hovers draws the lifted copy and highlights itself;
+ * near its edges the view auto-scrolls. Tagged `timeline.lane.<index>`; clips `timeline.clip.first` then
+ * `timeline.clip.<n>` in project order.
  */
 @Composable
 internal fun TrackLane(
@@ -80,6 +88,7 @@ internal fun TrackLane(
     onSelectClip: (ClipId) -> Unit,
     onClearSelection: () -> Unit,
     modifier: Modifier = Modifier,
+    grid: GridSize = GridSize.Default,
     onZoomAround: (centreX: Double, factor: Double) -> Unit = { _, _ -> },
     onScrollBy: (px: Double) -> Unit = {},
     drag: ClipDragUi? = null,
@@ -112,6 +121,7 @@ internal fun TrackLane(
     }
     val tint = style.tintOf(track.colorIndex)
     val gridColor = daw.gridOverlayFaint
+    val snapColor = daw.gridOverlay
     val dropTarget = drag?.takeIf { it.toTrack == track.id }
     val background = if (dropTarget != null) daw.surfaceLevel1 else daw.canvasLevel0
     val selectedClipId = (selection as? Selection.ClipSelected)?.takeIf { it.trackId == track.id }?.clipId
@@ -140,6 +150,9 @@ internal fun TrackLane(
                 if (x > size.width) break
                 if (x >= 0f) drawLine(gridColor, Offset(x, 0f), Offset(x, size.height))
                 bar += beatsPerBar
+            }
+            snapLineStep(grid, signature, viewport.devicePixelsPerBeat, MIN_SNAP_SPACING_DP.dp.toPx().toDouble())?.let { step ->
+                drawSnapLines(viewport, step, snapColor)
             }
             for (clip in track.clips) {
                 val left = viewport.xOf(clip.startBeats).toFloat()
@@ -240,6 +253,47 @@ internal fun TrackLane(
     }
 }
 
+/**
+ * The beats between two drawn snap lines (spec FR-018): the [grid]'s step, or, while lines that close would sit nearer
+ * than [minSpacingPx], the next coarser level that is still a multiple of it (1/16, 1/8, 1/4, the bar, then 2, 4, 8…
+ * bars), so the lines drawn are always snap targets and never finer than the picked value; null when the grid is off
+ * or the zoom is not measured.
+ */
+internal fun snapLineStep(grid: GridSize, signature: TimeSignature, devicePixelsPerBeat: Double, minSpacingPx: Double): Double? {
+    val picked = grid.beatsOf(signature)?.value ?: return null
+    if (!(devicePixelsPerBeat > 0.0) || devicePixelsPerBeat.isInfinite()) return null
+    fun fits(step: Double) = step >= picked && isMultipleOf(step, picked) && step * devicePixelsPerBeat >= minSpacingPx
+    for (level in SNAP_LEVELS) {
+        val step = level.beatsOf(signature)?.value ?: continue
+        if (fits(step)) return step
+    }
+    var bars = signature.beats * 2.0
+    repeat(MAX_BAR_DOUBLINGS) {
+        if (fits(bars)) return bars
+        bars *= 2
+    }
+    return null
+}
+
+/** The finest level first: the order [snapLineStep] coarsens in, up to the bar. */
+private val SNAP_LEVELS = listOf(GridSize.Sixteenth, GridSize.Eighth, GridSize.Quarter, GridSize.Bar)
+
+private fun isMultipleOf(value: Double, step: Double): Boolean {
+    val ratio = value / step
+    return abs(ratio - round(ratio)) < MULTIPLE_TOLERANCE
+}
+
+/** One 1 px column every [step] beats from the first at or after the left edge to the canvas's right edge, on whole pixels. */
+private fun DrawScope.drawSnapLines(viewport: TimelineViewport, step: Double, color: Color) {
+    var line = ceil(viewport.scrollBeats.value / step - MULTIPLE_TOLERANCE)
+    while (true) {
+        val x = floor(viewport.xOf(Beats(line * step))).toFloat()
+        if (x >= size.width) break
+        if (x >= 0f) drawLine(color, Offset(x + HALF_PIXEL, 0f), Offset(x + HALF_PIXEL, size.height), strokeWidth = SNAP_STROKE_PX)
+        line += 1.0
+    }
+}
+
 /** "drums, track 1, bar 1 beat 1, 31 seconds", with "unavailable" appended when the audio is missing (spec FR-058). */
 internal fun clipDescription(clip: ClipUi, trackIndex: Int, signature: TimeSignature): String {
     val beatsPerBar = signature.beats
@@ -262,3 +316,8 @@ private const val OUTLINE_WIDTH_DP = 2
 private const val GHOST_ALPHA = 0.35f
 private const val EDGE_DP = 24
 private const val EDGE_SCROLL_PX = 12.0
+private const val MIN_SNAP_SPACING_DP = 4
+private const val SNAP_STROKE_PX = 1f
+private const val HALF_PIXEL = 0.5f
+private const val MULTIPLE_TOLERANCE = 1e-9
+private const val MAX_BAR_DOUBLINGS = 32

@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -30,6 +31,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.dp
 import audio.tembra.core.project.Beats
 import audio.tembra.core.project.TempoMap
 import audio.tembra.core.timeline.RulerLabels
@@ -44,8 +46,9 @@ import audio.tembra.ui.timeline.TimelineTestTags
 /**
  * The pinned ruler (spec FR-013, FR-014; contracts/timeline-screen.md): [leftPills] (the tempo and signature pills)
  * then one `Canvas` of the bar row above the time row, labelled from [RulerLabels] for the [viewport], with ticks one
- * level below each labelled level, the bar-row grid lines, and the playhead's rounded "bar.beat" chip, which reads
- * [telemetry] in the draw phase every frame while [playing] and draws at [positionBeats] otherwise. A tap seeks
+ * level below each labelled level, the bar-row grid lines, and the playhead's rounded "bar.beat" chip (spec FR-009,
+ * D1: `onPrimaryContainer` text on `playheadChip`, 6.7:1, inside a 1 dp `playhead` outline), which reads [telemetry]
+ * in the draw phase every frame while [playing] and draws at [positionBeats] otherwise. A tap seeks
  * ([onSeek] with the beat under the finger; the owner snaps it), a horizontal drag scrubs silently
  * ([onScrubStart], [onScrub], [onScrubEnd]; clarification 4), and a hovering pointer shows the time under it. The
  * canvas is tagged `timeline.ruler`; its `stateDescription` is the 10 Hz "bar.beat".
@@ -70,7 +73,7 @@ internal fun TimelineRuler(
     val daw = TembraTheme.daw
     val spacing = TembraTheme.spacing
     val labelStyle: TextStyle = TembraTheme.typographyExtras.tabularParam.copy(color = colors.onSurfaceVariant)
-    val chipStyle: TextStyle = TembraTheme.typographyExtras.tabularParam.copy(color = colors.onSecondaryContainer)
+    val chipStyle: TextStyle = TembraTheme.typographyExtras.tabularParam.copy(color = colors.onPrimaryContainer)
     val measurer = rememberTextMeasurer()
     val density = LocalDensity.current
     val tick = rememberFrameTick(active = playing)
@@ -141,6 +144,7 @@ internal fun TimelineRuler(
                 },
         ) {
             val rowHeight = size.height / 2
+            val textInset = TEXT_INSET.toPx()
             val labels = RulerLabels.compute(viewport, tempoMap, barLabelWidth, timeLabelWidth, gapPx)
             // Bar row: ticks one level below, grid lines at the labelled level, then the labels.
             for (x in labels.bars.ticks) drawLine(tickColor, Offset(x.toFloat(), rowHeight * 0.7f), Offset(x.toFloat(), rowHeight))
@@ -148,7 +152,7 @@ internal fun TimelineRuler(
                 val x = label.x.toFloat()
                 drawLine(gridColor, Offset(x, 0f), Offset(x, size.height))
                 val layout = measurer.measure(label.text, labelStyle)
-                drawText(layout, topLeft = Offset(x + TEXT_INSET, (rowHeight - layout.size.height) / 2))
+                drawText(layout, topLeft = Offset(x + textInset, (rowHeight - layout.size.height) / 2))
             }
             // Time row.
             for (x in labels.time.ticks) drawLine(tickColor, Offset(x.toFloat(), size.height * 0.85f), Offset(x.toFloat(), size.height))
@@ -156,14 +160,14 @@ internal fun TimelineRuler(
                 val x = label.x.toFloat()
                 drawLine(tickColor, Offset(x, rowHeight), Offset(x, size.height))
                 val layout = measurer.measure(label.text, labelStyle)
-                drawText(layout, topLeft = Offset(x + TEXT_INSET, rowHeight + (rowHeight - layout.size.height) / 2))
+                drawText(layout, topLeft = Offset(x + textInset, rowHeight + (rowHeight - layout.size.height) / 2))
             }
             // Hover time under the pointer (Constitution IV).
             hoverX?.let { x ->
                 val seconds = tempoMap.beatsToSeconds(viewport.beatsAt(x.toDouble()).coerceAtLeastZero())
                 val layout = measurer.measure(TimeFormat.clock(seconds), labelStyle.copy(color = hoverColor))
                 drawLine(hoverColor.copy(alpha = HOVER_ALPHA), Offset(x, 0f), Offset(x, size.height))
-                drawText(layout, topLeft = Offset(x + TEXT_INSET, rowHeight + (rowHeight - layout.size.height) / 2))
+                drawText(layout, topLeft = Offset(x + textInset, rowHeight + (rowHeight - layout.size.height) / 2))
             }
             // The playhead chip: the audible position per frame while playing, the 10 Hz position otherwise.
             val beats = if (playing) {
@@ -173,23 +177,37 @@ internal fun TimelineRuler(
                 positionBeats
             }
             val x = viewport.xOf(beats).toFloat()
-            if (x >= -CHIP_REACH && x <= size.width + CHIP_REACH) {
+            val reach = CHIP_REACH.toPx()
+            if (x >= -reach && x <= size.width + reach) {
                 val text = if (playing) TimeFormat.barBeat(beats, tempoMap.timeSignature) else chipText
                 val layout = measurer.measure(text, chipStyle)
-                val chipWidth = layout.size.width + CHIP_PADDING * 2
-                val chipHeight = rowHeight - CHIP_INSET * 2
-                drawRoundRect(chipColor, topLeft = Offset(x - chipWidth / 2, CHIP_INSET), size = Size(chipWidth, chipHeight), cornerRadius = CornerRadius(chipHeight / 2))
-                drawText(layout, topLeft = Offset(x - layout.size.width / 2, CHIP_INSET + (chipHeight - layout.size.height) / 2))
-                drawLine(playheadColor, Offset(x, rowHeight), Offset(x, size.height), strokeWidth = PLAYHEAD_STROKE)
+                val inset = CHIP_INSET.toPx()
+                val chipWidth = layout.size.width + CHIP_PADDING.toPx() * 2
+                val chipHeight = rowHeight - inset * 2
+                val left = x - chipWidth / 2
+                drawRoundRect(chipColor, topLeft = Offset(left, inset), size = Size(chipWidth, chipHeight), cornerRadius = CornerRadius(chipHeight / 2))
+                // The outline's stroke centred half its width inside the chip's edge, so all of it lies on the chip.
+                val outline = CHIP_OUTLINE.toPx()
+                val outlineHeight = chipHeight - outline
+                drawRoundRect(
+                    playheadColor,
+                    topLeft = Offset(left + outline / 2, inset + outline / 2),
+                    size = Size(chipWidth - outline, outlineHeight),
+                    cornerRadius = CornerRadius(outlineHeight / 2),
+                    style = Stroke(width = outline),
+                )
+                drawText(layout, topLeft = Offset(x - layout.size.width / 2, inset + (chipHeight - layout.size.height) / 2))
+                drawLine(playheadColor, Offset(x, rowHeight), Offset(x, size.height), strokeWidth = PLAYHEAD_STROKE.toPx())
             }
         }
     }
 }
 
 internal const val RULER_DESCRIPTION = "Ruler"
-private const val TEXT_INSET = 4f
-private const val CHIP_PADDING = 8f
-private const val CHIP_INSET = 3f
-private const val CHIP_REACH = 60f
-private const val PLAYHEAD_STROKE = 2f
+private val TEXT_INSET = 4.dp
+private val CHIP_PADDING = 8.dp
+private val CHIP_INSET = 3.dp
+private val CHIP_OUTLINE = 1.dp
+private val CHIP_REACH = 60.dp
+private val PLAYHEAD_STROKE = 2.dp
 private const val HOVER_ALPHA = 0.5f

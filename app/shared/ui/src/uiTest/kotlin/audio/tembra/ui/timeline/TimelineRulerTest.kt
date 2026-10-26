@@ -4,6 +4,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ComposeUiTest
@@ -24,6 +27,7 @@ import audio.tembra.core.metronome.TimeSignature
 import audio.tembra.core.project.Beats
 import audio.tembra.core.project.TempoMap
 import audio.tembra.core.timeline.TimelineViewport
+import audio.tembra.ui.designsystem.approximately
 import audio.tembra.ui.designsystem.averageColorAt
 import audio.tembra.ui.designsystem.containsColor
 import audio.tembra.ui.designsystem.isCloserTo
@@ -33,12 +37,15 @@ import audio.tembra.ui.timeline.components.SignaturePill
 import audio.tembra.ui.timeline.components.TempoPill
 import audio.tembra.ui.timeline.components.TimelineRuler
 import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.roundToInt
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
-/** The ruler driven with a fixed viewport (contracts/timeline-screen.md; T079): labels drawn, taps seek, drags scrub, the chip text. */
+/** The ruler driven with a fixed viewport (contracts/timeline-screen.md; T079): labels drawn, taps seek, drags scrub, the chip text and its legibility (FR-009; T139). */
 @OptIn(ExperimentalTestApi::class)
 class TimelineRulerTest {
 
@@ -105,6 +112,40 @@ class TimelineRulerTest {
     }
 
     @Test
+    fun theChipTextContrastsWithTheChip() = runComposeUiTest {
+        setRuler(positionBeats = Beats(16.0))
+        val port = assertNotNull(viewport)
+        val pixels = onNodeWithTag(TimelineTestTags.RULER).captureToImage().toPixelMap()
+        // The chip's text is centred on the playhead x in the bar row (the top half): a 16 × 12 dp block around it holds
+        // the glyphs and the chip's fill around them, inside the outline.
+        val x = port.xOf(Beats(16.0)).roundToInt()
+        val y = pixels.height / 4
+        val halfWidth = (8 * densityScale).roundToInt()
+        val halfHeight = (6 * densityScale).roundToInt()
+        val block = buildList {
+            for (py in y - halfHeight..y + halfHeight) for (px in x - halfWidth..x + halfWidth) add(pixels[px.coerceIn(0, pixels.width - 1), py.coerceIn(0, pixels.height - 1)])
+        }
+        val fill = Color(block.groupingBy { it.toArgb() }.eachCount().maxBy { it.value }.key)
+        assertTrue(fill.approximately(chip), "the block at the playhead is $fill, not the chip $chip")
+        val text = block.maxBy { contrast(it, fill) }
+        val ratio = contrast(text, fill)
+        assertTrue(ratio >= 4.5f, "the chip text $text contrasts with the chip $fill at $ratio:1, below 4.5:1")
+    }
+
+    @Test
+    fun theChipHasAOneDpOutlineInThePlayheadColour() = runComposeUiTest {
+        setRuler(positionBeats = Beats(16.0))
+        val port = assertNotNull(viewport)
+        val image = onNodeWithTag(TimelineTestTags.RULER).captureToImage()
+        val x = port.xOf(Beats(16.0)).roundToInt()
+        // The chip's top edge is 3 dp below the ruler's: half a dp further down lies inside the 1 dp outline, 2 dp further the fill.
+        val edge = image.averageColorAt(x, (3.5f * densityScale).roundToInt(), radius = 0)
+        assertTrue(edge.isCloserTo(playhead, chip), "the chip's top edge is $edge, not the playhead colour $playhead")
+        val inside = image.averageColorAt(x, (5.5f * densityScale).roundToInt(), radius = 0)
+        assertTrue(inside.isCloserTo(chip, playhead), "inside the outline is $inside, not the chip $chip")
+    }
+
+    @Test
     fun aTapSeeksToTheBeatUnderTheFinger() = runComposeUiTest {
         setRuler()
         mainClock.autoAdvance = true
@@ -134,5 +175,12 @@ class TimelineRulerTest {
         setRuler(playing = true, telemetry = telemetry)
         mainClock.advanceTimeBy(200)
         assertTrue(telemetry.reads > 0, "the ruler did not read the telemetry while playing")
+    }
+
+    /** The WCAG contrast ratio of two opaque colours. */
+    private fun contrast(a: Color, b: Color): Float {
+        val la = a.luminance()
+        val lb = b.luminance()
+        return (max(la, lb) + 0.05f) / (min(la, lb) + 0.05f)
     }
 }
