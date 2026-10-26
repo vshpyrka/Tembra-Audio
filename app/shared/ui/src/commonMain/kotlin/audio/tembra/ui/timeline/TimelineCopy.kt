@@ -10,13 +10,30 @@ object TimelineCopy {
     const val split = "Split"
     const val undo = "Undo"
     const val redo = "Redo"
-    const val grid = "Grid"
+    const val snap = "Snap"
     const val snapToGrid = "Snap to grid"
     const val snapCaption = "Ruler taps, playhead drags, clip moves and splits land on these lines."
     const val fitProject = "Fit project"
     const val zoomIn = "Zoom in"
     const val zoomOut = "Zoom out"
     const val overview = "Overview"
+
+    /** The full toolbar's grid pill: "Snap 1/16" (spec FR-018, D1). */
+    fun snapPill(gridLabel: String): String = "$snap $gridLabel"
+
+    /** The overflow menu's grid entry: "Snap: 1/16" (spec FR-018, FR-055, D1). */
+    fun snapEntry(gridLabel: String): String = "$snap: $gridLabel"
+
+    /** The overflow menu's zoom-control choices (spec FR-015, D1). */
+    const val zoomControlButtons = "Zoom control: Buttons"
+    const val zoomControlOverviewStrip = "Zoom control: Overview strip"
+
+    /** The tempo pill: "124 BPM", read as "Tempo 124 beats per minute" (spec FR-036). */
+    fun tempoPill(bpm: Int): String = "$bpm BPM"
+    fun tempoPillDescription(bpm: Int): String = "Tempo $bpm beats per minute"
+
+    /** The metronome sheet's read-only tempo: "124 BPM, from the project" (spec FR-039, D1). */
+    fun projectTempo(bpm: Int): String = "${tempoPill(bpm)}, $fromTheProject"
 
     /** The zoom buttons' level: "Zoom 2.5×, fit the project" (spec FR-015, D1). */
     fun zoomLevel(label: String): String = "Zoom $label, fit the project"

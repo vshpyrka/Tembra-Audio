@@ -227,6 +227,34 @@ class TimelineViewModelTest {
         assertIs<PlaybackState.Stopped>(ui().playback, "a stopped transport stays stopped after a scrub")
     }
 
+    /** Spec FR-011 (D1): the scrubbed playhead lands on the grid while it moves and where it is released; Off follows the finger. */
+    @Test
+    fun aScrubSnapsToTheGridDuringTheDragAndOnRelease() = test {
+        openDemo()
+        viewModel.scrubStart()
+        viewModel.scrub(Beats(2.1))
+        runCurrent()
+        assertEquals("seek(2.0)", engine.calls.last(), "sixteenth grid during the drag")
+        assertEquals(Beats(2.0), ui().positionBeats)
+        viewModel.scrubEnd(Beats(3.4))
+        runCurrent()
+        assertEquals("seek(3.5)", engine.calls.last(), "sixteenth grid on release")
+        assertEquals(Beats(3.5), ui().positionBeats)
+        assertTrue(ui().following)
+        viewModel.setGrid(GridSize.Bar)
+        viewModel.scrubStart()
+        viewModel.scrubEnd(Beats(5.9))
+        runCurrent()
+        assertEquals("seek(4.0)", engine.calls.last(), "bar grid on release")
+        viewModel.setGrid(GridSize.Off)
+        viewModel.scrubStart()
+        viewModel.scrub(Beats(6.3))
+        viewModel.scrubEnd(Beats(7.3))
+        runCurrent()
+        assertEquals(listOf("seek(6.3)", "seek(7.3)"), engine.calls.takeLast(2), "Off follows the finger")
+        assertEquals(Beats(7.3), ui().positionBeats)
+    }
+
     @Test
     fun theMasterVolumeIsAnEditThatReachesTheEngine() = test {
         openDemo()
@@ -380,6 +408,31 @@ class TimelineViewModelTest {
         assertEquals(2, ui().tracks[0].clips.size)
     }
 
+    /** Spec FR-032 (D1): the scissors cut at the playhead snapped to the grid, and are unavailable when that point sits on an edge. */
+    @Test
+    fun splitCutsAtTheSnappedPlayhead() = test {
+        openDemo()
+        viewModel.setGrid(GridSize.Off)
+        viewModel.seek(Beats(8.3))
+        viewModel.selectClip(drumsTrack, drumsClip)
+        assertTrue(ui().canSplit)
+        viewModel.setGrid(GridSize.Bar)
+        assertTrue(ui().canSplit, "8.3 snaps to the bar line at 8")
+        viewModel.split()
+        val state = ui()
+        assertEquals(2, state.tracks[0].clips.size)
+        assertEquals(8.0, state.tracks[0].clips[1].startBeats.value, 1e-3, "the cut lands on the bar line (to a frame), not at 8.3")
+        viewModel.undo()
+        viewModel.setGrid(GridSize.Off)
+        viewModel.seek(Beats(0.3))
+        viewModel.selectClip(drumsTrack, drumsClip)
+        assertTrue(ui().canSplit, "0.3 lies inside the clip with the grid off")
+        viewModel.setGrid(GridSize.Bar)
+        assertFalse(ui().canSplit, "0.3 snaps to the clip's start at 0")
+        viewModel.split()
+        assertEquals(1, ui().tracks[0].clips.size, "no cut on the clip's edge")
+    }
+
     @Test
     fun aDragBuildsOneMoveOnReleaseWithTheSnappedStartAndTheTargetTrack() = test {
         openDemo()
@@ -483,6 +536,38 @@ class TimelineViewModelTest {
         val fitted = ui().viewport
         assertEquals(Beats.Zero, fitted.scrollBeats)
         assertEquals(fitted.fitPixelsPerBeat, fitted.pixelsPerBeat, 1e-9)
+    }
+
+    /** The overview strip's entry points (spec FR-015, D1): a span fills the lanes from its start, clamped; a scroll stops following. */
+    @Test
+    fun theOverviewStripScrollsAndZoomsTheSameViewport() = test {
+        openDemo()
+        val fit = ui().viewport
+        // 1000 px at density 2 are 500 dp: beats 8 to 24 across them is 31.25 dp a beat, beat 8 at the left edge.
+        viewModel.zoomTo(Beats(8.0), Beats(24.0))
+        val zoomed = ui()
+        assertEquals(31.25, zoomed.viewport.pixelsPerBeat, 1e-9)
+        assertEquals(Beats(8.0), zoomed.viewport.scrollBeats)
+        assertEquals(24.0, zoomed.viewport.endBeats.value, 1e-9)
+        assertFalse(zoomed.following, "zooming from the strip is a manual view change")
+        viewModel.scrollTo(Beats(12.0))
+        assertEquals(Beats(12.0), ui().viewport.scrollBeats)
+        assertEquals(31.25, ui().viewport.pixelsPerBeat, 1e-9, "a scroll keeps the zoom")
+        viewModel.scrollTo(Beats(-3.0))
+        assertEquals(Beats.Zero, ui().viewport.scrollBeats, "never before the start")
+        viewModel.zoomTo(Beats(4.0), Beats(4.01))
+        assertEquals(ui().viewport.closestPixelsPerBeat, ui().viewport.pixelsPerBeat, 1e-9, "no closer than one beat per view")
+        assertEquals(Beats(4.0), ui().viewport.scrollBeats, "the span's start stays at the left edge")
+        viewModel.zoomTo(Beats.Zero, Beats(10_000.0))
+        assertEquals(fit.pixelsPerBeat, ui().viewport.pixelsPerBeat, 1e-9, "no wider than the fit")
+        viewModel.zoomTo(Beats(16.0), Beats(16.0))
+        assertEquals(fit.pixelsPerBeat, ui().viewport.pixelsPerBeat, 1e-9, "an empty span changes nothing")
+        viewModel.zoomTo(Beats(8.0), Beats(24.0))
+        advanceTimeBy(600)
+        runCurrent()
+        assertEquals(31.25, repository.viewState(demo.id).zoom?.pixelsPerBeat, "the strip's zoom is remembered per project")
+        viewModel.seek(Beats(4.0))
+        assertTrue(ui().following, "a ruler tap follows again")
     }
 
     @Test

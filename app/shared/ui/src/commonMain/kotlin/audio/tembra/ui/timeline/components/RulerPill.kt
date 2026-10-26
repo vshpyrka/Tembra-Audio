@@ -29,10 +29,9 @@ import audio.tembra.ui.designsystem.drawFocusRing
 import audio.tembra.ui.theme.TembraTheme
 
 /**
- * The ruler's tempo and signature pills share this shape (research R15): a 32 dp `secondaryContainer` pill with
- * [text] in `tabularParam`, raised to `secondary` on hover and press, the `primary` focus ring, a button named
- * [description] inside a 44 dp target. Read-only when not [enabled] (User Story 1); tapping opens the dialog or menu
- * from User Story 5.
+ * The tempo pill's shape (research R15; the pill sat on the ruler until D1 moved it into the toolbar, spec FR-036): a
+ * 32 dp `secondaryContainer` pill with [text] in `tabularParam`, raised to `secondary` on hover and press, the
+ * `primary` focus ring, a button named [description] inside a 44 dp target. Read-only when not [enabled].
  */
 @Composable
 internal fun RulerPill(

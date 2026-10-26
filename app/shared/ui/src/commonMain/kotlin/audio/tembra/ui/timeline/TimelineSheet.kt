@@ -1,4 +1,7 @@
 package audio.tembra.ui.timeline
 
-/** The one overlay the timeline may show at a time (data-model.md §5): the tempo dialog, the signature menu, the metronome settings sheet, the grid or zoom menus. */
-enum class TimelineSheet { TempoDialog, SignatureMenu, MetronomeSettings, GridMenu, ZoomMenu }
+/**
+ * The one overlay the timeline may show at a time (data-model.md §5): the tempo dialog, the metronome settings sheet
+ * (which holds the time signature since D1, spec FR-037) or the snap sheet ([GridMenu], spec FR-018).
+ */
+enum class TimelineSheet { TempoDialog, MetronomeSettings, GridMenu }

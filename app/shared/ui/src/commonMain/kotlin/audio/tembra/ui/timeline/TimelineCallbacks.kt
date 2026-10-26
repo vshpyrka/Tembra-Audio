@@ -10,6 +10,7 @@ import audio.tembra.core.project.ClipId
 import audio.tembra.core.project.GainDb
 import audio.tembra.core.project.GridSize
 import audio.tembra.core.project.TrackId
+import audio.tembra.core.project.ZoomControl
 
 /** The timeline's intents as plain functions (Constitution II); [None] for previews and tests. */
 data class TimelineCallbacks(
@@ -30,6 +31,11 @@ data class TimelineCallbacks(
     val onZoomStep: (steps: Int) -> Unit,
     val onFitProject: () -> Unit,
     val onScrollBy: (px: Double) -> Unit,
+    /** The overview strip (spec FR-015, D1): the beat for the left edge, and a span to fill the lanes with. */
+    val onScrollTo: (beats: Beats) -> Unit,
+    val onZoomTo: (startBeats: Beats, endBeats: Beats) -> Unit,
+    /** The overflow menu's "Zoom control" choice, a device preference (spec FR-015, D1). */
+    val onZoomControl: (ZoomControl) -> Unit,
     val onGrid: (GridSize) -> Unit,
     // Tracks (US2)
     val onAddTrack: () -> Unit,
@@ -74,7 +80,8 @@ data class TimelineCallbacks(
         val None = TimelineCallbacks(
             onPlayPause = {}, onSkipToStart = {}, onStepBar = {}, onSeek = {}, onScrubStart = {}, onScrub = {}, onScrubEnd = {},
             onMasterVolume = {}, onMetronomeToggle = {}, onMetronomeSettings = {},
-            onViewportMeasured = { _, _ -> }, onZoomAround = { _, _ -> }, onZoomStep = {}, onFitProject = {}, onScrollBy = {}, onGrid = {},
+            onViewportMeasured = { _, _ -> }, onZoomAround = { _, _ -> }, onZoomStep = {}, onFitProject = {}, onScrollBy = {},
+            onScrollTo = {}, onZoomTo = { _, _ -> }, onZoomControl = {}, onGrid = {},
             onAddTrack = {}, onSelectTrack = {}, onToggleMute = {}, onToggleSolo = {}, onGain = { _, _ -> }, onTrackSettings = {},
             onMoveTrack = { _, _ -> }, onDeleteTrack = {}, onConfirmDeleteTrack = {}, onDismissDeleteTrack = {}, onAddAudio = {}, onAddAudioAsNewTrack = {}, onExpandTrack = {},
             onSelectClip = { _, _ -> }, onClearSelection = {}, onSplit = {}, onMoveClip = { _, _, _ -> }, onDeleteClip = {}, onClipDragStart = {}, onClipDrag = { _, _, _ -> }, onClipDragEnd = {}, onClipDragCancel = {}, onUndo = {}, onRedo = {},

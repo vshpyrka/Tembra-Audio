@@ -11,7 +11,7 @@ import audio.tembra.ui.timeline.components.GridPicker
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-/** The grid pill (spec FR-018; T099, US3): the five sizes, the current one described, a choice reported once. */
+/** The full toolbar's grid pill (spec FR-018; T099, US3; D1 T141): "Snap 1/16", the five sizes, a choice reported once. */
 @OptIn(ExperimentalTestApi::class)
 class GridPickerTest {
 
@@ -19,7 +19,7 @@ class GridPickerTest {
     fun theMenuListsEverySizeAndReportsTheChoice() = runComposeUiTest {
         val chosen = mutableListOf<GridSize>()
         setContent { TembraTheme { GridPicker(grid = GridSize.Sixteenth, onGrid = { chosen += it }) } }
-        onNodeWithTag(TimelineTestTags.GRID).assertContentDescriptionEquals("Grid 1/16").performClick()
+        onNodeWithTag(TimelineTestTags.GRID).assertContentDescriptionEquals("Snap 1/16").performClick()
         for (size in GridSize.entries) onNodeWithTag("${TimelineTestTags.GRID}.${size.name.lowercase()}").assertExists()
         onNodeWithTag("${TimelineTestTags.GRID}.bar").performClick()
         assertEquals(listOf(GridSize.Bar), chosen)

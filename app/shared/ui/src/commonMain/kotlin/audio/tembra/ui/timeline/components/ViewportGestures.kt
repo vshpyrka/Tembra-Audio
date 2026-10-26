@@ -17,7 +17,7 @@ import kotlin.math.abs
 import kotlin.math.pow
 
 /**
- * The timeline's viewport gestures on a lane or the ruler (spec FR-017, FR-018; clarification 3): a two-finger pinch
+ * The timeline's viewport gestures on a lane or the ruler (spec FR-015, FR-016; clarification 3): a two-finger pinch
  * zooms around its centroid and pans while it lasts; a plain horizontal drag scrolls when [dragScrolls] (the ruler's
  * drag scrubs instead); a wheel or trackpad scroll pans, and with Ctrl or Command (or a trackpad pinch, which arrives
  * the same way) zooms around the pointer. A tap never reaches here: the slop decides. Each gesture runs inside

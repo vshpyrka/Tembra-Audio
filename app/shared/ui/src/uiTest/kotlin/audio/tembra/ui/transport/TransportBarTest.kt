@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
@@ -244,8 +245,10 @@ class TransportBarTest {
         assertTrue(card.left >= window.left && card.right <= window.right && card.top >= window.top, "the pop-up $card leaves the window $window")
 
         // Dragging the slider to its end sets full volume through the bar's callback; the arrows step from there. The drag
-        // starts at the centre: the node's own edges are Material's focus-ring room, outside the slider's touch area.
-        onNodeWithTag(TAG).performTouchInput { swipe(start = center, end = centerRight) }
+        // starts at the centre: the node's own edges are Material's focus-ring room, outside the slider's touch area. It
+        // ends a node's width past the right edge: the iOS lane's injected swipe reports its last move short of the end
+        // point (95 % at the edge itself), and past the track the slider holds 100 %.
+        onNodeWithTag(TAG).performTouchInput { swipe(start = center, end = centerRight + Offset(width.toFloat(), 0f)) }
         assertEquals("master(100)", calls.last())
         onNodeWithTag(MASTER_PERCENT_TAG).assertTextEquals("100%")
         onNodeWithTag(TAG).requestFocus()

@@ -45,7 +45,7 @@ data class TimelineUiState(
     val masterVolume: Int = 80,
     val canUndo: Boolean = false,
     val canRedo: Boolean = false,
-    /** A clip is selected and the playhead lies strictly inside it, more than 0.01 s from both edges (spec FR-032). */
+    /** A clip is selected and the playhead, snapped to the grid, lies strictly inside it, more than 0.01 s from both edges (spec FR-032). */
     val canSplit: Boolean = false,
     /** The track whose settings are open inline on expanded windows (spec FR-041). */
     val expandedTrack: TrackId? = null,

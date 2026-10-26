@@ -24,8 +24,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import audio.tembra.ui.perf.anchorRoot
+import audio.tembra.ui.theme.TembraIcon
 import audio.tembra.ui.theme.TembraIcons
 import audio.tembra.ui.theme.TembraShapes
 import audio.tembra.ui.theme.TembraTheme
@@ -36,7 +39,8 @@ import audio.tembra.ui.theme.TembraTheme
  * `surfaceContainerHighest` as 44 dp rows whose hover and focus tint the row (`surfaceContainerHigh` on hover, the
  * `primary` focus ring on keyboard focus); choosing a row calls [onSelect] with its id and the caller closes the
  * menu through [onDismiss]. Disabled rows stay listed in `onSurfaceVariant` at the disabled alpha and select nothing.
- * The menu carries [testTag] and each row `<testTag>.<id>`.
+ * A choice row ([MenuItemSpec.selected] not null) reads selected or not; the current one is drawn in `primary` with a
+ * trailing check (`<testTag>.<id>.check`). The menu carries [testTag] and each row `<testTag>.<id>`.
  */
 @Composable
 fun TembraMenu(
@@ -60,13 +64,15 @@ fun TembraMenu(
             containerColor = colors.surfaceContainerHighest,
         ) {
             for (item in items) {
+                val rowTag = testTag?.let { "$it.${item.id}" }
                 TembraMenuRow(
                     item = item,
                     onClick = {
                         onDismiss()
                         onSelect(item.id)
                     },
-                    modifier = Modifier.testTagIfSet(testTag?.let { "$it.${item.id}" }),
+                    checkTag = rowTag?.let { "$it.check" },
+                    modifier = Modifier.testTagIfSet(rowTag),
                 )
             }
         }
@@ -76,15 +82,17 @@ fun TembraMenu(
 /** One 44 dp row; hover and focus come from the item's injected source or a remembered one. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TembraMenuRow(item: MenuItemSpec, onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun TembraMenuRow(item: MenuItemSpec, onClick: () -> Unit, checkTag: String?, modifier: Modifier = Modifier) {
     val colors = TembraTheme.colors
     val spacing = TembraTheme.spacing
     val source = item.interactionSource ?: remember { MutableInteractionSource() }
     val hovered by source.collectIsHoveredAsState()
     val pressed by source.collectIsPressedAsState()
     val focused by source.collectIsFocusedAsState()
+    val current = item.selected == true
     val content = when {
         !item.enabled -> colors.onSurfaceVariant.copy(alpha = DisabledAlpha)
+        current -> colors.primary
         hovered || pressed -> colors.onSurface
         else -> colors.onSurfaceVariant
     }
@@ -106,6 +114,7 @@ private fun TembraMenuRow(item: MenuItemSpec, onClick: () -> Unit, modifier: Mod
         onClick = onClick,
         modifier = modifier
             .heightIn(min = spacing.touchTargetMin)
+            .then(if (item.selected != null) Modifier.semantics { selected = current } else Modifier)
             .drawBehind {
                 drawRect(color = fill)
                 if (focused) drawFocusRing(ringColor, ring.toPx(), CornerRadius(0f))
@@ -119,6 +128,18 @@ private fun TembraMenuRow(item: MenuItemSpec, onClick: () -> Unit, modifier: Mod
                     modifier = Modifier.size(spacing.pickerIconSize),
                 )
             }
+        },
+        trailingIcon = if (current) {
+            {
+                Icon(
+                    imageVector = TembraIcons.vector(TembraIcon.Check),
+                    contentDescription = null,
+                    tint = content,
+                    modifier = Modifier.size(spacing.pickerIconSize).testTagIfSet(checkTag),
+                )
+            }
+        } else {
+            null
         },
         enabled = item.enabled,
         interactionSource = source,

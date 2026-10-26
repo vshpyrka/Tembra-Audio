@@ -31,7 +31,7 @@ import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.ui.timeline.TimelineCopy
 
 /**
- * The project tempo (spec FR-035): the metronome's dial, steppers, slider and tap button reused under `timeline.*`
+ * The project tempo (spec FR-036): the metronome's dial, steppers, slider and tap button reused under `timeline.*`
  * tags. Every change reaches [onTempoDragging] at once so the ruler, the clips and the click follow; "Done" commits
  * the run as one undo step ([onTempoCommit]). Dismissing commits as well: the project already holds the value.
  */

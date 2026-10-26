@@ -3,6 +3,7 @@ package audio.tembra.ui.timeline
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -23,27 +24,35 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import audio.tembra.core.project.TempoMap
+import audio.tembra.core.project.ZoomControl
 import audio.tembra.ui.session.TransportTelemetry
 import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.ui.timeline.components.DeleteTrackDialog
 import audio.tembra.ui.timeline.components.EmptyTimeline
-import audio.tembra.ui.timeline.components.PlayheadOverlay
 import audio.tembra.ui.timeline.components.MetronomeSettingsSheet
+import audio.tembra.ui.timeline.components.OverviewStrip
+import audio.tembra.ui.timeline.components.OverviewStripDefaults
+import audio.tembra.ui.timeline.components.PlayheadOverlay
+import audio.tembra.ui.timeline.components.SnapSheet
 import audio.tembra.ui.timeline.components.TempoDialog
-import audio.tembra.ui.timeline.components.RulerPills
 import audio.tembra.ui.timeline.components.TimelineRuler
 import audio.tembra.ui.timeline.components.TimelineToolbar
 import audio.tembra.ui.timeline.components.TrackList
+import audio.tembra.ui.timeline.components.ZoomButtons
+import audio.tembra.ui.timeline.components.zoomLevelLabel
 import audio.tembra.ui.transport.TransportBar
 import audio.tembra.ui.transport.TransportCallbacks
 
 /**
- * The stateless Timeline (contracts/timeline-screen.md "Layouts"): toolbar, pinned ruler, the track list under the
- * playhead overlay, and the transport bar, arranged per [layout]. On expanded windows the tempo and signature pills
- * take the 200 dp header column so the ruler's canvas starts where the lanes do; elsewhere they float over the
- * ruler's start and the canvas spans the full width, which keeps the playhead aligned between ruler and lanes. The
- * root is tagged `screen.timeline` with `stateDescription` "ready" once every visible overview is drawn
- * (contracts/perf-instrumentation.md), plus the 1 dp `screen.timeline.ready` marker the Android journey waits on.
+ * The stateless Timeline (contracts/timeline-screen.md "Layouts"): toolbar (with the tempo pill at every width, spec
+ * FR-036), pinned ruler, the track list under the playhead overlay, the zoom control the device chose, and the
+ * transport bar, arranged per [layout]. The ruler carries bars and time only (FR-013, D1): on expanded windows an
+ * empty 200 dp slot over the header column makes its canvas start where the lanes do; elsewhere the canvas spans the
+ * full width, as the lanes do, so ruler, playhead and clips share one scale (FR-017). [ZoomControl.Buttons] sit over
+ * the ruler's right end; [ZoomControl.OverviewStrip] sits between the lanes and the transport bar, under the lanes
+ * only on expanded windows (FR-015, D1). The root is tagged `screen.timeline` with `stateDescription` "ready" once
+ * every visible overview is drawn (contracts/perf-instrumentation.md), plus the 1 dp `screen.timeline.ready` marker
+ * the Android journey waits on.
  */
 @Composable
 internal fun TimelineScreenContent(
@@ -59,6 +68,12 @@ internal fun TimelineScreenContent(
     val tempoMap = TempoMap(state.tempo, state.timeSignature)
     val ready = state.isFirstContentReady
     val transportHeight = if (layout == TimelineLayout.Expanded) spacing.transportHeightExpanded else spacing.transportHeightCompact
+    val headerColumn = if (layout.pinnedHeaders) spacing.headerColumnWidth else 0.dp
+    val stripHeight = when {
+        state.zoomControl != ZoomControl.OverviewStrip -> 0.dp
+        layout == TimelineLayout.Compact || layout == TimelineLayout.Landscape -> OverviewStripDefaults.CompactHeight
+        else -> OverviewStripDefaults.Height
+    }
     // Keyboard shortcuts need a focused node: the root takes focus once the project is in, never again after (compose-focus-navigation).
     val rootFocus = remember { FocusRequester() }
     LaunchedEffect(state.loaded) {
@@ -92,34 +107,42 @@ internal fun TimelineScreenContent(
                 onSplit = callbacks.onSplit,
                 onUndo = callbacks.onUndo,
                 onRedo = callbacks.onRedo,
+                onTempo = { callbacks.onOpenSheet(TimelineSheet.TempoDialog) },
                 onGrid = callbacks.onGrid,
-                onFitProject = callbacks.onFitProject,
-                onZoomStep = callbacks.onZoomStep,
+                onSnapSheet = { callbacks.onOpenSheet(TimelineSheet.GridMenu) },
+                onZoomControl = callbacks.onZoomControl,
                 onMetronomeSettings = callbacks.onMetronomeSettings,
             )
-            Box(modifier = Modifier.fillMaxWidth()) {
-                TimelineRuler(
-                    viewport = state.viewport,
-                    tempoMap = tempoMap,
-                    playing = state.isPlaying,
-                    positionBeats = state.positionBeats,
-                    telemetry = telemetry,
-                    onSeek = callbacks.onSeek,
-                    onScrubStart = callbacks.onScrubStart,
-                    onScrub = callbacks.onScrub,
-                    onScrubEnd = callbacks.onScrubEnd,
-                    onZoomAround = callbacks.onZoomAround,
-                    onScrollBy = callbacks.onScrollBy,
-                    leftPills = {
-                        if (layout.pinnedHeaders) {
-                            RulerPills(state, callbacks, modifier = Modifier.width(spacing.headerColumnWidth))
-                        }
-                    },
-                )
-                if (!layout.pinnedHeaders) {
-                    RulerPills(state, callbacks, modifier = Modifier.align(Alignment.CenterStart).padding(start = spacing.xs))
-                }
-            }
+            TimelineRuler(
+                viewport = state.viewport,
+                tempoMap = tempoMap,
+                playing = state.isPlaying,
+                positionBeats = state.positionBeats,
+                telemetry = telemetry,
+                onSeek = callbacks.onSeek,
+                onScrubStart = callbacks.onScrubStart,
+                onScrub = callbacks.onScrub,
+                onScrubEnd = callbacks.onScrubEnd,
+                onZoomAround = callbacks.onZoomAround,
+                onScrollBy = callbacks.onScrollBy,
+                leftSlot = if (layout.pinnedHeaders) {
+                    { Spacer(Modifier.width(spacing.headerColumnWidth)) }
+                } else {
+                    null
+                },
+                rightControls = if (state.zoomControl == ZoomControl.Buttons) {
+                    {
+                        ZoomButtons(
+                            levelLabel = zoomLevelLabel(state.viewport),
+                            onZoomOut = { callbacks.onZoomStep(-1) },
+                            onZoomIn = { callbacks.onZoomStep(1) },
+                            onFit = callbacks.onFitProject,
+                        )
+                    }
+                } else {
+                    null
+                },
+            )
             Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
                 if (state.isEmpty) {
                     EmptyTimeline(onAddTrack = callbacks.onAddTrack, onAddAudio = callbacks.onAddAudioAsNewTrack)
@@ -132,7 +155,20 @@ internal fun TimelineScreenContent(
                     playing = state.isPlaying,
                     positionBeats = state.positionBeats,
                     telemetry = telemetry,
-                    modifier = Modifier.fillMaxSize().padding(start = if (layout.pinnedHeaders) spacing.headerColumnWidth else 0.dp),
+                    modifier = Modifier.fillMaxSize().padding(start = headerColumn),
+                )
+            }
+            if (state.zoomControl == ZoomControl.OverviewStrip) {
+                OverviewStrip(
+                    viewport = state.viewport,
+                    tracks = state.tracks,
+                    playing = state.isPlaying,
+                    positionBeats = state.positionBeats,
+                    telemetry = telemetry,
+                    onScrollTo = callbacks.onScrollTo,
+                    onZoomTo = callbacks.onZoomTo,
+                    modifier = Modifier.padding(start = headerColumn),
+                    height = stripHeight,
                 )
             }
             TransportBar(
@@ -147,7 +183,7 @@ internal fun TimelineScreenContent(
         if (deleting != null) {
             DeleteTrackDialog(trackName = deleting.name, onConfirm = callbacks.onConfirmDeleteTrack, onCancel = callbacks.onDismissDeleteTrack)
         }
-        SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = transportHeight))
+        SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = transportHeight + stripHeight))
         when (state.sheet) {
             TimelineSheet.TempoDialog -> TempoDialog(
                 tempo = state.tempo,
@@ -161,6 +197,7 @@ internal fun TimelineScreenContent(
                 settings = state.metronomeSettings,
                 tempo = state.tempo,
                 signature = state.timeSignature,
+                onTimeSignature = callbacks.onTimeSignature,
                 onClickSound = callbacks.onClickSound,
                 onImportCustomSound = callbacks.onImportCustomSound,
                 onSubdivision = callbacks.onSubdivision,
@@ -168,7 +205,8 @@ internal fun TimelineScreenContent(
                 onStyle = callbacks.onStyle,
                 onDismiss = { callbacks.onOpenSheet(null) },
             )
-            TimelineSheet.SignatureMenu, TimelineSheet.GridMenu, TimelineSheet.ZoomMenu, null -> Unit
+            TimelineSheet.GridMenu -> SnapSheet(grid = state.grid, onGrid = callbacks.onGrid, onDismiss = { callbacks.onOpenSheet(null) })
+            null -> Unit
         }
     }
 }
