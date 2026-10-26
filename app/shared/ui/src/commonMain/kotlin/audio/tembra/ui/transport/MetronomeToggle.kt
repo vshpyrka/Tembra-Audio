@@ -27,7 +27,7 @@ import audio.tembra.ui.theme.TembraIcons
 import audio.tembra.ui.theme.TembraTheme
 
 /**
- * The transport's metronome toggle (spec FR-036, FR-040): a 44 dp round `Switch` whose disc fills in
+ * The transport's metronome toggle (spec FR-038, FR-039): a 44 dp round `Switch` whose disc fills in
  * `secondaryContainer` while [on]; a tap toggles ([onToggle]), a long press opens the metronome settings sheet
  * ([onSettings]). Its name says what a tap does ("Turn metronome on/off"); its state reads "On"/"Off".
  */

@@ -30,7 +30,7 @@ import audio.tembra.ui.timeline.TimelineTestTags
 import kotlin.math.roundToInt
 
 /**
- * The playhead line over the ruler and the lanes (spec FR-011; research R7; Constitution II): one `Canvas` whose
+ * The playhead line over the ruler and the lanes (spec FR-009; research R7; Constitution II): one `Canvas` whose
  * draw lambda reads [telemetry] once per frame while [playing] (inside `PerfTrace.section(TIMELINE_PLAYHEAD_FRAME)`)
  * and draws the 1.5 dp `daw.playhead` line at the audible position; stopped, it draws at [positionBeats]. The line
  * is information and keeps moving under reduce motion. The accessible playhead (`timeline.playhead`, "Playhead",

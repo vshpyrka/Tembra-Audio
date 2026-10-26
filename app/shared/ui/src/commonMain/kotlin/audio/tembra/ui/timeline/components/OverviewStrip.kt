@@ -51,8 +51,9 @@ import kotlin.math.roundToInt
 /**
  * The overview strip above the transport bar (spec FR-015, D1): the whole project at the fit scale of the strip's own
  * width (the project, and never fewer than 32 bars), each track a thin row of clip blocks in its tint (at least 2 dp,
- * stacked; rows past the height are cut), the 1 dp `daw.playhead` line, and a window over the span the lanes show:
- * `daw.gridOverlay` at 24 % with a 1 dp `primary` outline and two 8 dp edge handles, never drawn narrower than 24 dp.
+ * stacked; rows past the height are cut), the 1 dp `daw.playhead` line on whole pixels, and a window over the span the
+ * lanes show: `daw.gridOverlay` at 24 % with a 1 dp `primary` outline and two 8 dp edge handles, never drawn narrower
+ * than 24 dp.
  *
  * Dragging inside the window scrolls ([onScrollTo] with the new left-edge beat: the window follows the finger, held
  * inside the project); dragging a handle zooms ([onZoomTo] with the new span, the opposite edge fixed, held between
@@ -94,7 +95,9 @@ internal fun OverviewStrip(
                 handle = HANDLE.toPx(),
                 minWindow = MIN_WINDOW.toPx(),
                 corner = CornerRadius(CORNER.toPx()),
-                playheadWidth = PLAYHEAD.toPx(),
+                // Whole pixels, so the line is crisp at every density (at 1× a 1 px line centred on a pixel edge would blur
+                // into two half-tone columns).
+                playheadWidth = PLAYHEAD.toPx().roundToInt().coerceAtLeast(1).toFloat(),
             )
         }
     }
@@ -122,7 +125,10 @@ internal fun OverviewStrip(
                     positionBeats.value
                 }
                 val x = (beats * size.width / viewport.overviewSpanBeats()).toFloat()
-                if (x >= 0f && x <= size.width) drawLine(style.playhead, Offset(x, 0f), Offset(x, size.height), strokeWidth = style.playheadWidth)
+                if (x >= 0f && x <= size.width) {
+                    val left = (x - style.playheadWidth / 2).roundToInt().toFloat()
+                    drawRect(style.playhead, topLeft = Offset(left, 0f), size = Size(style.playheadWidth, size.height))
+                }
             }
         },
         modifier = modifier

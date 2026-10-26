@@ -33,6 +33,7 @@ import audio.tembra.core.project.SetTimeSignature
 import audio.tembra.core.project.SplitClip
 import audio.tembra.core.project.TrackId
 import audio.tembra.core.project.ZoomControl
+import audio.tembra.core.project.ZoomLevel
 import audio.tembra.core.project.audibleTracks
 import audio.tembra.core.project.clipLengthBeats
 import audio.tembra.core.project.findClip
@@ -164,8 +165,7 @@ class TimelineViewModel(
 
     /** A ruler tap: snapped to the grid, and the view follows the playhead again (spec FR-012). */
     fun seek(beats: Beats) {
-        val state = currentUi()
-        val target = Snap.snap(beats, state.grid, state.timeSignature)
+        val target = snapped(beats)
         view.update { it.copy(following = true, positionBeats = target, viewport = it.viewport.follow(target)) }
         session.seek(target)
     }
@@ -176,14 +176,16 @@ class TimelineViewModel(
         if (resumeAfterScrub) session.pause()
     }
 
+    /** The marker under the finger, snapped to the grid when it is on (spec FR-011, D1). */
     fun scrub(beats: Beats) {
-        val target = beats.coerceAtLeastZero()
+        val target = snapped(beats)
         view.update { it.copy(positionBeats = target) }
         session.seek(target)
     }
 
+    /** The release point, snapped like the drag; playback resumes from it if the drag paused it. */
     fun scrubEnd(beats: Beats) {
-        val target = beats.coerceAtLeastZero()
+        val target = snapped(beats)
         view.update { it.copy(positionBeats = target, following = true) }
         session.seek(target)
         if (resumeAfterScrub) {
@@ -229,6 +231,25 @@ class TimelineViewModel(
     /** A manual scroll suspends following until play, skip-to-start or a ruler tap (spec FR-012). */
     fun scrollBy(px: Double) {
         view.update { it.copy(following = false, viewport = it.viewport.scrollBy(px)) }
+    }
+
+    /** The overview strip's window dragged (spec FR-015, D1): [beats] at the left edge, a manual scroll like [scrollBy]. */
+    fun scrollTo(beats: Beats) {
+        view.update { it.copy(following = false, viewport = it.viewport.scrollTo(beats)) }
+    }
+
+    /**
+     * The overview strip's edge dragged (spec FR-015, D1): the span from [startBeats] to [endBeats] fills the lanes,
+     * the zoom clamped to the widest and closest levels and [startBeats] kept at the left edge; an empty span is ignored.
+     */
+    fun zoomTo(startBeats: Beats, endBeats: Beats) {
+        val span = endBeats.value - startBeats.value
+        if (span <= 0.0) return
+        view.update { it.copy(following = false) }
+        updateViewport { port ->
+            if (port.widthPx <= 0.0) port else port.withZoom(ZoomLevel(port.widthPx / (span * port.densityScale))).scrollTo(startBeats)
+        }
+        scheduleViewStateSave()
     }
 
     fun setGrid(grid: GridSize) {
@@ -302,7 +323,7 @@ class TimelineViewModel(
         val clip = state.selectedClip ?: return
         val trackId = state.selection.trackIdOrNull ?: return
         if (!state.canSplit) return
-        val split = SplitClip(clip.id, state.positionBeats)
+        val split = SplitClip(clip.id, Snap.snap(state.positionBeats, state.grid, state.timeSignature))
         PerfTrace.section(PerfSection.TIMELINE_CLIP_SPLIT) {
             if (edit(split)) view.update { it.copy(selection = Selection.ClipSelected(trackId, split.rightId)) }
         }
@@ -455,10 +476,12 @@ class TimelineViewModel(
         val positionSeconds = if (playing) view.positionSeconds else tempoMap.beatsToSeconds(positionBeats)
         val selection = view.selection.validated(project)
         val selectedClip = (selection as? Selection.ClipSelected)?.let { project.findClip(it.clipId) }
+        val grid = view.grid ?: state.viewState.grid
+        // The scissors cut at the playhead snapped to the grid (spec FR-032), so availability asks about that point.
         val canSplit = selectedClip != null && run {
             val start = tempoMap.beatsToSeconds(selectedClip.startBeats)
             val end = tempoMap.beatsToSeconds(selectedClip.startBeats + project.clipLengthBeats(selectedClip))
-            val at = tempoMap.beatsToSeconds(positionBeats)
+            val at = tempoMap.beatsToSeconds(Snap.snap(positionBeats, grid, project.timeSignature))
             at - start > ProjectLimits.MIN_SPLIT_EDGE_SECONDS && end - at > ProjectLimits.MIN_SPLIT_EDGE_SECONDS
         }
         val ready = tracks.all { track -> track.clips.all { !it.available || it.overviewStatus !is OverviewStatus.Building } }
@@ -472,7 +495,7 @@ class TimelineViewModel(
             lengthSeconds = project.lengthSeconds,
             selection = selection,
             viewport = viewport,
-            grid = view.grid ?: state.viewState.grid,
+            grid = grid,
             zoomControl = zoomControl,
             following = view.following,
             playback = state.playback,
@@ -575,9 +598,17 @@ class TimelineViewModel(
     }
 
     /** Where imported audio lands: the playhead, snapped to the grid. */
-    private fun insertionPoint(): Beats {
-        val state = currentUi()
-        return Snap.snap(state.positionBeats, state.grid, state.timeSignature)
+    private fun insertionPoint(): Beats = snapped(currentUi().positionBeats)
+
+    /**
+     * [beats] on the nearest line of the current grid (the beats themselves when it is off), never before zero. Reads
+     * the grid and the signature directly rather than through [currentUi]: a scrub calls it once per pointer move.
+     */
+    private fun snapped(beats: Beats): Beats {
+        val current = session.state.value
+        val grid = view.value.grid ?: current.viewState.grid
+        val signature = current.project?.timeSignature ?: TimeSignature.Default
+        return Snap.snap(beats, grid, signature)
     }
 
     private fun pickAudio(target: ImportTarget) {

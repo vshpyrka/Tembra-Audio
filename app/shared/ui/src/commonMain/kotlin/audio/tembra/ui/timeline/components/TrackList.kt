@@ -19,7 +19,7 @@ import audio.tembra.ui.timeline.TimelineUiState
 import audio.tembra.ui.tracksettings.TrackSettingsInlineRow
 
 /**
- * The vertically scrolling list of [TrackRow]s (spec FR-015; contracts/timeline-screen.md): keyed by track id so a
+ * The vertically scrolling list of [TrackRow]s (spec FR-016; contracts/timeline-screen.md): keyed by track id so a
  * reorder moves rows instead of rebuilding them. Its lane width (the list minus the pinned header column) is reported
  * through [TimelineCallbacks.onViewportMeasured] whenever it changes, which is what the viewport maps beats to.
  */

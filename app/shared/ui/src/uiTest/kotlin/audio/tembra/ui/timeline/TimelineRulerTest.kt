@@ -1,6 +1,8 @@
 package audio.tembra.ui.timeline
 
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -8,6 +10,7 @@ import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -15,8 +18,12 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertHeightIsEqualTo
+import androidx.compose.ui.test.assertLeftPositionInRootIsEqualTo
+import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.click
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
@@ -33,9 +40,8 @@ import audio.tembra.ui.designsystem.containsColor
 import audio.tembra.ui.designsystem.isCloserTo
 import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.ui.timeline.components.RULER_DESCRIPTION
-import audio.tembra.ui.timeline.components.SignaturePill
-import audio.tembra.ui.timeline.components.TempoPill
 import audio.tembra.ui.timeline.components.TimelineRuler
+import audio.tembra.ui.timeline.components.ZoomButtons
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -45,7 +51,11 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
-/** The ruler driven with a fixed viewport (contracts/timeline-screen.md; T079): labels drawn, taps seek, drags scrub, the chip text and its legibility (FR-009; T139). */
+/**
+ * The ruler driven with a fixed viewport (contracts/timeline-screen.md; T079): labels drawn, taps seek, drags scrub, the
+ * chip text and its legibility (FR-009; T139), and its two slots (D1, T141): the left slot before the canvas and the
+ * zoom buttons over the canvas's right end, the canvas keeping its width.
+ */
 @OptIn(ExperimentalTestApi::class)
 class TimelineRulerTest {
 
@@ -57,7 +67,13 @@ class TimelineRulerTest {
     private var playhead: Color = Color.Unspecified
     private var viewport: TimelineViewport? = null
 
-    private fun ComposeUiTest.setRuler(positionBeats: Beats = Beats(16.0), playing: Boolean = false, telemetry: ScriptedTransportTelemetry = ScriptedTransportTelemetry.stopped(0.0)) {
+    private fun ComposeUiTest.setRuler(
+        positionBeats: Beats = Beats(16.0),
+        playing: Boolean = false,
+        telemetry: ScriptedTransportTelemetry = ScriptedTransportTelemetry.stopped(0.0),
+        leftSlot: (@Composable () -> Unit)? = null,
+        rightControls: (@Composable () -> Unit)? = null,
+    ) {
         setContent {
             TembraTheme {
                 densityScale = LocalDensity.current.density
@@ -77,25 +93,47 @@ class TimelineRulerTest {
                     onScrubStart = { scrubs += "start" },
                     onScrub = { scrubs += "scrub" },
                     onScrubEnd = { scrubs += "end" },
-                    modifier = Modifier.width(600.dp),
-                ) {
-                    TempoPill(tempo = tempoMap.tempo, onClick = {}, enabled = false)
-                    SignaturePill(signature = tempoMap.timeSignature, onClick = {}, enabled = false)
-                }
+                    modifier = Modifier.width(600.dp).testTag(ROW),
+                    leftSlot = leftSlot,
+                    rightControls = rightControls,
+                )
             }
         }
         mainClock.autoAdvance = false
     }
 
+    /** Bars and time only (spec FR-013, D1): with no slots the canvas is the whole row and carries no pill. */
     @Test
-    fun isA44dpRulerWithThePillsAndTheChipTextInItsSemantics() = runComposeUiTest {
+    fun isA44dpRulerSpanningItsRowWithTheChipTextInItsSemantics() = runComposeUiTest {
         setRuler(positionBeats = Beats(16.0))
+        val row = onNodeWithTag(ROW).getUnclippedBoundsInRoot()
         onNodeWithTag(TimelineTestTags.RULER)
             .assertHeightIsEqualTo(44.dp)
+            .assertWidthIsEqualTo(row.right - row.left)
+            .assertLeftPositionInRootIsEqualTo(row.left)
             .assertContentDescriptionEquals(RULER_DESCRIPTION)
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "5.1"))
-        onNodeWithTag(TimelineTestTags.TEMPO_PILL).assertContentDescriptionEquals("Tempo 124 beats per minute")
-        onNodeWithTag(TimelineTestTags.SIGNATURE_PILL).assertContentDescriptionEquals("Time signature 4/4")
+        assertEquals(0, onAllNodes(hasClickAction()).fetchSemanticsNodes().size, "the ruler carries no tempo or signature pill")
+    }
+
+    /**
+     * The expanded layout's empty 200 dp left slot puts the canvas's start 200 dp in, nothing between them; the zoom
+     * buttons sit over the canvas's right end without narrowing it, so the canvas's scale stays the lanes' (FR-017).
+     */
+    @Test
+    fun theLeftSlotShiftsTheCanvasAndTheRightControlsOverlayItsEnd() = runComposeUiTest {
+        setRuler(
+            leftSlot = { Spacer(Modifier.width(200.dp)) },
+            rightControls = { ZoomButtons(levelLabel = "1×", onZoomOut = {}, onZoomIn = {}, onFit = {}) },
+        )
+        val row = onNodeWithTag(ROW).getUnclippedBoundsInRoot()
+        val canvas = onNodeWithTag(TimelineTestTags.RULER).assertWidthIsEqualTo(row.right - row.left - 200.dp).getUnclippedBoundsInRoot()
+        assertTrue(abs((canvas.left - row.left - 200.dp).value) < 0.5f, "the canvas starts at ${canvas.left}, not right after the 200 dp slot at ${row.left + 200.dp}")
+        val zoomOut = onNodeWithTag(TimelineTestTags.ZOOM_OUT).getUnclippedBoundsInRoot()
+        val zoomIn = onNodeWithTag(TimelineTestTags.ZOOM_IN).getUnclippedBoundsInRoot()
+        assertTrue(abs((canvas.right - zoomIn.right).value) < 0.5f, "the buttons end at ${zoomIn.right}, not at the canvas's right end ${canvas.right}")
+        assertTrue(abs((zoomIn.right - zoomOut.left - 132.dp).value) < 0.5f, "the three 44 dp targets span ${zoomIn.right - zoomOut.left}")
+        assertTrue(zoomOut.top >= canvas.top && zoomIn.bottom <= canvas.bottom, "the buttons $zoomOut..$zoomIn leave the ruler $canvas")
     }
 
     @Test
@@ -138,8 +176,9 @@ class TimelineRulerTest {
         val port = assertNotNull(viewport)
         val image = onNodeWithTag(TimelineTestTags.RULER).captureToImage()
         val x = port.xOf(Beats(16.0)).roundToInt()
-        // The chip's top edge is 3 dp below the ruler's: half a dp further down lies inside the 1 dp outline, 2 dp further the fill.
-        val edge = image.averageColorAt(x, (3.5f * densityScale).roundToInt(), radius = 0)
+        // The chip's top edge is 3 dp below the ruler's: the pixel row holding 3.5 dp lies inside the 1 dp outline (floored:
+        // at 1× the outline is row 3 alone and 3.5 rounds to the fill's row 4), 2 dp further the fill.
+        val edge = image.averageColorAt(x, (3.5f * densityScale).toInt(), radius = 0)
         assertTrue(edge.isCloserTo(playhead, chip), "the chip's top edge is $edge, not the playhead colour $playhead")
         val inside = image.averageColorAt(x, (5.5f * densityScale).roundToInt(), radius = 0)
         assertTrue(inside.isCloserTo(chip, playhead), "inside the outline is $inside, not the chip $chip")
@@ -152,7 +191,6 @@ class TimelineRulerTest {
         val port = assertNotNull(viewport)
         onNodeWithTag(TimelineTestTags.RULER).performTouchInput { click(Offset(width / 2f, height / 2f)) }
         assertEquals(1, seeks.size)
-        // The canvas sits after the pills, so its centre is not the 600 dp row's centre.
         val canvasWidthPx = onNodeWithTag(TimelineTestTags.RULER).fetchSemanticsNode().size.width.toDouble()
         val expected = port.beatsAt(canvasWidthPx / 2).value
         assertTrue(abs(seeks.single().value - expected) < 0.5, "seeked to ${seeks.single().value}, expected about $expected")
@@ -175,6 +213,10 @@ class TimelineRulerTest {
         setRuler(playing = true, telemetry = telemetry)
         mainClock.advanceTimeBy(200)
         assertTrue(telemetry.reads > 0, "the ruler did not read the telemetry while playing")
+    }
+
+    private companion object {
+        const val ROW = "ruler.row"
     }
 
     /** The WCAG contrast ratio of two opaque colours. */

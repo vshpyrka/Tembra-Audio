@@ -108,7 +108,10 @@ class TimelineKeyboardTest {
         assertEquals(listOf("zoom(1)", "zoom(-1)", "mute(t1)", "solo(t1)"), calls)
     }
 
-    /** Tab walks toolbar → headers → clips → transport on the real screen (spec FR-057). */
+    /**
+     * Tab walks toolbar → headers → clips → transport on the real screen (spec FR-057); since D1 the toolbar's tempo pill
+     * comes after "+ Track" and the ruler's zoom buttons sit between the toolbar and the headers.
+     */
     @Test
     fun tabOrderIsToolbarHeadersClipsTransport() = runComposeUiTest {
         val screenState = state.copy(
@@ -123,7 +126,10 @@ class TimelineKeyboardTest {
         if (!enterKeyboardMode(manager)) return@runComposeUiTest
         onNodeWithTag(TimelineTestTags.ROOT).requestFocus()
         // One pass of Tabs from the root; the first time each target is focused fixes its place in the order.
-        val targets = listOf(TimelineTestTags.ADD_TRACK, TimelineTestTags.header(0), TimelineTestTags.clip(0), audio.tembra.ui.perf.PerfAnchors.TRANSPORT_PLAY)
+        val targets = listOf(
+            TimelineTestTags.ADD_TRACK, TimelineTestTags.TOOLBAR_TEMPO, TimelineTestTags.OVERFLOW_BUTTON, TimelineTestTags.ZOOM_OUT, TimelineTestTags.ZOOM_IN,
+            TimelineTestTags.header(0), TimelineTestTags.clip(0), audio.tembra.ui.perf.PerfAnchors.TRANSPORT_PLAY,
+        )
         val firstSeen = mutableMapOf<String, Int>()
         repeat(40) { step ->
             onNodeWithTag(TimelineTestTags.ROOT).performKeyInput { pressKey(Key.Tab) }

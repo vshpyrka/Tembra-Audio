@@ -7,7 +7,12 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHeightIsAtLeast
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.captureToImage
@@ -75,6 +80,24 @@ class TembraMenuTest {
         mainClock.autoAdvance = true
         onNodeWithTag("menu.up").performClick()
         assertEquals(null, selected)
+    }
+
+    /** A choice row (the timeline's "Zoom control" entries) reads selected or not and checks the current one; an action row reads neither. */
+    @Test
+    fun aChoiceRowReadsItsSelectionAndChecksTheCurrentOne() = runComposeUiTest {
+        setMenu(
+            listOf(
+                MenuItemSpec("buttons", "Zoom control: Buttons", selected = true),
+                MenuItemSpec("strip", "Zoom control: Overview strip", selected = false),
+                MenuItemSpec("action", "Metronome settings"),
+            ),
+        )
+        onNodeWithTag("menu.buttons").assertIsSelected()
+        onNodeWithTag("menu.buttons.check", useUnmergedTree = true).assertExists()
+        onNodeWithTag("menu.strip").assertIsNotSelected()
+        onNodeWithTag("menu.strip.check", useUnmergedTree = true).assertDoesNotExist()
+        onNodeWithTag("menu.action").assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Selected))
+        onNodeWithTag("menu.action.check", useUnmergedTree = true).assertDoesNotExist()
     }
 
     @Test

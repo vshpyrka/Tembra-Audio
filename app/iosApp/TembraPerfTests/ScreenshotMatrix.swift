@@ -68,7 +68,7 @@ final class ScreenshotMatrix: XCTestCase {
             tapIfPresent(Anchors.transportPlay); sleep(6); shot("demo-playing")
             tapIfPresent(Anchors.transportPlay); tapIfPresent(Anchors.transportSkipStart)
         }
-        if want("tempo-dialog"), tapIfPresent("timeline.ruler.tempo") { _ = app.anchor("dialog.tempo").waitForExistence(timeout: 5); shot("tempo-dialog"); tapIfPresent("timeline.tempo.done") }
+        if want("tempo-dialog"), tapIfPresent("timeline.toolbar.tempo") { _ = app.anchor("dialog.tempo").waitForExistence(timeout: 5); shot("tempo-dialog"); tapIfPresent("timeline.tempo.done") }
         if want("metronome-sheet") {
             app.anchor(Anchors.transportMetronome).press(forDuration: 0.8)
             if app.anchor("timeline.metronomeSheet").waitForExistence(timeout: 5) { shot("metronome-sheet"); app.swipeDown(); sleep(1) }
@@ -83,12 +83,12 @@ final class ScreenshotMatrix: XCTestCase {
             sleep(1); tapIfPresent(Anchors.transportPlay); tapIfPresent(Anchors.transportSkipStart)
         }
         if want("grid-picker") {
-            if app.anchor("timeline.toolbar.grid").exists { tapIfPresent("timeline.toolbar.grid") } else { tapIfPresent("timeline.toolbar.overflow.button") }
+            if app.anchor("timeline.toolbar.grid").exists { tapIfPresent("timeline.toolbar.grid") } else if tapIfPresent("timeline.toolbar.overflow.button") { tapIfPresent("timeline.toolbar.overflow.snap") }
             sleep(1); shot("grid-picker"); dismiss()
         }
         if want("clip-selected"), tapIfPresent(Anchors.timelineClipFirst) { shot("clip-selected") }
         if want("split-result") {
-            // The seek lands on the ruler's right half: the tempo and signature pills overlay its left on a phone.
+            // The seek lands on the ruler's left: the zoom buttons overlay its right end (D1).
             let ruler = app.anchor(Anchors.timelineRuler)
             if ruler.waitForExistence(timeout: 5) {
                 ruler.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0.5)).tap()
