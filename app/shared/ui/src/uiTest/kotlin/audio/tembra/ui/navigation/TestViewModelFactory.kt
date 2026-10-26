@@ -3,6 +3,7 @@ package audio.tembra.ui.navigation
 import androidx.lifecycle.ViewModel
 import audio.tembra.data.metronome.FakeMetronomePreferences
 import audio.tembra.data.projects.FakeProjectRepository
+import audio.tembra.data.timeline.FakeTimelinePreferences
 import audio.tembra.engine.FakeAudioEngine
 import audio.tembra.ui.platform.FakeAudioFilePicker
 import audio.tembra.ui.platform.FakeBackgroundPlaybackHost
@@ -27,6 +28,7 @@ import kotlin.reflect.KClass
 class TestViewModelFactory : MetroViewModelFactory() {
     private val engine = FakeAudioEngine()
     private val preferences = FakeMetronomePreferences()
+    private val timelinePreferences = FakeTimelinePreferences()
     private val repository = FakeProjectRepository()
     private val holder = LibraryViewStateHolder()
     private val session = ProjectSession(
@@ -46,7 +48,7 @@ class TestViewModelFactory : MetroViewModelFactory() {
 
     override val viewModelProviders: Map<KClass<out ViewModel>, () -> ViewModel>
         get() = mapOf(
-            TimelineViewModel::class to { TimelineViewModel(session, FakeAudioFilePicker(), preferences) },
+            TimelineViewModel::class to { TimelineViewModel(session, FakeAudioFilePicker(), preferences, timelinePreferences) },
             TrackSettingsViewModel::class to { TrackSettingsViewModel(session) },
             ProjectsViewModel::class to { ProjectsViewModel(repository, session, holder) },
         )

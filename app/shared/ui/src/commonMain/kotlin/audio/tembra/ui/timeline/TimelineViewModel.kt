@@ -32,6 +32,7 @@ import audio.tembra.core.project.SetTempo
 import audio.tembra.core.project.SetTimeSignature
 import audio.tembra.core.project.SplitClip
 import audio.tembra.core.project.TrackId
+import audio.tembra.core.project.ZoomControl
 import audio.tembra.core.project.audibleTracks
 import audio.tembra.core.project.clipLengthBeats
 import audio.tembra.core.project.findClip
@@ -45,6 +46,7 @@ import audio.tembra.core.timeline.TimelineViewport
 import audio.tembra.data.metronome.MetronomePreferences
 import audio.tembra.data.projects.OverviewStatus
 import audio.tembra.data.projects.ProjectViewState
+import audio.tembra.data.timeline.TimelinePreferences
 import audio.tembra.engine.TransportSnapshot
 import audio.tembra.engine.perf.PerfSection
 import audio.tembra.engine.perf.PerfTrace
@@ -65,6 +67,7 @@ import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -94,12 +97,16 @@ class TimelineViewModel(
     private val session: ProjectSession,
     private val picker: AudioFilePicker,
     private val preferences: MetronomePreferences,
+    private val timelinePreferences: TimelinePreferences,
 ) : ViewModel() {
 
     private val view = MutableStateFlow(TimelineViewState())
 
-    val uiState: StateFlow<TimelineUiState> = combine(session.state, view, ::mapState)
-        .stateIn(viewModelScope, SharingStarted.Eagerly, mapState(session.state.value, view.value))
+    /** The device's zoom control (spec FR-015, D1): outside [view], so opening another project keeps it. */
+    private val deviceZoomControl = MutableStateFlow(ZoomControl.Default)
+
+    val uiState: StateFlow<TimelineUiState> = combine(session.state, view, deviceZoomControl, ::mapState)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, mapState(session.state.value, view.value, deviceZoomControl.value))
 
     /** One-shot snackbar messages: the session's, mapped, merged with the ViewModel's own, to the one collector. */
     private val local = Channel<TimelineMessage>(Channel.BUFFERED)
@@ -227,6 +234,12 @@ class TimelineViewModel(
     fun setGrid(grid: GridSize) {
         view.update { it.copy(grid = grid) }
         scheduleViewStateSave()
+    }
+
+    /** The overflow menu's "Zoom control" choice (spec FR-015, D1): shown at once, remembered on the device. */
+    fun setZoomControl(control: ZoomControl) {
+        deviceZoomControl.value = control
+        viewModelScope.launch(CoroutineName("setZoomControl")) { timelinePreferences.setZoomControl(control) }
     }
 
     // --- Tracks ------------------------------------------------------------------------------------------------------
@@ -398,8 +411,8 @@ class TimelineViewModel(
 
     // --- Mapping -----------------------------------------------------------------------------------------------------
 
-    private fun mapState(state: SessionState, view: TimelineViewState): TimelineUiState {
-        val project = state.project ?: return TimelineUiState(loaded = state.unavailable != null, playback = state.playback)
+    private fun mapState(state: SessionState, view: TimelineViewState, zoomControl: ZoomControl): TimelineUiState {
+        val project = state.project ?: return TimelineUiState(loaded = state.unavailable != null, playback = state.playback, zoomControl = zoomControl)
         val tempoMap = project.tempoMap
         val audible = project.audibleTracks
         val tracks = project.tracks.map { track ->
@@ -460,6 +473,7 @@ class TimelineViewModel(
             selection = selection,
             viewport = viewport,
             grid = view.grid ?: state.viewState.grid,
+            zoomControl = zoomControl,
             following = view.following,
             playback = state.playback,
             positionBeats = positionBeats,
@@ -513,7 +527,7 @@ class TimelineViewModel(
     // --- Helpers -----------------------------------------------------------------------------------------------------
 
     /** The state an intent acts on, mapped now from the sources of truth: [uiState] is derived asynchronously. */
-    private fun currentUi(): TimelineUiState = mapState(session.state.value, view.value)
+    private fun currentUi(): TimelineUiState = mapState(session.state.value, view.value, deviceZoomControl.value)
 
     /** Applies [edit] through the session; a refusal with a reason the user can act on becomes a message. True when applied. */
     private fun edit(edit: ProjectEdit): Boolean {
@@ -546,7 +560,8 @@ class TimelineViewModel(
         }
     }
 
-    private suspend fun observePreferences() {
+    private suspend fun observePreferences() = coroutineScope {
+        launch(CoroutineName("observeZoomControl")) { timelinePreferences.zoomControl.collect { deviceZoomControl.value = it } }
         preferences.snapshot.collect { snapshot -> view.update { it.copy(metronomeSettings = snapshot.settings) } }
     }
 

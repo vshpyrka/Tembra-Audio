@@ -11,7 +11,7 @@ import audio.tembra.ui.timeline.components.zoomLabel
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-/** The zoom pill (spec FR-017; T099, US3): "1×", "2.5×", "16×", and its menu's fit, in and out. */
+/** The zoom pill (spec FR-015; T099, US3): "1×", "2.5×", "16×", and its menu's fit, in and out. */
 @OptIn(ExperimentalTestApi::class)
 class ZoomReadoutTest {
 

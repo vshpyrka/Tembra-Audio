@@ -14,6 +14,15 @@ object TimelineCopy {
     const val snapToGrid = "Snap to grid"
     const val snapCaption = "Ruler taps, playhead drags, clip moves and splits land on these lines."
     const val fitProject = "Fit project"
+    const val zoomIn = "Zoom in"
+    const val zoomOut = "Zoom out"
+    const val overview = "Overview"
+
+    /** The zoom buttons' level: "Zoom 2.5×, fit the project" (spec FR-015, D1). */
+    fun zoomLevel(label: String): String = "Zoom $label, fit the project"
+
+    /** The overview strip's state: "bars 1 to 32 in view". */
+    fun barsInView(first: Int, last: Int): String = "bars $first to $last in view"
     const val trackSettings = "Track settings"
     const val moveUp = "Move up"
     const val moveDown = "Move down"

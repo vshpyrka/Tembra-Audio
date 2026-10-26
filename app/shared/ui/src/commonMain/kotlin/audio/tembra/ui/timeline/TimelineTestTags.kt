@@ -19,6 +19,12 @@ object TimelineTestTags {
     const val OVERFLOW = "timeline.toolbar.overflow"
     const val GRID = "timeline.toolbar.grid"
     const val ZOOM = "timeline.toolbar.zoom"
+    // The two always-visible zoom controls (spec FR-015, D1): the ruler's buttons and the overview strip.
+    const val ZOOM_OUT = "timeline.zoom.out"
+    const val ZOOM_LEVEL = "timeline.zoom.level"
+    const val ZOOM_IN = "timeline.zoom.in"
+    const val OVERVIEW = "timeline.overview"
+    const val OVERVIEW_WINDOW = "timeline.overview.window"
     const val RULER = PerfAnchors.TIMELINE_RULER
     const val TEMPO_PILL = "timeline.ruler.tempo"
     const val SIGNATURE_PILL = "timeline.ruler.signature"

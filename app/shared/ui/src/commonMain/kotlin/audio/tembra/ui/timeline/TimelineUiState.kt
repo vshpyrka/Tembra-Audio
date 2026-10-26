@@ -8,6 +8,7 @@ import audio.tembra.core.project.Beats
 import audio.tembra.core.project.GridSize
 import audio.tembra.core.project.PlaybackState
 import audio.tembra.core.project.TrackId
+import audio.tembra.core.project.ZoomControl
 import audio.tembra.core.timeline.TimelineViewport
 import audio.tembra.ui.metronome.TapCaption
 import audio.tembra.ui.transport.TransportUiState
@@ -32,6 +33,8 @@ data class TimelineUiState(
     val selection: Selection = Selection.None,
     val viewport: TimelineViewport = TimelineViewport(pixelsPerBeat = 1.0, scrollBeats = Beats.Zero, widthPx = 0.0, densityScale = 1.0),
     val grid: GridSize = GridSize.Default,
+    /** The always-visible zoom control this device shows (spec FR-015, D1): a device preference, not a project's. */
+    val zoomControl: ZoomControl = ZoomControl.Default,
     /** True while the view pages after the playhead (spec FR-012); a manual scroll suspends it. */
     val following: Boolean = true,
     val playback: PlaybackState = PlaybackState.Stopped(Beats.Zero),

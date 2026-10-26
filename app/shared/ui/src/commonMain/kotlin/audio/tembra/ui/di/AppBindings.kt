@@ -9,6 +9,8 @@ import audio.tembra.data.metronome.OkioCustomClickSoundStore
 import audio.tembra.data.projects.DemoAudioSource
 import audio.tembra.data.projects.OkioProjectRepository
 import audio.tembra.data.projects.ProjectRepository
+import audio.tembra.data.timeline.DataStoreTimelinePreferences
+import audio.tembra.data.timeline.TimelinePreferences
 import audio.tembra.data.tuner.DataStoreTunerPreferences
 import audio.tembra.data.tuner.TembraDataStore
 import audio.tembra.data.tuner.TunerPreferences
@@ -71,6 +73,11 @@ object AppBindings {
     @Provides
     @SingleIn(AppScope::class)
     fun provideMetronomePreferences(dataStore: DataStore<Preferences>): MetronomePreferences = DataStoreMetronomePreferences(dataStore)
+
+    /** The timeline's per-device choices (the zoom control, spec FR-015) in the same file. */
+    @Provides
+    @SingleIn(AppScope::class)
+    fun provideTimelinePreferences(dataStore: DataStore<Preferences>): TimelinePreferences = DataStoreTimelinePreferences(dataStore)
 
     /** The app's copy of the imported click sound. */
     @Provides
