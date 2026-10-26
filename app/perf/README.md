@@ -126,7 +126,11 @@ The Android measurement build is `./gradlew --console=plain -Ptembra.perf=true :
 Five journeys on both platforms, same names: `startup` (cold), `tuner` (open, note readout, By Ear and
 back), `metronome` (start, tempo up ×5, down ×5, stop), `timeline` (feature 009: Projects → the demo
 card, wait for the waveforms, play eight bars, seek, pinch in and out, split the first clip, open and
-close a track's settings, toggle the metronome twice, pause, skip to start) and `stress` (the demo
+close a track's settings, toggle the metronome twice; since design iteration D1, on a phone open the master
+volume pop-up (`transport.masterPopup`), drag its slider a little, close it with a tap outside and undo the
+change, and with the overview strip as the device's zoom control drag its window a quarter of its width and
+back (inside `timeline.scroll`); then pause, skip to start; both D1 steps are skipped where their control is
+absent) and `stress` (the demo
 project plays with the click on while the lane scrolls for five seconds, the tuner cycle then takes the
 audio through the stop-and-leave dialog, the metronome runs while the tuner listens; the engine's audio-health
 counters are written right after the playback phase, while the transport still owns the device (on Android the

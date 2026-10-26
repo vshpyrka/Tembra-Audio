@@ -1071,6 +1071,12 @@ clips, overlaps or hides behind the transport bar.
   new position), zoom (per gesture, animation variant), clip split, playhead frame (the
   per-frame cost of the playhead and readout), project save, and library open (Projects to the
   first frame of the cards).
+- Design iteration D1 (2026-10-26) adds its two interactions to the `timeline` journey: on a
+  phone, open the master volume pop-up, move its slider a little and close it with a tap
+  outside (the change is undone, so the project is the same after every pass), and, when the
+  overview strip is the device's zoom control, drag the strip's window once and back (measured by
+  the existing scroll section). It adds one section, the pop-up's opening (master popup), and
+  anchors on the speaker button, the volume slider, the strip and its window.
 - Counters added: playback underruns during the journey, clip reads that were not ready when
   the engine needed them (starvation), peak and average callback load during playback, and the
   number of simultaneous clips rendering.

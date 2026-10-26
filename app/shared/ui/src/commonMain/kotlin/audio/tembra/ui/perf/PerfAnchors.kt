@@ -48,6 +48,14 @@ object PerfAnchors {
     const val TRANSPORT_READOUT = "transport.readout"
     const val DIALOG_STOP_AND_LEAVE_CONFIRM = "dialog.stopAndLeave.confirm"
 
+    // Feature 009's design iteration D1 (T146): the phone bar's speaker button and the slider of the pop-up it opens
+    // (the wide bar's inline slider carries the same tag), and the overview strip and its window when the strip is the
+    // device's zoom control.
+    const val TRANSPORT_MASTER_BUTTON = "transport.master.button"
+    const val TRANSPORT_MASTER = "transport.master"
+    const val TIMELINE_OVERVIEW = "timeline.overview"
+    const val TIMELINE_OVERVIEW_WINDOW = "timeline.overview.window"
+
     /** Every anchor, for the parity test and the journey drivers' documentation. */
     val all: List<String> = listOf(
         NAV_TUNER, NAV_METRONOME,
@@ -59,5 +67,6 @@ object PerfAnchors {
         TIMELINE_LANE_FIRST, TIMELINE_CLIP_FIRST, TIMELINE_TRACK_MENU_FIRST, TIMELINE_TRACK_SETTINGS, TIMELINE_SETTINGS_CLOSE,
         TRANSPORT_PLAY, TRANSPORT_SKIP_START, TRANSPORT_METRONOME, TRANSPORT_READOUT,
         DIALOG_STOP_AND_LEAVE_CONFIRM,
+        TRANSPORT_MASTER_BUTTON, TRANSPORT_MASTER, TIMELINE_OVERVIEW, TIMELINE_OVERVIEW_WINDOW,
     )
 }

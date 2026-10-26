@@ -18,9 +18,11 @@ enum Metrics {
     static let tunerSections = ["tuner.load", "tuner.modeSwitch", "tuner.frame"]
     static let metronomeSections = ["metronome.load", "metronome.tempoChange"]
     /// Feature 009 (contracts/perf-instrumentation.md): the timeline journey's sections; the engine's own are emitted
-    /// from C++ under the "engine" category.
+    /// from C++ under the "engine" category. The master pop-up's (design iteration D1) has no interval where the bar is
+    /// wide enough for the inline slider.
     static let timelineSections = ["timeline.projectOpen", "timeline.waveform", "transport.play", "transport.seek",
-                                   "timeline.zoom", "timeline.scroll", "timeline.clipSplit", "timeline.playheadFrame"]
+                                   "timeline.zoom", "timeline.scroll", "timeline.clipSplit", "timeline.playheadFrame",
+                                   "transport.masterPopup"]
     static let timelineEngineSections = ["engine.prime", "engine.loadClip"]
     static let stressTimelineSections = ["timeline.scroll", "timeline.playheadFrame", "transport.play"]
 

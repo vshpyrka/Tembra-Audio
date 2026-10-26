@@ -9,7 +9,8 @@ import audio.tembra.perf.journeys.Anchors.tap
 /**
  * The timeline journey (feature 009, contracts/perf-instrumentation.md): open Projects, open the demo card, wait for
  * every visible overview, play eight bars, seek on the ruler, pinch the first lane in and out, split the first clip,
- * open and close the first track's settings, toggle the metronome twice, pause, skip to start.
+ * open and close the first track's settings, toggle the metronome twice, on a phone open the master volume pop-up,
+ * drag its slider and close it, with the overview strip drag its window there and back, pause, skip to start.
  */
 class TimelineJourney {
     fun run(device: UiDevice) {
@@ -28,9 +29,10 @@ class TimelineJourney {
         check(readout.wait(Until.descMatches("00:1[5-9].*|00:[2-5].*"), PLAY_TIMEOUT_MS)) { "the readout never passed 00:15" }
         val ruler = device.anchor(Anchors.TIMELINE_RULER)
         val bounds = ruler.visibleBounds
-        // Past the tempo and signature pills, which overlay the ruler's left third on a phone (they would open a menu), and
-        // early enough in the demo's clips (they end at bar 17 of the 32 the fitted ruler shows) that the playhead, still
-        // moving through the two pinches, is inside the first clip when the split comes.
+        // Clear of the zoom buttons over the ruler's right end (the tempo and signature pills that overlaid its left third
+        // before design iteration D1 would have opened a menu), and early enough in the demo's clips (they end at bar 17
+        // of the 32 the fitted ruler shows) that the playhead, still moving through the two pinches, is inside the first
+        // clip when the split comes.
         device.click(bounds.left + bounds.width() * 2 / 5, bounds.centerY())
         device.waitForIdle()
         val lane = device.anchor(Anchors.TIMELINE_LANE_FIRST)
@@ -54,8 +56,52 @@ class TimelineJourney {
         device.anchor(Anchors.TIMELINE_ROOT)
         device.tap(Anchors.TRANSPORT_METRONOME)
         device.tap(Anchors.TRANSPORT_METRONOME)
+        adjustMasterVolume(device)
+        dragOverviewWindow(device)
         device.tap(Anchors.TRANSPORT_PLAY)
         device.tap(Anchors.TRANSPORT_SKIP_START)
+    }
+
+    /**
+     * Phones only (design iteration D1): the speaker button opens the master volume pop-up (`transport.masterPopup`), its
+     * slider is dragged a little, a tap outside the pop-up closes it, and undo restores the volume: the drag is one undo
+     * step, and the document persists between iterations. From 600 dp of bar width the slider is inline and there is no
+     * button, so the step is skipped.
+     */
+    private fun adjustMasterVolume(device: UiDevice) {
+        val button = device.findObject(By.res(Anchors.TRANSPORT_MASTER_BUTTON)) ?: return
+        // The readout is outside the pop-up, which opens above the bar; its bounds are read before the pop-up shows.
+        val outside = device.anchor(Anchors.TRANSPORT_READOUT).visibleBounds
+        button.click()
+        device.waitForIdle()
+        // From the slider's centre (its node's edges are Material's focus-ring room, outside the touch area), an eighth of
+        // its width to the right.
+        val slider = device.anchor(Anchors.TRANSPORT_MASTER).visibleBounds
+        device.swipe(slider.centerX(), slider.centerY(), slider.centerX() + slider.width() / 8, slider.centerY(), SWIPE_STEPS)
+        device.waitForIdle()
+        // A real tap through the window manager: the focusable pop-up sees it as outside itself and closes.
+        device.click(outside.centerX(), outside.centerY())
+        check(device.wait(Until.gone(By.res(Anchors.TRANSPORT_MASTER)), CLOSE_TIMEOUT_MS)) { "the master volume pop-up did not close" }
+        device.tap(Anchors.TIMELINE_UNDO)
+    }
+
+    /**
+     * Only with the overview strip as the device's zoom control (design iteration D1; the zoom buttons are the default):
+     * the strip's window is dragged from its centre by a quarter of its width, inside `timeline.scroll`, then back by the
+     * distance it moved (it stops at the project's end), so the view returns.
+     */
+    private fun dragOverviewWindow(device: UiDevice) {
+        device.findObject(By.res(Anchors.TIMELINE_OVERVIEW)) ?: return
+        val window = device.anchor(Anchors.TIMELINE_OVERVIEW_WINDOW).visibleBounds
+        val y = window.centerY()
+        device.swipe(window.centerX(), y, window.centerX() + window.width() / 4, y, SWIPE_STEPS)
+        device.waitForIdle()
+        val moved = device.anchor(Anchors.TIMELINE_OVERVIEW_WINDOW).visibleBounds
+        val distance = moved.left - window.left
+        if (distance != 0) {
+            device.swipe(moved.centerX(), y, moved.centerX() - distance, y, SWIPE_STEPS)
+            device.waitForIdle()
+        }
     }
 
     private companion object {
@@ -63,5 +109,8 @@ class TimelineJourney {
         const val PLAY_TIMEOUT_MS = 30_000L
         const val PINCH_PERCENT = 0.6f
         const val PINCH_SPEED = 400
+        /** Move events of a slider or strip drag, 5 ms apart. */
+        const val SWIPE_STEPS = 20
+        const val CLOSE_TIMEOUT_MS = 5_000L
     }
 }
