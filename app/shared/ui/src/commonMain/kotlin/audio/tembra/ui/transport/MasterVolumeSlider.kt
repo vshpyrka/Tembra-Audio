@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import audio.tembra.ui.designsystem.TembraSlider
 import audio.tembra.ui.designsystem.TembraSliderDefaults
 import audio.tembra.ui.designsystem.TembraSliderThumb
+import audio.tembra.ui.perf.PerfAnchors
 import audio.tembra.ui.theme.TembraTheme
 import kotlin.math.roundToInt
 
@@ -170,7 +171,7 @@ private fun rememberMasterPercentWidth(): Dp {
     }
 }
 
-internal const val TAG = "transport.master"
+internal const val TAG = PerfAnchors.TRANSPORT_MASTER
 internal const val MASTER_PERCENT_TAG = "transport.master.percent"
 
 /** The page keys move the volume by ten, the arrows by one. */

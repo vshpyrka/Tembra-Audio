@@ -38,8 +38,8 @@ object TimelineTestTags {
     const val ZOOM_OUT = "timeline.zoom.out"
     const val ZOOM_LEVEL = "timeline.zoom.level"
     const val ZOOM_IN = "timeline.zoom.in"
-    const val OVERVIEW = "timeline.overview"
-    const val OVERVIEW_WINDOW = "timeline.overview.window"
+    const val OVERVIEW = PerfAnchors.TIMELINE_OVERVIEW
+    const val OVERVIEW_WINDOW = PerfAnchors.TIMELINE_OVERVIEW_WINDOW
     const val RULER = PerfAnchors.TIMELINE_RULER
     const val TRACK_LIST = "timeline.tracks"
     const val PLAYHEAD = "timeline.playhead"

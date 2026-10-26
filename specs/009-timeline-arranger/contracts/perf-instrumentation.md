@@ -17,6 +17,7 @@ instrumentation declared by this feature"; research R16; the pipeline survey of 
 | `TRANSPORT_PLAY` | transport (new `PerfFamily.TRANSPORT`) | `transport.play` | session play → `Playing` |
 | `TRANSPORT_SEEK` | transport | `transport.seek` | session seek → engine returned |
 | `ENGINE_PRIME` | engine | `engine.prime` | C++ `DiskStreamer::prime` (control thread) |
+| `TRANSPORT_MASTER_POPUP` (D1, T146) | transport | `transport.masterPopup` | `MasterVolumePopup`: the card's first measure (`Modifier.traceFirstMeasure`, layout phase: the slider and the percentage laid out as the pop-up opens; composition and the platform window stay outside, as for every section) |
 | existing | | `timeline.scroll`, `timeline.zoom` (animation), `engine.loadClip` (clip source open) | |
 | `AUDIO_AVG_US` | counter | `audio.avgUs` | `AudioHealthTicker` |
 | `AUDIO_STARVATION` | counter | `audio.starvation` | `AudioHealthTicker` |
@@ -40,7 +41,12 @@ and `specs/007-performance-pipeline/contracts/metric-catalogue.md` gain the thre
 `TIMELINE_TRACK_MENU_FIRST = "timeline.track.menu.0"`, `TIMELINE_TRACK_SETTINGS = "timeline.track.menu.settings"`,
 `TIMELINE_SETTINGS_CLOSE = "timeline.settings.close"`, `TRANSPORT_PLAY = "transport.play"`,
 `TRANSPORT_SKIP_START = "transport.skipStart"`, `TRANSPORT_METRONOME = "transport.metronome"`,
-`TRANSPORT_READOUT = "transport.readout"`, `DIALOG_STOP_AND_LEAVE_CONFIRM = "dialog.stopAndLeave.confirm"`.
+`TRANSPORT_READOUT = "transport.readout"`, `DIALOG_STOP_AND_LEAVE_CONFIRM = "dialog.stopAndLeave.confirm"`;
+design iteration D1 (T146) adds `TRANSPORT_MASTER_BUTTON = "transport.master.button"`,
+`TRANSPORT_MASTER = "transport.master"` (the pop-up's slider on a phone, the inline slider from 600 dp),
+`TIMELINE_OVERVIEW = "timeline.overview"` and `TIMELINE_OVERVIEW_WINDOW = "timeline.overview.window"` (36 anchors).
+The pop-up is a window of its own on Android, so its card carries `anchorRoot()` like the dialogs and menus;
+without it UiAutomator would not see the slider.
 Waveform readiness is not an anchor (a zero-size node could be pruned from the accessibility
 tree): the `screen.timeline` node carries `stateDescription = "ready"` once every visible clip's
 overview is `Ready` (and `"loading"` before), which both UiAutomator (`By.res` + `UiObject2.text`/
@@ -55,11 +61,25 @@ until `transport.readout` text passes "00:15" (eight bars at 124 BPM = 15.5 s); 
 `UiObject2.pinchOpen/pinchClose`, iOS `pinch(withScale:velocity:)`); 6. tap
 `timeline.clip.first`, tap `timeline.toolbar.split`; 7. tap `timeline.track.menu.0`, tap
 `timeline.track.menu.settings`, wait the settings form, tap `timeline.settings.close` (or back);
-8. tap `transport.metronome` twice; 9. tap `transport.play` (pause); 10. tap `transport.skipStart`.
+8. tap `transport.metronome` twice; 8a. (D1, phones: only when `transport.master.button` is present;
+from 600 dp of bar width the slider is inline and the step is skipped) read the bounds of
+`transport.readout`, tap `transport.master.button`, wait `transport.master` (the pop-up's
+slider), drag it from its centre an eighth of its width to the right (Android `UiDevice.swipe`,
+iOS `press(forDuration:thenDragTo:)`), tap the readout's centre as a real tap outside the pop-up
+(Android `UiDevice.click`, iOS a coordinate from the app's origin), wait until `transport.master`
+is gone, tap `timeline.toolbar.undo`: the drag is one undo step, so the volume returns to its
+value before the step and the document is unchanged across iterations; 8b. (D1, only when
+`timeline.overview` is present, that is with the device's zoom control set to the overview
+strip; the default zoom buttons skip it silently) drag `timeline.overview.window` from its centre
+by a quarter of its width to the right, then back from its new centre by the distance it moved
+(it stops at the project's end; the scroll position is not stored); 9. tap `transport.play`
+(pause); 10. tap `transport.skipStart`.
 
 Sections measured: `timeline.projectOpen`, `timeline.waveform`, `transport.play`,
 `transport.seek`, `timeline.zoom`, `timeline.scroll`, `timeline.clipSplit`,
-`timeline.playheadFrame`, `engine.prime`, `engine.loadClip`.
+`timeline.playheadFrame`, `engine.prime`, `engine.loadClip`, `transport.masterPopup` (D1; 0 on
+Android and no interval on iOS where the bar shows the inline slider). The strip's window drag
+runs inside the existing `timeline.scroll`.
 
 Files: Android `journeys/TimelineJourney.kt`, `TimelineJourneyBenchmark.kt`,
 `PerfMetrics.sectionsOf("timeline")`, `BaselineProfileGenerator.journeys()`,
@@ -97,6 +117,7 @@ reference devices, no family above its gate in the worse direction.
 
 ## Tests
 
-`PerfSectionCatalogueTest`, `PerfAnchorsCatalogueTest` (new count), `trace_poison_test` (new RT
+`PerfSectionCatalogueTest`, `PerfAnchorsCatalogueTest` (new count; 36 since D1), `trace_shim_test`
+(the header's name count; 29 since D1), `trace_poison_test` (new RT
 files), `uv run pytest` (config, catalogue, collectors, report with the fifth journey), the iOS
 `FacadeSelfCheckTests` for the engine-category metric.

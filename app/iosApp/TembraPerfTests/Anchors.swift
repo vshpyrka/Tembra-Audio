@@ -40,6 +40,13 @@ enum Anchors {
     static let transportReadout = "transport.readout"
     static let dialogStopAndLeaveConfirm = "dialog.stopAndLeave.confirm"
 
+    // Feature 009's design iteration D1 (T146): the phone bar's speaker button, its pop-up's slider, the overview strip
+    // and its window.
+    static let transportMasterButton = "transport.master.button"
+    static let transportMaster = "transport.master"
+    static let timelineOverview = "timeline.overview"
+    static let timelineOverviewWindow = "timeline.overview.window"
+
     /// The `screen.timeline` value once every visible overview is built; "loading" before (not an anchor of its own).
     static let timelineReadyState = "ready"
 

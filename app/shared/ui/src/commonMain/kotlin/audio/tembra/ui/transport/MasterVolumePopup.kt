@@ -39,6 +39,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
+import audio.tembra.engine.perf.PerfSection
+import audio.tembra.ui.perf.PerfAnchors
+import audio.tembra.ui.perf.anchorRoot
+import audio.tembra.ui.perf.traceFirstMeasure
 import audio.tembra.ui.theme.TembraIcon
 import audio.tembra.ui.theme.TembraShapes
 import audio.tembra.ui.theme.TembraTheme
@@ -90,7 +94,9 @@ internal fun MasterVolumeButton(
  * Changes reach [onVolume] while dragging, as from the inline slider. It anchors to the layout that calls it and sits
  * [clearance] above that anchor, centred on it and kept inside the window; only a window with no room above (a bar at
  * the top) puts it below. A tap outside, Back and a hardware Escape ask [onDismiss] through the platform pop-up; the
- * card answers an Escape that reaches Compose itself, sent to its focused slider.
+ * card answers an Escape that reaches Compose itself, sent to its focused slider. The card is the root of a window of
+ * its own, so it carries [anchorRoot] for the journeys' UiAutomator, and its first measure is the `transport.masterPopup`
+ * section (contracts/perf-instrumentation.md).
  */
 @Composable
 internal fun MasterVolumePopup(
@@ -109,6 +115,8 @@ internal fun MasterVolumePopup(
     Popup(popupPositionProvider = position, onDismissRequest = onDismiss, properties = PopupProperties(focusable = true)) {
         Surface(
             modifier = Modifier
+                .anchorRoot()
+                .traceFirstMeasure(PerfSection.TRANSPORT_MASTER_POPUP)
                 .testTag(MASTER_POPUP_TAG)
                 .semantics { paneTitle = TransportCopy.masterVolume }
                 .onPreviewKeyEvent { event ->
@@ -155,7 +163,7 @@ private class AboveAnchor(private val clearance: Int, private val margin: Int) :
     }
 }
 
-internal const val MASTER_BUTTON_TAG = "transport.master.button"
+internal const val MASTER_BUTTON_TAG = PerfAnchors.TRANSPORT_MASTER_BUTTON
 internal const val MASTER_POPUP_TAG = "transport.master.popup"
 
 /** The pop-up's slider: wider than the phone bar could ever give it inline. */

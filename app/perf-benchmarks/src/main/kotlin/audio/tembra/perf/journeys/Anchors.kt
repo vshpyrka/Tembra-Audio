@@ -48,6 +48,13 @@ object Anchors {
     const val TRANSPORT_READOUT = "transport.readout"
     const val DIALOG_STOP_AND_LEAVE_CONFIRM = "dialog.stopAndLeave.confirm"
 
+    // Feature 009's design iteration D1 (T146): the phone bar's speaker button, its pop-up's slider, the overview strip
+    // and its window.
+    const val TRANSPORT_MASTER_BUTTON = "transport.master.button"
+    const val TRANSPORT_MASTER = "transport.master"
+    const val TIMELINE_OVERVIEW = "timeline.overview"
+    const val TIMELINE_OVERVIEW_WINDOW = "timeline.overview.window"
+
     /**
      * A 1 dp marker node the Timeline shows once every visible overview is built (the `stateDescription` "ready" the
      * contract names is not reachable through UiAutomator's selectors; XCUITest reads it as the root's `value`).

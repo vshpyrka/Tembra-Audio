@@ -17,6 +17,6 @@ class PerfAnchorsCatalogueTest {
 
     @Test
     fun everyJourneyControlHasAnAnchor() {
-        assertEquals(32, PerfAnchors.all.size)
+        assertEquals(36, PerfAnchors.all.size)
     }
 }

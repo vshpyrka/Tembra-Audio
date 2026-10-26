@@ -154,10 +154,12 @@ opens; not persisted.
 
 Sections: `timeline.projectOpen`, `timeline.waveform`, `timeline.playheadFrame`,
 `timeline.clipSplit`, `timeline.projectSave`, `timeline.libraryOpen`, `transport.play`,
-`transport.seek`, `engine.prime` (plus the existing `timeline.scroll`, `timeline.zoom`,
-`engine.loadClip`). Counters: `audio.avgUs`, `audio.starvation`, `audio.clipsActive`.
+`transport.seek`, `engine.prime`, `transport.masterPopup` (design iteration D1) (plus the existing
+`timeline.scroll`, `timeline.zoom`, `engine.loadClip`). Counters: `audio.avgUs`, `audio.starvation`,
+`audio.clipsActive`.
 Anchors: `screen.timeline`, `nav.item.timeline`, `nav.item.projects`, `screen.projects`,
 `projects.card.demo`, `projects.search`, `timeline.toolbar.addTrack`, `timeline.toolbar.split`,
 `timeline.toolbar.undo`, `timeline.ruler`, `timeline.lane.0`, `timeline.clip.first`,
 `timeline.track.menu.0`, `timeline.settings.close`, `transport.play`, `transport.skipStart`,
-`transport.metronome`, `transport.readout`.
+`transport.metronome`, `transport.readout`; D1 adds `transport.master.button`, `transport.master`,
+`timeline.overview`, `timeline.overview.window`.
