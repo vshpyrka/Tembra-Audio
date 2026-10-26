@@ -42,8 +42,10 @@ import kotlin.test.assertTrue
 /**
  * The overview strip (spec FR-015, D1; T140): the whole project at the fit scale with its clips as blocks, the
  * playhead read from the telemetry in draw, and a window over the visible span that scrolls when dragged, zooms when
- * an edge is dragged and recentres on a tap outside it. Every test uses 40 bars of 4/4 (160 beats) on a 400 dp strip,
- * 2.5 dp a beat, and lanes 320 dp wide at 8 dp a beat: 40 beats in view from beat 20, so the window spans 50 to 150 dp.
+ * an edge is dragged and recentres on a tap outside it. Every test uses 40 bars of 4/4 (160 beats) on a 320 dp strip
+ * (2 dp a beat; it must fit the narrowest device window, the 360 dp OPPO, since `width` is coerced into the window) and
+ * lanes 320 dp wide at 8 dp a beat: 40 beats in view from beat 20, so the window spans 40 to 120 dp. Positions are
+ * written as beats through [dpAtBeat].
  */
 @OptIn(ExperimentalTestApi::class)
 class OverviewStripTest {
@@ -55,7 +57,7 @@ class OverviewStripTest {
     private val scrolls = mutableListOf<Double>()
     private val zooms = mutableListOf<Pair<Double, Double>>()
 
-    /** Drums on row 0 over beats 0 to 8 (0 to 20 dp); bass on row 1 over beats 100 to 120 (250 to 300 dp). */
+    /** Drums on row 0 over beats 0 to 8 (0 to 16 dp); bass on row 1 over beats 100 to 120 (200 to 240 dp). */
     private val tracks: ImmutableList<TrackUi> = persistentListOf(
         track("t0", colorIndex = 0, FakeOverviews.clip("c0", "drums", startBeats = 0.0, lengthBeats = 8.0)),
         track("t1", colorIndex = 1, FakeOverviews.clip("c1", "bass", startBeats = 100.0, lengthBeats = 20.0)),
@@ -96,6 +98,9 @@ class OverviewStripTest {
 
     private fun px(dp: Float): Int = (dp * densityScale).roundToInt()
 
+    /** The strip's x in dp for a beat of the 160-beat project. */
+    private fun dpAtBeat(beats: Float): Float = beats * STRIP_DP / 160f
+
     /** The centre of the columns in the playhead colour along the strip's bottom padding (no blocks there), or null. */
     private fun ComposeUiTest.playheadX(): Int? {
         val pixels = onNodeWithTag(TimelineTestTags.OVERVIEW).captureToImage().toPixelMap()
@@ -115,8 +120,8 @@ class OverviewStripTest {
             .assertHeightIsEqualTo(24.dp)
         val bounds = strip.getUnclippedBoundsInRoot()
         val window = onNodeWithTag(TimelineTestTags.OVERVIEW_WINDOW).getUnclippedBoundsInRoot()
-        assertTrue(abs((window.left - bounds.left).value - 50f) <= 1f, "the window starts at ${window.left - bounds.left}, not 50 dp")
-        assertTrue(abs((window.right - bounds.left).value - 150f) <= 1f, "the window ends at ${window.right - bounds.left}, not 150 dp")
+        assertTrue(abs((window.left - bounds.left).value - dpAtBeat(20f)) <= 1f, "the window starts at ${window.left - bounds.left}, not beat 20")
+        assertTrue(abs((window.right - bounds.left).value - dpAtBeat(60f)) <= 1f, "the window ends at ${window.right - bounds.left}, not beat 60")
     }
 
     @Test
@@ -132,19 +137,21 @@ class OverviewStripTest {
         // 24 dp: 3 dp padding, then two 9 dp rows (an 8 dp block and a 1 dp gap each).
         val row0 = px(7f)
         val row1 = px(16f)
-        assertTrue(pixels.isNear(px(10f), row0, tints[0]), "no drums block at 10 dp on row 0: ${pixels[px(10f), row0]}")
-        assertTrue(pixels.isNear(px(275f), row1, tints[1]), "no bass block at 275 dp on row 1: ${pixels[px(275f), row1]}")
-        assertTrue(pixels.isNear(px(275f), row0, background), "row 0 has no clip at 275 dp: ${pixels[px(275f), row0]}")
-        assertTrue(pixels.isNear(px(10f), row1, background), "row 1 has no clip at 10 dp: ${pixels[px(10f), row1]}")
+        val drums = px(dpAtBeat(4f))
+        val bass = px(dpAtBeat(110f))
+        assertTrue(pixels.isNear(drums, row0, tints[0]), "no drums block at beat 4 on row 0: ${pixels[drums, row0]}")
+        assertTrue(pixels.isNear(bass, row1, tints[1]), "no bass block at beat 110 on row 1: ${pixels[bass, row1]}")
+        assertTrue(pixels.isNear(bass, row0, background), "row 0 has no clip at beat 110: ${pixels[bass, row0]}")
+        assertTrue(pixels.isNear(drums, row1, background), "row 1 has no clip at beat 4: ${pixels[drums, row1]}")
         val x = playheadX()
-        assertTrue(x != null && abs(x - px(200f)) <= px(1f), "the stopped line is not at beat 80 (200 dp): $x")
+        assertTrue(x != null && abs(x - px(dpAtBeat(80f))) <= px(1f), "the stopped line is not at beat 80 (${dpAtBeat(80f)} dp): $x")
     }
 
     @Test
     fun whilePlayingTheLineReadsTheTelemetryEveryFrame() = runComposeUiTest {
         // Paused before composing: the test clock cancels infinite animations (the frame tick) while it auto-advances.
         mainClock.autoAdvance = false
-        // From beat 80 at 40 beats a second: the line starts at 200 dp and moves 100 dp a second.
+        // From beat 80 at 40 beats a second: the line starts at beat 80 and moves 40 beats (80 dp) a second.
         val telemetry = ScriptedTransportTelemetry.playing(startSeconds = 2.0, beatsPerSecond = 40.0)
         setStrip(playing = true, positionBeats = Beats.Zero, telemetry = telemetry)
         mainClock.advanceTimeByFrame()
@@ -155,24 +162,24 @@ class OverviewStripTest {
         val later = playheadX()
         assertTrue(telemetry.reads > readsBefore, "the strip stopped reading the telemetry")
         assertTrue(first != null && later != null, "no playhead line while playing: $first, $later")
-        assertTrue(later > first + px(50f), "the line did not move: $first → $later")
+        assertTrue(later > first + px(dpAtBeat(20f)), "the line did not move: $first → $later")
     }
 
     @Test
     fun draggingInsideTheWindowScrollsWithTheFingerAndStopsAtTheEnd() = runComposeUiTest {
         setStrip()
         onNodeWithTag(TimelineTestTags.OVERVIEW).performTouchInput {
-            down(Offset(100.dp.toPx(), centerY))
-            repeat(10) { moveBy(Offset(5.dp.toPx(), 0f)) }
+            down(Offset(dpAtBeat(40f).dp.toPx(), centerY))
+            repeat(10) { moveBy(Offset(dpAtBeat(2f).dp.toPx(), 0f)) }
             up()
         }
         assertTrue(zooms.isEmpty(), "a drag inside the window does not zoom: $zooms")
-        // 50 dp to the right is 20 beats later: the window now starts at beat 40.
+        // 20 beats to the right: the window now starts at beat 40.
         assertEquals(40.0, scrolls.last(), 0.5)
         scrolls.clear()
         onNodeWithTag(TimelineTestTags.OVERVIEW).performTouchInput {
-            down(Offset(100.dp.toPx(), centerY))
-            repeat(10) { moveBy(Offset(30.dp.toPx(), 0f)) }
+            down(Offset(dpAtBeat(40f).dp.toPx(), centerY))
+            repeat(10) { moveBy(Offset(dpAtBeat(12f).dp.toPx(), 0f)) }
             up()
         }
         // Held inside the project: 160 beats less the 40 in view.
@@ -183,8 +190,8 @@ class OverviewStripTest {
     fun draggingTheRightHandleZoomsWithTheLeftEdgeFixed() = runComposeUiTest {
         setStrip()
         onNodeWithTag(TimelineTestTags.OVERVIEW).performTouchInput {
-            down(Offset(150.dp.toPx(), centerY))
-            repeat(10) { moveBy(Offset(5.dp.toPx(), 0f)) }
+            down(Offset(dpAtBeat(60f).dp.toPx(), centerY))
+            repeat(10) { moveBy(Offset(dpAtBeat(2f).dp.toPx(), 0f)) }
             up()
         }
         assertTrue(scrolls.isEmpty(), "an edge drag does not scroll: $scrolls")
@@ -193,8 +200,8 @@ class OverviewStripTest {
         assertEquals(80.0, end, 0.5)
         zooms.clear()
         onNodeWithTag(TimelineTestTags.OVERVIEW).performTouchInput {
-            down(Offset(150.dp.toPx(), centerY))
-            repeat(10) { moveBy(Offset((-20).dp.toPx(), 0f)) }
+            down(Offset(dpAtBeat(60f).dp.toPx(), centerY))
+            repeat(10) { moveBy(Offset(-dpAtBeat(8f).dp.toPx(), 0f)) }
             up()
         }
         // The closest level shows one beat across the lanes.
@@ -206,8 +213,8 @@ class OverviewStripTest {
     fun draggingTheLeftHandleZoomsWithTheRightEdgeFixed() = runComposeUiTest {
         setStrip()
         onNodeWithTag(TimelineTestTags.OVERVIEW).performTouchInput {
-            down(Offset(50.dp.toPx(), centerY))
-            repeat(5) { moveBy(Offset((-5).dp.toPx(), 0f)) }
+            down(Offset(dpAtBeat(20f).dp.toPx(), centerY))
+            repeat(5) { moveBy(Offset(-dpAtBeat(2f).dp.toPx(), 0f)) }
             up()
         }
         val (start, end) = zooms.last()
@@ -215,8 +222,8 @@ class OverviewStripTest {
         assertEquals(60.0, end, 1e-9)
         zooms.clear()
         onNodeWithTag(TimelineTestTags.OVERVIEW).performTouchInput {
-            down(Offset(50.dp.toPx(), centerY))
-            repeat(10) { moveBy(Offset(20.dp.toPx(), 0f)) }
+            down(Offset(dpAtBeat(20f).dp.toPx(), centerY))
+            repeat(10) { moveBy(Offset(dpAtBeat(8f).dp.toPx(), 0f)) }
             up()
         }
         // Held at the closest level: one beat before the fixed right edge.
@@ -228,18 +235,19 @@ class OverviewStripTest {
     fun aTapOutsideTheWindowCentresItOnTheTap() = runComposeUiTest {
         setStrip()
         val strip = onNodeWithTag(TimelineTestTags.OVERVIEW)
-        // 300 dp is beat 120: the 40 beats in view start 20 beats before it.
-        strip.performTouchInput { click(Offset(300.dp.toPx(), centerY)) }
+        // Beat 120: the 40 beats in view start 20 beats before it.
+        strip.performTouchInput { click(Offset(dpAtBeat(120f).dp.toPx(), centerY)) }
         assertEquals(listOf(100.0), scrolls.map { (it * 10).roundToInt() / 10.0 })
-        strip.performTouchInput { click(Offset(100.dp.toPx(), centerY)) }
+        strip.performTouchInput { click(Offset(dpAtBeat(40f).dp.toPx(), centerY)) }
         assertEquals(1, scrolls.size, "a tap inside the window changes nothing")
         // Near the end the window is held inside the project.
-        strip.performTouchInput { click(Offset(395.dp.toPx(), centerY)) }
+        strip.performTouchInput { click(Offset(dpAtBeat(157f).dp.toPx(), centerY)) }
         assertEquals(120.0, scrolls.last(), 1e-6)
         assertTrue(zooms.isEmpty())
     }
 
     private companion object {
-        const val STRIP_DP = 400
+        /** Fits the narrowest device window (the 360 dp OPPO) with room to spare. */
+        const val STRIP_DP = 320
     }
 }
