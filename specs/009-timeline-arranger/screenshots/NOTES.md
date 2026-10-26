@@ -137,7 +137,7 @@ for the session; the iPhone 14 cannot be muted remotely (its switch was set by h
 | Pixel 9 Pro Fold emulator | `emulator-5554` | Android 16 | open and half-opened postures (inner display `-d 4619827259835644672`) |
 | iPhone 17 simulator (replaced on the Mac by an iPhone 18 Pro, `1374495F-788F-42B4-B036-5CFF2EA195EE`, on 2026-10-25) | `4CD6879C-8FBA-4CEF-B4EC-31968D0144B0` | iOS 26.5 | the compact iOS matrix, the iOS lane, portability; the final iOS lanes ran on the iPhone 18 Pro |
 | iPad Pro 13-inch (M5) simulator | `C9A67FF1-62FC-4BE6-89F9-685DC39FBD46` (re-created as `035F4A11-FE89-4AA8-BCD0-405790F30B71` on 2026-10-25) | iOS 26.5 | the expanded iOS matrix, the iOS lane |
-| iPhone Duo simulator | `EB59DDD2-6D13-4503-A77E-BDFB69BF8CCD` | iOS 27.1 | closed posture, end rail |
+| iPhone Duo simulator (re-created as `8AF0F092-16BB-4286-8F8F-E0AB208CBA8A` on the iOS 27.1 release runtime on 2026-10-26, when the Xcode 27.1 beta left the Mac) | `EB59DDD2-6D13-4503-A77E-BDFB69BF8CCD` | iOS 27.1 | closed posture, end rail; the iOS lane on 2026-10-26 |
 | iPhone 14 (USB) | `00008110-001049660E3A401E` | iOS 27.0.1 | launch captures, the perf session |
 
 Every Android target, the emulator and the Mac's output were muted (`media volume --stream 3 --set 0`, Mac output
@@ -221,6 +221,32 @@ window exists there.
 The Pixel 6 Pro, iOS and host lanes ran on the final code; the Pixel 7 Pro, tablet, OPPO, Redmi and emulator lanes ran
 on the code of 20:50 to 21:30 (before the single-open hand-over rewrite, which is host-tested, and before the three
 test fixes, which were rerun alone on the devices that found them).
+
+### Final pass, continued (2026-10-26: the final code on every target)
+
+The five lanes that had run on the 20:50 code ran again on the final code (`d7f0dc4`; the docs commit `605c92f` changes no
+source), with the iPhone Duo's iOS lane beside them, as two chains at once: the main checkout for the iPhone Duo, the Pixel 7 Pro, the Pixel Tablet and the fold
+emulator, a detached worktree at the same commit for the OPPO and the Redmi. The run conditions above were applied again
+first (brightness 0 and manual mode, the music stream at 0, ringers silent, the Mac muted, black test windows). Log numbers
+are per `gradle-run` workflow: A is the main-checkout chain (`0b408650`), B the OPPO/Redmi chain (`a109e992`), R the
+OPPO and Redmi reruns (`febe1976`), P the Pixel 7 Pro rerun (`5a17c72b`).
+
+One event shaped the pass: at 19:22:08 the USB hub that carries the Pixel 7 Pro, the Pixel Tablet, the OPPO and the Redmi
+dropped all four for about a second (adb's own log: `usb_read failed with status e00002ed`, every transport "connection
+terminated", re-enumerated at 19:22:09 and dropped once more at 19:22:12; the OPPO and the Redmi had each dropped once at
+18:54, the Pixel 6 Pro, on its own port, at 19:01). The two UI runs in flight at that moment, the Pixel 7 Pro's and the
+OPPO's, lost their `am instrument` shell and the runner's UiAutomation with it, so each ended early ("Test run failed to
+complete") with AGP's XML blaming whichever test was running with an empty message. Both UI modules were rerun whole
+afterwards; the tablet and Redmi lanes started after the drop and the emulator is not on USB.
+
+| Lane | Result | Log |
+|---|---|---|
+| the Android device lane on the OPPO CPH2239 (`--continue`) | core 198, data 118, app 17 green; engine: `MetronomeTimingEndToEndTest` start latency 113 ms against the 100 ms budget (the device; 180 ms the day before); UI: the run ended at 377 of 815 when `LaidOutWindowSizeTest.containerSizeFollowsAnInPlaceRotation`, the one test that uses the instrumentation's `UiAutomation`, found it no longer connected (`IllegalStateException: UiAutomation not connected`: the 19:22:08 USB drop had taken the instrumentation shell and its UiAutomation with it; the runner stopped and the XML blames the test before it with an empty message). The UI module alone afterwards: 815 green in 624 s, zero warnings | B 0002, R 0001 |
+| the same on the Redmi Note 5 (`--continue`) | core 198, data 118, app 17 green; engine: start latency 100.8 ms against the 100 ms budget on this run (green the day before and on the class alone afterwards: the device sits at the budget); UI: 815 with one failure, `TembraMenuTest.hoverTintsTheRowAndFocusDrawsTheRing` (the hovered row's colour had not moved by the time the probe read it), green on the class alone; no Play Protect prompt this time | B 0003, 0005, R 0002 |
+| `checkIos -Ptembra.iosSimulator=8AF0F092-…` (the iPhone Duo) | every test task up-to-date in 2 s: Gradle kept the 14:04 run of the same simulator on the same sources, 1,225 green (core 198, data 118, engine 91, UI 818), zero warnings | A 0001 |
+| the same on the Pixel 7 Pro (`--continue`) | core 198, data 118, engine 95, app 17 green; UI: the run ended at 403 of 815 in the 19:22:08 USB drop (the XML blames `ProjectOverviewChartTest.barsCarryTheSpansTints` with an empty message; the class alone: 3 green in 14 s). The UI module alone afterwards: 815 green in 618 s, zero warnings | A 0002, 0005, P 0001 |
+| the same on the Pixel Tablet (`--continue`) | green in 723 s: core 198, data 118, engine 95, UI 815, app 17; zero warnings | A 0003 |
+| the same on the Pixel 9 Pro Fold emulator (`--continue`) | core 198, data 118, engine 95 (the fitted period inside its tolerance this time), app 17 green; UI: 815 with 8 failures in 7 classes, every one the window-capture helper giving up (`ComposeTimeoutException … 2000 ms` six times, `PixelCopy failed with result 2` twice) while the lane took 72 min with both chains building on the Mac at once; the seven classes alone: 43 green in 67 s | A 0004, 0006 |
 
 ## Defects the matrix found (fixed, with a device test each)
 
