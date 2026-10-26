@@ -11,6 +11,8 @@ object TimelineCopy {
     const val undo = "Undo"
     const val redo = "Redo"
     const val grid = "Grid"
+    const val snapToGrid = "Snap to grid"
+    const val snapCaption = "Ruler taps, playhead drags, clip moves and splits land on these lines."
     const val fitProject = "Fit project"
     const val trackSettings = "Track settings"
     const val moveUp = "Move up"

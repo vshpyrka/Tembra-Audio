@@ -1,5 +1,6 @@
 package audio.tembra.ui.timeline
 
+import audio.tembra.core.project.GridSize
 import audio.tembra.ui.perf.PerfAnchors
 
 /** Every `testTag` of the timeline's controls (contracts/timeline-screen.md "Semantics"); the journey anchors come from [PerfAnchors]. */
@@ -24,6 +25,11 @@ object TimelineTestTags {
     const val TRACK_LIST = "timeline.tracks"
     const val PLAYHEAD = "timeline.playhead"
     const val EMPTY = "timeline.empty"
+
+    /** The snap sheet; its rows `timeline.snapSheet.<grid, lowercase>` (see [snapSheetRow]), the current row's check `<row>.check`. */
+    const val SNAP_SHEET = "timeline.snapSheet"
+    fun snapSheetRow(grid: GridSize): String = "$SNAP_SHEET.${grid.name.lowercase()}"
+    fun snapSheetCheck(grid: GridSize): String = "${snapSheetRow(grid)}.check"
 
     fun lane(index: Int): String = "timeline.lane.$index"
     fun header(index: Int): String = "timeline.header.$index"
