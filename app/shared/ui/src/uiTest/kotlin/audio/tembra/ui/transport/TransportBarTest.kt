@@ -178,14 +178,16 @@ class TransportBarTest {
         val forward = onNodeWithTag(STEP_FORWARD_TAG).getUnclippedBoundsInRoot()
         val metronome = onNodeWithTag(PerfAnchors.TRANSPORT_METRONOME).getUnclippedBoundsInRoot()
         val speaker = onNodeWithTag(MASTER_BUTTON_TAG).getUnclippedBoundsInRoot()
+        // Positions are relative to the bar: on a window narrower than 411 dp (the OPPO, the Redmi) the required width centres the bar past the window's left edge.
+        val bar = onNodeWithTag(ROOT_TAG).getUnclippedBoundsInRoot()
         val width = readout.right - readout.left
         assertTrue(readout.left >= forward.right && readout.right <= metronome.left, "the readout ($readout) runs under its neighbours ($forward, $metronome)")
         // 411 − 2 × 4 padding − 6 × 2 gaps − 44 speaker − 3 × 44 − 48 − 44 = 123 dp is the budget; the doubled digits use most of it.
         assertTrue(width >= 80.dp && width <= 123.dp, "the readout's width is not its budget: $width")
-        assertTrue(metronome.right <= 411.dp, "the metronome toggle leaves the bar: ${metronome.right}")
+        assertTrue(metronome.right <= bar.right, "the metronome toggle leaves the bar: ${metronome.right} of $bar")
         // One pixel of rounding room: the fold emulator's 2.44 density lays 44 dp out as 43.9 dp.
         val speakerWidth = speaker.right - speaker.left
-        assertTrue(speaker.left >= 0.dp && speakerWidth >= 44.dp - 1.dp && speakerWidth <= 44.dp + 1.dp, "the speaker button is not a 44 dp target inside the bar: $speaker")
+        assertTrue(speaker.left >= bar.left && speakerWidth >= 44.dp - 1.dp && speakerWidth <= 44.dp + 1.dp, "the speaker button is not a 44 dp target inside the bar: $speaker in $bar")
     }
 
     /** A long press on the toggle opens the metronome settings sheet (spec FR-040; T108, US5). */
