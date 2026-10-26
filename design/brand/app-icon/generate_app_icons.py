@@ -8,7 +8,7 @@ gradients are the artwork's own. Nothing is redrawn.
     python3 design/brand/app-icon/generate_app_icons.py [android] [ios] [previews]
 
 With no arguments it writes everything. Requires Pillow and NumPy; the iOS
-preview also renders AppIcon.icon with Icon Composer's ictool (Xcode 27.1 beta).
+preview also renders AppIcon.icon with Icon Composer's ictool (Xcode 27.1).
 """
 import json
 import shutil
@@ -224,7 +224,7 @@ ICON_COMPOSER_DOC = {
     "supported-platforms": {"squares": ["iOS"]},
 }
 
-ICTOOL = Path("/Applications/Xcode-27.1-beta.app/Contents/Applications/Icon Composer.app/Contents/Executables/ictool")
+ICTOOL = Path("/Applications/Xcode.app/Contents/Applications/Icon Composer.app/Contents/Executables/ictool")
 ICON_RENDITIONS = ["Default", "Dark", "ClearLight", "ClearDark", "TintedLight", "TintedDark"]
 
 

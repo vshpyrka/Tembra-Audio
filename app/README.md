@@ -9,7 +9,7 @@ C++ real-time audio engine. This folder is the Gradle root. Governing rules:
 | Need | Check | Install |
 |---|---|---|
 | JDK 21 | `java -version` | Temurin 21 |
-| Xcode 26.x with an iOS simulator runtime | `xcodebuild -version`, `xcrun simctl runtime list` | `xcodebuild -downloadPlatform iOS` (about 8 GB) |
+| Xcode 27.1 with an iOS simulator runtime (the iOS 27 iPhone and the iPhone Duo need its SDK) | `xcodebuild -version`, `xcrun simctl runtime list` | `xcodebuild -downloadPlatform iOS` (about 8 GB) |
 | Android SDK: platform 37, build-tools 36, platform-tools | `android sdk list` | `android sdk install "platforms;android-37.0" "build-tools;36.0.0" platform-tools` |
 | Android NDK 29 and CMake 3.31.6 (also used for iOS and host builds) | `ls ~/Library/Android/sdk/ndk/29.0.14206865 ~/Library/Android/sdk/cmake/3.31.6` | `android sdk install "ndk;29.0.14206865" "cmake;3.31.6"` |
 | `android` CLI | `android --version` | see the Android CLI docs; `android update` when prompted |
@@ -39,10 +39,10 @@ iOS (simulator; Xcode runs `./gradlew :shared:ui:embedAndSignAppleFrameworkForXc
 ```bash
 cd app/iosApp
 xcodebuild -project iosApp.xcodeproj -scheme iosApp -configuration Debug \
-  -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath build build
-xcrun simctl boot "iPhone 17"
-xcrun simctl install "iPhone 17" "build/Build/Products/Debug-iphonesimulator/Tembra Audio.app"
-xcrun simctl launch "iPhone 17" audio.tembra.app
+  -destination 'platform=iOS Simulator,name=iPhone 18 Pro' -derivedDataPath build build
+xcrun simctl boot "iPhone 18 Pro"
+xcrun simctl install "iPhone 18 Pro" "build/Build/Products/Debug-iphonesimulator/Tembra Audio.app"
+xcrun simctl launch "iPhone 18 Pro" audio.tembra.app
 ```
 
 Or open `app/iosApp/iosApp.xcodeproj` in Xcode and press Run. Signing: `Configuration/Config.xcconfig`
@@ -57,8 +57,8 @@ cd app
 ./gradlew checkAndroidHost     # JVM unit tests (domain, parser, ViewModel, theme.json parity)
 ./gradlew checkIos             # iOS simulator: all shared tests + Compose UI tests + native engine link
 # add -Ptembra.iosSimulator="iPad Pro 13-inch (M5)" (any simctl name or UDID) to run the iOS lane on another simulator
-# iPhone Duo (foldable): needs Xcode 27.1 beta beside the release Xcode and its iOS 27.1 runtime; build the app with
-# DEVELOPER_DIR=/Applications/Xcode-27.1-beta.app/Contents/Developer so it fills the displays (docs/research/iphone-duo.md)
+# iPhone Duo (foldable): needs Xcode 27.1 and an iOS 27.1 simulator runtime; an app built with an older SDK runs
+# pillarboxed on the inner display (docs/research/iphone-duo.md)
 ./gradlew checkAndroidDevice   # connected Android device: Compose UI tests + native engine link + AppDirectories
 ./gradlew engineHostTest       # C++ engine Catch2 tests on the macOS host (no audio device)
 ```
@@ -86,7 +86,7 @@ Where tests live:
 
 ```bash
 android screen capture --output specs/<feature>/screenshots/android-compact.png   # add --device <serial> if several
-xcrun simctl io "iPhone 17" screenshot specs/<feature>/screenshots/ios-compact.png
+xcrun simctl io "iPhone 18 Pro" screenshot specs/<feature>/screenshots/ios-compact.png
 xcrun simctl io "iPad Pro 13-inch (M5)" screenshot specs/<feature>/screenshots/ios-wide.png
 ```
 
@@ -96,7 +96,7 @@ turns a 1440 px Pixel into a 606 dp window (`wm density reset` afterwards). Name
 `<platform>-<compact|medium|expanded|short>-<destination>.png` and record devices, OS versions and outcomes of manual
 checks in `specs/<feature>/screenshots/NOTES.md`. The iOS simulator bundle identifier carries the local `TEAM_ID`
 (`audio.tembra.app<TEAM_ID>`); read it from the built `Info.plist` before `simctl launch`. Large fonts: `adb shell settings put system font_scale 2.0`
-and `xcrun simctl ui "iPhone 17" content_size accessibility-extra-extra-extra-large`; restore to `1.0` /
+and `xcrun simctl ui "iPhone 18 Pro" content_size accessibility-extra-extra-extra-large`; restore to `1.0` /
 `medium`. Compare against `design/stitch/theme.json` and `design/stitch/screens/*/screenshot.jpg`.
 
 ## Module map

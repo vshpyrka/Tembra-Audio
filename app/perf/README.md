@@ -44,7 +44,8 @@ downloads on first use), Jinja2, jsonschema. None of it ships in the app.
   least as new as the phone's iOS: Xcode 26.6 (SDK 26.5) installs and launches the app on an iOS
   27.0.1 phone through `devicectl` but every XCUITest launch dies with CoreDevice error 10004 ("the
   process identifier of the launched application could not be determined"); `doctor` refuses the
-  pairing (`xcode_supports_device`) and the fix is `DEVELOPER_DIR=/Applications/Xcode-27.1-beta.app/
+  pairing (`xcode_supports_device`). Xcode 27.1, the default `/Applications/Xcode.app` since 2026-10-21,
+  covers the phone; another installed Xcode is chosen with `DEVELOPER_DIR=/Applications/<Xcode>.app/
   Contents/Developer uv run tracepulse run …` (the Xcode version lands in the round's fingerprint).
   Thermal state (must be `nominal`) and battery (≥ 50 %) are checked inside the runner, because the
   host cannot read them; the network state is recorded on the round and never refused (turn Wi-Fi off
@@ -177,8 +178,11 @@ stream. Neither fills the client-side `audio-hal-client-io-cycle-ioproc` table u
 journey, so the series comes from the HAL server's `audio-hal-io-cycle-client` view of the same
 interval (the client I/O-proc as audiomxd times it, ~100 cycles/s). That table names no client on
 iOS 27 ("Unknown"), so the pass trusts that the app is the phone's only HAL client — the phone is
-otherwise idle during a round. The two audio instruments alone make 35 MB of 75 s; the
-`Audio System Trace` template's kernel instruments made 0.5 GB and a full disk refused to save it.
+otherwise idle during a round. The Xcode 27.1 release's xctrace (2026-10-26) attaches by name
+(`--attach 'Tembra Audio'`, a 5 s Time Profiler recording) but still not by pid; whether an attached
+HAL recording now covers a whole journey is untested. The two audio instruments alone make 35 MB of
+75 s; the `Audio System Trace` template's kernel instruments made 0.5 GB and a full disk refused to
+save it.
 The first rounds with the pass in this shape (`20261012T093131Z` and `20261012T101350Z`, the last two
 R1 rounds): `AudioTracePass` passed under the recording both times, 37.4 and 36.5 MB traces, an empty
 client table beside 10 230 and 8 452 server cycles, cycle medians 772 µs and p99 1 547 and 1 976 µs
