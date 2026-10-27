@@ -8,7 +8,7 @@ import kotlin.test.assertNull
 
 /**
  * The audio-health plumbing without the real engine (spec SC-010): the fake engine scripts an [AudioHealth], the
- * facade returns it, and [AudioHealthPublisher.publish] turns it into exactly nine counters through [PerfTrace]. The
+ * facade returns it, and [AudioHealthPublisher.publish] turns it into exactly thirteen counters through [PerfTrace]. The
  * publisher is a plain function: the launch site is the app's one-second ticker, not this module.
  */
 class AudioHealthTelemetryTest {
@@ -34,11 +34,21 @@ class AudioHealthTelemetryTest {
     }
 
     @Test
-    fun thePublisherEmitsNineCountersWithTheScriptedValues() {
+    fun thePublisherEmitsThirteenCountersWithTheScriptedValues() {
         val engine = FakeAudioEngine()
         engine.scriptAudioHealth(
-            AudioHealth(callbacks = 1200, lastMicros = 850, maxMicros = 1900, overBudget = 2, xruns = 3, realtime = true, avgMicros = 410, starvation = 1, clipsActive = 5),
+            AudioHealth(
+                callbacks = 1200, lastMicros = 850, maxMicros = 1900, overBudget = 2, xruns = 3, realtime = true, avgMicros = 410, starvation = 1, clipsActive = 5,
+                inputOverruns = 1, recordBacklog = 4096, inputXruns = 2,
+            ),
         )
+        // Armed and monitoring: the alignment (960 frames at 48 kHz = 20 ms) and the monitoring delay (7 + 13 ms) come from the snapshot.
+        engine.nextCapture.armed = true
+        engine.nextCapture.monitoring = true
+        engine.nextCapture.sampleRate = 48000
+        engine.nextCapture.alignmentFrames = 960
+        engine.nextCapture.inputLatencyNanos = 7_000_000
+        engine.nextCapture.outputLatencyNanos = 13_000_000
         val published = AudioHealthPublisher.publish(engine, PerfTrace)
         assertEquals(true, published)
         if (PerfBuild.PERF_ENABLED) {
@@ -46,11 +56,22 @@ class AudioHealthTelemetryTest {
                 listOf(
                     "audio.callbacks=1200", "audio.lastUs=850", "audio.maxUs=1900", "audio.overBudget=2", "audio.xruns=3", "audio.realtime=1",
                     "audio.avgUs=410", "audio.starvation=1", "audio.clipsActive=5",
+                    "audio.inputOverruns=1", "audio.recordBacklog=4096", "audio.takeAlignmentMs=20", "audio.monitorDelayMs=20",
                 ),
                 sink.counters,
             )
         } else {
             assertEquals(emptyList(), sink.counters, "inert outside a measurement build")
+        }
+    }
+
+    @Test
+    fun theCaptureCountersReadZeroWhileNothingIsArmed() {
+        val engine = FakeAudioEngine()
+        engine.scriptAudioHealth(AudioHealth(callbacks = 1, lastMicros = 1, maxMicros = 1, overBudget = 0, xruns = 0, realtime = true))
+        assertEquals(true, AudioHealthPublisher.publish(engine, PerfTrace))
+        if (PerfBuild.PERF_ENABLED) {
+            assertEquals(listOf("audio.inputOverruns=0", "audio.recordBacklog=0", "audio.takeAlignmentMs=0", "audio.monitorDelayMs=0"), sink.counters.takeLast(4))
         }
     }
 

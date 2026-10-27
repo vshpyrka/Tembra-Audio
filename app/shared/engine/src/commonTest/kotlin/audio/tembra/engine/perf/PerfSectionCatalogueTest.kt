@@ -62,6 +62,24 @@ class PerfSectionCatalogueTest {
         }
     }
 
+    /** Feature 010 (contracts/perf-instrumentation.md): the seven sections and four counters of recording. */
+    @Test
+    fun theRecordingSectionsAndCountersAreCatalogued() {
+        val expected = mapOf(
+            "TIMELINE_ARM" to "timeline.arm", "TRANSPORT_RECORD_START" to "transport.recordStart", "TRANSPORT_COUNT_IN" to "transport.countIn",
+            "TIMELINE_TAKE_FRAME" to "timeline.takeFrame", "TRANSPORT_RECORD_STOP" to "transport.recordStop",
+            "TIMELINE_MONITOR_TOGGLE" to "timeline.monitorToggle", "ENGINE_TAKE_ALIGNMENT" to "engine.takeAlignment",
+            "AUDIO_INPUT_OVERRUNS" to "audio.inputOverruns", "AUDIO_RECORD_BACKLOG" to "audio.recordBacklog",
+            "AUDIO_TAKE_ALIGNMENT_MS" to "audio.takeAlignmentMs", "AUDIO_MONITOR_DELAY_MS" to "audio.monitorDelayMs",
+        )
+        for ((entry, name) in expected) {
+            assertEquals(name, lines.single { it.first == entry }.third, entry)
+        }
+        assertEquals(27, PerfSection.entries.size)
+        assertEquals(13, PerfCounter.entries.size)
+        assertEquals(40, lines.size)
+    }
+
     /** Exhaustive by construction: a new family must choose its catalogue keyword here. */
     private fun familyKeyword(family: PerfFamily): String = when (family) {
         PerfFamily.TUNER -> "tuner"

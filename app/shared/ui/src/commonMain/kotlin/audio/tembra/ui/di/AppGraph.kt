@@ -7,6 +7,7 @@ import audio.tembra.data.projects.ProjectRepository
 import audio.tembra.data.tuner.TunerPreferences
 import audio.tembra.engine.AudioEngine
 import audio.tembra.ui.platform.AudioFilePicker
+import audio.tembra.ui.platform.AudioRouteMonitor
 import audio.tembra.ui.platform.BackgroundPlaybackHost
 import audio.tembra.ui.platform.MicrophonePermission
 import audio.tembra.ui.projects.ProjectsSeeder
@@ -27,6 +28,7 @@ interface AppGraph : ViewModelGraph {
     val microphonePermission: MicrophonePermission
     val backgroundPlaybackHost: BackgroundPlaybackHost
     val audioFilePicker: AudioFilePicker
+    val audioRouteMonitor: AudioRouteMonitor
     val projectRepository: ProjectRepository
     val projectSession: ProjectSession
     val appStartup: AppStartup

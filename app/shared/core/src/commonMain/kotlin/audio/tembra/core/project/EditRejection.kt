@@ -34,4 +34,7 @@ sealed interface EditRejection {
 
     /** The arrangement already holds the engine's maximum of clips. */
     data object ClipLimitReached : EditRejection
+
+    /** The take is shorter than a hundredth of a second at its asset's rate (feature 010, spec FR-011). */
+    data object TakeTooShort : EditRejection
 }

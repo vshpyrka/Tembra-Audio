@@ -6,7 +6,9 @@ import audio.tembra.engine.AudioEngine
 import audio.tembra.engine.NativeAudioEngine
 import audio.tembra.ui.di.AppGraph
 import audio.tembra.ui.platform.AudioFilePicker
+import audio.tembra.ui.platform.AudioRouteMonitor
 import audio.tembra.ui.platform.BackgroundPlaybackHost
+import audio.tembra.ui.platform.IosAudioRouteMonitor
 import audio.tembra.ui.platform.IosAudioFilePicker
 import audio.tembra.ui.platform.IosBackgroundPlaybackHost
 import audio.tembra.ui.platform.IosMicrophonePermission
@@ -41,4 +43,9 @@ interface IosAppGraph : AppGraph {
     @Provides
     @SingleIn(AppScope::class)
     fun provideAudioFilePicker(): AudioFilePicker = IosAudioFilePicker()
+
+    /** The session's current route for the recording controller (feature 010, research R12). */
+    @Provides
+    @SingleIn(AppScope::class)
+    fun provideAudioRouteMonitor(): AudioRouteMonitor = IosAudioRouteMonitor()
 }

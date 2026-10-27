@@ -18,8 +18,8 @@ import android.os.IBinder
  * metronome's click (feature 004, contracts/background-playback.md, research R6) and the project transport
  * (feature 009, contracts/timeline-audio-kotlin.md). It is an OS entry point only: it holds no engine state and never
  * touches the engine. [ACTION_START] posts the ongoing notification (its title and subtitle from the
- * [EXTRA_TITLE] and [EXTRA_SUBTITLE] extras: "Metronome" / the tempo, "Playing" / the project name) and enters the
- * foreground; [ACTION_STOP] (the notification's Stop action) tells the owner through
+ * [EXTRA_TITLE] and [EXTRA_SUBTITLE] extras: "Metronome" / the tempo, "Playing" / the project name, "Recording" / the
+ * project name while a take runs, feature 010) and enters the foreground; [ACTION_STOP] (the notification's Stop action) tells the owner through
  * [AndroidBackgroundPlaybackHost.stopRequests] and stops. No broadcast receiver is involved: the Stop action is a
  * service intent, and the stop request reaches the owner through the host's process-wide flow.
  */
@@ -65,7 +65,11 @@ class PlaybackForegroundService : Service() {
     private fun enterForeground() {
         val notification = buildNotification(this)
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                // Feature 010 (FR-021): the microphone type keeps a take recording with the screen off; declared in the
+                // manifest and always started from the visible Timeline, as Android 14's while-in-use rule requires.
+                startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK or ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE)
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
             } else {
                 startForeground(NOTIFICATION_ID, notification)

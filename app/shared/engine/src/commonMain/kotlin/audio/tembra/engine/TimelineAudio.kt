@@ -58,4 +58,42 @@ interface TimelineAudio : AudioStatus {
 
     /** Offline and long: decodes [audioPath] once and writes the `.peaks` overview to [overviewPath]; false on failure. */
     suspend fun buildOverview(audioPath: String, overviewPath: String): Boolean
+
+    // --- Capture, takes and monitoring (feature 010, contracts/engine-c-abi-v7.md "Kotlin seam") ---------------------
+
+    /**
+     * Opens the input beside the transport's output with the device's channels up to [maxChannels] (IO dispatcher:
+     * Android opens the second stream, iOS switches the session and restarts the unit). Idempotent while armed.
+     */
+    suspend fun arm(maxChannels: Int): ArmResult
+
+    /** Ends a running take (kept), turns monitoring off and closes the input; idempotent. */
+    fun disarm()
+
+    /** Monitoring of the armed track [trackIndex]'s input through its strip; the engine clears it on an output reopen. */
+    fun setMonitor(enabled: Boolean, trackIndex: Int)
+
+    /** Starts a take (IO dispatcher: the staging file is created and the position primed); see [RecordConfig]. */
+    suspend fun recordStart(config: RecordConfig): RecordStartResult
+
+    /** Pre-roll only: pauses, restores the position and deletes the staging file. */
+    fun recordCancel()
+
+    /**
+     * Ends capture at the next block, drains the recorder and finalises the file (IO dispatcher, at most 1 s); also
+     * collects the info of a take the engine ended itself. Playback continues.
+     */
+    suspend fun recordStop(): TakeInfo
+
+    /** Lock-free; safe every frame; main thread only (one scratch per engine). Zeros when nothing is armed. */
+    fun readCapture(into: CaptureSnapshot)
+
+    /** Copies the live peak buckets from [fromIndex] into [into]; returns the next index to ask for. Main thread. */
+    fun readPeaks(fromIndex: Long, into: PeakBuckets): Long
+
+    /** Clears the meter's clip latch. */
+    fun resetClip()
+
+    /** Free bytes on the volume holding [path]; -1 when unknown. */
+    fun freeBytes(path: String): Long
 }

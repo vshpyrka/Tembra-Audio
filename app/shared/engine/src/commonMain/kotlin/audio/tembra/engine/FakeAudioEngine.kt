@@ -15,7 +15,9 @@ import kotlin.math.round
  * rules and lets tests script the reading, the tick, a start failure, the custom-sound outcome, the watchdog and platform
  * events (contracts/tuner-audio-kotlin.md, contracts/metronome-audio-kotlin.md). The transport half
  * (contracts/timeline-audio-kotlin.md) records its calls too and scripts the inspector, clip-source refusals, a play
- * failure, the transport snapshot and the overview writer.
+ * failure, the transport snapshot and the overview writer. The capture half (feature 010, contracts/engine-c-abi-v7.md
+ * "Kotlin seam") scripts the arm result, the capture snapshot, the peak buckets, the take info and a take writer that
+ * puts a tiny valid WAV where the engine would, so the adoption path is testable on the JVM.
  */
 class FakeAudioEngine(
     private val descriptor: EngineDescriptor = EngineDescriptor(
@@ -283,6 +285,12 @@ class FakeAudioEngine(
         _calls += "closeTransport"
         if (audioState == AudioState.Transport) audioState = AudioState.Idle
         transportPlaying = false
+        armed = false
+        takeRunning = false
+        nextCapture.armed = false
+        nextCapture.recording = false
+        nextCapture.preRoll = false
+        nextCapture.monitoring = false
     }
 
     override suspend fun openClipSource(path: String): ClipSourceResult {
@@ -361,6 +369,162 @@ class FakeAudioEngine(
         _calls += "buildOverview($audioPath)"
         return overviewWriter?.invoke(overviewPath) ?: true
     }
+
+    // --- Capture, takes and monitoring (feature 010, contracts/engine-c-abi-v7.md "Kotlin seam") ---------------------
+
+    /** What [arm] answers while the transport is open. */
+    var armResult: ArmResult = ArmResult.Armed(channels = 1, sampleRate = 48000)
+
+    /** True between a successful [arm] and [disarm] (or the transport closing). */
+    var armed: Boolean = false
+        private set
+
+    /** What [readCapture] copies; tests script it. [arm] sets its armed, channels and rate; [recordStart] its phase. */
+    var nextCapture: CaptureSnapshot = CaptureSnapshot()
+
+    /** How many times [readCapture] was called. */
+    var readCaptureCount: Int = 0
+        private set
+
+    /** Serves [readPeaks]: fills the buffer from the index and returns the next; null serves nothing. */
+    var scriptedPeaks: ((fromIndex: Long, into: PeakBuckets) -> Long)? = null
+
+    /** What [recordStop] returns; null builds a 2 s take at the transport's position with [nextCapture]'s format. */
+    var recordStopResult: TakeInfo? = null
+
+    /** Called by [recordStart] with the staging path so a test can write a tiny valid WAV there; null writes nothing. */
+    var takeWriter: ((path: String) -> Unit)? = null
+
+    /** True between [recordStart] and [recordStop] / [recordCancel]. */
+    var takeRunning: Boolean = false
+        private set
+
+    /** The last [recordStart] configuration. */
+    var lastRecordConfig: RecordConfig? = null
+        private set
+
+    /** What [freeBytes] answers. */
+    var freeBytesResult: Long = 1024L * 1024 * 1024
+
+    override suspend fun arm(maxChannels: Int): ArmResult {
+        _calls += "arm($maxChannels)"
+        if (audioState != AudioState.Transport) return ArmResult.NotTransport
+        val result = armResult
+        if (result is ArmResult.Armed) {
+            armed = true
+            nextCapture.armed = true
+            nextCapture.inputChannels = result.channels
+            nextCapture.sampleRate = result.sampleRate
+        }
+        return result
+    }
+
+    override fun disarm() {
+        _calls += "disarm"
+        armed = false
+        takeRunning = false
+        nextCapture.armed = false
+        nextCapture.recording = false
+        nextCapture.preRoll = false
+        nextCapture.monitoring = false
+        nextTransport.recording = false
+        nextTransport.countInBeatsLeft = -1
+    }
+
+    override fun setMonitor(enabled: Boolean, trackIndex: Int) {
+        _calls += "setMonitor($enabled,$trackIndex)"
+        nextCapture.monitoring = enabled && armed
+    }
+
+    override suspend fun recordStart(config: RecordConfig): RecordStartResult {
+        _calls += "recordStart(${config.wavPath},${config.trackIndex},${config.countInBeats})"
+        if (!armed) return RecordStartResult.NotArmed
+        if (takeRunning) return RecordStartResult.TakeRunning
+        takeWriter?.invoke(config.wavPath)
+        lastRecordConfig = config
+        takeRunning = true
+        transportPlaying = true
+        nextTransport.playing = true
+        nextCapture.preRoll = config.countInBeats > 0
+        nextCapture.recording = config.countInBeats == 0
+        nextCapture.takeStartFrames = nextTransport.positionFrames
+        nextTransport.recording = nextCapture.recording
+        nextTransport.countInBeatsLeft = if (config.countInBeats > 0) config.countInBeats else -1
+        return RecordStartResult.Started
+    }
+
+    /** The pre-roll ended on its own: the take captures from the transport's position (not recorded as a call). */
+    fun endPreRoll() {
+        if (!takeRunning) return
+        nextCapture.preRoll = false
+        nextCapture.recording = true
+        nextTransport.recording = true
+        nextTransport.countInBeatsLeft = -1
+    }
+
+    /** The engine ended the take itself with [reason] (the cap, the disk, a lost input); the host collects it with [recordStop]. */
+    fun endTake(reason: audio.tembra.core.recording.TakeStopReason) {
+        if (!takeRunning) return
+        nextCapture.recording = false
+        nextCapture.preRoll = false
+        nextCapture.stopReason = reason
+        nextTransport.recording = false
+        nextTransport.countInBeatsLeft = -1
+    }
+
+    override fun recordCancel() {
+        _calls += "recordCancel"
+        takeRunning = false
+        transportPlaying = false
+        nextTransport.playing = false
+        nextTransport.recording = false
+        nextTransport.countInBeatsLeft = -1
+        nextCapture.recording = false
+        nextCapture.preRoll = false
+    }
+
+    override suspend fun recordStop(): TakeInfo {
+        _calls += "recordStop"
+        takeRunning = false
+        nextCapture.recording = false
+        nextCapture.preRoll = false
+        nextTransport.recording = false
+        nextTransport.countInBeatsLeft = -1
+        val reason = nextCapture.stopReason
+        nextCapture.stopReason = audio.tembra.core.recording.TakeStopReason.User
+        return recordStopResult ?: TakeInfo(
+            startFrames = nextCapture.takeStartFrames,
+            startBeats = nextTransport.positionBeats,
+            frames = 2L * nextCapture.sampleRate,
+            channels = nextCapture.inputChannels,
+            sampleRate = nextCapture.sampleRate,
+            alignmentFrames = nextCapture.alignmentFrames,
+            stopReason = reason,
+        )
+    }
+
+    override fun readCapture(into: CaptureSnapshot) {
+        readCaptureCount++
+        into.copyFrom(nextCapture)
+    }
+
+    override fun readPeaks(fromIndex: Long, into: PeakBuckets): Long {
+        val script = scriptedPeaks
+        if (script == null) {
+            into.count = 0
+            into.firstIndex = fromIndex
+            into.nextIndex = fromIndex
+            return fromIndex
+        }
+        return script(fromIndex, into)
+    }
+
+    override fun resetClip() {
+        _calls += "resetClip"
+        nextCapture.clipped = false
+    }
+
+    override fun freeBytes(path: String): Long = freeBytesResult
 
     private companion object {
         /** `TEMBRA_ERR_STATE`. */

@@ -48,3 +48,21 @@ fun Project.findClip(id: ClipId): Clip? = tracks.asSequence().flatMap { it.clips
 
 /** The track holding a clip. */
 fun Project.trackOf(clipId: ClipId): Track? = tracks.firstOrNull { track -> track.clips.any { it.id == clipId } }
+
+/**
+ * The clips of a track whose span in beats at the current tempo crosses `[startBeats, endBeats)`, in start order
+ * (feature 010, spec FR-013: the editor's replacement rule and the renderer's muting rule). Touching does not count,
+ * a clip whose asset is missing has no length and never counts, and an unknown track has none.
+ */
+fun Project.clipsOverlapping(trackId: TrackId, startBeats: Beats, endBeats: Beats): List<Clip> {
+    val track = findTrack(trackId) ?: return emptyList()
+    return track.clips
+        .filter { clip ->
+            val end = clipEndBeats(clip).value
+            end > clip.startBeats.value && clip.startBeats.value < endBeats.value - OVERLAP_EPSILON && startBeats.value < end - OVERLAP_EPSILON
+        }
+        .sortedBy { it.startBeats.value }
+}
+
+/** Absorbs the last-bit error of beat arithmetic so touching clips never count as overlapping (the editor's margin). */
+private const val OVERLAP_EPSILON = 1e-9

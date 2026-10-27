@@ -10,6 +10,8 @@ import kotlinx.cinterop.value
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import platform.AVFAudio.AVAudioSession
+import platform.AVFAudio.AVAudioSessionCategoryOptionAllowBluetoothA2DP
+import platform.AVFAudio.AVAudioSessionCategoryOptionDefaultToSpeaker
 import platform.AVFAudio.AVAudioSessionCategoryPlayAndRecord
 import platform.AVFAudio.AVAudioSessionCategoryPlayback
 import platform.AVFAudio.AVAudioSessionInterruptionNotification
@@ -30,6 +32,8 @@ import platform.AVFAudio.AVAudioSessionRouteChangeReasonOldDeviceUnavailable
 import platform.AVFAudio.AVAudioSessionRouteDescription
 import platform.AVFAudio.AVAudioSessionSetActiveOptionNotifyOthersOnDeactivation
 import platform.AVFAudio.IOBufferDuration
+import platform.AVFAudio.currentRoute
+import platform.AVFAudio.inputLatency
 import platform.AVFAudio.outputLatency
 import platform.AVFAudio.setActive
 import platform.AVFAudio.setPreferredIOBufferDuration
@@ -115,6 +119,43 @@ object IosAudioSession {
     /** The active route's output latency plus one IO buffer, in nanoseconds: what the listener hears late by. */
     fun outputLatencyNanos(): Long = ((session.outputLatency + session.IOBufferDuration) * NANOS_PER_SECOND).toLong()
 
+    /** The active route's input latency plus one IO buffer, in nanoseconds (feature 010, research R9). */
+    fun inputLatencyNanos(): Long = ((session.inputLatency + session.IOBufferDuration) * NANOS_PER_SECOND).toLong()
+
+    /**
+     * `playAndRecord` in measurement mode with wireless headphones kept as stereo outputs and playback on the speaker
+     * rather than the receiver (feature 010, research R3, R4: `allowBluetoothA2DP` without HFP, so a headset's
+     * microphone is never used); 48 kHz with a 5 ms buffer. True when the session is active.
+     */
+    fun activateForRecording(): Boolean {
+        val options = AVAudioSessionCategoryOptionAllowBluetoothA2DP or AVAudioSessionCategoryOptionDefaultToSpeaker
+        val category = withError { session.setCategory(AVAudioSessionCategoryPlayAndRecord, AVAudioSessionModeMeasurement, options, it) }
+        withError { session.setPreferredSampleRate(PREFERRED_SAMPLE_RATE, it) }
+        withError { session.setPreferredIOBufferDuration(PREFERRED_IO_BUFFER_SECONDS, it) }
+        val active = withError { session.setActive(true, it) }
+        if (active) isActive = true
+        lastInputUid = currentInputUid()
+        return category && active
+    }
+
+    /** True when the current route's outputs are only the built-in speaker or receiver (feature 010, FR-017). */
+    fun outputIsSpeaker(): Boolean {
+        val outputs = session.currentRoute.outputs.mapNotNull { (it as? AVAudioSessionPortDescription)?.portType }
+        return outputs.isEmpty() || outputs.all { it in builtInOutputs }
+    }
+
+    /** The current input port's name, for the route monitor; empty when none. */
+    fun currentInputName(): String = session.currentRoute.inputs.firstNotNullOfOrNull { (it as? AVAudioSessionPortDescription)?.portName } ?: ""
+
+    /** The current output port's name, for the route monitor; empty when none. */
+    fun currentOutputName(): String = session.currentRoute.outputs.firstNotNullOfOrNull { (it as? AVAudioSessionPortDescription)?.portName } ?: ""
+
+    /** The current input port's UID, for the route monitor; empty when none. */
+    fun currentInputUid(): String = session.currentRoute.inputs.firstNotNullOfOrNull { (it as? AVAudioSessionPortDescription)?.UID } ?: ""
+
+    @Volatile
+    private var lastInputUid: String = ""
+
     /** Deactivates and tells other apps they may resume; true on success. */
     fun deactivate(): Boolean {
         val deactivated = withError { session.setActive(false, AVAudioSessionSetActiveOptionNotifyOthersOnDeactivation, it) }
@@ -155,6 +196,14 @@ object IosAudioSession {
         if (reason == AVAudioSessionRouteChangeReasonOldDeviceUnavailable && previousOutputs.any { it !in builtInOutputs }) {
             _events.tryEmit(AudioEvent.OutputRouteLost)
         }
+        // Feature 010 (research R4, R12): the input port changing ends a take; the output changing tells the host
+        // whether the speaker is now the output (monitoring must stop on it).
+        val inputUid = currentInputUid()
+        if (inputUid != lastInputUid) {
+            lastInputUid = inputUid
+            _events.tryEmit(AudioEvent.InputRouteChanged)
+        }
+        _events.tryEmit(AudioEvent.OutputRouteChanged(outputIsSpeaker()))
         routeChangeListener?.invoke()
     }
 }
