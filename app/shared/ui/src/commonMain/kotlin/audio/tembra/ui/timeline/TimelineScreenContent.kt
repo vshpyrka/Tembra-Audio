@@ -3,7 +3,9 @@ package audio.tembra.ui.timeline
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -46,9 +48,10 @@ import audio.tembra.ui.transport.TransportCallbacks
  * the transport bar, arranged per [layout]. The ruler carries bars and time only (FR-013, D1): on expanded windows an
  * empty 200 dp slot over the header column makes its canvas start where the lanes do; elsewhere the canvas spans the
  * full width, as the lanes do, so ruler, playhead and clips share one scale (FR-017). The overview strip sits between
- * the lanes and the transport bar, under the lanes only on expanded windows, inset from the window's sides on top of
- * that (FR-015; T151); while [TimelineUiState.overviewStripShown] is false it is not composed and takes no height. The
- * root is tagged `screen.timeline` with `stateDescription` "ready" once every visible overview is drawn
+ * the lanes and the transport bar, under the lanes only on expanded windows, and inset on each side by the page margin
+ * plus whatever part of the back-gesture zone still reaches it past that header column (FR-015; T151, T153); while
+ * [TimelineUiState.overviewStripShown] is false it is not composed and takes no height. The root is tagged
+ * `screen.timeline` with `stateDescription` "ready" once every visible overview is drawn
  * (contracts/perf-instrumentation.md), plus the 1 dp `screen.timeline.ready` marker the Android journey waits on.
  */
 @Composable
@@ -144,7 +147,9 @@ internal fun TimelineScreenContent(
                 )
             }
             if (state.overviewStripShown) {
-                // The strip adds its own side inset (the page margin, or the back-gesture zone where wider) to this.
+                // The strip adds its own side inset to this: the page margin, plus the part of the back-gesture zone that
+                // still reaches it. The header column is consumed as well as padded: the zone lies inside the 200 dp
+                // column, so the strip starts the margin after it, not the margin plus the zone (T153).
                 OverviewStrip(
                     viewport = state.viewport,
                     tracks = state.tracks,
@@ -153,7 +158,7 @@ internal fun TimelineScreenContent(
                     telemetry = telemetry,
                     onScrollTo = callbacks.onScrollTo,
                     onZoomTo = callbacks.onZoomTo,
-                    modifier = Modifier.padding(start = headerColumn),
+                    modifier = Modifier.padding(start = headerColumn).consumeWindowInsets(PaddingValues(start = headerColumn)),
                     height = stripHeight,
                 )
             }

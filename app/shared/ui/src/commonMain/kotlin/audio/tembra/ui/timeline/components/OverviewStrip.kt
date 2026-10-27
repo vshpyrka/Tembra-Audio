@@ -4,16 +4,15 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemGestures
-import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -63,11 +62,15 @@ import kotlin.math.roundToInt
  * lanes show: `daw.gridOverlay` at 24 % with a 1 dp `primary` outline and two 8 dp edge handles, never drawn narrower
  * than 24 dp.
  *
- * [sideInsets] keep the strip clear of the window's sides (the owner's verdict on D1, T151): by default
- * [OverviewStripDefaults.sideInsets], at least the 16 dp page margin and the system's back-gesture zone where that is
- * wider, so a handle at either end of the project is grabbed by the strip and not taken by a back swipe. The inset
- * lies outside the tagged node: its bounds, its semantics and its pointer input cover the strip alone, and the
- * beat-to-pixel arithmetic runs on that inset width.
+ * The strip keeps clear of the window's sides (the owner's verdict on D1, T151): each side is inset by [margin] (the
+ * 16 dp page margin) plus whatever part of [gestureInsets] (the system's back-gesture zones by default; zero wherever
+ * the platform reports none, as with three-button navigation) still reaches the strip past that margin and past what
+ * its ancestors consumed (T153). A navigation rail, the iPhone Duo's end column and the Timeline's header column consume
+ * the zone they cover, so beside them the strip keeps the margin alone; on a plain phone window it keeps the larger of
+ * the two. A handle at either end of the project is then grabbed by the strip, not taken by a back swipe. The inset is
+ * read in layout, not composition (a change of the zones relays the strip out without recomposing it), and lies outside
+ * the tagged node: its bounds, its semantics and its pointer input cover the strip alone, and the beat-to-pixel
+ * arithmetic runs on that inset width. Tests pass a zero [gestureInsets] and [margin] for a strip as wide as its host.
  *
  * Dragging inside the window scrolls ([onScrollTo] with the new left-edge beat: the window follows the finger, held
  * inside the project); dragging a handle zooms ([onZoomTo] with the new span, the opposite edge fixed, held between
@@ -88,7 +91,8 @@ internal fun OverviewStrip(
     onZoomTo: (startBeats: Beats, endBeats: Beats) -> Unit,
     modifier: Modifier = Modifier,
     height: Dp = OverviewStripDefaults.CompactHeight,
-    sideInsets: PaddingValues = OverviewStripDefaults.sideInsets(),
+    margin: Dp = TembraTheme.spacing.pageMargin,
+    gestureInsets: WindowInsets = WindowInsets.systemGestures,
 ) {
     val colors = TembraTheme.colors
     val daw = TembraTheme.daw
@@ -122,6 +126,10 @@ internal fun OverviewStrip(
     val currentOnScrollTo by rememberUpdatedState(onScrollTo)
     val currentOnZoomTo by rememberUpdatedState(onZoomTo)
     val described = barsInView(viewport)
+    // The zones' reach past the margin; windowInsetsPadding then takes off what the ancestors consumed on that side.
+    val gestureReach = remember(gestureInsets, margin) {
+        gestureInsets.only(WindowInsetsSides.Horizontal).exclude(WindowInsets(left = margin, right = margin))
+    }
     Layout(
         content = {
             Canvas(Modifier) {
@@ -149,7 +157,9 @@ internal fun OverviewStrip(
         modifier = modifier
             .fillMaxWidth()
             // Before the tag: the inset is margin, and the node, its semantics and its gestures are the strip alone.
-            .padding(sideInsets)
+            // The gesture zone's unconsumed remainder, then the page margin always: max(margin, zone - consumed) a side.
+            .windowInsetsPadding(gestureReach)
+            .padding(horizontal = margin)
             .height(height)
             .testTag(TimelineTestTags.OVERVIEW)
             .semantics {
@@ -180,29 +190,13 @@ internal fun OverviewStrip(
     }
 }
 
-/** The strip's two heights and its side inset (spec FR-015, D1; T151). */
+/** The strip's two heights (spec FR-015, D1). */
 internal object OverviewStripDefaults {
     /** On compact windows. */
     val CompactHeight: Dp = 24.dp
 
     /** On medium and expanded windows. */
     val Height: Dp = 28.dp
-
-    /**
-     * Per side, the larger of the page margin and the system's gesture inset on that side (the back-gesture zone with
-     * Android's gesture navigation; zero wherever the platform reports none, as with three-button navigation), so the
-     * strip's ends stay reachable by a finger (the owner's verdict on D1). The inset is read in layout, not composition:
-     * a change of the system's zones relays the strip out without recomposing it.
-     */
-    @Composable
-    fun sideInsets(): PaddingValues {
-        val gestures = WindowInsets.systemGestures
-        val margin = TembraTheme.spacing.pageMargin
-        val density = LocalDensity.current
-        return remember(gestures, margin, density) {
-            gestures.only(WindowInsetsSides.Horizontal).union(WindowInsets(left = margin, right = margin)).asPaddingValues(density)
-        }
-    }
 }
 
 /** Everything the draw lambdas need, resolved once per theme and density so a frame allocates nothing. */

@@ -409,6 +409,19 @@ every target with zero warnings.
   `DATA_TEST/timeline/DataStoreTimelinePreferencesTest.kt` (new); the journeys' comments
   (`PERF/journeys/TimelineJourney.kt`, `IOSPERF/Journeys/TimelineJourney.swift`) and `IOSPERF/ScreenshotMatrix.swift`
   (the zoom states drag the window's right handle); the baseline profiles regenerated on the Pixel 6 Pro
+- [X] T153 The strip was inset twice beside chrome that already keeps the back-gesture zone off it (seen in the captures
+  after the zoom verdict, 5841a41 and `screenshots/NOTES.md`: 84 pt short of the iPhone Duo's end rail, 30 dp from the
+  Pixel Tablet's and the fold's rail, 20 pt instead of 16 after the iPad's header column), because T151's
+  `asPaddingValues()` read the raw window insets. `UI/timeline/components/OverviewStrip.kt` takes `margin` (default the
+  16 dp page margin) and `gestureInsets` (default `WindowInsets.systemGestures`) in place of `sideInsets`, and pads with
+  `windowInsetsPadding` (the horizontal zones less the margin, which honours what the ancestors consumed) and then the
+  margin: each side is inset by max(margin, zone − consumed); `OverviewStripDefaults.sideInsets()` is gone. The
+  consumption rule: whatever already covers a side consumes that side's zone. `UI/navigation/NavigationShellContent.kt`
+  consumes `systemGestures` at the start beside a rail (the scaffold layout consumes nothing; the content's padding
+  consumes only the safe-drawing sides it applies) and, in `EndRailFrame`, the end's safe-drawing and gesture insets the
+  rail covers; `UI/timeline/TimelineScreenContent.kt` consumes the 200 dp header column it pads the strip by. Tests:
+  `UI_UITEST/timeline/OverviewStripTest.kt` (a zero margin and zone for the beat arithmetic; exactly 16 dp under a 200 dp
+  consumed start), `UI_UITEST/navigation/NavigationShellTest.kt` (16 dp from the content beside the rail and the end rail)
 - [ ] T145 `/speckit-constitution`: recording before the mixer (its own input level meter on the track header); then
   `/speckit-specify` the recording feature
 
@@ -429,9 +442,14 @@ every target with zero warnings.
   TimelineRuler.kt`): keep the chip inside the canvas when the playhead is within half a chip of either edge
 - [ ] T149 On Medium windows (600–839 dp) at twice the font size the full toolbar does not fit; FR-055's fallback to the
   compact toolbar "when it fits" is not built (`UI/timeline/components/TimelineToolbar.kt`, `TimelineLayout.kt`)
-- [ ] T150 On iOS, Undo becomes available after the tempo dialog's Done without a change, or after the long press on the
-  metronome toggle (seen while capturing D1; the tempo stays 124): find which of `tempoCommit` and the toggle's long press
-  records an empty undo step (`UI/timeline/TimelineViewModel.kt`) and cover it in `TimelineViewModelTest`
+- [ ] T150 Undo becomes available after the tempo dialog's Done without a change, or after the long press on the
+  metronome toggle (seen on iOS while capturing D1; the tempo stays 124). Not iOS-only: the captures after the zoom verdict
+  saw the tempo dialog's Done with no change light Undo on the Pixel Tablet too, while the two strip toggles leave it off.
+  Find which of `tempoCommit` and the toggle's long press records an empty undo step (`UI/timeline/TimelineViewModel.kt`)
+  and cover it in `TimelineViewModelTest`
+- [ ] T154 At 360 dp the metronome sheet's "Standard" pill sits under the system's gesture handle at the bottom edge (seen
+  in D1 and again in the captures after the zoom verdict): for the owner to decide whether the sheet clears the
+  navigation-bar inset (`UI/timeline/components/MetronomeSettingsSheet.kt`)
 
 ---
 
