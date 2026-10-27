@@ -28,6 +28,9 @@ public:
     /** The ramp keeps moving while nothing plays on the track, so the next clip starts at the settled gain. */
     void advance(uint32_t frames) { ramp_.advance(frames); }
 
+    /** The gain for the next sample (the monitor strip multiplies it with its own fade). */
+    float nextGain() { return ramp_.next(); }
+
     float currentGain() const { return ramp_.current(); }
     float targetGain() const { return ramp_.target(); }
 
