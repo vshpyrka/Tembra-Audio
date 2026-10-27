@@ -8,7 +8,7 @@ import kotlin.test.assertNull
 
 /**
  * The audio-health plumbing without the real engine (spec SC-010): the fake engine scripts an [AudioHealth], the
- * facade returns it, and [AudioHealthPublisher.publish] turns it into exactly six counters through [PerfTrace]. The
+ * facade returns it, and [AudioHealthPublisher.publish] turns it into exactly nine counters through [PerfTrace]. The
  * publisher is a plain function: the launch site is the app's one-second ticker, not this module.
  */
 class AudioHealthTelemetryTest {
@@ -34,14 +34,19 @@ class AudioHealthTelemetryTest {
     }
 
     @Test
-    fun thePublisherEmitsSixCountersWithTheScriptedValues() {
+    fun thePublisherEmitsNineCountersWithTheScriptedValues() {
         val engine = FakeAudioEngine()
-        engine.scriptAudioHealth(AudioHealth(callbacks = 1200, lastMicros = 850, maxMicros = 1900, overBudget = 2, xruns = 3, realtime = true))
+        engine.scriptAudioHealth(
+            AudioHealth(callbacks = 1200, lastMicros = 850, maxMicros = 1900, overBudget = 2, xruns = 3, realtime = true, avgMicros = 410, starvation = 1, clipsActive = 5),
+        )
         val published = AudioHealthPublisher.publish(engine, PerfTrace)
         assertEquals(true, published)
         if (PerfBuild.PERF_ENABLED) {
             assertEquals(
-                listOf("audio.callbacks=1200", "audio.lastUs=850", "audio.maxUs=1900", "audio.overBudget=2", "audio.xruns=3", "audio.realtime=1"),
+                listOf(
+                    "audio.callbacks=1200", "audio.lastUs=850", "audio.maxUs=1900", "audio.overBudget=2", "audio.xruns=3", "audio.realtime=1",
+                    "audio.avgUs=410", "audio.starvation=1", "audio.clipsActive=5",
+                ),
                 sink.counters,
             )
         } else {

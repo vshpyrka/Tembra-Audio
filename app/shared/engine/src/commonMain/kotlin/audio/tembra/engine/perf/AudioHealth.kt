@@ -12,4 +12,11 @@ data class AudioHealth(
     val overBudget: Int,
     val xruns: Int,
     val realtime: Boolean,
+    // ABI revision 6 (feature 009): the transport's counters; zero from a revision-5 reader.
+    /** Mean callback duration since the stream opened, microseconds. */
+    val avgMicros: Int = 0,
+    /** Clip fifos found dry by the callback (silence was rendered for them). */
+    val starvation: Int = 0,
+    /** Clips rendered in the last block. */
+    val clipsActive: Int = 0,
 )

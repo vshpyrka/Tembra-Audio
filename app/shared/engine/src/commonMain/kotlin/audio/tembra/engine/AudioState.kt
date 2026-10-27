@@ -5,7 +5,10 @@ enum class AudioState {
     Idle,
     Listening,
     Tone,
-    Metronome;
+    Metronome,
+
+    /** The output stream is open for a project, stopped or playing (feature 009, ABI revision 6). */
+    Transport;
 
     companion object {
         /** Maps the C ABI value; anything unknown reads as [Idle]. */

@@ -3,11 +3,15 @@ package audio.tembra.ui.di
 import audio.tembra.data.AppDirectories
 import audio.tembra.data.metronome.CustomClickSoundStore
 import audio.tembra.data.metronome.MetronomePreferences
+import audio.tembra.data.projects.ProjectRepository
 import audio.tembra.data.tuner.TunerPreferences
 import audio.tembra.engine.AudioEngine
+import audio.tembra.ui.platform.AudioFilePicker
 import audio.tembra.ui.platform.BackgroundPlaybackHost
 import audio.tembra.ui.platform.MicrophonePermission
-import audio.tembra.ui.platform.SoundFilePicker
+import audio.tembra.ui.projects.ProjectsSeeder
+import audio.tembra.ui.session.AppStartup
+import audio.tembra.ui.session.ProjectSession
 import dev.zacsweers.metrox.viewmodel.ViewModelGraph
 
 /**
@@ -22,7 +26,11 @@ interface AppGraph : ViewModelGraph {
     val customClickSoundStore: CustomClickSoundStore
     val microphonePermission: MicrophonePermission
     val backgroundPlaybackHost: BackgroundPlaybackHost
-    val soundFilePicker: SoundFilePicker
+    val audioFilePicker: AudioFilePicker
+    val projectRepository: ProjectRepository
+    val projectSession: ProjectSession
+    val appStartup: AppStartup
+    val projectsSeeder: ProjectsSeeder
 }
 
 /**

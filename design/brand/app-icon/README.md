@@ -7,7 +7,7 @@ python3 design/brand/app-icon/generate_app_icons.py            # everything
 python3 design/brand/app-icon/generate_app_icons.py android    # or ios, previews
 ```
 
-Requires Pillow and NumPy. The iOS preview also renders `AppIcon.icon` with Icon Composer's `ictool` from Xcode 27.1 beta, and is skipped without it. Re-running produces identical files.
+Requires Pillow and NumPy. The iOS preview also renders `AppIcon.icon` with Icon Composer's `ictool` from Xcode 27.1 (`/Applications/Xcode.app`), and is skipped without it. Re-running produces identical files.
 
 The mark is sized by the circle that encloses it. That circle is 78 % of the visible icon: 56 dp of Android's 72 dp viewport (inside the 66 dp safe zone), and 799 px of the 1024 px iOS and Play canvases.
 
@@ -34,7 +34,7 @@ Applied to the app on branch `brand/app-icons`: the `mipmap-*` folders and both 
 | `AppIcon.icon/` | 1024 layer | Icon Composer document for iOS 26+ Liquid Glass: the squirrel as one glass layer on a solid `#141416` fill. Xcode builds the pre-iOS 26 fallback PNGs from it. Open it in Icon Composer to adjust the glass, shadow or per-appearance settings |
 | `app-store/app-store-icon-1024.png` | 1024 × 1024, RGB, no alpha | App Store Connect marketing icon |
 
-Use one of the two icon formats, named `AppIcon` (the target's `ASSETCATALOG_COMPILER_APPICON_NAME`). Both compile cleanly with `actool` from Xcode 27.1 beta at the app's iOS 16.0 deployment target.
+Use one of the two icon formats, named `AppIcon` (the target's `ASSETCATALOG_COMPILER_APPICON_NAME`). Both compile cleanly with `actool` from Xcode 27.1 at the app's iOS 16.0 deployment target.
 
 ## Other files
 

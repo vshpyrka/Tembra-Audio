@@ -5,6 +5,8 @@ plugins {
 dependencies {
     implementation(libs.kotlin.gradle.plugin)
     implementation(libs.kotlin.compose.compiler.gradle.plugin)
+    // The kotlinx.serialization plugin must share KGP's classloader (feature 009); :shared:core and :shared:data apply it by id.
+    implementation(libs.kotlin.serialization.gradle.plugin)
     implementation(libs.android.gradle.plugin)
     implementation(libs.compose.gradle.plugin)
     implementation(libs.metro.gradle.plugin)

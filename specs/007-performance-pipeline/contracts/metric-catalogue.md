@@ -8,24 +8,25 @@ Code in `app/perf/tracepulse/catalogue.py`; `tracepulse.yml` may override `gate_
 | `startup.ttfd_ms` | android | `timeToFullDisplayMs` (needs `ReportDrawnWhen`) | ms | startup | 15 | 3 % | no |
 | `startup.ttid_ms` | ios | `XCTApplicationLaunchMetric(waitUntilResponsive: false)` | ms | startup | 15 | 3 % | no |
 | `startup.ttfd_ms` | ios | `XCTApplicationLaunchMetric(waitUntilResponsive: true)` | ms | startup | 15 | 3 % | no |
-| `frames.p50_ms`, `frames.p90_ms`, `frames.p99_ms` | android | `FrameTimingMetric.frameDurationCpuMs` P50/P90/P99 | ms | tuner, metronome, stress | 25 | 3 / 5 / 8 % | no |
+| `frames.p50_ms`, `frames.p90_ms`, `frames.p99_ms` | android | `FrameTimingMetric.frameDurationCpuMs` P50/P90/P99 | ms | tuner, metronome, timeline, stress | 25 | 3 / 5 / 8 % | no |
 | `frames.overrun_p90_ms` | android | `frameOverrunMs` P90 (API 31+) | ms | same | abs 2.0 ms, or 25 % of the baseline when that is larger | abs 2.0 ms | no |
-| `frames.hitch_ratio_ms_per_s` | ios | animation `XCTOSSignpostMetric` (or `XCTHitchMetric`) hitch time ratio | ms/s | tuner, metronome, stress | abs 5 ms/s | abs 2 ms/s | no |
+| `frames.hitch_ratio_ms_per_s` | ios | animation `XCTOSSignpostMetric` (or `XCTHitchMetric`) hitch time ratio | ms/s | tuner, metronome, timeline, stress | abs 5 ms/s | abs 2 ms/s | no |
 | `frames.hitch_count` | ios | same | count | same | 25 | 25 % | no |
 | `frames.fps` | ios | same, frame rate (lower is worse → stored as `frames.fps_deficit` = max(0, 60 − fps)) | fps | same | abs 5 | abs 2 | no |
-| `memory.peak_kb` | android | `MemoryUsageMetric(Max, RssAnon)` | kB | tuner, metronome, stress | 15 | 3 % | no |
+| `memory.peak_kb` | android | `MemoryUsageMetric(Max, RssAnon)` | kB | tuner, metronome, timeline, stress | 15 | 3 % | no |
 | `memory.end_kb` | android | `MemoryUsageMetric(Last, RssAnon)` (heap size until 2026-10-11; its round medians varied 4–16 %) | kB | same | 15 | 5 % | no |
 | `memory.peak_kb` | ios | `XCTMemoryMetric` Memory Peak Physical | kB | same | 15 | 3 % | no |
 | `memory.end_kb` | ios | `XCTMemoryMetric` Memory Physical (delta) | kB | same | 15 | 5 % | no |
-| `cpu.time_ms` | ios | `XCTCPUMetric` CPU Time | ms | tuner, metronome, stress | 20 | 5 % | no |
+| `cpu.time_ms` | ios | `XCTCPUMetric` CPU Time | ms | tuner, metronome, timeline, stress | 20 | 5 % | no |
 | `cpu.instructions_k` | ios | CPU Instructions Retired | kI | same | 20 | 5 % | no |
-| `journey.duration_ms` | both | Android: trace section around the journey (`TraceSectionMetric`); iOS: `XCTClockMetric` | ms | tuner, metronome, stress | 20 | 5 % | no |
+| `journey.duration_ms` | both | Android: trace section around the journey (`TraceSectionMetric`); iOS: `XCTClockMetric` | ms | tuner, metronome, timeline, stress | 20 | 5 % | no |
 | `section.<name>.sum_ms` | both | Android `TraceSectionMetric(name, Sum)`; iOS `XCTOSSignpostMetric(subsystem: audio.tembra, category: ui|engine, name:)` duration | ms | journey that exercises it | 20, and at least 1 ms | 5 % | **yes** (same instrumentation, same name) |
 | `section.<name>.count` | both | same | count | same | 20 | 10 % | yes |
 | `app.size_bytes` | android | perf APK bytes (`os.path.getsize`) | bytes | — (n=1) | 2 (threshold detector, 0.5 %) | — | no |
 | `app.size_bytes` | ios | thinning report, compressed size of `iPhone14,7` variant | bytes | — (n=1) | 2 | — | no |
 | `app.size_uncompressed_bytes` | ios | thinning report, uncompressed (advisory) | bytes | — | — | — | no |
 | `audio.callbacks`, `audio.last_callback_us`, `audio.max_callback_us`, `audio.over_budget`, `audio.xruns`, `audio.realtime` | both | Android counter tracks; iOS `engine-health.json` | various | stress | 50 (callback durations: and at least 100 µs; realtime: any change) | 10 % | **yes** |
+| `audio.avg_us`, `audio.starvation`, `audio.clips_active` (feature 009, ABI revision 6) | both | Android counter tracks (the peak over the trace: the engine restarts its counters per stream session and the stress journey hands the device over); iOS `engine-health.json`, written while the transport still plays | µs, count, count | stress | 50 (`avg_us`: and at least 100 µs; `starvation`: any increase from 0, absolute limit 1) | 10 % (`starvation`: 1) | **yes** |
 | `audio.ioproc_p99_us` | ios | `xctrace` Audio Client + Audio Server instruments, system-wide: `audio-hal-client-io-cycle-ioproc` when it has rows, else the HAL server's `audio-hal-io-cycle-client` (the only table iOS 27.0.1 fills; the phone's only HAL client is the app) | µs | stress | 50 | 10 % | no (advisory) |
 
 Simulator series: same keys, `kind: simulator`; gates inactive by default; `frames.*` and `audio.ioproc_*` absent (not produced on simulators); report marks the series as non-reference.

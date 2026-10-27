@@ -7,27 +7,35 @@ the API reference pages linked below, and running Tembra Audio on the iPhone Duo
 
 ## 1. Running the simulator
 
-- The Duo simulator needs **Xcode 27.1 beta** (Apple silicon, macOS 26.6 or later) and the **iOS 27.1 beta
-  simulator runtime, build 24A94401** (7.85 GB). That runtime is delivered only through Xcode 27.1's own downloader
-  (`downloadMethod: mobileAsset`, `minXcodeVersion = maxXcodeVersion = 27.1.0` in Apple's
-  [runtime index](https://devimages-cdn.apple.com/downloads/xcode/simulators/index2.dvtdownloadableindex)); there
-  is no dmg on the developer site.
+- The Duo simulator needs **Xcode 27.1** (Apple silicon, macOS 26.6 or later) and an **iOS 27.1 simulator runtime**.
+  The Xcode 27.1 release (27A9275) has been the default `/Applications/Xcode.app` since 2026-10-21 and runs the Duo
+  on its own (2026-10-26, macOS 27.0.1: Debug and Release builds, Device Hub poses, `checkIos`); the 27.1 beta
+  (27A9269) the simulator was first set up with was removed that day. Since then the Duo runs on the **iOS 27.1
+  release runtime, build 24A94425** (7.85 GB), which replaced the 27.1 beta runtime 24A94401. Both are delivered
+  only through Xcode's own downloader (`downloadMethod: mobileAsset`; the beta carries
+  `minXcodeVersion = maxXcodeVersion = 27.1.0` in Apple's [runtime index](https://devimages-cdn.apple.com/downloads/xcode/simulators/index2.dvtdownloadableindex));
+  there is no dmg on the developer site.
 - **Xcode 27.2 beta 2 cannot run it**: its iOS 27.2 runtime lists the Duo (`iPhone19,4`) under
   `unsupportedDeviceTypes`, so `simctl create` fails with "Incompatible device", and it cannot fetch the 27.1 runtime
   (hangs at "Finding content...").
-- Install side by side and keep `xcode-select` on the release Xcode:
-  `DEVELOPER_DIR=/Applications/Xcode-27.1-beta.app/Contents/Developer xcodebuild -downloadPlatform iOS` (it then
-  starts iOS 27.0 too; stop it once 27.1 shows Ready), then
+- Set up with Xcode 27.1 selected: `xcodebuild -downloadPlatform iOS -buildVersion 24A94425` (without
+  `-buildVersion`, on 2026-10-03, it also started iOS 27.0; it stages the ~8 GB on the internal disk and installs
+  the runtime even with `-exportPath <dir>`, which also leaves a copy there), then
   `xcrun simctl create "iPhone Duo" com.apple.CoreSimulator.SimDeviceType.iPhone-Duo com.apple.CoreSimulator.SimRuntime.iOS-27-1`.
-  The first beta to launch installs a newer CoreSimulator service: quit Simulator and
-  `launchctl remove com.apple.CoreSimulator.CoreSimulatorService` once.
-- Simulator.app is replaced by **Device Hub** (`Xcode-27.1-beta.app/Contents/Applications/DeviceHub.app`). The
+  While two builds of iOS 27.1 are installed, pass the wanted runtime's `.simruntime` path (`runtimeBundlePath` in
+  `xcrun simctl runtime list -j`) instead of the identifier; `xcrun simctl getenv <udid>
+  SIMULATOR_RUNTIME_BUILD_VERSION` on the booted device confirms the build.
+  An Xcode that brings a newer CoreSimulator service installs it on first launch: quit Device Hub and
+  `launchctl remove com.apple.CoreSimulator.CoreSimulatorService` once. After a macOS update the first Device Hub
+  launch asks for an administrator password to install Xcode's components (`xcodebuild -checkFirstLaunchStatus`
+  exits non-zero until then).
+- Simulator.app is replaced by **Device Hub** (`Xcode.app/Contents/Applications/DeviceHub.app`). The
   Closed, Book and Open poses and rotation are buttons in its bottom toolbar; `simctl` has no pose command.
 - Two displays: outer 466 × 678 pt (1398 × 2034 px), inner 669 × 951 pt landscape-native (2853 × 2007 px).
   `xcrun simctl io <udid> enumerate` lists them; `screenshot --display=<uuid>` captures one (the inner one is black
   while closed).
-- `./gradlew checkIos -Ptembra.iosSimulator=<udid>` runs the iOS lane on the Duo with the release Xcode (660 tests
-  passed on 2026-10-03).
+- `./gradlew checkIos -Ptembra.iosSimulator=<udid>` runs the iOS lane on the Duo (660 tests passed on 2026-10-03
+  under Xcode 26.6, 1,225 on 2026-10-26 under Xcode 27.1).
 
 ## 2. What the app does on it
 

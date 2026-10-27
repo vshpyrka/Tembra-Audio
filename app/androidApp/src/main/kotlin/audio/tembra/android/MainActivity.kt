@@ -8,6 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import audio.tembra.ui.App
 import audio.tembra.ui.devtools.DeveloperViewRequest
 import audio.tembra.ui.metronome.MetronomeDebugRequest
+import audio.tembra.ui.projects.ProjectsSeedRequest
 import audio.tembra.ui.platform.ProvideLaidOutWindowSize
 import audio.tembra.ui.platform.dispatchEscapeAsBack
 import audio.tembra.ui.platform.enableEdgeToEdgeOverDarkContent
@@ -25,9 +26,13 @@ class MainActivity : ComponentActivity() {
         val host = appGraph.microphonePermissionHost
         val launcher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted -> host.onResult(granted) }
         host.attach(this, launcher)
-        // The custom click sound is picked through this activity's document picker (feature 004, contracts/click-sounds.md).
-        val pickerHost = appGraph.soundFilePickerHost
-        pickerHost.attach(registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> pickerHost.onResult(uri) })
+        // Audio files (the timeline's imports, the metronome's custom click sound) are picked through this activity's
+        // document pickers (feature 009, contracts/project-storage.md): one document, or several in picker order.
+        val pickerHost = appGraph.audioFilePickerHost
+        pickerHost.attach(
+            one = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> pickerHost.onResult(uri) },
+            many = registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris -> pickerHost.onResult(uris) },
+        )
         // The notifications prompt for the metronome's "Running" notification (Android 13+, contracts/background-playback.md).
         val notificationHost = appGraph.notificationPermissionHost
         notificationHost.attach(this, registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted -> notificationHost.onResult(granted) })
@@ -47,11 +52,13 @@ class MainActivity : ComponentActivity() {
         } else {
             null
         }
+        // "tembra.projects.seed" fills the library for the SC-010 timing (feature 009, T121).
+        val projectsSeed = if (BuildConfig.DEBUG) ProjectsSeedRequest.parse(intent.getStringExtra("tembra.projects.seed")) else null
         setContent {
             // This activity rotates in place (configChanges), which leaves Compose's window size one rotation behind on some
             // devices (API 28 and 30 seen); the wrapper hands every adaptive layout the laid-out window instead.
             ProvideLaidOutWindowSize {
-                App(appGraph = appGraph, developerView = request, tunerTestSignal = testSignal, tunerNoiseGate = noiseGate, metronomeDebug = metronomeDebug)
+                App(appGraph = appGraph, developerView = request, tunerTestSignal = testSignal, tunerNoiseGate = noiseGate, metronomeDebug = metronomeDebug, projectsSeed = projectsSeed)
             }
         }
     }
@@ -61,7 +68,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         appGraph.microphonePermissionHost.detach()
-        appGraph.soundFilePickerHost.detach()
+        appGraph.audioFilePickerHost.detach()
         appGraph.notificationPermissionHost.detach()
         super.onDestroy()
     }

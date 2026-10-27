@@ -70,8 +70,12 @@ class ThemeJsonParityTest {
             "rose" to daw.rose, "rose_light" to daw.roseLight, "magenta" to daw.magenta,
             "wine_pad" to daw.winePad, "wine_pad_mid" to daw.winePadMid, "wine_pad_active" to daw.winePadActive,
             "grid_overlay_faint" to daw.gridOverlayFaint, "grid_overlay" to daw.gridOverlay,
+            // Feature 009 clip tokens.
+            "clip_caption_band" to daw.clipCaptionBand, "playhead_chip" to daw.playheadChip,
+            "selection_outline" to daw.selectionOutline, "unavailable_clip" to daw.unavailableClip,
         )
-        val file = theme.getValue("dawSemanticColors").jsonObject.filterKeys { it != "_note" && it != "clip_glow" }
+        val file = theme.getValue("dawSemanticColors").jsonObject
+            .filterKeys { !it.startsWith("_") && it != "clip_glow" && it != "track_tints" }
         for ((key, value) in file) {
             val color = assertNotNull(kotlin[key], "theme.json dawSemanticColors.$key has no DawColors counterpart")
             val raw = value.jsonPrimitive.content.uppercase() // #RRGGBB or #RRGGBBAA
@@ -82,6 +86,26 @@ class ThemeJsonParityTest {
         assertEquals(file.keys, kotlin.keys, "DawColors must match theme.json exactly")
         // clip_glow = "0 0 12px rgba(167, 139, 250, 0.25)"
         assertEquals("#A78BFA", hex(daw.clipGlow)); assertEquals(64, alpha(daw.clipGlow)); assertEquals(12f, daw.clipGlowBlur.value)
+    }
+
+    /** Feature 009: the six track tints, in `track_tints` order (a track's `colorIndex` picks one). */
+    @Test
+    fun trackTintsMatchTheThemeJsonOrder() {
+        val daw = DawColors.Default
+        val tints = theme.getValue("dawSemanticColors").jsonObject.getValue("track_tints").jsonObject
+        assertEquals(listOf("lavender", "rose", "dusty_rose", "peach", "mint", "violet"), tints.keys.toList())
+        assertEquals(tints.size, daw.trackTints.size)
+        tints.values.forEachIndexed { index, value ->
+            assertEquals(value.jsonPrimitive.content.uppercase(), hex(daw.trackTints[index]), "track_tints[$index]")
+            assertEquals(0xFF, alpha(daw.trackTints[index]))
+        }
+        // The first two are the existing lavender_light and rose_light; the clip tokens reference the scheme and the DAW surfaces.
+        assertEquals(daw.lavenderLight, daw.trackTints[0]); assertEquals(daw.roseLight, daw.trackTints[1])
+        assertEquals(daw.lavenderLight, daw.playheadChip)
+        assertEquals(TembraColorScheme.dark.primary, daw.selectionOutline)
+        assertEquals(TembraColorScheme.dark.outlineVariant, daw.unavailableClip)
+        assertEquals(daw.surfaceLevel2.copy(alpha = daw.clipCaptionBand.alpha), daw.clipCaptionBand)
+        assertEquals(0xB3, alpha(daw.clipCaptionBand))
     }
 
     @Test

@@ -38,11 +38,16 @@ import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.height
+import androidx.compose.ui.unit.width
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import audio.tembra.ui.designsystem.enterKeyboardMode
 import audio.tembra.ui.theme.TembraTheme
+import audio.tembra.ui.timeline.TimelineLayout
+import audio.tembra.ui.timeline.TimelineTestTags
+import dev.zacsweers.metrox.viewmodel.LocalMetroViewModelFactory
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -75,7 +80,8 @@ class NavigationShellTest {
         setContent {
             inputModeManager = LocalInputModeManager.current
             val owner = remember { TestViewModelStoreOwner() }
-            CompositionLocalProvider(LocalViewModelStoreOwner provides owner) {
+            val factory = remember { TestViewModelFactory() }
+            CompositionLocalProvider(LocalViewModelStoreOwner provides owner, LocalMetroViewModelFactory provides factory) {
                 TembraTheme(content)
             }
         }
@@ -102,10 +108,8 @@ class NavigationShellTest {
     fun noLayoutHasATopBarAndTheContentStartsAtTheTopInset() = runComposeUiTest {
         var layoutMode by mutableStateOf(LayoutMode.BottomBar)
         var topInset = 0.dp
-        var placeholderMargin = 0.dp
         withShellLocals {
             topInset = with(LocalDensity.current) { WindowInsets.safeDrawing.getTop(this).toDp() }
-            placeholderMargin = TembraTheme.spacing.lg // the placeholder's own top margin, inside its tagged node
             NavigationShellContent(ShellUiState(), layoutMode, onSelect = {}, onBack = {})
         }
         for (mode in LayoutMode.entries) {
@@ -114,13 +118,48 @@ class NavigationShellTest {
             onNodeWithTag("chrome.topBar").assertDoesNotExist()
             val shell = onNodeWithTag("nav.shell").getUnclippedBoundsInRoot()
             val start = onNodeWithTag("screen.timeline").getUnclippedBoundsInRoot()
-            val expected = topInset + placeholderMargin
+            val expected = topInset // the Timeline's root fills its entry from the inset down (feature 009)
             assertTrue(abs((start.top - shell.top - expected).value) < 0.5f, "$mode: Timeline starts ${start.top - shell.top} below the shell's top, not $expected (inset $topInset)")
             if (mode == LayoutMode.BottomBar) continue
             assertTrue(abs((onNodeWithTag("chrome.rail").getUnclippedBoundsInRoot().top - shell.top).value) < 0.5f, "$mode: the rail does not reach the top edge")
             val firstItem = onNodeWithTag("nav.item.${Destination.entries.first().id}").getUnclippedBoundsInRoot()
             assertTrue(firstItem.top >= shell.top + topInset - 0.5.dp, "$mode: the first rail item (${firstItem.top}) is under the top inset $topInset")
         }
+    }
+
+    /**
+     * T153: the system's back-gesture zone under a rail is consumed by the frame, so the Timeline's overview strip keeps
+     * only the 16 dp page margin from the content beside the rail: from its start beside the start rail (after the
+     * 200 dp header column where the Timeline is expanded), from its end beside the iPhone Duo's end rail. Where the
+     * platform reports no zone wider than the margin this holds without the consumption; with Android's gesture
+     * navigation (a 30 dp zone) the strip would otherwise sit 30 dp in.
+     */
+    @Test
+    fun theOverviewStripIsNotInsetAgainForTheGestureZoneUnderARail() = runComposeUiTest {
+        var layoutMode by mutableStateOf(LayoutMode.Rail)
+        var windowMode = LayoutMode.BottomBar
+        var density = 1f
+        var margin = 0.dp
+        var headerColumn = 0.dp
+        withShellLocals {
+            // What TimelineScreen derives its layout from: the window's own mode, not the one the test forces on the frame.
+            windowMode = rememberLayoutMode()
+            density = LocalDensity.current.density
+            margin = TembraTheme.spacing.pageMargin
+            headerColumn = TembraTheme.spacing.headerColumnWidth
+            NavigationShellContent(ShellUiState(), layoutMode, onSelect = {}, onBack = {})
+        }
+        // One pixel of rounding room.
+        val onePixel = 1f / density
+        val content = onNodeWithTag("screen.timeline").getUnclippedBoundsInRoot()
+        val header = if (TimelineLayout.from(content.width, content.height, windowMode).pinnedHeaders) headerColumn else 0.dp
+        val start = onNodeWithTag(TimelineTestTags.OVERVIEW).getUnclippedBoundsInRoot().left - content.left - header
+        assertTrue(abs((start - margin).value) <= onePixel, "beside the rail the strip starts $start after the content (header $header), not $margin")
+        layoutMode = LayoutMode.EndRail
+        waitForIdle()
+        val endContent = onNodeWithTag("screen.timeline").getUnclippedBoundsInRoot()
+        val end = endContent.right - onNodeWithTag(TimelineTestTags.OVERVIEW).getUnclippedBoundsInRoot().right
+        assertTrue(abs((end - margin).value) <= onePixel, "beside the end rail the strip ends $end before the content, not $margin")
     }
 
     @Test
@@ -169,13 +208,14 @@ class NavigationShellTest {
         }
     }
 
+    /** The start destination is the arranger itself (feature 009): its toolbar and transport bar, no placeholder sentence. */
     @Test
-    fun timelineShowsOnlyTitleAndSentence() = runComposeUiTest {
+    fun timelineShowsTheArrangerChrome() = runComposeUiTest {
         withShellLocals { NavigationShellContent(ShellUiState(), LayoutMode.BottomBar, onSelect = {}, onBack = {}) }
-        val textNodes = SemanticsMatcher.keyIsDefined(SemanticsProperties.Text)
-        onNode(hasText("Timeline") and hasAnyAncestor(hasTestTag("screen.timeline")), useUnmergedTree = true).assertIsDisplayed()
-        onNodeWithTag("screen.timeline.message").assertTextEquals("The timeline arranger arrives with the transport and timeline feature.")
-        onAllNodes(hasAnyAncestor(hasTestTag("screen.timeline")) and textNodes, useUnmergedTree = true).assertCountEquals(2)
+        onNodeWithTag("screen.timeline").assertIsDisplayed()
+        onNodeWithTag("timeline.toolbar").assertExists()
+        onNodeWithTag("transport.bar").assertExists()
+        onNodeWithTag("screen.timeline.message").assertDoesNotExist()
     }
 
     /** The items show icons only (2026-10-17): no text in the bar or the rail, each label is the item's description. */

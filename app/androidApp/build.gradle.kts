@@ -103,6 +103,8 @@ dependencies {
     implementation(libs.androidx.datastore.preferences.core)
     // AndroidMicrophonePermission suspends on the activity result (feature 003, research R6).
     implementation(libs.kotlinx.coroutines.core)
+    // AndroidAudioFilePicker hands the importer an Okio source over the picked document (feature 009, research R11).
+    implementation(libs.okio)
     // Writes the shipped baseline profile into ART's profile directory on the first launch, so a direct
     // `adb install` benefits (feature 008, FR-006) and the comparison's Partial(Require) state can rely on it (D4).
     implementation(libs.androidx.profileinstaller)

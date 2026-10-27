@@ -19,8 +19,13 @@ class FakeBackgroundPlaybackHost(var allow: Boolean = true) : BackgroundPlayback
     var releaseCount: Int = 0
         private set
 
-    override fun keepAlive(): Boolean {
+    /** The last notification [keepAlive] was given. */
+    var notification: PlaybackNotification? = null
+        private set
+
+    override fun keepAlive(notification: PlaybackNotification): Boolean {
         keepAliveCount++
+        this.notification = notification
         alive = allow
         return allow
     }

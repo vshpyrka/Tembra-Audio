@@ -9,10 +9,15 @@ One catalogue of names, one call shape, two platform bindings. Lives in `:shared
 enum class PerfSection(val family: PerfFamily) {
     TUNER_LOAD(TUNER), TUNER_FRAME(TUNER), TUNER_MODE_SWITCH(TUNER),
     METRONOME_LOAD(METRONOME), METRONOME_TICK(METRONOME), METRONOME_TEMPO_CHANGE(METRONOME),
-    TIMELINE_SCROLL(TIMELINE), TIMELINE_ZOOM(TIMELINE),          // reserved for the timeline feature
+    TIMELINE_SCROLL(TIMELINE), TIMELINE_ZOOM(TIMELINE),
     ENGINE_LOAD_CLIP(ENGINE), ENGINE_GRAPH_SWAP(ENGINE),
+    // feature 009 (contracts/perf-instrumentation.md of specs/009-timeline-arranger)
+    TIMELINE_PROJECT_OPEN(TIMELINE), TIMELINE_WAVEFORM(TIMELINE), TIMELINE_PLAYHEAD_FRAME(TIMELINE),
+    TIMELINE_CLIP_SPLIT(TIMELINE), TIMELINE_PROJECT_SAVE(TIMELINE), TIMELINE_LIBRARY_OPEN(TIMELINE),
+    TRANSPORT_PLAY(TRANSPORT), TRANSPORT_SEEK(TRANSPORT), ENGINE_PRIME(ENGINE),
+    TRANSPORT_MASTER_POPUP(TRANSPORT),  // feature 009's design iteration D1
 }
-enum class PerfFamily { TUNER, METRONOME, TIMELINE, ENGINE }
+enum class PerfFamily { TUNER, METRONOME, TIMELINE, TRANSPORT, ENGINE }  // TRANSPORT since feature 009
 enum class PerfCounter { AUDIO_CALLBACKS, AUDIO_LAST_US, AUDIO_MAX_US, AUDIO_OVER_BUDGET, AUDIO_XRUNS, AUDIO_REALTIME }
 
 // PerfTrace.kt — expect object; every function is a no-op when !PerfBuild.PERF_ENABLED
@@ -23,7 +28,7 @@ expect object PerfTrace {
 }
 ```
 
-**Names.** `app/shared/engine/perf-catalogue.txt` is the single source of signpost names, one line per entry: `<ENUM_NAME> <family> <signpost.name>` (e.g. `TUNER_MODE_SWITCH tuner tuner.modeSwitch`, `AUDIO_XRUNS counter audio.xruns`). The Gradle task `generatePerfBuild` generates `PerfBuild.kt` (`const val PERF_ENABLED`) and `PerfNames.kt` (`internal fun PerfSection.signpostName(): String`, `internal fun PerfCounter.signpostName(): String`) into `build/generated/perf/commonMain/kotlin/audio/tembra/engine/perf/`; with `tembra.perf` present the functions return the catalogue strings, otherwise every one returns `""`. `generateTraceNames` generates `app/engine/include/tembra_trace_names.h` from the same file. Consequence: measurement builds carry the names, release and debug builds carry none of the catalogue strings (FR-014, SC-007); enum identifiers such as `TUNER_FRAME` may remain in an unshrunk release dex and are not instrumentation names. A `commonTest` asserts enum ↔ catalogue ↔ header parity.
+**Names.** `app/shared/engine/perf-catalogue.txt` is the single source of signpost names, one line per entry: `<ENUM_NAME> <family> <signpost.name>` (e.g. `TUNER_MODE_SWITCH tuner tuner.modeSwitch`, `AUDIO_XRUNS counter audio.xruns`; feature 009 adds `AUDIO_AVG_US`, `AUDIO_STARVATION` and `AUDIO_CLIPS_ACTIVE`). The Gradle task `generatePerfBuild` generates `PerfBuild.kt` (`const val PERF_ENABLED`) and `PerfNames.kt` (`internal fun PerfSection.signpostName(): String`, `internal fun PerfCounter.signpostName(): String`) into `build/generated/perf/commonMain/kotlin/audio/tembra/engine/perf/`; with `tembra.perf` present the functions return the catalogue strings, otherwise every one returns `""`. `generateTraceNames` generates `app/engine/include/tembra_trace_names.h` from the same file. Consequence: measurement builds carry the names, release and debug builds carry none of the catalogue strings (FR-014, SC-007); enum identifiers such as `TUNER_FRAME` may remain in an unshrunk release dex and are not instrumentation names. A `commonTest` asserts enum ↔ catalogue ↔ header parity.
 
 Rules: sections wrap **non-composable** work only — ViewModel intents, draw-lambda computations, loaders, engine paths — never a composable lambda or composition itself (`section` is a plain inline function; routing composition through it would also violate Principle II); never called from the audio callback (the callback is C++ and never includes `tembra_trace.h`, see below); `section` and `animation` are `inline` so the lambda allocates nothing; startup is measured by the platforms' launch metrics, not by a section. Skill contracts (Principle VIII): `kotlin-api-design` for the `expect` boundary (platform detail behind a common binding), `kotlin-control-flow` for the exhaustive `when` over `PerfFamily` in the parity test.
 

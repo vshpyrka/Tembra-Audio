@@ -14,12 +14,25 @@
 #define TEMBRA_TRACE_TIMELINE_ZOOM "timeline.zoom"
 #define TEMBRA_TRACE_ENGINE_LOAD_CLIP "engine.loadClip"
 #define TEMBRA_TRACE_ENGINE_GRAPH_SWAP "engine.graphSwap"
+#define TEMBRA_TRACE_TIMELINE_PROJECT_OPEN "timeline.projectOpen"
+#define TEMBRA_TRACE_TIMELINE_WAVEFORM "timeline.waveform"
+#define TEMBRA_TRACE_TIMELINE_PLAYHEAD_FRAME "timeline.playheadFrame"
+#define TEMBRA_TRACE_TIMELINE_CLIP_SPLIT "timeline.clipSplit"
+#define TEMBRA_TRACE_TIMELINE_PROJECT_SAVE "timeline.projectSave"
+#define TEMBRA_TRACE_TIMELINE_LIBRARY_OPEN "timeline.libraryOpen"
+#define TEMBRA_TRACE_TRANSPORT_PLAY "transport.play"
+#define TEMBRA_TRACE_TRANSPORT_SEEK "transport.seek"
+#define TEMBRA_TRACE_ENGINE_PRIME "engine.prime"
+#define TEMBRA_TRACE_TRANSPORT_MASTER_POPUP "transport.masterPopup"
 #define TEMBRA_TRACE_AUDIO_CALLBACKS "audio.callbacks"
 #define TEMBRA_TRACE_AUDIO_LAST_US "audio.lastUs"
 #define TEMBRA_TRACE_AUDIO_MAX_US "audio.maxUs"
 #define TEMBRA_TRACE_AUDIO_OVER_BUDGET "audio.overBudget"
 #define TEMBRA_TRACE_AUDIO_XRUNS "audio.xruns"
 #define TEMBRA_TRACE_AUDIO_REALTIME "audio.realtime"
+#define TEMBRA_TRACE_AUDIO_AVG_US "audio.avgUs"
+#define TEMBRA_TRACE_AUDIO_STARVATION "audio.starvation"
+#define TEMBRA_TRACE_AUDIO_CLIPS_ACTIVE "audio.clipsActive"
 
 /* X-macro over every entry: os_signpost needs its name as a literal, so the shim dispatches through this. */
 #define TEMBRA_TRACE_FOR_EACH(X) \
@@ -33,13 +46,26 @@
     X(TIMELINE_ZOOM, "timeline.zoom") \
     X(ENGINE_LOAD_CLIP, "engine.loadClip") \
     X(ENGINE_GRAPH_SWAP, "engine.graphSwap") \
+    X(TIMELINE_PROJECT_OPEN, "timeline.projectOpen") \
+    X(TIMELINE_WAVEFORM, "timeline.waveform") \
+    X(TIMELINE_PLAYHEAD_FRAME, "timeline.playheadFrame") \
+    X(TIMELINE_CLIP_SPLIT, "timeline.clipSplit") \
+    X(TIMELINE_PROJECT_SAVE, "timeline.projectSave") \
+    X(TIMELINE_LIBRARY_OPEN, "timeline.libraryOpen") \
+    X(TRANSPORT_PLAY, "transport.play") \
+    X(TRANSPORT_SEEK, "transport.seek") \
+    X(ENGINE_PRIME, "engine.prime") \
+    X(TRANSPORT_MASTER_POPUP, "transport.masterPopup") \
     X(AUDIO_CALLBACKS, "audio.callbacks") \
     X(AUDIO_LAST_US, "audio.lastUs") \
     X(AUDIO_MAX_US, "audio.maxUs") \
     X(AUDIO_OVER_BUDGET, "audio.overBudget") \
     X(AUDIO_XRUNS, "audio.xruns") \
-    X(AUDIO_REALTIME, "audio.realtime")
+    X(AUDIO_REALTIME, "audio.realtime") \
+    X(AUDIO_AVG_US, "audio.avgUs") \
+    X(AUDIO_STARVATION, "audio.starvation") \
+    X(AUDIO_CLIPS_ACTIVE, "audio.clipsActive")
 
-#define TEMBRA_TRACE_NAME_COUNT 16
+#define TEMBRA_TRACE_NAME_COUNT 29
 
 #endif /* TEMBRA_TRACE_NAMES_H */

@@ -179,6 +179,7 @@ _JOURNEY_OF_CLASS = {
     "StartupBenchmark": "startup",
     "TunerJourneyBenchmark": "tuner",
     "MetronomeJourneyBenchmark": "metronome",
+    "TimelineJourneyBenchmark": "timeline",
     "StressJourneyBenchmark": "stress",
 }
 # Families every journey class must deliver (per the catalogue's journey column).
@@ -188,6 +189,8 @@ _REQUIRED = {
               "memory.peak_kb", "memory.end_kb", "journey.duration_ms"),
     "metronome": ("frames.p50_ms", "frames.p90_ms", "frames.p99_ms", "frames.overrun_p90_ms",
                   "memory.peak_kb", "memory.end_kb", "journey.duration_ms"),
+    "timeline": ("frames.p50_ms", "frames.p90_ms", "frames.p99_ms", "frames.overrun_p90_ms",
+                 "memory.peak_kb", "memory.end_kb", "journey.duration_ms"),
     "stress": ("frames.p50_ms", "frames.p90_ms", "frames.p99_ms", "frames.overrun_p90_ms",
                "memory.peak_kb", "memory.end_kb", "journey.duration_ms"),
 }
@@ -220,7 +223,7 @@ def journey_of(class_name: str) -> str:
 
 # The comparison class of `tracepulse profile compare` (feature 008) holds one test per journey, named after it.
 COMPARISON_CLASS = "ProfileComparisonBenchmark"
-_COMPARISON_METHODS = ("startup", "tuner", "metronome", "stress")
+_COMPARISON_METHODS = ("startup", "tuner", "metronome", "timeline", "stress")
 
 
 def journey_of_method(class_name: str, method: str) -> str:

@@ -32,10 +32,17 @@ add_library(tembra_engine_core STATIC
     src/platform/null_audio_device.cpp
     src/platform/synthetic_audio_device.cpp
 )
-# Core and metronome sources are globbed (feature 004, research R16); CONFIGURE_DEPENDS re-runs CMake when files appear.
+# Core, metronome, transport, timeline and mixer sources are globbed (feature 004, research R16; feature 009, R2);
+# CONFIGURE_DEPENDS re-runs CMake when files appear.
 file(GLOB TEMBRA_CORE_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/core/*.cpp)
 file(GLOB TEMBRA_METRONOME_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/metronome/*.cpp)
-target_sources(tembra_engine_core PRIVATE ${TEMBRA_CORE_SOURCES} ${TEMBRA_METRONOME_SOURCES})
+file(GLOB TEMBRA_TRANSPORT_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/transport/*.cpp)
+file(GLOB TEMBRA_TIMELINE_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/timeline/*.cpp)
+file(GLOB TEMBRA_MIXER_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/mixer/*.cpp)
+target_sources(tembra_engine_core PRIVATE
+    ${TEMBRA_CORE_SOURCES} ${TEMBRA_METRONOME_SOURCES}
+    ${TEMBRA_TRANSPORT_SOURCES} ${TEMBRA_TIMELINE_SOURCES} ${TEMBRA_MIXER_SOURCES}
+)
 set_target_properties(tembra_engine_core PROPERTIES OUTPUT_NAME tembra_engine)
 target_include_directories(tembra_engine_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_include_directories(tembra_engine_core PRIVATE
@@ -48,8 +55,9 @@ target_include_directories(tembra_engine_core PRIVATE
 target_compile_definitions(tembra_engine_core PRIVATE $<$<BOOL:${TEMBRA_BUILD_TESTS}>:TEMBRA_BUILD_TESTS>)
 # PUBLIC: the cinterop and JNI consumers see the same TEMBRA_TRACING value as the engine.
 target_compile_definitions(tembra_engine_core PUBLIC $<$<BOOL:${TEMBRA_TRACING}>:TEMBRA_TRACING=1>)
-# miniaudio contributes only its resampler to the engine: no device, decoding, encoding or generation (research R16).
-target_compile_definitions(tembra_engine_core PRIVATE MA_NO_DEVICE_IO MA_NO_DECODING MA_NO_ENCODING MA_NO_GENERATION)
+# miniaudio contributes its resampler and, since feature 009 (research R5), its WAV, FLAC and MP3 decoders to the
+# engine: no device I/O, encoding or generation.
+target_compile_definitions(tembra_engine_core PRIVATE MA_NO_DEVICE_IO MA_NO_ENCODING MA_NO_GENERATION)
 # The analysis thread and the synthetic device use std::thread.
 find_package(Threads REQUIRED)
 target_link_libraries(tembra_engine_core PUBLIC Threads::Threads)

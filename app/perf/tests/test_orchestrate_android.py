@@ -116,7 +116,17 @@ def _pull(cmd):
     with open(os.path.join(FIXTURES, "benchmarkData-1.5.json")) as fh:
         raw = json.load(fh)
     wanted = os.path.basename(dest)
-    raw["benchmarks"] = [b for b in raw["benchmarks"] if b["className"].endswith("." + wanted)]
+    matching = [b for b in raw["benchmarks"] if b["className"].endswith("." + wanted)]
+    if not matching and wanted == "TimelineJourneyBenchmark":
+        # The 1.5 fixture predates feature 009's journey: stand in with the metronome's shape under the new class name.
+        for b in raw["benchmarks"]:
+            if b["className"].endswith(".MetronomeJourneyBenchmark"):
+                clone = json.loads(
+                    json.dumps(b).replace("MetronomeJourneyBenchmark", wanted).replace("metronomeJourney", "timelineJourney")
+                        .replace("journey.metronome", "journey.timeline").replace("metronome.", "timeline."),
+                )
+                matching.append(clone)
+    raw["benchmarks"] = matching
     with open(os.path.join(dest, "audio.tembra.perf-benchmarkData.json"), "w") as fh:
         json.dump(raw, fh)
     with open(os.path.join(dest, "iter000.perfetto-trace"), "wb") as fh:
@@ -202,17 +212,17 @@ def test_round_runs_every_step_in_order(cfg, tmp_path):
     stop = runner.index_of("am", "force-stop", "audio.tembra.app")
     assert gradle < uninstall < install_app < install_test < warm < stop
     instruments = [c for c in runner.commands() if any("am instrument" in part for part in c)]
-    assert len(instruments) == 4
-    for journey_class in ("StartupBenchmark", "TunerJourneyBenchmark", "MetronomeJourneyBenchmark", "StressJourneyBenchmark"):
+    assert len(instruments) == 5
+    for journey_class in ("StartupBenchmark", "TunerJourneyBenchmark", "MetronomeJourneyBenchmark", "TimelineJourneyBenchmark", "StressJourneyBenchmark"):
         assert any(journey_class in " ".join(c) and "additionalTestOutputDir" in " ".join(c) for c in instruments), journey_class
     assert warm < runner.index_of("am instrument")
-    assert runner.count("adb", "-s", SERIAL, "pull") == 4
-    assert [j.journey for j in outcome.journeys] == ["startup", "tuner", "metronome", "stress"]
+    assert runner.count("adb", "-s", SERIAL, "pull") == 5
+    assert [j.journey for j in outcome.journeys] == ["startup", "tuner", "metronome", "timeline", "stress"]
     assert outcome.app_size_bytes == 1234
     assert outcome.badges == [] and outcome.checks and all(c["passed"] for c in outcome.checks)
     assert outcome.fingerprint["os_version"] == "17"
     assert {a["kind"] for a in outcome.artifacts} >= {"benchmark_json", "trace", "gradle_log"}
-    assert clock.sleeps.count(120) == 3, "a cooldown between classes, never after the last one"
+    assert clock.sleeps.count(120) == 4, "a cooldown between classes, never after the last one"
 
 
 def test_a_fresh_install_is_granted_the_microphone_and_notifications_before_the_warm_up(cfg, tmp_path):

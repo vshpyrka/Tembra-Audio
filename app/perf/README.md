@@ -44,7 +44,8 @@ downloads on first use), Jinja2, jsonschema. None of it ships in the app.
   least as new as the phone's iOS: Xcode 26.6 (SDK 26.5) installs and launches the app on an iOS
   27.0.1 phone through `devicectl` but every XCUITest launch dies with CoreDevice error 10004 ("the
   process identifier of the launched application could not be determined"); `doctor` refuses the
-  pairing (`xcode_supports_device`) and the fix is `DEVELOPER_DIR=/Applications/Xcode-27.1-beta.app/
+  pairing (`xcode_supports_device`). Xcode 27.1, the default `/Applications/Xcode.app` since 2026-10-21,
+  covers the phone; another installed Xcode is chosen with `DEVELOPER_DIR=/Applications/<Xcode>.app/
   Contents/Developer uv run tracepulse run …` (the Xcode version lands in the round's fingerprint).
   Thermal state (must be `nominal`) and battery (≥ 50 %) are checked inside the runner, because the
   host cannot read them; the network state is recorded on the round and never refused (turn Wi-Fi off
@@ -122,9 +123,20 @@ The Android measurement build is `./gradlew --console=plain -Ptembra.perf=true :
 
 ## What a round measures
 
-Four journeys on both platforms, same names: `startup` (cold), `tuner` (open, note readout, By Ear and
-back), `metronome` (start, tempo up ×5, down ×5, stop), `stress` (metronome running while the tuner
-listens; ends by writing the engine's audio-health counters). 20 iterations each. The catalogue
+Five journeys on both platforms, same names: `startup` (cold), `tuner` (open, note readout, By Ear and
+back), `metronome` (start, tempo up ×5, down ×5, stop), `timeline` (feature 009: Projects → the demo
+card, wait for the waveforms, play eight bars, seek, pinch in and out, split the first clip, open and
+close a track's settings, toggle the metronome twice; since design iteration D1, on a phone open the master
+volume pop-up (`transport.masterPopup`), drag its slider a little, close it with a tap outside and undo the
+change, and with the overview strip as the device's zoom control drag its window a quarter of its width and
+back (inside `timeline.scroll`); then pause, skip to start; both D1 steps are skipped where their control is
+absent) and `stress` (the demo
+project plays with the click on while the lane scrolls for five seconds, the tuner cycle then takes the
+audio through the stop-and-leave dialog, the metronome runs while the tuner listens; the engine's audio-health
+counters are written right after the playback phase, while the transport still owns the device (on Android the
+counter tracks keep their peak over the trace, since the engine restarts them per stream session) — its duration
+stepped up at the 009 label boundary, as expected).
+20 iterations each. The catalogue
 (`tracepulse/catalogue.py`, contract `metric-catalogue.md`) names every series per platform with its unit,
 source, gate default and screening gate; families marked non-comparable (startup, frames, memory,
 cpu) never share an axis across platforms; sections and audio health are the same instrumentation
@@ -170,8 +182,11 @@ stream. Neither fills the client-side `audio-hal-client-io-cycle-ioproc` table u
 journey, so the series comes from the HAL server's `audio-hal-io-cycle-client` view of the same
 interval (the client I/O-proc as audiomxd times it, ~100 cycles/s). That table names no client on
 iOS 27 ("Unknown"), so the pass trusts that the app is the phone's only HAL client — the phone is
-otherwise idle during a round. The two audio instruments alone make 35 MB of 75 s; the
-`Audio System Trace` template's kernel instruments made 0.5 GB and a full disk refused to save it.
+otherwise idle during a round. The Xcode 27.1 release's xctrace (2026-10-26) attaches by name
+(`--attach 'Tembra Audio'`, a 5 s Time Profiler recording) but still not by pid; whether an attached
+HAL recording now covers a whole journey is untested. The two audio instruments alone make 35 MB of
+75 s; the `Audio System Trace` template's kernel instruments made 0.5 GB and a full disk refused to
+save it.
 The first rounds with the pass in this shape (`20261012T093131Z` and `20261012T101350Z`, the last two
 R1 rounds): `AudioTracePass` passed under the recording both times, 37.4 and 36.5 MB traces, an empty
 client table beside 10 230 and 8 452 server cycles, cycle medians 772 µs and p99 1 547 and 1 976 µs
@@ -245,8 +260,12 @@ got 50 % slower (first hint)" for a 2 → 3 µs step.
 2. **Anchor**: a `testTag` on the control, named in `PerfAnchors` (`:shared:ui`), mirrored in
    `perf-benchmarks/.../journeys/Anchors.kt` and `TembraPerfTests/Anchors.swift`.
 3. **Journey**: a class in `perf-benchmarks/.../journeys/` + a benchmark class, a struct in
-   `TembraPerfTests/Journeys/` + a test case, the name in `tracepulse.yml` `journeys:` and in
-   `collect_android.BENCHMARK_CLASS_OF` / `collect_ios._TEST_JOURNEYS`. One journey definition, several
+   `TembraPerfTests/Journeys/` + a test case, the name in `tracepulse.yml` `journeys:`,
+   `config.DEFAULT_JOURNEYS`, `catalogue.JOURNEYS_MEASURED`, `orchestrate_android.BENCHMARK_CLASS_OF`,
+   `collect_android._JOURNEY_OF_CLASS` / `_REQUIRED`, `collect_ios._TEST_JOURNEYS` and its `order`,
+   `report._JOURNEY_ORDER`, the two JSON schemas' journey enums, `PerfMetrics.sectionsOf` and
+   `Metrics.sections(of:)`, and the pytest fixtures that enumerate journeys (feature 009 did this for
+   `timeline`; the list above is complete). One journey definition, several
    registrations (feature 008, spec FR-002): the same journey class is also run by
    `BaselineProfileGenerator.journeys()` and gets its own test in `ProfileComparisonBenchmark` (named after
    the journey; add the method to `collect_android._COMPARISON_METHODS`). When the journey visits a new
@@ -351,13 +370,15 @@ part of the warning gate.
 
 ## Audio-thread health
 
-`tembra_engine_audio_health` (C ABI revision 5) copies the counters the callback writes with relaxed
-atomics: callbacks, last/max callback duration, over-budget count, xruns (Oboe's counter, sampled off
-the callback), real-time status. `AudioHealthTicker` publishes them once per second through
+`tembra_engine_audio_health` (C ABI revision 6 since feature 009) copies the counters the callback writes
+with relaxed atomics: callbacks, last/max/mean callback duration, over-budget count, xruns (Oboe's
+counter, sampled off the callback), real-time status, fifo starvation (clips the transport found dry) and
+the clips active in the last block. `AudioHealthTicker` publishes the nine once per second through
 `PerfTrace.counter` in measurement builds; on Android they become counter tracks in each stress
 iteration's trace (`audio.*` series, one sample per iteration), on iOS the stress journey's last tap
-writes `engine-health.json`, which the collector pulls from the app container. Zeros with the current
-engine; the audio spine fills them.
+writes `engine-health.json`, which the collector pulls from the app container (a file from a revision-5
+build reads zeros for the three new fields). `audio.starvation` is expected to read 0 on the reference
+devices and flags on any increase.
 
 ## Lane times (SC-008)
 

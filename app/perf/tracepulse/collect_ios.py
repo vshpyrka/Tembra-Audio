@@ -21,6 +21,7 @@ logger = logging.getLogger("tracepulse.collect_ios")
 _TEST_JOURNEYS = {
     "TunerPerfTests": "tuner",
     "MetronomePerfTests": "metronome",
+    "TimelinePerfTests": "timeline",
     "StressPerfTests": "stress",
 }
 _STARTUP_TESTS = {"testColdLaunchToFirstFrame": "ttid", "testColdLaunchToResponsive": "ttfd"}
@@ -41,6 +42,7 @@ FRAME_COUNT = "frames._count"  # advisory: an interval without frames has no fra
 _HEALTH_KEYS = {
     "callbacks": "audio.callbacks", "last_us": "audio.last_callback_us", "max_us": "audio.max_callback_us",
     "over_budget": "audio.over_budget", "xruns": "audio.xruns", "realtime": "audio.realtime",
+    "avg_us": "audio.avg_us", "starvation": "audio.starvation", "clips_active": "audio.clips_active",
 }
 
 
@@ -167,7 +169,7 @@ def collect_round(metrics_json_path: str, cfg: Config, simulator: bool,
         raise CollectError(f"no journey test with metrics in {metrics_json_path}")
     results = [JourneyResult(journey=j, iterations=max(len(m.samples) for m in ms.values()), metrics=ms)
                for j, ms in journeys.items()]
-    order = {"startup": 0, "tuner": 1, "metronome": 2, "stress": 3}
+    order = {"startup": 0, "tuner": 1, "metronome": 2, "timeline": 3, "stress": 4}
     results.sort(key=lambda r: order.get(r.journey, 9))
     return CollectedRound(journeys=results, badges=["simulator"] if simulator else [], thermal_seconds=0.0)
 
@@ -214,7 +216,7 @@ def refusal_from_failures(failures: Sequence[Dict[str, Any]]) -> Optional[Refusa
 
 
 def engine_health(path: str) -> Dict[str, float]:
-    """`engine-health.json` → the six `audio.*` values (zeros when no stream was open)."""
+    """`engine-health.json` → the nine `audio.*` values (zeros when no stream was open or the file predates ABI 6)."""
     with open(path) as fh:
         data = json.load(fh)
     health = data.get("health", {})

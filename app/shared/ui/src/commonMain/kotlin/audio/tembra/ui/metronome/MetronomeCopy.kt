@@ -99,4 +99,9 @@ internal object MetronomeCopy {
         MetronomeMessage.FocusDenied -> focusDenied
         MetronomeMessage.DeviceUnavailable -> deviceUnavailable
     }
+
+    // The Android foreground notification while the click runs (feature 009 generalised the service): "Metronome" / "<tempo> BPM".
+    const val notificationTitle = "Metronome"
+
+    fun notificationSubtitle(tempo: Tempo): String = "${tempo.bpm} BPM"
 }

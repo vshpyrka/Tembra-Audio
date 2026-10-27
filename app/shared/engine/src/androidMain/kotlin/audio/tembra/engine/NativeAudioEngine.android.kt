@@ -1,18 +1,26 @@
 package audio.tembra.engine
 
-import audio.tembra.engine.perf.AudioHealth
-
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
+import audio.tembra.core.metronome.BeatUnit
+import audio.tembra.core.metronome.Tempo
+import audio.tembra.core.metronome.TimeSignature
+import audio.tembra.core.project.AudioFormat
+import audio.tembra.core.project.Beats
+import audio.tembra.engine.perf.AudioHealth
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.withContext
 
 /**
  * JNI facade over `libtembra_engine.so`. Tones and the preview click hold transient audio focus so other apps duck
  * (research R7); the running metronome holds full focus and listens for headphones being unplugged (feature 004 R6);
- * capture requests nothing (Android gives the microphone to the foreground app). Nothing here runs on an audio thread.
+ * capture requests nothing (Android gives the microphone to the foreground app). The project transport (feature 009)
+ * holds full focus like the metronome and listens for headphones being unplugged; a focus loss reaches the session as
+ * [AudioEvent.Interrupted] and never resumes playback by itself. Nothing here runs on an audio thread.
  *
  * Focus and the becoming-noisy receiver are acquired only by the call that moves the engine out of Idle and released
  * only when it returns there (contracts/metronome-audio-kotlin.md): a refused start never touches what the running
@@ -91,7 +99,7 @@ actual class NativeAudioEngine(context: Context) : AudioEngine {
      */
     private inline fun sound(start: () -> Int): AudioResult {
         when (audioState) {
-            AudioState.Listening, AudioState.Metronome -> return STATE_REFUSED
+            AudioState.Listening, AudioState.Metronome, AudioState.Transport -> return STATE_REFUSED
             AudioState.Tone -> return AudioResult.fromNative(start())
             AudioState.Idle -> Unit
         }
@@ -116,8 +124,8 @@ actual class NativeAudioEngine(context: Context) : AudioEngine {
 
     override fun stopTone() {
         nativeToneStop()
-        // A running metronome owns the focus; otherwise release what a tone, sample or preview left behind.
-        if (audioState == AudioState.Metronome) return
+        // A running metronome or transport owns the focus; otherwise release what a tone, sample or preview left behind.
+        if (audioState == AudioState.Metronome || audioState == AudioState.Transport) return
         synchronized(previewLock) { cancelPreviewReleaseLocked() }
         focus.abandon()
     }
@@ -204,7 +212,7 @@ actual class NativeAudioEngine(context: Context) : AudioEngine {
                         AudioState.Tone ->
                             if (--remaining > 0) mainHandler.postDelayed(this, PREVIEW_CHECK_INTERVAL_MS) else previewRelease = null
                         // Another stream took over; every start cancels this check first, so this is only a safeguard.
-                        AudioState.Listening, AudioState.Metronome -> previewRelease = null
+                        AudioState.Listening, AudioState.Metronome, AudioState.Transport -> previewRelease = null
                     }
                 }
             }
@@ -239,8 +247,8 @@ actual class NativeAudioEngine(context: Context) : AudioEngine {
     override val audioState: AudioState
         get() = AudioState.fromNative(nativeAudioState())
 
-    /** Reused by every [audioHealth]: [callbacks, lastUs, maxUs, overBudget, xruns, realtime]. */
-    private val healthFields = LongArray(6)
+    /** Reused by every [audioHealth]: [callbacks, lastUs, maxUs, overBudget, xruns, realtime, avgUs, starvation, clipsActive]. */
+    private val healthFields = LongArray(HEALTH_FIELDS)
 
     override fun audioHealth(): AudioHealth? {
         if (nativeAudioHealth(healthFields) != 0) return null
@@ -251,10 +259,129 @@ actual class NativeAudioEngine(context: Context) : AudioEngine {
             overBudget = healthFields[3].toInt(),
             xruns = healthFields[4].toInt(),
             realtime = healthFields[5] != 0L,
+            avgMicros = healthFields[6].toInt(),
+            starvation = healthFields[7].toInt(),
+            clipsActive = healthFields[8].toInt(),
         )
     }
 
     override val events: Flow<AudioEvent> = merge(focus.events, routeEvents)
+
+    // --- Transport (feature 009, contracts/timeline-audio-kotlin.md) -------------------------------------------------
+
+    private val arrangement = ArrangementBuffer()
+
+    /** Reused by every [readTransport]: [playing, positionFrames, blockTimeNs, latencyNs, sampleRate] and [positionBeats, audibleSeconds]. */
+    private val transportLongs = LongArray(TRANSPORT_LONGS)
+    private val transportDoubles = DoubleArray(TRANSPORT_DOUBLES)
+
+    /**
+     * From Idle only: full focus (other media pause) and the becoming-noisy receiver, then the engine; a refusal on either
+     * side holds nothing. Opening the output is a platform call, so it runs off the main thread.
+     */
+    override suspend fun openTransport(): TransportOpenResult {
+        val state = audioState
+        if (state != AudioState.Idle) return TransportOpenResult.Busy(state)
+        synchronized(previewLock) { cancelPreviewReleaseLocked() }
+        if (!focus.request(FocusType.Gain)) return TransportOpenResult.DeviceFailed
+        becomingNoisy.register()
+        val code = withContext(Dispatchers.IO) { nativeTransportOpen() }
+        if (code != 0) {
+            becomingNoisy.unregister()
+            focus.abandon()
+            return if (code == STATE_REFUSED.code) TransportOpenResult.Busy(audioState) else TransportOpenResult.DeviceFailed
+        }
+        return TransportOpenResult.Opened
+    }
+
+    override fun closeTransport() {
+        nativeTransportClose()
+        becomingNoisy.unregister()
+        // A tone or preview still sounding owns the focus (its own stop or the preview check releases it).
+        if (audioState == AudioState.Tone) return
+        synchronized(previewLock) { cancelPreviewReleaseLocked() }
+        focus.abandon()
+    }
+
+    override suspend fun openClipSource(path: String): ClipSourceResult = withContext(Dispatchers.IO) {
+        // Allocated per call: a source opens rarely and the MP3 seek table can take a while, so a shared buffer could race.
+        val ints = IntArray(CLIP_INFO_INTS)
+        val longs = LongArray(CLIP_INFO_LONGS)
+        val handle = nativeClipSourceOpen(path, ints, longs)
+        val format = AudioFormat.fromNative(ints[2])
+        if (handle < 0 || format == null) {
+            ClipSourceResult.Undecodable
+        } else {
+            ClipSourceResult.Opened(ClipSourceHandle(handle), AudioInfo(format, channels = ints[0], sampleRate = ints[1], frames = longs[0]))
+        }
+    }
+
+    override fun closeClipSource(handle: ClipSourceHandle) {
+        nativeClipSourceClose(handle.id)
+    }
+
+    override fun setTempo(tempo: Tempo, signature: TimeSignature) {
+        nativeTransportSetTempo(tempo.bpm, signature.beats, beatUnitOf(signature.unit))
+    }
+
+    override fun setArrangement(snapshot: ArrangementSnapshot) {
+        arrangement.fill(snapshot)
+        nativeTransportSetArrangement(arrangement.buffer)
+    }
+
+    override fun setTrack(index: Int, gainLinear: Float, audible: Boolean) {
+        nativeTransportSetTrack(index, gainLinear, audible)
+    }
+
+    override fun setMaster(gainLinear: Float) {
+        nativeTransportSetMaster(gainLinear)
+    }
+
+    override fun setMetronome(enabled: Boolean) {
+        nativeTransportSetMetronome(enabled)
+    }
+
+    /** The prime reads two seconds of every nearby clip (under 50 ms, but file I/O): off the main thread. */
+    override suspend fun play(): PlayResult {
+        val code = withContext(Dispatchers.IO) { nativeTransportPlay() }
+        return if (code == 0) PlayResult.Started else PlayResult.Failed(code)
+    }
+
+    override fun pause() {
+        nativeTransportPause()
+    }
+
+    override suspend fun seek(beats: Beats) {
+        withContext(Dispatchers.IO) { nativeTransportSeekBeats(beats.value) }
+    }
+
+    override fun readTransport(into: TransportSnapshot) {
+        nativeTransportRead(transportLongs, transportDoubles)
+        into.playing = transportLongs[0] != 0L
+        into.positionFrames = transportLongs[1]
+        into.blockTimeNanos = transportLongs[2]
+        into.latencyNanos = transportLongs[3]
+        into.sampleRate = transportLongs[4].toInt()
+        into.positionBeats = transportDoubles[0]
+        into.audiblePositionSeconds = transportDoubles[1]
+    }
+
+    override suspend fun inspect(path: String): AudioInfo? = withContext(Dispatchers.IO) {
+        val ints = IntArray(CLIP_INFO_INTS)
+        val longs = LongArray(CLIP_INFO_LONGS)
+        if (nativeAudioInspect(path, ints, longs) != 0) return@withContext null
+        val format = AudioFormat.fromNative(ints[0]) ?: return@withContext null
+        AudioInfo(format, channels = ints[1], sampleRate = ints[2], frames = longs[0])
+    }
+
+    override suspend fun buildOverview(audioPath: String, overviewPath: String): Boolean = withContext(Dispatchers.IO) {
+        nativeAudioOverviewBuild(audioPath, overviewPath) == 0
+    }
+
+    private fun beatUnitOf(unit: BeatUnit): Int = when (unit) {
+        BeatUnit.Quarter -> 4
+        BeatUnit.Eighth -> 8
+    }
 
     private external fun nativeAbiVersion(): Int
     private external fun nativeName(): String
@@ -286,12 +413,32 @@ actual class NativeAudioEngine(context: Context) : AudioEngine {
     private external fun nativeMetronomePreview(level: Int): Int
     private external fun nativeMetronomeSetOutputLatencyNs(nanos: Long)
     private external fun nativeMetronomeRead(out: LongArray)
+    private external fun nativeTransportOpen(): Int
+    private external fun nativeTransportClose()
+    private external fun nativeTransportSetTempo(bpm: Int, beatsPerBar: Int, beatUnit: Int): Int
+    private external fun nativeTransportSetArrangement(buffer: java.nio.ByteBuffer): Int
+    private external fun nativeTransportSetTrack(index: Int, gain: Float, audible: Boolean): Int
+    private external fun nativeTransportSetMaster(gain: Float): Int
+    private external fun nativeTransportSetMetronome(enabled: Boolean): Int
+    private external fun nativeTransportPlay(): Int
+    private external fun nativeTransportPause(): Int
+    private external fun nativeTransportSeekBeats(beats: Double): Int
+    private external fun nativeTransportRead(longs: LongArray, doubles: DoubleArray)
+    private external fun nativeClipSourceOpen(path: String, ints: IntArray, longs: LongArray): Int
+    private external fun nativeClipSourceClose(handle: Int)
+    private external fun nativeAudioInspect(path: String, ints: IntArray, longs: LongArray): Int
+    private external fun nativeAudioOverviewBuild(path: String, outPath: String): Int
 
     private companion object {
         const val READING_FIELDS = 9
         const val TICK_FIELDS = 7
         const val CUSTOM_INFO_FIELDS = 4
         const val CUSTOM_MS_FIELDS = 2
+        const val HEALTH_FIELDS = 9
+        const val TRANSPORT_LONGS = 5
+        const val TRANSPORT_DOUBLES = 2
+        const val CLIP_INFO_INTS = 3
+        const val CLIP_INFO_LONGS = 1
         const val PREVIEW_CHECK_INTERVAL_MS = 100L
 
         /** 3 s: a custom sound is kept up to 2 s (research R4), so a 1 s bound would leave its focus held. */

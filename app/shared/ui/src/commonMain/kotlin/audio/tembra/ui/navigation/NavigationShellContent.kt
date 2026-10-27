@@ -8,10 +8,13 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.systemGestures
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldLayout
@@ -24,8 +27,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import audio.tembra.ui.designsystem.NavigationItemSpec
+import audio.tembra.ui.designsystem.StopAndLeaveDialog
 import audio.tembra.ui.designsystem.TembraNavigationBar
 import audio.tembra.ui.designsystem.TembraNavigationRail
+import audio.tembra.core.project.TrackId
+import audio.tembra.ui.session.DialogRequest
 import audio.tembra.ui.theme.TembraTheme
 
 /**
@@ -33,6 +39,7 @@ import audio.tembra.ui.theme.TembraTheme
  * bar below or the rail at the start according to [layoutMode] (research R4); the content slot hosts the NavDisplay.
  * There is no top bar (removed 2026-10-16: the selected item already names the destination), so the content clears
  * the status bar, a desktop caption and a top cutout itself. UI tests drive this composable with an explicit layout mode.
+ * [dialog] is the session's pending stop-and-leave question (feature 009, spec FR-008a), rendered above everything.
  */
 @Composable
 fun NavigationShellContent(
@@ -41,7 +48,14 @@ fun NavigationShellContent(
     onSelect: (Destination) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    dialog: DialogRequest? = null,
+    onOpenTrackSettings: (TrackId) -> Unit = {},
+    onCloseTrackSettings: () -> Unit = {},
 ) {
+    when (dialog) {
+        is DialogRequest.StopAndLeave -> StopAndLeaveDialog(onConfirm = { dialog.answer(true) }, onCancel = { dialog.answer(false) })
+        null -> Unit
+    }
     val items = remember { Destination.entries.map { NavigationItemSpec(it.id, it.label, it.icon) } }
     // Re-selecting the active item changes nothing (spec FR-008), so the callback is not even invoked.
     val select: (String) -> Unit = { id ->
@@ -55,7 +69,7 @@ fun NavigationShellContent(
             .testTag("nav.shell"),
     ) {
         if (layoutMode == LayoutMode.EndRail) {
-            EndRailFrame(items = items, state = state, onSelect = select, onBack = onBack)
+            EndRailFrame(items = items, state = state, onSelect = select, onBack = onBack, onOpenTrackSettings = onOpenTrackSettings, onCloseTrackSettings = onCloseTrackSettings, onSelectDestination = onSelect)
             return@Column
         }
         NavigationSuiteScaffoldLayout(
@@ -70,11 +84,15 @@ fun NavigationShellContent(
             state = rememberNavigationSuiteScaffoldState(),
         ) {
             // The content clears the top inset; the bar clears the bottom inset itself; beside a rail the content reaches
-            // the bottom and end edges.
+            // the bottom and end edges. The padding consumes the safe-drawing insets it applies; the scaffold layout
+            // consumes nothing. Beside a rail the system's back-gesture zone at the start lies under the rail (wider than
+            // any such zone), so the content consumes it too and nothing inside insets for it again (the overview
+            // strip, T153).
             val sides = if (bottomBar) WindowInsetsSides.Horizontal else WindowInsetsSides.End + WindowInsetsSides.Bottom
             val contentInsets = WindowInsetsSides.Top + sides
-            Box(modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing.only(contentInsets))) {
-                TembraNavDisplay(backStack = state.backStack, layoutMode = layoutMode, onBack = onBack, modifier = Modifier.fillMaxSize())
+            val underRail = if (bottomBar) Modifier else Modifier.consumeWindowInsets(WindowInsets.systemGestures.only(WindowInsetsSides.Start))
+            Box(modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing.only(contentInsets)).then(underRail)) {
+                TembraNavDisplay(backStack = state.backStack, layoutMode = layoutMode, onBack = onBack, modifier = Modifier.fillMaxSize(), onOpenTrackSettings = onOpenTrackSettings, nestedTrackSettings = state.trackSettings?.trackId, onCloseTrackSettings = onCloseTrackSettings, onSelectDestination = onSelect)
             }
         }
     }
@@ -83,19 +101,30 @@ fun NavigationShellContent(
 /**
  * The iPhone Duo experiment's frame ([LayoutMode.EndRail]): the content clears the top, start and bottom insets, and the rail
  * fills the column iOS reserves at the end edge for the status bar and camera (at least Material's own rail width), its
- * items at the bottom of that column.
+ * items at the bottom of that column. The content consumes the end side's safe-drawing and system-gesture insets, which
+ * the rail covers, so nothing inside pads for that column again (the overview strip, T153).
  */
 @Composable
-private fun EndRailFrame(items: List<NavigationItemSpec>, state: ShellUiState, onSelect: (String) -> Unit, onBack: () -> Unit) {
+private fun EndRailFrame(
+    items: List<NavigationItemSpec>,
+    state: ShellUiState,
+    onSelect: (String) -> Unit,
+    onBack: () -> Unit,
+    onOpenTrackSettings: (TrackId) -> Unit,
+    onCloseTrackSettings: () -> Unit,
+    onSelectDestination: (Destination) -> Unit,
+) {
     val endInset = WindowInsets.safeDrawing.only(WindowInsetsSides.End).asPaddingValues().calculateEndPadding(LocalLayoutDirection.current)
     Row(modifier = Modifier.fillMaxSize()) {
         Box(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight()
-                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Start + WindowInsetsSides.Bottom)),
+                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Start + WindowInsetsSides.Bottom))
+                // The rail beside it fills the end column and is wider than the end's gesture zone.
+                .consumeWindowInsets(WindowInsets.safeDrawing.only(WindowInsetsSides.End).union(WindowInsets.systemGestures.only(WindowInsetsSides.End))),
         ) {
-            TembraNavDisplay(backStack = state.backStack, layoutMode = LayoutMode.EndRail, onBack = onBack, modifier = Modifier.fillMaxSize())
+            TembraNavDisplay(backStack = state.backStack, layoutMode = LayoutMode.EndRail, onBack = onBack, modifier = Modifier.fillMaxSize(), onOpenTrackSettings = onOpenTrackSettings, nestedTrackSettings = state.trackSettings?.trackId, onCloseTrackSettings = onCloseTrackSettings, onSelectDestination = onSelectDestination)
         }
         TembraNavigationRail(
             items = items,

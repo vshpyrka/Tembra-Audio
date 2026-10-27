@@ -3,8 +3,8 @@ package audio.tembra.engine.perf
 /**
  * The named sections a round can measure on both platforms (contracts/tracing-facade.md). Entries carry only their
  * [PerfFamily]; the signpost names live in `perf-catalogue.txt` and reach the code through the generated
- * `signpostName()` (real strings in measurement builds, `""` otherwise). TIMELINE entries are reserved for the
- * timeline feature.
+ * `signpostName()` (real strings in measurement builds, `""` otherwise). The TIMELINE, TRANSPORT and ENGINE_PRIME
+ * entries are feature 009's (contracts/perf-instrumentation.md); TRANSPORT_MASTER_POPUP came with its design iteration D1.
  */
 enum class PerfSection(val family: PerfFamily) {
     TUNER_LOAD(PerfFamily.TUNER),
@@ -17,4 +17,14 @@ enum class PerfSection(val family: PerfFamily) {
     TIMELINE_ZOOM(PerfFamily.TIMELINE),
     ENGINE_LOAD_CLIP(PerfFamily.ENGINE),
     ENGINE_GRAPH_SWAP(PerfFamily.ENGINE),
+    TIMELINE_PROJECT_OPEN(PerfFamily.TIMELINE),
+    TIMELINE_WAVEFORM(PerfFamily.TIMELINE),
+    TIMELINE_PLAYHEAD_FRAME(PerfFamily.TIMELINE),
+    TIMELINE_CLIP_SPLIT(PerfFamily.TIMELINE),
+    TIMELINE_PROJECT_SAVE(PerfFamily.TIMELINE),
+    TIMELINE_LIBRARY_OPEN(PerfFamily.TIMELINE),
+    TRANSPORT_PLAY(PerfFamily.TRANSPORT),
+    TRANSPORT_SEEK(PerfFamily.TRANSPORT),
+    ENGINE_PRIME(PerfFamily.ENGINE),
+    TRANSPORT_MASTER_POPUP(PerfFamily.TRANSPORT),
 }

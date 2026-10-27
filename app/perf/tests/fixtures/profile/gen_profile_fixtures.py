@@ -1,7 +1,7 @@
 """Deterministic Macrobenchmark `benchmarkData.json` fixtures for `tracepulse profile compare` (feature 008).
 
 One file per optimisation state (`none`, `profile`, `full`) in the shape Macrobenchmark 1.5 writes for
-`audio.tembra.perf.ProfileComparisonBenchmark` (methods `startup`, `tuner`, `metronome`, `stress`, 20
+`audio.tembra.perf.ProfileComparisonBenchmark` (methods `startup`, `tuner`, `metronome`, `timeline`, `stress`, 20
 iterations each; the key set mirrors `tests/fixtures/benchmarkData-1.5.json`). Medians are chosen so the
 comparison tests can assert hand-computed outcomes:
 
@@ -87,6 +87,10 @@ TUNER_END_KB = {"none": 49000.0, "profile": 50960.0, "full": 49100.0}      # wor
 METRONOME_JOURNEY = {"none": 6400.0, "profile": 6250.0, "full": 6230.0}
 METRONOME_LOAD = {"none": 58.0, "profile": 41.0, "full": 38.0}
 STRESS_JOURNEY = {"none": 9500.0, "profile": 9260.0, "full": 9240.0}
+# Feature 009's timeline journey draws from its own generator so the metronome's and stress's samples stay as they were.
+TIMELINE_JOURNEY = {"none": 24100.0, "profile": 23700.0, "full": 23650.0}
+TIMELINE_OPEN = {"none": 210.0, "profile": 150.0, "full": 142.0}
+TIMELINE_SEED = {"none": 41, "profile": 53, "full": 67}
 STRESS_PEAK_KB = {"none": 207500.0, "profile": 206000.0, "full": 207500.0}  # none == full → gap undefined
 # `none` and `full` draw the stress peak from the same seed so their medians are identical, not merely close.
 STRESS_PEAK_SEED = {"none": 99, "profile": 23, "full": 99}
@@ -126,6 +130,23 @@ def build(state):
         "frameDurationCpuMs": _sampled(gen, 8.0, 2.0),
         "frameOverrunMs": _sampled(gen, -4.0, 2.0),
     })
+    timeline_gen = _lcg(TIMELINE_SEED[state])
+    timeline = _benchmark("timeline", {
+        "memoryRssAnonMaxKb": _single(_samples(timeline_gen, 196400.0, 1500.0, nd=0)),
+        "memoryRssAnonLastKb": _single(_samples(timeline_gen, 61200.0, 400.0, nd=0)),
+        "journey.timelineSumMs": _single(_samples(timeline_gen, TIMELINE_JOURNEY[state], 60.0)),
+        "journey.timelineCount": _single([1.0] * ITERATIONS),
+        "timeline.projectOpenSumMs": _single(_samples(timeline_gen, TIMELINE_OPEN[state], 6.0)),
+        "timeline.projectOpenCount": _single([1.0] * ITERATIONS),
+        "transport.playSumMs": _single(_samples(timeline_gen, 38.0, 3.0)),
+        "transport.playCount": _single([2.0] * ITERATIONS),
+        "timeline.playheadFrameSumMs": _single(_samples(timeline_gen, 310.0, 12.0)),
+        "timeline.playheadFrameCount": _single([900.0] * ITERATIONS),
+        "frameCount": _single([float(FRAMES_PER_ITERATION)] * ITERATIONS),
+    }, {
+        "frameDurationCpuMs": _sampled(timeline_gen, 8.6, 2.0),
+        "frameOverrunMs": _sampled(timeline_gen, -3.4, 2.0),
+    })
     stress = _benchmark("stress", {
         "memoryRssAnonMaxKb": _single(_samples(_lcg(STRESS_PEAK_SEED[state]), STRESS_PEAK_KB[state], 300.0, nd=0)),
         "memoryRssAnonLastKb": _single(_samples(gen, 54200.0, 400.0, nd=0)),
@@ -136,7 +157,7 @@ def build(state):
         "frameDurationCpuMs": _sampled(gen, 9.5, 2.0),
         "frameOverrunMs": _sampled(gen, -2.1, 2.0),
     })
-    return {"context": _context(state), "benchmarks": [startup, tuner, metronome, stress]}
+    return {"context": _context(state), "benchmarks": [startup, tuner, metronome, timeline, stress]}
 
 
 def main():
