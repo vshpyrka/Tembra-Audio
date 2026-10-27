@@ -67,6 +67,12 @@ final class ScreenshotMatrix: XCTestCase {
         tapIfPresent("timeline.toolbar.overflow.button") && tapIfPresent("timeline.toolbar.overflow.\(row)")
     }
 
+    /// Waits up to [timeout] for the element tagged [tag] to leave the tree; false when it is still there.
+    private func waitGone(_ tag: String, timeout: TimeInterval = 5) -> Bool {
+        let gone = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: app.anchor(tag))
+        return XCTWaiter.wait(for: [gone], timeout: timeout) == .completed
+    }
+
     /// Drags the overview strip's window by its right handle (8 pt wide; a press within 16 pt of the window's right edge
     /// takes it) to the screen x [toX], through screen coordinates from the app's origin; false when there is no strip.
     /// The press lands 1 pt inside the edge, so the edge follows the finger to within less than the closest level's
@@ -90,6 +96,14 @@ final class ScreenshotMatrix: XCTestCase {
         if want("overview-strip"), app.anchor(Anchors.timelineOverview).exists { shot("overview-strip") }
         if want("overflow-menu"), tapIfPresent("timeline.toolbar.overflow.button") {
             _ = app.anchor("timeline.toolbar.overflow.overviewStrip").waitForExistence(timeout: 5); shot("overflow-menu"); dismiss()
+        }
+        if want("strip-hidden"), app.anchor(Anchors.timelineOverview).waitForExistence(timeout: 2) {
+            // The overflow's "Overview strip" hides the strip (a per-device preference, T151); shown again afterwards so
+            // the states below keep it.
+            if overflow("overviewStrip"), waitGone(Anchors.timelineOverview) { shot("strip-hidden") }
+            if !app.anchor(Anchors.timelineOverview).exists, overflow("overviewStrip"), !app.anchor(Anchors.timelineOverview).waitForExistence(timeout: 5) {
+                print("ScreenshotMatrix: the overview strip did not come back")
+            }
         }
         if want("snap-sheet") {
             // The full toolbar's "Snap" pill opens its menu of sizes; compact and landscape windows open the snap sheet
