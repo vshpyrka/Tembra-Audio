@@ -409,6 +409,12 @@ every target with zero warnings.
   `DATA_TEST/timeline/DataStoreTimelinePreferencesTest.kt` (new); the journeys' comments
   (`PERF/journeys/TimelineJourney.kt`, `IOSPERF/Journeys/TimelineJourney.swift`) and `IOSPERF/ScreenshotMatrix.swift`
   (the zoom states drag the window's right handle); the baseline profiles regenerated on the Pixel 6 Pro
+- [X] T152 The rerun on every target after the verdict (2026-10-27): the lanes green on all nine test targets on `8e89c7f`
+  and again on `b9a3816` (three chains at once from the main checkout and detached worktrees, `--warning-mode all`, zero
+  warnings), the 37 D1 captures redone (`5841a41`: the strip in every state, the six `*-overview-strip` files replaced by
+  `*-strip-hidden`, the zoom states driven by the window's handles) and the 17 rail/header-column ones again after T153
+  (`6e15d19`), the release build of `b9a3816` installed and running on all ten targets; the lanes and install tables are
+  in `screenshots/NOTES.md`.
 - [X] T153 The strip was inset twice beside chrome that already keeps the back-gesture zone off it (seen in the captures
   after the zoom verdict, 5841a41 and `screenshots/NOTES.md`: 84 pt short of the iPhone Duo's end rail, 30 dp from the
   Pixel Tablet's and the fold's rail, 20 pt instead of 16 after the iPad's header column), because T151's
