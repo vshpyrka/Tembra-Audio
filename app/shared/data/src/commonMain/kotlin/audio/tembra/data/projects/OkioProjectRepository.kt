@@ -9,7 +9,9 @@ import audio.tembra.core.project.ProjectDocument
 import audio.tembra.core.project.ProjectId
 import audio.tembra.core.project.TrackId
 import audio.tembra.core.project.lengthSeconds
+import audio.tembra.core.recording.TakeStopReason
 import audio.tembra.data.AppDirectories
+import audio.tembra.engine.TakeInfo
 import audio.tembra.engine.TimelineAudio
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.CoroutineDispatcher
@@ -32,6 +34,7 @@ import kotlinx.serialization.json.contentOrNull
 import okio.FileSystem
 import okio.IOException
 import okio.Path
+import okio.Path.Companion.toPath
 import kotlin.time.Clock
 
 /**
@@ -40,7 +43,9 @@ import kotlin.time.Clock
  * [library] is `version.map { load }`: a state flow of a change counter mapped to a fresh read, so each collector
  * gets the index on subscription and once per change (conflated, never replayed stale); the index is rebuilt from
  * the folders when missing, unreadable, when the folder set differs, or when a `project.json` is newer than it.
- * Overview build failures are remembered in memory for [overviewStatus] until a rebuild succeeds.
+ * Overview build failures are remembered in memory for [overviewStatus] until a rebuild succeeds. Staged takes
+ * (contracts/take-storage.md) are dot-files under `audio/`: listed and deleted under the same mutex, adopted by the
+ * [TakeAdopter] like an import.
  */
 class OkioProjectRepository(
     directories: AppDirectories,
@@ -54,6 +59,7 @@ class OkioProjectRepository(
 
     private val folders = ProjectFolders(directories)
     private val importer = AudioImporter(fileSystem, audio, ioDispatcher)
+    private val adopter = TakeAdopter(fileSystem, audio, ioDispatcher)
     private val demoInstaller = DemoProjectInstaller(fileSystem, demoAudio, ioDispatcher)
     private val writes = Mutex()
     private val version = MutableStateFlow(0L)
@@ -209,13 +215,87 @@ class OkioProjectRepository(
         }
     }.distinctUntilChanged()
 
+    // --- Staged takes (feature 010, contracts/take-storage.md) ---------------------------------------------------------
+
+    override fun audioDirectory(id: ProjectId): String = folders.folder(id).audio.toString()
+
+    override suspend fun stageTake(id: ProjectId, manifest: TakeManifest): String = locked {
+        val folder = folders.folder(id)
+        fileSystem.createDirectories(folder.audio)
+        fileSystem.write(folder.takeManifestPath(manifest.token)) { writeUtf8(manifest.toJson()) }
+        folder.takeStagingPath(manifest.token).toString()
+    }
+
+    override suspend fun adoptTake(id: ProjectId, manifest: TakeManifest, takeInfo: TakeInfo): AdoptedTake {
+        val result = adopter.adopt(folders.folder(id), manifest, takeInfo)
+        if (result is AdoptedTake.Adopted) {
+            // The adopter builds the overview of a new copy; a copy that already existed keeps the one it had.
+            val built = withContext(ioDispatcher) { WaveformOverviewReader.readHeader(fileSystem, result.overviewPath.toPath()) != null }
+            markOverview(id, result.assetId, built)
+        }
+        return result
+    }
+
+    override suspend fun adoptPendingTake(id: ProjectId, manifest: TakeManifest): AdoptedTake {
+        val folder = folders.folder(id)
+        val info = withContext(ioDispatcher) { audio.inspect(folder.takeStagingPath(manifest.token).toString()) }
+        if (info == null) {
+            discardTake(id, manifest.token)
+            return AdoptedTake.Discarded
+        }
+        // Shorter than 0.01 s reads as no frames: the adopter then deletes both files, as it does for a cancelled take.
+        val frames = if (info.durationSeconds < MIN_TAKE_SECONDS) 0L else info.frames
+        val takeInfo = TakeInfo(
+            startFrames = 0,
+            startBeats = manifest.startBeats.value,
+            frames = frames,
+            channels = info.channels,
+            sampleRate = info.sampleRate,
+            alignmentFrames = manifest.alignmentFrames,
+            stopReason = TakeStopReason.WriteFailed,
+        )
+        return adoptTake(id, manifest, takeInfo)
+    }
+
+    override suspend fun pendingTakes(id: ProjectId): List<TakeManifest> = locked {
+        val folder = folders.folder(id)
+        listTakeManifests(folder).mapNotNull { (token, path) ->
+            val manifest = readTextOrNull(path)?.let { TakeManifest.parse(it) }?.takeIf { it.token == token }
+            val wav = folder.takeStagingPath(token)
+            val readable = manifest != null && fileSystem.exists(wav) && audio.inspect(wav.toString()) != null
+            if (readable) {
+                manifest
+            } else {
+                // Nothing can recover a take without a readable file: both go (contracts/take-storage.md "Crash recovery").
+                fileSystem.delete(path)
+                fileSystem.delete(wav)
+                null
+            }
+        }.sortedBy { it.startedAt }
+    }
+
+    override suspend fun discardTake(id: ProjectId, token: String) {
+        locked {
+            val folder = folders.folder(id)
+            fileSystem.delete(folder.takeStagingPath(token))
+            fileSystem.delete(folder.takeManifestPath(token))
+        }
+    }
+
+    /** Every take manifest under `audio/` as (token, path). */
+    private fun listTakeManifests(folder: ProjectFolder): List<Pair<String, Path>> =
+        if (fileSystem.exists(folder.audio)) fileSystem.list(folder.audio).mapNotNull { path -> folder.takeTokenOf(path)?.let { it to path } } else emptyList()
+
     // --- Index -------------------------------------------------------------------------------------------------------
 
-    private suspend fun loadIndex(): LibraryIndex = withContext(ioDispatcher) { writes.withLock { readIndexOrRebuild() } }
+    private suspend fun loadIndex(): LibraryIndex = locked { readIndexOrRebuild() }
 
-    /** Runs [block] under the write mutex on the IO dispatcher and announces the change to [library] collectors. */
+    /** Runs [block] under the write mutex on the IO dispatcher: file work that leaves the index as it is. */
+    private suspend fun <T> locked(block: suspend () -> T): T = withContext(ioDispatcher) { writes.withLock { block() } }
+
+    /** [locked], then announces the change to [library] collectors. */
     private suspend fun <T> io(block: suspend () -> T): T {
-        val result = withContext(ioDispatcher) { writes.withLock { block() } }
+        val result = locked(block)
         version.update { it + 1 }
         return result
     }
@@ -395,5 +475,8 @@ class OkioProjectRepository(
 
     private companion object {
         const val OVERVIEW_POLL_MS = 500L
+
+        /** A recovered take shorter than this is discarded (contracts/take-storage.md "Crash recovery"). */
+        const val MIN_TAKE_SECONDS = 0.01
     }
 }

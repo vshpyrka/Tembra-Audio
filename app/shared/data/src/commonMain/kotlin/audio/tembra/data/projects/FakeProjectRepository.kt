@@ -1,22 +1,29 @@
 package audio.tembra.data.projects
 
+import audio.tembra.core.project.AudioAsset
 import audio.tembra.core.project.AudioAssetId
+import audio.tembra.core.project.AudioFormat
 import audio.tembra.core.project.ClipId
+import audio.tembra.core.project.ClipTemplate
 import audio.tembra.core.project.IdGenerator
 import audio.tembra.core.project.Project
 import audio.tembra.core.project.ProjectId
 import audio.tembra.core.project.TrackId
 import audio.tembra.core.project.lengthSeconds
+import audio.tembra.core.recording.TakeStopReason
+import audio.tembra.engine.TakeInfo
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
+import okio.ByteString.Companion.encodeUtf8
 
 /**
  * In-memory [ProjectRepository] for tests, beside the interface so `:shared:ui` tests can use it: documents in a
- * map, the index as a `StateFlow`, scripted import results and overview statuses, and a [calls] log. Audio paths
- * are `/fake/<projectId>/audio/<sha256>.<ext>`; assets listed in [missingAssets] open as missing.
+ * map, the index as a `StateFlow`, scripted import results, overview statuses and take adoptions, and a [calls] log.
+ * Audio paths are `/fake/<projectId>/audio/<sha256>.<ext>`; assets listed in [missingAssets] open as missing. A
+ * staged take's path is `/fake/<projectId>/audio/.take-<token>.wav`.
  */
 class FakeProjectRepository(
     initial: List<Project> = emptyList(),
@@ -45,6 +52,25 @@ class FakeProjectRepository(
 
     /** The documents as last saved. */
     val saved: Map<ProjectId, Project> get() = projects
+
+    /** Every manifest [stageTake] received, in order. */
+    val stagedTakes: MutableList<TakeManifest> = mutableListOf()
+
+    /** The manifests staged and not yet adopted or discarded, per project. */
+    val staged: MutableMap<ProjectId, MutableList<TakeManifest>> = mutableMapOf()
+
+    /** Every adoption ([adoptTake] and [adoptPendingTake]) with the take info it received, in order. */
+    val adoptedTakes: MutableList<Pair<TakeManifest, TakeInfo>> = mutableListOf()
+
+    /** What [pendingTakes] answers per project; a test seeds it, [discardTake] and the adoptions remove from it. */
+    val pending: MutableMap<ProjectId, List<TakeManifest>> = mutableMapOf()
+
+    /**
+     * Scripts what an adoption answers; null answers [AdoptedTake.Discarded] for a take without frames and otherwise an
+     * [AdoptedTake.Adopted] whose asset is a WAV with the take info's channels, rate and frames, its id derived from
+     * the token, the clip named and placed after the manifest.
+     */
+    var adoptResult: ((TakeManifest, TakeInfo) -> AdoptedTake)? = null
 
     override fun library(): Flow<LibraryIndex> = index
 
@@ -145,6 +171,82 @@ class FakeProjectRepository(
     override fun overviewStatus(projectId: ProjectId, assetId: AudioAssetId): Flow<OverviewStatus> =
         overviewStatuses.map { it[assetId] ?: OverviewStatus.Ready }
 
+    // --- Staged takes (feature 010, contracts/take-storage.md) ---------------------------------------------------------
+
+    override fun audioDirectory(id: ProjectId): String = "/fake/${id.value}/audio"
+
+    override suspend fun stageTake(id: ProjectId, manifest: TakeManifest): String {
+        calls += "stageTake(${id.value}, ${manifest.token})"
+        stagedTakes += manifest
+        staged.getOrPut(id) { mutableListOf() } += manifest
+        return "${audioDirectory(id)}/${ProjectFolder.TAKE_PREFIX}${manifest.token}.wav"
+    }
+
+    override suspend fun adoptTake(id: ProjectId, manifest: TakeManifest, takeInfo: TakeInfo): AdoptedTake {
+        calls += "adoptTake(${id.value}, ${manifest.token}, frames=${takeInfo.frames})"
+        return adopt(id, manifest, takeInfo)
+    }
+
+    override suspend fun adoptPendingTake(id: ProjectId, manifest: TakeManifest): AdoptedTake {
+        calls += "adoptPendingTake(${id.value}, ${manifest.token})"
+        val takeInfo = TakeInfo(
+            startFrames = 0,
+            startBeats = manifest.startBeats.value,
+            frames = 2L * manifest.sampleRate,
+            channels = manifest.channels,
+            sampleRate = manifest.sampleRate,
+            alignmentFrames = manifest.alignmentFrames,
+            stopReason = TakeStopReason.WriteFailed,
+        )
+        return adopt(id, manifest, takeInfo)
+    }
+
+    override suspend fun pendingTakes(id: ProjectId): List<TakeManifest> {
+        calls += "pendingTakes(${id.value})"
+        return pending[id].orEmpty().sortedBy { it.startedAt }
+    }
+
+    override suspend fun discardTake(id: ProjectId, token: String) {
+        calls += "discardTake(${id.value}, $token)"
+        forget(id, token)
+    }
+
+    private fun adopt(id: ProjectId, manifest: TakeManifest, takeInfo: TakeInfo): AdoptedTake {
+        adoptedTakes += manifest to takeInfo
+        val result = adoptResult?.invoke(manifest, takeInfo) ?: defaultAdoption(id, manifest, takeInfo)
+        when (result) {
+            is AdoptedTake.Adopted, AdoptedTake.Discarded -> forget(id, manifest.token)
+            is AdoptedTake.Failed -> Unit
+        }
+        return result
+    }
+
+    private fun forget(id: ProjectId, token: String) {
+        staged[id]?.removeAll { it.token == token }
+        pending[id]?.let { pending[id] = it.filterNot { manifest -> manifest.token == token } }
+    }
+
+    private fun defaultAdoption(id: ProjectId, manifest: TakeManifest, takeInfo: TakeInfo): AdoptedTake {
+        if (takeInfo.frames == 0L) return AdoptedTake.Discarded
+        val assetId = AudioAssetId(manifest.token.encodeUtf8().sha256().hex())
+        val asset = AudioAsset(
+            fileName = "${assetId.sha256}.wav",
+            format = AudioFormat.Wav,
+            channels = takeInfo.channels,
+            sampleRate = takeInfo.sampleRate,
+            frames = takeInfo.frames,
+            byteSize = WAV_HEADER_BYTES + takeInfo.frames * takeInfo.channels * BYTES_PER_SAMPLE,
+        )
+        return AdoptedTake.Adopted(
+            assetId = assetId,
+            asset = asset,
+            clip = ClipTemplate(assetId = assetId, name = manifest.takeName, offsetFrames = 0, lengthFrames = takeInfo.frames),
+            startBeats = manifest.startBeats,
+            audioPath = "${audioDirectory(id)}/${asset.fileName}",
+            overviewPath = "/fake/cache/${id.value}/${assetId.sha256}.peaks",
+        )
+    }
+
     private fun put(project: Project, origin: ProjectOrigin) {
         projects[project.id] = project
         origins[project.id] = origin
@@ -158,4 +260,9 @@ class FakeProjectRepository(
         lengthSeconds = project.lengthSeconds, trackCount = project.tracks.size, byteSize = project.assets.values.sumOf { it.byteSize },
         lastEdited = now(), origin = origin, overview = CardOverview.Empty,
     )
+
+    private companion object {
+        const val WAV_HEADER_BYTES = 44L
+        const val BYTES_PER_SAMPLE = 3L
+    }
 }
