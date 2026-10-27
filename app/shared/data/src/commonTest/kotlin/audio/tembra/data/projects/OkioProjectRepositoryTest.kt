@@ -3,13 +3,18 @@ package audio.tembra.data.projects
 import audio.tembra.core.metronome.Tempo
 import audio.tembra.core.project.AudioAssetId
 import audio.tembra.core.project.AudioFormat
+import audio.tembra.core.project.Beats
 import audio.tembra.core.project.GridSize
 import audio.tembra.core.project.Project
 import audio.tembra.core.project.ProjectDocument
 import audio.tembra.core.project.ProjectId
+import audio.tembra.core.project.TrackId
 import audio.tembra.core.project.ZoomLevel
+import audio.tembra.core.recording.TakeStopReason
 import audio.tembra.data.metronome.FakeAppDirectories
+import audio.tembra.engine.AudioInfo
 import audio.tembra.engine.FakeAudioEngine
+import audio.tembra.engine.TakeInfo
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -33,7 +38,10 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-/** The project folders, the library index and the document round trip over a fake file system (contracts/project-storage.md). */
+/**
+ * The project folders, the library index and the document round trip over a fake file system (contracts/project-storage.md),
+ * and the staged takes of contracts/take-storage.md: staging, listing, discarding, adoption and crash recovery.
+ */
 @OptIn(ExperimentalCoroutinesApi::class)
 class OkioProjectRepositoryTest {
 
@@ -51,6 +59,21 @@ class OkioProjectRepositoryTest {
 
     private fun TestScope.repository(): OkioProjectRepository =
         OkioProjectRepository(directories, engine, demoAudio, fileSystem, StandardTestDispatcher(testScheduler), clock = { clock.nowMs })
+
+    private fun takeManifest(token: String, startedAt: Long = clock.nowMs, takeName: String = "Take 1", startBeats: Double = 0.0): TakeManifest =
+        TakeManifest(token, TrackId("track-1"), Beats(startBeats), takeName, startedAt, alignmentFrames = 0, sampleRate = 48_000, channels = 1)
+
+    /** A staged take as the controller and the recorder leave it: the manifest and, unless [withWav] is false, the file of [bytes]. */
+    private fun stageTake(folder: ProjectFolder, token: String, startedAt: Long = clock.nowMs, withWav: Boolean = true, bytes: ByteArray = ByteArray(1_000) { 7 }): TakeManifest {
+        val manifest = takeManifest(token, startedAt)
+        fileSystem.createDirectories(folder.audio)
+        fileSystem.write(folder.takeManifestPath(token)) { writeUtf8(manifest.toJson()) }
+        if (withWav) fileSystem.write(folder.takeStagingPath(token)) { write(bytes) }
+        return manifest
+    }
+
+    private fun takeInfo(frames: Long, channels: Int = 1, sampleRate: Int = 48_000, startBeats: Double = 0.0): TakeInfo =
+        TakeInfo(startFrames = 0, startBeats = startBeats, frames = frames, channels = channels, sampleRate = sampleRate, alignmentFrames = 0, stopReason = TakeStopReason.User)
 
     private fun readDocument(path: Path): Project = assertIs<DecodeResult.Decoded>(codec.decode(fileSystem.read(path) { readUtf8() })).document.project
 
@@ -373,5 +396,148 @@ class OkioProjectRepositoryTest {
         engine.overviewWriter = { path -> fileSystem.write(path.toPath()) { write(DataFixtures.peaks(2, 1_536_000) { _, _ -> 3 }) }; true }
         assertTrue(repository.rebuildOverview(created.id, loopId))
         assertEquals(OverviewStatus.Ready, repository.overviewStatus(created.id, loopId).first())
+    }
+
+    // --- Staged takes (feature 010, contracts/take-storage.md) ---------------------------------------------------------
+
+    @Test
+    fun pendingTakesListsOnlyManifestsWithAReadableWavAndDropsTheRest() = runTest {
+        val repository = repository()
+        val created = repository.create("Song")
+        val folder = folders.folder(created.id)
+        val later = stageTake(folder, "later", startedAt = 2_000)
+        val earlier = stageTake(folder, "earlier", startedAt = 1_000)
+        stageTake(folder, "no-file", withWav = false)
+        stageTake(folder, "unreadable")
+        engine.inspectResults[folder.takeStagingPath("unreadable").toString()] = null
+        fileSystem.write(folder.takeManifestPath("broken")) { writeUtf8("{ not json") }
+        fileSystem.write(folder.takeStagingPath("broken")) { write(ByteArray(10)) }
+        fileSystem.write(folder.takeManifestPath("renamed")) { writeUtf8(takeManifest("other-token").toJson()) }
+        fileSystem.write(folder.takeStagingPath("renamed")) { write(ByteArray(10)) }
+        assertEquals(listOf(earlier, later), repository.pendingTakes(created.id), "readable takes, oldest first")
+        for (token in listOf("no-file", "unreadable", "broken", "renamed")) {
+            assertFalse(fileSystem.exists(folder.takeManifestPath(token)), "the $token manifest is dropped")
+            assertFalse(fileSystem.exists(folder.takeStagingPath(token)), "the $token file is dropped")
+        }
+        assertTrue(fileSystem.exists(folder.takeStagingPath("earlier")))
+        assertTrue(fileSystem.exists(folder.takeManifestPath("later")))
+        assertEquals(listOf(earlier, later), repository.pendingTakes(created.id), "listing is repeatable")
+        assertTrue(repository.pendingTakes(ProjectId("nope")).isEmpty())
+    }
+
+    @Test
+    fun discardTakeDeletesBothStagingFiles() = runTest {
+        val repository = repository()
+        val created = repository.create("Song")
+        val folder = folders.folder(created.id)
+        stageTake(folder, "t1")
+        stageTake(folder, "t2")
+        repository.discardTake(created.id, "t1")
+        assertFalse(fileSystem.exists(folder.takeManifestPath("t1")))
+        assertFalse(fileSystem.exists(folder.takeStagingPath("t1")))
+        assertTrue(fileSystem.exists(folder.takeManifestPath("t2")))
+        assertTrue(fileSystem.exists(folder.takeStagingPath("t2")))
+        assertEquals(listOf("t2"), repository.pendingTakes(created.id).map { it.token })
+        repository.discardTake(created.id, "t1")
+        repository.discardTake(ProjectId("nope"), "t1")
+    }
+
+    @Test
+    fun stagedTakesAreInvisibleToTheSizeAndTheRetireSweep() = runTest {
+        val repository = repository()
+        val created = repository.create("Song")
+        val project = withLoop(created)
+        val folder = folders.folder(created.id)
+        stageTake(folder, "t1", bytes = ByteArray(5_000) { 9 })
+        repository.save(project)
+        assertEquals(documentSize(folder) + loopBytes.size, repository.sizeOnDevice(created.id))
+        assertEquals(documentSize(folder) + loopBytes.size, repository.library().first().entries.single().byteSize)
+        val withoutClip = project.copy(tracks = persistentListOf(), assets = persistentMapOf())
+        repository.save(withoutClip, retiredAssets = setOf(loopId))
+        assertFalse(fileSystem.exists(folder.audioPath(loopId, AudioFormat.Wav)), "the retired copy is gone")
+        assertTrue(fileSystem.exists(folder.takeStagingPath("t1")), "the staged take survives the sweep")
+        assertTrue(fileSystem.exists(folder.takeManifestPath("t1")))
+        assertEquals(documentSize(folder), repository.sizeOnDevice(created.id))
+        assertEquals(listOf("t1"), repository.pendingTakes(created.id).map { it.token })
+    }
+
+    @Test
+    fun stageTakeWritesTheManifestAndNamesTheStagingFile() = runTest {
+        val repository = repository()
+        val created = repository.create("Song")
+        val folder = folders.folder(created.id)
+        val manifest = takeManifest("t1", takeName = "Take 3", startBeats = 8.0)
+        assertFalse(fileSystem.exists(folder.audio), "a new project has no audio folder yet")
+        val path = repository.stageTake(created.id, manifest)
+        assertEquals(folder.takeStagingPath("t1").toString(), path)
+        assertEquals(folder.audio.toString(), repository.audioDirectory(created.id))
+        assertEquals(manifest, TakeManifest.parse(fileSystem.read(folder.takeManifestPath("t1")) { readUtf8() }))
+        assertFalse(fileSystem.exists(folder.takeStagingPath("t1")), "the engine creates the file, not the repository")
+        assertEquals(documentSize(folder), repository.sizeOnDevice(created.id))
+    }
+
+    @Test
+    fun adoptTakeRunsTheAdopterInsideTheProjectFolderAndTracksItsOverview() = runTest {
+        val repository = repository()
+        val created = repository.create("Song")
+        val folder = folders.folder(created.id)
+        val manifest = takeManifest("t1", takeName = "Take 2", startBeats = 4.0)
+        val bytes = ByteArray(4_000) { (it * 5).toByte() }
+        val path = repository.stageTake(created.id, manifest)
+        fileSystem.write(path.toPath()) { write(bytes) }
+        engine.inspectResults[path] = AudioInfo(AudioFormat.Wav, 1, 48_000, 1_000)
+        engine.overviewWriter = { overview -> fileSystem.write(overview.toPath()) { write(DataFixtures.peaks(1, 1_000) { _, _ -> 3 }) }; true }
+        val adopted = assertIs<AdoptedTake.Adopted>(repository.adoptTake(created.id, manifest, takeInfo(frames = 1_000, startBeats = 4.0)))
+        assertEquals(DataFixtures.assetId(bytes), adopted.assetId)
+        assertEquals("Take 2", adopted.clip.name)
+        assertEquals(Beats(4.0), adopted.startBeats)
+        assertEquals(folder.audioPath(adopted.assetId, AudioFormat.Wav).toString(), adopted.audioPath)
+        assertTrue(fileSystem.exists(folder.audioPath(adopted.assetId, AudioFormat.Wav)))
+        assertFalse(fileSystem.exists(folder.takeManifestPath("t1")))
+        assertEquals(OverviewStatus.Ready, repository.overviewStatus(created.id, adopted.assetId).first())
+        assertTrue(repository.pendingTakes(created.id).isEmpty())
+
+        val second = takeManifest("t2")
+        val secondBytes = ByteArray(4_000) { (it * 11).toByte() }
+        val secondPath = repository.stageTake(created.id, second)
+        fileSystem.write(secondPath.toPath()) { write(secondBytes) }
+        engine.inspectResults[secondPath] = AudioInfo(AudioFormat.Wav, 1, 48_000, 1_000)
+        engine.overviewWriter = { false }
+        val failedOverview = assertIs<AdoptedTake.Adopted>(repository.adoptTake(created.id, second, takeInfo(frames = 1_000)))
+        assertEquals(OverviewStatus.Failed, repository.overviewStatus(created.id, failedOverview.assetId).first(), "a failed build is reported, the clip exists")
+        assertEquals(AdoptedTake.Discarded, repository.adoptTake(created.id, takeManifest("t3"), takeInfo(frames = 0)))
+    }
+
+    @Test
+    fun adoptPendingTakeRecoversAReadableStagedTakeAndDiscardsTheRest() = runTest {
+        val repository = repository()
+        val created = repository.create("Song")
+        val folder = folders.folder(created.id)
+        val bytes = ByteArray(3_000) { (it * 3).toByte() }
+        val recovered = stageTake(folder, "t1", bytes = bytes).copy(startBeats = Beats(16.0), alignmentFrames = 120, takeName = "Take 5")
+        fileSystem.write(folder.takeManifestPath("t1")) { writeUtf8(recovered.toJson()) }
+        engine.inspectResults[folder.takeStagingPath("t1").toString()] = AudioInfo(AudioFormat.Wav, 2, 44_100, 44_100)
+        val adopted = assertIs<AdoptedTake.Adopted>(repository.adoptPendingTake(created.id, recovered))
+        assertEquals(DataFixtures.assetId(bytes), adopted.assetId)
+        assertEquals(44_100L, adopted.clip.lengthFrames)
+        assertEquals("Take 5", adopted.clip.name)
+        assertEquals(Beats(16.0), adopted.startBeats)
+        assertEquals(2, adopted.asset.channels)
+        assertEquals(44_100, adopted.asset.sampleRate)
+        assertFalse(fileSystem.exists(folder.takeStagingPath("t1")))
+        assertFalse(fileSystem.exists(folder.takeManifestPath("t1")))
+
+        val unreadable = stageTake(folder, "t2")
+        engine.inspectResults[folder.takeStagingPath("t2").toString()] = null
+        assertEquals(AdoptedTake.Discarded, repository.adoptPendingTake(created.id, unreadable))
+        assertFalse(fileSystem.exists(folder.takeStagingPath("t2")))
+        assertFalse(fileSystem.exists(folder.takeManifestPath("t2")))
+
+        val tooShort = stageTake(folder, "t3")
+        engine.inspectResults[folder.takeStagingPath("t3").toString()] = AudioInfo(AudioFormat.Wav, 1, 48_000, 479)
+        assertEquals(AdoptedTake.Discarded, repository.adoptPendingTake(created.id, tooShort))
+        assertFalse(fileSystem.exists(folder.takeStagingPath("t3")), "shorter than 0.01 s is discarded with its file")
+        assertFalse(fileSystem.exists(folder.takeManifestPath("t3")))
+        assertEquals(listOf(folder.audioPath(adopted.assetId, AudioFormat.Wav)), fileSystem.list(folder.audio))
     }
 }

@@ -3,13 +3,15 @@ package audio.tembra.data.projects
 import audio.tembra.core.project.AudioAssetId
 import audio.tembra.core.project.Project
 import audio.tembra.core.project.ProjectId
+import audio.tembra.engine.TakeInfo
 import kotlinx.coroutines.flow.Flow
 
 /**
  * The project folders, the library index and the import pipeline (contracts/project-storage.md; spec FR-044 to
- * FR-054). Every member suspends so the caller owns cancellation and failure (`kotlin-concurrency-and-flow`);
- * [library] and [overviewStatus] are cold flows that re-read on subscription. [OkioProjectRepository] is the real
- * one, [FakeProjectRepository] the in-memory one for tests.
+ * FR-054), plus the staged takes of a recording (contracts/take-storage.md; spec FR-023). Every member suspends so
+ * the caller owns cancellation and failure (`kotlin-concurrency-and-flow`); [library] and [overviewStatus] are cold
+ * flows that re-read on subscription. [OkioProjectRepository] is the real one, [FakeProjectRepository] the in-memory
+ * one for tests.
  */
 interface ProjectRepository {
     /** Emits the index on subscription and after every change; rebuilt from the folders when missing, unreadable or stale. */
@@ -59,4 +61,34 @@ interface ProjectRepository {
 
     /** Polls the `.peaks` header every 500 ms while building; emits on change and completes at Ready or Failed. */
     fun overviewStatus(projectId: ProjectId, assetId: AudioAssetId): Flow<OverviewStatus>
+
+    // --- Staged takes (feature 010, contracts/take-storage.md) ---------------------------------------------------------
+
+    /** The absolute path of the project's `audio/` folder, for the free-space probe before a take (spec FR-025). */
+    fun audioDirectory(id: ProjectId): String
+
+    /**
+     * Writes the manifest `audio/.take-<token>.json` before capture begins and returns the absolute path of the staging
+     * WAV `audio/.take-<token>.wav` the engine creates.
+     */
+    suspend fun stageTake(id: ProjectId, manifest: TakeManifest): String
+
+    /** Runs the [TakeAdopter] on the project's folder once the engine ended the take; a failed overview build is reported by [overviewStatus]. */
+    suspend fun adoptTake(id: ProjectId, manifest: TakeManifest, takeInfo: TakeInfo): AdoptedTake
+
+    /**
+     * Crash recovery (spec FR-023): adopts a take left behind by an earlier launch from what its file's header says
+     * (`stopReason = WriteFailed`, the alignment from the manifest); a file the engine cannot read or shorter than
+     * 0.01 s is discarded with its manifest.
+     */
+    suspend fun adoptPendingTake(id: ProjectId, manifest: TakeManifest): AdoptedTake
+
+    /**
+     * The manifests of staged takes whose WAV exists and whose header the engine can read, oldest first; a manifest
+     * without a readable file is deleted with its file.
+     */
+    suspend fun pendingTakes(id: ProjectId): List<TakeManifest>
+
+    /** Deletes a staged take's file and manifest (a recovered take the user does not want); nothing when they are gone. */
+    suspend fun discardTake(id: ProjectId, token: String)
 }
