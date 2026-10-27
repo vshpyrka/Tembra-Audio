@@ -46,7 +46,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -100,6 +100,8 @@ class RecordingController(
     private var lastInputId: String? = null
     private var takeStartedAtMillis = 0L
 
+    private val freeSpace = TakeFreeSpace(audio)
+    private val mirrorWanted = MutableStateFlow(false)
     private val frameSnapshot = CaptureSnapshot()
     private var lastFrameNanos = Long.MIN_VALUE
     private val mirror = CaptureSnapshot()
@@ -148,7 +150,7 @@ class RecordingController(
             dispatch(RecordingEvent.Record(tokens(), countInBeats, host.isPlaying))
             return
         }
-        if (!TakeFreeSpace.canRecord(audio, repository.audioDirectory(project.id))) {
+        if (!freeSpace.canRecord(repository.audioDirectory(project.id))) {
             host.notify(SessionMessage.RecordRefused)
             return
         }
@@ -401,31 +403,41 @@ class RecordingController(
         }
     }
 
-    /** The 10 Hz mirror: the pre-roll's beats, the take's start and its end by the engine, and the live peaks. */
+    /**
+     * The 10 Hz mirror: the pre-roll's beats, the take's start and its end by the engine, and the live peaks. Idle (no
+     * timer scheduled) while nothing is armed, so a test's virtual clock can run to idle.
+     */
     private suspend fun observeCapture() {
         while (true) {
-            delay(mirrorIntervalMs)
-            if (phase.armedTrack == null) continue
-            audio.readCapture(mirror)
-            audio.readTransport(mirrorTransport)
-            when (val current = phase) {
-                is RecordingState.PreRoll -> {
-                    if (mirror.recording) {
-                        val startBeats = sessionHost?.framesToBeats(mirror.takeStartFrames, mirror.sampleRate) ?: Beats.Zero
-                        dispatch(RecordingEvent.TakeStarted(startBeats, clock()))
-                    } else if (mirrorTransport.countInBeatsLeft > 0 && mirrorTransport.countInBeatsLeft != current.beatsLeft) {
-                        dispatch(RecordingEvent.PreRollTick(mirrorTransport.countInBeatsLeft))
-                    }
-                }
-                is RecordingState.Recording -> {
-                    if (!mirror.recording && mirror.stopReason != TakeStopReason.User) {
-                        dispatch(RecordingEvent.TakeEnded(mirror.stopReason))
-                    } else {
-                        pollPeaks()
-                    }
-                }
-                RecordingState.Disarmed, is RecordingState.Arming, is RecordingState.Armed, is RecordingState.Finalising -> Unit
+            mirrorWanted.first { it }
+            while (mirrorWanted.value) {
+                delay(mirrorIntervalMs)
+                mirrorTick()
             }
+        }
+    }
+
+    private fun mirrorTick() {
+        if (phase.armedTrack == null) return
+        audio.readCapture(mirror)
+        audio.readTransport(mirrorTransport)
+        when (val current = phase) {
+            is RecordingState.PreRoll -> {
+                if (mirror.recording) {
+                    val startBeats = sessionHost?.framesToBeats(mirror.takeStartFrames, mirror.sampleRate) ?: Beats.Zero
+                    dispatch(RecordingEvent.TakeStarted(startBeats, clock()))
+                } else if (mirrorTransport.countInBeatsLeft > 0 && mirrorTransport.countInBeatsLeft != current.beatsLeft) {
+                    dispatch(RecordingEvent.PreRollTick(mirrorTransport.countInBeatsLeft))
+                }
+            }
+            is RecordingState.Recording -> {
+                if (!mirror.recording && mirror.stopReason != TakeStopReason.User) {
+                    dispatch(RecordingEvent.TakeEnded(mirror.stopReason))
+                } else {
+                    pollPeaks()
+                }
+            }
+            RecordingState.Disarmed, is RecordingState.Arming, is RecordingState.Armed, is RecordingState.Finalising -> Unit
         }
     }
 
@@ -459,6 +471,7 @@ class RecordingController(
             null
         }
         val permissionNow = permission.status.value
+        mirrorWanted.value = phase.armedTrack != null
         _state.value = _state.value.copy(
             armedTrack = phase.armedTrack,
             phase = phase,

@@ -56,9 +56,28 @@ class AndroidBackgroundPlaybackHostTest {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             assertTrue(
                 "not in the foreground as media playback within 2 s",
-                waitUntil { service.foregroundServiceType == ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK },
+                waitUntil { service.foregroundServiceType and ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK != 0 },
             )
         }
+    }
+
+    /** Feature 010 (FR-021): a take's notification reads "Recording" and, from Android 14, the service holds the microphone type. */
+    @Test
+    fun keepAliveWithTheRecordingNotificationShowsRecordingAndHoldsTheMicrophoneType() {
+        assertTrue(host.keepAlive(PlaybackNotification.recording("Demo project")))
+        val service = (serviceRule.bindService(serviceIntent) as PlaybackServiceBinder).service
+        val notification = PlaybackForegroundService.buildNotification(context)
+        assertEquals("Recording", notification.extras.getString(android.app.Notification.EXTRA_TITLE))
+        assertEquals("Demo project", notification.extras.getString(android.app.Notification.EXTRA_TEXT))
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            assertTrue(
+                "not in the foreground with the microphone type within 2 s",
+                waitUntil { service.foregroundServiceType and ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE != 0 },
+            )
+        }
+        // The take ended, playback continues: the notification goes back to "Playing" without a restart.
+        assertTrue(host.keepAlive(PLAYING))
+        assertEquals("Playing", PlaybackForegroundService.buildNotification(context).extras.getString(android.app.Notification.EXTRA_TITLE))
     }
 
     @Test

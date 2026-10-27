@@ -305,7 +305,7 @@ class ProjectSession(
 
     override fun framesToBeats(frames: Long, sampleRate: Int): Beats = history?.present?.tempoMap?.framesToBeats(frames, sampleRate) ?: Beats.Zero
 
-    override fun applyTake(edit: RecordTake, audioPath: String, overviewPath: String) {
+    override suspend fun applyTake(edit: RecordTake, audioPath: String, overviewPath: String) {
         val projectId = history?.present?.id ?: return
         val playable = sources.open(edit.assetId, audioPath)
         closeEditGroup()

@@ -1,5 +1,10 @@
 package audio.tembra.ui.tracksettings
 
+import audio.tembra.ui.session.RecordingController
+import audio.tembra.ui.platform.MicrophonePermissionStatus
+import audio.tembra.ui.platform.FakeMicrophonePermission
+import audio.tembra.ui.platform.FakeAudioRouteMonitor
+import audio.tembra.data.timeline.FakeTimelinePreferences
 import audio.tembra.core.project.GainDb
 import audio.tembra.core.project.InstrumentLabel
 import audio.tembra.core.project.PlaybackState
@@ -51,6 +56,18 @@ class TrackSettingsViewModelTest {
         metronome = engine,
         preferences = FakeMetronomePreferences(),
         host = FakeBackgroundPlaybackHost(),
+        recording = RecordingController(
+            audio = engine,
+            permission = FakeMicrophonePermission(MicrophonePermissionStatus.Granted),
+            routes = FakeAudioRouteMonitor(),
+            host = FakeBackgroundPlaybackHost(),
+            preferences = FakeTimelinePreferences(),
+            repository = repository,
+            scope = scope,
+            clock = { 0L },
+            tokens = { "take-1" },
+            mirrorIntervalMs = 100,
+        ),
         scope = scope,
         overviewReader = { overview },
         ioDispatcher = dispatcher,

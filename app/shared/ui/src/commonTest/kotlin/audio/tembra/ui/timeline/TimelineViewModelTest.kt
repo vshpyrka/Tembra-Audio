@@ -1,5 +1,9 @@
 package audio.tembra.ui.timeline
 
+import audio.tembra.ui.session.RecordingController
+import audio.tembra.ui.platform.MicrophonePermissionStatus
+import audio.tembra.ui.platform.FakeMicrophonePermission
+import audio.tembra.ui.platform.FakeAudioRouteMonitor
 import audio.tembra.core.metronome.BuiltInClickSound
 import audio.tembra.core.metronome.ClickSound
 import audio.tembra.core.metronome.MetronomeStyle
@@ -78,6 +82,18 @@ class TimelineViewModelTest {
         metronome = engine,
         preferences = preferences,
         host = FakeBackgroundPlaybackHost(),
+        recording = RecordingController(
+            audio = engine,
+            permission = FakeMicrophonePermission(MicrophonePermissionStatus.Granted),
+            routes = FakeAudioRouteMonitor(),
+            host = FakeBackgroundPlaybackHost(),
+            preferences = FakeTimelinePreferences(),
+            repository = repository,
+            scope = scope,
+            clock = { 0L },
+            tokens = { "take-1" },
+            mirrorIntervalMs = 100,
+        ),
         scope = scope,
         overviewReader = { overview },
         ioDispatcher = dispatcher,
