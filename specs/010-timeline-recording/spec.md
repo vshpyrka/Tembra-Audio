@@ -63,6 +63,28 @@ placing recording after the mixer ("recording needs the mixer's meters") is supe
 meter lives on the track header (FR-005) and the mixer reuses it. The amendment names this
 specification and feature 009's.
 
+## Clarifications
+
+### Session 2026-10-27
+
+- Q: When a new take is recorded over clips that already exist on the armed track, what
+  should happen to those older clips? → A: The take replaces what it covers: the overlapped
+  parts of older clips are trimmed away when the take ends, as one undo step (FR-013).
+- Q: How should the app line up a recorded take with the project so that what the musician
+  played on the beat lands on the beat? → A: Automatically only, from what the device reports
+  and what the app measures for the routes in use; no manual offset and no calibration
+  routine in this feature (FR-014).
+- Q: When wireless headphones that have their own microphone are connected, which microphone
+  should record the take? → A: The device's built-in microphone; playback stays at full
+  quality through the wireless headphones and the headset's microphone is never used (FR-002).
+- Q: How should the phone's transport bar make room for the new Record button? → A: Keep every
+  control and stack the readout (position above length) below 600 dp; the owner will check
+  the result by hand on a phone and may switch to Record in the armed track's header beside
+  the arm toggle instead, as a design iteration after the first release build (FR-007).
+- Q: Should the count-in clicks sound when the transport bar's metronome toggle is off? → A:
+  Yes: whenever Count-in is 1 or 2 bars the count-in clicks sound; after it the click
+  continues only if the metronome toggle is on (FR-015).
+
 ## User Scenarios & Testing *(mandatory)*
 
 Recording is how a musician's own playing gets into a project. Feature 009 gave the Timeline
@@ -315,11 +337,12 @@ and the growing clip with the screen reader.
 - The take reaches 30 minutes: it ends itself, is kept, and a notice says why.
 - The device runs low on space: Record is refused below 200 MB free with a message; a running
   take ends itself and is kept when free space falls below 50 MB.
-- The input device changes during a take (a headset with a microphone is plugged in or a wireless
-  one connects): the take ends and is kept, a notice says why; the next take uses the new input
-  with fresh alignment.
-- Headphones without a microphone are plugged in during a take: only the output changes; the
-  take continues (feature 009 FR-008).
+- The input device changes during a take (a wired headset with a microphone or an interface is
+  plugged in or removed): the take ends and is kept, a notice says why; the next take uses the
+  new input with fresh alignment.
+- Headphones without a microphone, or wireless headphones, connect or disconnect during a take:
+  only the output changes; the built-in microphone keeps recording and the take continues
+  (feature 009 FR-008).
 - The microphone permission is revoked while a track is armed: the track is disarmed and the
   denied message shown; a running take ends and is kept.
 - The user rotates the device or resizes the window during a take: the take continues; the
@@ -359,9 +382,12 @@ and the growing clip with the screen reader.
   when another project is opened, when the app leaves Timeline and its track settings screen for
   any other destination (after the dialog of FR-022 when a take runs), and when the app is
   terminated.
-- **FR-002**: The input MUST be the device's current default input (the built-in microphone, or
-  the microphone of connected headphones or of an external interface when the system routes
-  input there); no input picker is offered. The capture MUST keep the input's own channel count
+- **FR-002**: The input MUST be the device's current default wired input: the built-in microphone,
+  or the microphone of wired headphones or of an external interface when the system routes
+  input there; no input picker is offered. The microphone of wireless headphones MUST never be
+  used: with wireless headphones connected the built-in microphone records and playback and
+  monitoring stay at full quality through the headphones (confirmed 2026-10-27,
+  clarification). The capture MUST keep the input's own channel count
   up to two (one from a built-in microphone, two from a stereo interface) and MUST NOT apply
   voice-call processing (echo cancellation, noise suppression, automatic gain control) or the
   Tuner's noise gate: what the musician plays is what is recorded, and a take contains the input
@@ -399,7 +425,12 @@ and the growing clip with the screen reader.
   idle, count-in (pulsing once per count-in beat; a steady state change under reduce motion) and
   recording (lit). The bar MUST still fit without clipping at every width: in windows narrower
   than 600 dp the position and length readout MUST stack the position above the length in the
-  same forms as feature 009's FR-010; from 600 dp it stays on one line.
+  same forms as feature 009's FR-010; from 600 dp it stays on one line. The stacked bar is the
+  owner's choice to verify by hand on a phone (confirmed 2026-10-27, clarification): if it does
+  not satisfy, the fallback is Record in the armed track's header beside the arm toggle with
+  the transport bar left as feature 009 built it, applied as a design iteration of this
+  feature after the first release build, with the keyboard, semantics and journey anchors of
+  FR-028, FR-029 and the instrumentation section moving with the button.
 - **FR-008**: Record MUST be available whenever a project is open on Timeline or its track
   settings screen. It records into the
   armed track; when no track is armed it MUST first arm the selected track, and when no track is
@@ -435,12 +466,15 @@ and the growing clip with the screen reader.
   before, a clip straddling the end keeps its part after, a clip inside the span is removed, a
   clip straddling both keeps both outside parts as two clips; so the track has no overlapping
   clips (009 FR-027). The trimmed clips' audio copies are untouched; the whole change is the one
-  undo step of FR-011, and undo restores every trimmed clip exactly and removes the take's clip.
+  undo step of FR-011, and undo restores every trimmed clip exactly and removes the take's clip
+  (confirmed 2026-10-27, clarification).
 - **FR-014**: A take MUST be placed so that a sound the musician makes at the instant a beat is
   heard lands on that beat in the recorded clip: the app MUST compensate the delay from the
   engine to the output and from the input to the engine for the routes in use, automatically and
   with no user control, by a value measured or obtained per device and route rather than fixed,
-  and freshly for each take when a route changed. Success criterion SC-001 states the tolerance.
+  and freshly for each take when a route changed; no manual offset and no calibration routine
+  are offered (confirmed 2026-10-27, clarification). Success criterion SC-001 states the
+  tolerance.
 
 **Count-in**
 
@@ -453,8 +487,9 @@ and the growing clip with the screen reader.
   metronome toggle is on; the playhead MUST stay at its position; the readout's position MUST
   show "Count-in" with the beats left (for one bar of 4/4: "Count-in 4" to "Count-in 1"); the
   take and playback MUST start exactly one beat after the last count-in click, on the downbeat.
-  After the count-in the click continues only when the metronome toggle is on. The count-in MUST
-  never apply to pressing play or to Record while playing.
+  After the count-in the click continues only when the metronome toggle is on (confirmed
+  2026-10-27, clarification). The count-in MUST never apply to pressing play or to Record
+  while playing.
 
 **Input monitoring**
 
@@ -702,15 +737,17 @@ and the growing clip with the screen reader.
 
 - **One input, one armed track.** The device delivers one input at a time, so arming is
   exclusive and a take goes to one track; recording several tracks at once from a multi-input
-  interface waits for an input picker in a later feature.
-- **A new take replaces what it covers.** The covered parts of older clips on the armed track are
+  interface waits for an input picker in a later feature. Wireless headset microphones are
+  excluded (confirmed 2026-10-27) because using one drops the whole connection, playback
+  included, to call quality; a musician who wants one waits for the input picker.
+- **A new take replaces what it covers** (confirmed 2026-10-27). The covered parts of older clips on the armed track are
   trimmed away when the take ends and undo restores them (the default of the best-known mobile
   DAWs, and the only behaviour consistent with feature 009's rule that editing never creates
   overlapping clips). Take lanes, layered takes and comping are a later feature. A musician who
   wants to keep an earlier take records the next one on another track.
 - **Count-in** defaults to one bar, lives in the metronome sheet beside the signature because it
   is a click matter, is a project setting like the metronome toggle, and sounds even when the
-  toggle is off because a count-in that cannot be heard is no count-in. It reuses the Metronome
+  toggle is off because a count-in that cannot be heard is no count-in (confirmed 2026-10-27). It reuses the Metronome
   destination's click as the constitution requires; the standalone Metronome keeps no count-in
   (feature 004).
 - **Monitoring** is the app's own path from the input to the output (through the armed track's
@@ -718,7 +755,7 @@ and the growing clip with the screen reader.
   hardware loopback, and is impossible on the built-in speaker because the microphone would feed
   back. On phones it lives in the overflow menu, as feature 009 placed its rarely used toolbar
   entries, because it is set once per session.
-- **Alignment is automatic.** The compensation comes from what the device reports and the app
+- **Alignment is automatic** (confirmed 2026-10-27). The compensation comes from what the device reports and the app
   measures for the routes in use; a manual offset control is excluded. If a device cannot meet
   SC-001 with the automatic value, the verification notes record it and a per-device offset
   becomes a later feature rather than a control every musician sees.
@@ -728,7 +765,8 @@ and the growing clip with the screen reader.
 - **Record never meets a disabled button.** Record arms the selected track or adds one so that a
   first-time user can press it and get a take; a track is never armed without a user action.
 - **The readout stacks on phones** (position above length) to make room for Record without
-  removing a transport control or a number feature 009 shows.
+  removing a transport control or a number feature 009 shows; the owner checks it by hand on
+  the release build and may move Record into the armed header instead (confirmed 2026-10-27).
 - **The permission wording** covers the tuner and recording in one sentence because each
   platform allows one declaration per app; feature 003's FR-014 wording is superseded by FR-019
   and the plan records the amendment.
