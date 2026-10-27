@@ -334,6 +334,13 @@ was redone on the debug build of `8e89c7f`'s app code, same names, same targets,
 `wm density 640`, 360 dp, reset afterwards; the Pixel Tablet and the iPad in portrait; the fold emulator open; the Duo
 closed with the end rail).
 
+The captures beside a rail or the header column were redone on `b9a3816` after the strip inset fix (T153), same names:
+the 17 files of `android-expanded-*` and `android-fold-open-*` (beside the start rail), `ios-expanded-*` (after the iPad's
+header column) and `ios-duo-*` (beside the end rail). For them the debug build was installed on the Pixel Tablet and the
+fold emulator through the `gradle-run` wrapper (workflow `16a1f5ce`, `:androidApp:installDebug --warning-mode all`, zero
+warnings), and the XCTest bundle was rebuilt in the worktree at that commit (the Kotlin framework recompiled and relinked).
+The `android-compact-*` and `ios-compact-*` captures stand, because the fix leaves the inset at a window edge as it was.
+
 How they were driven:
 
 - Android: the debug build installed through the `gradle-run` wrapper from a detached worktree at `d152c28` (workflow
@@ -361,16 +368,17 @@ handle. The other screenshots were left as they were: the pre-D1 width series, t
 the states outside the D1 set (`ios-*-demo-playing`, `android-expanded-demo-playing`, `*-expanded-zoom-*`, the settings,
 library, search and clip states), which predate D1.
 
-The strip's inset, measured on the PNGs at the widest zoom (where the drawn window's outline covers the whole strip):
+The strip's inset, measured at the widest zoom on the strip's node bounds (Android) and on the PNGs (iOS, where the drawn
+window's outline covers the whole strip), on `b9a3816` for the rows beside a rail or the header column:
 
 | Target | Window | Left | Right |
 |---|---|---|---|
 | Pixel 6 Pro, 360 dp | 1440 px at 4.0 | 30 dp (the 120 px back-gesture zone) | 30 dp |
-| Pixel Tablet, portrait 800 dp | 1600 px at 2.0 | 30 dp from the rail's edge (the 60 px gesture zone) | 30 dp |
-| fold emulator, open | 2076 px at 2.4375 | 30 dp from the rail's edge | 30.8 dp |
+| Pixel Tablet, portrait 800 dp | 1600 px at 2.0 | 16 dp from the rail's edge (30 dp, the 60 px gesture zone, before `b9a3816`) | 30 dp (the gesture zone) |
+| fold emulator, open | 2076 px at 2.4375 | 16 dp from the rail's edge (30 dp before) | 30 dp |
 | iPhone 18 Pro | 1206 px at 3× | 16 pt | 16 pt |
-| iPad Pro 13-inch (M5), portrait | 2064 px at 2× | 20 pt from the lanes' left edge (the strip lies under the lanes, as in D1) | 20 pt |
-| iPhone Duo, closed | 1398 px at 3× | 20 pt | 84.3 pt short of the end rail (D1's strip reached the rail) |
+| iPad Pro 13-inch (M5), portrait | 2064 px at 2× | 16 pt from the lanes' left edge, after the header column (the strip lies under the lanes, as in D1; 20 pt before) | 20 pt |
+| iPhone Duo, closed | 1398 px at 3× | 20 pt | 16.3 pt before the end rail (84.3 pt short of it before) |
 
 | Capture | Target | Shows |
 |---|---|---|
@@ -384,23 +392,27 @@ The strip's inset, measured on the PNGs at the widest zoom (where the drawn wind
 | `android-compact-metronome-sheet.png`, `android-compact-tempo-dialog.png` | Pixel 6 Pro | "124 BPM from the project" with the 4/4 pill (from the overflow's Metronome settings); the tempo dialog from the toolbar pill |
 | `android-compact-zoom-widest.png` | Pixel 6 Pro | the right handle dragged past the strip's right end: the fit view, the window over the whole strip |
 | `android-compact-zoom-closest.png` | Pixel 6 Pro | the right handle dragged onto the window's left edge: the ruler at 1.1.1 / 1.1.2 / 1.1.3 / 1.1.4, the window drawn at its 24 dp minimum |
-| `android-expanded-demo-stopped.png`, `-overflow-menu.png`, `-strip-hidden.png`, `-snap-sheet.png`, `-metronome-sheet.png`, `-tempo-dialog.png` | Pixel Tablet, portrait 800 dp | the full toolbar (Snap pill, tempo pill, metronome button) and the inline slider at 80 % with the strip; the overflow holding only "Overview strip" (checked); no strip; the Snap pill's menu; the sheet from the toolbar's metronome button; the dialog |
-| `android-fold-open-demo-stopped.png`, `android-fold-open-strip-hidden.png` | fold emulator, open | the strip, then none |
+| `android-expanded-demo-stopped.png`, `-overflow-menu.png`, `-strip-hidden.png`, `-snap-sheet.png`, `-metronome-sheet.png`, `-tempo-dialog.png` | Pixel Tablet, portrait 800 dp | the full toolbar (Snap pill, tempo pill, metronome button) and the inline slider at 80 % with the strip; the overflow holding only "Overview strip" (checked); no strip; the Snap pill's menu; the sheet from the toolbar's metronome button; the dialog; the strip 16 dp from the rail |
+| `android-fold-open-demo-stopped.png`, `android-fold-open-strip-hidden.png` | fold emulator, open | the strip 16 dp from the rail, then none |
 | `ios-compact-demo-stopped.png`, `-overflow-menu.png`, `-strip-hidden.png`, `-snap-sheet.png`, `-master-popup.png`, `-tempo-dialog.png`, `-metronome-sheet.png`, `-zoom-closest.png`, `-zoom-widest.png` | iPhone 18 Pro | the Android phone's states (the D1 iOS set has no `demo-playing` or `snap-bar`); the strip 16 pt in |
-| `ios-expanded-demo-stopped.png`, `-overflow-menu.png`, `-strip-hidden.png`, `-snap-sheet.png`, `-tempo-dialog.png`, `-metronome-sheet.png` | iPad Pro 13-inch, portrait | the tablet's states; the strip under the lanes column |
-| `ios-duo-demo-stopped.png`, `ios-duo-strip-hidden.png`, `ios-duo-master-popup.png` | iPhone Duo, closed, end rail | the strip (ending 84 pt before the rail), none, the popup |
+| `ios-expanded-demo-stopped.png`, `-overflow-menu.png`, `-strip-hidden.png`, `-snap-sheet.png`, `-tempo-dialog.png`, `-metronome-sheet.png` | iPad Pro 13-inch, portrait | the tablet's states; the strip under the lanes column, 16 pt in from it |
+| `ios-duo-demo-stopped.png`, `ios-duo-strip-hidden.png`, `ios-duo-master-popup.png` | iPhone Duo, closed, end rail | the strip (ending 16 pt before the end rail), none, the popup |
 
-Seen while capturing, not fixed:
+Seen while capturing:
 
-- Beside a navigation rail the strip is inset twice. `OverviewStripDefaults.sideInsets()` pads by the window's gesture
-  zones (`WindowInsets.systemGestures`), but the shell pads its content for `safeDrawing` only and consumes nothing. So the
-  strip insets itself by a window-edge zone that the rail already covers: 84 pt on the Duo's end-rail side (the end column
-  iOS reserves, which `EndRailFrame` fills with the rail), and 30 dp from the rail on the Pixel Tablet and the fold
-  (where the back zone lies under the rail; 16 dp would do).
-- T150 is not iOS-only: on the Pixel Tablet, Undo lights up after the tempo dialog's Done with no change (relaunched,
-  then Done alone; the two strip toggles leave Undo off). It shows in the iOS metronome-sheet captures, which the matrix
-  takes after the tempo dialog.
-- At 360 dp the metronome sheet's "Standard" pill sits under the gesture handle at the bottom edge (it did in D1 too).
+- Fixed in `b9a3816` (T153): beside a navigation rail the strip was inset twice. `OverviewStripDefaults.sideInsets()`
+  padded by the window's gesture zones (`WindowInsets.systemGestures`), but the shell padded its content for
+  `safeDrawing` only and consumed nothing. So the strip inset itself by a window-edge zone the rail already covered:
+  84 pt on the Duo's end-rail side (the end column iOS reserves, which `EndRailFrame` fills with the rail), and 30 dp from
+  the rail on the Pixel Tablet and the fold (where the back zone lies under the rail). Now the shell consumes the start
+  gesture zone beside a rail and the end column with its zone in the end-rail frame, the Timeline consumes the header
+  column, and the strip pads with inset modifiers that honour what its ancestors consumed; the recaptures measure 16 dp
+  or 16 pt there.
+- Not fixed: T150 is not iOS-only. On the Pixel Tablet, Undo lights up after the tempo dialog's Done with no change
+  (relaunched, then Done alone; the two strip toggles leave Undo off). It shows in the iOS metronome-sheet captures, which
+  the matrix takes after the tempo dialog.
+- Not fixed: at 360 dp the metronome sheet's "Standard" pill sits under the gesture handle at the bottom edge (it did in
+  D1 too).
 
 ### The zoom-control comparison install (T143, 2026-10-27 02:00)
 
