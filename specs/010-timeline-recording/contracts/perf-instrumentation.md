@@ -32,9 +32,9 @@ floor; `takeAlignmentMs` and `monitorDelayMs`: 20 % gate with a 2 ms floor, info
 `tests/fixtures/engine-health.json` and `specs/007-performance-pipeline/contracts/metric-catalogue.md`
 gain the four counters. `trace_shim_test` expects 36 names.
 
-## Anchors (`PerfAnchors` + `PerfAnchorsCatalogueTest` 46 + the Android and iOS mirrors)
+## Anchors (`PerfAnchors` + `PerfAnchorsCatalogueTest` 47 + the Android and iOS mirrors)
 
-`timeline.track.arm.0`, `timeline.track.meter.0`, `timeline.track.record.0`,
+`timeline.track.arm.0`, `timeline.track.meter.0`, `timeline.track.clip.0`, `timeline.track.record.0`,
 `transport.record`, `timeline.toolbar.monitor`, `timeline.toolbar.overflow.monitor`,
 `metronome.sheet.countIn`, `timeline.clip.take`, `snackbar.microphone.settings`,
 `dialog.stopRecording.confirm` (and `.cancel`). The compact-bar journey step taps
@@ -104,6 +104,6 @@ profile comparison and any `above_limit` notice with its explanation go into
 
 ## Tests
 
-`PerfSectionCatalogueTest`, `PerfAnchorsCatalogueTest` (46), `trace_shim_test` (36),
+`PerfSectionCatalogueTest`, `PerfAnchorsCatalogueTest` (47), `trace_shim_test` (36),
 `trace_poison_test` (the new RT files), `uv run pytest` (config, catalogue, collectors, report
 with the sixth journey and the four counters), the iOS `FacadeSelfCheckTests`.
