@@ -38,11 +38,15 @@ import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.height
+import androidx.compose.ui.unit.width
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import audio.tembra.ui.designsystem.enterKeyboardMode
 import audio.tembra.ui.theme.TembraTheme
+import audio.tembra.ui.timeline.TimelineLayout
+import audio.tembra.ui.timeline.TimelineTestTags
 import dev.zacsweers.metrox.viewmodel.LocalMetroViewModelFactory
 import kotlin.math.abs
 import kotlin.test.Test
@@ -121,6 +125,41 @@ class NavigationShellTest {
             val firstItem = onNodeWithTag("nav.item.${Destination.entries.first().id}").getUnclippedBoundsInRoot()
             assertTrue(firstItem.top >= shell.top + topInset - 0.5.dp, "$mode: the first rail item (${firstItem.top}) is under the top inset $topInset")
         }
+    }
+
+    /**
+     * T153: the system's back-gesture zone under a rail is consumed by the frame, so the Timeline's overview strip keeps
+     * only the 16 dp page margin from the content beside the rail: from its start beside the start rail (after the
+     * 200 dp header column where the Timeline is expanded), from its end beside the iPhone Duo's end rail. Where the
+     * platform reports no zone wider than the margin this holds without the consumption; with Android's gesture
+     * navigation (a 30 dp zone) the strip would otherwise sit 30 dp in.
+     */
+    @Test
+    fun theOverviewStripIsNotInsetAgainForTheGestureZoneUnderARail() = runComposeUiTest {
+        var layoutMode by mutableStateOf(LayoutMode.Rail)
+        var windowMode = LayoutMode.BottomBar
+        var density = 1f
+        var margin = 0.dp
+        var headerColumn = 0.dp
+        withShellLocals {
+            // What TimelineScreen derives its layout from: the window's own mode, not the one the test forces on the frame.
+            windowMode = rememberLayoutMode()
+            density = LocalDensity.current.density
+            margin = TembraTheme.spacing.pageMargin
+            headerColumn = TembraTheme.spacing.headerColumnWidth
+            NavigationShellContent(ShellUiState(), layoutMode, onSelect = {}, onBack = {})
+        }
+        // One pixel of rounding room.
+        val onePixel = 1f / density
+        val content = onNodeWithTag("screen.timeline").getUnclippedBoundsInRoot()
+        val header = if (TimelineLayout.from(content.width, content.height, windowMode).pinnedHeaders) headerColumn else 0.dp
+        val start = onNodeWithTag(TimelineTestTags.OVERVIEW).getUnclippedBoundsInRoot().left - content.left - header
+        assertTrue(abs((start - margin).value) <= onePixel, "beside the rail the strip starts $start after the content (header $header), not $margin")
+        layoutMode = LayoutMode.EndRail
+        waitForIdle()
+        val endContent = onNodeWithTag("screen.timeline").getUnclippedBoundsInRoot()
+        val end = endContent.right - onNodeWithTag(TimelineTestTags.OVERVIEW).getUnclippedBoundsInRoot().right
+        assertTrue(abs((end - margin).value) <= onePixel, "beside the end rail the strip ends $end before the content, not $margin")
     }
 
     @Test

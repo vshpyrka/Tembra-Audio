@@ -2,6 +2,8 @@ package audio.tembra.ui.timeline
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.ui.Modifier
@@ -48,8 +50,9 @@ import kotlin.test.assertTrue
  * an edge is dragged and recentres on a tap outside it. Every test uses 40 bars of 4/4 (160 beats) on a 320 dp strip
  * (2 dp a beat; it must fit the narrowest device window, the 360 dp OPPO, since `width` is coerced into the window) and
  * lanes 320 dp wide at 8 dp a beat: 40 beats in view from beat 20, so the window spans 40 to 120 dp. Positions are
- * written as beats through [dpAtBeat]; those tests set no side inset so the strip is the whole 320 dp, and one test
- * checks the default inset of the owner's verdict on D1 (T151).
+ * written as beats through [dpAtBeat]; those tests set a zero margin and gesture inset so the strip is the whole 320 dp,
+ * and two tests check the default inset of the owner's verdict on D1 (T151) and that it counts what an ancestor
+ * consumed (T153).
  */
 @OptIn(ExperimentalTestApi::class)
 class OverviewStripTest {
@@ -94,7 +97,8 @@ class OverviewStripTest {
                         viewport = viewport(densityScale), tracks = tracks, playing = playing, positionBeats = positionBeats,
                         telemetry = telemetry, onScrollTo = { scrolls += it.value }, onZoomTo = { start, end -> zooms += start.value to end.value },
                         height = height,
-                        sideInsets = PaddingValues(0.dp),
+                        margin = 0.dp,
+                        gestureInsets = NO_INSETS,
                     )
                 }
             }
@@ -158,6 +162,34 @@ class OverviewStripTest {
         val window = onNodeWithTag(TimelineTestTags.OVERVIEW_WINDOW).getUnclippedBoundsInRoot()
         assertTrue(abs((window.left - strip.left).value - 20f * width / 160f) <= 1f, "the window starts at ${window.left - strip.left} of $width dp")
         assertTrue(abs((window.right - strip.left).value - 60f * width / 160f) <= 1f, "the window ends at ${window.right - strip.left} of $width dp")
+    }
+
+    /**
+     * T153: the gesture part of the inset counts what the ancestors already padded and consumed. Under a host that
+     * consumed 200 dp at the start (the expanded Timeline's header column, wider than any back-gesture zone) the strip
+     * starts exactly the 16 dp page margin in, not the margin plus the zone again; at the end, where nothing was
+     * consumed, it keeps at least the margin.
+     */
+    @Test
+    fun theGestureInsetCountsWhatAnAncestorConsumed() = runComposeUiTest {
+        setContent {
+            TembraTheme {
+                densityScale = LocalDensity.current.density
+                Box(Modifier.requiredWidth(STRIP_DP.dp).consumeWindowInsets(PaddingValues(start = 200.dp)).testTag(HOST)) {
+                    OverviewStrip(
+                        viewport = viewport(densityScale), tracks = tracks, playing = false, positionBeats = Beats(80.0),
+                        telemetry = ScriptedTransportTelemetry.stopped(0.0), onScrollTo = {}, onZoomTo = { _, _ -> },
+                    )
+                }
+            }
+        }
+        val host = onNodeWithTag(HOST).getUnclippedBoundsInRoot()
+        val strip = onNodeWithTag(TimelineTestTags.OVERVIEW).getUnclippedBoundsInRoot()
+        // One pixel of rounding room at the test devices' densities.
+        val onePixel = (1f / densityScale).dp
+        val start = strip.left - host.left
+        assertTrue(abs((start - 16.dp).value) <= onePixel.value, "the strip starts $start from the host's left edge, not 16 dp")
+        assertTrue(host.right - strip.right >= 16.dp - onePixel, "the strip ends ${host.right - strip.right} from the host's right edge")
     }
 
     @Test
@@ -286,5 +318,8 @@ class OverviewStripTest {
         /** Fits the narrowest device window (the 360 dp OPPO) with room to spare. */
         const val STRIP_DP = 320
         const val HOST = "test.overviewHost"
+
+        /** No gesture zone: with a zero margin the strip is as wide as its host. */
+        val NO_INSETS = WindowInsets(0, 0, 0, 0)
     }
 }

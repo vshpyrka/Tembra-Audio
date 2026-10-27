@@ -769,10 +769,10 @@ clips, overlaps or hides behind the transport bar.
   strip MUST be shown by default and MUST be shown or hidden from the overflow menu's "Overview
   strip" entry, checked while shown and remembered on the device, outside every project; with
   the strip hidden the pinch, wheel, trackpad and key paths remain. The strip MUST be inset from
-  the window's left and right sides by at least 16 dp, and by the system's back-gesture zone on
-  a side where that is wider, so that both ends of its window can be grabbed without starting a
-  back swipe. The overflow menu's zoom readout is replaced by the strip. The level MUST be
-  remembered per project.
+  the window's left and right sides by at least 16 dp, plus whatever part of the system's
+  back-gesture zone still reaches the strip beside a rail, the end column or the header column,
+  so that both ends of its window can be grabbed without starting a back swipe. The overflow
+  menu's zoom readout is replaced by the strip. The level MUST be remembered per project.
 - **FR-016**: The timeline MUST scroll horizontally by drag, by the scroll wheel without the
   modifier and by a two-finger trackpad swipe; the track list MUST scroll vertically when the
   tracks exceed the height, with the ruler pinned at the top and, in expanded windows, the
