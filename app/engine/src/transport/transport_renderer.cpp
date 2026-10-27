@@ -4,6 +4,8 @@
 #include <cmath>
 #include <cstring>
 
+#include "tembra_engine.h"
+
 namespace tembra {
 
 TransportRenderer::TransportRenderer(uint32_t rate)
@@ -15,9 +17,20 @@ TransportRenderer::TransportRenderer(uint32_t rate)
       clickScratch_(kMaxBlockFrames * 2, 0.0f),
       clipStart_(TEMBRA_MAX_CLIPS, 0),
       clipEnd_(TEMBRA_MAX_CLIPS, 0),
-      activeClip_(TEMBRA_MAX_TRACKS, -1) {
+      activeClip_(TEMBRA_MAX_TRACKS, -1),
+      monitor_(rate),
+      monitorScratch_(kMaxBlockFrames * 2, 0.0f) {
     tempo_.rate = rate;
     for (TrackStrip& strip : strips_) strip.setRate(rate);
+}
+
+void TransportRenderer::requestRecordStart(int64_t startFrame, int64_t preRollFrames) {
+    RecordRequest request;
+    request.sequence = ++recordSequence_;
+    request.start = startFrame;
+    request.preRoll = preRollFrames < 0 ? 0 : preRollFrames;
+    recordRequests_.write(request);
+    recordCommand_.store(kRecordStart, std::memory_order_seq_cst);
 }
 
 // --- Host -------------------------------------------------------------------------------------------------------
@@ -34,16 +47,39 @@ void TransportRenderer::silence() {
     command_.store(kNone, std::memory_order_release);
     playing_.store(false, std::memory_order_release);
     readersActive_.store(false, std::memory_order_release);
+    captureState_ = CaptureState::Idle;
+    preRolling_ = false;
+    muteFrom_ = INT64_MAX;
+    generationsSeen_ = false;
+    monitor_.setEnabled(false);
+    monitor_.advance(static_cast<uint32_t>(rate_));
+    monitoring_.store(false, std::memory_order_release);
+    monitorRequested_.store(0, std::memory_order_release);
+    recordCommand_.store(kRecordNone, std::memory_order_release);
 }
 
 // --- Audio thread -----------------------------------------------------------------------------------------------
 
-void TransportRenderer::render(float* out, uint32_t frames) {
+void TransportRenderer::render(float* out, uint32_t frames, const InputBlock& input) {
+    rendering_.store(true, std::memory_order_seq_cst);
     for (uint32_t done = 0; done < frames;) {
         const uint32_t chunk = std::min<uint32_t>(frames - done, static_cast<uint32_t>(kMaxBlockFrames));
-        renderBlock(out + static_cast<size_t>(done) * 2, chunk);
+        InputBlock piece = input;
+        if (input.interleaved != nullptr) {
+            if (done >= input.frames) {
+                piece = InputBlock{};
+                piece.inputGeneration = input.inputGeneration;
+                piece.outputGeneration = input.outputGeneration;
+            } else {
+                piece.interleaved = input.interleaved + static_cast<size_t>(done) * input.channels;
+                piece.frames = std::min<uint32_t>(chunk, input.frames - done);
+                piece.shortFrames = done == 0 ? input.shortFrames : 0;
+            }
+        }
+        renderBlock(out + static_cast<size_t>(done) * 2, chunk, piece);
         done += chunk;
     }
+    rendering_.store(false, std::memory_order_seq_cst);
 }
 
 void TransportRenderer::applyTracks(const TrackTable& table) {
@@ -57,6 +93,25 @@ void TransportRenderer::applyTracks(const TrackTable& table) {
             stripSet_[t] = true;
         }
     }
+    // The monitor follows the armed track's targets (research R12).
+    const int32_t armed = armedTrack_.load(std::memory_order_acquire);
+    if (armed >= 0 && static_cast<uint32_t>(armed) < count) {
+        if (monitorTrack_ != armed) {
+            monitor_.snap(table.tracks[armed].gain, table.tracks[armed].audible != 0);
+            monitorTrack_ = armed;
+        } else {
+            monitor_.setTarget(table.tracks[armed].gain, table.tracks[armed].audible != 0);
+        }
+    }
+}
+
+void TransportRenderer::renderMonitor(uint32_t frames, const float* inputSlice, uint32_t inputChannels) {
+    if (!monitor_.active() || inputSlice == nullptr || inputChannels == 0) {
+        monitor_.advance(frames);
+        return;
+    }
+    monitor_.process(inputSlice, inputChannels, monitorScratch_.data(), frames);
+    bus_.add(monitorScratch_.data(), frames);
 }
 
 void TransportRenderer::recomputeClipFrames() {
@@ -100,17 +155,22 @@ void TransportRenderer::requestSources(int64_t position) {
     }
 }
 
-uint32_t TransportRenderer::renderSegment(int64_t position, uint32_t frames, float* out) {
+uint32_t TransportRenderer::renderSegment(int64_t position, uint32_t frames, float* out, const float* inputSlice, uint32_t inputChannels, bool clips) {
     const ArrangementSnapshot& arrangement = *arrangement_;
     const uint32_t trackCount = std::min<uint32_t>(arrangement.trackCount, TEMBRA_MAX_TRACKS);
     const uint32_t clipCount = std::min<uint32_t>(arrangement.clipCount, TEMBRA_MAX_CLIPS);
     bus_.begin(frames);
     for (uint32_t t = 0; t < trackCount; ++t) activeClip_[t] = -1;
-    for (uint32_t i = 0; i < clipCount; ++i) {
-        if (clipStart_[i] <= position && position < clipEnd_[i] && arrangement.clips[i].track < trackCount) {
-            activeClip_[arrangement.clips[i].track] = static_cast<int32_t>(i);
+    if (clips) {
+        for (uint32_t i = 0; i < clipCount; ++i) {
+            if (clipStart_[i] <= position && position < clipEnd_[i] && arrangement.clips[i].track < trackCount) {
+                activeClip_[arrangement.clips[i].track] = static_cast<int32_t>(i);
+            }
         }
     }
+    // The armed track's clips at or after the take start are being replaced: silent while the take runs (research R11).
+    const int32_t armed = armedTrack_.load(std::memory_order_acquire);
+    if (armed >= 0 && static_cast<uint32_t>(armed) < trackCount && position >= muteFrom_) activeClip_[armed] = -1;
     uint32_t active = 0;
     for (uint32_t t = 0; t < trackCount; ++t) {
         if (activeClip_[t] < 0) {
@@ -129,11 +189,12 @@ uint32_t TransportRenderer::renderSegment(int64_t position, uint32_t frames, flo
         bus_.add(stripScratch_.data(), frames);
         ++active;
     }
+    renderMonitor(frames, inputSlice, inputChannels);
     bus_.finish(out, frames);
     return active;
 }
 
-uint32_t TransportRenderer::renderPlaying(int64_t position, uint32_t frames, float* out) {
+uint32_t TransportRenderer::renderPlaying(int64_t position, uint32_t frames, float* out, const InputBlock& input, uint32_t inputOffset) {
     const uint32_t clipCount = std::min<uint32_t>(arrangement_->clipCount, TEMBRA_MAX_CLIPS);
     const int64_t end = position + frames;
     uint32_t active = 0;
@@ -146,14 +207,20 @@ uint32_t TransportRenderer::renderPlaying(int64_t position, uint32_t frames, flo
             if (s > a && s < b) b = s;
             if (e > a && e < b) b = e;
         }
+        // The pre-roll ends and the take begins at preRollStart_: a boundary like a clip edge (research R10).
+        if (preRolling_ && preRollStart_ > a && preRollStart_ < b) b = preRollStart_;
+        if (muteFrom_ != INT64_MAX && muteFrom_ > a && muteFrom_ < b) b = muteFrom_;
         const uint32_t n = static_cast<uint32_t>(b - a);
-        active = std::max(active, renderSegment(a, n, out + static_cast<size_t>(cursor) * 2));
+        const bool clips = !(preRolling_ && a < preRollStart_);
+        const uint32_t inputAt = inputOffset + cursor;
+        const float* slice = (input.interleaved != nullptr && inputAt + n <= input.frames) ? input.interleaved + static_cast<size_t>(inputAt) * input.channels : nullptr;
+        active = std::max(active, renderSegment(a, n, out + static_cast<size_t>(cursor) * 2, slice, input.channels, clips));
         cursor += n;
     }
     return active;
 }
 
-void TransportRenderer::renderBlock(float* out, uint32_t frames) {
+void TransportRenderer::renderBlock(float* out, uint32_t frames, const InputBlock& input) {
     const int64_t blockTimeNs = MetronomeRenderer::nowNanos();
 
     // 1. The newest snapshots.
@@ -213,16 +280,118 @@ void TransportRenderer::renderBlock(float* out, uint32_t frames) {
         requestSources(clock_.frame);  // a new arrangement or tempo while playing: sources may need new positions
     }
 
+    // 3a. Capture (feature 010): the armed source, the platform's reopens, monitoring and the record commands.
+    CaptureSource* capture = capture_.load(std::memory_order_acquire);
+    const bool armed = capture != nullptr;
+    if (!armed) {
+        captureState_ = CaptureState::Idle;
+        preRolling_ = false;
+        muteFrom_ = INT64_MAX;
+        generationsSeen_ = false;
+    } else if (captureState_ == CaptureState::Idle) {
+        captureState_ = CaptureState::Armed;
+        muteFrom_ = INT64_MAX;
+        generationsSeen_ = false;
+    }
+    if (!generationsSeen_) {
+        seenInputGeneration_ = input.inputGeneration;
+        seenOutputGeneration_ = input.outputGeneration;
+        generationsSeen_ = true;
+    } else {
+        if (input.outputGeneration != seenOutputGeneration_) {
+            seenOutputGeneration_ = input.outputGeneration;
+            monitorRequested_.store(0, std::memory_order_release);  // the route may be the speaker now (research R12)
+        }
+        if (input.inputGeneration != seenInputGeneration_) {
+            seenInputGeneration_ = input.inputGeneration;
+            if (captureState_ == CaptureState::Recording && capture != nullptr) capture->endTake(TEMBRA_TAKE_STOP_INPUT_LOST);
+        }
+    }
+    const bool monitorWanted = armed && monitorRequested_.load(std::memory_order_acquire) != 0;
+    monitor_.setEnabled(monitorWanted);
+    monitoring_.store(monitorWanted, std::memory_order_release);
+    const uint32_t recordCommand = recordCommand_.exchange(kRecordNone, std::memory_order_seq_cst);
+    uint32_t keepFrom = kNoSplit;  // the offset within this block where capture begins, when it begins here
+    if (recordCommand == kRecordStart && captureState_ == CaptureState::Armed) {
+        const RecordRequest& request = recordRequests_.latest();
+        appliedRecordSequence_ = request.sequence;
+        if (!clock_.playing && request.preRoll > 0) {
+            preRollReturnFrame_ = clock_.frame;
+            preRollStart_ = request.start;
+            clock_.frame = request.start - request.preRoll;
+            preRolling_ = true;
+            captureState_ = CaptureState::PreRoll;
+        } else {
+            captureState_ = CaptureState::Recording;
+            takeStart_ = clock_.frame;
+            muteFrom_ = takeStart_;
+            keepFrom = 0;
+        }
+        if (!clock_.playing) {
+            clock_.playing = true;
+            releasing_ = false;
+            releaseRemaining_ = 0;
+            readersActive_.store(true, std::memory_order_release);
+            playing_.store(true, std::memory_order_release);
+            anchor = true;
+            requestSources(preRolling_ ? preRollStart_ : clock_.frame);
+        }
+    } else if (recordCommand == kRecordCancel && captureState_ == CaptureState::PreRoll) {
+        clock_.playing = false;
+        clock_.frame = preRollReturnFrame_;
+        preRolling_ = false;
+        captureState_ = CaptureState::Armed;
+        playing_.store(false, std::memory_order_release);
+        readersActive_.store(false, std::memory_order_release);
+        releasing_ = false;
+        releaseRemaining_ = 0;
+    } else if (recordCommand == kRecordStop || recordCommand == kRecordCancel) {
+        if (captureState_ == CaptureState::PreRoll) {
+            // A stop during the pre-roll is a cancel: nothing was captured.
+            clock_.playing = false;
+            clock_.frame = preRollReturnFrame_;
+            preRolling_ = false;
+            playing_.store(false, std::memory_order_release);
+            readersActive_.store(false, std::memory_order_release);
+            releasing_ = false;
+            releaseRemaining_ = 0;
+        }
+        if (captureState_ == CaptureState::Recording || captureState_ == CaptureState::PreRoll) {
+            captureState_ = CaptureState::Armed;
+            muteFrom_ = INT64_MAX;
+        }
+    }
+    if (captureState_ == CaptureState::Recording && capture != nullptr && capture->engineStopRequested()) {
+        captureState_ = CaptureState::Armed;  // the recorder thread (cap, disk, write failure) or the input reopen ended it
+        muteFrom_ = INT64_MAX;
+    }
+    // The pre-roll ends inside this block: the take begins at that offset (sample-accurate, research R10).
+    const int64_t blockStart = clock_.frame;
+    uint32_t preRollEndsAt = kNoSplit;
+    if (captureState_ == CaptureState::PreRoll && clock_.playing) {
+        if (preRollStart_ <= blockStart) preRollEndsAt = 0;
+        else if (preRollStart_ < blockStart + static_cast<int64_t>(frames)) preRollEndsAt = static_cast<uint32_t>(preRollStart_ - blockStart);
+        if (preRollEndsAt != kNoSplit) {
+            keepFrom = preRollEndsAt;
+            takeStart_ = preRollStart_;
+            muteFrom_ = takeStart_;
+        }
+    }
+
     // 4. The click: started on play, anchored on play, seek and tempo change, released on pause and when disabled.
+    // During the count-in it runs whatever the toggle says (FR-015) and, with the toggle off, stops at the start.
     MetronomeRenderer* metronome = metronome_.load(std::memory_order_acquire);
+    const bool clickWanted = metronomeEnabled_.load(std::memory_order_acquire);
+    uint32_t clickCut = kNoSplit;
     if (metronome != nullptr) {
-        if (clock_.playing && metronomeEnabled_.load(std::memory_order_acquire)) {
+        if (clock_.playing && (clickWanted || preRolling_)) {
             if (!clickRunning_) {
                 metronome->start();
                 clickRunning_ = true;
                 anchor = true;
             }
             if (anchor || tempoChanged) metronome->anchor(metronome->framePosition(), tempo_.frameToBeats(clock_.frame));
+            if (preRollEndsAt != kNoSplit && !clickWanted) clickCut = preRollEndsAt;
         } else if (clickRunning_) {
             metronome->stop();
             clickRunning_ = false;
@@ -230,39 +399,73 @@ void TransportRenderer::renderBlock(float* out, uint32_t frames) {
     }
 
     // 5. The mix.
-    const int64_t blockStart = clock_.frame;
     uint32_t active = 0;
     if (clock_.playing) {
-        active = renderPlaying(blockStart, frames, out);
+        active = renderPlaying(blockStart, frames, out, input, 0);
         clock_.advance(frames);
     } else if (releasing_) {
         const uint32_t done = releaseFrames_ - releaseRemaining_;
         const uint32_t tail = std::min(frames, releaseRemaining_);
-        active = renderPlaying(blockStart + done, tail, out);
+        active = renderPlaying(blockStart + done, tail, out, input, 0);
         for (uint32_t i = 0; i < tail; ++i) {
             const float gain = static_cast<float>(releaseFrames_ - (done + i)) / static_cast<float>(releaseFrames_);
             out[2 * i] *= gain;
             out[2 * i + 1] *= gain;
         }
-        if (tail < frames) std::memset(out + static_cast<size_t>(tail) * 2, 0, static_cast<size_t>(frames - tail) * 2 * sizeof(float));
+        if (tail < frames) {
+            // The rest of the block: the monitor alone (the input is heard while stopped, research R12).
+            bus_.begin(frames - tail);
+            const float* slice = (input.interleaved != nullptr && input.frames >= frames) ? input.interleaved + static_cast<size_t>(tail) * input.channels : nullptr;
+            renderMonitor(frames - tail, slice, input.channels);
+            bus_.finish(out + static_cast<size_t>(tail) * 2, frames - tail);
+        }
         releaseRemaining_ -= tail;
         if (releaseRemaining_ == 0) {
             releasing_ = false;
             readersActive_.store(false, std::memory_order_release);
         }
+    } else if (monitor_.active() && input.interleaved != nullptr && input.frames >= frames) {
+        bus_.begin(frames);
+        renderMonitor(frames, input.interleaved, input.channels);
+        bus_.finish(out, frames);
     } else {
+        monitor_.advance(frames);
         std::memset(out, 0, static_cast<size_t>(frames) * 2 * sizeof(float));
     }
+    if (preRollEndsAt != kNoSplit) {
+        preRolling_ = false;
+        captureState_ = CaptureState::Recording;
+    }
 
-    // 6. The click after the bus: never attenuated by the master (research R4).
+    // 6. The click after the bus: never attenuated by the master (research R4). With the toggle off the count-in's
+    // click is stopped at the take's start, before the downbeat tick would sound.
     if (metronome != nullptr) {
-        metronome->render(clickScratch_.data(), frames);
-        if (clickRunning_ || metronome->isActive()) {
+        if (clickCut != kNoSplit) {
+            if (clickCut > 0) metronome->render(clickScratch_.data(), clickCut);
+            metronome->stop();
+            clickRunning_ = false;
+            metronome->render(clickScratch_.data() + static_cast<size_t>(clickCut) * 2, frames - clickCut);
             for (uint32_t i = 0; i < frames * 2; ++i) out[i] += clickScratch_[i];
+        } else {
+            metronome->render(clickScratch_.data(), frames);
+            if (clickRunning_ || metronome->isActive()) {
+                for (uint32_t i = 0; i < frames * 2; ++i) out[i] += clickScratch_[i];
+            }
+        }
+    }
+
+    // 6a. Capture: the meter from every block, the kept frames while the take runs (research R5, R8, R9).
+    if (capture != nullptr && input.interleaved != nullptr && input.frames > 0) {
+        capture->measure(input.interleaved, input.channels, input.frames, input.shortFrames);
+        if (captureState_ == CaptureState::Recording && keepFrom != kNoSplit) {
+            capture->capture(input.interleaved, input.channels, input.frames, keepFrom);
+        } else if (captureState_ == CaptureState::Recording) {
+            capture->capture(input.interleaved, input.channels, input.frames, 0);
         }
     }
 
     // 7. Publish.
+    const uint64_t blocks = blocks_.load(std::memory_order_relaxed) + 1;
     TransportRecord record;
     record.frame = blockStart;
     record.playing = clock_.playing ? 1u : 0u;
@@ -270,8 +473,18 @@ void TransportRenderer::renderBlock(float* out, uint32_t frames) {
     record.blockTimeNs = blockTimeNs;
     record.framesPerBeat = tempo_.framesPerBeat();
     record.seekSequence = clock_.appliedSeekSequence();
-    record.blocks = blocks_.load(std::memory_order_relaxed) + 1;
+    record.blocks = blocks;
+    record.recording = captureState_ == CaptureState::Recording ? 1u : 0u;
+    record.preRoll = captureState_ == CaptureState::PreRoll ? 1u : 0u;
+    if (captureState_ == CaptureState::PreRoll && record.framesPerBeat > 0.0) {
+        record.countInBeatsLeft = static_cast<int32_t>(std::ceil(static_cast<double>(preRollStart_ - blockStart) / record.framesPerBeat - 1e-9));
+        if (record.countInBeatsLeft < 1) record.countInBeatsLeft = 1;
+    }
+    record.takeStartFrame = takeStart_;
     record_.store(record);
+    if (capture != nullptr) {
+        capture->publish(true, captureState_ == CaptureState::Recording, captureState_ == CaptureState::PreRoll, monitorWanted, takeStart_, blocks);
+    }
     clipsActive_.store(active, std::memory_order_relaxed);
     blocks_.fetch_add(1, std::memory_order_acq_rel);
 }

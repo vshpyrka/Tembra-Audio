@@ -24,8 +24,9 @@ tembra::FakeAudioDevice* installFake() {
 
 TEST_CASE("the health struct has the documented layout", "[health][abi]") {
     // uint64 + 4 x uint32 + uint8 + 3 reserved = 28 bytes of revision-5 fields, then the three revision-6 uint32
-    // (feature 009: avg_us, starvation, clips_active) = 40 bytes, a multiple of the uint64 alignment.
-    static_assert(sizeof(tembra_audio_health) == 40, "revision 5's 28 bytes + 3 x uint32, 8-byte aligned");
+    // (feature 009: avg_us, starvation, clips_active) = 40 bytes, then the three revision-7 uint32 (feature 010:
+    // input_overruns, record_backlog, input_xruns) = 52 bytes, padded to 56 for the uint64 alignment.
+    static_assert(sizeof(tembra_audio_health) == 56, "revision 6's 40 bytes + 3 x uint32, 8-byte aligned");
     static_assert(offsetof(tembra_audio_health, callbacks) == 0, "callbacks first");
     static_assert(offsetof(tembra_audio_health, last_us) == 8, "last_us after callbacks");
     static_assert(offsetof(tembra_audio_health, xruns) == 20, "xruns is the fourth uint32");
@@ -33,9 +34,12 @@ TEST_CASE("the health struct has the documented layout", "[health][abi]") {
     static_assert(offsetof(tembra_audio_health, _reserved) == 25, "three reserved bytes follow realtime");
     static_assert(offsetof(tembra_audio_health, avg_us) == 28, "avg_us is the first revision-6 field");
     static_assert(offsetof(tembra_audio_health, starvation) == 32, "starvation follows avg_us");
-    static_assert(offsetof(tembra_audio_health, clips_active) == 36, "clips_active is the last field");
-    REQUIRE(TEMBRA_ENGINE_ABI_VERSION == 6u);
-    REQUIRE(tembra_engine_abi_version() == 6u);
+    static_assert(offsetof(tembra_audio_health, clips_active) == 36, "clips_active is the last revision-6 field");
+    static_assert(offsetof(tembra_audio_health, input_overruns) == 40, "input_overruns is the first revision-7 field");
+    static_assert(offsetof(tembra_audio_health, record_backlog) == 44, "record_backlog follows input_overruns");
+    static_assert(offsetof(tembra_audio_health, input_xruns) == 48, "input_xruns is the last field");
+    REQUIRE(TEMBRA_ENGINE_ABI_VERSION == 7u);
+    REQUIRE(tembra_engine_abi_version() == 7u);
 }
 
 TEST_CASE("a scripted callback within its period updates the counters without an over-budget mark", "[health]") {
@@ -89,6 +93,26 @@ TEST_CASE("the revision-6 fields carry the running mean and the transport's coun
     REQUIRE(health.read(out));
     CHECK(out.avg_us == 0);
     CHECK(out.starvation == 0);
+}
+
+TEST_CASE("the revision-7 fields carry the capture counters and start at zero with every stream", "[health]") {
+    tembra::AudioHealth health;
+    health.streamOpened(true);
+    tembra_audio_health out{};
+    REQUIRE(health.read(out));
+    CHECK(out.input_overruns == 0);
+    CHECK(out.record_backlog == 0);
+    CHECK(out.input_xruns == 0);
+    health.setCaptureCounters(2, 4096, 1);
+    REQUIRE(health.read(out));
+    CHECK(out.input_overruns == 2);
+    CHECK(out.record_backlog == 4096);
+    CHECK(out.input_xruns == 1);
+    health.streamOpened(true);
+    REQUIRE(health.read(out));
+    CHECK(out.input_overruns == 0);
+    CHECK(out.record_backlog == 0);
+    CHECK(out.input_xruns == 0);
 }
 
 TEST_CASE("the ABI getter reports -1 without a stream and 0 with one", "[health][abi]") {

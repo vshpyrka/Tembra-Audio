@@ -14,6 +14,9 @@
 #include <thread>
 #include <vector>
 
+#include "capture/capture_source.h"
+#include "capture/peak_ring.h"
+#include "capture/take_recorder.h"
 #include "core/audio_health.h"
 #include "metronome/click_set.h"
 #include "metronome/metronome_grid.h"
@@ -88,6 +91,20 @@ public:
     /** Silently refused while the current arrangement references the handle. */
     void closeClipSource(int32_t handle);
 
+    // --- Capture, takes and monitoring (feature 010, contracts/engine-c-abi-v7.md) -------------------------------------
+
+    int32_t arm(const tembra_capture_config& config);
+    void disarm();
+    int32_t setMonitor(bool enabled, uint32_t trackIndex);
+    void setInputLatencyNs(int64_t nanos);
+    int32_t recordStart(const tembra_record_config& config);
+    int32_t recordCancel();
+    int32_t recordStop(tembra_take_info& out);
+    /** Lock-free; zeros unless armed. */
+    void readCapture(tembra_capture_snapshot& out);
+    void resetClip();
+    uint32_t readPeaks(uint64_t fromIndex, tembra_peak_bucket* out, uint32_t maxCount, uint64_t* nextIndex);
+
     uint32_t state() const { return state_.load(std::memory_order_acquire); }
     void read(tembra_pitch_reading& out) const;
 
@@ -104,6 +121,7 @@ public:
 private:
     EngineCore();
     static void onInput(void* context, const float* mono, uint32_t frames);
+    static void onCapture(void* context, const float* interleaved, uint32_t channels, uint32_t frames, uint32_t shortFrames);
     static void onRender(void* context, float* interleavedStereo, uint32_t frames);
     void render(float* interleavedStereo, uint32_t frames);
     int32_t ensureOutputOpen();
@@ -127,6 +145,11 @@ private:
     std::vector<ClipSource*> sourceTableLocked() const;
     std::vector<ClipSource*> openSourcesLocked() const;
     int64_t transportPositionLocked() const;
+    void disarmLocked();
+    void determineAlignmentLocked();
+    int64_t inputLatencyNanosLocked() const;
+    void waitForCallback();
+    void endTakeLocked(uint32_t stopReason);
 
     static constexpr uint32_t kPreferredRate = 48000;
     static constexpr int kIdleSleepMillis = 4;
@@ -205,6 +228,27 @@ private:
     bool hostPlaying_ = false;
     int64_t lastSeekFrame_ = 0;
     uint64_t lastSeekSequence_ = 0;
+
+    // Capture (feature 010, research R1-R12). The source and the peak ring live for the transport session; the recorder
+    // thread for one take. The callback-owned input block is set by onCapture and consumed by the render of the same
+    // device callback. armed_ and monitorTrack_ are host state under commands_; the latencies are atomics the
+    // lock-free reader combines.
+    std::unique_ptr<CaptureSource> capture_;
+    PeakRing peakRing_;
+    std::unique_ptr<TakeRecorder> recorder_;
+    std::atomic<bool> armed_{false};  // host-written under commands_; the lock-free capture reader checks it
+    bool takeRunning_ = false;
+    bool takeInfoPending_ = false;
+    tembra_take_info pendingTakeInfo_{};
+    std::string takePath_;
+    uint32_t takeTrack_ = 0;
+    std::atomic<int64_t> reportedInputLatencyNs_{0};
+    std::atomic<int64_t> inputLatencyNs_{0};
+    std::atomic<int64_t> alignmentOutputLatencyNs_{0};
+    const float* inputBlock_ = nullptr;  // callback-owned
+    uint32_t inputBlockChannels_ = 0;
+    uint32_t inputBlockFrames_ = 0;
+    uint32_t inputBlockShort_ = 0;
 };
 
 }  // namespace tembra

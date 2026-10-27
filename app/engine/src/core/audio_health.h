@@ -33,6 +33,8 @@ public:
     void setXruns(uint32_t count);
     /** The transport renderer's counters (feature 009, revision 6), sampled from its atomics on the host thread. */
     void setTransportCounters(uint32_t starvation, uint32_t clipsActive);
+    /** The capture counters (feature 010, revision 7), sampled on the host thread from the source and the input stream. */
+    void setCaptureCounters(uint32_t inputOverruns, uint32_t recordBacklog, uint32_t inputXruns);
 
     /** Copies the counters into [out]; false (and [out] untouched) while no stream is open. avg_us is the running mean. */
     bool read(tembra_audio_health& out) const;
@@ -47,6 +49,9 @@ private:
     std::atomic<uint32_t> xruns_{0};
     std::atomic<uint32_t> starvation_{0};
     std::atomic<uint32_t> clipsActive_{0};
+    std::atomic<uint32_t> inputOverruns_{0};
+    std::atomic<uint32_t> recordBacklog_{0};
+    std::atomic<uint32_t> inputXruns_{0};
     std::atomic<bool> realtime_{false};
 };
 

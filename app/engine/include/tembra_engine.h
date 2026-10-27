@@ -1,5 +1,5 @@
 /*
- * Tembra Audio engine C ABI, revision 6.
+ * Tembra Audio engine C ABI, revision 7.
  *
  * This header is the only interface the Kotlin side ever sees (JNI shim on Android, cinterop on
  * iOS). Rules: plain C, no C++ types, no callbacks into the host, every returned pointer has static
@@ -15,7 +15,12 @@
  * specs/007-performance-pipeline/contracts/engine-audio-health.md; revision 6 (the project transport:
  * TEMBRA_AUDIO_TRANSPORT, the tembra_transport_* and tembra_clip_source_* functions, the offline tembra_audio_inspect and
  * tembra_audio_overview_build, and the avg_us, starvation and clips_active fields of tembra_audio_health; every
- * revision 5 function unchanged) is specs/009-timeline-arranger/contracts/engine-c-abi-v6.md.
+ * revision 5 function unchanged) is specs/009-timeline-arranger/contracts/engine-c-abi-v6.md; revision 7 (microphone
+ * recording on the timeline: the duplex transport with tembra_transport_arm/disarm/set_monitor, the takes with
+ * tembra_transport_record_start/cancel/stop, the tembra_capture_* telemetry, tembra_storage_free_bytes, TEMBRA_ERR_IO, the
+ * count_in_beats_left and recording fields of tembra_transport_snapshot and the input_overruns, record_backlog and
+ * input_xruns fields of tembra_audio_health; every revision 6 function unchanged) is
+ * specs/010-timeline-recording/contracts/engine-c-abi-v7.md.
  */
 #ifndef TEMBRA_ENGINE_H
 #define TEMBRA_ENGINE_H
@@ -27,7 +32,7 @@ extern "C" {
 #endif
 
 /* ABI revision of this header. Incremented whenever a function is added, removed or changed. */
-#define TEMBRA_ENGINE_ABI_VERSION 6u
+#define TEMBRA_ENGINE_ABI_VERSION 7u
 uint32_t tembra_engine_abi_version(void);
 
 /* Human-readable engine name, e.g. "Tembra Engine". Static storage. */
@@ -50,7 +55,8 @@ enum tembra_error {
     TEMBRA_ERR_DEVICE = -2,   /* the platform stream could not open (no permission, no device) */
     TEMBRA_ERR_ARGUMENT = -3, /* null pointer or a value outside its range */
     TEMBRA_ERR_DECODE = -4,   /* the bytes are not a WAV dr_wav can decode */
-    TEMBRA_ERR_SILENT = -5    /* the file decodes but holds no sound above -60 dBFS */
+    TEMBRA_ERR_SILENT = -5,   /* the file decodes but holds no sound above -60 dBFS */
+    TEMBRA_ERR_IO = -6        /* revision 7: a file could not be created or written */
 };
 
 /*
@@ -58,6 +64,8 @@ enum tembra_error {
  * feature 003; data-model.md §6). TRANSPORT (revision 6) means the output stream is open for a project, stopped or
  * playing; tembra_transport_open returns TEMBRA_ERR_STATE unless IDLE, and tembra_tuner_start, tembra_tone_start,
  * tembra_sample_play, tembra_metronome_start and tembra_metronome_preview return TEMBRA_ERR_STATE while TRANSPORT.
+ * Capture (revision 7) is a mode of TRANSPORT: tembra_transport_arm opens the input beside the output and the state
+ * stays TRANSPORT; tembra_capture_read says whether the input is armed, pre-rolling, recording or monitoring.
  */
 enum tembra_audio_state {
     TEMBRA_AUDIO_IDLE = 0,
@@ -184,6 +192,9 @@ typedef struct tembra_audio_health {
     uint32_t avg_us;        /* revision 6: mean callback duration since stream start, microseconds */
     uint32_t starvation;    /* revision 6: clip fifos found dry by the callback since the transport opened */
     uint32_t clips_active;  /* revision 6: clips rendered in the last block                        */
+    uint32_t input_overruns; /* revision 7: captured frames lost (a full fifo, a short read after warm-up) since the arm */
+    uint32_t record_backlog; /* revision 7: the largest count of captured frames waiting in the fifo since the take began */
+    uint32_t input_xruns;    /* revision 7: the input stream's own xrun count on Android; 0 on iOS */
 } tembra_audio_health;
 /* Non-real-time. Copies the counters into *out (the callback writes them with atomic stores; the xrun count is
    sampled from the platform stream on the calling thread). Returns 0, -1 when no stream is open, or
@@ -249,6 +260,8 @@ typedef struct tembra_transport_snapshot {
     int64_t  block_time_ns;        /* monotonic time of the block that produced position_frames */
     int64_t  latency_ns;           /* the output latency used */
     uint32_t sample_rate;
+    int32_t  count_in_beats_left;  /* revision 7: beats of a running count-in still to sound, down to 1; -1 when no pre-roll runs */
+    uint32_t recording;            /* revision 7: 1 while a take captures */
 } tembra_transport_snapshot;
 
 void tembra_transport_read(tembra_transport_snapshot* out);  /* lock-free seqlock read, safe every frame; zeros when not TRANSPORT */
@@ -258,6 +271,89 @@ typedef struct tembra_audio_info { uint32_t format; uint32_t channels; uint32_t 
 
 int32_t tembra_audio_inspect(const char* path, tembra_audio_info* out);          /* opens and closes a decoder; ERR_DECODE for anything miniaudio cannot read */
 int32_t tembra_audio_overview_build(const char* path, const char* out_path);     /* decodes once, writes the .peaks file (header "TPK1", int8 min/max per channel at 256/1024/4096/16384 frames per bucket); flushes the header every 10 s of audio; returns when complete */
+
+/* --- Capture, takes and monitoring (revision 7, specs/010-timeline-recording/contracts/engine-c-abi-v7.md; research R1-R12) --- */
+
+/* Arming: the input half of the transport's stream (research R2 on Android: a second Oboe stream read non-blocking in the
+   output callback; R3 on iOS: bus 1 of the RemoteIO unit, which restarts the unit). The input opens at the stream rate with
+   the device's channel count clamped to max_channels, without voice processing (FR-002). */
+typedef struct tembra_capture_config {
+    uint32_t max_channels;  /* 1 or 2 */
+    uint32_t reserved;      /* 0 */
+} tembra_capture_config;
+
+int32_t tembra_transport_arm(const tembra_capture_config* config);  /* TRANSPORT only (ERR_STATE); opens the input beside the output, starts the meter; ERR_DEVICE when the input cannot open; idempotent while armed */
+void    tembra_transport_disarm(void);                                /* ends a running take (kept, finalised synchronously), turns monitoring off, closes the input; idempotent */
+int32_t tembra_transport_set_monitor(uint32_t enabled, uint32_t track_index); /* ERR_STATE unless armed; ERR_ARGUMENT unless track_index < track_count; the engine clears it on every output reopen and reports the clear in the capture snapshot */
+void    tembra_capture_set_input_latency_ns(int64_t nanos);           /* iOS reports AVAudioSession.inputLatency + ioBufferDuration; 0 = ask the device (Android); any state, kept for the engine's life */
+
+/* Takes (research R6, R9, R10, R11). */
+typedef struct tembra_record_config {
+    const char* wav_path;        /* created (truncated) on the control thread; 24-bit PCM, the input's channels, the stream rate */
+    uint32_t    track_index;     /* the armed track; its clips at or after the take start are silent while recording */
+    uint32_t    count_in_beats;  /* 0 = none; ignored while playing */
+    int64_t     max_frames;      /* the engine ends the take itself at this length (30 min) */
+    uint64_t    min_free_bytes;  /* the engine ends the take itself below this free space (50 MB) */
+} tembra_record_config;
+
+int32_t tembra_transport_record_start(const tembra_record_config* config);
+/* armed only (ERR_STATE); a take already running → ERR_STATE; file cannot be created → ERR_IO.
+   Stopped: the clock moves to start − count_in frames, a pre-roll runs with the click forced on and no clip rendered,
+   and at `start` playback and capture begin together on the downbeat (sample-accurate: the block is split at `start`).
+   Playing: capture begins at the next block boundary; no pre-roll. The first alignment_frames captured frames are discarded (R9). */
+
+int32_t tembra_transport_record_cancel(void);  /* pre-roll only: pauses, restores the position, deletes the file; ERR_STATE otherwise */
+
+enum tembra_take_stop_reason {
+    TEMBRA_TAKE_STOP_USER = 0,
+    TEMBRA_TAKE_STOP_MAX_LENGTH = 1,
+    TEMBRA_TAKE_STOP_DISK_FULL = 2,
+    TEMBRA_TAKE_STOP_INPUT_LOST = 3,
+    TEMBRA_TAKE_STOP_TRANSPORT_CLOSED = 4,
+    TEMBRA_TAKE_STOP_WRITE_FAILED = 5
+};
+
+typedef struct tembra_take_info {
+    int64_t  start_frames;      /* transport frame of the first kept sample (the downbeat, or the block where capture began) */
+    double   start_beats;       /* start_frames through the tempo map */
+    int64_t  frames;            /* kept frames; 0 = discarded (shorter than 0.01 s; the file is deleted) */
+    uint32_t channels;
+    uint32_t sample_rate;
+    int64_t  alignment_frames;  /* discarded at the start */
+    uint32_t stop_reason;       /* tembra_take_stop_reason */
+} tembra_take_info;
+
+int32_t tembra_transport_record_stop(tembra_take_info* out);
+/* ends capture at the next block (the take keeps its last sample; monitoring is untouched), drains the recorder,
+   finalises the WAV header, fills `out`; blocks for at most 1 s (the FIFO holds 4 s but the drain is a memcpy and a write);
+   ERR_STATE when no take runs and none has ended since the last collection. When the engine ended the take itself
+   (stop_reason in the snapshot ≠ USER and recording == 0, or the transport closed under it), the host still calls
+   record_stop to collect `out`. Playback continues after the stop; the host pauses if it wants to. */
+
+/* Telemetry (research R7, R8). */
+typedef struct tembra_capture_snapshot {
+    uint32_t armed, recording, pre_roll, monitoring;
+    uint32_t input_channels, sample_rate;
+    float    peak[2];            /* max |x| over the last 64 ms per channel; 0 when silent */
+    uint32_t clipped;            /* sticky: |x| ≥ 0.9999 seen since the last reset */
+    int64_t  frames_captured;    /* kept frames so far; grows during a take */
+    int64_t  take_start_frames;
+    int64_t  alignment_frames;
+    int64_t  input_latency_ns, output_latency_ns;
+    uint32_t stop_reason;        /* set when the engine ended the take itself; USER otherwise */
+    uint32_t input_overruns;     /* FIFO-full and post-warm-up short reads since arm */
+    uint32_t backlog_frames;     /* frames waiting in the FIFO at the last block */
+} tembra_capture_snapshot;
+
+void tembra_capture_read(tembra_capture_snapshot* out);   /* seqlock read, safe every frame; zeros when not armed */
+void tembra_capture_reset_clip(void);                     /* clears `clipped` */
+
+typedef struct tembra_peak_bucket { int8_t min[2]; int8_t max[2]; } tembra_peak_bucket;  /* the .peaks base level: 256 frames */
+uint32_t tembra_capture_read_peaks(uint64_t from_index, tembra_peak_bucket* out, uint32_t max_count, uint64_t* out_next_index);
+/* copies the buckets [from_index, count) into out (the ring keeps 1024); when from_index has been overwritten the copy starts at the
+   oldest kept bucket and *out_next_index − returned > from_index tells the host it missed some (it repeats the previous bucket) */
+
+int64_t tembra_storage_free_bytes(const char* path);      /* statvfs of the containing volume; any thread; −1 on error */
 
 #ifdef __cplusplus
 }

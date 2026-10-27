@@ -19,6 +19,9 @@ void AudioHealth::streamOpened(bool realtime) {
     xruns_.store(0, std::memory_order_relaxed);
     starvation_.store(0, std::memory_order_relaxed);
     clipsActive_.store(0, std::memory_order_relaxed);
+    inputOverruns_.store(0, std::memory_order_relaxed);
+    recordBacklog_.store(0, std::memory_order_relaxed);
+    inputXruns_.store(0, std::memory_order_relaxed);
     realtime_.store(realtime, std::memory_order_relaxed);
     open_.store(true, std::memory_order_release);
 }
@@ -47,6 +50,12 @@ void AudioHealth::setTransportCounters(uint32_t starvation, uint32_t clipsActive
     clipsActive_.store(clipsActive, std::memory_order_relaxed);
 }
 
+void AudioHealth::setCaptureCounters(uint32_t inputOverruns, uint32_t recordBacklog, uint32_t inputXruns) {
+    inputOverruns_.store(inputOverruns, std::memory_order_relaxed);
+    recordBacklog_.store(recordBacklog, std::memory_order_relaxed);
+    inputXruns_.store(inputXruns, std::memory_order_relaxed);
+}
+
 bool AudioHealth::read(tembra_audio_health& out) const {
     if (!open_.load(std::memory_order_acquire)) return false;
     const uint64_t callbacks = callbacks_.load(std::memory_order_relaxed);
@@ -61,6 +70,9 @@ bool AudioHealth::read(tembra_audio_health& out) const {
     out.avg_us = callbacks > 0 ? static_cast<uint32_t>(sum / callbacks) : 0;
     out.starvation = starvation_.load(std::memory_order_relaxed);
     out.clips_active = clipsActive_.load(std::memory_order_relaxed);
+    out.input_overruns = inputOverruns_.load(std::memory_order_relaxed);
+    out.record_backlog = recordBacklog_.load(std::memory_order_relaxed);
+    out.input_xruns = inputXruns_.load(std::memory_order_relaxed);
     return true;
 }
 
