@@ -97,7 +97,12 @@
     "clip_caption_band": "#212026B3",
     "playhead_chip": "#C4B5FD",
     "selection_outline": "#CEBDFF",
-    "unavailable_clip": "#494552"
+    "unavailable_clip": "#494552",
+    "_recording_tokens_note": "Feature 010 (timeline recording): record = the filled record circle of the top transport in mixer-timeline/tablet-split-v2/screenshot.jpg (sampled #E36F7E on 2026-10-27, rounded); meter_body and meter_warning = the green body and the yellow upper segments of the dual-colour LED master meter in mixer-timeline/phone-drawer/screenshot.jpg (sampled #94D39A and #F5E786); meter_clip = the palette's rose, the lit top of that meter.",
+    "record": "#E36F7E",
+    "meter_body": "#94D39A",
+    "meter_warning": "#F5E786",
+    "meter_clip": "#F472B6"
   },
   "typography": {
     "headline-lg": {"fontFamily": "Space Grotesk", "fontSize": "32px", "fontWeight": "600", "lineHeight": "40px", "letterSpacing": "-0.02em"},

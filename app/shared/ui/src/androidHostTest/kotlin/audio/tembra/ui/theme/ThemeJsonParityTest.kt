@@ -73,6 +73,8 @@ class ThemeJsonParityTest {
             // Feature 009 clip tokens.
             "clip_caption_band" to daw.clipCaptionBand, "playhead_chip" to daw.playheadChip,
             "selection_outline" to daw.selectionOutline, "unavailable_clip" to daw.unavailableClip,
+            // Feature 010 recording tokens.
+            "record" to daw.record, "meter_body" to daw.meterBody, "meter_warning" to daw.meterWarning, "meter_clip" to daw.meterClip,
         )
         val file = theme.getValue("dawSemanticColors").jsonObject
             .filterKeys { !it.startsWith("_") && it != "clip_glow" && it != "track_tints" }
@@ -106,6 +108,19 @@ class ThemeJsonParityTest {
         assertEquals(TembraColorScheme.dark.outlineVariant, daw.unavailableClip)
         assertEquals(daw.surfaceLevel2.copy(alpha = daw.clipCaptionBand.alpha), daw.clipCaptionBand)
         assertEquals(0xB3, alpha(daw.clipCaptionBand))
+    }
+
+    /** Feature 010: the record circle and the meter's three colours are opaque tokens; the clip latch is the palette's rose. */
+    @Test
+    fun recordingTokensMatchTheThemeJson() {
+        val daw = DawColors.Default
+        val file = theme.getValue("dawSemanticColors").jsonObject
+        assertEquals(file.getValue("record").jsonPrimitive.content.uppercase(), hex(daw.record))
+        assertEquals(file.getValue("meter_body").jsonPrimitive.content.uppercase(), hex(daw.meterBody))
+        assertEquals(file.getValue("meter_warning").jsonPrimitive.content.uppercase(), hex(daw.meterWarning))
+        assertEquals(file.getValue("meter_clip").jsonPrimitive.content.uppercase(), hex(daw.meterClip))
+        assertEquals(daw.rose, daw.meterClip)
+        for (color in listOf(daw.record, daw.meterBody, daw.meterWarning, daw.meterClip)) assertEquals(0xFF, alpha(color))
     }
 
     @Test

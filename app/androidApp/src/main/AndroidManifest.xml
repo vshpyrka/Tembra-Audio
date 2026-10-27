@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Auto Listen hears the instrument through the microphone (feature 003, spec FR-014). -->
+    <!-- Auto Listen hears the instrument through the microphone (feature 003, spec FR-014) and the timeline records it (feature 010, FR-019). -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
-    <!-- The metronome (feature 004) and the project transport (feature 009) keep playing with the screen off through a media-playback foreground service. -->
+    <!-- The metronome (feature 004) and the project transport (feature 009) keep playing with the screen off through a media-playback foreground service;
+         a running take (feature 010, FR-021) keeps the microphone open through the same service's microphone type. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
     <!--
         On Android 13+ the service's "Metronome" / "Playing" notification with its Stop action shows only with this
         permission; NotificationPermissionHost asks for it once when playback first starts the service
@@ -35,7 +37,7 @@
 
         <service
             android:name=".PlaybackForegroundService"
-            android:foregroundServiceType="mediaPlayback"
+            android:foregroundServiceType="mediaPlayback|microphone"
             android:exported="false" />
     </application>
 

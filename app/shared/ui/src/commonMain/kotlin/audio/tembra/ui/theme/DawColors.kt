@@ -39,6 +39,15 @@ data class DawColors(
     val selectionOutline: Color,
     /** `unavailable_clip`: the fill of a clip whose audio file is missing (the scheme's outline variant). */
     val unavailableClip: Color,
+    // Feature 010 (timeline recording, contracts/timeline-recording-ui.md): the record circle and the input meter.
+    /** `record`: the design's filled record circle (the transport's Record and the lit arm toggle). */
+    val record: Color,
+    /** `meter_body`: the input meter up to -6 dB. */
+    val meterBody: Color,
+    /** `meter_warning`: the input meter above -6 dB. */
+    val meterWarning: Color,
+    /** `meter_clip`: the clip latch square at the meter's end (the palette's `rose`). */
+    val meterClip: Color,
 ) {
     companion object {
         val Default = DawColors(
@@ -73,6 +82,10 @@ data class DawColors(
             playheadChip = Color(0xFFC4B5FD),
             selectionOutline = Color(0xFFCEBDFF),
             unavailableClip = Color(0xFF494552),
+            record = Color(0xFFE36F7E),
+            meterBody = Color(0xFF94D39A),
+            meterWarning = Color(0xFFF5E786),
+            meterClip = Color(0xFFF472B6),
         )
     }
 }

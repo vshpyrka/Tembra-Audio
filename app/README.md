@@ -63,6 +63,14 @@ Both install over a debug or perf build in place and launch the app. `--serial`/
 `TEMBRA_TEAM_ID`. When a target runs a newer iOS than the default Xcode's SDK (an iOS 27 phone, the iPhone Duo), the
 iOS script switches to the Xcode whose SDK covers it.
 
+Device runs on one Android target (feature 010): `tools/gradlew-device.sh <serial> <gradle arguments…>` runs the
+wrapper with `ANDROID_SERIAL` set, so `tools/gradlew-device.sh 19021FDEE001AH checkAndroidDevice` runs the device
+lane on the Pixel 6 Pro alone. Before any lane, capture or perf round on a physical device apply the owner's run
+conditions with `tools/apply-device-run-conditions.sh <serial>` (the screen awake, brightness at its floor, the
+music stream silent, do-not-disturb on; the OPPO refuses the brightness settings and is dimmed by hand). The device
+UI tests run behind the black `Theme.Tembra.DeviceTest` window. The only step that makes a sound is the loopback
+alignment check of feature 010's quickstart §8, announced before it starts.
+
 ## Test lanes
 
 One command per lane; each aggregates every `:shared:*` module.

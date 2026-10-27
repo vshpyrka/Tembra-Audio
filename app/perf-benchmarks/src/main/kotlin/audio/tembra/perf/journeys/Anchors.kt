@@ -55,6 +55,24 @@ object Anchors {
     const val TIMELINE_OVERVIEW = "timeline.overview"
     const val TIMELINE_OVERVIEW_WINDOW = "timeline.overview.window"
 
+    // Feature 010 (timeline recording, contracts/perf-instrumentation.md).
+    const val TIMELINE_TRACK_ARM_FIRST = "timeline.track.arm.0"
+    const val TIMELINE_TRACK_METER_FIRST = "timeline.track.meter.0"
+    const val TIMELINE_TRACK_RECORD_FIRST = "timeline.track.record.0"
+    const val TIMELINE_TRACK_CLIP_FIRST = "timeline.track.clip.0"
+    const val TRANSPORT_RECORD = "transport.record"
+    const val TIMELINE_MONITOR = "timeline.toolbar.monitor"
+    const val TIMELINE_OVERFLOW_MONITOR = "timeline.toolbar.overflow.monitor"
+    const val METRONOME_COUNT_IN = "metronome.sheet.countIn"
+    const val TIMELINE_CLIP_TAKE = "timeline.clip.take"
+    const val SNACKBAR_MICROPHONE_SETTINGS = "snackbar.microphone.settings"
+    const val DIALOG_STOP_RECORDING_CONFIRM = "dialog.stopRecording.confirm"
+
+    /** The arm toggle, the meter, Record and the clip of track [index] (the recording journey's new track is the last one). */
+    fun trackArm(index: Int): String = "timeline.track.arm.$index"
+    fun trackMeter(index: Int): String = "timeline.track.meter.$index"
+    fun trackRecord(index: Int): String = "timeline.track.record.$index"
+
     /**
      * A 1 dp marker node the Timeline shows once every visible overview is built (the `stateDescription` "ready" the
      * contract names is not reachable through UiAutomator's selectors; XCUITest reads it as the root's `value`).

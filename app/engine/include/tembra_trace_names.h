@@ -24,6 +24,13 @@
 #define TEMBRA_TRACE_TRANSPORT_SEEK "transport.seek"
 #define TEMBRA_TRACE_ENGINE_PRIME "engine.prime"
 #define TEMBRA_TRACE_TRANSPORT_MASTER_POPUP "transport.masterPopup"
+#define TEMBRA_TRACE_TIMELINE_ARM "timeline.arm"
+#define TEMBRA_TRACE_TRANSPORT_RECORD_START "transport.recordStart"
+#define TEMBRA_TRACE_TRANSPORT_COUNT_IN "transport.countIn"
+#define TEMBRA_TRACE_TIMELINE_TAKE_FRAME "timeline.takeFrame"
+#define TEMBRA_TRACE_TRANSPORT_RECORD_STOP "transport.recordStop"
+#define TEMBRA_TRACE_TIMELINE_MONITOR_TOGGLE "timeline.monitorToggle"
+#define TEMBRA_TRACE_ENGINE_TAKE_ALIGNMENT "engine.takeAlignment"
 #define TEMBRA_TRACE_AUDIO_CALLBACKS "audio.callbacks"
 #define TEMBRA_TRACE_AUDIO_LAST_US "audio.lastUs"
 #define TEMBRA_TRACE_AUDIO_MAX_US "audio.maxUs"
@@ -33,6 +40,10 @@
 #define TEMBRA_TRACE_AUDIO_AVG_US "audio.avgUs"
 #define TEMBRA_TRACE_AUDIO_STARVATION "audio.starvation"
 #define TEMBRA_TRACE_AUDIO_CLIPS_ACTIVE "audio.clipsActive"
+#define TEMBRA_TRACE_AUDIO_INPUT_OVERRUNS "audio.inputOverruns"
+#define TEMBRA_TRACE_AUDIO_RECORD_BACKLOG "audio.recordBacklog"
+#define TEMBRA_TRACE_AUDIO_TAKE_ALIGNMENT_MS "audio.takeAlignmentMs"
+#define TEMBRA_TRACE_AUDIO_MONITOR_DELAY_MS "audio.monitorDelayMs"
 
 /* X-macro over every entry: os_signpost needs its name as a literal, so the shim dispatches through this. */
 #define TEMBRA_TRACE_FOR_EACH(X) \
@@ -56,6 +67,13 @@
     X(TRANSPORT_SEEK, "transport.seek") \
     X(ENGINE_PRIME, "engine.prime") \
     X(TRANSPORT_MASTER_POPUP, "transport.masterPopup") \
+    X(TIMELINE_ARM, "timeline.arm") \
+    X(TRANSPORT_RECORD_START, "transport.recordStart") \
+    X(TRANSPORT_COUNT_IN, "transport.countIn") \
+    X(TIMELINE_TAKE_FRAME, "timeline.takeFrame") \
+    X(TRANSPORT_RECORD_STOP, "transport.recordStop") \
+    X(TIMELINE_MONITOR_TOGGLE, "timeline.monitorToggle") \
+    X(ENGINE_TAKE_ALIGNMENT, "engine.takeAlignment") \
     X(AUDIO_CALLBACKS, "audio.callbacks") \
     X(AUDIO_LAST_US, "audio.lastUs") \
     X(AUDIO_MAX_US, "audio.maxUs") \
@@ -64,8 +82,12 @@
     X(AUDIO_REALTIME, "audio.realtime") \
     X(AUDIO_AVG_US, "audio.avgUs") \
     X(AUDIO_STARVATION, "audio.starvation") \
-    X(AUDIO_CLIPS_ACTIVE, "audio.clipsActive")
+    X(AUDIO_CLIPS_ACTIVE, "audio.clipsActive") \
+    X(AUDIO_INPUT_OVERRUNS, "audio.inputOverruns") \
+    X(AUDIO_RECORD_BACKLOG, "audio.recordBacklog") \
+    X(AUDIO_TAKE_ALIGNMENT_MS, "audio.takeAlignmentMs") \
+    X(AUDIO_MONITOR_DELAY_MS, "audio.monitorDelayMs")
 
-#define TEMBRA_TRACE_NAME_COUNT 29
+#define TEMBRA_TRACE_NAME_COUNT 40
 
 #endif /* TEMBRA_TRACE_NAMES_H */

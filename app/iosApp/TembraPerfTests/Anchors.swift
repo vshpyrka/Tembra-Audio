@@ -47,6 +47,24 @@ enum Anchors {
     static let timelineOverview = "timeline.overview"
     static let timelineOverviewWindow = "timeline.overview.window"
 
+    // Feature 010 (timeline recording, contracts/perf-instrumentation.md).
+    static let timelineTrackArmFirst = "timeline.track.arm.0"
+    static let timelineTrackMeterFirst = "timeline.track.meter.0"
+    static let timelineTrackRecordFirst = "timeline.track.record.0"
+    static let timelineTrackClipFirst = "timeline.track.clip.0"
+    static let transportRecord = "transport.record"
+    static let timelineMonitor = "timeline.toolbar.monitor"
+    static let timelineOverflowMonitor = "timeline.toolbar.overflow.monitor"
+    static let metronomeCountIn = "metronome.sheet.countIn"
+    static let timelineClipTake = "timeline.clip.take"
+    static let snackbarMicrophoneSettings = "snackbar.microphone.settings"
+    static let dialogStopRecordingConfirm = "dialog.stopRecording.confirm"
+
+    /// The arm toggle, the meter and Record of track `index` (the recording journey's new track is the last one).
+    static func trackArm(_ index: Int) -> String { "timeline.track.arm.\(index)" }
+    static func trackMeter(_ index: Int) -> String { "timeline.track.meter.\(index)" }
+    static func trackRecord(_ index: Int) -> String { "timeline.track.record.\(index)" }
+
     /// The `screen.timeline` value once every visible overview is built; "loading" before (not an anchor of its own).
     static let timelineReadyState = "ready"
 
