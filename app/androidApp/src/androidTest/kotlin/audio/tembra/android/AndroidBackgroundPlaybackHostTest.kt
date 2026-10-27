@@ -10,6 +10,7 @@ import android.os.IBinder
 import android.os.SystemClock
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.ServiceTestRule
+import audio.tembra.ui.platform.PlaybackNotification
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.take
@@ -24,15 +25,23 @@ import org.junit.Test
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
-/** The media-playback foreground service behind [AndroidBackgroundPlaybackHost] (contracts/background-playback.md). */
+/**
+ * The media-playback foreground service behind [AndroidBackgroundPlaybackHost] (contracts/background-playback.md;
+ * renamed PlaybackForegroundService by feature 009, contracts/timeline-audio-kotlin.md, with the notification's title
+ * and subtitle supplied by the caller).
+ */
 class AndroidBackgroundPlaybackHostTest {
+
+    private companion object {
+        val PLAYING = PlaybackNotification("Playing", "Demo project")
+    }
 
     @get:Rule
     val serviceRule = ServiceTestRule()
 
     private val context: Context = InstrumentationRegistry.getInstrumentation().targetContext
     private val host = AndroidBackgroundPlaybackHost(context)
-    private val serviceIntent = Intent(context, MetronomeForegroundService::class.java)
+    private val serviceIntent = Intent(context, PlaybackForegroundService::class.java)
 
     @After
     fun stopTheService() {
@@ -41,8 +50,8 @@ class AndroidBackgroundPlaybackHostTest {
 
     @Test
     fun keepAliveRunsTheServiceInTheForegroundAsMediaPlayback() {
-        assertTrue(host.keepAlive())
-        val service = (serviceRule.bindService(serviceIntent) as MetronomeServiceBinder).service
+        assertTrue(host.keepAlive(PLAYING))
+        val service = (serviceRule.bindService(serviceIntent) as PlaybackServiceBinder).service
         // Service.foregroundServiceType exists from API 29; below it the start itself is the evidence.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             assertTrue(
@@ -53,8 +62,22 @@ class AndroidBackgroundPlaybackHostTest {
     }
 
     @Test
+    fun theNotificationShowsTheCallersTitleAndSubtitle() {
+        assertTrue(host.keepAlive(PlaybackNotification("Metronome", "124 BPM")))
+        serviceRule.bindService(serviceIntent)
+        val notification = PlaybackForegroundService.buildNotification(context)
+        assertEquals("Metronome", notification.extras.getString(android.app.Notification.EXTRA_TITLE))
+        assertEquals("124 BPM", notification.extras.getString(android.app.Notification.EXTRA_TEXT))
+        // A later keepAlive with another payload re-titles the running notification.
+        assertTrue(host.keepAlive(PLAYING))
+        val updated = PlaybackForegroundService.buildNotification(context)
+        assertEquals("Playing", updated.extras.getString(android.app.Notification.EXTRA_TITLE))
+        assertEquals("Demo project", updated.extras.getString(android.app.Notification.EXTRA_TEXT))
+    }
+
+    @Test
     fun releaseStopsTheServiceWithinTwoSeconds() {
-        assertTrue(host.keepAlive())
+        assertTrue(host.keepAlive(PLAYING))
         serviceRule.bindService(serviceIntent)
         serviceRule.unbindService()
         host.release()
@@ -69,7 +92,7 @@ class AndroidBackgroundPlaybackHostTest {
     @Test
     fun releaseRightAfterKeepAliveLeavesTheProcessRunningAndStopsTheService() {
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            assertTrue(host.keepAlive())
+            assertTrue(host.keepAlive(PLAYING))
             host.release()
         }
         assertTrue("the service still runs 2 s after release()", waitUntil { !isRunning() })
@@ -81,32 +104,32 @@ class AndroidBackgroundPlaybackHostTest {
     /** A service the system stops while the process lives must not leave the host believing it is still foreground. */
     @Test
     fun keepAliveStartsAgainAfterTheServiceWasStoppedBehindTheHostsBack() {
-        assertTrue(host.keepAlive())
-        val first = (serviceRule.bindService(serviceIntent) as MetronomeServiceBinder).service
+        assertTrue(host.keepAlive(PLAYING))
+        val first = (serviceRule.bindService(serviceIntent) as PlaybackServiceBinder).service
         assertTrue("not in the foreground within 2 s", waitUntil { isForeground(first) })
         serviceRule.unbindService()
         context.stopService(serviceIntent)
         assertTrue("the service still runs 2 s after stopService", waitUntil { !isRunning() })
 
-        assertTrue(host.keepAlive())
+        assertTrue(host.keepAlive(PLAYING))
 
-        val second = (serviceRule.bindService(serviceIntent) as MetronomeServiceBinder).service
+        val second = (serviceRule.bindService(serviceIntent) as PlaybackServiceBinder).service
         assertTrue("the second keepAlive() did not start a foreground service within 2 s", waitUntil { isForeground(second) })
     }
 
     /** In the foreground as media playback on API 29+; below it, running is all that can be read. */
-    private fun isForeground(service: MetronomeForegroundService): Boolean =
+    private fun isForeground(service: PlaybackForegroundService): Boolean =
         Build.VERSION.SDK_INT < Build.VERSION_CODES.Q ||
             service.foregroundServiceType == ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
 
     @Test
     fun theStopActionEmitsOneStopRequest() = runBlocking {
-        assertTrue(host.keepAlive())
+        assertTrue(host.keepAlive(PLAYING))
         val collected = async { host.stopRequests.take(1).toList() }
         withTimeout(2_000) {
             while (AndroidBackgroundPlaybackHost.stopSignals.subscriptionCount.value == 0) yield()
         }
-        context.startService(Intent(serviceIntent).setAction(MetronomeForegroundService.ACTION_STOP))
+        context.startService(Intent(serviceIntent).setAction(PlaybackForegroundService.ACTION_STOP))
         assertEquals(listOf(Unit), withTimeout(2_000) { collected.await() })
         assertTrue("the Stop action left the service running", waitUntil { !isRunning() })
     }

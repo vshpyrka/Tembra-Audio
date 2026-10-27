@@ -28,6 +28,7 @@ def test_journey_of_test_identifier():
     assert journey_of_test("TembraPerfTests/StartupPerfTests/testColdLaunchToResponsive()") == ("startup", "ttfd")
     assert journey_of_test("TembraPerfTests/TunerPerfTests/testTunerJourney()") == ("tuner", None)
     assert journey_of_test("TembraPerfTests/MetronomePerfTests/testMetronomeJourney()") == ("metronome", None)
+    assert journey_of_test("TembraPerfTests/TimelinePerfTests/testTimelineJourney()") == ("timeline", None)
     assert journey_of_test("TembraPerfTests/StressPerfTests/testStressJourney()") == ("stress", None)
     assert journey_of_test("TembraPerfTests/FacadeSelfCheckTests/testModeSwitchSectionIsMeasuredByName()") is None
 
@@ -35,7 +36,7 @@ def test_journey_of_test_identifier():
 def test_metrics_map_to_catalogue_keys_with_twenty_samples(cfg):
     result = collect_round(METRICS, cfg, simulator=False)
     journeys = {j.journey: j for j in result.journeys}
-    assert set(journeys) == {"startup", "tuner", "metronome", "stress"}
+    assert set(journeys) == {"startup", "tuner", "metronome", "timeline", "stress"}
     startup = journeys["startup"].metrics
     assert set(startup) == {"startup.ttid_ms", "startup.ttfd_ms"}
     assert len(startup["startup.ttid_ms"].samples) == 20
@@ -121,11 +122,11 @@ def test_perf_refused_failure_maps_to_a_refusal():
     assert refusal_from_failures([{"testIdentifier": "x", "message": "XCTAssertTrue failed - perf anchor 'tuner.meter' not found"}]) is None
 
 
-def test_engine_health_json_yields_the_six_audio_series():
+def test_engine_health_json_yields_the_nine_audio_series():
     series = engine_health(os.path.join(FIXTURES, "engine-health.json"))
     assert series == {"audio.callbacks": 1200.0, "audio.last_callback_us": 850.0, "audio.max_callback_us": 1900.0,
-                      "audio.over_budget": 0.0, "audio.xruns": 0.0, "audio.realtime": 1.0}
-
+                      "audio.over_budget": 0.0, "audio.xruns": 0.0, "audio.realtime": 1.0,
+                      "audio.avg_us": 410.0, "audio.starvation": 0.0, "audio.clips_active": 5.0}
 
 def test_phone_identifier_forms_and_a_frameless_animation_interval(cfg, caplog):
     """The first iPhone 14 round (iOS 27.0.1, Xcode 27.1): memory and CPU carry the bundle id

@@ -1,15 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <application>
+        <!-- The Compose test host (declared by the ui-test-manifest artifact with the light theme): a black window, so a
+             device running the lane shows no white between and around the composed screens. -->
+        <activity
+            android:name="androidx.activity.ComponentActivity"
+            android:theme="@style/Theme.Tembra.DeviceTest"
+            tools:replace="android:theme" />
+        <!-- androidx.test's bootstrap and empty activities flash between tests with a white theme of their own: black here. -->
+        <activity
+            android:name="androidx.test.core.app.InstrumentationActivityInvoker$BootstrapActivity"
+            android:theme="@style/Theme.Tembra.DeviceTest"
+            tools:replace="android:theme" />
+        <activity
+            android:name="androidx.test.core.app.InstrumentationActivityInvoker$EmptyActivity"
+            android:theme="@style/Theme.Tembra.DeviceTest"
+            tools:replace="android:theme" />
+        <activity
+            android:name="androidx.test.core.app.InstrumentationActivityInvoker$EmptyFloatingActivity"
+            android:theme="@style/Theme.Tembra.DeviceTest.Dialog"
+            tools:replace="android:theme" />
         <!-- Handles rotation in place like MainActivity, so LaidOutWindowSizeTest sees an in-place configuration change. -->
         <activity
             android:name="audio.tembra.ui.platform.InPlaceRotationActivity"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|uiMode|density"
+            android:theme="@style/Theme.Tembra.DeviceTest"
             android:exported="false" />
         <!-- Routes key events through dispatchEscapeAsBack, for EscapeAsBackTest. -->
         <activity
             android:name="audio.tembra.ui.platform.EscapeAsBackActivity"
+            android:theme="@style/Theme.Tembra.DeviceTest"
             android:exported="false" />
         <!-- Sees the light system theme on any device, for EdgeToEdgeTest. -->
         <activity

@@ -20,6 +20,9 @@ AUDIO_COUNTER_KEYS: Dict[str, str] = {
     "audio.overBudget": "audio.over_budget",
     "audio.xruns": "audio.xruns",
     "audio.realtime": "audio.realtime",
+    "audio.avgUs": "audio.avg_us",
+    "audio.starvation": "audio.starvation",
+    "audio.clipsActive": "audio.clips_active",
 }
 
 
@@ -116,10 +119,18 @@ def slice_deltas(before: List[SliceStat], after: List[SliceStat], top_n: int) ->
     return deltas[:top_n]
 
 
+# The engine restarts its health counters with every stream session, and a journey that hands the audio device over
+# (feature 009's stress: the transport plays, then the metronome and the tuner take the device) ends on another
+# session. The cumulative and peak counters therefore keep their maximum over the trace, the heaviest session's
+# numbers; the two that describe a moment (the last callback, the real-time flag) keep their last value.
+_LAST_VALUE_COUNTERS = frozenset({"audio.lastUs", "audio.realtime"})
+
+
 def counter_series(trace_path: str, names: Sequence[str]) -> Dict[str, float]:
-    """The last value of every counter track in `names` present in the trace
-    (`counter` joined to `counter_track` by name). Absent tracks are absent
-    from the result: a round without audio counters yields no audio series."""
+    """The value of every counter track in `names` present in the trace (`counter`
+    joined to `counter_track` by name): the maximum over the trace, except the
+    last value for `_LAST_VALUE_COUNTERS`. Absent tracks are absent from the
+    result: a round without audio counters yields no audio series."""
     if not names:
         return {}
     quoted = ", ".join("'" + _escape_glob(n) + "'" for n in names)
@@ -129,8 +140,9 @@ def counter_series(trace_path: str, names: Sequence[str]) -> Dict[str, float]:
     WHERE t.name IN ({quoted})
     ORDER BY c.ts ASC
     """
-    last: Dict[str, float] = {}
+    series: Dict[str, float] = {}
     with TraceProcessor(trace=trace_path) as tp:
         for row in tp.query(query):
-            last[row.name] = float(row.value)
-    return last
+            value = float(row.value)
+            series[row.name] = value if row.name in _LAST_VALUE_COUNTERS else max(series.get(row.name, value), value)
+    return series

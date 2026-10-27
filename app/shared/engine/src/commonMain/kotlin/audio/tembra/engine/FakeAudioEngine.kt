@@ -1,8 +1,11 @@
 package audio.tembra.engine
 
-import audio.tembra.engine.perf.AudioHealth
-
+import audio.tembra.core.metronome.Tempo
+import audio.tembra.core.metronome.TimeSignature
+import audio.tembra.core.project.Beats
 import audio.tembra.core.version.SemanticVersion
+import audio.tembra.engine.perf.AudioHealth
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlin.math.round
@@ -10,7 +13,9 @@ import kotlin.math.round
 /**
  * Test double for [AudioEngine]: never touches native code, records every call in order, follows the engine's state
  * rules and lets tests script the reading, the tick, a start failure, the custom-sound outcome, the watchdog and platform
- * events (contracts/tuner-audio-kotlin.md, contracts/metronome-audio-kotlin.md).
+ * events (contracts/tuner-audio-kotlin.md, contracts/metronome-audio-kotlin.md). The transport half
+ * (contracts/timeline-audio-kotlin.md) records its calls too and scripts the inspector, clip-source refusals, a play
+ * failure, the transport snapshot and the overview writer.
  */
 class FakeAudioEngine(
     private val descriptor: EngineDescriptor = EngineDescriptor(
@@ -207,5 +212,158 @@ class FakeAudioEngine(
     /** The engine's privacy watchdog stopped capture by itself (research R7). */
     fun simulateWatchdog() {
         audioState = AudioState.Idle
+    }
+
+    // --- Transport (feature 009, contracts/timeline-audio-kotlin.md) -------------------------------------------------
+
+    /** What [inspect] answers per path; a path not listed answers [defaultInspectResult]. */
+    val inspectResults: MutableMap<String, AudioInfo?> = mutableMapOf()
+
+    /** The answer for a path [inspectResults] does not name: a 48 kHz stereo WAV of one second by default. */
+    var defaultInspectResult: AudioInfo? = AudioInfo(format = audio.tembra.core.project.AudioFormat.Wav, channels = 2, sampleRate = 48000, frames = 48000)
+
+    /** Paths whose [openClipSource] answers [ClipSourceResult.Undecodable]. */
+    val clipSourceFailures: MutableSet<String> = mutableSetOf()
+
+    /** When set, the next [play] returns it, leaves the transport stopped and clears itself. */
+    var failNextPlay: PlayResult.Failed? = null
+
+    /** What [readTransport] copies; tests script it. */
+    var nextTransport: TransportSnapshot = TransportSnapshot()
+
+    /** How many times [readTransport] was called. */
+    var readTransportCount: Int = 0
+        private set
+
+    /** Called by [buildOverview] with the overview path so a test can write a tiny valid `.peaks`; null writes nothing and succeeds. */
+    var overviewWriter: ((overviewPath: String) -> Boolean)? = null
+
+    /** The open clip sources by handle id: path and the info they were opened with. */
+    val openClipSources: MutableMap<Int, Pair<String, AudioInfo>> = mutableMapOf()
+
+    /** The last arrangement [setArrangement] received. */
+    var lastArrangement: ArrangementSnapshot? = null
+        private set
+
+    /** True between [play] and [pause]; [nextTransport] is what the readers see. */
+    var transportPlaying: Boolean = false
+        private set
+
+    private var nextClipHandle = 1
+
+    /** When set, [openTransport] suspends on it before changing state: a test can leave while the device opens. */
+    var openTransportGate: CompletableDeferred<Unit>? = null
+
+    /** How many of the next [openTransport] calls answer `Busy(Listening)`, as a tuner still letting go of the device would. */
+    var transportBusyFor: Int = 0
+
+    override suspend fun openTransport(): TransportOpenResult {
+        _calls += "openTransport"
+        openTransportGate?.await()
+        val failure = failNextStart
+        if (failure != null) {
+            failNextStart = null
+            return TransportOpenResult.DeviceFailed
+        }
+        if (transportBusyFor > 0) {
+            transportBusyFor--
+            return TransportOpenResult.Busy(AudioState.Listening)
+        }
+        return when (audioState) {
+            AudioState.Idle -> {
+                audioState = AudioState.Transport
+                TransportOpenResult.Opened
+            }
+            // Like the engine: a transport that is already open refuses a second open.
+            AudioState.Transport, AudioState.Listening, AudioState.Tone, AudioState.Metronome -> TransportOpenResult.Busy(audioState)
+        }
+    }
+
+    override fun closeTransport() {
+        _calls += "closeTransport"
+        if (audioState == AudioState.Transport) audioState = AudioState.Idle
+        transportPlaying = false
+    }
+
+    override suspend fun openClipSource(path: String): ClipSourceResult {
+        _calls += "openClipSource($path)"
+        if (path in clipSourceFailures) return ClipSourceResult.Undecodable
+        val info = scriptedInfo(path) ?: return ClipSourceResult.Undecodable
+        val handle = ClipSourceHandle(nextClipHandle++)
+        openClipSources[handle.id] = path to info
+        return ClipSourceResult.Opened(handle, info)
+    }
+
+    override fun closeClipSource(handle: ClipSourceHandle) {
+        _calls += "closeClipSource(${handle.id})"
+        openClipSources.remove(handle.id)
+    }
+
+    override fun setTempo(tempo: Tempo, signature: TimeSignature) {
+        _calls += "setTempo(${tempo.bpm}, ${signature.label})"
+    }
+
+    override fun setArrangement(snapshot: ArrangementSnapshot) {
+        _calls += "setArrangement(tracks=${snapshot.tracks.size},clips=${snapshot.clips.size})"
+        lastArrangement = snapshot
+    }
+
+    override fun setTrack(index: Int, gainLinear: Float, audible: Boolean) {
+        _calls += "setTrack($index,${round(gainLinear * 1000) / 1000},$audible)"
+    }
+
+    override fun setMaster(gainLinear: Float) {
+        _calls += "setMaster(${round(gainLinear * 1000) / 1000})"
+    }
+
+    override fun setMetronome(enabled: Boolean) {
+        _calls += "setMetronome($enabled)"
+    }
+
+    override suspend fun play(): PlayResult {
+        _calls += "play"
+        val failure = failNextPlay
+        if (failure != null) {
+            failNextPlay = null
+            return failure
+        }
+        if (audioState != AudioState.Transport) return PlayResult.Failed(STATE_ERROR)
+        transportPlaying = true
+        nextTransport.playing = true
+        return PlayResult.Started
+    }
+
+    override fun pause() {
+        _calls += "pause"
+        transportPlaying = false
+        nextTransport.playing = false
+    }
+
+    override suspend fun seek(beats: Beats) {
+        _calls += "seek(${beats.value})"
+        nextTransport.positionBeats = beats.value
+    }
+
+    override fun readTransport(into: TransportSnapshot) {
+        readTransportCount++
+        into.copyFrom(nextTransport)
+    }
+
+    override suspend fun inspect(path: String): AudioInfo? {
+        _calls += "inspect($path)"
+        return scriptedInfo(path)
+    }
+
+    /** A listed path answers its entry, null included; an unlisted one the default. */
+    private fun scriptedInfo(path: String): AudioInfo? = if (path in inspectResults) inspectResults[path] else defaultInspectResult
+
+    override suspend fun buildOverview(audioPath: String, overviewPath: String): Boolean {
+        _calls += "buildOverview($audioPath)"
+        return overviewWriter?.invoke(overviewPath) ?: true
+    }
+
+    private companion object {
+        /** `TEMBRA_ERR_STATE`. */
+        const val STATE_ERROR = -1
     }
 }

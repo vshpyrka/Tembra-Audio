@@ -17,7 +17,7 @@ class FakeBackgroundPlaybackHostTest {
     fun keepAliveReturnsAllowAndTogglesAlive() {
         val host = FakeBackgroundPlaybackHost()
         assertFalse(host.alive)
-        assertTrue(host.keepAlive())
+        assertTrue(host.keepAlive(PlaybackNotification("Metronome", "120 BPM")))
         assertTrue(host.alive)
         host.release()
         assertFalse(host.alive)
@@ -28,7 +28,7 @@ class FakeBackgroundPlaybackHostTest {
     @Test
     fun aRefusingHostStaysDown() {
         val host = FakeBackgroundPlaybackHost(allow = false)
-        assertFalse(host.keepAlive())
+        assertFalse(host.keepAlive(PlaybackNotification("Metronome", "120 BPM")))
         assertFalse(host.alive)
         assertEquals(1, host.keepAliveCount)
     }

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The engine's device tests: the foreground activity the real-time tests show (TransportTimingEndToEndTest). -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <activity
+            android:name="audio.tembra.engine.ForegroundActivity"
+            android:theme="@android:style/Theme.Black.NoTitleBar"
+            android:exported="false" />
+    </application>
+</manifest>

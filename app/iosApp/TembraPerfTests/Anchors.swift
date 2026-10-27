@@ -18,6 +18,38 @@ enum Anchors {
     static let metronomeTempoReadout = "metronome.tempoReadout"
     static let devtoolsWriteHealth = "devtools.writeHealth"
 
+    // Feature 009 (contracts/perf-instrumentation.md).
+    static let navProjects = "nav.item.projects"
+    static let projectsRoot = "screen.projects"
+    static let projectsSearch = "projects.search"
+    static let projectsCardDemo = "projects.card.demo"
+    static let navTimeline = "nav.item.timeline"
+    static let timelineRoot = "screen.timeline"
+    static let timelineAddTrack = "timeline.toolbar.addTrack"
+    static let timelineSplit = "timeline.toolbar.split"
+    static let timelineUndo = "timeline.toolbar.undo"
+    static let timelineRuler = "timeline.ruler"
+    static let timelineLaneFirst = "timeline.lane.0"
+    static let timelineClipFirst = "timeline.clip.first"
+    static let timelineTrackMenuFirst = "timeline.track.menu.0"
+    static let timelineTrackSettings = "timeline.track.menu.settings"
+    static let timelineSettingsClose = "timeline.settings.close"
+    static let transportPlay = "transport.play"
+    static let transportSkipStart = "transport.skipStart"
+    static let transportMetronome = "transport.metronome"
+    static let transportReadout = "transport.readout"
+    static let dialogStopAndLeaveConfirm = "dialog.stopAndLeave.confirm"
+
+    // Feature 009's design iteration D1 (T146): the phone bar's speaker button, its pop-up's slider, the overview strip
+    // and its window.
+    static let transportMasterButton = "transport.master.button"
+    static let transportMaster = "transport.master"
+    static let timelineOverview = "timeline.overview"
+    static let timelineOverviewWindow = "timeline.overview.window"
+
+    /// The `screen.timeline` value once every visible overview is built; "loading" before (not an anchor of its own).
+    static let timelineReadyState = "ready"
+
     /// Generous for a cold process on a cool phone.
     static let timeout: TimeInterval = 10
 }

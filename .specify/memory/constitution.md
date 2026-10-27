@@ -188,7 +188,11 @@ specifications technology-free and the test-first loop of Principle III intact.
   rail are the platform design system's standard components, sized by it (amended 2026-10-17:
   Home, the earlier start destination, is removed and the items lost their visible labels;
   specs 002, 003, 004, 007 and 008 were amended the same day). The transport bar is present on
-  every DAW screen. Fonts are Space Grotesk and Inter, bundled; live numbers use tabular figures.
+  every DAW screen: the Timeline, Effects and Pads destinations and the screens opened from them
+  (such as a track's settings); Tuner, Metronome, Projects and Profile carry none (clarified
+  2026-10-13, feature 009: Tuner and Metronome own their audio, and Projects opens a project into
+  Timeline rather than playing it in place). Fonts are Space Grotesk and Inter, bundled; live
+  numbers use tabular figures.
 - The Metronome destination is a global, standalone metronome for playing along (amended
   2026-09-29). It runs on its own tempo and settings, kept in the app's preferences, and is not
   part of any recording session, project or timeline session: a project's tempo map never drives

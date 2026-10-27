@@ -29,6 +29,8 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodel.navigation3)
             implementation(libs.compose.material3.adaptive)
             implementation(libs.compose.material3.adaptive.navigation.suite)
+            // The Projects library's relative times need the local wall clock (feature 009, FR-051).
+            implementation(libs.kotlinx.datetime)
         }
         androidMain.dependencies {
             // ReportFirstContentDrawn's Android actual is activity-compose's ReportDrawnWhen (feature 007).

@@ -26,6 +26,41 @@ object Anchors {
     const val METRONOME_TEMPO_READOUT = "metronome.tempoReadout"
     const val DEVTOOLS_WRITE_HEALTH = "devtools.writeHealth"
 
+    // Feature 009 (contracts/perf-instrumentation.md).
+    const val NAV_PROJECTS = "nav.item.projects"
+    const val PROJECTS_ROOT = "screen.projects"
+    const val PROJECTS_SEARCH = "projects.search"
+    const val PROJECTS_CARD_DEMO = "projects.card.demo"
+    const val NAV_TIMELINE = "nav.item.timeline"
+    const val TIMELINE_ROOT = "screen.timeline"
+    const val TIMELINE_ADD_TRACK = "timeline.toolbar.addTrack"
+    const val TIMELINE_SPLIT = "timeline.toolbar.split"
+    const val TIMELINE_UNDO = "timeline.toolbar.undo"
+    const val TIMELINE_RULER = "timeline.ruler"
+    const val TIMELINE_LANE_FIRST = "timeline.lane.0"
+    const val TIMELINE_CLIP_FIRST = "timeline.clip.first"
+    const val TIMELINE_TRACK_MENU_FIRST = "timeline.track.menu.0"
+    const val TIMELINE_TRACK_SETTINGS = "timeline.track.menu.settings"
+    const val TIMELINE_SETTINGS_CLOSE = "timeline.settings.close"
+    const val TRANSPORT_PLAY = "transport.play"
+    const val TRANSPORT_SKIP_START = "transport.skipStart"
+    const val TRANSPORT_METRONOME = "transport.metronome"
+    const val TRANSPORT_READOUT = "transport.readout"
+    const val DIALOG_STOP_AND_LEAVE_CONFIRM = "dialog.stopAndLeave.confirm"
+
+    // Feature 009's design iteration D1 (T146): the phone bar's speaker button, its pop-up's slider, the overview strip
+    // and its window.
+    const val TRANSPORT_MASTER_BUTTON = "transport.master.button"
+    const val TRANSPORT_MASTER = "transport.master"
+    const val TIMELINE_OVERVIEW = "timeline.overview"
+    const val TIMELINE_OVERVIEW_WINDOW = "timeline.overview.window"
+
+    /**
+     * A 1 dp marker node the Timeline shows once every visible overview is built (the `stateDescription` "ready" the
+     * contract names is not reachable through UiAutomator's selectors; XCUITest reads it as the root's `value`).
+     */
+    const val TIMELINE_READY_MARKER = "screen.timeline.ready"
+
     /** Default wait for an anchor to appear, generous for a cold process on a cool phone. */
     const val TIMEOUT_MS = 10_000L
 

@@ -1,9 +1,33 @@
 package audio.tembra.engine
 
-import audio.tembra.engine.perf.AudioHealth
-
+import audio.tembra.core.metronome.BeatUnit
+import audio.tembra.core.metronome.Tempo
+import audio.tembra.core.metronome.TimeSignature
+import audio.tembra.core.project.AudioFormat
+import audio.tembra.core.project.Beats
+import audio.tembra.engine.cinterop.tembra_arrangement
 import audio.tembra.engine.cinterop.tembra_audio_health
+import audio.tembra.engine.cinterop.tembra_audio_info
+import audio.tembra.engine.cinterop.tembra_audio_inspect
+import audio.tembra.engine.cinterop.tembra_audio_overview_build
 import audio.tembra.engine.cinterop.tembra_audio_state
+import audio.tembra.engine.cinterop.tembra_clip_info
+import audio.tembra.engine.cinterop.tembra_clip_source_close
+import audio.tembra.engine.cinterop.tembra_clip_source_open
+import audio.tembra.engine.cinterop.tembra_transport_close
+import audio.tembra.engine.cinterop.tembra_transport_config
+import audio.tembra.engine.cinterop.tembra_transport_open
+import audio.tembra.engine.cinterop.tembra_transport_pause
+import audio.tembra.engine.cinterop.tembra_transport_play
+import audio.tembra.engine.cinterop.tembra_transport_read
+import audio.tembra.engine.cinterop.tembra_transport_seek_beats
+import audio.tembra.engine.cinterop.tembra_transport_set_arrangement
+import audio.tembra.engine.cinterop.tembra_transport_set_master
+import audio.tembra.engine.cinterop.tembra_transport_set_metronome
+import audio.tembra.engine.cinterop.tembra_transport_set_tempo
+import audio.tembra.engine.cinterop.tembra_transport_set_track
+import audio.tembra.engine.cinterop.tembra_transport_snapshot
+import audio.tembra.engine.perf.AudioHealth
 import audio.tembra.engine.cinterop.tembra_engine_audio_health
 import audio.tembra.engine.cinterop.tembra_custom_sound_info
 import audio.tembra.engine.cinterop.tembra_engine_abi_version
@@ -43,7 +67,10 @@ import kotlinx.cinterop.reinterpret
 import kotlinx.cinterop.set
 import kotlinx.cinterop.toKString
 import kotlinx.cinterop.usePinned
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.withContext
 import platform.Foundation.NSLock
 import platform.darwin.DISPATCH_TIME_NOW
 import platform.darwin.dispatch_after
@@ -54,8 +81,9 @@ import platform.darwin.dispatch_time
  * Cinterop facade over the static engine archive. The `AVAudioSession` is configured around every stream
  * (research R3, R7): `playAndRecord` in measurement mode for listening, `playback` for tones, deactivated with
  * `notifyOthersOnDeactivation` when idle. The metronome also plays in `playback` and reports the session's output
- * latency at the start and on every route change while it runs (feature 004 R7). The six native structs live as long
- * as the engine object.
+ * latency at the start and on every route change while it runs (feature 004 R7), as does the project transport
+ * (feature 009), whose arrangement struct is allocated once and refilled. The native structs live as long as the engine
+ * object.
  *
  * The session is activated only by the call that moves the engine out of Idle and deactivated only when it returns
  * there (contracts/metronome-audio-kotlin.md): a refused start never deactivates under a running stream, and a stop
@@ -76,6 +104,9 @@ actual class NativeAudioEngine internal constructor(
     private val grid = nativeHeap.alloc<tembra_metronome_grid>()
     private val tick = nativeHeap.alloc<tembra_metronome_tick>()
     private val customInfo = nativeHeap.alloc<tembra_custom_sound_info>()
+    private val transportConfig = nativeHeap.alloc<tembra_transport_config>()
+    private val arrangement = nativeHeap.alloc<tembra_arrangement>()
+    private val transport = nativeHeap.alloc<tembra_transport_snapshot>()
 
     /** Guards [previewGeneration] against a start or stop racing the main-queue check. */
     private val previewLock = NSLock()
@@ -126,7 +157,7 @@ actual class NativeAudioEngine internal constructor(
 
     override fun stopListening() {
         tembra_tuner_stop()
-        releaseSessionUnlessOwnedBy(AudioState.Tone, AudioState.Metronome)
+        releaseSessionUnlessOwnedBy(AudioState.Tone, AudioState.Metronome, AudioState.Transport)
     }
 
     /** The engine keeps the value; the audio session is not touched, so a change while listening interrupts nothing. */
@@ -166,7 +197,7 @@ actual class NativeAudioEngine internal constructor(
      */
     private inline fun sound(start: () -> Int): AudioResult {
         when (audioState) {
-            AudioState.Listening, AudioState.Metronome -> return STATE_REFUSED
+            AudioState.Listening, AudioState.Metronome, AudioState.Transport -> return STATE_REFUSED
             AudioState.Tone -> return AudioResult.fromNative(start())
             AudioState.Idle -> Unit
         }
@@ -194,7 +225,7 @@ actual class NativeAudioEngine internal constructor(
 
     override fun stopTone() {
         tembra_tone_stop()
-        releaseSessionUnlessOwnedBy(AudioState.Listening, AudioState.Metronome)
+        releaseSessionUnlessOwnedBy(AudioState.Listening, AudioState.Metronome, AudioState.Transport)
     }
 
     override fun setGrid(grid: MetronomeGrid): AudioResult {
@@ -246,7 +277,7 @@ actual class NativeAudioEngine internal constructor(
     override fun stopMetronome() {
         tembra_metronome_stop()
         if (audioState == AudioState.Idle) IosAudioSession.routeChangeListener = null
-        releaseSessionUnlessOwnedBy(AudioState.Listening, AudioState.Tone)
+        releaseSessionUnlessOwnedBy(AudioState.Listening, AudioState.Tone, AudioState.Transport)
     }
 
     override fun previewClick(level: ClickLevel): AudioResult {
@@ -286,7 +317,7 @@ actual class NativeAudioEngine internal constructor(
                     AudioState.Tone ->
                         if (remaining > 1) checkPreviewLater(generation, remaining - 1) else previewPending = false
                     // Another stream took over; every start cancels this check first, so this is only a safeguard.
-                    AudioState.Listening, AudioState.Metronome -> previewPending = false
+                    AudioState.Listening, AudioState.Metronome, AudioState.Transport -> previewPending = false
                 }
             } finally {
                 previewLock.unlock()
@@ -330,10 +361,139 @@ actual class NativeAudioEngine internal constructor(
             overBudget = health.over_budget.toInt(),
             xruns = health.xruns.toInt(),
             realtime = health.realtime.toInt() != 0,
+            avgMicros = health.avg_us.toInt(),
+            starvation = health.starvation.toInt(),
+            clipsActive = health.clips_active.toInt(),
         )
     }
 
     override val events: Flow<AudioEvent> = IosAudioSession.events
+
+    // --- Transport (feature 009, contracts/timeline-audio-kotlin.md) -------------------------------------------------
+
+    /**
+     * From Idle only: `playback` session, the route's latency reported for both renderers, then the engine; a refusal
+     * deactivates again. Opening the output unit is a platform call, so it runs off the main thread.
+     */
+    override suspend fun openTransport(): TransportOpenResult {
+        val state = audioState
+        if (state != AudioState.Idle) return TransportOpenResult.Busy(state)
+        cancelPreviewRelease()
+        IosAudioSession.activateForPlayback()
+        reportOutputLatencyNanos(IosAudioSession.outputLatencyNanos())
+        transportConfig.reserved = 0u
+        // On the caller's thread like the metronome's start: the RemoteIO unit is created and started here, not primed.
+        val code = tembra_transport_open(transportConfig.ptr)
+        if (code != 0) {
+            IosAudioSession.deactivate()
+            return if (code == STATE_REFUSED.code) TransportOpenResult.Busy(audioState) else TransportOpenResult.DeviceFailed
+        }
+        IosAudioSession.routeChangeListener = { reportOutputLatencyNanos(IosAudioSession.outputLatencyNanos()) }
+        return TransportOpenResult.Opened
+    }
+
+    override fun closeTransport() {
+        tembra_transport_close()
+        if (audioState == AudioState.Idle) IosAudioSession.routeChangeListener = null
+        releaseSessionUnlessOwnedBy(AudioState.Listening, AudioState.Tone, AudioState.Metronome)
+    }
+
+    override suspend fun openClipSource(path: String): ClipSourceResult = withContext(Dispatchers.IO) {
+        memScoped {
+            val info = alloc<tembra_clip_info>()
+            val handle = tembra_clip_source_open(path, info.ptr)
+            val format = AudioFormat.fromNative(info.format.toInt())
+            if (handle < 0 || format == null) {
+                ClipSourceResult.Undecodable
+            } else {
+                ClipSourceResult.Opened(
+                    ClipSourceHandle(handle),
+                    AudioInfo(format, channels = info.channels.toInt(), sampleRate = info.sample_rate.toInt(), frames = info.frames),
+                )
+            }
+        }
+    }
+
+    override fun closeClipSource(handle: ClipSourceHandle) {
+        tembra_clip_source_close(handle.id)
+    }
+
+    override fun setTempo(tempo: Tempo, signature: TimeSignature) {
+        tembra_transport_set_tempo(tempo.bpm.toUInt(), signature.beats.toUInt(), beatUnitOf(signature.unit))
+    }
+
+    override fun setArrangement(snapshot: ArrangementSnapshot) {
+        arrangement.track_count = snapshot.tracks.size.toUInt()
+        arrangement.clip_count = snapshot.clips.size.toUInt()
+        snapshot.tracks.forEachIndexed { index, track ->
+            arrangement.tracks[index].gain_linear = track.gainLinear
+            arrangement.tracks[index].audible = if (track.audible) 1u else 0u
+        }
+        snapshot.clips.forEachIndexed { index, clip ->
+            val state = arrangement.clips[index]
+            state.track = clip.trackIndex.toUInt()
+            state.source = clip.source.id
+            state.start_beats = clip.startBeats
+            state.offset_frames = clip.offsetFrames
+            state.length_frames = clip.lengthFrames
+        }
+        tembra_transport_set_arrangement(arrangement.ptr)
+    }
+
+    override fun setTrack(index: Int, gainLinear: Float, audible: Boolean) {
+        tembra_transport_set_track(index.toUInt(), gainLinear, if (audible) 1u else 0u)
+    }
+
+    override fun setMaster(gainLinear: Float) {
+        tembra_transport_set_master(gainLinear)
+    }
+
+    override fun setMetronome(enabled: Boolean) {
+        tembra_transport_set_metronome(if (enabled) 1u else 0u)
+    }
+
+    /** The prime reads two seconds of every nearby clip (under 50 ms, but file I/O): off the main thread. */
+    override suspend fun play(): PlayResult {
+        val code = withContext(Dispatchers.IO) { tembra_transport_play() }
+        return if (code == 0) PlayResult.Started else PlayResult.Failed(code)
+    }
+
+    override fun pause() {
+        tembra_transport_pause()
+    }
+
+    override suspend fun seek(beats: Beats) {
+        withContext(Dispatchers.IO) { tembra_transport_seek_beats(beats.value) }
+    }
+
+    override fun readTransport(into: TransportSnapshot) {
+        tembra_transport_read(transport.ptr)
+        into.playing = transport.playing != 0u
+        into.positionFrames = transport.position_frames
+        into.positionBeats = transport.position_beats
+        into.audiblePositionSeconds = transport.audible_seconds
+        into.blockTimeNanos = transport.block_time_ns
+        into.latencyNanos = transport.latency_ns
+        into.sampleRate = transport.sample_rate.toInt()
+    }
+
+    override suspend fun inspect(path: String): AudioInfo? = withContext(Dispatchers.IO) {
+        memScoped {
+            val info = alloc<tembra_audio_info>()
+            if (tembra_audio_inspect(path, info.ptr) != 0) return@memScoped null
+            val format = AudioFormat.fromNative(info.format.toInt()) ?: return@memScoped null
+            AudioInfo(format, channels = info.channels.toInt(), sampleRate = info.sample_rate.toInt(), frames = info.frames)
+        }
+    }
+
+    override suspend fun buildOverview(audioPath: String, overviewPath: String): Boolean = withContext(Dispatchers.IO) {
+        tembra_audio_overview_build(audioPath, overviewPath) == 0
+    }
+
+    private fun beatUnitOf(unit: BeatUnit): UInt = when (unit) {
+        BeatUnit.Quarter -> 4u
+        BeatUnit.Eighth -> 8u
+    }
 
     private companion object {
         /** `TEMBRA_ERR_STATE`: what the engine answers when it is not in a state that allows the call. */

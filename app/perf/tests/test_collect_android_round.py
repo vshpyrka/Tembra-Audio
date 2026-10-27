@@ -23,6 +23,7 @@ def test_journey_of_benchmark_class():
     assert journey_of("audio.tembra.perf.StartupBenchmark") == "startup"
     assert journey_of("audio.tembra.perf.TunerJourneyBenchmark") == "tuner"
     assert journey_of("audio.tembra.perf.MetronomeJourneyBenchmark") == "metronome"
+    assert journey_of("audio.tembra.perf.TimelineJourneyBenchmark") == "timeline"
     assert journey_of("audio.tembra.perf.StressJourneyBenchmark") == "stress"
     with pytest.raises(CollectError):
         journey_of("audio.tembra.perf.ScrollBenchmark")

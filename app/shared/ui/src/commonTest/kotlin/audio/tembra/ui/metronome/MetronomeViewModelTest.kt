@@ -24,10 +24,13 @@ import audio.tembra.engine.CustomSoundResult
 import audio.tembra.engine.FakeAudioEngine
 import audio.tembra.ui.platform.BackgroundPlaybackHost
 import audio.tembra.ui.platform.FakeBackgroundPlaybackHost
-import audio.tembra.ui.platform.FakeSoundFilePicker
-import audio.tembra.ui.platform.SoundFilePicker
-import audio.tembra.ui.platform.SoundPickFailure
-import audio.tembra.ui.platform.SoundPickResult
+import audio.tembra.data.metronome.StageResult
+import audio.tembra.ui.platform.AudioFilePicker
+import audio.tembra.ui.platform.AudioPickFailure
+import audio.tembra.ui.platform.AudioPickRequest
+import audio.tembra.ui.platform.AudioPickResult
+import audio.tembra.ui.platform.FakeAudioFilePicker
+import audio.tembra.ui.platform.PlaybackNotification
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -72,7 +75,7 @@ class MetronomeViewModelTest {
     private lateinit var host: RecordingHost
     private lateinit var preferences: CountingPreferences
     private lateinit var store: FakeCustomClickSoundStore
-    private lateinit var picker: FakeSoundFilePicker
+    private lateinit var picker: FakeAudioFilePicker
     private var created: MetronomeViewModel? = null
 
     /** Counts writes so a test can prove an intent persisted nothing. */
@@ -89,9 +92,9 @@ class MetronomeViewModelTest {
     /** Records each host call with the number of engine calls made before it, so the two logs can be interleaved. */
     private class RecordingHost(private val inner: FakeBackgroundPlaybackHost, private val audio: FakeAudioEngine) : BackgroundPlaybackHost by inner {
         val log = mutableListOf<Pair<String, Int>>()
-        override fun keepAlive(): Boolean {
+        override fun keepAlive(notification: PlaybackNotification): Boolean {
             log += "keepAlive" to audio.calls.size
-            return inner.keepAlive()
+            return inner.keepAlive(notification)
         }
         override fun release() {
             log += "release" to audio.calls.size
@@ -107,8 +110,8 @@ class MetronomeViewModelTest {
         host = RecordingHost(fakeHost, audio)
         preferences = CountingPreferences(FakeMetronomePreferences())
         store = FakeCustomClickSoundStore()
-        // The picker writes into the store's map, so a commit moves what was picked.
-        picker = FakeSoundFilePicker(files = store.files)
+        // The store stages what the picker hands over into its map, so a commit moves what was picked.
+        picker = FakeAudioFilePicker()
     }
 
     @AfterTest
@@ -700,7 +703,7 @@ class MetronomeViewModelTest {
         runCurrent()
         assertEquals(listOf("selectSound(Custom)", "previewClick(Click)"), audio.calls.takeLast(2))
         assertEquals(ClickSound.Custom("Kick"), preferences.snapshot.first().settings.sound)
-        assertEquals(emptyList(), picker.destinations)
+        assertEquals(emptyList(), picker.requests)
     }
 
     @Test
@@ -710,7 +713,7 @@ class MetronomeViewModelTest {
         val callsBefore = audio.calls.size
         viewModel.selectSound(ClickSound.Custom("Custom"))
         runCurrent()
-        assertEquals(listOf(store.stagingPath), picker.destinations)
+        assertEquals(listOf(AudioPickRequest.wav), picker.requests)
         assertEquals(callsBefore, audio.calls.size)
         assertEquals(ClickSound.BuiltIn(BuiltInClickSound.ClassicWood), viewModel.uiState.value.settings.sound)
         assertEquals(0, preferences.updates)
@@ -805,7 +808,7 @@ class MetronomeViewModelTest {
         FakeMetronomePreferences(MetronomePreferencesSnapshot(MetronomeSettings(sound = sound, customSound = CustomSoundRef("Kick", store.path)))),
     )
 
-    private fun TestScope.viewModelPreparingOn(prepare: CoroutineDispatcher, filePicker: SoundFilePicker = picker): MetronomeViewModel {
+    private fun TestScope.viewModelPreparingOn(prepare: CoroutineDispatcher, filePicker: AudioFilePicker = picker): MetronomeViewModel {
         val viewModel = MetronomeViewModel(audio, host, preferences, store, filePicker, prepare)
         created = viewModel
         runCurrent()
@@ -813,13 +816,14 @@ class MetronomeViewModelTest {
     }
 
     /** A picker that suspends until the test answers, as the platform sheet does while the user browses. */
-    private class GatedPicker : SoundFilePicker {
-        val answer = CompletableDeferred<SoundPickResult>()
+    private class GatedPicker : AudioFilePicker {
+        val answer = CompletableDeferred<AudioPickResult>()
         var opened = 0
-        override suspend fun pickWav(destinationPath: String): SoundPickResult {
+        override suspend fun pickOne(request: AudioPickRequest): AudioPickResult {
             opened++
             return answer.await()
         }
+        override suspend fun pickMany(request: AudioPickRequest): AudioPickResult = pickOne(request)
     }
 
     @Test
@@ -827,12 +831,11 @@ class MetronomeViewModelTest {
         val prepare = HeldDispatcher()
         val viewModel = viewModelPreparingOn(prepare)
         show(viewModel)
-        picker.next = SoundPickResult.Picked("Kick")
-        picker.bytesToWrite = byteArrayOf(1, 2, 3)
+        picker.next = FakeAudioFilePicker.picked("Kick", byteArrayOf(1, 2, 3))
         viewModel.importCustomSound()
         assertEquals(CustomSoundState.Importing, viewModel.uiState.value.customSound)
         runCurrent()
-        assertEquals(listOf(store.stagingPath), picker.destinations)
+        assertEquals(listOf(AudioPickRequest.wav), picker.requests)
         // Nothing is committed before the engine has accepted the staged file.
         assertFalse("commit" in store.calls)
         assertEquals(listOf<Byte>(1, 2, 3), store.files[store.stagingPath]?.toList())
@@ -842,7 +845,7 @@ class MetronomeViewModelTest {
         prepare.release()
         runCurrent()
         assertEquals(listOf("loadCustomSound(${store.stagingPath})", "selectSound(Custom)", "previewClick(Click)"), audio.calls.takeLast(3))
-        assertEquals(listOf("commit"), store.calls)
+        assertEquals(listOf("stage", "commit"), store.calls)
         assertEquals(listOf<Byte>(1, 2, 3), store.files[store.path]?.toList())
         assertFalse(store.stagingPath in store.files)
         val state = viewModel.uiState.value
@@ -857,7 +860,7 @@ class MetronomeViewModelTest {
     @Test
     fun aWavImportedWhileRunningSwapsWithoutAPreview() = viewModelTest {
         val viewModel = running()
-        picker.next = SoundPickResult.Picked("Kick")
+        picker.next = FakeAudioFilePicker.picked("Kick")
         viewModel.importCustomSound()
         runCurrent()
         assertEquals("selectSound(Custom)", audio.calls.last())
@@ -889,15 +892,15 @@ class MetronomeViewModelTest {
         viewModel.selectSound(rim)
         runCurrent()
         val updatesBefore = preferences.updates
-        picker.next = SoundPickResult.Failed(SoundPickFailure.TooLarge)
-        // A platform picker can leave a partial copy behind; the ViewModel removes it.
-        picker.partialOnFailure = byteArrayOf(9, 9)
+        picker.next = FakeAudioFilePicker.picked("Huge", byteArrayOf(9, 9))
+        // The store cuts an over-long copy short and refuses it; the ViewModel removes what was staged.
+        store.stageResult = StageResult.TooLarge
         viewModel.importCustomSound()
         runCurrent()
         assertEquals(listOf<MetronomeMessage>(MetronomeMessage.TooLarge), messages)
         assertEquals(rim, viewModel.uiState.value.settings.sound)
         assertEquals(CustomSoundState.None, viewModel.uiState.value.customSound)
-        assertEquals(listOf("deleteStaging"), store.calls)
+        assertEquals(listOf("stage", "deleteStaging"), store.calls)
         assertFalse(store.stagingPath in store.files, "the staging file was left behind")
         assertEquals(updatesBefore, preferences.updates)
     }
@@ -907,7 +910,7 @@ class MetronomeViewModelTest {
         val viewModel = viewModel()
         val messages = collectMessages(viewModel)
         show(viewModel)
-        picker.next = SoundPickResult.Failed(SoundPickFailure.Unreadable)
+        picker.next = AudioPickResult.Failed(AudioPickFailure.Unreadable)
         viewModel.importCustomSound()
         runCurrent()
         assertEquals(listOf<MetronomeMessage>(MetronomeMessage.ImportFailed), messages)
@@ -944,8 +947,7 @@ class MetronomeViewModelTest {
         val updatesBefore = preferences.updates
         val callsBefore = audio.calls.size
         audio.customSoundResults[store.stagingPath] = result
-        picker.next = SoundPickResult.Picked("Notes")
-        picker.bytesToWrite = byteArrayOf(7, 7, 7)
+        picker.next = FakeAudioFilePicker.picked("Notes", byteArrayOf(7, 7, 7))
         if (previousCopy) viewModel.replaceCustomSound() else viewModel.importCustomSound()
         runCurrent()
         assertEquals(listOf(message), messages)
@@ -1001,7 +1003,7 @@ class MetronomeViewModelTest {
         val first = viewModel()
         show(first)
         audio.customSoundResults[store.stagingPath] = CustomSoundResult.NotWav
-        picker.next = SoundPickResult.Picked("Notes")
+        picker.next = FakeAudioFilePicker.picked("Notes")
         first.replaceCustomSound()
         runCurrent()
         first.clear()
@@ -1062,10 +1064,10 @@ class MetronomeViewModelTest {
         val viewModel = viewModel()
         show(viewModel)
         audio.customSoundResult = loaded
-        picker.next = SoundPickResult.Picked("Kick 2")
+        picker.next = FakeAudioFilePicker.picked("Kick 2")
         viewModel.selectSound(kick)
         runCurrent()
-        assertEquals(listOf(store.stagingPath), picker.destinations)
+        assertEquals(listOf(AudioPickRequest.wav), picker.requests)
         assertEquals(CustomSoundState.Available("Kick 2"), viewModel.uiState.value.customSound)
         assertEquals(ClickSound.Custom("Kick 2"), viewModel.uiState.value.settings.sound)
     }
@@ -1076,11 +1078,11 @@ class MetronomeViewModelTest {
         val viewModel = viewModel()
         show(viewModel)
         assertEquals(CustomSoundState.Available("Kick"), viewModel.uiState.value.customSound)
-        picker.next = SoundPickResult.Picked("Snare")
+        picker.next = FakeAudioFilePicker.picked("Snare")
         viewModel.replaceCustomSound()
         assertEquals(CustomSoundState.Importing, viewModel.uiState.value.customSound)
         runCurrent()
-        assertEquals(listOf(store.stagingPath), picker.destinations)
+        assertEquals(listOf(AudioPickRequest.wav), picker.requests)
         assertEquals(CustomSoundState.Available("Snare"), viewModel.uiState.value.customSound)
         assertEquals(ClickSound.Custom("Snare"), viewModel.uiState.value.settings.sound)
         val stored = preferences.snapshot.first().settings
@@ -1105,13 +1107,13 @@ class MetronomeViewModelTest {
         val prepare = HeldDispatcher()
         val viewModel = viewModelPreparingOn(prepare)
         show(viewModel)
-        picker.next = SoundPickResult.Picked("Kick")
+        picker.next = FakeAudioFilePicker.picked("Kick")
         viewModel.importCustomSound()
         runCurrent()
         viewModel.importCustomSound()
         viewModel.replaceCustomSound()
         runCurrent()
-        assertEquals(1, picker.destinations.size)
+        assertEquals(1, picker.requests.size)
         prepare.release()
         runCurrent()
         assertEquals(CustomSoundState.Available("Kick"), viewModel.uiState.value.customSound)
@@ -1132,7 +1134,7 @@ class MetronomeViewModelTest {
         prepare.release()
         runCurrent()
         assertEquals(CustomSoundState.Importing, viewModel.uiState.value.customSound)
-        gated.answer.complete(SoundPickResult.Cancelled)
+        gated.answer.complete(AudioPickResult.Cancelled)
         runCurrent()
         // The cancelled pick restores what the startup load found, not the state from before it.
         assertEquals(CustomSoundState.Available("Kick"), viewModel.uiState.value.customSound)

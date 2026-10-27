@@ -1,6 +1,6 @@
-"""The audio-health series on both platforms (spec SC-010, FR-015): the six
-counter tracks of a Perfetto trace, the six fields of engine-health.json, and the
-p99 of the I/O-proc duration from the HAL trace's export."""
+"""The audio-health series on both platforms (spec SC-010, FR-015): the counter
+tracks of a Perfetto trace (six in the fixture, nine since feature 009), the nine fields
+of engine-health.json, and the p99 of the I/O-proc duration from the HAL trace's export."""
 
 import os
 
@@ -12,16 +12,26 @@ from tracepulse.traces_ios import ioproc_p99, parse_ioproc_durations
 FIXTURES = os.path.join(os.path.dirname(__file__), "fixtures")
 SCRIPTED = {"audio.callbacks": 1200.0, "audio.last_callback_us": 850.0, "audio.max_callback_us": 1900.0,
             "audio.over_budget": 0.0, "audio.xruns": 0.0, "audio.realtime": 1.0}
+# Feature 009 appended the transport's three counters (ABI revision 6).
+SCRIPTED_V6 = dict(SCRIPTED, **{"audio.avg_us": 410.0, "audio.starvation": 0.0, "audio.clips_active": 5.0})
 
 
 def test_android_counter_tracks_yield_the_scripted_values():
     raw = counter_series(os.path.join(FIXTURES, "perfetto-audio-counters.perfetto-trace"), list(AUDIO_COUNTER_KEYS))
     series = {AUDIO_COUNTER_KEYS[name]: value for name, value in raw.items()}
+    # The fixture trace predates ABI revision 6: it carries the six original tracks and none of the three new ones.
     assert series == SCRIPTED
+    assert set(AUDIO_COUNTER_KEYS.values()) == set(SCRIPTED_V6)
 
 
-def test_ios_engine_health_yields_the_same_keys():
-    assert engine_health(os.path.join(FIXTURES, "engine-health.json")) == SCRIPTED
+def test_ios_engine_health_yields_the_nine_keys():
+    assert engine_health(os.path.join(FIXTURES, "engine-health.json")) == SCRIPTED_V6
+
+
+def test_ios_engine_health_predating_abi_6_reads_zeros_for_the_new_fields(tmp_path):
+    legacy = tmp_path / "engine-health.json"
+    legacy.write_text('{"schema":1,"journey":"stress","stream_open":true,"health":{"callbacks":1200,"last_us":850,"max_us":1900,"over_budget":0,"xruns":0,"realtime":1}}')
+    assert engine_health(str(legacy)) == dict(SCRIPTED, **{"audio.avg_us": 0.0, "audio.starvation": 0.0, "audio.clips_active": 0.0})
 
 
 def test_ioproc_durations_and_p99_from_the_spike_shaped_export():

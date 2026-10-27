@@ -1,5 +1,5 @@
 /*
- * Tembra Audio engine C ABI, revision 5.
+ * Tembra Audio engine C ABI, revision 6.
  *
  * This header is the only interface the Kotlin side ever sees (JNI shim on Android, cinterop on
  * iOS). Rules: plain C, no C++ types, no callbacks into the host, every returned pointer has static
@@ -12,7 +12,10 @@
  * the input_level_db and gate_open fields of tembra_pitch_reading; every revision 3 function unchanged) is
  * specs/006-tuner-noise-gate/contracts/engine-c-abi-v4.md; revision 5 (the audio-thread health counters:
  * tembra_audio_health and tembra_engine_audio_health; every revision 4 function unchanged) is
- * specs/007-performance-pipeline/contracts/engine-audio-health.md.
+ * specs/007-performance-pipeline/contracts/engine-audio-health.md; revision 6 (the project transport:
+ * TEMBRA_AUDIO_TRANSPORT, the tembra_transport_* and tembra_clip_source_* functions, the offline tembra_audio_inspect and
+ * tembra_audio_overview_build, and the avg_us, starvation and clips_active fields of tembra_audio_health; every
+ * revision 5 function unchanged) is specs/009-timeline-arranger/contracts/engine-c-abi-v6.md.
  */
 #ifndef TEMBRA_ENGINE_H
 #define TEMBRA_ENGINE_H
@@ -24,7 +27,7 @@ extern "C" {
 #endif
 
 /* ABI revision of this header. Incremented whenever a function is added, removed or changed. */
-#define TEMBRA_ENGINE_ABI_VERSION 5u
+#define TEMBRA_ENGINE_ABI_VERSION 6u
 uint32_t tembra_engine_abi_version(void);
 
 /* Human-readable engine name, e.g. "Tembra Engine". Static storage. */
@@ -50,12 +53,18 @@ enum tembra_error {
     TEMBRA_ERR_SILENT = -5    /* the file decodes but holds no sound above -60 dBFS */
 };
 
-/* At most one stream is open: listening, a tone and the metronome never overlap (spec FR-006; data-model.md §6). */
+/*
+ * At most one stream is open: listening, a tone, the metronome and the transport never overlap (spec FR-006 of
+ * feature 003; data-model.md §6). TRANSPORT (revision 6) means the output stream is open for a project, stopped or
+ * playing; tembra_transport_open returns TEMBRA_ERR_STATE unless IDLE, and tembra_tuner_start, tembra_tone_start,
+ * tembra_sample_play, tembra_metronome_start and tembra_metronome_preview return TEMBRA_ERR_STATE while TRANSPORT.
+ */
 enum tembra_audio_state {
     TEMBRA_AUDIO_IDLE = 0,
     TEMBRA_AUDIO_LISTENING = 1,
     TEMBRA_AUDIO_TONE = 2,
-    TEMBRA_AUDIO_METRONOME = 3
+    TEMBRA_AUDIO_METRONOME = 3,
+    TEMBRA_AUDIO_TRANSPORT = 4
 };
 uint32_t tembra_audio_state(void); /* atomic read */
 
@@ -163,7 +172,7 @@ typedef struct tembra_metronome_tick {
 } tembra_metronome_tick;
 void    tembra_metronome_read(tembra_metronome_tick* out);  /* lock-free seqlock read; computes audible_in_ns against the monotonic clock at call time */
 
-/* --- Audio-thread health (feature 007, contracts/engine-audio-health.md) --- */
+/* --- Audio-thread health (feature 007, contracts/engine-audio-health.md; revision 6 fields appended) --- */
 typedef struct tembra_audio_health {
     uint64_t callbacks;     /* total render and capture callbacks since stream start      */
     uint32_t last_us;       /* duration of the most recent callback, microseconds         */
@@ -172,11 +181,83 @@ typedef struct tembra_audio_health {
     uint32_t xruns;         /* underruns + overruns reported by the platform stream       */
     uint8_t  realtime;      /* 1 when the audio thread holds real-time status             */
     uint8_t  _reserved[3];
+    uint32_t avg_us;        /* revision 6: mean callback duration since stream start, microseconds */
+    uint32_t starvation;    /* revision 6: clip fifos found dry by the callback since the transport opened */
+    uint32_t clips_active;  /* revision 6: clips rendered in the last block                        */
 } tembra_audio_health;
 /* Non-real-time. Copies the counters into *out (the callback writes them with atomic stores; the xrun count is
    sampled from the platform stream on the calling thread). Returns 0, -1 when no stream is open, or
    TEMBRA_ERR_ARGUMENT for a null pointer. The engine is process-wide, hence no handle argument. */
 int32_t tembra_engine_audio_health(tembra_audio_health* out);
+
+/* --- Project transport (revision 6, specs/009-timeline-arranger/contracts/engine-c-abi-v6.md; research R2-R7) --- */
+typedef struct tembra_transport_config {
+    uint32_t reserved;              /* 0; room for later options */
+} tembra_transport_config;
+
+int32_t tembra_transport_open(const tembra_transport_config* config);   /* IDLE -> TRANSPORT: opens the output at the device rate, creates the renderer, position 0, stopped */
+void    tembra_transport_close(void);                                    /* pauses with the 5 ms release, joins the streamer, closes the stream -> IDLE; idempotent */
+
+int32_t tembra_transport_set_tempo(uint32_t bpm, uint32_t beats_per_bar, uint32_t beat_unit);  /* 40..240, 1..32, 4|8; applies at the next block; re-anchors the click */
+int32_t tembra_transport_set_track(uint32_t index, float gain_linear, uint32_t audible);      /* fast path: one track's gain target (0..2.0) and audibility without a new arrangement */
+int32_t tembra_transport_set_master(float gain_linear);                                       /* 0..1; smoothed over 10 ms */
+int32_t tembra_transport_set_metronome(uint32_t enabled);                                     /* 1: the click joins the mix at the next beat, anchored; 0: releases the voice */
+
+int32_t tembra_transport_play(void);                /* primes every clip within 2 s of the position (blocking, control thread, target < 50 ms), then starts; ERR_STATE unless TRANSPORT */
+int32_t tembra_transport_pause(void);               /* 5 ms release, keeps the position; idempotent while stopped */
+int32_t tembra_transport_seek_beats(double beats);  /* any TRANSPORT state; playing: silent re-prime and resume from the new position within 100 ms; stopped: moves the position */
+
+/* The arrangement: the derived real-time view of the project (Constitution V); the Kotlin document stays the authority. */
+#define TEMBRA_MAX_TRACKS 64u
+#define TEMBRA_MAX_CLIPS  1024u
+
+typedef struct tembra_track_state { float gain_linear; uint32_t audible; } tembra_track_state;
+
+typedef struct tembra_clip_state {
+    uint32_t track;          /* index into tracks */
+    int32_t  source;         /* clip source handle (tembra_clip_source_open) */
+    double   start_beats;    /* position in beats of the beat unit */
+    int64_t  offset_frames;  /* into the source, at the source rate */
+    int64_t  length_frames;  /* at the source rate; > 0 */
+} tembra_clip_state;
+
+typedef struct tembra_arrangement {
+    uint32_t           track_count;              /* <= 64 */
+    uint32_t           clip_count;               /* <= 1024 */
+    tembra_track_state tracks[TEMBRA_MAX_TRACKS];
+    tembra_clip_state  clips[TEMBRA_MAX_CLIPS];  /* any order; the engine sorts by start per track */
+} tembra_arrangement;
+/* Validated (ERR_ARGUMENT: counts within bounds, every track < track_count, every source an open handle,
+   offset + length <= source frames, start_beats >= 0, gains finite), copied into a triple-buffer snapshot; applies at
+   the next block. Two clips on one track may overlap after a tempo change: the later start takes precedence. */
+int32_t tembra_transport_set_arrangement(const tembra_arrangement* arrangement);
+
+/* --- Clip sources (opened on the host's IO thread, never on the callback) --- */
+enum tembra_audio_format { TEMBRA_FORMAT_UNKNOWN = 0, TEMBRA_FORMAT_WAV = 1, TEMBRA_FORMAT_FLAC = 2, TEMBRA_FORMAT_MP3 = 3 };
+
+typedef struct tembra_clip_info { uint32_t channels; uint32_t sample_rate; int64_t frames; uint32_t format; } tembra_clip_info; /* format: tembra_audio_format */
+
+int32_t tembra_clip_source_open(const char* path, tembra_clip_info* out_info);  /* ma_decoder on the file: f32, source channels, output at the stream rate; MP3 with a seek table; returns handle >= 0 or ERR_DECODE / ERR_ARGUMENT; allowed in IDLE and TRANSPORT */
+void    tembra_clip_source_close(int32_t handle);                                /* error-free; refused silently while an arrangement references it (the host removes it first) */
+
+/* --- Transport telemetry --- */
+typedef struct tembra_transport_snapshot {
+    uint32_t playing;
+    int64_t  position_frames;      /* at block start, stream rate */
+    double   position_beats;       /* position_frames through the tempo map */
+    double   audible_seconds;      /* position + elapsed since block - output latency, at call time */
+    int64_t  block_time_ns;        /* monotonic time of the block that produced position_frames */
+    int64_t  latency_ns;           /* the output latency used */
+    uint32_t sample_rate;
+} tembra_transport_snapshot;
+
+void tembra_transport_read(tembra_transport_snapshot* out);  /* lock-free seqlock read, safe every frame; zeros when not TRANSPORT */
+
+/* --- Offline audio tools (any thread, no stream needed) --- */
+typedef struct tembra_audio_info { uint32_t format; uint32_t channels; uint32_t sample_rate; int64_t frames; } tembra_audio_info;
+
+int32_t tembra_audio_inspect(const char* path, tembra_audio_info* out);          /* opens and closes a decoder; ERR_DECODE for anything miniaudio cannot read */
+int32_t tembra_audio_overview_build(const char* path, const char* out_path);     /* decodes once, writes the .peaks file (header "TPK1", int8 min/max per channel at 256/1024/4096/16384 frames per bucket); flushes the header every 10 s of audio; returns when complete */
 
 #ifdef __cplusplus
 }

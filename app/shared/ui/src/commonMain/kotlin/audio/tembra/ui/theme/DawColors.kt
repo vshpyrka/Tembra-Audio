@@ -28,6 +28,17 @@ data class DawColors(
     /** `clip_glow = 0 0 12px rgba(167, 139, 250, 0.25)`: the only glow in the design, drawn, never a shadow. */
     val clipGlow: Color,
     val clipGlowBlur: Dp,
+    // Feature 009 (contracts/design-system-additions.md): the six track tints and the clip drawing tokens.
+    /** `track_tints`: lavender, rose, dusty rose, peach, mint, violet; a track's `colorIndex` picks one. */
+    val trackTints: List<Color>,
+    /** `clip_caption_band`: `surface_level2` at 70 % over the tint. */
+    val clipCaptionBand: Color,
+    /** `playhead_chip`: the ruler's rounded position chip. */
+    val playheadChip: Color,
+    /** `selection_outline`: the 2 dp outline of the selected clip (the scheme's primary). */
+    val selectionOutline: Color,
+    /** `unavailable_clip`: the fill of a clip whose audio file is missing (the scheme's outline variant). */
+    val unavailableClip: Color,
 ) {
     companion object {
         val Default = DawColors(
@@ -50,6 +61,18 @@ data class DawColors(
             gridOverlay = Color(0x33C084FC),
             clipGlow = Color(0x40A78BFA),
             clipGlowBlur = 12.dp,
+            trackTints = listOf(
+                Color(0xFFC4B5FD),
+                Color(0xFFFDA4AF),
+                Color(0xFFE0A0C0),
+                Color(0xFFF5BE9E),
+                Color(0xFFA4D4BC),
+                Color(0xFFC4A2DC),
+            ),
+            clipCaptionBand = Color(0xB3212026),
+            playheadChip = Color(0xFFC4B5FD),
+            selectionOutline = Color(0xFFCEBDFF),
+            unavailableClip = Color(0xFF494552),
         )
     }
 }

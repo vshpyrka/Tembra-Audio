@@ -11,12 +11,12 @@ class PerfAnchorsCatalogueTest {
     fun anchorsAreUniqueAndWellFormed() {
         assertEquals(PerfAnchors.all.size, PerfAnchors.all.toSet().size)
         for (anchor in PerfAnchors.all) {
-            assertTrue(Regex("[a-z][A-Za-z0-9]*(\\.[a-z][A-Za-z0-9]*)+").matches(anchor), anchor)
+            assertTrue(Regex("[a-z][A-Za-z0-9]*(\\.[a-z0-9][A-Za-z0-9]*)+").matches(anchor), anchor)
         }
     }
 
     @Test
     fun everyJourneyControlHasAnAnchor() {
-        assertEquals(13, PerfAnchors.all.size)
+        assertEquals(36, PerfAnchors.all.size)
     }
 }

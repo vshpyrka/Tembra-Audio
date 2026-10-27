@@ -263,6 +263,50 @@
       "height": "1766",
       "html": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBKOARIhYXBwX2NvbXBhbmlvbl91c2VyX3VwbG9hZGVkX2ZpbGVzGmkKM3VzZXJfdXBsb2FkZWRfaHRtbF8wMDA2NWUwYTYxMWM1OGRkMDM1NmM2OGJiZDA0YzlkNxILEgcQqcbYkZETGAGSASQKCnByb2plY3RfaWQSFkIUMTIwNDAxNzE2MTE3MTI1ODk1OTk&filename=&opi=96797242",
       "screenshot": "https://lh3.googleusercontent.com/aida/AEtjO1Xoudq7y4t-ITbIdp_rHcvAwAsEgncZpROcjMsko2c2dy4wA0zxQabMUONVukCEj_0XVDNpMp5RhvNVYj4s-UsBk8qpJfz3q6EqeaRZSkgfWkY6I6reTh7HdbJvI_0E37_cqO49gAcjjv98gbaljmlxBI9EWY-SKy_8ETPbh3duY9hdai9d9tZR2TDCS2M3s5PEsO0zsb4d_rPP-UwfKGc9cVRc8tBxnD0K2FZZekAWvdQn1qnH0plWuNy3QlYFFIgY2oqP6r4SXgg"
+    },
+    {
+      "slug": "mixer-timeline/phone-drawer",
+      "project": "projects/13820816821466270236",
+      "screenId": "ac925b9ecdd74e3287784f6de6a308dd",
+      "title": "Mobile Expanded Timeline View (Studio Sound refine)",
+      "device": "MOBILE",
+      "width": 768,
+      "height": 1376,
+      "screenshot": "https://lh3.googleusercontent.com/aida/AEtjO1UQqo1bS4ytcsebW8L56mGIEhVUU2_7A2qIBcOSjVfhtwDWPV8T3UpBzLGkb2SXawUoxoY9p2EWlYb3uH6Zx05kL0gxzey3oFrG6q0-peFQ_4jBHrSSH9eV-rTrnLjMqGRvkaioJeAJOWrti0E9uLB5mGHT4HuoHXvIrMhKVvBZrj5lOrzB2IpHNV4yYDddrgk2zz8edOGZhZ2EiSjSoACUyMgD8E5ddB4Q3PCYvLLW6Iqr-8x4mXqqyEIQ",
+      "note": "Image-only screen from the user's second Stitch project (Studio Sound design system); Stitch holds no HTML for it. Pulled 2026-10-13 as mixer evidence for features 009/010."
+    },
+    {
+      "slug": "mixer-timeline/tablet-split-v1",
+      "project": "projects/13820816821466270236",
+      "screenId": "2949644131fe44cca45fdbe910eb46c8",
+      "title": "Tablet Mixer & Timeline Split",
+      "device": "MOBILE",
+      "width": 768,
+      "height": 1376,
+      "screenshot": "https://lh3.googleusercontent.com/aida/AEtjO1UYXo9j2XiBkdLmHL9nDUhpLZNZy3CC1SAPX-lT8wqmKsRxw25Oy5v3Kd66Czx131riV96epJpTw9NSyd94G4BwSiphQxD9C9sWqFYY_6_JsG7EZ-1awGaR0DLvpXOld21ayWL9UmDQ8sxTCgsqjLAS4z1YbT8yX_CaXqMH0EIEd6Gndhrg36yW20wtYgAkf4lzuuo4GjGxr853YxTVNJLly7-eqNnKzwr7HglQVvPMCXdbJoDL1P7ccDfG",
+      "note": "Image-only screen from the user's second Stitch project (Studio Sound design system); Stitch holds no HTML for it. Pulled 2026-10-13 as mixer evidence for features 009/010."
+    },
+    {
+      "slug": "mixer-timeline/tablet-split-v2",
+      "project": "projects/13820816821466270236",
+      "screenId": "542591bf0833411fbd395f4456f72761",
+      "title": "Tablet Mixer & Timeline Split (Studio Sound refine)",
+      "device": "MOBILE",
+      "width": 768,
+      "height": 1376,
+      "screenshot": "https://lh3.googleusercontent.com/aida/AEtjO1VfEq4Ca68hkaKVeTrdJy177LtGbJYHVnhHiJACakiLK1ZLULuHBSgNcfSEn63Rqan2Bh6jpzmSkFjaZ8Nd0QwchYFvb0zUNcuCgVfQqm71sDNRSCANC7FDpb5t7mrBpYOUOeCNzaI5M44eBcMqfjwSJqU05O3ktgH60hvwYzAHP9HyhzsZzdKaxpvLr-_eALVKigzSuObbYaMvNsSNek8fQeQsgn9KhlBeTKegcweRw45myG_u_pCZ37qK",
+      "note": "Image-only screen from the user's second Stitch project (Studio Sound design system); Stitch holds no HTML for it. Pulled 2026-10-13 as mixer evidence for features 009/010."
+    },
+    {
+      "slug": "mixer-timeline/tablet-split-console",
+      "project": "projects/13820816821466270236",
+      "screenId": "5af317971c704db79b33c0fb53311c40",
+      "title": "Tablet Mixer & Timeline Split (studio console faders)",
+      "device": "MOBILE",
+      "width": 768,
+      "height": 1376,
+      "screenshot": "https://lh3.googleusercontent.com/aida/AEtjO1V0P6wQxXSZ1YoDB2aF2DLN9XSE80mDauKoTcTyiKP0NFYuSpju8Dp7C3g6Ad4GfyWBk92m-ff1LOYqIpqS8F13544eBG0pbCVDsNR997IPFHRibTFJbcTDXArVZmI66huqMBJjArsFUSuADwjlSZ1uaVPZOqGG2LWjU_woy6q8l0L5m7nU62lB0EhnRqjNhkJXp-ftO8bcPOruOXf5MGDx5uXP4ndkHQzyoZ-spTuFCMPbxZx3fxKBeMUE",
+      "note": "Image-only screen from the user's second Stitch project (Studio Sound design system); Stitch holds no HTML for it. Pulled 2026-10-13 as mixer evidence for features 009/010."
     }
   ],
   "uploadedReferenceScreens": [
@@ -405,6 +449,14 @@
       "height": 1600,
       "html": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBKOARIhYXBwX2NvbXBhbmlvbl91c2VyX3VwbG9hZGVkX2ZpbGVzGmkKM3VzZXJfdXBsb2FkZWRfaHRtbF8wMDA2NWRmMzhlOGNlNzFlMDM1NmU4Yjk4OTI0YTU2ZBILEgcQqcbYkZETGAGSASQKCnByb2plY3RfaWQSFkIUMTIwNDAxNzE2MTE3MTI1ODk1OTk&filename=&opi=96797242",
       "screenshot": "https://lh3.googleusercontent.com/aida/AEtjO1UyQ5-Ra-m27yR1n3IxKzobYwC6ZCQCkHrBdqj_TFCL2quEHhYWBAwBKHYn7YNQsNQaGPXfP6rSdm2Iz5U2XMfm69v0q_NDsupP6JLjvFi7cEyB-Q7kBicUdDH5qOajvPh36din-bBUrg217lMwO1bptfTsQsepf8IrhKbWo8nFxvY1QJ-wBINsdMqhnFdR0M0Urjdr_qi6bx-H0z_LX8xIgYhqu1nEorffqoJJ8bCAmvy1BaodfkutpMhTlY1nrb-51XKfIwCK_tM"
+    }
+  ],
+  "secondaryProjects": [
+    {
+      "project": "projects/13820816821466270236",
+      "projectUrl": "https://stitch.withgoogle.com/projects/13820816821466270236",
+      "title": "Studio Sound mixer and timeline references",
+      "fetchedAt": "2026-10-13T00:00:00Z"
     }
   ]
 }

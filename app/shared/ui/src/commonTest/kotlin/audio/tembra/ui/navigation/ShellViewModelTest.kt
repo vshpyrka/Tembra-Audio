@@ -1,5 +1,6 @@
 package audio.tembra.ui.navigation
 
+import audio.tembra.ui.session.FakePlaybackGuard
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -23,7 +24,7 @@ class ShellViewModelTest {
     @BeforeTest
     fun setUp() {
         Dispatchers.setMain(StandardTestDispatcher())
-        viewModel = ShellViewModel()
+        viewModel = ShellViewModel(FakePlaybackGuard())
     }
 
     @AfterTest
@@ -32,6 +33,17 @@ class ShellViewModelTest {
     @Test
     fun startsOnTimeline() = runTest {
         assertEquals(Destination.Timeline, viewModel.uiState.value.selected)
+    }
+
+    /** The device changes hands with the destination: away from the Timeline before the new screen shows, back on return. */
+    @Test
+    fun leavingTheTimelineHandsTheTransportOverAndReturningTakesItBack() = runTest {
+        val guard = FakePlaybackGuard()
+        val shell = ShellViewModel(guard)
+        shell.select(Destination.Tuner)
+        shell.select(Destination.Metronome)
+        shell.select(Destination.Timeline)
+        assertEquals(listOf(false, false, true), guard.hostVisibility)
     }
 
     @Test

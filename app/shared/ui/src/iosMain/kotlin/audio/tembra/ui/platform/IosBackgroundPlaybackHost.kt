@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.emptyFlow
  * empty; interruptions reach the ViewModel as engine events instead.
  */
 class IosBackgroundPlaybackHost : BackgroundPlaybackHost {
-    override fun keepAlive(): Boolean = true
+    override fun keepAlive(notification: PlaybackNotification): Boolean = true
 
     override fun release() = Unit
 

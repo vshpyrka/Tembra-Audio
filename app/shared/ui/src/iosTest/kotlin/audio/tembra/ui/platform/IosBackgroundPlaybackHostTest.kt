@@ -16,7 +16,7 @@ class IosBackgroundPlaybackHostTest {
     @Test
     fun keepAliveIsGrantedAndReleaseIsQuiet() {
         val host = IosBackgroundPlaybackHost()
-        assertTrue(host.keepAlive())
+        assertTrue(host.keepAlive(PlaybackNotification("Metronome", "120 BPM")))
         host.release()
     }
 

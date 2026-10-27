@@ -1,6 +1,7 @@
 package audio.tembra.data.metronome
 
 import kotlinx.coroutines.test.runTest
+import okio.Buffer
 import okio.Path.Companion.toPath
 import okio.fakefilesystem.FakeFileSystem
 import kotlin.test.Test
@@ -81,5 +82,20 @@ class OkioCustomClickSoundStoreTest {
         store.deleteStaging()
         assertTrue(store.exists())
         assertFalse(store.commit())
+    }
+
+    // --- Staging from a picked file (feature 009: the platform picker hands over a content handle) -------------------
+
+    @Test
+    fun stageCopiesThePickedBytesToTheStagingPath() = runTest {
+        assertEquals(StageResult.Staged, store.stage { Buffer().write(byteArrayOf(5, 6, 7)) })
+        assertContentEquals(byteArrayOf(5, 6, 7), fileSystem.read(store.stagingPath.toPath()) { readByteArray() })
+        assertFalse(store.exists())
+    }
+
+    @Test
+    fun stageRefusesAnUnreadableSourceAndLeavesNothingStaged() = runTest {
+        assertEquals(StageResult.Unreadable, store.stage { throw okio.IOException("revoked") })
+        assertFalse(fileSystem.exists(store.stagingPath.toPath()))
     }
 }

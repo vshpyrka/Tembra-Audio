@@ -3,6 +3,9 @@ package audio.tembra.engine
 import audio.tembra.core.metronome.BeatLevel
 import audio.tembra.core.metronome.Tempo
 import audio.tembra.core.metronome.TickGrid
+import audio.tembra.core.metronome.TimeSignature
+import audio.tembra.core.project.AudioFormat
+import audio.tembra.core.project.Beats
 import audio.tembra.core.version.SemanticVersion
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -304,5 +307,119 @@ class FakeAudioEngineTest {
             Tempo(96),
         )
         assertEquals(MetronomeGrid(Tempo(96), 2, listOf(ClickLevel.Accent, ClickLevel.Sub, ClickLevel.Click, ClickLevel.Sub)), grid)
+    }
+
+    // --- Transport (feature 009, contracts/timeline-audio-kotlin.md) -------------------------------------------------
+
+    @Test
+    fun transportOpensFromIdleAndClosesBackToIdle() = runTest {
+        val engine = FakeAudioEngine()
+        assertEquals(TransportOpenResult.Opened, engine.openTransport())
+        assertEquals(AudioState.Transport, engine.audioState)
+        engine.closeTransport()
+        assertEquals(AudioState.Idle, engine.audioState)
+        assertEquals(listOf("openTransport", "closeTransport"), engine.calls)
+    }
+
+    @Test
+    fun transportIsRefusedWhileAnotherStreamRunsAndWhenTheDeviceFails() = runTest {
+        val engine = FakeAudioEngine()
+        engine.startMetronome()
+        assertEquals(TransportOpenResult.Busy(AudioState.Metronome), engine.openTransport())
+        engine.stopMetronome()
+        engine.failNextStart = AudioResult.Error(-2)
+        assertEquals(TransportOpenResult.DeviceFailed, engine.openTransport())
+        assertEquals(AudioState.Idle, engine.audioState)
+    }
+
+    @Test
+    fun everyTransportCallIsRecordedWithItsArguments() = runTest {
+        val engine = FakeAudioEngine()
+        engine.openTransport()
+        val opened = engine.openClipSource("/p/audio/abc.wav") as ClipSourceResult.Opened
+        engine.setTempo(Tempo(124), TimeSignature.FourFour)
+        engine.setMaster(0.8f)
+        engine.setArrangement(
+            ArrangementSnapshot(
+                tracks = listOf(TrackRender(1f, true), TrackRender(0.5f, false)),
+                clips = listOf(ClipRender(0, opened.handle, 0.0, 0L, 48000L, 48000)),
+            ),
+        )
+        engine.setTrack(1, 0.5f, false)
+        engine.setMetronome(true)
+        assertEquals(PlayResult.Started, engine.play())
+        engine.seek(16.0.let(::Beats))
+        engine.pause()
+        engine.closeClipSource(opened.handle)
+        engine.closeTransport()
+        assertEquals(
+            listOf(
+                "openTransport", "openClipSource(/p/audio/abc.wav)", "setTempo(124, 4/4)", "setMaster(0.8)",
+                "setArrangement(tracks=2,clips=1)", "setTrack(1,0.5,false)", "setMetronome(true)", "play", "seek(16.0)", "pause",
+                "closeClipSource(1)", "closeTransport",
+            ),
+            engine.calls,
+        )
+        assertEquals(2, engine.lastArrangement?.tracks?.size)
+    }
+
+    @Test
+    fun inspectAndClipSourcesFollowTheScript() = runTest {
+        val engine = FakeAudioEngine()
+        val flac = AudioInfo(AudioFormat.Flac, channels = 1, sampleRate = 44100, frames = 44100)
+        engine.inspectResults["/a.flac"] = flac
+        engine.inspectResults["/bad.txt"] = null
+        engine.clipSourceFailures += "/gone.wav"
+        assertEquals(flac, engine.inspect("/a.flac"))
+        assertNull(engine.inspect("/bad.txt"))
+        assertEquals(AudioFormat.Wav, engine.inspect("/unknown.wav")?.format)
+        assertEquals(ClipSourceResult.Undecodable, engine.openClipSource("/gone.wav"))
+        assertEquals(ClipSourceResult.Undecodable, engine.openClipSource("/bad.txt"))
+        val opened = engine.openClipSource("/a.flac") as ClipSourceResult.Opened
+        assertEquals(flac, opened.info)
+        assertEquals("/a.flac" to flac, engine.openClipSources[opened.handle.id])
+    }
+
+    @Test
+    fun aScriptedPlayFailureIsReturnedOnceAndLeavesTheTransportStopped() = runTest {
+        val engine = FakeAudioEngine()
+        engine.openTransport()
+        engine.failNextPlay = PlayResult.Failed(-2)
+        assertEquals(PlayResult.Failed(-2), engine.play())
+        assertTrue(!engine.transportPlaying)
+        assertEquals(PlayResult.Started, engine.play())
+        assertTrue(engine.transportPlaying)
+    }
+
+    @Test
+    fun playIsRefusedWithoutAnOpenTransport() = runTest {
+        val engine = FakeAudioEngine()
+        assertEquals(PlayResult.Failed(-1), engine.play())
+    }
+
+    @Test
+    fun readTransportCopiesTheScriptedSnapshotAndCounts() = runTest {
+        val engine = FakeAudioEngine()
+        engine.nextTransport.positionBeats = 3.5
+        engine.nextTransport.audiblePositionSeconds = 1.75
+        engine.nextTransport.sampleRate = 48000
+        val into = TransportSnapshot()
+        engine.readTransport(into)
+        engine.readTransport(into)
+        assertEquals(3.5, into.positionBeats)
+        assertEquals(1.75, into.audiblePositionSeconds)
+        assertEquals(48000, into.sampleRate)
+        assertEquals(2, engine.readTransportCount)
+    }
+
+    @Test
+    fun buildOverviewRunsTheWriterAndReportsItsAnswer() = runTest {
+        val engine = FakeAudioEngine()
+        val written = mutableListOf<String>()
+        engine.overviewWriter = { path -> written += path; path.endsWith(".peaks") }
+        assertTrue(engine.buildOverview("/a.wav", "/cache/a.peaks"))
+        assertTrue(!engine.buildOverview("/a.wav", "/cache/a.bad"))
+        assertEquals(listOf("/cache/a.peaks", "/cache/a.bad"), written)
+        assertEquals(listOf("buildOverview(/a.wav)", "buildOverview(/a.wav)"), engine.calls)
     }
 }

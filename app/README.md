@@ -9,7 +9,7 @@ C++ real-time audio engine. This folder is the Gradle root. Governing rules:
 | Need | Check | Install |
 |---|---|---|
 | JDK 21 | `java -version` | Temurin 21 |
-| Xcode 26.x with an iOS simulator runtime | `xcodebuild -version`, `xcrun simctl runtime list` | `xcodebuild -downloadPlatform iOS` (about 8 GB) |
+| Xcode 27.1 with an iOS simulator runtime (the iOS 27 iPhone and the iPhone Duo need its SDK) | `xcodebuild -version`, `xcrun simctl runtime list` | `xcodebuild -downloadPlatform iOS` (about 8 GB) |
 | Android SDK: platform 37, build-tools 36, platform-tools | `android sdk list` | `android sdk install "platforms;android-37.0" "build-tools;36.0.0" platform-tools` |
 | Android NDK 29 and CMake 3.31.6 (also used for iOS and host builds) | `ls ~/Library/Android/sdk/ndk/29.0.14206865 ~/Library/Android/sdk/cmake/3.31.6` | `android sdk install "ndk;29.0.14206865" "cmake;3.31.6"` |
 | `android` CLI | `android --version` | see the Android CLI docs; `android update` when prompted |
@@ -39,10 +39,10 @@ iOS (simulator; Xcode runs `./gradlew :shared:ui:embedAndSignAppleFrameworkForXc
 ```bash
 cd app/iosApp
 xcodebuild -project iosApp.xcodeproj -scheme iosApp -configuration Debug \
-  -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath build build
-xcrun simctl boot "iPhone 17"
-xcrun simctl install "iPhone 17" "build/Build/Products/Debug-iphonesimulator/Tembra Audio.app"
-xcrun simctl launch "iPhone 17" audio.tembra.app
+  -destination 'platform=iOS Simulator,name=iPhone 18 Pro' -derivedDataPath build build
+xcrun simctl boot "iPhone 18 Pro"
+xcrun simctl install "iPhone 18 Pro" "build/Build/Products/Debug-iphonesimulator/Tembra Audio.app"
+xcrun simctl launch "iPhone 18 Pro" audio.tembra.app
 ```
 
 Or open `app/iosApp/iosApp.xcodeproj` in Xcode and press Run. Signing: `Configuration/Config.xcconfig`
@@ -72,8 +72,8 @@ cd app
 ./gradlew checkAndroidHost     # JVM unit tests (domain, parser, ViewModel, theme.json parity)
 ./gradlew checkIos             # iOS simulator: all shared tests + Compose UI tests + native engine link
 # add -Ptembra.iosSimulator="iPad Pro 13-inch (M5)" (any simctl name or UDID) to run the iOS lane on another simulator
-# iPhone Duo (foldable): needs Xcode 27.1 beta beside the release Xcode and its iOS 27.1 runtime; build the app with
-# DEVELOPER_DIR=/Applications/Xcode-27.1-beta.app/Contents/Developer so it fills the displays (docs/research/iphone-duo.md)
+# iPhone Duo (foldable): needs Xcode 27.1 and an iOS 27.1 simulator runtime; an app built with an older SDK runs
+# pillarboxed on the inner display (docs/research/iphone-duo.md)
 ./gradlew checkAndroidDevice   # connected Android device: Compose UI tests + native engine link + AppDirectories
 ./gradlew engineHostTest       # C++ engine Catch2 tests on the macOS host (no audio device)
 ```
@@ -92,13 +92,16 @@ Where tests live:
 | `iosTest`, `androidDeviceTest` | one platform | the real `NativeAudioEngine` (descriptor, tone round trip, idle reading, `TunerSignalEndToEndTest`: every test signal through the real engine), `IosAudioSessionTest` / `AndroidAudioFocusTest`, `DataStoreTunerPreferencesTest`, platform directories; metronome: `MetronomeTimingEndToEndTest` (start latency and tick spacing through the real engine), `BecomingNoisyReceiverTest`, `DataStoreMetronomePreferencesTest`, `CustomClickSoundStoreFileTest`; `IosMicrophonePermissionTest`, `IosBackgroundPlaybackHostTest`, `IosSoundFilePickerTest` (`:shared:ui`); `AndroidBackTest` (system back through the shell, Espresso) |
 | `androidTest` (`:androidApp`) | Android device | `AndroidMicrophonePermissionTest`: the activity-hosted permission implementation; `AndroidBackgroundPlaybackHostTest` (the metronome foreground service) and `AndroidSoundFilePickerTest` (the WAV picker, through `TestSoundProvider`); run with `./gradlew :androidApp:connectedDebugAndroidTest` |
 | `androidHostTest` (`:shared:ui`) | JVM host only | `IconAssetsTest` (glyph files normalised, pinned commit, licence bundled) |
+| `commonTest` (feature 009) | JVM host, iOS simulator, Android device | `:shared:core` `project` and `timeline`: the document, the editor, the history, the playback policy, the library query, the viewport, ruler labels, snap, clip hits, time formats; `:shared:data` `projects`: the codec and its golden `fixtures/demo-project.json`, migrations, the validator, the Okio repository on `FakeFileSystem`, the importer, overviews, autosave, the demo installer, and `timeline`: the overview strip's device preference; `:shared:ui`: `ProjectSessionTest`, `ArrangementMapperTest`, `MetronomeBridgeTest`, `ShellViewModelGuardTest`, `TimelineViewModelTest`, `TrackSettingsViewModelTest`, `ProjectsViewModelTest`, `RelativeTimeTest`, `ProjectsLayoutTest`, `TimelineLayoutTest`, `TransportUiStateTest` |
+| `uiTest` (feature 009) | iOS simulator, Android device | `TransportBarTest`, `TimelineRulerTest`, `PlayheadOverlayTest`, `TrackLaneTest`, `TrackLaneGestureTest`, `TimelineScreenTest`, `TrackHeaderTest`, `GainReadoutTest`, `InstrumentLabelMenuTest`, `GridPickerTest`, `SnapSheetTest`, `OverviewStripTest`, `MasterVolumePopupTest`, `TempoDialogTest`, `MetronomeSettingsSheetTest`, `TimelineKeyboardTest`, `TimelineSemanticsTest`, `TimelineLargeFontTest`, `TrackSettingsScreenTest`, `TrackSettingsInlineRowTest`, `ProjectsScreenTest`, `ProjectCardTest`, `ProjectOverviewChartTest`, `ProjectsKeyboardTest`, `TembraMenuTest`, `TembraTooltipTest`, `TembraTextFieldTest`, `TembraDialogTest`, `TembraCardTest`, `StopAndLeaveDialogTest` |
+| `iosTest`, `androidDeviceTest` (feature 009) | one platform | `NativeAudioEngineTransportTest` and `TransportTimingEndToEndTest` (the real transport: sources, arrangement, play, seek, pause, the inspector and the overview builder; the bare simulator test process has no output unit and skips the playback checks), `IosAudioFilePickerTest`, `AudioFilePickerHostTest` and `AndroidBackgroundPlaybackHostTest` (`:androidApp`) |
 | `engine/tests` | macOS host | Catch2, offline, no audio device: `engine_info_test`, `seqlock_test`, `ring_buffer_test`, `band_pass_test`, `mpm_test` (accuracy and octave), `tuner_analyzer_test`, `tone_generator_test`, `sample_player_test`, `recordings_on_pitch_test`, `engine_core_state_test` (with `fake_audio_device.h`); metronome: `metronome_renderer_test` (ten-minute timing), `click_synth_test`, `click_sample_builder_test`, `custom_sound_loader_test` (with `wav_fixtures.h`), `triple_buffer_test` |
 
 ## Screenshots
 
 ```bash
 android screen capture --output specs/<feature>/screenshots/android-compact.png   # add --device <serial> if several
-xcrun simctl io "iPhone 17" screenshot specs/<feature>/screenshots/ios-compact.png
+xcrun simctl io "iPhone 18 Pro" screenshot specs/<feature>/screenshots/ios-compact.png
 xcrun simctl io "iPad Pro 13-inch (M5)" screenshot specs/<feature>/screenshots/ios-wide.png
 ```
 
@@ -108,7 +111,7 @@ turns a 1440 px Pixel into a 606 dp window (`wm density reset` afterwards). Name
 `<platform>-<compact|medium|expanded|short>-<destination>.png` and record devices, OS versions and outcomes of manual
 checks in `specs/<feature>/screenshots/NOTES.md`. The iOS simulator bundle identifier carries the local `TEAM_ID`
 (`audio.tembra.app<TEAM_ID>`); read it from the built `Info.plist` before `simctl launch`. Large fonts: `adb shell settings put system font_scale 2.0`
-and `xcrun simctl ui "iPhone 17" content_size accessibility-extra-extra-extra-large`; restore to `1.0` /
+and `xcrun simctl ui "iPhone 18 Pro" content_size accessibility-extra-extra-extra-large`; restore to `1.0` /
 `medium`. Compare against `design/stitch/theme.json` and `design/stitch/screens/*/screenshot.jpg`.
 
 ## Module map
@@ -120,30 +123,36 @@ app/
 │   ├── src/                engine_info.cpp (descriptor), third_party_check.cpp (compiles vendored libs)
 │   │   ├── core/           EngineCore state machine (owns the device and every renderer), miniaudio_impl.cpp
 │   │   ├── metronome/      MetronomeRenderer, click synth, sample builder, custom sound loader, resampler, triple buffer, C ABI forwarders
+│   │   ├── transport/      feature 009: TempoMap, TransportClock, TransportRenderer (the project's callback: clips → strips → bus → the anchored click), TransportRecord, C ABI forwarders
+│   │   ├── timeline/       feature 009: AudioDecoder (miniaudio's WAV/FLAC/MP3), ClipSource + SpscFifo, DiskStreamer (the reader thread), ArrangementSnapshot, OverviewBuilder (.peaks), C ABI forwarders
+│   │   ├── mixer/          feature 009: GainRamp, TrackStrip, MasterBus (the shape features 010 and later extend)
 │   │   ├── tuner/          C ABI forwarders, ring buffer, seqlock, band-pass, McLeod detector, smoother, analyzer, tone generator, sample player, WAV decoder
 │   │   └── platform/       AudioDevice seam: null (host), synthetic (test signals), android/oboe, apple/remote_io
 │   ├── third_party/        miniaudio, dr_wav, Signalsmith Stretch (+ licences)
 │   ├── tests/              Catch2 tests
 │   └── android/            :engine:android — com.android.library + CMake/NDK + Prefab Oboe → libtembra_engine.so + JNI shim
 ├── shared/
-│   ├── core/               :shared:core   — pure Kotlin domain (no Compose, no platform APIs, no project dependencies)
-│   ├── engine/             :shared:engine — AudioEngine facade (TunerAudio + MetronomeAudio): NativeAudioEngine (JNI / cinterop), FakeAudioEngine, parser
-│   ├── data/               :shared:data   — persistence: AppDirectories, tuner/ DataStore preferences (TunerPreferences, TembraDataStore), metronome/ (MetronomePreferences, CustomClickSoundStore)
+│   ├── core/               :shared:core   — pure Kotlin domain (no Compose, no platform APIs, no project dependencies; kotlinx.serialization + collections.immutable only): metronome/, tuner/, project/ (the document, ids, edits + ProjectEditor, EditHistory, TempoMap, PlaybackPolicy, LibraryQuery), timeline/ (TimelineViewport, RulerLabels, Snap, ClipHit, TimeFormat)
+│   ├── engine/             :shared:engine — AudioEngine facade (TunerAudio + MetronomeAudio + TimelineAudio): NativeAudioEngine (JNI / cinterop, ArrangementBuffer on Android), FakeAudioEngine, parser, perf/ (PerfTrace facade, catalogue enums, AudioHealth)
+│   ├── data/               :shared:data   — persistence: AppDirectories, tuner/ DataStore preferences (TunerPreferences, TembraDataStore), metronome/ (MetronomePreferences, CustomClickSoundStore), timeline/ (TimelinePreferences: whether this device shows the overview strip, `timeline.overviewStrip`), projects/ (ProjectRepository over Okio project folders + library.json, the ProjectDocumentCodec, AudioImporter, WaveformOverview, AutosaveScheduler, DemoProjectInstaller; depends on :shared:engine for the offline inspector and overview builder)
 │   └── ui/                 :shared:ui     — Compose screens, ViewModels, theme, Metro graph; iOS framework "TembraShared"
 │       ├── theme/          design tokens from design/stitch/theme.json: colours, type, shapes, spacing and chrome metrics, motion, TembraIcon registry (Material Symbols glyphs plus the project's own note figures and, since 2026-10-17, the navigation's hand-drawn tuning fork and metronome)
 │       ├── designsystem/   chrome components: TembraTopBar (not shown by the shell since 2026-10-16), TembraNavigationBar and TembraNavigationRail (icon-only, on Material 3 Expressive's ShortNavigationBar and collapsed WideNavigationRail since 2026-10-17; NavigationItemIcon shows the label as a hover tooltip, InsetFocusRing gives Material's inset focus ring), TembraSupportingPane, EmptyState, PlaceholderDestination, TembraSegmentedControl, TembraToggle, TembraStatusPill, TembraGradientCard, TembraChipRow, TembraPill, TembraSlider (expect/actual: Material's slider with a custom thumb and track), FocusRing, FrameTick
-│       ├── platform/       MicrophonePermission, BackgroundPlaybackHost, SoundFilePicker interfaces (+ IosMicrophonePermission, IosBackgroundPlaybackHost, IosSoundFilePicker in iosMain; the Android ones live in :androidApp)
+│       ├── platform/       MicrophonePermission, BackgroundPlaybackHost (+ PlaybackNotification), AudioFilePicker interfaces (+ IosMicrophonePermission, IosBackgroundPlaybackHost, IosAudioFilePicker in iosMain; the Android ones live in :androidApp)
+│       ├── session/        feature 009: ProjectSession (the open project, its history, autosave, engine binding and playback policy; the shell's PlaybackGuard), TransportTelemetry, DialogRequest, AppStartup
+│       ├── transport/      feature 009: TransportBar and its parts (TimeReadout reads the telemetry in draw, MasterVolumeSlider, MasterVolumePopup (the phone bar's speaker button and pop-up slider, D1), MetronomeToggle, TransportButton)
+│       ├── tracksettings/  feature 009: TrackSettingsViewModel (one track's fields as session edits, the name draft carried through ProjectSession.settingsDraft across 840 dp), TrackSettingsForm (+ GainSlider, EffectsPlaceholder), the nested TrackSettingsScreen (TrackSettingsKey) and the expanded layout's TrackSettingsInlineRow
 │       ├── navigation/     the shell: Destination registry, ShellViewModel, LayoutMode, NavigationShell, Navigation 3 wiring (TembraNavDisplay), SupportingPaneSceneStrategy
 │       ├── metronome/      MetronomeScreen + MetronomeViewModel, PlaybackPolicy, MetronomeSettingsPanel; components/ (TempoDial, TempoSlider, AccentCells, StyleRow, ClickSoundPicker, TapTempoButton, PlayPauseButton, MetronomeDefaults)
-│       ├── timeline/ projects/ profile/   one package per destination (TimelineScreen, ...); each independent of the shell; home/ keeps only LibraryPane, which no destination declares since Home was removed (2026-10-17)
+│       ├── timeline/ projects/ profile/   one package per destination; feature 009 fills timeline/ (TimelineScreen + TimelineViewModel over ProjectSession, TimelineKeyHandling; components/ with the Canvas ruler, TrackLane + ClipPainter, PlayheadOverlay, ViewportGestures, the toolbar with its TempoPill, headers, menus, TempoDialog, MetronomeSettingsSheet (the signature since D1), SnapSheet, and the OverviewStrip, the always-visible zoom control, inset from the window's sides and hidden or shown from the toolbar's overflow menu) and projects/ (ProjectsViewModel over the repository's index and the app-scoped LibraryViewStateHolder, ProjectsScreen; components/ with ProjectCard, ProjectOverviewChart, LibrarySearchField, LibraryFilterChips, SortMenu, RelativeTime and the four dialogs); each independent of the shell; home/ keeps only LibraryPane, which no destination declares since Home was removed (2026-10-17)
 │       ├── tuner/          TunerScreen + TunerViewModel, ListeningPolicy, TunerMeter (one Canvas), NoiseGateSlider (the noise gate control over the live input level), By Ear cards, ReferenceSoundRepository, test-signal and noise-gate requests
 │       └── devtools/       debug-only developer views (DesignTokenPreview behind a launch argument)
-├── androidApp/             :androidApp — TembraApplication (Metro graph), MainActivity, AndroidMicrophonePermission + MicrophonePermissionHost, MetronomeForegroundService + AndroidBackgroundPlaybackHost, SoundFilePickerHost + AndroidSoundFilePicker
+├── androidApp/             :androidApp — TembraApplication (Metro graph), MainActivity, AndroidMicrophonePermission + MicrophonePermissionHost, PlaybackForegroundService + AndroidBackgroundPlaybackHost (the metronome and the transport), AudioFilePickerHost + AndroidAudioFilePicker (OpenDocument / OpenMultipleDocuments)
 ├── iosApp/                 Xcode project; two Swift files host MainViewController()
-└── tools/                  fetch-material-symbols.sh (glyphs at a pinned commit); make-note-glyphs.py (the note-figure glyphs); make-nav-glyphs.py (the navigation's hand-drawn Tuner and Metronome glyphs and the metronome notification's status-bar icon; `--preview <dir>` writes a preview sheet); capture-tuner-states.sh (the tuner's test-signal screenshot matrix); capture-noise-gate.sh (the noise gate control on one target in one orientation, with a layout check on Android)
+└── tools/                  fetch-material-symbols.sh (glyphs at a pinned commit); make-note-glyphs.py (the note-figure glyphs); make-nav-glyphs.py (the navigation's hand-drawn Tuner and Metronome glyphs and the metronome notification's status-bar icon; `--preview <dir>` writes a preview sheet); make-demo-audio.py (the demo project's four loops under shared/ui/src/commonMain/composeResources/files/demo/, regenerated with `uv run --with numpy python tools/make-demo-audio.py`); capture-tuner-states.sh (the tuner's test-signal screenshot matrix); capture-noise-gate.sh (the noise gate control on one target in one orientation, with a layout check on Android)
 ```
 
-Dependencies point inward: apps → `:shared:ui` → `:shared:engine` / `:shared:data` → `:shared:core`.
+Dependencies point inward: apps → `:shared:ui` → `:shared:data` → `:shared:engine` → `:shared:core` (`:shared:data` uses the engine's offline audio tools since feature 009).
 A dependency in the wrong direction fails configuration (`tembra.kmp.library`).
 
 ## Where does X go?
@@ -168,6 +177,7 @@ A dependency in the wrong direction fails configuration (`tembra.kmp.library`).
 | a performance round or session | `app/perf/` (`uv run tracepulse run --device <id> --label <feature> [--rounds 5]`), config `app/tracepulse.yml`, records on the `perf-history` branch | user tooling: it calls `./gradlew --console=plain -Ptembra.perf=true` itself; an agent builds through `gradle-run` and passes `--no-build --apk … --test-apk …`; raw traces stay in `app/perf/data/` (git-ignored) |
 | a benchmark journey | `perf-benchmarks/src/main/kotlin/audio/tembra/perf/journeys/` (UiAutomator over `PerfAnchors`) + a benchmark class; `iosApp/TembraPerfTests/Journeys/` + a test case; the name in `app/tracepulse.yml` | `:perf-benchmarks` is included only with `-Ptembra.perf=true`; anchors are `testTag`s listed in `audio.tembra.ui.perf.PerfAnchors`, mirrored in both drivers |
 | a named performance section or counter | `app/shared/engine/perf-catalogue.txt` + `PerfSection`/`PerfCounter`, then `PerfTrace.section { }` around non-composable work (or `TEMBRA_TRACE_SCOPE` in the engine's non-real-time code) | the only source of names; `generateTraceNames` keeps `engine/include/tembra_trace_names.h` in step; never on the audio callback (the poison test proves it); every feature instruments itself (constitution) |
+| the demo project's audio | `shared/ui/src/commonMain/composeResources/files/demo/{drums,bass,keys,pad}.wav`, written by `uv run --with numpy python tools/make-demo-audio.py` (feature 009, research R18) | generated, never hand-edited: 16 bars of 4/4 at 124 BPM (1 486 452 frames at 48 kHz, 16-bit); the installer reads them through `DemoAudioSource` |
 | a reference recording | `shared/ui/src/commonMain/composeResources/files/tuner/<instrument>-<note>.wav` (`guitar-E2.wav`, `guitar-Fsharp3.wav`, `cello-C2.wav`) | PCM or float WAV, mono or stereo, any rate, at least 1 s; `engineHostTest` fails if it is more than 1 cent off its note; none ships |
 | a design glyph that Material Symbols lacks | hand-written `ic_<name>_24.xml` under `composeResources/drawable/` with the header `<!-- Tembra design glyph "<name>" from <stitch screen>; hand-converted, do not edit -->`, then a `TembraIcon` value | 24 × 24 viewport, one path, `android:fillColor="#FFFFFFFF"`; `IconAssetsTest` checks it |
 | a note-figure glyph (metronome subdivisions) | edit the figure in `tools/make-note-glyphs.py`, then `python3 tools/make-note-glyphs.py` (rewrites every `ic_note_*_24.xml`; `--preview <dir>` writes an HTML sheet and the SVG path JSON) and a `TembraIcon` value | generated, not hand-edited: head, stem, beam and flag proportions are shared constants so the figures stay one family |

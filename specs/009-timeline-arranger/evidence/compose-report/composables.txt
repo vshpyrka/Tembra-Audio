@@ -1,0 +1,1395 @@
+restartable skippable scheme("[androidx.compose.ui.UiComposable, [androidx.compose.ui.UiComposable], [androidx.compose.ui.UiComposable]]") fun audio.tembra.ui.designsystem.PlatformSlider(
+  stable value: Float
+  stable onValueChange: Function1<Float, Unit>
+  stable modifier: Modifier
+  stable valueRange: ClosedFloatingPointRange<Float>
+  stable steps: Int
+  stable onValueChangeFinished: Function0<Unit>?
+  stable interactionSource: MutableInteractionSource
+  stable thumb: Function3<SliderState, Composer, Int, Unit>
+  stable track: Function3<SliderState, Composer, Int, Unit>
+)
+fun audio.tembra.ui.perf.rememberEngineHealthWriter()
+restartable skippable fun audio.tembra.ui.perf.ReportFirstContentDrawn(
+  stable ready: Boolean
+)
+restartable skippable scheme("[0, [0]]") fun audio.tembra.ui.platform.ProvideLaidOutWindowSize(
+  stable content: Function2<Composer, Int, Unit>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.App(
+  appGraph: AppGraph
+  developerView: DeveloperViewRequest? = @dynamic <expression>
+  tunerTestSignal: TestSignal? = @static null
+  tunerNoiseGate: TunerNoiseGateRequest? = @static null
+  metronomeDebug: MetronomeDebugRequest? = @static null
+  projectsSeed: ProjectsSeedRequest? = @static null
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable, [androidx.compose.ui.UiComposable]]") fun audio.tembra.ui.AppContent(
+  developerView: DeveloperViewRequest
+  stable shell: Function2<Composer, Int, Unit>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.designsystem.EmptyState(
+  stable message: String
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable, [_], [_]]") fun audio.tembra.ui.designsystem.FoldSplit(
+  stable fold: TabletopFold?
+  stable modifier: Modifier? = @static <expression>
+  stable gutter: Dp = @dynamic <expression>
+  stable upper: Function2<Composer, Int, Unit>
+  stable lower: Function2<Composer, Int, Unit>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable, [_], [_]]") fun audio.tembra.ui.designsystem.FoldSplitRow(
+  stable fold: VerticalFold?
+  stable modifier: Modifier? = @static <expression>
+  stable gutter: Dp = @dynamic <expression>
+  stable start: Function2<Composer, Int, Unit>
+  stable end: Function2<Composer, Int, Unit>
+)
+fun audio.tembra.ui.designsystem.rememberFrameTick(
+  stable active: Boolean
+): LongState
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.designsystem.NavigationItemIcon(
+  item: NavigationItemSpec
+  stable interactionSource: MutableInteractionSource
+  stable position: TooltipAnchorPosition
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.designsystem.PlaceholderDestination(
+  stable destination: Destination
+  stable modifier: Modifier? = @static <expression>
+  stable windowWidth: WindowWidth? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.designsystem.StopAndLeaveDialog(
+  stable onConfirm: Function0<Unit>
+  stable onCancel: Function0<Unit>
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable, [androidx.compose.ui.UiComposable]]") fun audio.tembra.ui.designsystem.TembraCard(
+  stable modifier: Modifier? = @static <expression>
+  stable elevated: Boolean = @static false
+  stable testTag: String? = @static null
+  stable content: @[ExtensionFunctionType] Function3<BoxScope, Composer, Int, Unit>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.designsystem.TembraChipRow(
+  items: List<ChipSpec>
+  stable selectedId: String
+  stable onSelect: Function1<String, Unit>
+  stable accent: ChipAccent
+  stable modifier: Modifier? = @static <expression>
+  stable columns: Int = @dynamic <expression>
+  stable testTag: String? = @static null
+)
+fun audio.tembra.ui.designsystem.rememberWidestChip(
+  items: List<ChipSpec>
+): Dp
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.designsystem.Chip(
+  stable <this>: RowScope
+  item: ChipSpec
+  stable selected: Boolean
+  stable accent: ChipAccent
+  stable onSelect: Function1<String, Unit>
+  stable testTag: String?
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.designsystem.TembraDialog(
+  stable title: String
+  stable text: String
+  confirm: DialogAction
+  dismiss: DialogAction
+  stable modifier: Modifier? = @static <expression>
+  stable testTag: String? = @static null
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable, [androidx.compose.ui.UiComposable]]") fun audio.tembra.ui.designsystem.TembraGradientCard(
+  stable glow: RadialGlow
+  stable modifier: Modifier? = @static <expression>
+  stable discs: CardDiscs? = @static <expression>
+  stable overlay: LinearGlow? = @static null
+  stable testTag: String? = @static null
+  stable content: @[ExtensionFunctionType] Function3<BoxScope, Composer, Int, Unit>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable, [androidx.compose.ui.UiComposable]]") fun audio.tembra.ui.designsystem.TembraMenu(
+  stable expanded: Boolean
+  stable onDismiss: Function0<Unit>
+  items: List<MenuItemSpec>
+  stable onSelect: Function1<String, Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable testTag: String? = @static null
+  stable anchor: Function2<Composer, Int, Unit>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.designsystem.TembraMenuRow(
+  item: MenuItemSpec
+  stable onClick: Function0<Unit>
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.designsystem.TembraNavigationBar(
+  items: List<NavigationItemSpec>
+  stable selectedId: String
+  stable onSelect: Function1<String, Unit>
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.designsystem.TembraNavigationRail(
+  items: List<NavigationItemSpec>
+  stable selectedId: String
+  stable onSelect: Function1<String, Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable itemsAlignment: Vertical? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.designsystem.TembraPill(
+  stable text: String
+  stable selected: Boolean
+  stable onClick: Function0<Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable interactionSource: MutableInteractionSource? = @static null
+  stable testTag: String? = @static null
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.designsystem.TembraSegmentedControl(
+  items: List<SegmentSpec>
+  stable selectedId: String
+  stable onSelect: Function1<String, Unit>
+  stable style: SegmentedStyle
+  stable modifier: Modifier? = @static <expression>
+  stable accent: SegmentAccent? = @static <expression>
+  stable widths: SegmentWidths? = @static <expression>
+  stable testTag: String? = @static null
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.designsystem.Segment(
+  stable <this>: RowScope
+  item: SegmentSpec
+  stable selected: Boolean
+  stable style: SegmentedStyle
+  stable accent: SegmentAccent
+  stable segmentHeight: Dp
+  stable equalWidth: Boolean
+  stable onSelect: Function1<String, Unit>
+  stable testTag: String?
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable, [androidx.compose.ui.UiComposable], [androidx.compose.ui.UiComposable]]") fun audio.tembra.ui.designsystem.TembraSlider(
+  stable value: Float
+  stable onValueChange: Function1<Float, Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable valueRange: ClosedFloatingPointRange<Float>? = @dynamic <expression>
+  stable steps: Int = @static 0
+  stable onValueChangeFinished: Function0<Unit>? = @static null
+  stable interactionSource: MutableInteractionSource
+  stable thumb: Function3<SliderState, Composer, Int, Unit>
+  stable track: Function3<SliderState, Composer, Int, Unit>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.designsystem.TembraSliderThumb(
+  stable interactionSource: MutableInteractionSource
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.designsystem.TembraStatusPill(
+  stable text: String
+  stable color: Color
+  stable modifier: Modifier? = @static <expression>
+  stable icon: TembraIcon? = @static null
+  stable pulsing: Boolean = @static false
+  stable testTag: String? = @static null
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable, [androidx.compose.ui.UiComposable]]") fun audio.tembra.ui.designsystem.TembraSupportingPane(
+  stable title: String
+  stable modifier: Modifier? = @static <expression>
+  stable content: @[ExtensionFunctionType] Function3<ColumnScope, Composer, Int, Unit>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable, [androidx.compose.ui.UiComposable], [androidx.compose.ui.UiComposable]]") fun audio.tembra.ui.designsystem.TembraTextField(
+  stable value: String
+  stable onValueChange: Function1<String, Unit>
+  stable label: String
+  stable modifier: Modifier? = @static <expression>
+  stable singleLine: Boolean = @static true
+  stable maxLength: Int = @static 2147483647
+  stable error: String? = @static null
+  stable placeholder: String? = @static null
+  stable interactionSource: MutableInteractionSource? = @static null
+  stable testTag: String? = @static null
+  stable leading: Function2<Composer, Int, Unit>? = @static null
+  stable trailing: Function2<Composer, Int, Unit>? = @static null
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.designsystem.TembraToggle(
+  stable checked: Boolean
+  stable onCheckedChange: Function1<Boolean, Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable testTag: String? = @static null
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable, [androidx.compose.ui.UiComposable]]") fun audio.tembra.ui.designsystem.TembraTooltip(
+  stable text: String
+  stable interactionSource: MutableInteractionSource
+  stable modifier: Modifier? = @static <expression>
+  stable testTag: String? = @static null
+  stable content: Function2<Composer, Int, Unit>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.designsystem.TembraTopBar(
+  stable title: String
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.devtools.DesignTokenPreview(
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.devtools.Swatch(
+  stable name: String
+  stable color: Color
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.devtools.DeveloperViewScreen(
+  stable view: DeveloperView
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.home.LibraryPane(
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.MetronomeScreen(
+  stable modifier: Modifier? = @static <expression>
+  viewModel: MetronomeViewModel? = @dynamic <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.MetronomeScreenContent(
+  state: MetronomeUiState
+  callbacks: MetronomeCallbacks
+  telemetry: BeatTelemetry
+  stable layout: MetronomeLayout
+  stable snackbarHostState: SnackbarHostState
+  stable modifier: Modifier? = @static <expression>
+  stable fold: TabletopFold? = @static null
+  stable verticalFold: VerticalFold? = @static null
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.StackedMetronome(
+  state: MetronomeUiState
+  callbacks: MetronomeCallbacks
+  telemetry: BeatTelemetry
+  stable modifier: Modifier
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.PocketMetronome(
+  state: MetronomeUiState
+  callbacks: MetronomeCallbacks
+  telemetry: BeatTelemetry
+  stable modifier: Modifier
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.TempoCard(
+  state: MetronomeUiState
+  callbacks: MetronomeCallbacks
+  stable slider: Boolean
+  stable onSettings: Function0<Unit>
+  stable modifier: Modifier
+)
+fun audio.tembra.ui.metronome.pocketHeights()
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.SettingsButton(
+  stable onClick: Function0<Unit>
+  stable modifier: Modifier
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable, [_], [_]]") fun audio.tembra.ui.metronome.SettingsOverDial(
+  stable viewportHeight: Dp
+  stable gap: Dp
+  stable minDialCardHeight: Dp
+  stable modifier: Modifier
+  stable settings: Function2<Composer, Int, Unit>
+  stable dialCard: Function2<Composer, Int, Unit>
+)
+fun audio.tembra.ui.metronome.dialCardChrome()
+fun audio.tembra.ui.metronome.compactDialMin()
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.WideMetronome(
+  state: MetronomeUiState
+  callbacks: MetronomeCallbacks
+  telemetry: BeatTelemetry
+  stable verticalFold: VerticalFold?
+  stable modifier: Modifier
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.LandscapeMetronome(
+  state: MetronomeUiState
+  callbacks: MetronomeCallbacks
+  telemetry: BeatTelemetry
+  stable modifier: Modifier
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.TabletopMetronome(
+  state: MetronomeUiState
+  callbacks: MetronomeCallbacks
+  telemetry: BeatTelemetry
+  stable fold: TabletopFold?
+  stable modifier: Modifier
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.TabletopControlDeck(
+  state: MetronomeUiState
+  callbacks: MetronomeCallbacks
+  stable modifier: Modifier
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.TabletopDialCard(
+  state: MetronomeUiState
+  callbacks: MetronomeCallbacks
+  stable modifier: Modifier
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.FilledAccentCard(
+  state: MetronomeUiState
+  callbacks: MetronomeCallbacks
+  telemetry: BeatTelemetry
+  stable modifier: Modifier
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.AccentCard(
+  state: MetronomeUiState
+  callbacks: MetronomeCallbacks
+  telemetry: BeatTelemetry
+  stable barHeight: Dp
+  stable modifier: Modifier
+)
+fun audio.tembra.ui.metronome.landscapeDialChrome()
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.LandscapeDialPane(
+  state: MetronomeUiState
+  callbacks: MetronomeCallbacks
+  stable block: LandscapeBlock
+  stable modifier: Modifier
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable, [androidx.compose.ui.UiComposable]]") fun audio.tembra.ui.metronome.DialCard(
+  state: MetronomeUiState
+  callbacks: MetronomeCallbacks
+  stable discs: CardDiscs
+  stable modifier: Modifier
+  stable sliderMaxWidth: Dp = @static <expression>
+  stable padding: Dp = @dynamic <expression>
+  stable dial: @[ExtensionFunctionType] Function3<ColumnScope, Composer, Int, Unit>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.DialInCard(
+  stable <this>: ColumnScope
+  state: MetronomeUiState
+  callbacks: MetronomeCallbacks
+  stable cap: Dp
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.TempoDialFor(
+  state: MetronomeUiState
+  callbacks: MetronomeCallbacks
+  stable modifier: Modifier
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.TransportRow(
+  state: MetronomeUiState
+  callbacks: MetronomeCallbacks
+  stable modifier: Modifier
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.TapTempoFor(
+  state: MetronomeUiState
+  callbacks: MetronomeCallbacks
+  stable modifier: Modifier
+  stable minHeight: Dp = @dynamic <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.MetronomeSettingsPanel(
+  state: MetronomeUiState
+  callbacks: MetronomeCallbacks
+  telemetry: BeatTelemetry
+  stable layout: MetronomeLayout
+  stable modifier: Modifier? = @static <expression>
+  stable pocketCells: Boolean = @static false
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.BarShapeCard(
+  state: MetronomeUiState
+  callbacks: MetronomeCallbacks
+  telemetry: BeatTelemetry
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.LandscapeBarShapeCard(
+  state: MetronomeUiState
+  callbacks: MetronomeCallbacks
+  telemetry: BeatTelemetry
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.PocketSettingsCard(
+  state: MetronomeUiState
+  callbacks: MetronomeCallbacks
+  telemetry: BeatTelemetry
+  stable cells: Boolean
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.SectionCards(
+  state: MetronomeUiState
+  callbacks: MetronomeCallbacks
+  telemetry: BeatTelemetry
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.Cells(
+  state: MetronomeUiState
+  callbacks: MetronomeCallbacks
+  telemetry: BeatTelemetry
+  stable gap: Dp
+  stable form: AccentCellsForm? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.SoundPicker(
+  state: MetronomeUiState
+  callbacks: MetronomeCallbacks
+  stable layout: ClickSoundPickerLayout
+  stable modifier: Modifier
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable, [androidx.compose.ui.UiComposable]]") fun audio.tembra.ui.metronome.SectionCard(
+  stable modifier: Modifier? = @static <expression>
+  stable gap: Dp = @dynamic <expression>
+  stable content: @[ExtensionFunctionType] Function3<ColumnScope, Composer, Int, Unit>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.SectionHeader(
+  stable label: String
+  stable caption: String? = @static null
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable, [androidx.compose.ui.UiComposable]]") fun audio.tembra.ui.metronome.components.AccentCell(
+  stable index: Int
+  stable level: BeatLevel
+  stable lit: Function0<Boolean>
+  stable playing: Boolean
+  stable onClick: Function0<Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable interactionSource: MutableInteractionSource? = @static null
+  stable testTag: String? = @static null
+  stable barHeight: Dp = @dynamic <expression>
+  stable label: Function2<Composer, Int, Unit>? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.components.AccentCellLabel(
+  stable level: BeatLevel
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.components.AccentCells(
+  pattern: AccentPattern
+  stable running: Boolean
+  stable currentBeat: Int
+  telemetry: BeatTelemetry
+  stable onCycle: Function1<Int, Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable gap: Dp = @dynamic <expression>
+  stable form: AccentCellsForm? = @static <expression>
+  stable barHeight: Dp = @static <expression>
+  stable testTag: String? = @static "metronome.cells"
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.components.ClickSoundPicker(
+  sound: ClickSound
+  customSound: CustomSoundState
+  stable layout: ClickSoundPickerLayout
+  stable onSelect: Function1<ClickSound, Unit>
+  stable onImportCustom: Function0<Unit>
+  stable onReplaceCustom: Function0<Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable testTag: String? = @static "metronome.sound"
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.components.SoundDropdown(
+  sound: ClickSound
+  customSound: CustomSoundState
+  stable customName: String?
+  stable customSelected: Boolean
+  stable onSelect: Function1<ClickSound, Unit>
+  stable onCustom: Function0<Unit>
+  stable onReplace: Function0<Unit>?
+  stable testTag: String
+  stable modifier: Modifier
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable, [androidx.compose.ui.UiComposable]]") fun audio.tembra.ui.metronome.components.SoundMenuItem(
+  stable label: String
+  stable selected: Boolean
+  stable trailing: TembraIcon?
+  stable trailingTag: String
+  stable testTag: String
+  stable onClick: Function0<Unit>
+  stable contentDescription: String? = @static null
+  stable enabled: Boolean = @static true
+  stable action: Function2<Composer, Int, Unit>? = @static null
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.components.SoundTiles(
+  sound: ClickSound
+  customSound: CustomSoundState
+  stable customName: String?
+  stable customSelected: Boolean
+  stable onSelect: Function1<ClickSound, Unit>
+  stable onCustom: Function0<Unit>
+  stable onReplace: Function0<Unit>?
+  stable testTag: String
+  stable modifier: Modifier
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.components.ReplaceCustomButton(
+  stable onReplace: Function0<Unit>
+  stable testTag: String
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable, [androidx.compose.ui.UiComposable]]") fun audio.tembra.ui.metronome.components.ClickSoundTile(
+  stable label: String
+  stable icon: TembraIcon
+  stable selected: Boolean
+  stable onClick: Function0<Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable dashed: Boolean = @static false
+  stable enabled: Boolean = @static true
+  stable muted: Boolean = @static false
+  stable trailing: Function2<Composer, Int, Unit>? = @static null
+  stable interactionSource: MutableInteractionSource? = @static null
+  stable testTag: String? = @static null
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.components.MenuPill(
+  stable label: String
+  stable description: String
+  entries: List<MenuEntry>
+  stable selectedId: String?
+  stable onSelect: Function1<String, Unit>
+  stable testTag: String
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.components.PlayPauseButton(
+  stable running: Boolean
+  stable onToggle: Function0<Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable diameter: Dp = @dynamic <expression>
+  stable interactionSource: MutableInteractionSource? = @static null
+  stable testTag: String? = @static "metronome.play"
+  stable startDescription: String? = @static "Start metronome"
+  stable stopDescription: String? = @static "Stop metronome"
+)
+fun audio.tembra.ui.metronome.components.rememberGlowPulse(
+  stable active: Boolean
+): State<Float>?
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.components.SectionLabel(
+  stable text: String
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.components.StyleMenu(
+  stable selected: MetronomeStyle?
+  stable onSelect: Function1<MetronomeStyle, Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable testTag: String? = @static "metronome.style"
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.components.StyleRow(
+  stable selected: MetronomeStyle?
+  stable onSelect: Function1<MetronomeStyle, Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable testTag: String? = @static "metronome.style"
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.components.SubdivisionChips(
+  stable selected: Subdivision
+  stable unit: BeatUnit
+  stable onSelect: Function1<Subdivision, Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable testTag: String? = @static "metronome.subdivision"
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.components.SubdivisionTiles(
+  stable selected: Subdivision
+  stable unit: BeatUnit
+  stable onSelect: Function1<Subdivision, Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable testTag: String? = @static "metronome.subdivision"
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.components.SubdivisionTile(
+  stable icon: TembraIcon
+  stable label: String
+  stable selected: Boolean
+  stable onClick: Function0<Unit>
+  stable testTag: String
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.components.TapTempoButton(
+  stable caption: String
+  stable onTap: Function1<@[ParameterName(name = 'frameNanos')] Long, Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable stateDescription: String? = @dynamic caption
+  stable minHeight: Dp = @dynamic <expression>
+  stable interactionSource: MutableInteractionSource? = @static null
+  stable testTag: String? = @static "metronome.tap"
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable, [androidx.compose.ui.UiComposable]]") fun audio.tembra.ui.metronome.components.TempoDial(
+  stable tempo: Tempo
+  stable marking: TempoMarking
+  stable canStepDown: Boolean
+  stable canStepUp: Boolean
+  stable onTempo: Function1<Tempo, Unit>
+  stable onStep: Function1<Int, Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable center: Function2<Composer, Int, Unit>? = @static <expression>
+  stable interactionSource: MutableInteractionSource? = @static null
+  stable testTag: String? = @static "metronome.dial"
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.components.TempoReadout(
+  stable tempo: Tempo
+  stable marking: TempoMarking
+  stable modifier: Modifier? = @static <expression>
+  stable markingBeside: Boolean = @static false
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.components.NumberLine(
+  stable tempo: Tempo
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.components.MarkingLine(
+  stable marking: TempoMarking
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable, [androidx.compose.ui.UiComposable]]") fun audio.tembra.ui.metronome.components.TempoRow(
+  stable tempo: Tempo
+  stable marking: TempoMarking
+  stable canStepDown: Boolean
+  stable canStepUp: Boolean
+  stable onTempo: Function1<Tempo, Unit>
+  stable onStep: Function1<Int, Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable testTag: String? = @static "metronome.tempoRow"
+  stable trailing: Function2<Composer, Int, Unit>? = @static null
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.components.TempoSlider(
+  stable tempo: Tempo
+  stable onTempo: Function1<Tempo, Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable interactionSource: MutableInteractionSource? = @static null
+  stable testTag: String? = @static "metronome.slider"
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.components.TempoStepper(
+  stable icon: TembraIcon
+  stable enabled: Boolean
+  stable contentDescription: String
+  stable onStep: Function0<Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable interactionSource: MutableInteractionSource? = @static null
+  stable testTag: String? = @static null
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.components.TimeSignatureChips(
+  stable selected: TimeSignature
+  stable onSelect: Function1<TimeSignature, Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable columns: Int = @dynamic <expression>
+  stable testTag: String? = @static "metronome.signature"
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.metronome.components.TimeSignatureMenu(
+  stable selected: TimeSignature
+  stable onSelect: Function1<TimeSignature, Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable testTag: String? = @static "metronome.signature"
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.navigation.DestinationContent(
+  stable destination: Destination
+  stable onOpenTrackSettings: Function1<TrackId, Unit>? = @static <expression>
+  stable nestedTrackSettings: TrackId? = @static null
+  stable onCloseTrackSettings: Function0<Unit>? = @static <expression>
+  stable onSelectDestination: Function1<Destination, Unit>? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.navigation.NavigationShell(
+  stable modifier: Modifier? = @static <expression>
+  viewModel: ShellViewModel? = @dynamic <expression>
+  stable layoutMode: LayoutMode? = @dynamic <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.navigation.NavigationShellContent(
+  state: ShellUiState
+  stable layoutMode: LayoutMode
+  stable onSelect: Function1<Destination, Unit>
+  stable onBack: Function0<Unit>
+  stable modifier: Modifier? = @static <expression>
+  dialog: DialogRequest? = @static null
+  stable onOpenTrackSettings: Function1<TrackId, Unit>? = @static <expression>
+  stable onCloseTrackSettings: Function0<Unit>? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.navigation.EndRailFrame(
+  items: List<NavigationItemSpec>
+  state: ShellUiState
+  stable onSelect: Function1<String, Unit>
+  stable onBack: Function0<Unit>
+  stable onOpenTrackSettings: Function1<TrackId, Unit>
+  stable onCloseTrackSettings: Function0<Unit>
+  stable onSelectDestination: Function1<Destination, Unit>
+)
+fun audio.tembra.ui.navigation.rememberLayoutMode()
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.navigation.SupportingPaneContent(
+  stable pane: SupportingPane
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.navigation.TembraNavDisplay(
+  backStack: List<NavKey>
+  stable layoutMode: LayoutMode
+  stable onBack: Function0<Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable onOpenTrackSettings: Function1<TrackId, Unit>? = @static <expression>
+  stable nestedTrackSettings: TrackId? = @static null
+  stable onCloseTrackSettings: Function0<Unit>? = @static <expression>
+  stable onSelectDestination: Function1<Destination, Unit>? = @static <expression>
+)
+restartable skippable fun audio.tembra.ui.perf.AudioHealthTicker(
+  engine: AudioEngine
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.perf.AudioHealthWriteButton(
+  engine: AudioEngine
+  stable modifier: Modifier? = @static <expression>
+  writer: EngineHealthWriter? = @dynamic <expression>
+)
+fun audio.tembra.ui.posture.currentTabletopFold()
+fun audio.tembra.ui.posture.currentVerticalFold()
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.profile.ProfileScreen(
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.projects.ProjectsScreen(
+  stable modifier: Modifier? = @static <expression>
+  viewModel: ProjectsViewModel? = @dynamic <expression>
+  stable onOpenTimeline: Function0<Unit>? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.projects.ProjectsScreenContent(
+  stable state: ProjectsUiState
+  callbacks: ProjectsCallbacks
+  stable layout: ProjectsLayout
+  stable snackbarHostState: SnackbarHostState
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.projects.components.DeleteProjectDialog(
+  stable name: String
+  stable onConfirm: Function0<Unit>
+  stable onCancel: Function0<Unit>
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.projects.components.DescribeProjectDialog(
+  stable description: String
+  stable error: String?
+  stable onConfirm: Function1<String, Unit>
+  stable onDismiss: Function0<Unit>
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.projects.components.KeyPickerDialog(
+  stable selected: MusicalKey?
+  stable onConfirm: Function1<MusicalKey?, Unit>
+  stable onDismiss: Function0<Unit>
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.projects.components.KeyRow(
+  stable label: String
+  stable selected: Boolean
+  stable onClick: Function0<Unit>
+  stable testTag: String
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.projects.components.LibraryFilterChips(
+  stable filter: LibraryFilter
+  stable onFilter: Function1<LibraryFilter, Unit>
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.projects.components.LibrarySearchField(
+  stable text: String
+  stable onText: Function1<String, Unit>
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.projects.components.ProjectBadge(
+  stable text: String
+  stable accent: Boolean
+  stable modifier: Modifier? = @static <expression>
+  stable testTag: String? = @static null
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.projects.components.ProjectCard(
+  stable card: ProjectCardUi
+  stable layout: ProjectsLayout
+  callbacks: ProjectsCallbacks
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable, [androidx.compose.ui.UiComposable]]") fun audio.tembra.ui.projects.components.ProjectCardMenu(
+  stable expanded: Boolean
+  stable isDemo: Boolean
+  stable onDismiss: Function0<Unit>
+  stable onRename: Function0<Unit>
+  stable onDescribe: Function0<Unit>
+  stable onKey: Function0<Unit>
+  stable onDuplicate: Function0<Unit>
+  stable onDelete: Function0<Unit>
+  stable onRestoreDemo: Function0<Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable testTag: String? = @static null
+  stable anchor: Function2<Composer, Int, Unit>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.projects.components.ProjectOverviewChart(
+  unstable overview: CardOverview
+  stable asLine: Boolean
+  stable modifier: Modifier? = @static <expression>
+  stable height: Dp = @static <expression>
+  stable testTag: String? = @static null
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.projects.components.ProjectStat(
+  stable text: String
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.projects.components.ProjectTextDialog(
+  stable title: String
+  stable label: String
+  stable initial: String
+  stable maxLength: Int
+  stable error: String?
+  stable onConfirm: Function1<String, Unit>
+  stable onDismiss: Function0<Unit>
+  stable testTag: String
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.projects.components.RenameProjectDialog(
+  stable name: String
+  stable error: String?
+  stable onConfirm: Function1<String, Unit>
+  stable onDismiss: Function0<Unit>
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.projects.components.SortMenu(
+  stable sort: LibrarySort
+  stable onSort: Function1<LibrarySort, Unit>
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable fun audio.tembra.ui.session.AppLifecycleObserver(
+  session: ProjectSession
+)
+fun audio.tembra.ui.theme.rememberReduceMotion()
+fun audio.tembra.ui.theme.TembraFonts.spaceGrotesk(
+  unused stable <this>: TembraFonts
+): FontFamily
+fun audio.tembra.ui.theme.TembraFonts.inter(
+  unused stable <this>: TembraFonts
+): FontFamily
+fun audio.tembra.ui.theme.TembraFonts.of(
+  stable font: TembraFont
+  stable <this>: TembraFonts
+): FontFamily
+fun audio.tembra.ui.theme.TembraIcons.vector(
+  stable icon: TembraIcon
+  unused stable <this>: TembraIcons
+): ImageVector
+restartable skippable scheme("[0, [0]]") fun audio.tembra.ui.theme.TembraTheme(
+  stable content: Function2<Composer, Int, Unit>
+)
+readonly fun audio.tembra.ui.theme.TembraTheme.<get-colors>(
+  unused stable <this>: TembraTheme
+): ColorScheme
+readonly fun audio.tembra.ui.theme.TembraTheme.<get-daw>(
+  unused stable <this>: TembraTheme
+): DawColors
+readonly fun audio.tembra.ui.theme.TembraTheme.<get-typography>(
+  unused stable <this>: TembraTheme
+): Typography
+readonly fun audio.tembra.ui.theme.TembraTheme.<get-typographyExtras>(
+  unused stable <this>: TembraTheme
+): TembraTypographyExtras
+readonly fun audio.tembra.ui.theme.TembraTheme.<get-shapes>(
+  unused stable <this>: TembraTheme
+): Shapes
+readonly fun audio.tembra.ui.theme.TembraTheme.<get-spacing>(
+  unused stable <this>: TembraTheme
+): TembraSpacing
+readonly fun audio.tembra.ui.theme.TembraTheme.<get-motion>(
+  unused stable <this>: TembraTheme
+): TembraMotion
+readonly fun audio.tembra.ui.theme.TembraTheme.<get-gradients>(
+  unused stable <this>: TembraTheme
+): TembraGradients
+fun audio.tembra.ui.theme.TembraTypography.style(
+  spec: TembraTextStyleSpec
+  unused stable <this>: TembraTypography
+): TextStyle
+fun audio.tembra.ui.theme.TembraTypography.styles(
+  unused stable <this>: TembraTypography
+): Map<String, TextStyle>
+fun audio.tembra.ui.theme.TembraTypography.material(
+  stable <this>: TembraTypography
+): Typography
+fun audio.tembra.ui.theme.TembraTypography.extras(
+  stable <this>: TembraTypography
+): TembraTypographyExtras
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.timeline.TimelineScreen(
+  stable modifier: Modifier? = @static <expression>
+  viewModel: TimelineViewModel? = @dynamic <expression>
+  stable onOpenTrackSettings: Function1<TrackId, Unit>? = @static <expression>
+  stable nestedTrackSettings: TrackId? = @static null
+  stable onCloseTrackSettings: Function0<Unit>? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.timeline.TimelineScreenContent(
+  stable state: TimelineUiState
+  callbacks: TimelineCallbacks
+  telemetry: TransportTelemetry
+  stable layout: TimelineLayout
+  stable snackbarHostState: SnackbarHostState
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable, [androidx.compose.ui.UiComposable]]") fun audio.tembra.ui.timeline.components.ClipMenu(
+  stable expanded: Boolean
+  stable canSplit: Boolean
+  stable onDismiss: Function0<Unit>
+  stable onSplit: Function0<Unit>
+  stable onDelete: Function0<Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable testTag: String? = @static null
+  stable anchor: Function2<Composer, Int, Unit>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.timeline.components.DeleteTrackDialog(
+  stable trackName: String
+  stable onConfirm: Function0<Unit>
+  stable onCancel: Function0<Unit>
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.timeline.components.EmptyTimeline(
+  stable onAddTrack: Function0<Unit>
+  stable onAddAudio: Function0<Unit>
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.timeline.components.GainReadout(
+  stable gain: GainDb
+  stable onGain: Function1<GainDb, Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable interactionSource: MutableInteractionSource? = @static null
+  stable testTag: String? = @static null
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.timeline.components.GridPicker(
+  stable grid: GridSize
+  stable onGrid: Function1<GridSize, Unit>
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.timeline.components.InstrumentChip(
+  stable label: InstrumentLabel
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable, [androidx.compose.ui.UiComposable]]") fun audio.tembra.ui.timeline.components.InstrumentLabelMenu(
+  stable expanded: Boolean
+  stable onDismiss: Function0<Unit>
+  stable onSelect: Function1<InstrumentLabel?, Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable testTag: String? = @static "timeline.labelMenu"
+  stable anchor: Function2<Composer, Int, Unit>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.timeline.components.MetronomeSettingsSheet(
+  unstable settings: MetronomeSettings
+  stable tempo: Tempo
+  stable signature: TimeSignature
+  stable onClickSound: Function1<ClickSound, Unit>
+  stable onImportCustomSound: Function0<Unit>
+  stable onSubdivision: Function1<Subdivision, Unit>
+  stable onCycleBeat: Function1<Int, Unit>
+  stable onStyle: Function1<MetronomeStyle, Unit>
+  stable onDismiss: Function0<Unit>
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.timeline.components.MuteSoloButton(
+  stable letter: String
+  stable description: String
+  stable checked: Boolean
+  stable tint: Color
+  stable onCheckedChange: Function1<Boolean, Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable size: Dp = @dynamic <expression>
+  stable interactionSource: MutableInteractionSource? = @static null
+  stable testTag: String? = @static null
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.timeline.components.PlayheadOverlay(
+  unstable viewport: TimelineViewport
+  stable signature: TimeSignature
+  stable playing: Boolean
+  stable positionBeats: Beats
+  telemetry: TransportTelemetry
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.timeline.components.RulerPill(
+  stable text: String
+  stable description: String
+  stable onClick: Function0<Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable enabled: Boolean = @static true
+  stable interactionSource: MutableInteractionSource? = @static null
+  stable testTag: String? = @static null
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.timeline.components.RulerPills(
+  stable state: TimelineUiState
+  callbacks: TimelineCallbacks
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.timeline.components.SignaturePill(
+  stable signature: TimeSignature
+  stable onClick: Function0<Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable enabled: Boolean = @static true
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.timeline.components.TempoDialog(
+  stable tempo: Tempo
+  tapCaption: TapCaption
+  stable onTempoDragging: Function1<Tempo, Unit>
+  stable onTempoCommit: Function1<Tempo, Unit>
+  stable onTapTempo: Function1<@[ParameterName(name = 'nanos')] Long, Unit>
+  stable onDismiss: Function0<Unit>
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.timeline.components.TempoPill(
+  stable tempo: Tempo
+  stable onClick: Function0<Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable enabled: Boolean = @static true
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable, [androidx.compose.ui.UiComposable]]") fun audio.tembra.ui.timeline.components.TimelineRuler(
+  unstable viewport: TimelineViewport
+  unstable tempoMap: TempoMap
+  stable playing: Boolean
+  stable positionBeats: Beats
+  telemetry: TransportTelemetry
+  stable onSeek: Function1<Beats, Unit>
+  stable onScrubStart: Function0<Unit>
+  stable onScrub: Function1<Beats, Unit>
+  stable onScrubEnd: Function1<Beats, Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable onZoomAround: Function2<@[ParameterName(name = 'centreX')] Double, @[ParameterName(name = 'factor')] Double, Unit>? = @static <expression>
+  stable onScrollBy: Function1<@[ParameterName(name = 'px')] Double, Unit>? = @static <expression>
+  stable leftPills: Function2<Composer, Int, Unit>? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.timeline.components.TimelineToolbar(
+  stable state: TimelineUiState
+  stable layout: TimelineLayout
+  stable onAddTrack: Function0<Unit>
+  stable onAddAudio: Function0<Unit>
+  stable onAddAudioAsNewTrack: Function0<Unit>
+  stable onSplit: Function0<Unit>
+  stable onUndo: Function0<Unit>
+  stable onRedo: Function0<Unit>
+  stable onGrid: Function1<GridSize, Unit>
+  stable onFitProject: Function0<Unit>
+  stable onZoomStep: Function1<Int, Unit>
+  stable onMetronomeSettings: Function0<Unit>
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.timeline.components.TrackHeader(
+  stable track: TrackUi
+  stable index: Int
+  stable selected: Boolean
+  stable expanded: Boolean
+  stable isFirst: Boolean
+  stable isLast: Boolean
+  stable onSelect: Function0<Unit>
+  stable onMute: Function1<Boolean, Unit>
+  stable onSolo: Function1<Boolean, Unit>
+  stable onGain: Function1<GainDb, Unit>
+  stable onExpand: Function1<Boolean, Unit>
+  stable onSettings: Function0<Unit>
+  stable onAddAudio: Function0<Unit>
+  stable onMoveUp: Function0<Unit>
+  stable onMoveDown: Function0<Unit>
+  stable onDelete: Function0<Unit>
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.timeline.components.TrackHeaderCompact(
+  stable track: TrackUi
+  stable index: Int
+  stable selected: Boolean
+  stable isFirst: Boolean
+  stable isLast: Boolean
+  stable onSelect: Function0<Unit>
+  stable onMute: Function1<Boolean, Unit>
+  stable onSolo: Function1<Boolean, Unit>
+  stable onSettings: Function0<Unit>
+  stable onAddAudio: Function0<Unit>
+  stable onMoveUp: Function0<Unit>
+  stable onMoveDown: Function0<Unit>
+  stable onDelete: Function0<Unit>
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.timeline.components.TrackLane(
+  stable track: TrackUi
+  stable index: Int
+  stable firstClipIndex: Int
+  unstable viewport: TimelineViewport
+  selection: Selection
+  stable signature: TimeSignature
+  stable height: Dp
+  stable onSelectClip: Function1<ClipId, Unit>
+  stable onClearSelection: Function0<Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable onZoomAround: Function2<@[ParameterName(name = 'centreX')] Double, @[ParameterName(name = 'factor')] Double, Unit>? = @static <expression>
+  stable onScrollBy: Function1<@[ParameterName(name = 'px')] Double, Unit>? = @static <expression>
+  stable drag: ClipDragUi? = @static null
+  stable rowPitch: Dp = @dynamic height
+  stable canSplit: Boolean = @static false
+  stable onClipDragStart: Function1<ClipId, Unit>? = @static <expression>
+  stable onClipDrag: Function3<ClipId, @[ParameterName(name = 'deltaBeats')] Double, @[ParameterName(name = 'deltaTracks')] Int, Unit>? = @static <expression>
+  stable onClipDragEnd: Function0<Unit>? = @static <expression>
+  stable onClipDragCancel: Function0<Unit>? = @static <expression>
+  stable onSplit: Function0<Unit>? = @static <expression>
+  stable onDeleteClip: Function1<ClipId, Unit>? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.timeline.components.TrackList(
+  stable state: TimelineUiState
+  stable layout: TimelineLayout
+  callbacks: TimelineCallbacks
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable, [androidx.compose.ui.UiComposable]]") fun audio.tembra.ui.timeline.components.TrackMenu(
+  stable expanded: Boolean
+  stable isFirst: Boolean
+  stable isLast: Boolean
+  stable onDismiss: Function0<Unit>
+  stable onSettings: Function0<Unit>
+  stable onAddAudio: Function0<Unit>
+  stable onMoveUp: Function0<Unit>
+  stable onMoveDown: Function0<Unit>
+  stable onDelete: Function0<Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable testTag: String? = @static null
+  stable anchor: Function2<Composer, Int, Unit>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.timeline.components.TrackRow(
+  stable track: TrackUi
+  stable index: Int
+  stable firstClipIndex: Int
+  stable state: TimelineUiState
+  stable layout: TimelineLayout
+  callbacks: TimelineCallbacks
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.timeline.components.ZoomReadout(
+  stable zoomFactor: Double
+  stable onFitProject: Function0<Unit>
+  stable onZoomStep: Function1<Int, Unit>
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.tracksettings.EffectsPlaceholder(
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.tracksettings.GainSlider(
+  stable gain: GainDb
+  stable onGain: Function1<GainDb, Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable interactionSource: MutableInteractionSource? = @static null
+  stable testTag: String? = @static null
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.tracksettings.TrackSettingsForm(
+  stable state: TrackSettingsUiState
+  callbacks: TrackSettingsCallbacks
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.tracksettings.TrackSettingsInlineRow(
+  stable trackId: TrackId
+  stable onCollapse: Function0<Unit>
+  stable modifier: Modifier? = @static <expression>
+  viewModel: TrackSettingsViewModel? = @dynamic <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.tracksettings.TrackSettingsScreen(
+  stable trackId: TrackId
+  stable onBack: Function0<Unit>
+  stable modifier: Modifier? = @static <expression>
+  viewModel: TrackSettingsViewModel? = @dynamic <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.tracksettings.TrackSettingsScreenContent(
+  stable state: TrackSettingsUiState
+  callbacks: TrackSettingsCallbacks
+  transportCallbacks: TransportCallbacks
+  telemetry: TransportTelemetry
+  stable onBack: Function0<Unit>
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.transport.MasterVolumeSlider(
+  stable percent: Int
+  stable onVolume: Function1<Int, Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable interactionSource: MutableInteractionSource? = @static null
+  stable testTag: String? = @static "transport.master"
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.transport.MetronomeToggle(
+  stable on: Boolean
+  stable onToggle: Function0<Unit>
+  stable onSettings: Function0<Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable enabled: Boolean = @static true
+  stable interactionSource: MutableInteractionSource? = @static null
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.transport.TimeReadout(
+  stable positionSeconds: Double
+  stable lengthSeconds: Double
+  stable playing: Boolean
+  telemetry: TransportTelemetry
+  stable modifier: Modifier? = @static <expression>
+  stable stacked: Boolean = @static false
+  stable maxWidth: Dp = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.transport.TransportBar(
+  stable state: TransportUiState
+  callbacks: TransportCallbacks
+  telemetry: TransportTelemetry
+  stable modifier: Modifier? = @static <expression>
+  stable height: Dp = @dynamic <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.transport.TransportButton(
+  stable icon: TembraIcon
+  stable description: String
+  stable onClick: Function0<Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable enabled: Boolean = @static true
+  stable selected: Boolean = @static false
+  stable interactionSource: MutableInteractionSource? = @static null
+  stable testTag: String? = @static null
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable, [androidx.compose.ui.UiComposable]]") fun audio.tembra.ui.tuner.AutoListenPane(
+  reading: MeterReading?
+  stable listening: Boolean
+  stable showDeniedState: Boolean
+  telemetry: PitchTelemetry
+  stable layout: TunerLayout
+  stable onRequestMicrophone: Function0<Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable footer: Function2<Composer, Int, Unit>? = @static null
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable, [androidx.compose.ui.UiComposable]]") fun audio.tembra.ui.tuner.MeterOverFooter(
+  reading: MeterReading?
+  stable listening: Boolean
+  telemetry: PitchTelemetry
+  stable wide: Boolean
+  stable footer: Function2<Composer, Int, Unit>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.tuner.FittedMeter(
+  reading: MeterReading?
+  stable listening: Boolean
+  stable showDeniedState: Boolean
+  telemetry: PitchTelemetry
+  stable onRequestMicrophone: Function0<Unit>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.tuner.ByEarPane(
+  stable guitarStrings: GuitarStringCount?
+  unstable preset: TuningPreset
+  presets: List<TuningPreset>
+  stable loopTone: Boolean
+  stable playingIndex: Int?
+  callbacks: TunerCallbacks
+  stable layout: TunerLayout
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.tuner.ByEarCardsPane(
+  unstable preset: TuningPreset
+  stable playingIndex: Int?
+  callbacks: TunerCallbacks
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable, [_]]") fun audio.tembra.ui.tuner.WideByEarCard(
+  strings: List<TargetString>
+  stable playingIndex: Int?
+  callbacks: TunerCallbacks
+  stable modifier: Modifier
+  stable controls: Function2<Composer, Int, Unit>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.tuner.ByEarControls(
+  stable guitarStrings: GuitarStringCount?
+  unstable preset: TuningPreset
+  presets: List<TuningPreset>
+  stable loopTone: Boolean
+  callbacks: TunerCallbacks
+  stable maxWidth: Dp
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable, [_], [_]]") fun audio.tembra.ui.tuner.FittedByEarBlock(
+  stable viewportHeight: Dp
+  stable gap: Dp
+  stable controls: Function2<Composer, Int, Unit>
+  stable grid: Function4<@[ParameterName(name = 'width')] Dp, @[ParameterName(name = 'height')] Dp, Composer, Int, Unit>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.tuner.FilledStringCards(
+  strings: List<TargetString>
+  stable playingIndex: Int?
+  stable layout: TunerLayout
+  stable onAudition: Function1<Int, Unit>
+  stable onStop: Function0<Unit>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.tuner.LoopToneToggle(
+  stable checked: Boolean
+  stable onCheckedChange: Function1<Boolean, Unit>
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.tuner.MicrophoneDeniedState(
+  stable onRequestMicrophone: Function0<Unit>
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.tuner.NoiseGateSlider(
+  stable gate: NoiseGate
+  stable onGate: Function1<NoiseGate, Unit>
+  stable onGateSettled: Function0<Unit>
+  telemetry: PitchTelemetry
+  stable listening: Boolean
+  stable soundAboveGate: Boolean?
+  stable modifier: Modifier? = @static <expression>
+  stable interactionSource: MutableInteractionSource? = @static null
+  stable testTag: String? = @static "tuner.noiseGate"
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.tuner.StringCard(
+  unstable string: TargetString
+  stable playing: Boolean
+  stable layout: TunerLayout
+  stable onAudition: Function0<Unit>
+  stable onStop: Function0<Unit>
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.tuner.AuditionButton(
+  unstable string: TargetString
+  stable playing: Boolean
+  stable onClick: Function0<Unit>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.tuner.LevelBars()
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.tuner.StringCardGrid(
+  strings: List<TargetString>
+  stable playingIndex: Int?
+  stable layout: TunerLayout
+  stable onAudition: Function1<Int, Unit>
+  stable onStop: Function0<Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable rowMinHeight: Dp = @static <expression>
+  stable heightBudget: Dp = @static <expression>
+  stable widthBudget: Dp = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.tuner.TunerMeter(
+  telemetry: PitchTelemetry
+  reading: MeterReading?
+  stable listening: Boolean
+  stable testTag: String
+  stable modifier: Modifier? = @static <expression>
+  stable size: MeterSize? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.tuner.TunerScreen(
+  stable modifier: Modifier? = @static <expression>
+  viewModel: TunerViewModel? = @dynamic <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.tuner.TunerScreenContent(
+  state: TunerUiState
+  callbacks: TunerCallbacks
+  telemetry: PitchTelemetry
+  stable layout: TunerLayout
+  stable modifier: Modifier? = @static <expression>
+  stable fold: TabletopFold? = @static null
+  stable verticalFold: VerticalFold? = @static null
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable, [androidx.compose.ui.UiComposable]]") fun audio.tembra.ui.tuner.ModePane(
+  state: TunerUiState
+  callbacks: TunerCallbacks
+  telemetry: PitchTelemetry
+  stable layout: TunerLayout
+  stable modifier: Modifier
+  stable autoListenFooter: Function2<Composer, Int, Unit>? = @static null
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.tuner.InstrumentControl(
+  stable instrument: Instrument
+  stable onInstrument: Function1<Instrument, Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable widths: SegmentWidths? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.tuner.StringCountControl(
+  stable guitarStrings: GuitarStringCount
+  stable onGuitarStrings: Function1<GuitarStringCount, Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable widths: SegmentWidths? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.tuner.ModeControl(
+  stable mode: TunerMode
+  stable onMode: Function1<TunerMode, Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable widths: SegmentWidths? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.tuner.AudioStatePillView(
+  stable pill: AudioStatePill
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.tuner.TunerSelectors(
+  stable instrument: Instrument
+  stable mode: TunerMode
+  stable pill: AudioStatePill?
+  callbacks: TunerCallbacks
+  stable layout: TunerLayout
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable, [androidx.compose.ui.UiComposable]]") fun audio.tembra.ui.tuner.TunerSettingsColumn(
+  stable instrument: Instrument
+  stable guitarStrings: GuitarStringCount
+  stable mode: TunerMode
+  stable pill: AudioStatePill?
+  unstable preset: TuningPreset
+  presets: List<TuningPreset>
+  stable loopTone: Boolean
+  callbacks: TunerCallbacks
+  stable modifier: Modifier? = @static <expression>
+  stable autoListenControls: Function2<Composer, Int, Unit>? = @static null
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable, [androidx.compose.ui.UiComposable]]") fun audio.tembra.ui.tuner.TunerTabletopSettings(
+  stable instrument: Instrument
+  stable guitarStrings: GuitarStringCount
+  stable mode: TunerMode
+  stable pill: AudioStatePill?
+  unstable preset: TuningPreset
+  presets: List<TuningPreset>
+  stable loopTone: Boolean
+  callbacks: TunerCallbacks
+  stable modifier: Modifier? = @static <expression>
+  stable autoListenControls: Function2<Composer, Int, Unit>? = @static null
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable, [_], [_]]") fun audio.tembra.ui.tuner.CentredHeading(
+  stable heading: Function2<Composer, Int, Unit>
+  stable trailing: Function2<Composer, Int, Unit>
+  stable gap: Dp
+  stable modifier: Modifier? = @static <expression>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.tuner.TuningPresetPicker(
+  unstable current: TuningPreset
+  presets: List<TuningPreset>
+  stable onPreset: Function1<String, Unit>
+  stable modifier: Modifier? = @static <expression>
+)

@@ -131,16 +131,18 @@ Java_audio_tembra_engine_NativeAudioEngine_nativeToneStop(JNIEnv*, jobject) {
 
 JNIEXPORT jint JNICALL
 Java_audio_tembra_engine_NativeAudioEngine_nativeAudioHealth(JNIEnv* env, jobject, jlongArray out) {
-    // Feature 007: fills [callbacks, lastUs, maxUs, overBudget, xruns, realtime]; -1 while no stream is open.
-    if (out == nullptr || env->GetArrayLength(out) < 6) return TEMBRA_ERR_ARGUMENT;
+    // Feature 007: fills [callbacks, lastUs, maxUs, overBudget, xruns, realtime, avgUs, starvation, clipsActive]
+    // (the last three since ABI revision 6, feature 009); -1 while no stream is open.
+    if (out == nullptr || env->GetArrayLength(out) < 9) return TEMBRA_ERR_ARGUMENT;
     tembra_audio_health health{};
     const int32_t result = tembra_engine_audio_health(&health);
     if (result != 0) return result;
-    const jlong fields[6] = {
+    const jlong fields[9] = {
         static_cast<jlong>(health.callbacks), static_cast<jlong>(health.last_us), static_cast<jlong>(health.max_us),
         static_cast<jlong>(health.over_budget), static_cast<jlong>(health.xruns), static_cast<jlong>(health.realtime),
+        static_cast<jlong>(health.avg_us), static_cast<jlong>(health.starvation), static_cast<jlong>(health.clips_active),
     };
-    env->SetLongArrayRegion(out, 0, 6, fields);
+    env->SetLongArrayRegion(out, 0, 9, fields);
     return 0;
 }
 
@@ -238,6 +240,134 @@ Java_audio_tembra_engine_NativeAudioEngine_nativeMetronomeRead(JNIEnv* env, jobj
         static_cast<jlong>(tick.sample_rate),
     };
     env->SetLongArrayRegion(out, 0, 7, fields);
+}
+
+// --- Transport, clip sources and offline tools (ABI revision 6, specs/009-timeline-arranger/contracts/engine-c-abi-v6.md) ---
+
+JNIEXPORT jint JNICALL
+Java_audio_tembra_engine_NativeAudioEngine_nativeTransportOpen(JNIEnv*, jobject) {
+    const tembra_transport_config config{};
+    return static_cast<jint>(tembra_transport_open(&config));
+}
+
+JNIEXPORT void JNICALL
+Java_audio_tembra_engine_NativeAudioEngine_nativeTransportClose(JNIEnv*, jobject) {
+    tembra_transport_close();
+}
+
+JNIEXPORT jint JNICALL
+Java_audio_tembra_engine_NativeAudioEngine_nativeTransportSetTempo(JNIEnv*, jobject, jint bpm, jint beatsPerBar, jint beatUnit) {
+    return static_cast<jint>(tembra_transport_set_tempo(static_cast<uint32_t>(bpm), static_cast<uint32_t>(beatsPerBar),
+                                                        static_cast<uint32_t>(beatUnit)));
+}
+
+JNIEXPORT jint JNICALL
+Java_audio_tembra_engine_NativeAudioEngine_nativeTransportSetArrangement(JNIEnv* env, jobject, jobject buffer) {
+    // The arrangement crosses JNI as one direct ByteBuffer laid out as the C struct (no per-clip JNI calls).
+    if (buffer == nullptr) return TEMBRA_ERR_ARGUMENT;
+    void* address = env->GetDirectBufferAddress(buffer);
+    const jlong capacity = env->GetDirectBufferCapacity(buffer);
+    if (address == nullptr || capacity < static_cast<jlong>(sizeof(tembra_arrangement))) return TEMBRA_ERR_ARGUMENT;
+    return static_cast<jint>(tembra_transport_set_arrangement(static_cast<const tembra_arrangement*>(address)));
+}
+
+JNIEXPORT jint JNICALL
+Java_audio_tembra_engine_NativeAudioEngine_nativeTransportSetTrack(JNIEnv*, jobject, jint index, jfloat gain, jboolean audible) {
+    return static_cast<jint>(tembra_transport_set_track(static_cast<uint32_t>(index), gain, audible ? 1u : 0u));
+}
+
+JNIEXPORT jint JNICALL
+Java_audio_tembra_engine_NativeAudioEngine_nativeTransportSetMaster(JNIEnv*, jobject, jfloat gain) {
+    return static_cast<jint>(tembra_transport_set_master(gain));
+}
+
+JNIEXPORT jint JNICALL
+Java_audio_tembra_engine_NativeAudioEngine_nativeTransportSetMetronome(JNIEnv*, jobject, jboolean enabled) {
+    return static_cast<jint>(tembra_transport_set_metronome(enabled ? 1u : 0u));
+}
+
+JNIEXPORT jint JNICALL
+Java_audio_tembra_engine_NativeAudioEngine_nativeTransportPlay(JNIEnv*, jobject) {
+    return static_cast<jint>(tembra_transport_play());
+}
+
+JNIEXPORT jint JNICALL
+Java_audio_tembra_engine_NativeAudioEngine_nativeTransportPause(JNIEnv*, jobject) {
+    return static_cast<jint>(tembra_transport_pause());
+}
+
+JNIEXPORT jint JNICALL
+Java_audio_tembra_engine_NativeAudioEngine_nativeTransportSeekBeats(JNIEnv*, jobject, jdouble beats) {
+    return static_cast<jint>(tembra_transport_seek_beats(beats));
+}
+
+JNIEXPORT void JNICALL
+Java_audio_tembra_engine_NativeAudioEngine_nativeTransportRead(JNIEnv* env, jobject, jlongArray longs, jdoubleArray doubles) {
+    // Fills longs [playing, positionFrames, blockTimeNs, latencyNs, sampleRate] and doubles [positionBeats, audibleSeconds]
+    // from one seqlock read; allocates nothing (draw-phase caller).
+    if (longs == nullptr || doubles == nullptr || env->GetArrayLength(longs) < 5 || env->GetArrayLength(doubles) < 2) return;
+    tembra_transport_snapshot snapshot{};
+    tembra_transport_read(&snapshot);
+    const jlong l[5] = {
+        static_cast<jlong>(snapshot.playing), static_cast<jlong>(snapshot.position_frames), static_cast<jlong>(snapshot.block_time_ns),
+        static_cast<jlong>(snapshot.latency_ns), static_cast<jlong>(snapshot.sample_rate),
+    };
+    const jdouble d[2] = {snapshot.position_beats, snapshot.audible_seconds};
+    env->SetLongArrayRegion(longs, 0, 5, l);
+    env->SetDoubleArrayRegion(doubles, 0, 2, d);
+}
+
+JNIEXPORT jint JNICALL
+Java_audio_tembra_engine_NativeAudioEngine_nativeClipSourceOpen(JNIEnv* env, jobject, jstring path, jintArray ints, jlongArray longs) {
+    // Returns the handle (>= 0) or the error; fills ints [channels, sampleRate, format] and longs [frames].
+    if (path == nullptr || ints == nullptr || longs == nullptr) return TEMBRA_ERR_ARGUMENT;
+    if (env->GetArrayLength(ints) < 3 || env->GetArrayLength(longs) < 1) return TEMBRA_ERR_ARGUMENT;
+    const char* utf = env->GetStringUTFChars(path, nullptr);
+    if (utf == nullptr) return TEMBRA_ERR_ARGUMENT;
+    tembra_clip_info info{};
+    const int32_t result = tembra_clip_source_open(utf, &info);
+    env->ReleaseStringUTFChars(path, utf);
+    if (result < 0) return static_cast<jint>(result);
+    const jint i[3] = {static_cast<jint>(info.channels), static_cast<jint>(info.sample_rate), static_cast<jint>(info.format)};
+    const jlong f[1] = {static_cast<jlong>(info.frames)};
+    env->SetIntArrayRegion(ints, 0, 3, i);
+    env->SetLongArrayRegion(longs, 0, 1, f);
+    return static_cast<jint>(result);
+}
+
+JNIEXPORT void JNICALL
+Java_audio_tembra_engine_NativeAudioEngine_nativeClipSourceClose(JNIEnv*, jobject, jint handle) {
+    tembra_clip_source_close(static_cast<int32_t>(handle));
+}
+
+JNIEXPORT jint JNICALL
+Java_audio_tembra_engine_NativeAudioEngine_nativeAudioInspect(JNIEnv* env, jobject, jstring path, jintArray ints, jlongArray longs) {
+    // Fills ints [format, channels, sampleRate] and longs [frames]; TEMBRA_ERR_DECODE for anything unreadable.
+    if (path == nullptr || ints == nullptr || longs == nullptr) return TEMBRA_ERR_ARGUMENT;
+    if (env->GetArrayLength(ints) < 3 || env->GetArrayLength(longs) < 1) return TEMBRA_ERR_ARGUMENT;
+    const char* utf = env->GetStringUTFChars(path, nullptr);
+    if (utf == nullptr) return TEMBRA_ERR_ARGUMENT;
+    tembra_audio_info info{};
+    const int32_t result = tembra_audio_inspect(utf, &info);
+    env->ReleaseStringUTFChars(path, utf);
+    if (result != TEMBRA_OK) return static_cast<jint>(result);
+    const jint i[3] = {static_cast<jint>(info.format), static_cast<jint>(info.channels), static_cast<jint>(info.sample_rate)};
+    const jlong f[1] = {static_cast<jlong>(info.frames)};
+    env->SetIntArrayRegion(ints, 0, 3, i);
+    env->SetLongArrayRegion(longs, 0, 1, f);
+    return TEMBRA_OK;
+}
+
+JNIEXPORT jint JNICALL
+Java_audio_tembra_engine_NativeAudioEngine_nativeAudioOverviewBuild(JNIEnv* env, jobject, jstring path, jstring outPath) {
+    if (path == nullptr || outPath == nullptr) return TEMBRA_ERR_ARGUMENT;
+    const char* source = env->GetStringUTFChars(path, nullptr);
+    const char* target = env->GetStringUTFChars(outPath, nullptr);
+    int32_t result = TEMBRA_ERR_ARGUMENT;
+    if (source != nullptr && target != nullptr) result = tembra_audio_overview_build(source, target);
+    if (source != nullptr) env->ReleaseStringUTFChars(path, source);
+    if (target != nullptr) env->ReleaseStringUTFChars(outPath, target);
+    return static_cast<jint>(result);
 }
 
 }  // extern "C"

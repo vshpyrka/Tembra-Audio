@@ -83,7 +83,21 @@
     "wine_pad_active": "#9D4B68",
     "grid_overlay_faint": "#A855F71F",
     "grid_overlay": "#C084FC33",
-    "clip_glow": "0 0 12px rgba(167, 139, 250, 0.25)"
+    "clip_glow": "0 0 12px rgba(167, 139, 250, 0.25)",
+    "_track_tints_note": "Feature 009 (timeline arranger): the six track tints. lavender = lavender_light and rose = rose_light, as the arranger screens draw clips; dusty_rose, peach, mint and violet were sampled on 2026-10-13 from mixer-timeline/tablet-split-console/screenshot.jpg clip blocks of lanes 3-6 (#E09EBF, #F3BC9B, #9FCFB8, #C09ED9) and rounded to the pastel lightness of the first two.",
+    "track_tints": {
+      "lavender": "#C4B5FD",
+      "rose": "#FDA4AF",
+      "dusty_rose": "#E0A0C0",
+      "peach": "#F5BE9E",
+      "mint": "#A4D4BC",
+      "violet": "#C4A2DC"
+    },
+    "_clip_tokens_note": "Feature 009 clip drawing: clip_caption_band = surface_level2 at 70 %, playhead_chip = lavender_light, selection_outline = the scheme's primary, unavailable_clip = the scheme's outline_variant.",
+    "clip_caption_band": "#212026B3",
+    "playhead_chip": "#C4B5FD",
+    "selection_outline": "#CEBDFF",
+    "unavailable_clip": "#494552"
   },
   "typography": {
     "headline-lg": {"fontFamily": "Space Grotesk", "fontSize": "32px", "fontWeight": "600", "lineHeight": "40px", "letterSpacing": "-0.02em"},

@@ -1,0 +1,10 @@
+<!-- Material Symbols Outlined "skip_next" from google/material-design-icons@27e9ef1dbeedc13d682fece4a58e1eda4cb0961a (Apache-2.0); fetched by tools/fetch-material-symbols.sh, do not edit -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="960"
+    android:viewportHeight="960">
+  <path
+      android:fillColor="#FFFFFFFF"
+      android:pathData="M660,720L660,240L740,240L740,720L660,720ZM220,720L220,240L580,480L220,720ZM300,480L300,480L300,480L300,480ZM300,570L436,480L300,390L300,570Z"/>
+</vector>

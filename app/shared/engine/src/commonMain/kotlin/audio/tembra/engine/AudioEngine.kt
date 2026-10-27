@@ -6,7 +6,7 @@ import audio.tembra.engine.perf.AudioHealth
  * The only way Kotlin talks to the native engine (Constitution I, II). Implemented by [NativeAudioEngine]
  * on both platforms and by [FakeAudioEngine] in tests. Every call runs on an ordinary thread.
  */
-interface AudioEngine : TunerAudio, MetronomeAudio {
+interface AudioEngine : TunerAudio, MetronomeAudio, TimelineAudio {
     fun describe(): EngineDescriptor
 
     /**
