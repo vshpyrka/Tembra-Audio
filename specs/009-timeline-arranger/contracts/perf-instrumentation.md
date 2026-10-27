@@ -69,8 +69,9 @@ iOS `press(forDuration:thenDragTo:)`), tap the readout's centre as a real tap ou
 (Android `UiDevice.click`, iOS a coordinate from the app's origin), wait until `transport.master`
 is gone, tap `timeline.toolbar.undo`: the drag is one undo step, so the volume returns to its
 value before the step and the document is unchanged across iterations; 8b. (D1, only when
-`timeline.overview` is present, that is with the device's zoom control set to the overview
-strip; the default zoom buttons skip it silently) drag `timeline.overview.window` from its centre
+`timeline.overview` is present: the strip shows unless the device hid it from the overflow
+menu's "Overview strip" entry, T151, and a hidden strip skips the step silently) drag
+`timeline.overview.window` from its centre
 by a quarter of its width to the right, then back from its new centre by the distance it moved
 (it stops at the project's end; the scroll position is not stored); 9. tap `transport.play`
 (pause); 10. tap `transport.skipStart`.

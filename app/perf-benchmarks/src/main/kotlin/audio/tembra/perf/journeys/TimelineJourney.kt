@@ -10,7 +10,8 @@ import audio.tembra.perf.journeys.Anchors.tap
  * The timeline journey (feature 009, contracts/perf-instrumentation.md): open Projects, open the demo card, wait for
  * every visible overview, play eight bars, seek on the ruler, pinch the first lane in and out, split the first clip,
  * open and close the first track's settings, toggle the metronome twice, on a phone open the master volume pop-up,
- * drag its slider and close it, with the overview strip drag its window there and back, pause, skip to start.
+ * drag its slider and close it, drag the overview strip's window there and back (unless the device hid the strip),
+ * pause, skip to start.
  */
 class TimelineJourney {
     fun run(device: UiDevice) {
@@ -29,10 +30,9 @@ class TimelineJourney {
         check(readout.wait(Until.descMatches("00:1[5-9].*|00:[2-5].*"), PLAY_TIMEOUT_MS)) { "the readout never passed 00:15" }
         val ruler = device.anchor(Anchors.TIMELINE_RULER)
         val bounds = ruler.visibleBounds
-        // Clear of the zoom buttons over the ruler's right end (the tempo and signature pills that overlaid its left third
-        // before design iteration D1 would have opened a menu), and early enough in the demo's clips (they end at bar 17
-        // of the 32 the fitted ruler shows) that the playhead, still moving through the two pinches, is inside the first
-        // clip when the split comes.
+        // Clear of the ruler's left third (the tempo and signature pills that overlaid it before design iteration D1
+        // would have opened a menu), and early enough in the demo's clips (they end at bar 17 of the 32 the fitted ruler
+        // shows) that the playhead, still moving through the two pinches, is inside the first clip when the split comes.
         device.click(bounds.left + bounds.width() * 2 / 5, bounds.centerY())
         device.waitForIdle()
         val lane = device.anchor(Anchors.TIMELINE_LANE_FIRST)
@@ -86,9 +86,9 @@ class TimelineJourney {
     }
 
     /**
-     * Only with the overview strip as the device's zoom control (design iteration D1; the zoom buttons are the default):
-     * the strip's window is dragged from its centre by a quarter of its width, inside `timeline.scroll`, then back by the
-     * distance it moved (it stops at the project's end), so the view returns.
+     * The overview strip shows unless the device hid it from the overflow menu (spec FR-015; T151), and then the step is
+     * skipped: the strip's window is dragged from its centre by a quarter of its width, inside `timeline.scroll`, then
+     * back by the distance it moved (it stops at the project's end), so the view returns.
      */
     private fun dragOverviewWindow(device: UiDevice) {
         device.findObject(By.res(Anchors.TIMELINE_OVERVIEW)) ?: return

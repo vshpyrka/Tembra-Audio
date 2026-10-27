@@ -1,6 +1,8 @@
 package audio.tembra.ui.timeline
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -8,6 +10,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PixelMap
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -45,7 +48,8 @@ import kotlin.test.assertTrue
  * an edge is dragged and recentres on a tap outside it. Every test uses 40 bars of 4/4 (160 beats) on a 320 dp strip
  * (2 dp a beat; it must fit the narrowest device window, the 360 dp OPPO, since `width` is coerced into the window) and
  * lanes 320 dp wide at 8 dp a beat: 40 beats in view from beat 20, so the window spans 40 to 120 dp. Positions are
- * written as beats through [dpAtBeat].
+ * written as beats through [dpAtBeat]; those tests set no side inset so the strip is the whole 320 dp, and one test
+ * checks the default inset of the owner's verdict on D1 (T151).
  */
 @OptIn(ExperimentalTestApi::class)
 class OverviewStripTest {
@@ -90,6 +94,7 @@ class OverviewStripTest {
                         viewport = viewport(densityScale), tracks = tracks, playing = playing, positionBeats = positionBeats,
                         telemetry = telemetry, onScrollTo = { scrolls += it.value }, onZoomTo = { start, end -> zooms += start.value to end.value },
                         height = height,
+                        sideInsets = PaddingValues(0.dp),
                     )
                 }
             }
@@ -122,6 +127,37 @@ class OverviewStripTest {
         val window = onNodeWithTag(TimelineTestTags.OVERVIEW_WINDOW).getUnclippedBoundsInRoot()
         assertTrue(abs((window.left - bounds.left).value - dpAtBeat(20f)) <= 1f, "the window starts at ${window.left - bounds.left}, not beat 20")
         assertTrue(abs((window.right - bounds.left).value - dpAtBeat(60f)) <= 1f, "the window ends at ${window.right - bounds.left}, not beat 60")
+    }
+
+    /**
+     * The owner's verdict on D1 (spec FR-015; T151): by default the strip keeps at least the 16 dp page margin (more
+     * where the system's back-gesture zone is wider) from each side of its host, so a finger reaches either handle
+     * without starting a back swipe; the tagged node, which takes the strip's gestures, is the inset strip alone.
+     */
+    @Test
+    fun theDefaultInsetKeepsTheStripClearOfBothSides() = runComposeUiTest {
+        setContent {
+            TembraTheme {
+                densityScale = LocalDensity.current.density
+                Box(Modifier.requiredWidth(STRIP_DP.dp).testTag(HOST)) {
+                    OverviewStrip(
+                        viewport = viewport(densityScale), tracks = tracks, playing = false, positionBeats = Beats(80.0),
+                        telemetry = ScriptedTransportTelemetry.stopped(0.0), onScrollTo = {}, onZoomTo = { _, _ -> },
+                    )
+                }
+            }
+        }
+        val host = onNodeWithTag(HOST).getUnclippedBoundsInRoot()
+        val strip = onNodeWithTag(TimelineTestTags.OVERVIEW).assertHeightIsEqualTo(24.dp).getUnclippedBoundsInRoot()
+        // One pixel of rounding room at the test devices' densities (2.44 and 2.625).
+        val margin = 16.dp - (1f / densityScale).dp
+        assertTrue(strip.left - host.left >= margin, "the strip starts ${strip.left - host.left} from the host's left edge")
+        assertTrue(host.right - strip.right >= margin, "the strip ends ${host.right - strip.right} from the host's right edge")
+        // The window still spans beats 20 to 60 of the strip's own (inset) width.
+        val width = (strip.right - strip.left).value
+        val window = onNodeWithTag(TimelineTestTags.OVERVIEW_WINDOW).getUnclippedBoundsInRoot()
+        assertTrue(abs((window.left - strip.left).value - 20f * width / 160f) <= 1f, "the window starts at ${window.left - strip.left} of $width dp")
+        assertTrue(abs((window.right - strip.left).value - 60f * width / 160f) <= 1f, "the window ends at ${window.right - strip.left} of $width dp")
     }
 
     @Test
@@ -249,5 +285,6 @@ class OverviewStripTest {
     private companion object {
         /** Fits the narrowest device window (the 360 dp OPPO) with room to spare. */
         const val STRIP_DP = 320
+        const val HOST = "test.overviewHost"
     }
 }

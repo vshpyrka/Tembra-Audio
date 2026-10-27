@@ -24,7 +24,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import audio.tembra.core.project.TempoMap
-import audio.tembra.core.project.ZoomControl
 import audio.tembra.ui.session.TransportTelemetry
 import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.ui.timeline.components.DeleteTrackDialog
@@ -38,21 +37,19 @@ import audio.tembra.ui.timeline.components.TempoDialog
 import audio.tembra.ui.timeline.components.TimelineRuler
 import audio.tembra.ui.timeline.components.TimelineToolbar
 import audio.tembra.ui.timeline.components.TrackList
-import audio.tembra.ui.timeline.components.ZoomButtons
-import audio.tembra.ui.timeline.components.zoomLevelLabel
 import audio.tembra.ui.transport.TransportBar
 import audio.tembra.ui.transport.TransportCallbacks
 
 /**
  * The stateless Timeline (contracts/timeline-screen.md "Layouts"): toolbar (with the tempo pill at every width, spec
- * FR-036), pinned ruler, the track list under the playhead overlay, the zoom control the device chose, and the
- * transport bar, arranged per [layout]. The ruler carries bars and time only (FR-013, D1): on expanded windows an
+ * FR-036), pinned ruler, the track list under the playhead overlay, the overview strip unless the device hid it, and
+ * the transport bar, arranged per [layout]. The ruler carries bars and time only (FR-013, D1): on expanded windows an
  * empty 200 dp slot over the header column makes its canvas start where the lanes do; elsewhere the canvas spans the
- * full width, as the lanes do, so ruler, playhead and clips share one scale (FR-017). [ZoomControl.Buttons] sit over
- * the ruler's right end; [ZoomControl.OverviewStrip] sits between the lanes and the transport bar, under the lanes
- * only on expanded windows (FR-015, D1). The root is tagged `screen.timeline` with `stateDescription` "ready" once
- * every visible overview is drawn (contracts/perf-instrumentation.md), plus the 1 dp `screen.timeline.ready` marker
- * the Android journey waits on.
+ * full width, as the lanes do, so ruler, playhead and clips share one scale (FR-017). The overview strip sits between
+ * the lanes and the transport bar, under the lanes only on expanded windows, inset from the window's sides on top of
+ * that (FR-015; T151); while [TimelineUiState.overviewStripShown] is false it is not composed and takes no height. The
+ * root is tagged `screen.timeline` with `stateDescription` "ready" once every visible overview is drawn
+ * (contracts/perf-instrumentation.md), plus the 1 dp `screen.timeline.ready` marker the Android journey waits on.
  */
 @Composable
 internal fun TimelineScreenContent(
@@ -70,7 +67,7 @@ internal fun TimelineScreenContent(
     val transportHeight = if (layout == TimelineLayout.Expanded) spacing.transportHeightExpanded else spacing.transportHeightCompact
     val headerColumn = if (layout.pinnedHeaders) spacing.headerColumnWidth else 0.dp
     val stripHeight = when {
-        state.zoomControl != ZoomControl.OverviewStrip -> 0.dp
+        !state.overviewStripShown -> 0.dp
         layout == TimelineLayout.Compact || layout == TimelineLayout.Landscape -> OverviewStripDefaults.CompactHeight
         else -> OverviewStripDefaults.Height
     }
@@ -110,7 +107,7 @@ internal fun TimelineScreenContent(
                 onTempo = { callbacks.onOpenSheet(TimelineSheet.TempoDialog) },
                 onGrid = callbacks.onGrid,
                 onSnapSheet = { callbacks.onOpenSheet(TimelineSheet.GridMenu) },
-                onZoomControl = callbacks.onZoomControl,
+                onOverviewStripShown = callbacks.onOverviewStripShown,
                 onMetronomeSettings = callbacks.onMetronomeSettings,
             )
             TimelineRuler(
@@ -130,18 +127,6 @@ internal fun TimelineScreenContent(
                 } else {
                     null
                 },
-                rightControls = if (state.zoomControl == ZoomControl.Buttons) {
-                    {
-                        ZoomButtons(
-                            levelLabel = zoomLevelLabel(state.viewport),
-                            onZoomOut = { callbacks.onZoomStep(-1) },
-                            onZoomIn = { callbacks.onZoomStep(1) },
-                            onFit = callbacks.onFitProject,
-                        )
-                    }
-                } else {
-                    null
-                },
             )
             Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
                 if (state.isEmpty) {
@@ -158,7 +143,8 @@ internal fun TimelineScreenContent(
                     modifier = Modifier.fillMaxSize().padding(start = headerColumn),
                 )
             }
-            if (state.zoomControl == ZoomControl.OverviewStrip) {
+            if (state.overviewStripShown) {
+                // The strip adds its own side inset (the page margin, or the back-gesture zone where wider) to this.
                 OverviewStrip(
                     viewport = state.viewport,
                     tracks = state.tracks,

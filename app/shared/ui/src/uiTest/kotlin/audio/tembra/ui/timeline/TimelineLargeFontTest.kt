@@ -25,7 +25,6 @@ import audio.tembra.core.project.Beats
 import audio.tembra.core.project.GainDb
 import audio.tembra.core.project.InstrumentLabel
 import audio.tembra.core.project.TrackId
-import audio.tembra.core.project.ZoomControl
 import audio.tembra.core.timeline.TimelineViewport
 import audio.tembra.ui.perf.PerfAnchors
 import audio.tembra.ui.theme.TembraTheme
@@ -36,9 +35,9 @@ import kotlin.test.Test
 import kotlin.test.assertTrue
 
 /**
- * Font scale 2.0 on a 360 dp phone (spec FR-055, FR-059; T123; D1 T141): the readout stays intact, the chips still read,
- * three lanes and the ruler stay visible with either zoom control, and the toolbar's tempo pill keeps its whole width
- * beside a 44 dp overflow button.
+ * Font scale 2.0 on a 360 dp phone (spec FR-055, FR-059; T123; D1 T141, T151): the readout stays intact, the chips still
+ * read, three lanes and the ruler stay visible with the overview strip shown or hidden, and the toolbar's tempo pill
+ * keeps its whole width beside a 44 dp overflow button.
  */
 @OptIn(ExperimentalTestApi::class)
 class TimelineLargeFontTest {
@@ -55,16 +54,17 @@ class TimelineLargeFontTest {
     )
 
     /**
-     * The 360 × 780 dp screen at font scale 2 with [zoomControl], and a reference tempo pill measured with no width limit
-     * and placed left of the window, where it covers nothing: what the toolbar's pill must match to be whole.
+     * The 360 × 780 dp screen at font scale 2 with the strip [stripShown] or hidden, and a reference tempo pill measured
+     * with no width limit and placed left of the window, where it covers nothing: what the toolbar's pill must match to be
+     * whole.
      */
-    private fun ComposeUiTest.setScreen(zoomControl: ZoomControl) {
+    private fun ComposeUiTest.setScreen(stripShown: Boolean) {
         setContent {
             val base = LocalDensity.current
             CompositionLocalProvider(LocalDensity provides Density(base.density, fontScale = 2f)) {
                 TembraTheme {
                     Box(Modifier.requiredWidth(360.dp).height(780.dp)) {
-                        TimelineScreenContent(state.copy(zoomControl = zoomControl), TimelineCallbacks.None, ScriptedTransportTelemetry.stopped(0.0), TimelineLayout.Compact, SnackbarHostState())
+                        TimelineScreenContent(state.copy(overviewStripShown = stripShown), TimelineCallbacks.None, ScriptedTransportTelemetry.stopped(0.0), TimelineLayout.Compact, SnackbarHostState())
                         Box(
                             Modifier.layout { measurable, _ ->
                                 val placeable = measurable.measure(Constraints())
@@ -81,14 +81,14 @@ class TimelineLargeFontTest {
 
     @Test
     fun atTwiceTheFontSizeTheTimelineKeepsItsShape() = runComposeUiTest {
-        setScreen(ZoomControl.Buttons)
+        setScreen(stripShown = false)
         assertTheShape()
-        onNodeWithTag(TimelineTestTags.ZOOM_IN).assertIsDisplayed().assertWidthIsEqualTo(44.dp)
+        onNodeWithTag(TimelineTestTags.OVERVIEW).assertDoesNotExist()
     }
 
     @Test
     fun atTwiceTheFontSizeTheStripLeavesThreeTracksAndTheRuler() = runComposeUiTest {
-        setScreen(ZoomControl.OverviewStrip)
+        setScreen(stripShown = true)
         assertTheShape()
         val strip = onNodeWithTag(TimelineTestTags.OVERVIEW).assertIsDisplayed().getUnclippedBoundsInRoot()
         val play = onNodeWithTag(PerfAnchors.TRANSPORT_PLAY).getUnclippedBoundsInRoot()

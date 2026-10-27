@@ -32,7 +32,6 @@ import audio.tembra.core.project.SetTempo
 import audio.tembra.core.project.SetTimeSignature
 import audio.tembra.core.project.SplitClip
 import audio.tembra.core.project.TrackId
-import audio.tembra.core.project.ZoomControl
 import audio.tembra.core.project.ZoomLevel
 import audio.tembra.core.project.audibleTracks
 import audio.tembra.core.project.clipLengthBeats
@@ -103,13 +102,13 @@ class TimelineViewModel(
 
     private val view = MutableStateFlow(TimelineViewState())
 
-    /** The device's zoom control (spec FR-015, D1): outside [view], so opening another project keeps it. */
-    private val deviceZoomControl = MutableStateFlow(ZoomControl.Default)
+    /** Whether this device shows the overview strip (spec FR-015; T151): outside [view], so opening another project keeps it. */
+    private val overviewStripShown = MutableStateFlow(true)
 
     /** The last global metronome settings the preferences emitted: outside [view] for the same reason (T147). */
     private val metronomeSettings = MutableStateFlow(MetronomeSettings())
 
-    val uiState: StateFlow<TimelineUiState> = combine(session.state, view, deviceZoomControl, metronomeSettings, ::mapState)
+    val uiState: StateFlow<TimelineUiState> = combine(session.state, view, overviewStripShown, metronomeSettings, ::mapState)
         .stateIn(viewModelScope, SharingStarted.Eagerly, currentUi())
 
     /** One-shot snackbar messages: the session's, mapped, merged with the ViewModel's own, to the one collector. */
@@ -260,10 +259,10 @@ class TimelineViewModel(
         scheduleViewStateSave()
     }
 
-    /** The overflow menu's "Zoom control" choice (spec FR-015, D1): shown at once, remembered on the device. */
-    fun setZoomControl(control: ZoomControl) {
-        deviceZoomControl.value = control
-        viewModelScope.launch(CoroutineName("setZoomControl")) { timelinePreferences.setZoomControl(control) }
+    /** The overflow menu's "Overview strip" entry (spec FR-015; T151): shown or hidden at once, remembered on the device. */
+    fun setOverviewStripShown(shown: Boolean) {
+        overviewStripShown.value = shown
+        viewModelScope.launch(CoroutineName("setOverviewStripShown")) { timelinePreferences.setOverviewStripShown(shown) }
     }
 
     // --- Tracks ------------------------------------------------------------------------------------------------------
@@ -435,11 +434,11 @@ class TimelineViewModel(
 
     // --- Mapping -----------------------------------------------------------------------------------------------------
 
-    private fun mapState(state: SessionState, view: TimelineViewState, zoomControl: ZoomControl, metronomeSettings: MetronomeSettings): TimelineUiState {
+    private fun mapState(state: SessionState, view: TimelineViewState, overviewStripShown: Boolean, metronomeSettings: MetronomeSettings): TimelineUiState {
         val project = state.project ?: return TimelineUiState(
             loaded = state.unavailable != null,
             playback = state.playback,
-            zoomControl = zoomControl,
+            overviewStripShown = overviewStripShown,
             metronomeSettings = metronomeSettings,
         )
         val tempoMap = project.tempoMap
@@ -504,7 +503,7 @@ class TimelineViewModel(
             selection = selection,
             viewport = viewport,
             grid = grid,
-            zoomControl = zoomControl,
+            overviewStripShown = overviewStripShown,
             following = view.following,
             playback = state.playback,
             positionBeats = positionBeats,
@@ -558,7 +557,7 @@ class TimelineViewModel(
     // --- Helpers -----------------------------------------------------------------------------------------------------
 
     /** The state an intent acts on, mapped now from the sources of truth: [uiState] is derived asynchronously. */
-    private fun currentUi(): TimelineUiState = mapState(session.state.value, view.value, deviceZoomControl.value, metronomeSettings.value)
+    private fun currentUi(): TimelineUiState = mapState(session.state.value, view.value, overviewStripShown.value, metronomeSettings.value)
 
     /** Applies [edit] through the session; a refusal with a reason the user can act on becomes a message. True when applied. */
     private fun edit(edit: ProjectEdit): Boolean {
@@ -592,7 +591,7 @@ class TimelineViewModel(
     }
 
     private suspend fun observePreferences() = coroutineScope {
-        launch(CoroutineName("observeZoomControl")) { timelinePreferences.zoomControl.collect { deviceZoomControl.value = it } }
+        launch(CoroutineName("observeOverviewStrip")) { timelinePreferences.overviewStripShown.collect { overviewStripShown.value = it } }
         preferences.snapshot.collect { snapshot -> metronomeSettings.value = snapshot.settings }
     }
 

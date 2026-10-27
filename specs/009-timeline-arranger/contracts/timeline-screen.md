@@ -16,14 +16,12 @@ ui/timeline/
   TimelineViewModel.kt         @Inject @ContributesIntoMap(AppScope) @ViewModelKey; maps ProjectSession.state + view state → TimelineUiState; intents
   TimelineUiState.kt, TimelineCallbacks.kt, TimelineLayout.kt, TimelineCopy.kt, TimelineSheet.kt, Selection.kt, TransportTelemetry.kt
   components/
-    TimelineToolbar.kt         + Track, Add audio…, Add audio as new track, scissors, undo, redo, TempoPill, overflow per layout (D1: compact overflow = Add audio…, Add audio as new track, "Snap: <value>" → SnapSheet, "Zoom control: Buttons | Overview strip" (current checked), Metronome settings; full row adds GridPicker "Snap <value>" and the metronome button, its overflow only the two "Zoom control" items)
+    TimelineToolbar.kt         + Track, Add audio…, Add audio as new track, scissors, undo, redo, TempoPill, overflow per layout (D1, T151: compact overflow = Add audio…, Add audio as new track, "Snap: <value>" → SnapSheet, "Overview strip" (checked while shown; a tap shows or hides it), Metronome settings; full row adds GridPicker "Snap <value>" and the metronome button, its overflow only "Overview strip")
     GridPicker.kt              MenuPill over GridSize, labelled "Snap 1/16" (full toolbar)
     SnapSheet.kt               ModalBottomSheet "Snap to grid": the five GridSize rows, the current one checked (TimelineSheet.GridMenu; compact overflow)
-    TimelineRuler.kt           Canvas: bar row + time row (RulerLabels) only, playhead chip; leftSlot (expanded: the empty 200 dp over the header column), rightControls overlaid on the canvas's right end (ZoomButtons); tap/drag → onSeek/onScrub; hover time
+    TimelineRuler.kt           Canvas: bar row + time row (RulerLabels) only, playhead chip; leftSlot (expanded: the empty 200 dp over the header column); nothing overlays the canvas; tap/drag → onSeek/onScrub; hover time
     TempoPill.kt, RulerPill.kt "124 BPM" pill in the toolbar at every width → TempoDialog (D1; the ruler carries no pills)
-    ZoomButtons.kt             "−", the level (tap = fit the project), "+": 132 dp at the ruler's right end (ZoomControl.Buttons, D1)
-    OverviewStrip.kt           the whole project, clip blocks, playhead, a draggable window whose edges zoom; between the lanes and the transport bar (ZoomControl.OverviewStrip, D1)
-    ZoomLabel.kt               zoomLevelLabel(viewport): "1×", "2.5×", "16×"
+    OverviewStrip.kt           the whole project, clip blocks, playhead, a draggable window whose edges zoom; between the lanes and the transport bar, composed unless the device hid it; sideInsets (default OverviewStripDefaults.sideInsets(): per side the larger of the 16 dp page margin and the system's back-gesture inset) outside the tagged node (D1, T151)
     TrackList.kt               LazyColumn of TrackRow; vertical scroll; expanded inline settings row
     TrackRow.kt                header + lane in one row (header pinned in expanded layouts)
     TrackHeader.kt             expanded: colour dot, name, InstrumentChip, GainReadout, M, S, chevron, menu
@@ -74,7 +72,7 @@ Nothing scrolls horizontally except the timeline content.
 |---|---|---|
 | Lane, empty or on a clip | tap: select clip / clear; plain drag: scroll; long press on clip then drag: move (clip lifts); two-finger pinch: zoom around centroid | click: select; press-drag on clip: move; wheel: scroll; modifier + wheel / trackpad pinch: zoom; hover: clip hover state |
 | Ruler | tap: seek (snap); drag marker: silent scrub (snapped), resume on release; pinch: zoom | same; hover shows time under pointer |
-| Zoom control (D1) | buttons: "−"/"+" step, the level fits; strip: drag the window scrolls, drag an edge zooms, tap outside centres | same; hover and focus on the buttons |
+| Overview strip (D1, T151; unless hidden) | drag the window scrolls, drag an edge zooms, tap outside centres; the inset at either side is no target | same |
 | Headers | tap: select track; M/S toggles; chevron (expanded); menu | hover states, tooltips on icon buttons |
 
 Scroll and zoom run inside `PerfTrace.animation(TIMELINE_SCROLL / TIMELINE_ZOOM)`; `following`
@@ -94,19 +92,20 @@ readout: `liveRegion = Polite` off during playback (it updates per frame visuall
 value updates at 1 Hz to keep screen readers usable); faders and gain readouts: `progressBarRangeInfo`
 + `setProgress`; every control `testTag` from `TimelineTestTags` (anchors from `PerfAnchors`).
 
-D1 tags (2026-10-26, T141): added `timeline.toolbar.tempo`, `timeline.toolbar.overflow.button` and its rows
-`timeline.toolbar.overflow.<addAudio | addAudioNewTrack | snap | zoomControl.buttons | zoomControl.overviewStrip |
-metronomeSettings>` (the current zoom control `selected`, its check `<row>.check`), `timeline.toolbar.metronomeSettings`,
-`timeline.zoom.out / .level / .in` (buttons) or `timeline.overview` and `timeline.overview.window` (strip),
-`timeline.snapSheet` and `timeline.snapSheet.<bar | quarter | eighth | sixteenth | off>`, `timeline.metronomeSheet.signature`
+D1 tags (2026-10-26, T141; the zoom verdict of 2026-10-27, T144 and T151): added `timeline.toolbar.tempo`,
+`timeline.toolbar.overflow.button` and its rows `timeline.toolbar.overflow.<addAudio | addAudioNewTrack | snap |
+overviewStrip | metronomeSettings>` (`overviewStrip` `selected` while the strip shows, its check `<row>.check`),
+`timeline.toolbar.metronomeSettings`, `timeline.overview` and `timeline.overview.window` (present unless the device hid
+the strip), `timeline.snapSheet` and `timeline.snapSheet.<bar | quarter | eighth | sixteenth | off>`, `timeline.metronomeSheet.signature`
 (rows `<tag>.<signature id>`), `transport.master.button` and `transport.master.popup` (phones), `transport.master.percent`;
-removed `timeline.ruler.tempo`, `timeline.ruler.signature`, `timeline.toolbar.zoom`. The journeys' `timeline.ruler` and
-`timeline.lane.0` are unchanged.
+removed `timeline.ruler.tempo`, `timeline.ruler.signature`, `timeline.toolbar.zoom`, and with the zoom buttons (T144)
+`timeline.zoom.out / .level / .in` and `timeline.toolbar.overflow.zoomControl.<buttons | overviewStrip>`. The journeys'
+`timeline.ruler` and `timeline.lane.0` are unchanged.
 
 ## Copy (`TimelineCopy`)
 
 "Add track", "Add audio…", "Add audio as new track", "Split", "Undo", "Redo", "Snap", "Snap 1/16" (pill), "Snap: 1/16"
-(overflow), "Snap to grid", "Zoom control: Buttons", "Zoom control: Overview strip", "Zoom 2.5×, fit the project", "Fit project",
+(overflow), "Snap to grid", "Overview strip" (overflow), "Overview" and "bars 6 to 15 in view" (the strip's description and state),
 "Track settings", "Move up", "Move down", "Delete track", "Delete clip", "Metronome settings",
 "Effects", "Effects for this track arrive in a later version.", "Stop playback?", "You are leaving
 the timeline while it is playing.", "Stop and leave", "Keep playing", "Could not start playback",

@@ -4,8 +4,16 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemGestures
+import androidx.compose.foundation.layout.union
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -55,13 +63,19 @@ import kotlin.math.roundToInt
  * lanes show: `daw.gridOverlay` at 24 % with a 1 dp `primary` outline and two 8 dp edge handles, never drawn narrower
  * than 24 dp.
  *
+ * [sideInsets] keep the strip clear of the window's sides (the owner's verdict on D1, T151): by default
+ * [OverviewStripDefaults.sideInsets], at least the 16 dp page margin and the system's back-gesture zone where that is
+ * wider, so a handle at either end of the project is grabbed by the strip and not taken by a back swipe. The inset
+ * lies outside the tagged node: its bounds, its semantics and its pointer input cover the strip alone, and the
+ * beat-to-pixel arithmetic runs on that inset width.
+ *
  * Dragging inside the window scrolls ([onScrollTo] with the new left-edge beat: the window follows the finger, held
  * inside the project); dragging a handle zooms ([onZoomTo] with the new span, the opposite edge fixed, held between
  * the viewport's widest and closest levels); a tap outside centres the window on the tap. While [playing] the line
  * reads [telemetry] once per frame in draw, on its own layer so the blocks are not redrawn; stopped it sits at
  * [positionBeats]. Nothing is allocated per frame. Tagged `timeline.overview` ("Overview", "bars 6 to 15 in view"),
  * the window `timeline.overview.window`. [height] is [OverviewStripDefaults.CompactHeight] on compact windows and
- * [OverviewStripDefaults.Height] otherwise.
+ * [OverviewStripDefaults.Height] otherwise. The Timeline composes it only while the device shows it (FR-015; T151).
  */
 @Composable
 internal fun OverviewStrip(
@@ -74,6 +88,7 @@ internal fun OverviewStrip(
     onZoomTo: (startBeats: Beats, endBeats: Beats) -> Unit,
     modifier: Modifier = Modifier,
     height: Dp = OverviewStripDefaults.CompactHeight,
+    sideInsets: PaddingValues = OverviewStripDefaults.sideInsets(),
 ) {
     val colors = TembraTheme.colors
     val daw = TembraTheme.daw
@@ -133,6 +148,8 @@ internal fun OverviewStrip(
         },
         modifier = modifier
             .fillMaxWidth()
+            // Before the tag: the inset is margin, and the node, its semantics and its gestures are the strip alone.
+            .padding(sideInsets)
             .height(height)
             .testTag(TimelineTestTags.OVERVIEW)
             .semantics {
@@ -163,13 +180,29 @@ internal fun OverviewStrip(
     }
 }
 
-/** The strip's two heights (spec FR-015, D1). */
+/** The strip's two heights and its side inset (spec FR-015, D1; T151). */
 internal object OverviewStripDefaults {
     /** On compact windows. */
     val CompactHeight: Dp = 24.dp
 
     /** On medium and expanded windows. */
     val Height: Dp = 28.dp
+
+    /**
+     * Per side, the larger of the page margin and the system's gesture inset on that side (the back-gesture zone with
+     * Android's gesture navigation; zero wherever the platform reports none, as with three-button navigation), so the
+     * strip's ends stay reachable by a finger (the owner's verdict on D1). The inset is read in layout, not composition:
+     * a change of the system's zones relays the strip out without recomposing it.
+     */
+    @Composable
+    fun sideInsets(): PaddingValues {
+        val gestures = WindowInsets.systemGestures
+        val margin = TembraTheme.spacing.pageMargin
+        val density = LocalDensity.current
+        return remember(gestures, margin, density) {
+            gestures.only(WindowInsetsSides.Horizontal).union(WindowInsets(left = margin, right = margin)).asPaddingValues(density)
+        }
+    }
 }
 
 /** Everything the draw lambdas need, resolved once per theme and density so a frame allocates nothing. */

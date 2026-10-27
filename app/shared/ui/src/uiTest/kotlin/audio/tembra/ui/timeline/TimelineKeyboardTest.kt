@@ -110,7 +110,7 @@ class TimelineKeyboardTest {
 
     /**
      * Tab walks toolbar → headers → clips → transport on the real screen (spec FR-057); since D1 the toolbar's tempo pill
-     * comes after "+ Track" and the ruler's zoom buttons sit between the toolbar and the headers.
+     * comes after "+ Track". The overview strip takes no focus: the "+" and "−" keys zoom from the keyboard.
      */
     @Test
     fun tabOrderIsToolbarHeadersClipsTransport() = runComposeUiTest {
@@ -127,7 +127,7 @@ class TimelineKeyboardTest {
         onNodeWithTag(TimelineTestTags.ROOT).requestFocus()
         // One pass of Tabs from the root; the first time each target is focused fixes its place in the order.
         val targets = listOf(
-            TimelineTestTags.ADD_TRACK, TimelineTestTags.TOOLBAR_TEMPO, TimelineTestTags.OVERFLOW_BUTTON, TimelineTestTags.ZOOM_OUT, TimelineTestTags.ZOOM_IN,
+            TimelineTestTags.ADD_TRACK, TimelineTestTags.TOOLBAR_TEMPO, TimelineTestTags.OVERFLOW_BUTTON,
             TimelineTestTags.header(0), TimelineTestTags.clip(0), audio.tembra.ui.perf.PerfAnchors.TRANSPORT_PLAY,
         )
         val firstSeen = mutableMapOf<String, Int>()

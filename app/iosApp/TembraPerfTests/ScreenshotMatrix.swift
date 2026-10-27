@@ -67,28 +67,29 @@ final class ScreenshotMatrix: XCTestCase {
         tapIfPresent("timeline.toolbar.overflow.button") && tapIfPresent("timeline.toolbar.overflow.\(row)")
     }
 
-    /// The device's zoom control (design iteration D1), chosen through the overflow menu: "buttons" (the default, at the
-    /// ruler's right end) or "overviewStrip" (above the transport bar). A device preference, so every run leaves the buttons.
-    private func zoomControl(_ id: String) {
-        guard overflow("zoomControl.\(id)") else { return }
-        let control = app.anchor(id == "overviewStrip" ? Anchors.timelineOverview : "timeline.zoom.level")
-        _ = control.waitForExistence(timeout: 5)
+    /// Drags the overview strip's window by its right handle (8 pt wide; a press within 16 pt of the window's right edge
+    /// takes it) to the screen x [toX], through screen coordinates from the app's origin; false when there is no strip.
+    /// The press lands 1 pt inside the edge, so the edge follows the finger to within less than the closest level's
+    /// one beat (about 2.6 pt on a phone's strip) and a drag onto either limit lands exactly on it.
+    @discardableResult
+    private func dragWindowRightHandle(toX: CGFloat) -> Bool {
+        let window = app.anchor(Anchors.timelineOverviewWindow)
+        guard app.anchor(Anchors.timelineOverview).exists, window.waitForExistence(timeout: 2) else { print("ScreenshotMatrix: no overview strip"); return false }
+        let frame = window.frame
+        let origin = app.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0))
+        let handle = origin.withOffset(CGVector(dx: frame.maxX - 1, dy: frame.midY))
+        handle.press(forDuration: 0.1, thenDragTo: origin.withOffset(CGVector(dx: toX, dy: frame.midY)))
+        return true
     }
 
     func testMatrix() {
         waitReady()
-        // Every state but `overview-strip` shows the default zoom buttons, the fitted view and the playhead at the start.
-        if app.anchor(Anchors.timelineOverview).exists { zoomControl("buttons") }
-        tapIfPresent("timeline.zoom.level", timeout: 2)
+        // Every state starts with the playhead at the start; the overview strip shows unless the device hid it (T151).
         tapIfPresent(Anchors.transportSkipStart, timeout: 2)
         if want("demo-stopped") { shot("demo-stopped") }
-        if want("overview-strip") {
-            zoomControl("overviewStrip")
-            if app.anchor(Anchors.timelineOverview).exists { shot("overview-strip") }
-            zoomControl("buttons")
-        }
+        if want("overview-strip"), app.anchor(Anchors.timelineOverview).exists { shot("overview-strip") }
         if want("overflow-menu"), tapIfPresent("timeline.toolbar.overflow.button") {
-            _ = app.anchor("timeline.toolbar.overflow.zoomControl.buttons").waitForExistence(timeout: 5); shot("overflow-menu"); dismiss()
+            _ = app.anchor("timeline.toolbar.overflow.overviewStrip").waitForExistence(timeout: 5); shot("overflow-menu"); dismiss()
         }
         if want("snap-sheet") {
             // The full toolbar's "Snap" pill opens its menu of sizes; compact and landscape windows open the snap sheet
@@ -126,25 +127,29 @@ final class ScreenshotMatrix: XCTestCase {
         }
         if want("clip-selected"), tapIfPresent(Anchors.timelineClipFirst) { shot("clip-selected") }
         if want("split-result") {
-            // The seek lands on the ruler's left: the zoom buttons overlay its right end (D1).
+            // The seek lands early on the ruler, inside the first clip.
             let ruler = app.anchor(Anchors.timelineRuler)
             if ruler.waitForExistence(timeout: 5) {
                 ruler.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0.5)).tap()
                 if tapIfPresent(Anchors.timelineClipFirst), tapIfPresent(Anchors.timelineSplit) { shot("split-result"); tapIfPresent(Anchors.timelineUndo) }
             }
         }
-        if want("zoom-widest") || want("zoom-closest"), tapIfPresent("timeline.zoom.level") {
-            // The level segment fits the project (the widest view); "+" steps by √2 up to 128×, fourteen steps from the fit.
-            sleep(1)
-            if want("zoom-widest") { shot("zoom-widest") }
-            if want("zoom-closest") {
-                let zoomIn = app.anchor("timeline.zoom.in")
-                for _ in 0..<16 where zoomIn.exists { zoomIn.tap() }
-                // Zooming keeps the view's centre: skip to start so the closest view shows bar 1.
+        if want("zoom-widest") || want("zoom-closest") {
+            // The strip's right handle zooms with the window's left edge fixed: dragged onto that edge it reaches the
+            // closest level, dragged to the strip's right end the widest (a second drag once the first left it short,
+            // as the drawn window is never narrower than 24 pt).
+            tapIfPresent(Anchors.transportSkipStart, timeout: 2)
+            let window = app.anchor(Anchors.timelineOverviewWindow)
+            if want("zoom-closest"), window.waitForExistence(timeout: 2), dragWindowRightHandle(toX: window.frame.minX) {
                 tapIfPresent(Anchors.transportSkipStart); sleep(1)
                 shot("zoom-closest")
             }
-            tapIfPresent("timeline.zoom.level")
+            let strip = app.anchor(Anchors.timelineOverview)
+            if strip.exists {
+                for _ in 0..<2 where window.frame.maxX < strip.frame.maxX - 1 { dragWindowRightHandle(toX: strip.frame.maxX) }
+                sleep(1)
+                if want("zoom-widest") { shot("zoom-widest") }
+            }
         }
         if want("empty-project"), tapIfPresent(Anchors.navProjects) {
             app.waitForAnchor(Anchors.projectsRoot); if tapIfPresent("projects.new") { waitReady(); shot("empty-project") }
