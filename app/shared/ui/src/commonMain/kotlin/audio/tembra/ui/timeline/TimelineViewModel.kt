@@ -552,6 +552,10 @@ class TimelineViewModel(
         SessionMessage.SaveFailed -> TimelineMessage.SaveFailed
         SessionMessage.ProjectTooLarge -> TimelineMessage.ProjectTooLarge
         is SessionMessage.EditRejected -> TimelineMessage.EditRejected(message.reason)
+        is SessionMessage.MicrophoneDenied -> TimelineMessage.MicrophoneDenied(message.openSettings)
+        SessionMessage.MonitorNeedsHeadphones -> TimelineMessage.MonitorNeedsHeadphones
+        SessionMessage.RecordRefused -> TimelineMessage.RecordRefused
+        is SessionMessage.TakeEnded -> TimelineMessage.TakeEnded(message.reason)
     }
 
     // --- Helpers -----------------------------------------------------------------------------------------------------

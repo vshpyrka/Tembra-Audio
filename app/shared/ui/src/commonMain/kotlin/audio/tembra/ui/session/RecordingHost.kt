@@ -21,7 +21,7 @@ interface RecordingHost {
     fun framesToBeats(frames: Long, sampleRate: Int): Beats
 
     /** Applies the finished take as one undo step: the clip source at [audioPath] is opened first and its overview at [overviewPath] tracked. */
-    fun applyTake(edit: RecordTake, audioPath: String, overviewPath: String)
+    suspend fun applyTake(edit: RecordTake, audioPath: String, overviewPath: String)
 
     /** The take began capturing: playback is running now (the pre-roll ended, or Record was pressed while stopped). */
     fun playbackStartedByTake()
