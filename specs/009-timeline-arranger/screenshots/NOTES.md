@@ -325,6 +325,83 @@ the full toolbar. The compact grid-picker captures are gone with the picker (`an
 Seen while capturing, not fixed: on iOS, Undo lights up after the tempo dialog's Done with no change or after the long press
 on the metronome toggle (the tempo stays 124; a relaunch clears it) — T150.
 
+### Captures after the zoom verdict (2026-10-27)
+
+The owner kept the overview strip (T144, T151; `d249c15`): the "− level +" buttons are gone, the strip shows by default on
+every device, inset from the window's sides (16 dp, or the system's back-gesture zone where wider), and the overflow's
+"Overview strip" row hides or shows it per device. Every D1 capture that showed the ruler's right end or the overflow menu
+was redone on the debug build of `8e89c7f`'s app code, same names, same targets, same windows (the Pixel 6 Pro at
+`wm density 640`, 360 dp, reset afterwards; the Pixel Tablet and the iPad in portrait; the fold emulator open; the Duo
+closed with the end rail).
+
+How they were driven:
+
+- Android: the debug build installed through the `gradle-run` wrapper from a detached worktree at `d152c28` (workflow
+  `ca07c074`, `:androidApp:installDebug --warning-mode all` per serial, up to date, zero warnings), then the app driven by
+  its accessibility ids (`scratchpad/cap/ui.py`: UiAutomator dumps, taps, key events) and the strip's handles dragged
+  with `adb shell input motionevent DOWN/MOVE/UP` (an `input swipe` stopped 12 px short of its end point: the strip applies
+  the last move before the lift, not the lift). The fold's PNGs come from its inner display (`screencap -d
+  4619827259835644672`).
+- iOS: `ScreenshotMatrix` with a new `strip-hidden` state (`d152c28`: it opens the overflow, taps
+  `timeline.toolbar.overflow.overviewStrip`, waits until `timeline.overview` is gone, shoots, then shows the strip again),
+  built for testing in the worktree and run per simulator with the state list. The `zoom-closest` and `zoom-widest` states
+  of `d249c15` drag the window's right handle onto the window's left edge, then to the strip's right end (twice, since the
+  drawn window is never narrower than 24 pt); both land on the limits as written: closest shows the ruler at 1.1.1–1.1.4,
+  the scale of D1's 128×, and widest the fit view. `xcodebuild test-without-building` hung after the passing suite on the
+  iPhone 18 Pro and the Duo (not on the iPad). It was interrupted by hand the first time and then by a watchdog 60 s after
+  the suite reported; every PNG had been written by then.
+- Each `strip-hidden` capture hides the strip and then shows it again. Every Android target was left on the Timeline with
+  the strip shown (relaunched at the end, so Undo is clear). The simulators' own apps were never touched, because XCUITest
+  runs on clones.
+
+What changed in the set: the six `*-overview-strip.png` files (`android-compact-`, `android-expanded-`,
+`android-fold-open-`, `ios-compact-`, `ios-expanded-`, `ios-duo-`) are deleted, because the strip is in every capture now.
+A `*-strip-hidden.png` is new for each of the six form factors. The zoom and snap-bar captures now come from the strip's
+handle. The other screenshots were left as they were: the pre-D1 width series, the OPPO, Redmi and Pixel 7 Pro ones, and
+the states outside the D1 set (`ios-*-demo-playing`, `android-expanded-demo-playing`, `*-expanded-zoom-*`, the settings,
+library, search and clip states), which predate D1.
+
+The strip's inset, measured on the PNGs at the widest zoom (where the drawn window's outline covers the whole strip):
+
+| Target | Window | Left | Right |
+|---|---|---|---|
+| Pixel 6 Pro, 360 dp | 1440 px at 4.0 | 30 dp (the 120 px back-gesture zone) | 30 dp |
+| Pixel Tablet, portrait 800 dp | 1600 px at 2.0 | 30 dp from the rail's edge (the 60 px gesture zone) | 30 dp |
+| fold emulator, open | 2076 px at 2.4375 | 30 dp from the rail's edge | 30.8 dp |
+| iPhone 18 Pro | 1206 px at 3× | 16 pt | 16 pt |
+| iPad Pro 13-inch (M5), portrait | 2064 px at 2× | 20 pt from the lanes' left edge (the strip lies under the lanes, as in D1) | 20 pt |
+| iPhone Duo, closed | 1398 px at 3× | 20 pt | 84.3 pt short of the end rail (D1's strip reached the rail) |
+
+| Capture | Target | Shows |
+|---|---|---|
+| `android-compact-demo-stopped.png` | Pixel 6 Pro, 360 dp | "124 BPM" in the toolbar, bars 1–25 across the ruler with nothing over its right end, the strip above the transport bar 30 dp in from both sides, the speaker button |
+| `android-compact-demo-playing.png` | Pixel 6 Pro | playing at 00:02.50 with the chip at 2.2 |
+| `android-compact-overflow-menu.png` | Pixel 6 Pro | Add audio…, Add audio as new track, Snap: 1/16, Overview strip (checked), Metronome settings |
+| `android-compact-strip-hidden.png` | Pixel 6 Pro | the same Timeline without the strip: the lanes reach the transport bar |
+| `android-compact-snap-sheet.png` | Pixel 6 Pro | "Snap to grid": Bar, 1/4, 1/8, 1/16 (checked), Off |
+| `android-compact-snap-bar.png` | Pixel 6 Pro | Bar at 2.80× (the window dragged to 429 of the strip's 1200 px): bars 1–11 in the ruler, bar lines only; snap set back to 1/16 afterwards |
+| `android-compact-master-popup.png` | Pixel 6 Pro | the speaker button lit, the popup slider at 80 % (the popup covers the strip's left part) |
+| `android-compact-metronome-sheet.png`, `android-compact-tempo-dialog.png` | Pixel 6 Pro | "124 BPM from the project" with the 4/4 pill (from the overflow's Metronome settings); the tempo dialog from the toolbar pill |
+| `android-compact-zoom-widest.png` | Pixel 6 Pro | the right handle dragged past the strip's right end: the fit view, the window over the whole strip |
+| `android-compact-zoom-closest.png` | Pixel 6 Pro | the right handle dragged onto the window's left edge: the ruler at 1.1.1 / 1.1.2 / 1.1.3 / 1.1.4, the window drawn at its 24 dp minimum |
+| `android-expanded-demo-stopped.png`, `-overflow-menu.png`, `-strip-hidden.png`, `-snap-sheet.png`, `-metronome-sheet.png`, `-tempo-dialog.png` | Pixel Tablet, portrait 800 dp | the full toolbar (Snap pill, tempo pill, metronome button) and the inline slider at 80 % with the strip; the overflow holding only "Overview strip" (checked); no strip; the Snap pill's menu; the sheet from the toolbar's metronome button; the dialog |
+| `android-fold-open-demo-stopped.png`, `android-fold-open-strip-hidden.png` | fold emulator, open | the strip, then none |
+| `ios-compact-demo-stopped.png`, `-overflow-menu.png`, `-strip-hidden.png`, `-snap-sheet.png`, `-master-popup.png`, `-tempo-dialog.png`, `-metronome-sheet.png`, `-zoom-closest.png`, `-zoom-widest.png` | iPhone 18 Pro | the Android phone's states (the D1 iOS set has no `demo-playing` or `snap-bar`); the strip 16 pt in |
+| `ios-expanded-demo-stopped.png`, `-overflow-menu.png`, `-strip-hidden.png`, `-snap-sheet.png`, `-tempo-dialog.png`, `-metronome-sheet.png` | iPad Pro 13-inch, portrait | the tablet's states; the strip under the lanes column |
+| `ios-duo-demo-stopped.png`, `ios-duo-strip-hidden.png`, `ios-duo-master-popup.png` | iPhone Duo, closed, end rail | the strip (ending 84 pt before the rail), none, the popup |
+
+Seen while capturing, not fixed:
+
+- Beside a navigation rail the strip is inset twice. `OverviewStripDefaults.sideInsets()` pads by the window's gesture
+  zones (`WindowInsets.systemGestures`), but the shell pads its content for `safeDrawing` only and consumes nothing. So the
+  strip insets itself by a window-edge zone that the rail already covers: 84 pt on the Duo's end-rail side (the end column
+  iOS reserves, which `EndRailFrame` fills with the rail), and 30 dp from the rail on the Pixel Tablet and the fold
+  (where the back zone lies under the rail; 16 dp would do).
+- T150 is not iOS-only: on the Pixel Tablet, Undo lights up after the tempo dialog's Done with no change (relaunched,
+  then Done alone; the two strip toggles leave Undo off). It shows in the iOS metronome-sheet captures, which the matrix
+  takes after the tempo dialog.
+- At 360 dp the metronome sheet's "Standard" pill sits under the gesture handle at the bottom edge (it did in D1 too).
+
 ### The zoom-control comparison install (T143, 2026-10-27 02:00)
 
 The D1 release build (`fa0fb41`'s profiles, signed with the debug key, compiled from the profile everywhere but the Redmi)
