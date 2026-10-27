@@ -14,6 +14,7 @@ import audio.tembra.ui.resources.ic_fast_forward_24
 import audio.tembra.ui.resources.ic_fast_rewind_24
 import audio.tembra.ui.resources.ic_folder_24
 import audio.tembra.ui.resources.ic_graphic_eq_24
+import audio.tembra.ui.resources.ic_headphones_24
 import audio.tembra.ui.resources.ic_grid_on_24
 import audio.tembra.ui.resources.ic_hearing_24
 import audio.tembra.ui.resources.ic_library_music_24
@@ -127,4 +128,6 @@ enum class TembraIcon(internal val resource: DrawableResource) {
     AudioFile(Res.drawable.ic_audio_file_24),
     PlaylistAdd(Res.drawable.ic_playlist_add_24),
     Piano(Res.drawable.ic_piano_24),
+    // Feature 010 (timeline recording): the input monitoring toggle.
+    Headphones(Res.drawable.ic_headphones_24),
 }

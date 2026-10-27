@@ -56,6 +56,21 @@ object PerfAnchors {
     const val TIMELINE_OVERVIEW = "timeline.overview"
     const val TIMELINE_OVERVIEW_WINDOW = "timeline.overview.window"
 
+    // Feature 010 (timeline recording, contracts/perf-instrumentation.md): the arm toggle, the meter and the clip latch, Record
+    // in the bar and in the armed compact header, the growing take, the monitor toggle and its overflow entry, the count-in
+    // setting, the denied snackbar's settings action and the stop-recording dialog's confirm action.
+    const val TIMELINE_TRACK_ARM_FIRST = "timeline.track.arm.0"
+    const val TIMELINE_TRACK_METER_FIRST = "timeline.track.meter.0"
+    const val TIMELINE_TRACK_RECORD_FIRST = "timeline.track.record.0"
+    const val TIMELINE_TRACK_CLIP_FIRST = "timeline.track.clip.0"
+    const val TRANSPORT_RECORD = "transport.record"
+    const val TIMELINE_MONITOR = "timeline.toolbar.monitor"
+    const val TIMELINE_OVERFLOW_MONITOR = "timeline.toolbar.overflow.monitor"
+    const val METRONOME_COUNT_IN = "metronome.sheet.countIn"
+    const val TIMELINE_CLIP_TAKE = "timeline.clip.take"
+    const val SNACKBAR_MICROPHONE_SETTINGS = "snackbar.microphone.settings"
+    const val DIALOG_STOP_RECORDING_CONFIRM = "dialog.stopRecording.confirm"
+
     /** Every anchor, for the parity test and the journey drivers' documentation. */
     val all: List<String> = listOf(
         NAV_TUNER, NAV_METRONOME,
@@ -68,5 +83,8 @@ object PerfAnchors {
         TRANSPORT_PLAY, TRANSPORT_SKIP_START, TRANSPORT_METRONOME, TRANSPORT_READOUT,
         DIALOG_STOP_AND_LEAVE_CONFIRM,
         TRANSPORT_MASTER_BUTTON, TRANSPORT_MASTER, TIMELINE_OVERVIEW, TIMELINE_OVERVIEW_WINDOW,
+        TIMELINE_TRACK_ARM_FIRST, TIMELINE_TRACK_METER_FIRST, TIMELINE_TRACK_RECORD_FIRST, TIMELINE_TRACK_CLIP_FIRST,
+        TRANSPORT_RECORD, TIMELINE_MONITOR, TIMELINE_OVERFLOW_MONITOR, METRONOME_COUNT_IN, TIMELINE_CLIP_TAKE,
+        SNACKBAR_MICROPHONE_SETTINGS, DIALOG_STOP_RECORDING_CONFIRM,
     )
 }

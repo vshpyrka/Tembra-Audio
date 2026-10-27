@@ -21,7 +21,7 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Tembra Audio listens to your instrument to show its tuning.</string>
+	<string>Tembra Audio listens to your instrument to show its tuning and records it into your projects.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>UIBackgroundModes</key>
