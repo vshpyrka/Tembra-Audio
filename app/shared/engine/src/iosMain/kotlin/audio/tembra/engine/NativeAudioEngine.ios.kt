@@ -5,7 +5,24 @@ import audio.tembra.core.metronome.Tempo
 import audio.tembra.core.metronome.TimeSignature
 import audio.tembra.core.project.AudioFormat
 import audio.tembra.core.project.Beats
+import audio.tembra.core.recording.TakeStopReason
 import audio.tembra.engine.cinterop.tembra_arrangement
+import audio.tembra.engine.cinterop.tembra_capture_config
+import audio.tembra.engine.cinterop.tembra_capture_read
+import audio.tembra.engine.cinterop.tembra_capture_read_peaks
+import audio.tembra.engine.cinterop.tembra_capture_reset_clip
+import audio.tembra.engine.cinterop.tembra_capture_set_input_latency_ns
+import audio.tembra.engine.cinterop.tembra_capture_snapshot
+import audio.tembra.engine.cinterop.tembra_peak_bucket
+import audio.tembra.engine.cinterop.tembra_record_config
+import audio.tembra.engine.cinterop.tembra_storage_free_bytes
+import audio.tembra.engine.cinterop.tembra_take_info
+import audio.tembra.engine.cinterop.tembra_transport_arm
+import audio.tembra.engine.cinterop.tembra_transport_disarm
+import audio.tembra.engine.cinterop.tembra_transport_record_cancel
+import audio.tembra.engine.cinterop.tembra_transport_record_start
+import audio.tembra.engine.cinterop.tembra_transport_record_stop
+import audio.tembra.engine.cinterop.tembra_transport_set_monitor
 import audio.tembra.engine.cinterop.tembra_audio_health
 import audio.tembra.engine.cinterop.tembra_audio_info
 import audio.tembra.engine.cinterop.tembra_audio_inspect
@@ -59,6 +76,8 @@ import audio.tembra.engine.cinterop.tembra_tuner_stop
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.alloc
+import kotlinx.cinterop.allocArray
+import kotlinx.cinterop.cstr
 import kotlinx.cinterop.get
 import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.nativeHeap
@@ -67,6 +86,8 @@ import kotlinx.cinterop.reinterpret
 import kotlinx.cinterop.set
 import kotlinx.cinterop.toKString
 import kotlinx.cinterop.usePinned
+import kotlinx.cinterop.value
+import kotlinx.cinterop.ULongVar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
@@ -107,6 +128,11 @@ actual class NativeAudioEngine internal constructor(
     private val transportConfig = nativeHeap.alloc<tembra_transport_config>()
     private val arrangement = nativeHeap.alloc<tembra_arrangement>()
     private val transport = nativeHeap.alloc<tembra_transport_snapshot>()
+    // Feature 010: the capture structs, allocated once (the snapshot is read every frame).
+    private val captureConfig = nativeHeap.alloc<tembra_capture_config>()
+    private val capture = nativeHeap.alloc<tembra_capture_snapshot>()
+    private val peakBuckets = nativeHeap.allocArray<tembra_peak_bucket>(PeakBuckets.DEFAULT_CAPACITY)
+    private val peakNext = nativeHeap.alloc<ULongVar>()
 
     /** Guards [previewGeneration] against a start or stop racing the main-queue check. */
     private val previewLock = NSLock()
@@ -388,12 +414,19 @@ actual class NativeAudioEngine internal constructor(
             IosAudioSession.deactivate()
             return if (code == STATE_REFUSED.code) TransportOpenResult.Busy(audioState) else TransportOpenResult.DeviceFailed
         }
-        IosAudioSession.routeChangeListener = { reportOutputLatencyNanos(IosAudioSession.outputLatencyNanos()) }
+        IosAudioSession.routeChangeListener = { reportLatencies() }
         return TransportOpenResult.Opened
+    }
+
+    /** Both latencies of the current route (feature 010, research R9): the output for the clock, the input for the alignment. */
+    private fun reportLatencies() {
+        reportOutputLatencyNanos(IosAudioSession.outputLatencyNanos())
+        if (armed) tembra_capture_set_input_latency_ns(IosAudioSession.inputLatencyNanos())
     }
 
     override fun closeTransport() {
         tembra_transport_close()
+        armed = false
         if (audioState == AudioState.Idle) IosAudioSession.routeChangeListener = null
         releaseSessionUnlessOwnedBy(AudioState.Listening, AudioState.Tone, AudioState.Metronome)
     }
@@ -475,7 +508,131 @@ actual class NativeAudioEngine internal constructor(
         into.blockTimeNanos = transport.block_time_ns
         into.latencyNanos = transport.latency_ns
         into.sampleRate = transport.sample_rate.toInt()
+        into.countInBeatsLeft = transport.count_in_beats_left
+        into.recording = transport.recording != 0u
     }
+
+    // --- Capture, takes and monitoring (feature 010, contracts/engine-c-abi-v7.md "Kotlin seam") ---------------------
+
+    /** True between a successful [arm] and [disarm] (or the transport closing). */
+    private var armed = false
+
+    /**
+     * The session switches to `playAndRecord` before the unit restarts with its input bus (research R3), both
+     * latencies are reported, then the engine arms. On the caller's thread like the transport's open (the unit is
+     * reconfigured here, not primed).
+     */
+    override suspend fun arm(maxChannels: Int): ArmResult {
+        if (audioState != AudioState.Transport) return ArmResult.NotTransport
+        IosAudioSession.activateForRecording()
+        reportOutputLatencyNanos(IosAudioSession.outputLatencyNanos())
+        tembra_capture_set_input_latency_ns(IosAudioSession.inputLatencyNanos())
+        captureConfig.max_channels = maxChannels.toUInt()
+        captureConfig.reserved = 0u
+        val code = tembra_transport_arm(captureConfig.ptr)
+        if (code != 0) {
+            IosAudioSession.activateForPlayback()
+            return if (code == STATE_REFUSED.code) ArmResult.NotTransport else ArmResult.InputUnavailable
+        }
+        armed = true
+        tembra_capture_read(capture.ptr)
+        return ArmResult.Armed(channels = capture.input_channels.toInt().coerceAtLeast(1), sampleRate = capture.sample_rate.toInt())
+    }
+
+    override fun disarm() {
+        tembra_transport_disarm()
+        if (armed && audioState == AudioState.Transport) {
+            IosAudioSession.activateForPlayback()
+            reportOutputLatencyNanos(IosAudioSession.outputLatencyNanos())
+        }
+        armed = false
+    }
+
+    override fun setMonitor(enabled: Boolean, trackIndex: Int) {
+        tembra_transport_set_monitor(if (enabled) 1u else 0u, trackIndex.toUInt())
+    }
+
+    /** The staging file is created and the position primed (file I/O): off the main thread. */
+    override suspend fun recordStart(config: RecordConfig): RecordStartResult = withContext(Dispatchers.IO) {
+        memScoped {
+            val record = alloc<tembra_record_config>()
+            record.wav_path = config.wavPath.cstr.ptr
+            record.track_index = config.trackIndex.toUInt()
+            record.count_in_beats = config.countInBeats.toUInt()
+            record.max_frames = config.maxFrames
+            record.min_free_bytes = config.minFreeBytes.toULong()
+            when (val code = tembra_transport_record_start(record.ptr)) {
+                0 -> RecordStartResult.Started
+                IO_ERROR -> RecordStartResult.FileFailed
+                else -> {
+                    tembra_capture_read(capture.ptr)
+                    if (code == STATE_REFUSED.code && capture.armed != 0u) RecordStartResult.TakeRunning else RecordStartResult.NotArmed
+                }
+            }
+        }
+    }
+
+    override fun recordCancel() {
+        tembra_transport_record_cancel()
+    }
+
+    /** The drain and the header finalisation block for up to a second: off the main thread. */
+    override suspend fun recordStop(): TakeInfo = withContext(Dispatchers.IO) {
+        memScoped {
+            val info = alloc<tembra_take_info>()
+            if (tembra_transport_record_stop(info.ptr) != 0) {
+                TakeInfo(startFrames = 0, startBeats = 0.0, frames = 0, channels = 0, sampleRate = 0, alignmentFrames = 0, stopReason = TakeStopReason.User)
+            } else {
+                TakeInfo(
+                    startFrames = info.start_frames, startBeats = info.start_beats, frames = info.frames, channels = info.channels.toInt(),
+                    sampleRate = info.sample_rate.toInt(), alignmentFrames = info.alignment_frames, stopReason = TakeStopReasonCodes.fromNative(info.stop_reason.toInt()),
+                )
+            }
+        }
+    }
+
+    override fun readCapture(into: CaptureSnapshot) {
+        tembra_capture_read(capture.ptr)
+        into.armed = capture.armed != 0u
+        into.recording = capture.recording != 0u
+        into.preRoll = capture.pre_roll != 0u
+        into.monitoring = capture.monitoring != 0u
+        into.inputChannels = capture.input_channels.toInt()
+        into.sampleRate = capture.sample_rate.toInt()
+        into.peak[0] = capture.peak[0]
+        into.peak[1] = capture.peak[1]
+        into.clipped = capture.clipped != 0u
+        into.framesCaptured = capture.frames_captured
+        into.takeStartFrames = capture.take_start_frames
+        into.alignmentFrames = capture.alignment_frames
+        into.inputLatencyNanos = capture.input_latency_ns
+        into.outputLatencyNanos = capture.output_latency_ns
+        into.stopReason = TakeStopReasonCodes.fromNative(capture.stop_reason.toInt())
+        into.inputOverruns = capture.input_overruns.toInt()
+        into.backlogFrames = capture.backlog_frames.toInt()
+    }
+
+    override fun readPeaks(fromIndex: Long, into: PeakBuckets): Long {
+        val wanted = minOf(into.capacity, PeakBuckets.DEFAULT_CAPACITY)
+        val count = tembra_capture_read_peaks(fromIndex.toULong(), peakBuckets, wanted.toUInt(), peakNext.ptr).toInt()
+        for (i in 0 until count) {
+            val bucket = peakBuckets[i]
+            into.min[i * 2] = bucket.min[0]
+            into.min[i * 2 + 1] = bucket.min[1]
+            into.max[i * 2] = bucket.max[0]
+            into.max[i * 2 + 1] = bucket.max[1]
+        }
+        into.count = count
+        into.nextIndex = peakNext.value.toLong()
+        into.firstIndex = into.nextIndex - count
+        return into.nextIndex
+    }
+
+    override fun resetClip() {
+        tembra_capture_reset_clip()
+    }
+
+    override fun freeBytes(path: String): Long = tembra_storage_free_bytes(path)
 
     override suspend fun inspect(path: String): AudioInfo? = withContext(Dispatchers.IO) {
         memScoped {
@@ -498,6 +655,9 @@ actual class NativeAudioEngine internal constructor(
     private companion object {
         /** `TEMBRA_ERR_STATE`: what the engine answers when it is not in a state that allows the call. */
         val STATE_REFUSED = AudioResult.Error(-1)
+
+        /** `TEMBRA_ERR_IO`: the staging file could not be created. */
+        const val IO_ERROR = -6
         const val PREVIEW_CHECK_INTERVAL_NANOS = 100_000_000L
 
         /** 3 s: a custom sound is kept up to 2 s (research R4), so a 1 s bound would leave its session active. */

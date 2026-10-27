@@ -452,6 +452,8 @@ class TunerViewModel(
                 _uiState.update { it.copy(audition = null) }
                 applyAudio()
             }
+            // Feature 010: the recording session's route changes; the tuner's own stream is untouched by them.
+            AudioEvent.InputRouteChanged, is AudioEvent.OutputRouteChanged -> Unit
         }
     }
 

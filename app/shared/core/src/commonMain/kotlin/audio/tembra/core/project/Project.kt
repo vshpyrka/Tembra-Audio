@@ -13,8 +13,10 @@ import kotlinx.serialization.Serializable
  * The project document's content (spec FR-003, FR-049; data-model.md section 1): the single source of truth the
  * engine derives its real-time view from (Constitution V). Everything musical is in beats; audio is referenced by
  * content id with its format facts; nothing here names a device path. Grid and zoom live in the device-side
- * `ProjectViewState`. Field order is the contract's wire order (and the future `@ProtoNumber` order). Name and
- * description length are rules of `ProjectEditor` and `ProjectValidator`, not of the constructor.
+ * `ProjectViewState`. Field order is the contract's wire order (and the future `@ProtoNumber` order); a field added
+ * by a later feature is appended with a default, so an older document still reads ([countIn] came with feature 010
+ * and a feature 009 document reads as one bar). Name and description length are rules of `ProjectEditor` and
+ * `ProjectValidator`, not of the constructor.
  */
 @Serializable
 data class Project(
@@ -28,11 +30,12 @@ data class Project(
     @SerialName("metronomeOn") val metronomeOn: Boolean = false,
     @SerialName("assets") @Serializable(with = PersistentMapSerializer::class) val assets: PersistentMap<AudioAssetId, AudioAsset>,
     @SerialName("tracks") @Serializable(with = PersistentListSerializer::class) val tracks: PersistentList<Track>,
+    @SerialName("countIn") @Serializable(with = CountInSerializer::class) val countIn: CountIn = CountIn.ONE_BAR,
 ) {
     companion object {
         const val DEFAULT_MASTER_VOLUME = 80
 
-        /** A new project as spec FR-003 and FR-052 define it: 120 BPM, 4/4, no description, no key, no tracks. */
+        /** A new project as spec FR-003 and FR-052 define it: 120 BPM, 4/4, no description, no key, no tracks, a one-bar count-in. */
         fun new(id: ProjectId, name: String): Project = Project(
             id = id,
             name = name,

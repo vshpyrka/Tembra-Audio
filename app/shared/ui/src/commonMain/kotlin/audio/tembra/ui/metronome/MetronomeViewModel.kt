@@ -197,6 +197,8 @@ class MetronomeViewModel(
                 AudioEvent.DeviceLost -> onPlaybackEvent(PlaybackEvent.DeviceLost)
                 // The metronome never restarts by itself (spec FR-027): the end of an interruption changes nothing.
                 AudioEvent.InterruptionEnded -> Unit
+                // Feature 010: the recording session's route changes concern the timeline only.
+                AudioEvent.InputRouteChanged, is AudioEvent.OutputRouteChanged -> Unit
             }
         }
     }

@@ -15,6 +15,15 @@ class PlaybackPolicyTest {
         assertEquals(PlaybackOutcome(PlaybackState.Starting(Beats(16.0)), PlaybackTransition.Start), step(stopped, PlaybackEvent.Play))
     }
 
+    /** Feature 010: Record while stopped starts playback inside the engine; the state follows without a Start transition. */
+    @Test
+    fun recordStartedMovesStoppedToPlayingWithoutAStart() {
+        assertEquals(PlaybackOutcome(PlaybackState.Playing, PlaybackTransition.BecomePlaying), step(stopped, PlaybackEvent.RecordStarted))
+        assertEquals(PlaybackOutcome(PlaybackState.Playing, PlaybackTransition.BecomePlaying), step(PlaybackState.Starting(Beats(16.0)), PlaybackEvent.RecordStarted))
+        assertEquals(PlaybackOutcome(PlaybackState.Playing, PlaybackTransition.None), step(PlaybackState.Playing, PlaybackEvent.RecordStarted))
+        assertEquals(PlaybackOutcome(PlaybackState.Pausing, PlaybackTransition.None), step(PlaybackState.Pausing, PlaybackEvent.RecordStarted))
+    }
+
     @Test
     fun startingPlusStartedIsPlaying() {
         assertEquals(PlaybackOutcome(PlaybackState.Playing, PlaybackTransition.BecomePlaying), step(PlaybackState.Starting(Beats(16.0)), PlaybackEvent.Started))

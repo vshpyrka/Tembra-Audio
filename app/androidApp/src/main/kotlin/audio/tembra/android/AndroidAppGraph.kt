@@ -6,6 +6,7 @@ import audio.tembra.data.AppDirectories
 import audio.tembra.engine.AudioEngine
 import audio.tembra.engine.NativeAudioEngine
 import audio.tembra.ui.di.AppGraph
+import audio.tembra.ui.platform.AudioRouteMonitor
 import audio.tembra.ui.platform.BackgroundPlaybackHost
 import audio.tembra.ui.platform.MicrophonePermission
 import audio.tembra.ui.platform.AudioFilePicker
@@ -65,6 +66,11 @@ interface AndroidAppGraph : AppGraph {
     @Provides
     @SingleIn(AppScope::class)
     fun provideAudioFilePicker(host: AudioFilePickerHost, context: Context): AudioFilePicker = AndroidAudioFilePicker(host, context)
+
+    /** The device routes for the recording controller (feature 010, research R12). */
+    @Provides
+    @SingleIn(AppScope::class)
+    fun provideAudioRouteMonitor(context: Context): AudioRouteMonitor = AndroidAudioRouteMonitor(context)
 
     @DependencyGraph.Factory
     fun interface Factory {
