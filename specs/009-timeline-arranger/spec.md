@@ -28,7 +28,7 @@ mixing behaviour used in the requirements and success criteria.
 
 | Element | Where it appears | Verdict |
 |---|---|---|
-| Toolbar above the tracks: "+ Track" primary button; a scissors button titled "Split / Scissors"; a "Grid 1/16" pill; a zoom pill with a magnifier and "1x"; an "Arrange" pill | Both timeline screens | **Kept**: add track (FR-019), split (FR-032), grid picker (FR-018), zoom readout (FR-015; D1 replaced the readout with an always-visible zoom control). The "Arrange" pill is **excluded**: it would switch to a second view (session or clip-launch) that does not exist yet |
+| Toolbar above the tracks: "+ Track" primary button; a scissors button titled "Split / Scissors"; a "Grid 1/16" pill; a zoom pill with a magnifier and "1x"; an "Arrange" pill | Both timeline screens | **Kept**: add track (FR-019), split (FR-032), grid picker (FR-018), zoom readout (FR-015; D1 replaced the readout with an always-visible zoom control, since the owner's verdict of 2026-10-27 the overview strip). The "Arrange" pill is **excluded**: it would switch to a second view (session or clip-launch) that does not exist yet |
 | Headphones button and a muted-speaker button in the toolbar | Tablet timeline screen | **Excluded**: input monitoring belongs to the recording feature (011) and the second glyph has no stated meaning on either screen |
 | Ruler: "BPM 124.0" and "4/4" at the left, bar numbers 1 to 10 with small beat ticks, a playhead marker (a rounded tab) above the vertical playhead line | Both timeline screens (the phone shows bars 1 to 8) | **Kept**: the ruler shows bars and beats and, as the user asked, a time scale whose labels follow the zoom (FR-013, FR-014); the tempo and time signature were shown and edited from the ruler's left end until D1 (2026-10-26) moved the tempo into the toolbar and the signature into the metronome sheet, since on a phone the two pills covered the first bars (FR-036, FR-037); the tempo is a whole number as in the metronome, the ".0" is drift |
 | Track header: a colour dot, the name ("Lead Vocal", "Bass 808", "Perc / Loops", "Pad Filter"), "M" and "S" toggles titled "Mute" and "Solo Listen", a gain readout ("−0.5dB", "−2.4dB", "+0.8dB", "−3.2dB"), a "…" menu; the phone shows the name as "Track 1" followed by a chip "Lead Vocal" | Both timeline screens | **Kept** as the phone shows it: a free name and an instrument label chip from a fixed list (FR-020, FR-021), colour (FR-022), mute and solo (FR-024), gain (FR-023) and the track menu (FR-026) |
@@ -154,12 +154,27 @@ they are). The amendment names this specification.
   end with the level between them (the default; a tap on the level fits the project), or an
   overview strip above the transport bar (the whole project with its clips as blocks, the
   playhead and a draggable window for the visible span whose edges zoom). The owner keeps one;
-  the other is removed afterwards (FR-015, FR-055).
+  the other is removed afterwards (FR-015, FR-055); settled on 2026-10-27, in the session below.
 - Q: The playhead marker's text is barely visible. → A: Text in a theme colour that contrasts
   with the chip at 4.5:1 or better, and a 1 dp outline on the chip (FR-009).
 - Q: There is no way to record into a track. → A: Out of scope here (FR-064). The owner chose
   recording as the next feature, before the mixer, as its own spec with its own input level
   meter on the track header; the constitution's order is amended for it.
+
+### Session 2026-10-27 (design iteration D1, the zoom verdict)
+
+- Q: Which of the two zoom controls stays? → A: The owner: "I prefer the strip more, however I
+  would like you to add a little padding from left and right sides as there can be a back
+  navigation gesture happening on the screen and it will be hard to tap on the strip edge to
+  change it. Make it also configurable from settings, so it can be displayed or hidden." The
+  overview strip stays and the zoom buttons at the ruler's right end are removed, with the
+  per-device "Zoom control" choice. The strip is inset from the window's sides by at least
+  16 dp, and by the system's back-gesture zone where that is wider, so either end of the
+  window can be grabbed without starting a back swipe. The app has no settings screen; the
+  Timeline's per-device choices live in the toolbar's overflow menu, so its "Overview strip"
+  entry shows or hides the strip, shown by default and remembered on the device. With the strip
+  hidden the pinch, the wheel with the modifier, the trackpad pinch and the "+" and "−" keys
+  still zoom (FR-015, FR-055).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -289,8 +304,8 @@ The ruler above the tracks shows bar numbers with beat ticks and, under them, th
 minutes and seconds. The musician pinches on the ruler or the tracks to zoom in; the beat ticks
 become labelled beats, then subdivisions, and the time labels change to seconds, then tenths and
 hundredths. Pinching out shows the whole song at once with only bars and minutes labelled. The
-zoom readout shows the level; a scroll wheel with the modifier key or a trackpad pinch does the
-same with a mouse. Scrolling sideways moves along the song and, during playback, the view
+overview strip above the transport bar shows the whole song with a window over the part in
+view; a scroll wheel with the modifier key or a trackpad pinch does the same with a mouse. Scrolling sideways moves along the song and, during playback, the view
 follows the playhead. The grid picker sets the snap for taps on the ruler, playhead drags and
 clip moves to a bar, a quarter, an eighth, a sixteenth or off.
 
@@ -310,7 +325,7 @@ it. Delivers a navigable timeline.
    tracks' clips are drawn to the same scale.
 2. **Given** any zoom level, **When** the user pinches on the ruler or on the track area,
    **Then** the timeline zooms around the pinch centre, the clips and waveforms rescale with it,
-   the labels change density by the rules of FR-014, and the zoom readout updates; the pinch
+   the labels change density by the rules of FR-014, and the overview strip's window resizes; the pinch
    stops at the widest level (the whole project, at least 32 bars, fits the window) and at the
    closest (one beat spans at least the window's width).
 3. **Given** a pointer device, **When** the user turns the scroll wheel with the platform's
@@ -747,15 +762,17 @@ clips, overlaps or hides behind the transport bar.
   least 32 bars, fits the window and a closest level at which one beat spans at least the
   window width; it MUST be driven by a pinch on the ruler or the track area (zooming around the
   pinch centre), by the scroll wheel with the platform's modifier key and by a trackpad pinch
-  (zooming around the pointer), by the "+" and "−" keys, and by an always-visible zoom control (D1) chosen per device from
-  the overflow menu's "Zoom control" entry and remembered on the device: either "−" and "+"
-  buttons at the ruler's right end with the level between them, a tap on the level fitting the
-  project (the default), or an overview strip above the transport bar that draws the whole
-  project with its clips as blocks, the playhead and a window for the visible span, where
-  dragging the window scrolls and dragging its edges zooms. The two are built for the owner's
-  side-by-side comparison on different devices; the one not chosen is removed afterwards. The
-  overflow menu's zoom readout is replaced by the control. The level MUST be remembered per
-  project.
+  (zooming around the pointer), by the "+" and "−" keys, and by the overview strip (D1; the
+  owner's verdict of 2026-10-27): a strip above the transport bar that draws the whole project
+  with its clips as blocks, the playhead and a window for the visible span, where dragging the
+  window scrolls, dragging its edges zooms and a tap outside the window centres it there. The
+  strip MUST be shown by default and MUST be shown or hidden from the overflow menu's "Overview
+  strip" entry, checked while shown and remembered on the device, outside every project; with
+  the strip hidden the pinch, wheel, trackpad and key paths remain. The strip MUST be inset from
+  the window's left and right sides by at least 16 dp, and by the system's back-gesture zone on
+  a side where that is wider, so that both ends of its window can be grabbed without starting a
+  back swipe. The overflow menu's zoom readout is replaced by the strip. The level MUST be
+  remembered per project.
 - **FR-016**: The timeline MUST scroll horizontally by drag, by the scroll wheel without the
   modifier and by a two-finger trackpad swipe; the track list MUST scroll vertically when the
   tracks exceed the height, with the ruler pinned at the top and, in expanded windows, the
@@ -973,7 +990,7 @@ clips, overlaps or hides behind the transport bar.
 
 - **FR-055**: In windows narrower than 600 dp the toolbar MUST show "+ Track", the scissors,
   undo, redo, the tempo pill (D1) and an overflow menu holding "Add audio…", "Add audio as new
-  track", the "Snap" picker, the "Zoom control" choice and "Metronome settings" (D1); headers MUST be compact (colour dot, name,
+  track", the "Snap" picker, the "Overview strip" entry and "Metronome settings" (D1); headers MUST be compact (colour dot, name,
   label chip, M, S, menu) at least 56 dp tall with the gain in the settings; at least three
   tracks and the ruler MUST be visible above the transport bar on a phone in portrait at the
   default font scale. In windows 840 dp or wider every toolbar control MUST be visible, headers
@@ -1073,9 +1090,9 @@ clips, overlaps or hides behind the transport bar.
   first frame of the cards).
 - Design iteration D1 (2026-10-26) adds its two interactions to the `timeline` journey: on a
   phone, open the master volume pop-up, move its slider a little and close it with a tap
-  outside (the change is undone, so the project is the same after every pass), and, when the
-  overview strip is the device's zoom control, drag the strip's window once and back (measured by
-  the existing scroll section). It adds one section, the pop-up's opening (master popup), and
+  outside (the change is undone, so the project is the same after every pass), and, unless the
+  device hid the overview strip, drag the strip's window once and back (measured by the existing
+  scroll section). It adds one section, the pop-up's opening (master popup), and
   anchors on the speaker button, the volume slider, the strip and its window.
 - Counters added: playback underruns during the journey, clip reads that were not ready when
   the engine needed them (starvation), peak and average callback load during playback, and the

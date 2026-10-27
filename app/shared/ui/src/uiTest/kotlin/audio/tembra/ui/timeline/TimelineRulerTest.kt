@@ -41,7 +41,6 @@ import audio.tembra.ui.designsystem.isCloserTo
 import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.ui.timeline.components.RULER_DESCRIPTION
 import audio.tembra.ui.timeline.components.TimelineRuler
-import audio.tembra.ui.timeline.components.ZoomButtons
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -53,8 +52,8 @@ import kotlin.test.assertTrue
 
 /**
  * The ruler driven with a fixed viewport (contracts/timeline-screen.md; T079): labels drawn, taps seek, drags scrub, the
- * chip text and its legibility (FR-009; T139), and its two slots (D1, T141): the left slot before the canvas and the
- * zoom buttons over the canvas's right end, the canvas keeping its width.
+ * chip text and its legibility (FR-009; T139), and its left slot before the canvas (D1, T141); nothing overlays the
+ * canvas since the zoom buttons went (T144).
  */
 @OptIn(ExperimentalTestApi::class)
 class TimelineRulerTest {
@@ -72,7 +71,6 @@ class TimelineRulerTest {
         playing: Boolean = false,
         telemetry: ScriptedTransportTelemetry = ScriptedTransportTelemetry.stopped(0.0),
         leftSlot: (@Composable () -> Unit)? = null,
-        rightControls: (@Composable () -> Unit)? = null,
     ) {
         setContent {
             TembraTheme {
@@ -95,7 +93,6 @@ class TimelineRulerTest {
                     onScrubEnd = { scrubs += "end" },
                     modifier = Modifier.width(600.dp).testTag(ROW),
                     leftSlot = leftSlot,
-                    rightControls = rightControls,
                 )
             }
         }
@@ -117,23 +114,17 @@ class TimelineRulerTest {
     }
 
     /**
-     * The expanded layout's empty 200 dp left slot puts the canvas's start 200 dp in, nothing between them; the zoom
-     * buttons sit over the canvas's right end without narrowing it, so the canvas's scale stays the lanes' (FR-017).
+     * The expanded layout's empty 200 dp left slot puts the canvas's start 200 dp in, nothing between them, and the
+     * canvas runs to the row's right end, so its scale stays the lanes' (FR-017).
      */
     @Test
-    fun theLeftSlotShiftsTheCanvasAndTheRightControlsOverlayItsEnd() = runComposeUiTest {
-        setRuler(
-            leftSlot = { Spacer(Modifier.width(200.dp)) },
-            rightControls = { ZoomButtons(levelLabel = "1×", onZoomOut = {}, onZoomIn = {}, onFit = {}) },
-        )
+    fun theLeftSlotShiftsTheCanvasToTheRowsEnd() = runComposeUiTest {
+        setRuler(leftSlot = { Spacer(Modifier.width(200.dp)) })
         val row = onNodeWithTag(ROW).getUnclippedBoundsInRoot()
         val canvas = onNodeWithTag(TimelineTestTags.RULER).assertWidthIsEqualTo(row.right - row.left - 200.dp).getUnclippedBoundsInRoot()
         assertTrue(abs((canvas.left - row.left - 200.dp).value) < 0.5f, "the canvas starts at ${canvas.left}, not right after the 200 dp slot at ${row.left + 200.dp}")
-        val zoomOut = onNodeWithTag(TimelineTestTags.ZOOM_OUT).getUnclippedBoundsInRoot()
-        val zoomIn = onNodeWithTag(TimelineTestTags.ZOOM_IN).getUnclippedBoundsInRoot()
-        assertTrue(abs((canvas.right - zoomIn.right).value) < 0.5f, "the buttons end at ${zoomIn.right}, not at the canvas's right end ${canvas.right}")
-        assertTrue(abs((zoomIn.right - zoomOut.left - 132.dp).value) < 0.5f, "the three 44 dp targets span ${zoomIn.right - zoomOut.left}")
-        assertTrue(zoomOut.top >= canvas.top && zoomIn.bottom <= canvas.bottom, "the buttons $zoomOut..$zoomIn leave the ruler $canvas")
+        assertTrue(abs((canvas.right - row.right).value) < 0.5f, "the canvas ends at ${canvas.right}, not at the row's right end ${row.right}")
+        assertEquals(0, onAllNodes(hasClickAction()).fetchSemanticsNodes().size, "nothing clickable overlays the canvas")
     }
 
     @Test

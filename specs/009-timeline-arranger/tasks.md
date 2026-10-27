@@ -387,7 +387,28 @@ every target with zero warnings.
 
 ### After the owner's verdict
 
-- [ ] T144 Remove the zoom control the owner did not choose, its preference and its tests; spec FR-015 names the survivor
+- [X] T144 Remove the zoom control the owner did not choose, its preference and its tests; spec FR-015 names the survivor.
+  Verdict 2026-10-27 (spec Clarifications): the overview strip stays. Removed `UI/timeline/components/ZoomButtons.kt`,
+  `ZoomLabel.kt`, `CORE/project/ZoomControl.kt`, `UI_UITEST/timeline/ZoomButtonsTest.kt` and `CORE_TEST/project/
+  ZoomControlTest.kt`, the tags `timeline.zoom.out/.level/.in` and `timeline.toolbar.overflow.zoomControl.<id>`, the
+  "Zoom control", "Zoom in", "Zoom out", "Fit project" and level copy, `TimelineRuler`'s right-controls slot and
+  `TimelineCallbacks.onFitProject` (no caller left; the ViewModel's `fitProject` stays); pinch, wheel, trackpad and the
+  "+"/"−" keys remain the other zoom paths
+- [X] T151 The strip's side inset and the show/hide preference (spec FR-015, FR-055; the owner's verdict on D1):
+  `UI/timeline/components/OverviewStrip.kt` takes `sideInsets` (default `OverviewStripDefaults.sideInsets()`: per side the
+  larger of the 16 dp page margin and `WindowInsets.systemGestures`), applied before the tag so the node, its semantics
+  and its gestures cover the inset strip; `DATA/timeline/TimelinePreferences.kt` becomes `overviewStripShown`
+  (`timeline.overviewStrip`, a boolean, shown while absent; a write removes the stale `timeline.zoomControl`) in
+  `DataStoreTimelinePreferences.kt` and `FakeTimelinePreferences.kt`; `TimelineUiState.overviewStripShown`,
+  `TimelineViewModel.setOverviewStripShown`, `TimelineCallbacks.onOverviewStripShown` wired in `TimelineScreen.kt`;
+  one overflow row "Overview strip" (tag `timeline.toolbar.overflow.overviewStrip`, checked while shown) in both overflow
+  lists of `TimelineToolbar.kt`; `TimelineScreenContent.kt` composes the strip only while shown. Tests:
+  `UI_UITEST/timeline/OverviewStripTest.kt` (the default inset), `TimelineScreenTest` (show, hide, no node, no check),
+  `TimelineLargeFontTest`, `TimelineRulerTest`, `TimelineSemanticsTest`, `TimelineKeyboardTest`,
+  `UI_UITEST/designsystem/TembraMenuTest.kt`, `UI_TEST/timeline/TimelineViewModelTest.kt`,
+  `DATA_TEST/timeline/DataStoreTimelinePreferencesTest.kt` (new); the journeys' comments
+  (`PERF/journeys/TimelineJourney.kt`, `IOSPERF/Journeys/TimelineJourney.swift`) and `IOSPERF/ScreenshotMatrix.swift`
+  (the zoom states drag the window's right handle); the baseline profiles regenerated on the Pixel 6 Pro
 - [ ] T145 `/speckit-constitution`: recording before the mixer (its own input level meter on the track header); then
   `/speckit-specify` the recording feature
 

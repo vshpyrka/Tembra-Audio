@@ -14,7 +14,6 @@ import audio.tembra.core.project.ClipTemplate
 import audio.tembra.core.project.GainDb
 import audio.tembra.core.project.GridSize
 import audio.tembra.core.project.PlaybackState
-import audio.tembra.core.project.ZoomControl
 import audio.tembra.data.metronome.FakeMetronomePreferences
 import audio.tembra.data.projects.DemoProject
 import audio.tembra.data.projects.DemoProjectIds
@@ -592,34 +591,46 @@ class TimelineViewModelTest {
         later.screenVisible(false)
     }
 
-    /** Spec FR-015 (D1): the zoom control is chosen per device, outside every project, and read back when the timeline shows. */
+    /** Spec FR-015 (T151): the strip shows by default; hiding it is a device preference, outside every project, kept on open. */
     @Test
-    fun theZoomControlIsADevicePreferenceRestoredOnStart() = test {
+    fun hidingTheOverviewStripIsADevicePreferenceRestoredOnStart() = test {
         openDemo()
-        assertEquals(ZoomControl.Buttons, ui().zoomControl, "the buttons are the default")
-        viewModel.setZoomControl(ZoomControl.OverviewStrip)
-        assertEquals(ZoomControl.OverviewStrip, ui().zoomControl)
-        assertEquals(ZoomControl.OverviewStrip, timelinePreferences.stored, "the choice is written to the device preferences")
+        assertTrue(ui().overviewStripShown, "the strip shows by default")
+        viewModel.setOverviewStripShown(false)
+        assertFalse(ui().overviewStripShown)
+        assertFalse(timelinePreferences.stored, "the choice is written to the device preferences")
         advanceTimeBy(600)
         runCurrent()
-        assertFalse(session.state.value.canUndo, "choosing a control is not an edit")
+        assertFalse(session.state.value.canUndo, "showing or hiding the strip is not an edit")
         assertEquals(demo, repository.saved.getValue(demo.id), "the document is untouched")
         // Another project keeps the device's choice: it belongs to no project.
         scope.launch { session.open(repository.create("Second").id) }
         advanceTimeBy(200)
         runCurrent()
         assertEquals("Second", ui().projectName)
-        assertEquals(ZoomControl.OverviewStrip, ui().zoomControl)
+        assertFalse(ui().overviewStripShown)
         // A fresh ViewModel after a relaunch reads the stored choice once the timeline shows.
         val later = TimelineViewModel(session, picker, preferences, timelinePreferences)
         later.screenVisible(true)
         runCurrent()
-        assertEquals(ZoomControl.OverviewStrip, later.uiState.value.zoomControl)
-        later.setZoomControl(ZoomControl.Buttons)
+        assertFalse(later.uiState.value.overviewStripShown)
+        later.setOverviewStripShown(true)
         runCurrent()
-        assertEquals(ZoomControl.Buttons, timelinePreferences.stored)
-        assertEquals(ZoomControl.Buttons, later.uiState.value.zoomControl)
+        assertTrue(timelinePreferences.stored)
+        assertTrue(later.uiState.value.overviewStripShown)
         later.screenVisible(false)
+    }
+
+    /** A device that hid the strip before this launch: the stored `false` is what the first shown state carries (T151). */
+    @Test
+    fun aStoredHiddenStripIsReadWhenTheTimelineShows() = test {
+        val hidden = FakeTimelinePreferences(initialShown = false)
+        val fresh = TimelineViewModel(session, picker, preferences, hidden)
+        fresh.screenVisible(true)
+        runCurrent()
+        assertFalse(fresh.uiState.value.overviewStripShown, "the stored choice hides the strip")
+        assertFalse(hidden.stored, "reading writes nothing")
+        fresh.screenVisible(false)
     }
 
     /** T147: the metronome settings are global, so opening another project keeps the sheet's settings and their updates. */

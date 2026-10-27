@@ -44,7 +44,6 @@ import audio.tembra.core.project.GridSize
 import audio.tembra.core.project.InstrumentLabel
 import audio.tembra.core.project.PlaybackState
 import audio.tembra.core.project.TrackId
-import audio.tembra.core.project.ZoomControl
 import audio.tembra.core.timeline.TimelineViewport
 import audio.tembra.data.projects.OverviewStatus
 import audio.tembra.ui.perf.PerfAnchors
@@ -65,8 +64,9 @@ import kotlin.test.assertTrue
  * The Timeline content at Compact and Expanded under a frozen clock, semantics before pixels
  * (contracts/timeline-screen.md; T079, User Story 1): the demo's tracks and clips, the chrome, the first-content
  * state, and the delete confirmation; since D1 (T141) the toolbar's tempo pill, the metronome sheet's signature, the
- * snap sheet, the zoom-control choice and a ruler whose first bar nothing covers. The state is held so the callbacks
- * that open sheets or change the grid and the zoom control show their result, as the ViewModel's state does.
+ * snap sheet and a ruler whose first bar nothing covers; since the owner's verdict (T151) the overview strip shown by
+ * default and the overflow entry that hides it. The state is held so the callbacks that open sheets, change the grid
+ * or show and hide the strip show their result, as the ViewModel's state does.
  */
 @OptIn(ExperimentalTestApi::class)
 class TimelineScreenTest {
@@ -93,12 +93,10 @@ class TimelineScreenTest {
             calls += "grid(${it.label})"
             screen.value = screen.value.copy(grid = it)
         },
-        onZoomControl = {
-            calls += "zoomControl(${it.id})"
-            screen.value = screen.value.copy(zoomControl = it)
+        onOverviewStripShown = {
+            calls += "overviewStrip($it)"
+            screen.value = screen.value.copy(overviewStripShown = it)
         },
-        onZoomStep = { calls += "zoom($it)" },
-        onFitProject = { calls += "fit" },
         onScrollTo = { calls += "scrollTo" },
     )
 
@@ -163,9 +161,8 @@ class TimelineScreenTest {
         val toolbar = onNodeWithTag(TimelineTestTags.TOOLBAR).getUnclippedBoundsInRoot()
         assertTrue(tempo.left >= redo.right && tempo.right <= overflow.left, "the tempo pill $tempo is not between redo $redo and the overflow $overflow")
         assertTrue(tempo.top >= toolbar.top && tempo.bottom <= toolbar.bottom, "the tempo pill $tempo is not in the toolbar $toolbar")
-        // The default zoom control: the buttons at the ruler's right end (spec FR-015, D1).
-        onNodeWithTag(TimelineTestTags.ZOOM_LEVEL).assertContentDescriptionEquals("Zoom 1×, fit the project")
-        onNodeWithTag(TimelineTestTags.OVERVIEW).assertDoesNotExist()
+        // The overview strip shows by default, the one always-visible zoom control (spec FR-015; T151).
+        onNodeWithTag(TimelineTestTags.OVERVIEW).assertExists()
         onNodeWithTag(TimelineTestTags.header(0)).assertContentDescriptionEquals("Drums, Drums, +0.0dB").assertHeightIsEqualTo(56.dp)
         onNodeWithTag(TimelineTestTags.header(1)).assertContentDescriptionEquals("Pad, Synth, −2.4dB, muted")
         onNodeWithTag(TimelineTestTags.gain(0), useUnmergedTree = true).assertDoesNotExist()
@@ -297,41 +294,56 @@ class TimelineScreenTest {
     }
 
     /**
-     * The overflow's "Zoom control" choice swaps the ruler's buttons for the strip above the transport bar and back,
-     * the current one checked, and each control's intents reach the callbacks (spec FR-015, D1).
+     * The owner's verdict on D1 (spec FR-015, FR-055; T151): the strip shows by default between the lanes and the
+     * transport bar, inset from the window's sides by at least the 16 dp page margin, and its intents reach the
+     * callbacks; the overflow's "Overview strip" row is checked while it shows, a tap hides it (the callback gets
+     * `false`), and then neither the strip nor the check is there until a second tap brings both back.
      */
     @Test
-    fun theZoomControlChoiceSwapsTheButtonsForTheStrip() = runComposeUiTest {
+    fun theOverflowEntryShowsAndHidesTheStrip() = runComposeUiTest {
         val base = demoState()
         setScreen(base.copy(viewport = base.viewport.zoomAround(0.0, 4.0)), TimelineLayout.Compact)
         mainClock.autoAdvance = true
-        onNodeWithTag(TimelineTestTags.ZOOM_IN).performClick()
-        onNodeWithTag(TimelineTestTags.ZOOM_OUT).performClick()
-        onNodeWithTag(TimelineTestTags.ZOOM_LEVEL).performClick()
-        assertEquals(listOf("zoom(1)", "zoom(-1)", "fit"), calls)
-        val ruler = onNodeWithTag(PerfAnchors.TIMELINE_RULER).getUnclippedBoundsInRoot()
-        val zoomIn = onNodeWithTag(TimelineTestTags.ZOOM_IN).getUnclippedBoundsInRoot()
-        assertTrue(abs((zoomIn.right - ruler.right).value) < 0.5f && zoomIn.top >= ruler.top && zoomIn.bottom <= ruler.bottom, "the buttons $zoomIn are not at the ruler's right end $ruler")
-
-        onNodeWithTag(TimelineTestTags.OVERFLOW_BUTTON).performClick()
-        onNodeWithTag(TimelineTestTags.overflowZoomControl(ZoomControl.Buttons)).assertIsSelected()
-        onNodeWithTag(TimelineTestTags.overflowZoomControl(ZoomControl.OverviewStrip)).assertIsNotSelected().performClick()
-        onNodeWithTag(TimelineTestTags.ZOOM_IN).assertDoesNotExist()
+        val root = onNodeWithTag(TimelineTestTags.ROOT).getUnclippedBoundsInRoot()
         val strip = onNodeWithTag(TimelineTestTags.OVERVIEW).assertHeightIsEqualTo(24.dp).getUnclippedBoundsInRoot()
         val tracks = onNodeWithTag(TimelineTestTags.TRACK_LIST).getUnclippedBoundsInRoot()
         val bar = onNodeWithTag(PerfAnchors.TRANSPORT_PLAY).getUnclippedBoundsInRoot()
         assertTrue(strip.top >= tracks.bottom - 0.5.dp, "the strip $strip overlaps the lanes $tracks")
         assertTrue(strip.bottom <= bar.top, "the strip $strip is not above the transport bar $bar")
+        // One pixel of rounding room at the test devices' densities.
+        val margin = 16.dp - with(density) { 1.toDp() }
+        assertTrue(strip.left - root.left >= margin && root.right - strip.right >= margin, "the strip $strip is not inset 16 dp in the window $root")
         // A tap outside the window centres it there: a scroll through the strip's callback.
         onNodeWithTag(TimelineTestTags.OVERVIEW).performTouchInput { click(Offset(width * 0.9f, height / 2f)) }
         assertTrue("scrollTo" in calls, "the strip's tap reached no scroll: $calls")
 
         onNodeWithTag(TimelineTestTags.OVERFLOW_BUTTON).performClick()
-        onNodeWithTag(TimelineTestTags.overflowZoomControl(ZoomControl.OverviewStrip)).assertIsSelected()
-        onNodeWithTag(TimelineTestTags.overflowZoomControl(ZoomControl.Buttons)).performClick()
+        onNodeWithTag(TimelineTestTags.OVERFLOW_OVERVIEW_STRIP).assertTextEquals(TimelineCopy.overviewStrip).assertIsSelected()
+        onNodeWithTag("${TimelineTestTags.OVERFLOW_OVERVIEW_STRIP}.check", useUnmergedTree = true).assertExists()
+        onNodeWithTag(TimelineTestTags.OVERFLOW_OVERVIEW_STRIP).performClick()
         onNodeWithTag(TimelineTestTags.OVERVIEW).assertDoesNotExist()
-        onNodeWithTag(TimelineTestTags.ZOOM_IN).assertExists()
-        assertEquals(listOf("zoomControl(overviewStrip)", "zoomControl(buttons)"), calls.filter { it.startsWith("zoomControl") })
+        onNodeWithTag(TimelineTestTags.OVERVIEW_WINDOW).assertDoesNotExist()
+        onNodeWithTag(PerfAnchors.TRANSPORT_PLAY).assertIsDisplayed()
+
+        onNodeWithTag(TimelineTestTags.OVERFLOW_BUTTON).performClick()
+        onNodeWithTag(TimelineTestTags.OVERFLOW_OVERVIEW_STRIP).assertIsNotSelected()
+        onNodeWithTag("${TimelineTestTags.OVERFLOW_OVERVIEW_STRIP}.check", useUnmergedTree = true).assertDoesNotExist()
+        onNodeWithTag(TimelineTestTags.OVERFLOW_OVERVIEW_STRIP).performClick()
+        onNodeWithTag(TimelineTestTags.OVERVIEW).assertExists()
+        assertEquals(listOf("overviewStrip(false)", "overviewStrip(true)"), calls.filter { it.startsWith("overviewStrip") })
+    }
+
+    /** A device that hid the strip (spec FR-015; T151): no strip, no window, and the overflow row reads unchecked. */
+    @Test
+    fun aHiddenStripLeavesNoNodeAndNoCheck() = runComposeUiTest {
+        setScreen(demoState().copy(overviewStripShown = false), TimelineLayout.Compact)
+        mainClock.autoAdvance = true
+        onNodeWithTag(TimelineTestTags.OVERVIEW).assertDoesNotExist()
+        onNodeWithTag(TimelineTestTags.OVERVIEW_WINDOW).assertDoesNotExist()
+        onNodeWithTag(TimelineTestTags.OVERFLOW_BUTTON).performClick()
+        onNodeWithTag(TimelineTestTags.OVERFLOW_OVERVIEW_STRIP).assertIsNotSelected()
+        onNodeWithTag("${TimelineTestTags.OVERFLOW_OVERVIEW_STRIP}.check", useUnmergedTree = true).assertDoesNotExist()
+        assertEquals(emptyList(), calls)
     }
 
     /**
@@ -352,7 +364,7 @@ class TimelineScreenTest {
         val covering = onAllNodes(hasClickAction()).fetchSemanticsNodes().map { it.boundsInRoot }.filter { it.overlaps(firstBar) }
         assertEquals(emptyList(), covering, "controls over the ruler's first bar $firstBar")
         onNodeWithTag(TimelineTestTags.TOOLBAR_TEMPO).assertIsDisplayed()
-        onNodeWithTag(TimelineTestTags.ZOOM_OUT).assertIsDisplayed()
+        onNodeWithTag(TimelineTestTags.OVERVIEW).assertIsDisplayed()
     }
 
     @Test

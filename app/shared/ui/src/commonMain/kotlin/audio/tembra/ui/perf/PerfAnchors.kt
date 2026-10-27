@@ -49,8 +49,8 @@ object PerfAnchors {
     const val DIALOG_STOP_AND_LEAVE_CONFIRM = "dialog.stopAndLeave.confirm"
 
     // Feature 009's design iteration D1 (T146): the phone bar's speaker button and the slider of the pop-up it opens
-    // (the wide bar's inline slider carries the same tag), and the overview strip and its window when the strip is the
-    // device's zoom control.
+    // (the wide bar's inline slider carries the same tag), and the overview strip and its window, present unless the
+    // device hid the strip (T151).
     const val TRANSPORT_MASTER_BUTTON = "transport.master.button"
     const val TRANSPORT_MASTER = "transport.master"
     const val TIMELINE_OVERVIEW = "timeline.overview"

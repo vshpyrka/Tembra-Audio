@@ -1,7 +1,6 @@
 package audio.tembra.ui.timeline
 
 import audio.tembra.core.project.GridSize
-import audio.tembra.core.project.ZoomControl
 import audio.tembra.ui.perf.PerfAnchors
 
 /** Every `testTag` of the timeline's controls (contracts/timeline-screen.md "Semantics"); the journey anchors come from [PerfAnchors]. */
@@ -29,15 +28,12 @@ object TimelineTestTags {
     /** "Snap: 1/16" on compact and landscape windows: opens the snap sheet (spec FR-018, FR-055). */
     const val OVERFLOW_SNAP = "$OVERFLOW.snap"
     const val OVERFLOW_METRONOME_SETTINGS = "$OVERFLOW.metronomeSettings"
-    /** The "Zoom control" choices at every width (spec FR-015, D1): `timeline.toolbar.overflow.zoomControl.<id>`. */
-    fun overflowZoomControl(control: ZoomControl): String = "$OVERFLOW.zoomControl.${control.id}"
+    /** "Overview strip" at every width, checked while the strip shows; a tap shows or hides it (spec FR-015, FR-055; T151). */
+    const val OVERFLOW_OVERVIEW_STRIP = "$OVERFLOW.overviewStrip"
 
     /** The full toolbar's "Snap 1/16" pill (spec FR-018). */
     const val GRID = "timeline.toolbar.grid"
-    // The two always-visible zoom controls (spec FR-015, D1): the ruler's buttons and the overview strip.
-    const val ZOOM_OUT = "timeline.zoom.out"
-    const val ZOOM_LEVEL = "timeline.zoom.level"
-    const val ZOOM_IN = "timeline.zoom.in"
+    /** The overview strip above the transport bar and its window over the span in view (spec FR-015, D1). */
     const val OVERVIEW = PerfAnchors.TIMELINE_OVERVIEW
     const val OVERVIEW_WINDOW = PerfAnchors.TIMELINE_OVERVIEW_WINDOW
     const val RULER = PerfAnchors.TIMELINE_RULER

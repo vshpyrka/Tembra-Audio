@@ -82,20 +82,20 @@ class TembraMenuTest {
         assertEquals(null, selected)
     }
 
-    /** A choice row (the timeline's "Zoom control" entries) reads selected or not and checks the current one; an action row reads neither. */
+    /** A toggle row (the timeline's "Overview strip") reads selected or not and is checked only while on; an action row reads neither. */
     @Test
     fun aChoiceRowReadsItsSelectionAndChecksTheCurrentOne() = runComposeUiTest {
         setMenu(
             listOf(
-                MenuItemSpec("buttons", "Zoom control: Buttons", selected = true),
-                MenuItemSpec("strip", "Zoom control: Overview strip", selected = false),
+                MenuItemSpec("on", "Overview strip", selected = true),
+                MenuItemSpec("off", "Snap to grid", selected = false),
                 MenuItemSpec("action", "Metronome settings"),
             ),
         )
-        onNodeWithTag("menu.buttons").assertIsSelected()
-        onNodeWithTag("menu.buttons.check", useUnmergedTree = true).assertExists()
-        onNodeWithTag("menu.strip").assertIsNotSelected()
-        onNodeWithTag("menu.strip.check", useUnmergedTree = true).assertDoesNotExist()
+        onNodeWithTag("menu.on").assertIsSelected()
+        onNodeWithTag("menu.on.check", useUnmergedTree = true).assertExists()
+        onNodeWithTag("menu.off").assertIsNotSelected()
+        onNodeWithTag("menu.off.check", useUnmergedTree = true).assertDoesNotExist()
         onNodeWithTag("menu.action").assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Selected))
         onNodeWithTag("menu.action.check", useUnmergedTree = true).assertDoesNotExist()
     }

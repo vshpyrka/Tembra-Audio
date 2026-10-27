@@ -25,7 +25,6 @@ import audio.tembra.core.project.Beats
 import audio.tembra.core.project.GainDb
 import audio.tembra.core.project.InstrumentLabel
 import audio.tembra.core.project.TrackId
-import audio.tembra.core.project.ZoomControl
 import audio.tembra.core.timeline.TimelineViewport
 import audio.tembra.ui.perf.PerfAnchors
 import audio.tembra.ui.theme.TembraTheme
@@ -37,9 +36,10 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 /**
- * Every control reads (spec FR-058; T123; D1 T141): the track, the clip, the playhead, the readout and the master
- * volume, every control carries its tag for each zoom control and each open sheet, and no meter exists. The screen is
- * held at a phone's 360 dp, where the transport bar shows the master volume as the speaker button (spec FR-007, D1).
+ * Every control reads (spec FR-058; T123; D1 T141, T151): the track, the clip, the playhead, the readout, the overview
+ * strip and the master volume, every control carries its tag with the strip shown or hidden and with each open sheet,
+ * and no meter exists. The screen is held at a phone's 360 dp, where the transport bar shows the master volume as the
+ * speaker button (spec FR-007, D1).
  */
 @OptIn(ExperimentalTestApi::class)
 class TimelineSemanticsTest {
@@ -76,7 +76,9 @@ class TimelineSemanticsTest {
         onNodeWithTag(TimelineTestTags.PLAYHEAD).assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "2.1"))
         onNodeWithTag(PerfAnchors.TRANSPORT_READOUT).assertContentDescriptionEquals("00:01.00 of 00:30.00")
         onNodeWithTag(TimelineTestTags.TOOLBAR_TEMPO).assertContentDescriptionEquals("Tempo 124 beats per minute").assertHasClickAction()
-        onNodeWithTag(TimelineTestTags.ZOOM_LEVEL).assertContentDescriptionEquals("Zoom 1×, fit the project").assertHasClickAction()
+        onNodeWithTag(TimelineTestTags.OVERVIEW)
+            .assertContentDescriptionEquals("Overview")
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "bars 1 to 32 in view"))
         // At a phone's width the master volume is the speaker button reading the percentage; its pop-up holds the slider.
         onNodeWithTag(TAG).assertDoesNotExist()
         onNodeWithTag(MASTER_BUTTON_TAG)
@@ -99,17 +101,17 @@ class TimelineSemanticsTest {
             PerfAnchors.TIMELINE_TRACK_MENU_FIRST, PerfAnchors.TIMELINE_CLIP_FIRST, TimelineTestTags.PLAYHEAD, PerfAnchors.TRANSPORT_PLAY,
             PerfAnchors.TRANSPORT_SKIP_START, PerfAnchors.TRANSPORT_METRONOME, PerfAnchors.TRANSPORT_READOUT, MASTER_BUTTON_TAG,
         )
-        val buttons = listOf(TimelineTestTags.ZOOM_OUT, TimelineTestTags.ZOOM_LEVEL, TimelineTestTags.ZOOM_IN)
         val strip = listOf(TimelineTestTags.OVERVIEW, TimelineTestTags.OVERVIEW_WINDOW)
-        val gone = listOf("timeline.ruler.tempo", "timeline.ruler.signature", "timeline.toolbar.zoom")
-        for (tag in always + buttons) onNodeWithTag(tag, useUnmergedTree = true).assertExists()
-        for (tag in strip + gone) onNodeWithTag(tag, useUnmergedTree = true).assertDoesNotExist()
+        // The D1 pills and the zoom buttons the owner's verdict removed (T144).
+        val gone = listOf("timeline.ruler.tempo", "timeline.ruler.signature", "timeline.toolbar.zoom", "timeline.zoom.out", "timeline.zoom.level", "timeline.zoom.in")
+        for (tag in always + strip) onNodeWithTag(tag, useUnmergedTree = true).assertExists()
+        for (tag in gone) onNodeWithTag(tag, useUnmergedTree = true).assertDoesNotExist()
         assertEquals(0, onAllNodes(hasTestTag("meter"), useUnmergedTree = true).fetchSemanticsNodes().size, "the timeline carries no level meters (feature 010)")
 
-        screen.value = screen.value.copy(zoomControl = ZoomControl.OverviewStrip)
+        screen.value = screen.value.copy(overviewStripShown = false)
         waitForIdle()
-        for (tag in always + strip) onNodeWithTag(tag, useUnmergedTree = true).assertExists()
-        for (tag in buttons + gone) onNodeWithTag(tag, useUnmergedTree = true).assertDoesNotExist()
+        for (tag in always) onNodeWithTag(tag, useUnmergedTree = true).assertExists()
+        for (tag in strip + gone) onNodeWithTag(tag, useUnmergedTree = true).assertDoesNotExist()
 
         onNodeWithTag(MASTER_BUTTON_TAG).performClick()
         onNodeWithTag(MASTER_POPUP_TAG).assertExists()
