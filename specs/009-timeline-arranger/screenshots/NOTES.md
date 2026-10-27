@@ -427,6 +427,59 @@ is installed and running on all ten targets, with the zoom control set per devic
 Either control can be flipped on any device from the toolbar's overflow menu ("Zoom control"). The owner keeps one; T144
 removes the other.
 
+### Lanes after the zoom verdict (2026-10-27, every target, `--warning-mode all`, zero warnings)
+
+Two rounds. The first on `8e89c7f` (the strip kept, inset and switchable; the buttons gone; the profiles regenerated):
+chain A from the main checkout (host, the three simulators, the Pixel 6 Pro, the fold emulator; workflow `7ae335c1`),
+B from the detached worktree `lanes-b` (Pixel 7 Pro, Pixel Tablet; `d4d942d1`), C from `lanes-c` (OPPO, Redmi;
+`ef00fcfd`), all three at once. The capture agent then found the strip inset twice beside a rail (T153), so the second
+round ran on `b9a3816` (the fix): A again from the main checkout (`79d4c1ec`), B from `lanes-b` (`bc3dbf95`), C from a
+fourth worktree `lanes-d` (`5bf2ffd2`), with the rail captures redone in between. The run conditions above applied (the
+Pixel 6 Pro's music volume was found at 5 and set to 0 first). No USB drop, no latency failure and no rerun in either
+round; the OPPO's start latency and the Redmi's hover test both stayed green.
+
+| Lane | On `8e89c7f` | On `b9a3816` |
+|---|---|---|
+| `checkAndroidHost engineHostTest` | up to date with the implementing agent's run on `d249c15` (core 198, engine 60, data 110, ui 413, androidApp 12 green; the C++ tests up to date since D1, their sources unchanged) | up to date again (nothing the host tasks read changed after the fix agent's fresh green run on `b9a3816`; the C++ sources are untouched by the whole iteration) |
+| `checkIos` on the iPhone 18 Pro | core 198, engine 91, data 120, UI 857 green, 37 s | core 198, engine 91, data 120, UI 859 green (the UI task up to date with the fix agent's run on the same inputs), 6 s |
+| `checkIos` on the iPad Pro 13-inch (M5) | the same, 42 s | the same, every task fresh, 26 s |
+| `checkIos` on the iPhone Duo | the same, 24 s | the same, every task fresh, 25 s |
+| the Android device lane on the Pixel 6 Pro (`--continue`) | core 198, data 120, engine 95, UI 854, app 17 green, 12 m 47 s | all four modules and the app green, UI 856 and app 17 counted in the excerpt, 13 m 53 s |
+| the same on the Pixel 9 Pro Fold emulator | the same, 14 m 18 s (with a window and audio this time) | the same, 14 m 14 s |
+| the same on the Pixel 7 Pro | the same, 858 s | core 198, data 120, engine 95, UI 856, app 17 green, 840 s |
+| the same on the Pixel Tablet | the same, 841 s | the same, 845 s |
+| the same on the OPPO CPH2239 | the same, 813 s | the same, 784 s |
+| the same on the Redmi Note 5 | the same, 574 s | the same, 576 s |
+
+The UI counts move with the change: 854 on the device and 857 on the simulator after `d249c15` (`ZoomButtonsTest`'s
+nine tests gone, the strip's inset test, the screen's show/hide tests and the data test added), 856 and 859 after
+`b9a3816` (the strip's consumed-inset test and the shell's rail test). The implementing agents also verified their own
+commits before the rounds: `d249c15` on the host, the iPhone 18 Pro and the changed classes on the Pixel 6 Pro (48/48,
+workflow `1dcbc7f6`); `b9a3816` on the host, the Duo, the iPhone 18 Pro and the changed classes on the Pixel Tablet
+(43/43, with a red check of the new shell test against the reverted shell; `8c78254b`).
+
+### The release install after the verdict (2026-10-27)
+
+The release build of `b9a3816` (the APK built from `lanes-c` through the wrapper, 26.6 MB unsigned, signed with the debug
+key by `release-android.sh --no-build`; the iOS build from `lanes-c` too, which needed the main checkout's
+`Config.xcconfig` with the signing team copied in: the worktree carries only the committed file) is installed and running
+on all ten targets, the strip shown everywhere (the stale `timeline.zoomControl` key is dropped on the first write of the
+new preference):
+
+| Target | Result |
+|---|---|
+| Pixel 6 Pro | installed, compiled from the baseline profile (speed-profile), launched |
+| Pixel 7 Pro, OPPO CPH2239 | installed, compiled from the baseline profile (speed-profile), launched |
+| Pixel Tablet | installed, compiled from the baseline profile (speed-profile), launched |
+| Redmi Note 5 | installed, run-from-apk (API 28, the JIT) as always, launched |
+| Pixel 9 Pro Fold emulator | installed, compiled from the baseline profile (speed-profile), launched |
+| iPhone 14 (iOS 27.0.1) | Release build installed with `devicectl`, launched |
+| iPhone 18 Pro | Release build installed, launched (the strip 16 pt from each side) |
+| iPad Pro 13-inch (M5), iPhone Duo | Release build installed (`--no-build`: the simulator product of the iPhone 18 Pro's build), launched |
+
+The earlier release build of `8e89c7f` had gone to the OPPO, the Redmi, the Pixel 7 Pro and the four iOS targets before the
+inset fix; all were replaced.
+
 ## Defects the matrix found (fixed, with a device test each)
 
 1. The playhead overlay's full-size semantics node hid every lane, header and clip from TalkBack and UiAutomator
