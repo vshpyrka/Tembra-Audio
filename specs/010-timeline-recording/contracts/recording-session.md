@@ -50,6 +50,8 @@ on IO → `TakeAdopter.adopt` → `RecordTake` edit → `TakeFinalised`), `armJo
 | Recording | TakeEnded(reason) (engine-initiated) | Finalising | StopTake(reason), Notify(reason) |
 | Recording | Interrupted / InputChanged / PermissionRevoked / TrackDeleted(t) / ProjectClosing / HostHidden / TransportClosed | Finalising | StopTake(reason), Notify(reason) (then, for the last five, Disarm after TakeFinalised) |
 | Finalising | TakeFinalised | Armed(t) (or Disarmed when a disarming reason is pending) | KeepAlive(false) |
+| PreRoll / Recording | Arm(any) / Disarm | same | — (FR-018: arming and disarming are unavailable while a take runs) |
+| Finalising | Record / Stop / Cancel | same | — (ignored until TakeFinalised) |
 | Armed / Recording | OutputChanged(speaker = true) | same, monitor SuspendedSpeaker | SetMonitor(false) |
 | Armed / Recording | OutputChanged(speaker = false), remembered on | same, monitor On | SetMonitor(true) |
 | Armed | Disarm / TrackDeleted(t) / ProjectClosing / HostHidden / TransportClosed / PermissionRevoked | Disarmed | CloseInput |

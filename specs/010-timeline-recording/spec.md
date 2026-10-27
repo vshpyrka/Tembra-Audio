@@ -84,6 +84,15 @@ specification and feature 009's.
 - Q: Should the count-in clicks sound when the transport bar's metronome toggle is off? → A:
   Yes: whenever Count-in is 1 or 2 bars the count-in clicks sound; after it the click
   continues only if the metronome toggle is on (FR-015).
+- Planning finding 2026-10-27 (`/speckit-plan` research R17, `/speckit-analyze` I1): eight 44 dp
+  targets are 352 dp, so the chosen phone bar cannot hold Record and a readout below 432 dp of
+  bar width. Record stays in the bar from 432 dp (stacked readout to 599 dp) and goes to the
+  armed track's compact header below it, the owner's named fallback; the owner's manual check on
+  the first release build stands and may replace the header placement by a floating button
+  (FR-007, FR-008, FR-026).
+- Planning finding 2026-10-27 (research R3, analysis I2): on iOS, enabling the microphone
+  restarts the audio unit, so arming while a project plays may gap the output for a bounded
+  time; FR-001 states the bound (30 ms) and the verification notes record the measurement.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -377,7 +386,10 @@ and the growing clip with the screen reader.
   shape. At most one track is armed at a time: arming a track MUST disarm the armed one. Arming
   MUST open the microphone (after permission, FR-019) and show the input meter (FR-005) within
   300 ms; disarming MUST close the input at once and hide the meter. Arming MUST work while the
-  transport is stopped or playing without interrupting playback. The armed state is session
+  transport is stopped or playing: on Android without interrupting playback; on iOS, where
+  enabling the input restarts the audio unit, with an output gap of at most 30 ms and the
+  position and the project unaffected (planning finding 2026-10-27, measured in the
+  verification notes). The armed state is session
   state: it MUST NOT be saved with the project and MUST be cleared when the track is deleted,
   when another project is opened, when the app leaves Timeline and its track settings screen for
   any other destination (after the dialog of FR-022 when a take runs), and when the app is
@@ -420,19 +432,24 @@ and the growing clip with the screen reader.
 
 **Record**
 
-- **FR-007**: The transport bar MUST gain a Record button immediately right of play/pause at every
-  width, a filled circle in the design's record colour, accessible name "Record", with the states
-  idle, count-in (pulsing once per count-in beat; a steady state change under reduce motion) and
-  recording (lit). The bar MUST still fit without clipping at every width: in windows narrower
-  than 600 dp the position and length readout MUST stack the position above the length in the
-  same forms as feature 009's FR-010; from 600 dp it stays on one line. The stacked bar is the
-  owner's choice to verify by hand on a phone (confirmed 2026-10-27, clarification): if it does
-  not satisfy, the fallback is Record in the armed track's header beside the arm toggle with
-  the transport bar left as feature 009 built it, applied as a design iteration of this
-  feature after the first release build, with the keyboard, semantics and journey anchors of
-  FR-028, FR-029 and the instrumentation section moving with the button.
+- **FR-007**: The transport bar MUST hold a Record button immediately right of play/pause whenever
+  the bar is at least 432 dp wide (phone landscape, tablets, desktop windows): a filled circle in
+  the design's record colour, accessible name "Record", with the states idle, count-in (pulsing
+  once per count-in beat; a steady state change under reduce motion) and recording (lit). In
+  bars from 432 dp to 599 dp the position and length readout MUST stack the position above the
+  length in the same forms as feature 009's FR-010; from 600 dp it stays on one line. In bars
+  narrower than 432 dp (every phone in portrait) the bar MUST stay exactly as feature 009 built
+  it and Record MUST sit in the armed track's compact header beside the arm toggle, in the label
+  chip's place while the track is armed (planning finding 2026-10-27: eight 44 dp targets leave
+  no room for a readout at 360 dp, so the clarification's choice is kept where it fits and the
+  owner's named fallback applies below). The owner still checks the phone result by hand on the
+  first release build and may replace the header placement by a floating Record button as a
+  design iteration of this feature, with the keyboard, semantics and journey anchors of FR-028,
+  FR-029 and the instrumentation section moving with the button.
 - **FR-008**: Record MUST be available whenever a project is open on Timeline or its track
-  settings screen. It records into the
+  settings screen where the bar holds it (bars of 432 dp or wider); in narrower bars it MUST
+  appear as soon as a track is armed, the arm toggle on every header being the entry, and the
+  "R" key MUST record into the armed track at every width. It records into the
   armed track; when no track is armed it MUST first arm the selected track, and when no track is
   selected it MUST add a track exactly as "+ Track" does (009 FR-019), select and arm it.
 - **FR-009**: Pressing Record while stopped MUST run the count-in if it is not Off (FR-015) and
@@ -575,7 +592,10 @@ and the growing clip with the screen reader.
   dot, the name, the label chip, "M", "S", the arm toggle and the menu at 360 dp at the default
   font size, and at the largest system font size, without clipping, at least 56 dp tall, with the
   meter along its bottom edge while armed; the transport bar MUST hold every control of 009
-  FR-004 plus Record with the stacked readout of FR-007. From 840 dp the arm toggle sits with
+  FR-004 unchanged below 432 dp of bar width, and Record with the stacked readout from 432 dp
+  (FR-007); while a compact header is armed below 432 dp it MUST hold the colour dot, the name
+  (at least 72 dp), Record, "M", "S", the arm toggle and the menu, the label chip hidden until
+  the track is disarmed. From 840 dp the arm toggle sits with
   "M" and "S" in the header column and the meter beneath the gain readout. In windows at least
   600 dp wide and shorter than 480 dp the ruler, at least two tracks and the transport bar with
   Record MUST be visible. Nothing MUST clip, overlap, hide behind the transport bar or scroll the
@@ -661,8 +681,10 @@ and the growing clip with the screen reader.
   the refusal message), and take alignment (the determination of the compensation for a take).
 - Counters added: input overruns (captured blocks the engine missed), take write backlog (the
   longest queue of captured audio waiting to be stored), take alignment applied (the
-  compensation in milliseconds), peak and average callback load while a take runs, and the
-  monitoring delay as determined, beside feature 009's underruns and starvation.
+  compensation in milliseconds), peak and average callback load while a take runs (read from
+  the existing callback-duration counters during the journey's recording phase, so these two
+  are not new counters), and the monitoring delay as determined, beside feature 009's underruns
+  and starvation.
 - Anchors: the arm toggle in every header, the meter and its clip indicator, the Record button,
   the monitoring toggle and its overflow entry, the count-in setting in the metronome sheet, the
   growing clip, the permission message's settings action and the actions of the stop-recording

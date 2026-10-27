@@ -155,7 +155,7 @@ specs/010-timeline-recording/
 ```text
 app/
 ├── README.md                                        + rows: capture, recorder, recording session, the device-lane launcher
-├── tools/gradlew-device.sh (new), measure-take-alignment.py (new), fetch-material-symbols.sh (run: headphones)
+├── tools/gradlew-device.sh (new), apply-device-run-conditions.sh (new), measure-take-alignment.py (new), fetch-material-symbols.sh (run: headphones)
 ├── tracepulse.yml                                   journeys + recording
 ├── engine/
 │   ├── include/tembra_engine.h                      ABI 7 (contracts/engine-c-abi-v7.md); tembra_trace_names.h regenerated (36)

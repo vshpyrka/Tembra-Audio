@@ -49,7 +49,7 @@ lead to `Finalising` → `Armed` (the track stays armed, FR-011); `HostHidden`, 
 | `ArmResult` (sealed) | `Armed(channels: Int, sampleRate: Int)`, `InputUnavailable`, `NotTransport` | |
 | `RecordConfig` | `wavPath`, `trackIndex`, `countInBeats`, `maxFrames`, `minFreeBytes` | `maxFrames` = 30 min at the stream rate; `minFreeBytes` = 50 MB |
 | `RecordStartResult` (sealed) | `Started`, `NotArmed`, `TakeRunning`, `FileFailed` | |
-| `TakeInfo` | `startFrames`, `startBeats`, `frames`, `channels`, `sampleRate`, `alignmentFrames`, `stopReason: TakeStopReason` | `frames == 0` means discarded (shorter than 0.01 s; the engine deleted the file) |
+| `TakeInfo` | `startFrames`, `startBeats`, `frames`, `channels`, `sampleRate`, `alignmentFrames`, `stopReason: TakeStopReason` (the `core.recording` type; no engine-side mirror) | `frames == 0` means discarded (shorter than 0.01 s; the engine deleted the file) |
 | `CaptureSnapshot` (mutable, one per reader) | `armed`, `recording`, `preRoll`, `monitoring`, `inputChannels`, `sampleRate`, `peak: FloatArray(2)`, `clipped`, `framesCaptured`, `takeStartFrames`, `alignmentFrames`, `inputLatencyNanos`, `outputLatencyNanos`, `stopReason`, `inputOverruns`, `backlogFrames` | filled by `readCapture` from the seqlock; read in draw lambdas and by the 10 Hz mirror (R8) |
 | `PeakBuckets` (mutable buffer) | `min: ByteArray`, `max: ByteArray`, `count`, `firstIndex`, `nextIndex` | 256-frame base buckets per channel (R7) |
 | `TransportSnapshot` (extended) | `countInBeatsLeft: Int` (−1 none), `recording: Boolean` | drawn by the readout and the Record button pulse |

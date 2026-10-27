@@ -60,11 +60,11 @@ monitor toggle after the scissors.
 `overflowMonitor`, `countIn`, `record` (bar), `denied.action`, `stopRecording.confirm/cancel`.
 `PerfAnchors` adds `TIMELINE_TRACK_ARM_FIRST = "timeline.track.arm.0"`,
 `TIMELINE_TRACK_METER_FIRST = "timeline.track.meter.0"`, `TIMELINE_TRACK_RECORD_FIRST =
-"timeline.track.record.0"`, `TRANSPORT_RECORD = "transport.record"`, `TIMELINE_MONITOR =
+"timeline.track.record.0"`, `TIMELINE_TRACK_CLIP_FIRST = "timeline.track.clip.0"`, `TRANSPORT_RECORD = "transport.record"`, `TIMELINE_MONITOR =
 "timeline.toolbar.monitor"`, `TIMELINE_OVERFLOW_MONITOR = "timeline.toolbar.overflow.monitor"`,
 `METRONOME_COUNT_IN = "metronome.sheet.countIn"`, `TIMELINE_CLIP_TAKE = "timeline.clip.take"`,
 `SNACKBAR_MICROPHONE_SETTINGS = "snackbar.microphone.settings"`,
-`DIALOG_STOP_RECORDING_CONFIRM = "dialog.stopRecording.confirm"` (46 anchors). Every new
+`DIALOG_STOP_RECORDING_CONFIRM = "dialog.stopRecording.confirm"` (47 anchors). Every new
 window root (the sheet already has it) carries `anchorRoot()`.
 
 ## Copy (`TimelineCopy`, `TransportCopy`)
@@ -99,7 +99,7 @@ as a filled circle, the meter's two colours from the mixer screens). Screenshots
   arm → meter, record → live clip, FR-018 availability, the denied snackbar with its action),
   `TimelineKeyHandlingTest` (extended: A, R, I, Escape; declared per lane).
 - `commonTest`: `TimelineUiStateTest` (the availability map, `RecordButtonState` by width),
-  `TimelineTokensTest` (the four tokens), `PerfAnchorsCatalogueTest` (46).
+  `TimelineTokensTest` (the four tokens), `PerfAnchorsCatalogueTest` (47).
 - Device: `AndroidMicrophonePermissionTest` (extended for the recording purpose),
   `NativeAudioEngineRecordingTest` (arm, meter, a 2-bar take, adoption), the route tests in
   the quickstart.
