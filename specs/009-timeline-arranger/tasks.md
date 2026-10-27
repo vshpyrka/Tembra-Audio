@@ -337,20 +337,20 @@ every target with zero warnings.
 
 - [X] T137 Spec: Clarifications session 2026-10-26 and the D1 amendments of FR-007, FR-009, FR-013, FR-015, FR-018, FR-036,
   FR-037, FR-039, FR-055 and the design-evidence rows (`specs/009-timeline-arranger/spec.md`)
-- [ ] T138 [P] Transport bar on phones: below 600 dp of bar width `UI/transport/TransportBar.kt` shows a 44 dp speaker button
+- [X] T138 [P] Transport bar on phones: below 600 dp of bar width `UI/transport/TransportBar.kt` shows a 44 dp speaker button
   (tag `transport.master.button`, state description "80 percent") in place of the inline `MasterVolumeSlider`; tapping it opens
   `UI/transport/MasterVolumePopup.kt` (new): a card anchored above the bar with the same slider at 200 dp, the percentage as
   text, closed by a tap outside, Escape or Back; from 600 dp the slider stays inline and shows its percentage (FR-004, FR-007).
   The readout budget drops the slider's minimum. Tests first in `UI_UITEST/transport/TransportBarTest.kt` (the 360 and 411 dp
   tests, a popup open/close/adjust test, semantics) and `UI_UITEST/transport/MasterVolumePopupTest.kt` (new); KDoc FR ids fixed
-- [ ] T139 [P] Snap grid and chip: `UI/timeline/components/TrackLane.kt` draws, over the faint per-bar lines, the snap lines at
+- [X] T139 [P] Snap grid and chip: `UI/timeline/components/TrackLane.kt` draws, over the faint per-bar lines, the snap lines at
   `TimelineUiState.grid` in `daw.gridOverlay` (none for Off, FR-018); `UI/timeline/components/SnapSheet.kt` (new): a modal
   sheet "Snap to grid" with the five `GridSize` rows, the current one checked, tags `timeline.snapSheet` and
   `timeline.snapSheet.<name>`, rendered for `TimelineSheet.GridMenu`; `UI/timeline/components/TimelineRuler.kt` draws the chip
   text in a theme colour contrasting with `daw.playheadChip` at 4.5:1 and a 1 dp outline (FR-009). Tests first:
   `UI_UITEST/timeline/TrackLaneTest.kt` (snap lines per grid value), `TimelineRulerTest.kt` (chip colour by pixel),
   `UI_UITEST/timeline/SnapSheetTest.kt` (new); `GridPickerTest` KDoc FR id fixed
-- [ ] T140 [P] Zoom controls: `UI/timeline/components/ZoomButtons.kt` (new; "−", the level label, "+"; the label fits the
+- [X] T140 [P] Zoom controls: `UI/timeline/components/ZoomButtons.kt` (new; "−", the level label, "+"; the label fits the
   project on tap; tags `timeline.zoom.out`, `timeline.zoom.level`, `timeline.zoom.in`) and `UI/timeline/components/
   OverviewStrip.kt` (new; 24 dp on compact, 28 dp otherwise: the whole project at the fit scale with clip blocks in the track
   colours, the playhead line, a window for the visible span with 8 dp edge handles; drag inside scrolls, drag an edge zooms
@@ -358,11 +358,11 @@ every target with zero warnings.
   `ZoomControl { Buttons, OverviewStrip }` in `CORE/project/ZoomControl.kt` (new), remembered per device in the app
   preferences (`DATA`, default Buttons) and exposed as `TimelineUiState.zoomControl` with `setZoomControl` in
   `TimelineViewModel.kt` (FR-015). Tests first: `UI_UITEST/timeline/ZoomButtonsTest.kt`, `OverviewStripTest.kt` (new),
-  `UI_TEST/ui/timeline/TimelineViewModelTest.kt` (the preference round-trip); `ZoomReadoutTest` KDoc FR id fixed
+  `UI_TEST/timeline/TimelineViewModelTest.kt` (the preference round-trip); `ZoomReadoutTest` KDoc FR id fixed
 
 ### Integration (after T138–T140 merge)
 
-- [ ] T141 `UI/timeline/components/TimelineToolbar.kt` and `UI/timeline/TimelineScreenContent.kt`: the tempo pill (tag
+- [X] T141 `UI/timeline/components/TimelineToolbar.kt` and `UI/timeline/TimelineScreenContent.kt`: the tempo pill (tag
   `timeline.toolbar.tempo`) in the toolbar at every width (compact and landscape: between redo and the overflow button; full
   layouts: at the right end before the overflow) opening the tempo dialog; `RulerPills` and the signature leave the ruler (the
   Expanded header-column slot stays empty so the canvas aligns with the lanes); `UI/timeline/components/
@@ -377,11 +377,11 @@ every target with zero warnings.
   `TimelineRulerTest`, `TimelineSemanticsTest`, `TimelineKeyboardTest` (tab order), `MetronomeSettingsSheetTest`,
   `TimelineLargeFontTest` (three tracks and the ruler still visible with the strip), `TimelineViewModelTest`;
   `checkAndroidHost` and `checkIos` green with zero warnings
-- [ ] T142 Lanes on every target with `--warning-mode all` (`checkAndroidHost`, `checkIos` on the iPhone 18 Pro, iPad and Duo
+- [X] T142 Lanes on every target with `--warning-mode all` (`checkAndroidHost`, `checkIos` on the iPhone 18 Pro, iPad and Duo
   simulators, `checkAndroidDevice` on all six Android targets); the screenshot matrix rows the change touches (compact and
   expanded, both zoom controls) re-captured under `specs/009-timeline-arranger/screenshots/` with a D1 section in `NOTES.md`;
   one commit `feat(timeline): design iteration D1 …`
-- [ ] T143 Release build installed on every target with the zoom control set per device for the owner's comparison (Buttons on
+- [X] T143 Release build installed on every target with the zoom control set per device for the owner's comparison (Buttons on
   the Pixel 6 Pro, Pixel Tablet, iPhone 18 Pro and iPad; Overview strip on the Pixel 7 Pro, OPPO, Redmi, fold emulator, iPhone
   Duo and iPhone 14), the assignment recorded in `NOTES.md`
 
@@ -390,6 +390,27 @@ every target with zero warnings.
 - [ ] T144 Remove the zoom control the owner did not choose, its preference and its tests; spec FR-015 names the survivor
 - [ ] T145 `/speckit-constitution`: recording before the mixer (its own input level meter on the track header); then
   `/speckit-specify` the recording feature
+
+### Owed by D1 (constitution: every new interaction is instrumented; feature 008: the profile follows the startup path)
+
+- [X] T146 Perf: the `timeline` journey opens the master popup, drags its slider and closes it, and (with the strip chosen)
+  drags the overview window once, on both platforms (`PERF/journeys/TimelineJourney.kt`, `IOSPERF/Journeys/
+  TimelineJourney.swift`, the journey contract in `contracts/perf-instrumentation.md`); the baseline profiles regenerated on
+  the Pixel 6 Pro (`cd app/perf && uv run tracepulse profile generate --device pixel6`) because the Timeline's start-up
+  composition changed (`app/androidApp/src/main/generated/baselineProfiles/`), with `profile verify` green
+- [X] T147 Bug found by T140's author: opening another project rebuilds `TimelineViewState` and drops `metronomeSettings`
+  until the metronome preferences next change, so the metronome sheet can show defaults after a project switch; re-seed
+  the settings from the preferences on open (`UI/timeline/TimelineViewModel.kt`), with a `TimelineViewModelTest` case
+
+### Found by D1, for the owner to prioritise
+
+- [ ] T148 The ruler's playhead chip at beat 0 is cut in half by the canvas's left edge (`UI/timeline/components/
+  TimelineRuler.kt`): keep the chip inside the canvas when the playhead is within half a chip of either edge
+- [ ] T149 On Medium windows (600–839 dp) at twice the font size the full toolbar does not fit; FR-055's fallback to the
+  compact toolbar "when it fits" is not built (`UI/timeline/components/TimelineToolbar.kt`, `TimelineLayout.kt`)
+- [ ] T150 On iOS, Undo becomes available after the tempo dialog's Done without a change, or after the long press on the
+  metronome toggle (seen while capturing D1; the tempo stays 124): find which of `tempoCommit` and the toggle's long press
+  records an empty undo step (`UI/timeline/TimelineViewModel.kt`) and cover it in `TimelineViewModelTest`
 
 ---
 

@@ -248,6 +248,96 @@ afterwards; the tablet and Redmi lanes started after the drop and the emulator i
 | the same on the Pixel Tablet (`--continue`) | green in 723 s: core 198, data 118, engine 95, UI 815, app 17; zero warnings | A 0003 |
 | the same on the Pixel 9 Pro Fold emulator (`--continue`) | core 198, data 118, engine 95 (the fitted period inside its tolerance this time), app 17 green; UI: 815 with 8 failures in 7 classes, every one the window-capture helper giving up (`ComposeTimeoutException … 2000 ms` six times, `PixelCopy failed with result 2` twice) while the lane took 72 min with both chains building on the Mac at once; the seven classes alone: 43 green in 67 s | A 0004, 0006 |
 
+## Design iteration D1 (2026-10-26/27: the owner's review of the release build)
+
+After the release build ran on every target, the owner reviewed the Timeline and asked for six changes (spec Clarifications,
+session 2026-10-26; tasks T137–T149). What changed, commit by commit on `009-timeline-arranger`:
+
+| Finding | Decision | Commit |
+|---|---|---|
+| The tempo and 4/4 pills at the ruler's left end covered the first bars on a phone | The tempo pill lives in the toolbar at every width (phones: between redo and the overflow button); the time signature is chosen in the metronome sheet; the ruler shows bars only | `d775aae` (T141) |
+| The master volume slider took much of a phone's transport bar | Below 600 dp a speaker button whose popup holds the 200 dp slider and the percentage; the inline slider with its percentage from 600 dp | `0c2e84b` (T138) |
+| "Grid Bar" changed nothing visible | One "Snap: <value>" entry opening a sheet with the five sizes; the snap lines are drawn over the lanes at the picked resolution (coarsened to keep 4 dp between lines); scrub and split snap too | `1b9daeb` (T139), `d775aae` |
+| Zoom sat in the overflow menu | Two always-visible controls for a side-by-side comparison, chosen per device from "Zoom control" in the overflow: "− level +" buttons at the ruler's right end (default) or an overview strip above the transport bar | `b13368b` (T140), `d775aae` |
+| The playhead chip's text was barely visible | `onPrimaryContainer` text on the lilac chip (6.7:1 measured on the Pixel 7 Pro, 1.1:1 before) and a 1 dp outline | `1b9daeb` |
+| No way to record into a track | Out of scope (FR-064): recording becomes the next feature, before the mixer (T145) | — |
+
+Also in the pass: the metronome sheet forgot its settings on a project switch (found by the zoom agent, `915c7c8`, T147); the
+popup gained a `transport.masterPopup` perf section and the `timeline` journey opens the popup and drags the strip on both
+platforms (`e300b7b`, T146); an Expanded ruler/lane misalignment of 4 dp was fixed on the way (T141).
+
+Built as three parallel agents in detached worktrees on disjoint files (T138 on the Pixel 6 Pro, T139 on the Pixel 7 Pro,
+T140 on the Pixel Tablet, each with its own `gradle-run` workflow), then one integrator in the main checkout (full
+`:shared:ui` module on the Pixel 6 Pro, `checkIos` on the iPhone 18 Pro) and one follow-up agent (JVM lanes, perf APKs,
+the XCTest target built). The zoom buttons overlay the ruler's right 136 dp rather than narrowing the lanes, so the last
+time labels and, during playback, the position chip pass under them before the view pages.
+
+### Lanes on the final D1 code (`e300b7b`, every target, `--warning-mode all`, zero warnings)
+
+Two chains at once again: A from the main checkout (host lanes, the three simulators, the Pixel 6 Pro, the fold emulator;
+workflow `75e47afe`), B from a detached worktree at the same commit (Pixel 7 Pro, Pixel Tablet, OPPO, Redmi; `fcb9d15b`),
+E the reruns of the rewritten tests from the main checkout (`79828d95`). The run conditions above were applied again.
+
+Two of the new tests were written for the author's device rather than for every window: `OverviewStripTest` composed a
+400 dp strip (coerced into the 360 dp OPPO and the 393 dp Redmi, which shifted every position) and the 411 dp transport
+bar test measured positions from the window's edge rather than the bar's (the required width centres the bar past the
+edge of a narrower window). The strip test now uses a 320 dp strip with its positions written in beats, the bar test
+measures from the bar, and the 44 dp and 132 dp assertions allow one pixel (the fold emulator's 2.44 and the Pixel 7
+Pro's 2.625 densities land 0.1–0.2 dp off). Test-only changes; the app was not touched.
+
+| Lane | Result | Log |
+|---|---|---|
+| `checkAndroidHost engineHostTest` | up to date with the follow-up agent's run on the same inputs: core 199, engine 60, data 108, ui 412, androidApp 12 green; C++ 204 green | A 0001 |
+| `checkIos` on the iPhone 18 Pro | core 199, data 118, engine 91, UI 858 green | A 0002 |
+| `checkIos` on the iPad Pro 13-inch (M5) | the same, green | A 0003 |
+| `checkIos` on the iPhone Duo | the same, green | A 0004 |
+| the Android device lane on the Pixel 6 Pro (`--continue`) | core 199, data 118, engine 95, UI 855, app 17 green, 834 s | A 0005 |
+| the same on the Pixel 9 Pro Fold emulator (`--continue`) | core 199, data 118, engine 95, app 17 green; UI 855 with 2 failures, both the new tests measuring a 44 dp target and a 132 dp group at the emulator's 2.44 density (43.9 dp and 132.1 dp); green alone with the one-pixel room (18 tests) (the emulator had to be restarted; it ran headless and without audio for this lane) | A 0006, 0007; E 0001 |
+| the same on the Pixel 7 Pro (`--continue`) | core 199, data 118, engine 95, app 17 green; UI 855 with the same 2 rounding failures as the emulator (132.19 dp and 44.19 dp at density 2.625); the three classes green alone: 26 tests | B 0001, 0002; E 0004 |
+| the same on the Pixel Tablet (`--continue`) | green in 841 s: core 199, data 118, engine 95, UI 855, app 17 | B 0003 |
+| the same on the OPPO CPH2239 (`--continue`) | core 199, data 118, engine 95, app 17 green; UI 855 with 7 failures, six in `OverviewStripTest` and the 411 dp bar test (the window assumptions above); the three rewritten classes green alone on it: 26 tests, 78 s | B 0004, 0005; E 0002 |
+| the same on the Redmi Note 5 (`--continue`) | core 199, data 118, engine 95, app 17 green; UI 855 with 4 of the same failures; the three classes green alone: 26 tests; no Play Protect prompt, no latency failure this time | B 0006, 0007; E 0003 |
+
+### D1 captures (2026-10-27, the debug build at `e300b7b`'s app code)
+
+Re-captured where D1 changed the screen, same drivers as before (the accessibility ids on Android, `ScreenshotMatrix` on
+the simulators, now with the `overview-strip`, `overflow-menu`, `snap-sheet` and `master-popup` states and the zoom states
+through the ruler's buttons). The Pixel Tablet and the iPad stood in portrait this time (800 dp and 1024 dp windows), so
+their `*-expanded-*` rows below are portrait where the earlier ones were landscape; the tablet's 800 dp window still shows
+the full toolbar. The compact grid-picker captures are gone with the picker (`android-compact-grid-picker.png`,
+`ios-compact-grid-picker.png`); the 600/840/expanded grid-picker files predate D1 and show the pill before it read "Snap".
+
+| Capture | Target | Shows |
+|---|---|---|
+| `android-compact-demo-stopped.png`, `android-compact-demo-playing.png` | Pixel 6 Pro, 360 dp | the toolbar with "124 BPM", bar 1 at the left edge, "− 1× +" at the ruler's right end, the speaker button; playing at 00:02.54 with the chip at 2.2 |
+| `android-compact-overview-strip.png` | Pixel 6 Pro | the overview strip above the transport bar, no zoom buttons |
+| `android-compact-overflow-menu.png` | Pixel 6 Pro | Add audio…, Add audio as new track, Snap: 1/16, Zoom control: Buttons (checked), Zoom control: Overview strip, Metronome settings |
+| `android-compact-snap-sheet.png`, `android-compact-snap-bar.png` | Pixel 6 Pro | the "Snap to grid" sheet; the lanes after choosing Bar at 2.8× (bar lines only, where 1/16 shows beats) |
+| `android-compact-master-popup.png` | Pixel 6 Pro | the speaker button lit, the popup slider at 80% |
+| `android-compact-metronome-sheet.png`, `android-compact-tempo-dialog.png` | Pixel 6 Pro | "124 BPM from the project" with the 4/4 signature pill; the tempo dialog from the toolbar pill |
+| `android-compact-zoom-widest.png`, `android-compact-zoom-closest.png` | Pixel 6 Pro | 1× after tapping the level; 128× with the ruler at 1.1.1 / 1.1.2 / 1.1.3 |
+| `android-expanded-demo-stopped.png`, `-overview-strip.png`, `-overflow-menu.png`, `-snap-sheet.png`, `-metronome-sheet.png`, `-tempo-dialog.png` | Pixel Tablet, portrait 800 dp | the full toolbar (Snap pill, tempo pill, metronome button, inline slider with "80%"), the strip, the two-entry overflow, the Snap pill's menu, the sheet with the signature pill, the dialog |
+| `android-fold-open-demo-stopped.png`, `android-fold-open-overview-strip.png` | fold emulator, open | the same two states on the inner display |
+| `ios-compact-*` (the nine states of the phone) | iPhone 18 Pro | the same states as the Android phone |
+| `ios-expanded-*` (six states) | iPad Pro 13-inch, portrait | the same states as the tablet |
+| `ios-duo-demo-stopped.png`, `ios-duo-overview-strip.png`, `ios-duo-master-popup.png` | iPhone Duo, closed, end rail | buttons, strip, popup |
+
+Seen while capturing, not fixed: on iOS, Undo lights up after the tempo dialog's Done with no change or after the long press
+on the metronome toggle (the tempo stays 124; a relaunch clears it) — T150.
+
+### The zoom-control comparison install (T143, 2026-10-27 02:00)
+
+The D1 release build (`fa0fb41`'s profiles, signed with the debug key, compiled from the profile everywhere but the Redmi)
+is installed and running on all ten targets, with the zoom control set per device so the owner can compare the two:
+
+| Zoom control | Targets | How it was set |
+|---|---|---|
+| Buttons (the default) | Pixel 6 Pro, Pixel Tablet, iPhone 18 Pro, iPad Pro 13-inch, iPhone 14 | nothing to set |
+| Overview strip | Pixel 7 Pro, OPPO CPH2239, Redmi Note 5, fold emulator, iPhone Duo | Android: the overflow menu driven by accessibility ids (`scratchpad/set_zoom_control.py`); the Duo: `timeline.zoomControl=overviewStrip` written into the app's `Library/Application Support/datastore/tembra.preferences_pb` (the DataStore map encoded by hand, 41 bytes; `xcodebuild test` runs on simulator clones, so a UI test cannot set the real simulator's preference) |
+
+Either control can be flipped on any device from the toolbar's overflow menu ("Zoom control"). The owner keeps one; T144
+removes the other.
+
 ## Defects the matrix found (fixed, with a device test each)
 
 1. The playhead overlay's full-size semantics node hid every lane, header and clip from TalkBack and UiAutomator
