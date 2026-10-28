@@ -59,6 +59,8 @@ internal fun TrackRow(
                 onDelete = { callbacks.onDeleteTrack(track.id) },
                 onArm = { callbacks.onArm(track.id) },
                 canReorder = state.canMoveOrDeleteTrack,
+                inputTelemetry = inputTelemetry,
+                onResetClip = { callbacks.onResetClip(track.id) },
             )
             TrackLane(
                 track = track,
@@ -108,6 +110,8 @@ internal fun TrackRow(
                 onRecord = callbacks.onRecord,
                 recordState = state.recordPhase,
                 canReorder = state.canMoveOrDeleteTrack,
+                inputTelemetry = inputTelemetry,
+                onResetClip = { callbacks.onResetClip(track.id) },
             )
             TrackLane(
                 track = track,

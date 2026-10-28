@@ -2,7 +2,9 @@ package audio.tembra.ui.timeline
 
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -41,7 +43,16 @@ fun TimelineScreen(
     ReportFirstContentDrawn(state.isFirstContentReady)
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(viewModel, snackbarHostState) {
-        viewModel.messages.collect { snackbarHostState.showSnackbar(it.text) }
+        viewModel.messages.collect { message ->
+            val action = message.action
+            // A message with an action stays longer, never indefinitely: the queue behind it must move (feature 010, FR-020).
+            val result = if (action == null) {
+                snackbarHostState.showSnackbar(message.text)
+            } else {
+                snackbarHostState.showSnackbar(message.text, actionLabel = action, duration = SnackbarDuration.Long)
+            }
+            if (result == SnackbarResult.ActionPerformed && message is TimelineMessage.MicrophoneDenied) viewModel.requestMicrophone()
+        }
     }
     val layoutMode = rememberLayoutMode()
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {

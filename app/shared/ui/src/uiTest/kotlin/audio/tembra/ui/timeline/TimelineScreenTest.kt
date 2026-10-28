@@ -3,7 +3,10 @@ package audio.tembra.ui.timeline
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.requiredWidth
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
@@ -80,6 +83,10 @@ class TimelineScreenTest {
     private val padId = TrackId("t2")
     private val calls = mutableListOf<String>()
     private val screen = mutableStateOf(TimelineUiState())
+    private val snackbarHostState = SnackbarHostState()
+    /** A message the content shows through the host, as the stateful screen does; the result of the last one shown. */
+    private val shown = mutableStateOf<TimelineMessage?>(null)
+    private val results = mutableListOf<SnackbarResult>()
 
     private val callbacks = TimelineCallbacks.None.copy(
         onPlayPause = { calls += "play" },
@@ -145,12 +152,16 @@ class TimelineScreenTest {
             TembraTheme {
                 CompositionLocalProvider(LocalDawColors provides (daw ?: LocalDawColors.current)) {
                     Box(if (width != null) Modifier.requiredWidth(width).fillMaxHeight() else Modifier) {
+                        LaunchedEffect(shown.value) {
+                            val message = shown.value ?: return@LaunchedEffect
+                            results += snackbarHostState.showSnackbar(message.text, actionLabel = message.action, duration = SnackbarDuration.Long)
+                        }
                         TimelineScreenContent(
                             state = screen.value,
                             callbacks = callbacks,
                             telemetry = ScriptedTransportTelemetry.stopped(0.0),
                             layout = layout,
-                            snackbarHostState = SnackbarHostState(),
+                            snackbarHostState = snackbarHostState,
                         )
                     }
                 }
@@ -444,6 +455,7 @@ class TimelineScreenTest {
         onNodeWithTag(TimelineTestTags.record(0)).assertDoesNotExist()
         onNodeWithTag(TimelineTestTags.arm(0)).assertIsOff().performClick()
         assertEquals(listOf("arm(t1)"), calls)
+        mainClock.advanceTimeByFrame()  // the held state changed under a frozen clock: one frame recomposes the header
         onNodeWithTag(TimelineTestTags.arm(0)).assertIsOn()
         onNodeWithTag(TimelineTestTags.header(0)).assertContentDescriptionEquals("Drums, Drums, +0.0dB, armed")
         onNodeWithTag(TimelineTestTags.record(0)).assertContentDescriptionEquals("Record").performClick()
@@ -492,6 +504,19 @@ class TimelineScreenTest {
         onNodeWithTag(PerfAnchors.TRANSPORT_RECORD).assertContentDescriptionEquals("Recording").assertIsEnabled()
         // Mute, solo and the arm toggle keep working; the arm toggle is only refused by the ViewModel (spec FR-018).
         onNodeWithTag(TimelineTestTags.mute(0)).assertIsEnabled()
+    }
+
+    /** The denied message (feature 010, FR-020; T071): the snackbar carries "Open settings" as a tagged action and reports the tap. */
+    @Test
+    fun theDeniedSnackbarOffersOpenSettingsAsATaggedAction() = runComposeUiTest {
+        setScreen(demoState(), TimelineLayout.Compact)
+        shown.value = TimelineMessage.MicrophoneDenied(openSettings = true)
+        mainClock.advanceTimeByFrame()
+        mainClock.advanceTimeByFrame()
+        onNodeWithText("Microphone access is needed to record").assertExists()
+        onNodeWithTag(TimelineTestTags.DENIED_ACTION).assertTextEquals("Open settings").performClick()
+        mainClock.advanceTimeByFrame()
+        assertEquals(listOf(SnackbarResult.ActionPerformed), results)
     }
 
     /** Opaque stand-ins for the lane's tokens, so a drawn snap column reads unambiguously as [snapColor]. */

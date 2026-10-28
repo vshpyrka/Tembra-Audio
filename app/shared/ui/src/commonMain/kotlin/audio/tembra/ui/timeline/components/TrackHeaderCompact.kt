@@ -25,6 +25,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import audio.tembra.ui.session.InputTelemetry
 import audio.tembra.ui.theme.TembraIcon
 import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.ui.timeline.TimelineTestTags
@@ -59,6 +60,9 @@ internal fun TrackHeaderCompact(
     recordState: RecordButtonState = RecordButtonState.Idle,
     /** False while a take runs: Move up, Move down and Delete track are unavailable (feature 010, spec FR-018). */
     canReorder: Boolean = true,
+    /** The armed track's input, read per frame by the meter (feature 010, spec FR-005); null leaves the meter out. */
+    inputTelemetry: InputTelemetry? = null,
+    onResetClip: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val colors = TembraTheme.colors
@@ -66,14 +70,30 @@ internal fun TrackHeaderCompact(
     val spacing = TembraTheme.spacing
     val tint = daw.trackTints[track.colorIndex % daw.trackTints.size]
     var menuOpen by remember { mutableStateOf(false) }
-    Row(
+    Box(
         modifier = modifier
             .fillMaxWidth()
             .height(HeaderHeight)
             .background(if (selected) daw.surfaceLevel2 else daw.surfaceLevel1)
             .testTag(TimelineTestTags.header(index))
             .selectable(selected = selected, role = Role.Button, onClick = onSelect)
-            .semantics { contentDescription = track.description }
+            .semantics { contentDescription = track.description },
+    ) {
+    // The input meter lies along the bottom edge, over the row, so the header keeps its 56 dp (spec FR-005).
+    if (track.armed && inputTelemetry != null) {
+        InputMeter(
+            telemetry = inputTelemetry,
+            armed = true,
+            onResetClip = onResetClip,
+            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
+            testTag = TimelineTestTags.meter(index),
+            clipTestTag = TimelineTestTags.clipIndicator(index),
+        )
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(HeaderHeight)
             .padding(start = spacing.md, end = spacing.xs),
         // xs gaps: with Record shown the 44 dp controls (Record, M, S, arm, menu) plus a 72 dp name must fit 360 dp.
         horizontalArrangement = Arrangement.spacedBy(spacing.xs),
@@ -98,7 +118,6 @@ internal fun TrackHeaderCompact(
         MuteSoloButton(letter = "M", description = MUTE_DESCRIPTION, checked = track.muted, tint = tint, onCheckedChange = onMute, testTag = TimelineTestTags.mute(index))
         MuteSoloButton(letter = "S", description = SOLO_DESCRIPTION, checked = track.soloed, tint = tint, onCheckedChange = onSolo, testTag = TimelineTestTags.solo(index))
         ArmButton(armed = track.armed, trackTint = tint, onToggle = onArm, testTag = TimelineTestTags.arm(index))
-        // US2: the input meter (TimelineTestTags.meter(index)) sits along this row's bottom edge while the track is armed.
         TrackMenu(
             expanded = menuOpen,
             isFirst = isFirst,
@@ -114,6 +133,7 @@ internal fun TrackHeaderCompact(
         ) {
             TransportButton(icon = TembraIcon.MoreVert, description = TRACK_MENU_DESCRIPTION, onClick = { menuOpen = true }, testTag = TimelineTestTags.trackMenu(index))
         }
+    }
     }
 }
 

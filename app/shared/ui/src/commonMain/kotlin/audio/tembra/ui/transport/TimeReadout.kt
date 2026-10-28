@@ -61,7 +61,8 @@ internal fun TimeReadout(
         else -> if (countingIn) "$countInText / 88:88.88" else "88:88.88 / 88:88.88"
     }
     val style: TextStyle = fitted(wanted, templateText, maxWidth, measurer, density)
-    val tick = rememberFrameTick(active = playing && !countingIn)
+    // The count-in runs with the session stopped: the tick stays live so the beats left come from the engine per frame.
+    val tick = rememberFrameTick(active = playing || countingIn)
     val snapshot = remember { TransportSnapshot() }
     val length = TimeFormat.clock(lengthSeconds)
     val announcedPosition = if (countingIn) countInText else TimeFormat.clock(floor(positionSeconds))
@@ -79,22 +80,27 @@ internal fun TimeReadout(
             .semantics { contentDescription = announced },
     ) {
         val frame = tick.longValue
+        var beatsLeft = countInBeatsLeft
         val seconds = if (countingIn) {
-            positionSeconds // not read: the position half paints the count-in text
+            // The engine's count-down lands on the beat; the state's value is the 10 Hz fallback (spec FR-015).
+            telemetry.read(frame, snapshot)
+            if (snapshot.countInBeatsLeft >= 0) beatsLeft = snapshot.countInBeatsLeft
+            positionSeconds
         } else if (playing) {
             telemetry.read(frame, snapshot)
             snapshot.audiblePositionSeconds.coerceAtLeast(0.0)
         } else {
             positionSeconds
         }
+        val positionText = if (countingIn) TransportCopy.countIn(beatsLeft) else TimeFormat.clock(seconds)
         if (stacked) {
-            val position = measurer.measure(if (countingIn) countInText else TimeFormat.clock(seconds), style)
+            val position = measurer.measure(positionText, style)
             val total = measurer.measure(length, style)
             val lineHeight = size.height / 2
             drawText(position, topLeft = Offset((size.width - position.size.width) / 2, (lineHeight - position.size.height) / 2))
             drawText(total, topLeft = Offset((size.width - total.size.width) / 2, lineHeight + (lineHeight - total.size.height) / 2))
         } else {
-            val layout = measurer.measure("${if (countingIn) countInText else TimeFormat.clock(seconds)} / $length", style)
+            val layout = measurer.measure("$positionText / $length", style)
             drawText(layout, topLeft = Offset((size.width - layout.size.width) / 2, (size.height - layout.size.height) / 2))
         }
     }

@@ -18,6 +18,12 @@ import audio.tembra.ui.perf.PerfAnchors
 import audio.tembra.ui.theme.LocalTembraMotion
 import audio.tembra.ui.theme.TembraMotion
 import audio.tembra.ui.theme.TembraTheme
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.test.captureToImage
+import audio.tembra.engine.TransportSnapshot
+import audio.tembra.ui.timeline.ScriptedTransportTelemetry
+import kotlin.test.assertTrue
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -101,5 +107,51 @@ class RecordButtonTest {
         beats = 2
         mainClock.advanceTimeBy(500)
         onNodeWithTag(PerfAnchors.TRANSPORT_RECORD).assertContentDescriptionEquals("Count-in, 2 beats left")
+    }
+
+    /**
+     * The pulse follows the engine's beats (spec FR-007, FR-015; T062): the ring is drawn after a beat change and gone
+     * once the pulse has run out, and the engine's next beat restarts it. Read as pixel differences across time on the
+     * button's middle row outside the disc, so no colour blending has to be assumed.
+     */
+    @Test
+    fun theRingPulsesOnEachBeatTheEngineReportsAndRestsBetween() = runComposeUiTest {
+        var beats = 4
+        val telemetry = ScriptedTransportTelemetry { TransportSnapshot().apply { countInBeatsLeft = beats } }
+        mainClock.autoAdvance = false
+        setContent {
+            // The simulator's own Reduce Motion setting must not decide this test: the pulse is the subject.
+            CompositionLocalProvider(LocalTembraMotion provides TembraMotion(reduceMotion = false)) {
+                TembraTheme {
+                    RecordButton(state = RecordButtonState.CountIn, onRecord = {}, countInBeatsLeft = 4, telemetry = telemetry)
+                }
+            }
+        }
+        mainClock.advanceTimeByFrame()
+        mainClock.advanceTimeBy(200)
+        val pulsing = middleRow()
+        mainClock.advanceTimeBy(800)
+        val resting = middleRow()
+        assertTrue(differences(pulsing, resting) > 0, "the ring 200 ms after a beat differs from the rest state")
+        beats = 3
+        mainClock.advanceTimeByFrame()
+        mainClock.advanceTimeBy(200)
+        val restarted = middleRow()
+        assertTrue(differences(restarted, resting) > 0, "the engine's next beat restarts the ring")
+        mainClock.advanceTimeBy(800)
+        assertEquals(0, differences(middleRow(), resting), "the ring rests again after the pulse")
+    }
+
+    /** The colours of the button's middle row outside the 20 dp disc. */
+    private fun ComposeUiTest.middleRow(): List<Color> {
+        val pixels = onNodeWithTag(PerfAnchors.TRANSPORT_RECORD).captureToImage().toPixelMap()
+        val y = pixels.height / 2
+        val centre = pixels.width / 2
+        val disc = with(density) { 11.dp.roundToPx() }
+        return (0 until pixels.width).filter { kotlin.math.abs(it - centre) > disc }.map { pixels[it, y] }
+    }
+
+    private fun differences(a: List<Color>, b: List<Color>): Int = a.indices.count { i ->
+        kotlin.math.abs(a[i].red - b[i].red) > 0.03f || kotlin.math.abs(a[i].green - b[i].green) > 0.03f || kotlin.math.abs(a[i].blue - b[i].blue) > 0.03f
     }
 }

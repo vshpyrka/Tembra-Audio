@@ -86,6 +86,10 @@ object TimelineCopy {
     const val takeEndedFailed = "Take ended: recording failed"
     const val takeEndedPermission = "Take ended: microphone access was revoked"
     const val takeEndedLeft = "Take kept"
+    const val stopRecordingTitle = "Stop recording?"
+    const val stopRecordingText = "The take is kept up to now."
+    const val stopRecordingAndLeave = "Stop recording and leave"
+    const val keepRecording = "Keep recording"
 
     /** The one-line notice for a take the engine or the platform ended (spec FR-021, FR-025). */
     fun takeEnded(reason: TakeStopReason): String = when (reason) {

@@ -64,6 +64,8 @@ class NativeAudioEngineRecordingTest {
         assertEquals(armed.channels, snapshot.inputChannels)
         assertEquals(armed.sampleRate, snapshot.sampleRate)
         assertTrue(snapshot.alignmentFrames > 0, "the alignment is the input plus the output latency: ${snapshot.alignmentFrames}")
+        // The measured value for specs/010-timeline-recording/evidence/alignment.md (read from logcat after the lane).
+        android.util.Log.i("TembraRecordingTest", "alignmentFrames=${snapshot.alignmentFrames} sampleRate=${snapshot.sampleRate} inputLatencyNs=${snapshot.inputLatencyNanos} outputLatencyNs=${snapshot.outputLatencyNanos}")
         assertTrue(snapshot.outputLatencyNanos > 0)
         assertEquals(TakeStopReason.User, snapshot.stopReason)
 

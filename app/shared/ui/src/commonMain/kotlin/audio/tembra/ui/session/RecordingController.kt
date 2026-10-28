@@ -338,6 +338,11 @@ class RecordingController(
                     RecordStartResult.Started -> if (countInBeats == 0) {
                         dispatch(RecordingEvent.TakeStarted(manifest.startBeats, manifest.startedAt))
                         host.playbackStartedByTake()
+                    } else {
+                        // The pre-roll as one animation interval (contracts/perf-instrumentation.md): from the start to the first captured frame or the cancel.
+                        scope.launch(CoroutineName("countInSpan")) {
+                            PerfTrace.animation(PerfSection.TRANSPORT_COUNT_IN) { _state.first { it.phase !is RecordingState.PreRoll } }
+                        }
                     }
                     RecordStartResult.NotArmed, RecordStartResult.TakeRunning, RecordStartResult.FileFailed -> dispatch(RecordingEvent.TakeEnded(TakeStopReason.WriteFailed))
                 }

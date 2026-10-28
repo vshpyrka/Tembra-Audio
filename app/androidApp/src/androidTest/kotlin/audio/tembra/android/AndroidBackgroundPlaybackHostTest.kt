@@ -64,6 +64,10 @@ class AndroidBackgroundPlaybackHostTest {
     /** Feature 010 (FR-021): a take's notification reads "Recording" and, from Android 14, the service holds the microphone type. */
     @Test
     fun keepAliveWithTheRecordingNotificationShowsRecordingAndHoldsTheMicrophoneType() {
+        // The type needs the microphone granted (Android 14 refuses it otherwise): the runner's grant, as the permission test does.
+        if (context.checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().uiAutomation.grantRuntimePermission(context.packageName, android.Manifest.permission.RECORD_AUDIO)
+        }
         assertTrue(host.keepAlive(PlaybackNotification.recording("Demo project")))
         val service = (serviceRule.bindService(serviceIntent) as PlaybackServiceBinder).service
         val notification = PlaybackForegroundService.buildNotification(context)

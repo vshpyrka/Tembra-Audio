@@ -6,6 +6,7 @@ import audio.tembra.ui.platform.FakeMicrophonePermission
 import audio.tembra.ui.platform.FakeAudioRouteMonitor
 import androidx.compose.ui.unit.dp
 import audio.tembra.core.project.CountIn
+import audio.tembra.core.recording.MonitorState
 import audio.tembra.core.recording.RecordingState
 import audio.tembra.ui.transport.RecordButtonState
 import audio.tembra.core.metronome.BuiltInClickSound
@@ -80,6 +81,8 @@ class TimelineViewModelTest {
     private val picker = FakeAudioFilePicker()
     private val preferences = FakeMetronomePreferences()
     private val timelinePreferences = FakeTimelinePreferences()
+    private val recordingPreferences = FakeTimelinePreferences()
+    private val routes = FakeAudioRouteMonitor()
     private val session = ProjectSession(
         repository = repository,
         audio = engine,
@@ -89,9 +92,9 @@ class TimelineViewModelTest {
         recording = RecordingController(
             audio = engine,
             permission = FakeMicrophonePermission(MicrophonePermissionStatus.Granted),
-            routes = FakeAudioRouteMonitor(),
+            routes = routes,
             host = FakeBackgroundPlaybackHost(),
-            preferences = FakeTimelinePreferences(),
+            preferences = recordingPreferences,
             repository = repository,
             scope = scope,
             clock = { 0L },
@@ -1005,6 +1008,50 @@ class TimelineViewModelTest {
         runCurrent()
         assertEquals(RecordButtonState.Recording, ui().recordButton)
         assertEquals(-1, ui().countInBeatsLeft)
+    }
+
+    /** The count-in is a project setting, not an undo step (spec FR-015; T062): the history flags do not move. */
+    @Test
+    fun setCountInIsAProjectSettingOutsideTheHistory() = recordingTest {
+        openDemo()
+        assertEquals(CountIn.ONE_BAR, ui().countIn)
+        val canUndo = ui().canUndo
+        viewModel.setCountIn(CountIn.TWO_BARS)
+        assertEquals(CountIn.TWO_BARS, ui().countIn)
+        assertEquals(canUndo, ui().canUndo)
+        assertEquals(CountIn.TWO_BARS, session.state.value.project?.countIn)
+        // Two bars of 4/4: the controller receives eight beats.
+        viewModel.arm(drumsTrack)
+        settle()
+        viewModel.record()
+        settle()
+        assertEquals(8, engine.lastRecordConfig?.countInBeats)
+    }
+
+    /** Monitoring (spec FR-016, FR-017; T067): on the speaker the toggle only explains; with headphones it flips the remembered preference and the engine. */
+    @Test
+    fun toggleMonitorOnTheSpeakerExplainsAndWithHeadphonesFlipsThePreferenceAndTheEngine() = recordingTest {
+        openDemo()
+        val messages = collectMessages()
+        viewModel.arm(drumsTrack)
+        settle()
+        assertEquals(MonitorState.Off, ui().monitor)
+        viewModel.toggleMonitor()
+        settle()
+        assertEquals(listOf<TimelineMessage>(TimelineMessage.MonitorNeedsHeadphones), messages)
+        assertEquals(MonitorState.Off, ui().monitor)
+        assertTrue(engine.calls.none { it.startsWith("setMonitor(true") })
+        routes.plugHeadphones()
+        settle()
+        viewModel.toggleMonitor()
+        settle()
+        assertEquals(MonitorState.On, ui().monitor)
+        assertEquals(true, recordingPreferences.storedMonitorInput)
+        assertTrue(engine.calls.any { it.startsWith("setMonitor(true") })
+        viewModel.toggleMonitor()
+        settle()
+        assertEquals(MonitorState.Off, ui().monitor)
+        assertEquals(false, recordingPreferences.storedMonitorInput)
     }
 
     @Test

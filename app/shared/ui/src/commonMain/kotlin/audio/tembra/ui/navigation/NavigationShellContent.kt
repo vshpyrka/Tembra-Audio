@@ -53,7 +53,7 @@ fun NavigationShellContent(
     onCloseTrackSettings: () -> Unit = {},
 ) {
     when (dialog) {
-        is DialogRequest.StopAndLeave -> StopAndLeaveDialog(onConfirm = { dialog.answer(true) }, onCancel = { dialog.answer(false) })
+        is DialogRequest.StopAndLeave -> StopAndLeaveDialog(onConfirm = { dialog.answer(true) }, onCancel = { dialog.answer(false) }, recording = dialog.recording)
         null -> Unit
     }
     val items = remember { Destination.entries.map { NavigationItemSpec(it.id, it.label, it.icon) } }

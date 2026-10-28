@@ -11,6 +11,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.foundation.focusable
@@ -115,6 +120,7 @@ internal fun TimelineScreenContent(
                 onSnapSheet = { callbacks.onOpenSheet(TimelineSheet.GridMenu) },
                 onOverviewStripShown = callbacks.onOverviewStripShown,
                 onMetronomeSettings = callbacks.onMetronomeSettings,
+                onMonitorToggle = callbacks.onMonitorToggle,
             )
             TimelineRuler(
                 viewport = state.viewport,
@@ -177,7 +183,21 @@ internal fun TimelineScreenContent(
         if (deleting != null) {
             DeleteTrackDialog(trackName = deleting.name, onConfirm = callbacks.onConfirmDeleteTrack, onCancel = callbacks.onDismissDeleteTrack)
         }
-        SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = transportHeight + stripHeight))
+        SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = transportHeight + stripHeight)) { data ->
+            // The action as a tagged button: the denied message's "Open settings" / "Allow" (feature 010, FR-020) is a journey anchor.
+            val label = data.visuals.actionLabel
+            Snackbar(
+                action = label?.let {
+                    {
+                        TextButton(
+                            onClick = data::performAction,
+                            colors = ButtonDefaults.textButtonColors(contentColor = SnackbarDefaults.actionColor),
+                            modifier = Modifier.testTag(TimelineTestTags.DENIED_ACTION),
+                        ) { Text(it) }
+                    }
+                },
+            ) { Text(data.visuals.message) }
+        }
         when (state.sheet) {
             TimelineSheet.TempoDialog -> TempoDialog(
                 tempo = state.tempo,
@@ -198,6 +218,9 @@ internal fun TimelineScreenContent(
                 onCycleBeat = callbacks.onCycleBeat,
                 onStyle = callbacks.onStyle,
                 onDismiss = { callbacks.onOpenSheet(null) },
+                countIn = state.countIn,
+                countInEnabled = state.canEditCountIn,
+                onCountIn = callbacks.onCountIn,
             )
             TimelineSheet.GridMenu -> SnapSheet(grid = state.grid, onGrid = callbacks.onGrid, onDismiss = { callbacks.onOpenSheet(null) })
             null -> Unit

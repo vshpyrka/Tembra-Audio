@@ -18,6 +18,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.DpSize
 import audio.tembra.engine.AudioEngine
+import audio.tembra.engine.CaptureSnapshot
 import audio.tembra.ui.theme.TembraTheme
 
 /**
@@ -51,7 +52,7 @@ fun AudioHealthWriteButton(
                     .size(TembraTheme.spacing.sm)
                     .clip(CircleShape)
                     .background(TembraTheme.colors.onSurfaceVariant)
-                    .clickable(role = Role.Button) { writer.write(engineHealthJson(engine.audioHealth())) }
+                    .clickable(role = Role.Button) { writer.write(engineHealthJson(engine.audioHealth(), CaptureSnapshot().also(engine::readCapture))) }
                     .testTag(PerfAnchors.DEVTOOLS_WRITE_HEALTH)
                     .semantics { contentDescription = "Write engine health" },
             )

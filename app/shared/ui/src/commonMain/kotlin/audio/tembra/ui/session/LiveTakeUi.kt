@@ -1,5 +1,6 @@
 package audio.tembra.ui.session
 
+import androidx.compose.runtime.Immutable
 import audio.tembra.core.project.Beats
 import audio.tembra.core.project.TrackId
 import audio.tembra.data.projects.WaveformOverview
@@ -9,6 +10,7 @@ import audio.tembra.data.projects.WaveformOverview
  * 10 Hz mirror replaces (never mutated in place), and the kept frames and rate at the last mirror tick for the
  * semantics. The drawn length is read per frame from the capture telemetry, not from here.
  */
+@Immutable
 data class LiveTakeUi(
     val trackId: TrackId,
     val clipName: String,
