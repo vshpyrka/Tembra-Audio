@@ -187,4 +187,113 @@ final class ScreenshotMatrix: XCTestCase {
             XCUIDevice.shared.orientation = .portrait; sleep(2)
         }
     }
+
+    // MARK: Feature 010 (recording) states
+
+    private let newTrack = RecordingJourney.demoTrackCount
+
+    /// Demo project open with a track added and armed (the track from an earlier state is reused after a relaunch).
+    @discardableResult
+    private func armNewTrack() -> Bool {
+        if !app.anchor(Anchors.trackArm(newTrack)).exists { tapIfPresent(Anchors.timelineAddTrack); sleep(1) }
+        // The added track sits below the four demo tracks: scroll the lanes until it is in the tree and on screen.
+        for _ in 0..<3 where !app.anchor(Anchors.trackArm(newTrack)).isHittable { app.anchor(Anchors.timelineLaneFirst).swipeUp(); sleep(1) }
+        guard tapIfPresent(Anchors.trackArm(newTrack)) else { return false }
+        PerfJourneyTestCase.answerMicrophoneAlertIfShown(timeout: 1)
+        return app.anchor(Anchors.trackMeter(newTrack)).waitForExistence(timeout: 5)
+    }
+
+    private func pressRecord(_ index: Int) {
+        let bar = app.anchor(Anchors.transportRecord)
+        if bar.exists { bar.tap() } else { tapIfPresent(Anchors.trackRecord(index)) }
+    }
+
+    private func waitReadout(_ format: String, timeout: TimeInterval = 8) -> Bool {
+        let readout = app.anchor(Anchors.transportReadout)
+        return XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: format), object: readout)], timeout: timeout) == .completed
+    }
+
+    /// Stops a running take (Record again) and waits for the growing clip to go.
+    private func stopTake(_ index: Int) {
+        pressRecord(index)
+        _ = waitGone(Anchors.timelineClipTake, timeout: 10)
+    }
+
+    func testRecordingStates() {
+        let wanted = ["armedRest", "armedLoud", "armedClipped", "countIn", "recording", "takeDone", "takeOverClips", "monitorOn",
+                      "monitorSuspended", "micDenied", "stopRecordingDialog", "sheetCountIn", "barRecord432", "largestFont"]
+        guard wanted.contains(where: want) else { return }
+        openDemo()
+        tapIfPresent(Anchors.transportSkipStart, timeout: 2)
+        let armed = armNewTrack()
+        if !armed { print("ScreenshotMatrix: the track could not be armed") }
+        // The simulator's input is the Mac's microphone: the three armed captures show whatever level the room gives.
+        for state in ["armedRest", "armedLoud", "armedClipped"] where want(state) && armed { shot(state) }
+        if want("barRecord432") {
+            if app.anchor(Anchors.transportRecord).exists { shot("barRecord432") } else { print("ScreenshotMatrix: no transport.record in this width") }
+        }
+        if want("monitorOn") || want("monitorSuspended") {
+            let monitor = app.anchor(Anchors.timelineMonitor).exists ? Anchors.timelineMonitor : Anchors.timelineOverflowMonitor
+            let tapped = monitor == Anchors.timelineMonitor ? tapIfPresent(monitor, timeout: 2) : overflow("monitor")
+            if tapped {
+                sleep(1)
+                if want("monitorOn") { shot("monitorOn") }
+                if want("monitorSuspended") { shot("monitorSuspended") }
+                // Toggle off again when it stayed on.
+                if monitor == Anchors.timelineMonitor { tapIfPresent(monitor, timeout: 1) }
+            }
+            dismiss()
+            armNewTrack()
+        }
+        if want("sheetCountIn") {
+            app.anchor(Anchors.transportMetronome).press(forDuration: 0.8)
+            if app.anchor("timeline.metronomeSheet").waitForExistence(timeout: 5), app.anchor(Anchors.metronomeCountIn).waitForExistence(timeout: 3) {
+                shot("sheetCountIn")
+            } else if app.anchor("timeline.metronomeSheet").exists { print("ScreenshotMatrix: no count-in row"); shot("sheetCountIn-norow") }
+            dismiss()
+            armNewTrack()
+        }
+        if want("countIn") || want("recording") || want("takeDone") || want("stopRecordingDialog") {
+            pressRecord(newTrack)
+            if want("countIn"), waitReadout("label BEGINSWITH 'Count-in'", timeout: 5) { shot("countIn") }
+            if app.anchor(Anchors.timelineClipTake).waitForExistence(timeout: 10) {
+                sleep(3)
+                if want("recording") { shot("recording") }
+                if want("stopRecordingDialog") {
+                    tapIfPresent(Anchors.navTuner)
+                    if app.anchor("dialog.stopRecording").waitForExistence(timeout: 5) { shot("stopRecordingDialog"); tapIfPresent("dialog.stopRecording.cancel") }
+                    sleep(1)
+                }
+                pressRecord(newTrack)
+                _ = waitGone(Anchors.timelineClipTake, timeout: 10)
+                _ = app.anchor(Anchors.trackClip(newTrack)).waitForExistence(timeout: 10)
+                if want("takeDone") { shot("takeDone") }
+            } else { print("ScreenshotMatrix: the growing take never appeared") }
+        }
+        if want("takeOverClips") {
+            tapIfPresent(Anchors.transportSkipStart, timeout: 2)
+            // Disarm the new track, arm the drums, move to about bar 3 and take a few seconds.
+            tapIfPresent(Anchors.trackArm(newTrack), timeout: 2)
+            for _ in 0..<6 where !app.anchor(Anchors.timelineTrackArmFirst).exists || !app.anchor(Anchors.timelineTrackArmFirst).isHittable { app.swipeDown(); sleep(1) }
+            if tapIfPresent(Anchors.timelineTrackArmFirst) {
+                let ruler = app.anchor(Anchors.timelineRuler)
+                if ruler.waitForExistence(timeout: 5) { ruler.coordinate(withNormalizedOffset: CGVector(dx: 0.35, dy: 0.5)).tap() }
+                pressRecord(0)
+                if app.anchor(Anchors.timelineClipTake).waitForExistence(timeout: 10) {
+                    sleep(4); stopTake(0); sleep(1); shot("takeOverClips")
+                } else { print("ScreenshotMatrix: no take over clips") }
+            }
+        }
+        if want("micDenied") { print("ScreenshotMatrix: micDenied is captured outside the test (simctl privacy revoke)") }
+    }
+
+    /// The armed compact row at the largest accessibility text size (launch argument; the app reads the content size category).
+    func testLargestFont() {
+        guard want("largestFont") else { return }
+        app.terminate()
+        app.launchArguments += ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
+        app.launch(); app.waitForAnchor(Anchors.startRoot)
+        openDemo()
+        if armNewTrack() { shot("largestFont") } else { print("ScreenshotMatrix: largestFont: could not arm"); shot("largestFont-unarmed") }
+    }
 }
