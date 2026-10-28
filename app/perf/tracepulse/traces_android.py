@@ -23,6 +23,10 @@ AUDIO_COUNTER_KEYS: Dict[str, str] = {
     "audio.avgUs": "audio.avg_us",
     "audio.starvation": "audio.starvation",
     "audio.clipsActive": "audio.clips_active",
+    "audio.inputOverruns": "audio.input_overruns",
+    "audio.recordBacklog": "audio.record_backlog",
+    "audio.takeAlignmentMs": "audio.take_alignment_ms",
+    "audio.monitorDelayMs": "audio.monitor_delay_ms",
 }
 
 

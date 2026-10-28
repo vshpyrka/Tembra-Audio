@@ -11,7 +11,7 @@ from typing import Dict, Iterable, List, Mapping, Optional, Tuple
 
 PLATFORMS = ("android", "ios")
 FAMILIES = ("startup", "frames", "memory", "cpu", "journey", "section", "app", "audio")
-JOURNEYS_MEASURED = ("tuner", "metronome", "timeline", "stress")
+JOURNEYS_MEASURED = ("tuner", "metronome", "timeline", "recording", "stress")
 
 
 class CatalogueError(Exception):
@@ -121,6 +121,13 @@ _AUDIO = (
     ("audio.avg_us", "us", dict(gate_limit_pct=50, screening_pct=10, floor_abs=100.0)),
     ("audio.starvation", "count", dict(gate_limit_abs=1.0, screening_abs=1.0)),
     ("audio.clips_active", "count", dict(gate_limit_pct=50, screening_pct=10)),
+    # Feature 010 (ABI revision 7): the recording counters. Input overruns are expected to read 0 and are flagged on
+    # any increase; the record backlog (frames) has a 2048-frame floor; the take alignment and the monitor delay
+    # (ms) are informational, under a 2 ms floor.
+    ("audio.input_overruns", "count", dict(gate_limit_abs=1.0, screening_abs=1.0)),
+    ("audio.record_backlog", "frames", dict(gate_limit_pct=50, screening_pct=10, floor_abs=2048.0)),
+    ("audio.take_alignment_ms", "ms", dict(gate_limit_pct=20, screening_pct=5, floor_abs=2.0)),
+    ("audio.monitor_delay_ms", "ms", dict(gate_limit_pct=20, screening_pct=5, floor_abs=2.0)),
 )
 for _key, _unit, _gates in _AUDIO:
     _ANDROID.append(_m("android", _key, "audio", "perfetto counter track (last value)", _unit, ("stress",),

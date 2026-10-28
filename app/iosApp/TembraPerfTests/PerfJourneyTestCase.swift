@@ -25,7 +25,7 @@ class PerfJourneyTestCase: XCTestCase {
         grantMicrophoneOnce()
     }
 
-    private static let allowButton = NSPredicate(format: "label BEGINSWITH 'Allow' OR label == 'OK'")
+    fileprivate static let allowButton = NSPredicate(format: "label BEGINSWITH 'Allow' OR label == 'OK'")
 
     /// A warm launch before each measured iteration: the app is on its start destination (Timeline) when the journey starts.
     func launchWarm() {
@@ -50,9 +50,15 @@ class PerfJourneyTestCase: XCTestCase {
     }
 
     private func answerMicrophoneAlertIfShown() {
+        Self.answerMicrophoneAlertIfShown(timeout: 3)
+    }
+
+    /// Answers the system microphone alert wherever it appears (the Tuner, the start destination, the Timeline's first
+    /// arm); with `timeout: 0` it only taps an alert that is already up.
+    static func answerMicrophoneAlertIfShown(timeout: TimeInterval) {
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
-        let allow = springboard.alerts.buttons.matching(Self.allowButton).firstMatch
-        if allow.waitForExistence(timeout: 3) {
+        let allow = springboard.alerts.buttons.matching(allowButton).firstMatch
+        if timeout > 0 ? allow.waitForExistence(timeout: timeout) : allow.exists {
             allow.tap()
         }
     }

@@ -26,6 +26,12 @@ enum Metrics {
     static let timelineEngineSections = ["engine.prime", "engine.loadClip"]
     static let stressTimelineSections = ["timeline.scroll", "timeline.playheadFrame", "transport.play"]
 
+    /// Feature 010 (contracts/perf-instrumentation.md): the recording journey's sections; `engine.takeAlignment` is the C++ one.
+    static let recordingSections = ["timeline.arm", "transport.recordStart", "transport.countIn", "timeline.takeFrame",
+                                    "transport.recordStop", "timeline.monitorToggle", "timeline.waveform", "transport.play",
+                                    "timeline.playheadFrame", "timeline.projectSave"]
+    static let recordingEngineSections = ["engine.takeAlignment"]
+
     static func section(_ name: String) -> XCTOSSignpostMetric {
         section(name, category: "ui")
     }
@@ -47,6 +53,7 @@ enum Metrics {
         case "tuner": return tunerSections
         case "metronome": return metronomeSections
         case "timeline": return timelineSections
+        case "recording": return recordingSections
         case "stress": return tunerSections + metronomeSections + stressTimelineSections
         default: return []
         }
@@ -55,6 +62,7 @@ enum Metrics {
     static func engineSections(of journey: String) -> [String] {
         switch journey {
         case "timeline": return timelineEngineSections
+        case "recording": return recordingEngineSections
         default: return []
         }
     }
