@@ -4,6 +4,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -22,7 +26,9 @@ import audio.tembra.ui.tracksettings.TrackSettingsInlineRow
 /**
  * The vertically scrolling list of [TrackRow]s (spec FR-016; contracts/timeline-screen.md): keyed by track id so a
  * reorder moves rows instead of rebuilding them. Its lane width (the list minus the pinned header column) is reported
- * through [TimelineCallbacks.onViewportMeasured] whenever it changes, which is what the viewport maps beats to.
+ * through [TimelineCallbacks.onViewportMeasured] whenever it changes, which is what the viewport maps beats to. A
+ * track just added is selected (009 FR-019) and lands below the visible rows on a phone: the list scrolls it into
+ * view, so its arm toggle is at hand (feature 010, FR-008; the recording journey arms it right after "+ Track").
  */
 @Composable
 internal fun TrackList(
@@ -39,7 +45,16 @@ internal fun TrackList(
         var running = 0
         state.tracks.map { track -> running.also { running += track.clips.size } }
     }
+    val listState = rememberLazyListState()
+    val selectedTrack = state.selection.trackIdOrNull
+    var knownTracks by remember { mutableIntStateOf(state.tracks.size) }
+    LaunchedEffect(state.tracks.size) {
+        val grew = state.tracks.size > knownTracks
+        knownTracks = state.tracks.size
+        if (grew && selectedTrack != null && state.tracks.lastOrNull()?.id == selectedTrack) listState.animateScrollToItem(state.tracks.lastIndex)
+    }
     LazyColumn(
+        state = listState,
         modifier = modifier
             .fillMaxSize()
             .onSizeChanged { size -> onMeasured((size.width - headerWidthPx).toDouble(), density.density.toDouble()) }
