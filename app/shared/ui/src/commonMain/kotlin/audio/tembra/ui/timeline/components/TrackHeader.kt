@@ -56,6 +56,9 @@ internal fun TrackHeader(
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
     onDelete: () -> Unit,
+    onArm: (Boolean) -> Unit = {},
+    /** False while a take runs: Move up, Move down and Delete track are unavailable (feature 010, spec FR-018). */
+    canReorder: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     val colors = TembraTheme.colors
@@ -96,6 +99,7 @@ internal fun TrackHeader(
                 onMoveDown = onMoveDown,
                 onDelete = onDelete,
                 testTag = TimelineTestTags.TRACK_MENU,
+            canReorder = canReorder,
             ) {
                 TransportButton(icon = TembraIcon.MoreVert, description = TRACK_MENU_DESCRIPTION, onClick = { menuOpen = true }, testTag = TimelineTestTags.trackMenu(index))
             }
@@ -104,6 +108,7 @@ internal fun TrackHeader(
             GainReadout(gain = track.gainDb, onGain = onGain, modifier = Modifier.weight(1f), testTag = TimelineTestTags.gain(index))
             MuteSoloButton(letter = "M", description = MUTE_DESCRIPTION, checked = track.muted, tint = tint, onCheckedChange = onMute, size = SmallToggle, testTag = TimelineTestTags.mute(index))
             MuteSoloButton(letter = "S", description = SOLO_DESCRIPTION, checked = track.soloed, tint = tint, onCheckedChange = onSolo, size = SmallToggle, testTag = TimelineTestTags.solo(index))
+            ArmButton(armed = track.armed, trackTint = tint, onToggle = onArm, size = SmallToggle, testTag = TimelineTestTags.arm(index))
             TransportButton(
                 icon = if (expanded) TembraIcon.ExpandLess else TembraIcon.ExpandMore,
                 description = if (expanded) COLLAPSE_SETTINGS else TimelineCopy.trackSettings,
@@ -111,6 +116,7 @@ internal fun TrackHeader(
                 testTag = TimelineTestTags.chevron(index),
             )
         }
+        // US2: the input meter (TimelineTestTags.meter(index)) sits beneath this row while the track is armed.
     }
 }
 

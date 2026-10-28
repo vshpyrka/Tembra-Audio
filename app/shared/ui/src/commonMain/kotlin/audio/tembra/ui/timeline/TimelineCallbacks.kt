@@ -7,6 +7,7 @@ import audio.tembra.core.metronome.Tempo
 import audio.tembra.core.metronome.TimeSignature
 import audio.tembra.core.project.Beats
 import audio.tembra.core.project.ClipId
+import audio.tembra.core.project.CountIn
 import audio.tembra.core.project.GainDb
 import audio.tembra.core.project.GridSize
 import audio.tembra.core.project.TrackId
@@ -74,6 +75,17 @@ data class TimelineCallbacks(
     val onSubdivision: (Subdivision) -> Unit,
     val onCycleBeat: (Int) -> Unit,
     val onStyle: (MetronomeStyle) -> Unit,
+    // Recording (feature 010, contracts/timeline-recording-ui.md)
+    /** The arm toggle: arms [TrackId], disarms it when it is the armed one. */
+    val onArm: (TrackId) -> Unit = {},
+    /** Record: starts a take (arming the selected or a new track first), ends the running one, cancels a count-in. */
+    val onRecord: () -> Unit = {},
+    /** The meter's clip square tapped: clears the latch. */
+    val onResetClip: (TrackId) -> Unit = {},
+    val onMonitorToggle: () -> Unit = {},
+    val onCountIn: (CountIn) -> Unit = {},
+    /** The denied snackbar's action: the system settings, or the prompt again. */
+    val onRequestMicrophone: () -> Unit = {},
 ) {
     companion object {
         val None = TimelineCallbacks(
@@ -86,6 +98,7 @@ data class TimelineCallbacks(
             onSelectClip = { _, _ -> }, onClearSelection = {}, onSplit = {}, onMoveClip = { _, _, _ -> }, onDeleteClip = {}, onClipDragStart = {}, onClipDrag = { _, _, _ -> }, onClipDragEnd = {}, onClipDragCancel = {}, onUndo = {}, onRedo = {},
             onOpenSheet = {}, onTempoDragging = {}, onTempoCommit = {}, onTapTempo = {}, onTimeSignature = {},
             onClickSound = {}, onImportCustomSound = {}, onSubdivision = {}, onCycleBeat = {}, onStyle = {},
+            onArm = {}, onRecord = {}, onResetClip = {}, onMonitorToggle = {}, onCountIn = {}, onRequestMicrophone = {},
         )
     }
 }

@@ -92,6 +92,8 @@ class RecordingController(
     private var monitorRemembered = false
     private var disarmPending = false
     private var pendingArm: TrackId? = null
+    /** The count-in of a Record press that armed first (FR-008): the take starts once the input is open. */
+    private var pendingRecord: Int? = null
     private var armJob: Job? = null
     private var finaliseJob: Job? = null
     private var take: PendingTake? = null
@@ -140,21 +142,27 @@ class RecordingController(
     fun disarm() = dispatch(RecordingEvent.Disarm)
 
     /**
-     * Record pressed on the armed track: refused with a message below 200 MB of free space (FR-025); otherwise the
-     * take is staged and started with [countInBeats] (ignored while playing).
+     * Record pressed: on the armed track the take is staged and started with [countInBeats] (ignored while playing),
+     * refused with a message below 200 MB of free space (FR-025); while nothing is armed [armFirst] is armed and the
+     * take starts once its input is open (FR-008); during a count-in it cancels, during a take it ends it (FR-009).
      */
-    fun record(countInBeats: Int) {
+    fun record(countInBeats: Int, armFirst: TrackId? = null) {
         val host = sessionHost ?: return
         val project = host.project ?: return
-        if (phase !is RecordingState.Armed) {
-            dispatch(RecordingEvent.Record(tokens(), countInBeats, host.isPlaying))
-            return
+        when (phase) {
+            RecordingState.Disarmed -> if (armFirst != null) {
+                pendingRecord = countInBeats
+                arm(armFirst)
+            }
+            is RecordingState.Arming -> pendingRecord = countInBeats
+            is RecordingState.Armed -> if (freeSpace.canRecord(repository.audioDirectory(project.id))) {
+                dispatch(RecordingEvent.Record(tokens(), countInBeats, host.isPlaying))
+            } else {
+                host.notify(SessionMessage.RecordRefused)
+            }
+            is RecordingState.PreRoll, is RecordingState.Recording, is RecordingState.Finalising ->
+                dispatch(RecordingEvent.Record(tokens(), countInBeats, host.isPlaying))
         }
-        if (!freeSpace.canRecord(repository.audioDirectory(project.id))) {
-            host.notify(SessionMessage.RecordRefused)
-            return
-        }
-        dispatch(RecordingEvent.Record(tokens(), countInBeats, host.isPlaying))
     }
 
     fun stop() = dispatch(RecordingEvent.Stop)
@@ -215,6 +223,18 @@ class RecordingController(
         }
         publish()
         for (effect in transition.effects) run(effect, transition.state)
+        settlePendingRecord(before, transition.state)
+    }
+
+    /** A Record press that armed first (FR-008) starts its take once the input is open, and is forgotten when the arm fails or is undone. */
+    private fun settlePendingRecord(before: RecordingState, now: RecordingState) {
+        val countIn = pendingRecord ?: return
+        if (before is RecordingState.Arming && now is RecordingState.Armed) {
+            pendingRecord = null
+            record(countIn)
+        } else if (now is RecordingState.Disarmed && before !is RecordingState.Disarmed) {
+            pendingRecord = null
+        }
     }
 
     private fun run(effect: RecordingEffect, state: RecordingState) {
@@ -234,7 +254,10 @@ class RecordingController(
                 scope.launch(CoroutineName("rememberMonitor")) { preferences.setMonitorInput(effect.enabled) }
             }
             RecordingEffect.RequestPermission -> requestPermissionThenArm()
-            RecordingEffect.ShowDenied -> sessionHost?.notify(SessionMessage.MicrophoneDenied(openSettings = permission.status.value == MicrophonePermissionStatus.DeniedOpenSettings))
+            RecordingEffect.ShowDenied -> {
+                pendingRecord = null
+                sessionHost?.notify(SessionMessage.MicrophoneDenied(openSettings = permission.status.value == MicrophonePermissionStatus.DeniedOpenSettings))
+            }
             RecordingEffect.ShowMonitorNeedsHeadphones -> sessionHost?.notify(SessionMessage.MonitorNeedsHeadphones)
             is RecordingEffect.Notify -> sessionHost?.notify(SessionMessage.TakeEnded(effect.reason))
             is RecordingEffect.KeepAlive -> keepAlive(effect.recording)
@@ -269,9 +292,14 @@ class RecordingController(
             val status = permission.request()
             when (status) {
                 MicrophonePermissionStatus.Granted -> dispatch(RecordingEvent.Arm(trackId, RecordingEvent.PermissionStatus.Granted))
-                MicrophonePermissionStatus.NotDetermined, MicrophonePermissionStatus.DeniedCanAsk ->
+                MicrophonePermissionStatus.NotDetermined, MicrophonePermissionStatus.DeniedCanAsk -> {
+                    pendingRecord = null
                     sessionHost?.notify(SessionMessage.MicrophoneDenied(openSettings = false))
-                MicrophonePermissionStatus.DeniedOpenSettings -> sessionHost?.notify(SessionMessage.MicrophoneDenied(openSettings = true))
+                }
+                MicrophonePermissionStatus.DeniedOpenSettings -> {
+                    pendingRecord = null
+                    sessionHost?.notify(SessionMessage.MicrophoneDenied(openSettings = true))
+                }
             }
             publish()
         }

@@ -47,17 +47,25 @@ internal fun TimeReadout(
     modifier: Modifier = Modifier,
     stacked: Boolean = false,
     maxWidth: Dp = Dp.Unspecified,
+    countInBeatsLeft: Int = -1,
 ) {
     val base = TembraTheme.typographyExtras.tabularTimecode.copy(color = TembraTheme.colors.onSurface)
     val wanted: TextStyle = if (stacked) base.copy(fontSize = STACKED_SIZE, lineHeight = STACKED_LINE_HEIGHT) else base
     val measurer = rememberTextMeasurer()
     val density = LocalDensity.current
-    val templateText = if (stacked) "88:88.88" else "88:88.88 / 88:88.88"
+    val countingIn = countInBeatsLeft >= 0
+    val countInText = if (countingIn) TransportCopy.countIn(countInBeatsLeft) else ""
+    // While the count-in runs the position half is "Count-in N", wider than the clock: measure with it.
+    val templateText = when {
+        stacked -> if (countingIn) countInText else "88:88.88"
+        else -> if (countingIn) "$countInText / 88:88.88" else "88:88.88 / 88:88.88"
+    }
     val style: TextStyle = fitted(wanted, templateText, maxWidth, measurer, density)
-    val tick = rememberFrameTick(active = playing)
+    val tick = rememberFrameTick(active = playing && !countingIn)
     val snapshot = remember { TransportSnapshot() }
     val length = TimeFormat.clock(lengthSeconds)
-    val announced = "${TimeFormat.clock(floor(positionSeconds))} of ${TimeFormat.clock(floor(lengthSeconds))}"
+    val announcedPosition = if (countingIn) countInText else TimeFormat.clock(floor(positionSeconds))
+    val announced = "$announcedPosition of ${TimeFormat.clock(floor(lengthSeconds))}"
     // Width of the widest possible text, so the readout never jitters as digits change.
     val template = measurer.measure(templateText, style)
     val widthDp = with(density) { template.size.width.toDp() }
@@ -71,20 +79,22 @@ internal fun TimeReadout(
             .semantics { contentDescription = announced },
     ) {
         val frame = tick.longValue
-        val seconds = if (playing) {
+        val seconds = if (countingIn) {
+            positionSeconds // not read: the position half paints the count-in text
+        } else if (playing) {
             telemetry.read(frame, snapshot)
             snapshot.audiblePositionSeconds.coerceAtLeast(0.0)
         } else {
             positionSeconds
         }
         if (stacked) {
-            val position = measurer.measure(TimeFormat.clock(seconds), style)
+            val position = measurer.measure(if (countingIn) countInText else TimeFormat.clock(seconds), style)
             val total = measurer.measure(length, style)
             val lineHeight = size.height / 2
             drawText(position, topLeft = Offset((size.width - position.size.width) / 2, (lineHeight - position.size.height) / 2))
             drawText(total, topLeft = Offset((size.width - total.size.width) / 2, lineHeight + (lineHeight - total.size.height) / 2))
         } else {
-            val layout = measurer.measure("${TimeFormat.clock(seconds)} / $length", style)
+            val layout = measurer.measure("${if (countingIn) countInText else TimeFormat.clock(seconds)} / $length", style)
             drawText(layout, topLeft = Offset((size.width - layout.size.width) / 2, (size.height - layout.size.height) / 2))
         }
     }

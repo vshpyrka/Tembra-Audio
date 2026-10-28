@@ -118,6 +118,8 @@ class ProjectsViewModel(
         viewModelScope.launch(CoroutineName("restoreDemo")) {
             val openId = session.state.value.project?.id
             val wasOpen = openId != null && repository.library().first().entries.any { it.id == openId && it.origin == audio.tembra.data.projects.ProjectOrigin.Demo }
+            // A take recording into the open demo refuses the restore unless the user ends it (feature 010, FR-018).
+            if (wasOpen && !leaveAllowed()) return@launch
             val demo = repository.restoreDemo()
             if (wasOpen) openInTimeline(demo.id)
         }
@@ -172,9 +174,13 @@ class ProjectsViewModel(
     // --- Helpers -----------------------------------------------------------------------------------------------------
 
     private suspend fun openInTimeline(id: ProjectId) {
+        if (!leaveAllowed()) return
         session.open(id)
         if (session.state.value.project?.id == id) _events.trySend(ProjectsEvent.OpenedInTimeline) else _messages.trySend(ProjectsMessage.CouldNotOpen)
     }
+
+    /** A running take refuses the switch unless the user ends it through the stop-and-leave dialog (feature 010, FR-018, FR-022). */
+    private suspend fun leaveAllowed(): Boolean = !session.state.value.recording.takeRunning || session.confirmLeave()
 
     private fun showDialog(id: ProjectId, build: (ProjectCardUi) -> ProjectsDialog) {
         val card = uiState.value.cards.firstOrNull { it.id == id } ?: return

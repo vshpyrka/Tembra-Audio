@@ -21,6 +21,8 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertContentDescriptionEquals
+import androidx.compose.ui.test.assertHeightIsAtLeast
+import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -269,6 +271,50 @@ class TransportBarTest {
         tapThroughTheWindow(onNodeWithTag(PerfAnchors.TRANSPORT_READOUT))
         onNodeWithTag(MASTER_POPUP_TAG).assertDoesNotExist()
         onNodeWithTag(MASTER_BUTTON_TAG).assertExists()
+    }
+
+    /** Record joins the bar from 432 dp; the readout stacks until 600 dp then (feature 010, FR-007, FR-026). */
+    @Test
+    fun recordJoinsTheBarFrom432dpAndTheReadoutStacksUntil600dp() = runComposeUiTest {
+        var width by mutableStateOf(PHONE_WIDTH)
+        val state = demo.copy(record = RecordButtonState.Idle)
+        setContent {
+            TembraTheme {
+                Box(Modifier.requiredWidth(width)) { TransportBar(state = state, callbacks = callbacks, telemetry = ScriptedTransportTelemetry.stopped(0.0)) }
+            }
+        }
+        fun readoutHeight() = onNodeWithTag(PerfAnchors.TRANSPORT_READOUT).getUnclippedBoundsInRoot().let { it.bottom - it.top }
+        onNodeWithTag(PerfAnchors.TRANSPORT_RECORD).assertDoesNotExist()
+        val stackedHeight = readoutHeight()
+        width = 432.dp
+        onNodeWithTag(PerfAnchors.TRANSPORT_RECORD).assertExists().assertWidthIsAtLeast(44.dp).assertHeightIsAtLeast(44.dp)
+        for (tag in listOf(PerfAnchors.TRANSPORT_SKIP_START, STEP_BACK_TAG, STEP_FORWARD_TAG, PerfAnchors.TRANSPORT_METRONOME, MASTER_BUTTON_TAG)) {
+            onNodeWithTag(tag).assertWidthIsAtLeast(44.dp).assertHeightIsAtLeast(44.dp)
+        }
+        val bar = onNodeWithTag(ROOT_TAG).getUnclippedBoundsInRoot()
+        val readout = onNodeWithTag(PerfAnchors.TRANSPORT_READOUT).getUnclippedBoundsInRoot()
+        val record = onNodeWithTag(PerfAnchors.TRANSPORT_RECORD).getUnclippedBoundsInRoot()
+        val forward = onNodeWithTag(STEP_FORWARD_TAG).getUnclippedBoundsInRoot()
+        val metronome = onNodeWithTag(PerfAnchors.TRANSPORT_METRONOME).getUnclippedBoundsInRoot()
+        assertTrue(record.left >= forward.right && readout.left >= record.right && readout.right <= metronome.left && metronome.right <= bar.right, "overlap at 432 dp: $forward $record $readout $metronome in $bar")
+        assertEquals(stackedHeight, readoutHeight(), "the readout is stacked at 432 dp")
+        width = 599.dp
+        assertEquals(stackedHeight, readoutHeight(), "the readout is stacked at 599 dp")
+        width = 600.dp
+        assertTrue(readoutHeight() < stackedHeight, "the readout is one line at 600 dp")
+        onNodeWithTag(PerfAnchors.TRANSPORT_RECORD).assertExists()
+    }
+
+    @Test
+    fun seekingIsUnavailableWhileATakeRuns() = runComposeUiTest {
+        var update: (TransportUiState) -> Unit = {}
+        setBar(width = 432.dp) { update = it }
+        for (tag in listOf(PerfAnchors.TRANSPORT_SKIP_START, STEP_BACK_TAG, STEP_FORWARD_TAG)) onNodeWithTag(tag).assertIsEnabled()
+        update(demo.copy(seekEnabled = false, record = RecordButtonState.Recording, lengthSeconds = 42.0))
+        mainClock.advanceTimeByFrame()
+        for (tag in listOf(PerfAnchors.TRANSPORT_SKIP_START, STEP_BACK_TAG, STEP_FORWARD_TAG)) onNodeWithTag(tag).assertIsNotEnabled()
+        onNodeWithTag(PerfAnchors.TRANSPORT_RECORD).assertContentDescriptionEquals(TransportCopy.recording).assertIsEnabled()
+        onNodeWithTag(PerfAnchors.TRANSPORT_READOUT).assertContentDescriptionEquals("00:00.00 of 00:42.00")
     }
 
     /** From 600 dp the slider stays inline with its percentage after it, and no speaker button is drawn (spec FR-004, FR-007). */

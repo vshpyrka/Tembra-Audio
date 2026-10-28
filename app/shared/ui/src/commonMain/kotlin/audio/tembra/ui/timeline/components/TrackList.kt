@@ -12,6 +12,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import audio.tembra.ui.theme.TembraTheme
+import audio.tembra.ui.session.InputTelemetry
 import audio.tembra.ui.timeline.TimelineCallbacks
 import audio.tembra.ui.timeline.TimelineLayout
 import audio.tembra.ui.timeline.TimelineTestTags
@@ -29,6 +30,7 @@ internal fun TrackList(
     layout: TimelineLayout,
     callbacks: TimelineCallbacks,
     modifier: Modifier = Modifier,
+    inputTelemetry: InputTelemetry = InputTelemetry { _, _ -> },
 ) {
     val density = LocalDensity.current
     val headerWidthPx = if (layout.pinnedHeaders) with(density) { TembraTheme.spacing.headerColumnWidth.toPx() } else 0f
@@ -51,6 +53,7 @@ internal fun TrackList(
                 state = state,
                 layout = layout,
                 callbacks = callbacks,
+                inputTelemetry = inputTelemetry,
             )
             // The expanded layout's inline settings under the open track (spec FR-041); the chevron collapses it.
             if (layout.inlineSettings && state.expandedTrack == track.id) {
