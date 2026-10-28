@@ -13,7 +13,7 @@ sounding step (the loopback check of §8) is recorded in `../evidence/alignment.
 | iPhone 18 Pro simulator | `checkIos` | green, zero warnings | core, engine (incl. NativeAudioEngineRecordingTest), data, ui (every uiTest class) | 2026-10-28 02:5x after US6 |
 | iPad Pro 13-inch (M5) simulator | `checkIos` | green, zero warnings | core, engine, data, ui (every uiTest class) | 2026-10-28 02:52, 1 min 14 s, commit 02a4593 |
 | iPhone Duo simulator | `checkIos` | green, zero warnings | core, engine, data, ui (every uiTest class; test tasks executed, binaries cached) | 2026-10-28 02:51, 27 s, commit 02a4593 |
-| Pixel 6 Pro (19021FDEE001AH) | `checkAndroidDevice` | green: engine 105, core 246, data 152, app (02:28 lane, commit 99dde16 tree); ui 975 green on the re-run (02:43–02:55, 12 min 23 s) | 1478 device tests | After the lanes the engine's recording test failed twice on an input HAL in a bad state (`in_get_mmap_position: pcm_sync_ptr failed: File descriptor in bad state`, `getInputForAttr EX_SECURITY`) with no client holding the microphone; the device was rebooted at 02:59 and had not re-enumerated over USB by 03:06 (not in `adb devices`, not in `system_profiler`): the owner reconnects it. The device-test wait for the duplex start was made generous (5 s) meanwhile. |
+| Pixel 6 Pro (19021FDEE001AH) | `checkAndroidDevice` | green: engine 105, core 246, data 152, app (02:28 lane, commit 99dde16 tree); ui 975 green on the re-run (02:43–02:55, 12 min 23 s) | 1478 device tests | After the lanes the engine's recording test failed twice on an input HAL in a bad state (`in_get_mmap_position: pcm_sync_ptr failed: File descriptor in bad state`, `getInputForAttr EX_SECURITY`) with no client holding the microphone; the device was rebooted at 02:59, was absent from USB until after 03:45 and at 06:01 is back as `unauthorized`: the owner accepts the USB-debugging prompt on it. The device-test wait for the duplex start was made generous (5 s) meanwhile. |
 | Pixel 7 Pro (33241FDH3000NZ) | `checkAndroidDevice` | _pending_ | | |
 | Pixel Tablet (3621105H803UFX) | `checkAndroidDevice` | _pending_ | | |
 | Fold emulator (emulator-5554) | `checkAndroidDevice` | _pending_ | | |
@@ -37,7 +37,10 @@ sounding step (the loopback check of §8) is recorded in `../evidence/alignment.
   log under `app/perf/data/sessions/20261028T014141Z_010-recording/`). The journey was written against the built UI but never
   driven on a device before this run; the first debugging step is to read that log for the step that did not find its
   anchor (the microphone grant happens through `pm grant` before the round; the count-in readout wait is non-fatal).
-  Not resolved in this session.
+  Resolved 06:10: the journey arms `timeline.track.arm.4` right after "+ Track", and on a phone the new row lands below the
+  visible lanes (the list did not scroll), so the tap hit another row. `TrackList` now scrolls a newly added, selected
+  track into view (the screen test `aNewlyAddedTrackIsScrolledIntoViewOnAPhone`); the perf APKs are rebuilt and the round
+  re-run on the Pixel 7 Pro afterwards (see below).
 
 ## Captures (T080)
 

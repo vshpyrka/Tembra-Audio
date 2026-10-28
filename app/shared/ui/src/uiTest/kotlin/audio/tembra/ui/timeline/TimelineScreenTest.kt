@@ -2,6 +2,7 @@ package audio.tembra.ui.timeline
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarResult
@@ -517,6 +518,31 @@ class TimelineScreenTest {
         onNodeWithTag(TimelineTestTags.DENIED_ACTION).assertTextEquals("Open settings").performClick()
         mainClock.advanceTimeByFrame()
         assertEquals(listOf(SnackbarResult.ActionPerformed), results)
+    }
+
+    /** "+ Track" on a phone lands the new row below the visible lanes: the list scrolls it into view (feature 010, FR-008). */
+    @Test
+    fun aNewlyAddedTrackIsScrolledIntoViewOnAPhone() = runComposeUiTest {
+        val base = demoState()
+        val tall = TrackUi(id = TrackId("t3"), name = "Keys", label = null, colorIndex = 2, gainDb = GainDb.Unity, muted = false, soloed = false, audible = true, clips = persistentListOf())
+        val taller = tall.copy(id = TrackId("t4"), name = "Pad 2")
+        screen.value = base.copy(tracks = persistentListOf(base.tracks[0], base.tracks[1], tall, taller))
+        mainClock.autoAdvance = false
+        setContent {
+            TembraTheme {
+                Box(Modifier.requiredWidth(360.dp).requiredHeight(640.dp)) {
+                    TimelineScreenContent(state = screen.value, callbacks = callbacks, telemetry = ScriptedTransportTelemetry.stopped(0.0), layout = TimelineLayout.Compact, snackbarHostState = snackbarHostState)
+                }
+            }
+        }
+        mainClock.advanceTimeByFrame()
+        val added = tall.copy(id = TrackId("t5"), name = "Track 1")
+        screen.value = screen.value.copy(tracks = (screen.value.tracks + added).toPersistentList(), selection = Selection.TrackSelected(added.id))
+        mainClock.advanceTimeBy(1_500)
+        val list = onNodeWithTag(TimelineTestTags.TRACK_LIST).getUnclippedBoundsInRoot()
+        val header = onNodeWithTag(TimelineTestTags.header(4)).assertIsDisplayed().getUnclippedBoundsInRoot()
+        assertTrue(header.bottom <= list.bottom + 1.dp && header.top >= list.top - 1.dp, "the new header $header is not inside the list $list")
+        onNodeWithTag(TimelineTestTags.arm(4)).assertIsDisplayed()
     }
 
     /** Opaque stand-ins for the lane's tokens, so a drawn snap column reads unambiguously as [snapColor]. */
