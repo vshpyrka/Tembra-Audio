@@ -65,8 +65,8 @@ internal fun TimelineToolbar(
         listOf(overviewStrip)
     } else {
         listOf(
-            MenuItemSpec(ADD_AUDIO, TimelineCopy.addAudio, TembraIcon.AudioFile, enabled = state.loaded),
-            MenuItemSpec(ADD_AUDIO_NEW, TimelineCopy.addAudioAsNewTrack, TembraIcon.PlaylistAdd, enabled = state.loaded),
+            MenuItemSpec(ADD_AUDIO, TimelineCopy.addAudio, TembraIcon.AudioFile, enabled = state.canImport),
+            MenuItemSpec(ADD_AUDIO_NEW, TimelineCopy.addAudioAsNewTrack, TembraIcon.PlaylistAdd, enabled = state.canImport),
             MenuItemSpec(SNAP, TimelineCopy.snapEntry(state.grid.label), TembraIcon.GridOn, enabled = state.loaded),
             overviewStrip,
             MenuItemSpec(METRONOME, TimelineCopy.metronomeSettings, TembraIcon.Metronome, enabled = state.loaded),
@@ -79,10 +79,10 @@ internal fun TimelineToolbar(
         horizontalArrangement = Arrangement.spacedBy(if (full) spacing.xs else 0.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        TransportButton(icon = TembraIcon.Add, description = TimelineCopy.addTrack, onClick = onAddTrack, enabled = state.loaded, testTag = TimelineTestTags.ADD_TRACK)
+        TransportButton(icon = TembraIcon.Add, description = TimelineCopy.addTrack, onClick = onAddTrack, enabled = state.canAddTrack, testTag = TimelineTestTags.ADD_TRACK)
         if (full) {
-            TransportButton(icon = TembraIcon.AudioFile, description = TimelineCopy.addAudio, onClick = onAddAudio, enabled = state.loaded, testTag = TimelineTestTags.ADD_AUDIO)
-            TransportButton(icon = TembraIcon.PlaylistAdd, description = TimelineCopy.addAudioAsNewTrack, onClick = onAddAudioAsNewTrack, enabled = state.loaded, testTag = TimelineTestTags.ADD_AUDIO_NEW_TRACK)
+            TransportButton(icon = TembraIcon.AudioFile, description = TimelineCopy.addAudio, onClick = onAddAudio, enabled = state.canImport, testTag = TimelineTestTags.ADD_AUDIO)
+            TransportButton(icon = TembraIcon.PlaylistAdd, description = TimelineCopy.addAudioAsNewTrack, onClick = onAddAudioAsNewTrack, enabled = state.canImport, testTag = TimelineTestTags.ADD_AUDIO_NEW_TRACK)
         }
         TransportButton(icon = TembraIcon.ContentCut, description = TimelineCopy.split, onClick = onSplit, enabled = state.canSplit, testTag = TimelineTestTags.SPLIT)
         TransportButton(icon = TembraIcon.Undo, description = TimelineCopy.undo, onClick = onUndo, enabled = state.canUndo, testTag = TimelineTestTags.UNDO)
@@ -90,11 +90,11 @@ internal fun TimelineToolbar(
         if (full) {
             Spacer(Modifier.weight(1f))
             GridPicker(grid = state.grid, onGrid = onGrid)
-            TempoPill(tempo = state.tempo, onClick = onTempo, enabled = state.loaded)
+            TempoPill(tempo = state.tempo, onClick = onTempo, enabled = state.canEditTempo)
             TransportButton(icon = TembraIcon.Metronome, description = TimelineCopy.metronomeSettings, onClick = onMetronomeSettings, enabled = state.loaded, testTag = TimelineTestTags.METRONOME_SETTINGS)
         } else {
             Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
-                TempoPill(tempo = state.tempo, onClick = onTempo, enabled = state.loaded)
+                TempoPill(tempo = state.tempo, onClick = onTempo, enabled = state.canEditTempo)
             }
         }
         TembraMenu(

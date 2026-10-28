@@ -4,6 +4,10 @@ import audio.tembra.ui.session.RecordingController
 import audio.tembra.ui.platform.MicrophonePermissionStatus
 import audio.tembra.ui.platform.FakeMicrophonePermission
 import audio.tembra.ui.platform.FakeAudioRouteMonitor
+import androidx.compose.ui.unit.dp
+import audio.tembra.core.project.CountIn
+import audio.tembra.core.recording.RecordingState
+import audio.tembra.ui.transport.RecordButtonState
 import audio.tembra.core.metronome.BuiltInClickSound
 import audio.tembra.core.metronome.ClickSound
 import audio.tembra.core.metronome.MetronomeStyle
@@ -119,6 +123,43 @@ class TimelineViewModelTest {
         } finally {
             viewModel.screenVisible(false)
         }
+    }
+
+    /** Recording tests also cancel the session scope at the end: the controller's 10 Hz mirror never idles while a track is armed. */
+    private fun recordingTest(block: suspend TestScope.() -> Unit) = runTest(dispatcher) {
+        try {
+            block()
+        } finally {
+            viewModel.screenVisible(false)
+            scope.cancel()
+        }
+    }
+
+    /**
+     * One mirror tick: the controller's 10 Hz mirror never idles while a track is armed, so the recording tests step
+     * the clock instead of advancing until idle.
+     */
+    private fun TestScope.settle() {
+        runCurrent()
+        advanceTimeBy(101)
+        runCurrent()
+    }
+
+    /** Arms the drums and presses Record; with [countIn] off the take runs at once, otherwise the count-in is ended by hand. */
+    private fun TestScope.startTake(countIn: CountIn = CountIn.ONE_BAR) {
+        viewModel.setCountIn(countIn)
+        viewModel.arm(drumsTrack)
+        settle()
+        assertIs<RecordingState.Armed>(session.state.value.recording.phase)
+        viewModel.record()
+        settle()
+        if (countIn != CountIn.OFF) {
+            assertIs<RecordingState.PreRoll>(session.state.value.recording.phase)
+            engine.endPreRoll()
+            advanceTimeBy(101)
+            runCurrent()
+        }
+        assertIs<RecordingState.Recording>(session.state.value.recording.phase)
     }
 
     /** The derived state after the scheduler ran: `uiState` is combined on the ViewModel's scope, never inline. */
@@ -775,6 +816,204 @@ class TimelineViewModelTest {
         val message = assertIs<TimelineMessage.ImportRefused>(received.single())
         assertEquals(listOf("x.ogg", "y.wav"), message.refusals.map { it.first })
         assertEquals("2 files could not be added: x.ogg (not a WAV, FLAC or MP3 file), y.wav (more than two channels)", message.text)
+    }
+
+    // --- Recording (feature 010, User Story 1; T047) ------------------------------------------------------------------
+
+    @Test
+    fun armForwardsToTheSessionAndLightsTheTrackAndArmingAgainDisarms() = recordingTest {
+        openDemo()
+        viewModel.arm(drumsTrack)
+        settle()
+        assertTrue(ui().tracks[0].armed)
+        assertEquals(drumsTrack, ui().armedTrack)
+        assertTrue(engine.armed)
+        assertTrue(ui().tracks[0].description.endsWith("armed"))
+        viewModel.arm(drumsTrack)
+        settle()
+        assertFalse(ui().tracks[0].armed)
+        assertNull(ui().armedTrack)
+        assertFalse(engine.armed)
+    }
+
+    @Test
+    fun recordWithNothingArmedArmsTheSelectedTrackAndStartsTheCountIn() = recordingTest {
+        openDemo()
+        viewModel.selectTrack(bassTrack)
+        viewModel.record()
+        settle()
+        val state = ui()
+        assertTrue(state.tracks[1].armed)
+        assertEquals(RecordButtonState.CountIn, state.recordPhase)
+        assertTrue(state.takeRunning)
+        assertEquals(4, engine.lastRecordConfig?.countInBeats)
+        assertEquals(1, engine.lastRecordConfig?.trackIndex)
+    }
+
+    @Test
+    fun recordInAnEmptyProjectAddsTrack1SelectsAndArmsIt() = recordingTest {
+        openDemo()
+        for (track in ui().tracks) {
+            viewModel.requestDeleteTrack(track.id)
+            viewModel.confirmDeleteTrack()
+        }
+        assertTrue(ui().isEmpty)
+        viewModel.record()
+        settle()
+        val state = ui()
+        assertEquals(1, state.tracks.size)
+        assertEquals("Track 1", state.tracks[0].name)
+        assertEquals(Selection.TrackSelected(state.tracks[0].id), state.selection)
+        assertTrue(state.tracks[0].armed)
+        assertTrue(state.takeRunning)
+    }
+
+    @Test
+    fun recordWhileRecordingEndsTheTakeAndTheClipJoinsTheTrack() = recordingTest {
+        openDemo()
+        startTake(CountIn.OFF)
+        assertEquals(RecordButtonState.Recording, ui().recordPhase)
+        assertTrue(ui().isPlaying)
+        viewModel.record()
+        settle()
+        assertTrue("recordStop" in engine.calls)
+        assertFalse(engine.takeRunning)
+        val state = ui()
+        assertFalse(state.takeRunning)
+        assertEquals(RecordButtonState.Idle, state.recordPhase)
+        assertTrue(state.tracks[0].armed)
+        assertTrue(state.tracks[0].clips.any { it.name == "Take 1" })
+        assertTrue(state.isPlaying)
+    }
+
+    @Test
+    fun pauseWhileRecordingEndsTheTakeAndPauses() = recordingTest {
+        openDemo()
+        startTake(CountIn.OFF)
+        viewModel.playPause()
+        settle()
+        assertTrue("recordStop" in engine.calls)
+        assertFalse(engine.takeRunning)
+        assertFalse(ui().isPlaying)
+        assertFalse(ui().takeRunning)
+    }
+
+    @Test
+    fun playOrRecordDuringTheCountInCancelsIt() = recordingTest {
+        openDemo()
+        viewModel.arm(drumsTrack)
+        settle()
+        viewModel.record()
+        settle()
+        assertEquals(RecordButtonState.CountIn, ui().recordPhase)
+        viewModel.playPause()
+        settle()
+        assertTrue("recordCancel" in engine.calls)
+        assertFalse(ui().takeRunning)
+        assertFalse(ui().isPlaying)
+        assertTrue(ui().tracks[0].armed)
+        assertTrue(ui().tracks[0].clips.none { it.name.startsWith("Take") })
+    }
+
+    @Test
+    fun theAvailabilityMapFlipsWhileATakeRunsAndTheSeekingIntentsAreRefused() = recordingTest {
+        openDemo()
+        startTake()
+        val recording = ui()
+        assertFalse(recording.canAddTrack)
+        assertFalse(recording.canImport)
+        assertFalse(recording.canEditTempo)
+        assertFalse(recording.canEditSignature)
+        assertFalse(recording.canEditCountIn)
+        assertFalse(recording.canArm)
+        assertFalse(recording.canMoveOrDeleteTrack)
+        assertFalse(recording.canUndo)
+        assertFalse(recording.canRedo)
+        assertFalse(recording.transport.seekEnabled)
+        val calls = engine.calls.size
+        val tracks = recording.tracks.size
+        viewModel.skipToStart()
+        viewModel.stepBar(1)
+        viewModel.seek(Beats(8.0))
+        viewModel.scrubStart()
+        viewModel.scrub(Beats(8.0))
+        viewModel.scrubEnd(Beats(8.0))
+        viewModel.addTrack()
+        viewModel.arm(bassTrack)
+        viewModel.moveTrack(drumsTrack, 1)
+        viewModel.requestDeleteTrack(bassTrack)
+        viewModel.setTimeSignature(TimeSignature.ThreeFour)
+        viewModel.setCountIn(CountIn.OFF)
+        runCurrent()
+        assertEquals(calls, engine.calls.size)
+        val after = ui()
+        assertEquals(tracks, after.tracks.size)
+        assertTrue(after.tracks[0].armed)
+        assertNull(after.confirmDelete)
+        assertEquals(TimeSignature.FourFour, after.timeSignature)
+        assertEquals(CountIn.ONE_BAR, after.countIn)
+        viewModel.record()
+        settle()
+        val idle = ui()
+        assertTrue(idle.canAddTrack)
+        assertTrue(idle.canArm)
+        assertTrue(idle.transport.seekEnabled)
+    }
+
+    @Test
+    fun theReadoutLengthGrowsWithTheLiveTake() = recordingTest {
+        openDemo()
+        val projectLength = ui().lengthSeconds
+        startTake(CountIn.OFF)
+        engine.nextCapture.framesCaptured = 48_000L * 40
+        advanceTimeBy(101)
+        runCurrent()
+        val state = ui()
+        assertEquals(48_000L * 40, state.liveTake?.framesCaptured)
+        assertEquals(40.0, state.lengthSeconds, 1e-6)
+        assertTrue(state.lengthSeconds > projectLength)
+        assertEquals(40.0, state.transport.lengthSeconds, 1e-6)
+        assertTrue(state.lengthBeats > Beats(64.0))
+    }
+
+    @Test
+    fun recordButtonStateFollowsTheBarWidthAndThePhase() = recordingTest {
+        openDemo()
+        viewModel.arm(drumsTrack)
+        settle()
+        viewModel.barWidthMeasured(360.dp)
+        var state = ui()
+        assertEquals(RecordButtonState.Hidden, state.recordButton)
+        assertEquals(RecordButtonState.Hidden, state.transport.record)
+        assertTrue(state.tracks[0].recordHere)
+        assertFalse(state.tracks[1].recordHere)
+        viewModel.barWidthMeasured(432.dp)
+        state = ui()
+        assertEquals(RecordButtonState.Idle, state.recordButton)
+        assertFalse(state.tracks[0].recordHere)
+        viewModel.record()
+        settle()
+        engine.nextTransport.countInBeatsLeft = 3
+        advanceTimeBy(101)
+        runCurrent()
+        state = ui()
+        assertEquals(RecordButtonState.CountIn, state.recordButton)
+        assertEquals(3, state.countInBeatsLeft)
+        assertEquals(3, state.transport.countInBeatsLeft)
+        engine.endPreRoll()
+        advanceTimeBy(101)
+        runCurrent()
+        assertEquals(RecordButtonState.Recording, ui().recordButton)
+        assertEquals(-1, ui().countInBeatsLeft)
+    }
+
+    @Test
+    fun resetClipReachesTheEngine() = recordingTest {
+        openDemo()
+        viewModel.arm(drumsTrack)
+        settle()
+        viewModel.resetClip()
+        assertEquals("resetClip", engine.calls.last())
     }
 
     private fun accepted(fileName: String, hex: String): ImportResult.Accepted {

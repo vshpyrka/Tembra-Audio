@@ -8,6 +8,8 @@ data class TransportCallbacks(
     val onMasterVolume: (percent: Int) -> Unit,
     val onMetronomeToggle: () -> Unit,
     val onMetronomeSettings: () -> Unit,
+    /** Record pressed (feature 010, spec FR-009): starts, ends or cancels a take depending on the state. */
+    val onRecord: () -> Unit = {},
 ) {
     companion object {
         val None = TransportCallbacks(
@@ -17,6 +19,7 @@ data class TransportCallbacks(
             onMasterVolume = {},
             onMetronomeToggle = {},
             onMetronomeSettings = {},
+            onRecord = {},
         )
     }
 }

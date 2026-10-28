@@ -44,13 +44,17 @@ internal fun TransportBar(
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
         val masterInline = maxWidth >= MasterInlineFrom
         // A phone in portrait: tighter gaps and the stacked readout, so the seven controls fit.
-        val narrow = maxWidth < ReadoutStacksBelow
+        val recordInBar = maxWidth >= RecordInBarFrom
+        val narrow = maxWidth < (if (recordInBar) ReadoutStacksBelowWithRecord else ReadoutStacksBelow)
         val sidePadding = if (narrow) spacing.xs else spacing.sm
         val gap = if (narrow) NarrowGap else spacing.xs
         val masterMin = if (masterInline) rememberMasterInlineMinWidth() else spacing.touchTargetMin
         // What is left for the readout once the master volume's floor and the five targets have theirs (a doubled font
         // shrinks to it). The readout carries no weight: it is measured at its own width.
-        val readoutMax = maxWidth - sidePadding * 2 - gap * 6 - masterMin - spacing.touchTargetMin * 4 - PlayDiameter
+        // With Record in the bar: one more target and one more gap (eight controls, seven gaps).
+        val controls = if (recordInBar) 5 else 4
+        val gaps = if (recordInBar) 7 else 6
+        val readoutMax = maxWidth - sidePadding * 2 - gap * gaps - masterMin - spacing.touchTargetMin * controls - PlayDiameter
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -81,14 +85,14 @@ internal fun TransportBar(
                 icon = TembraIcon.SkipPrevious,
                 description = TransportCopy.skipToStart,
                 onClick = callbacks.onSkipToStart,
-                enabled = enabled,
+                enabled = enabled && state.seekEnabled,
                 testTag = PerfAnchors.TRANSPORT_SKIP_START,
             )
             TransportButton(
                 icon = TembraIcon.FastRewind,
                 description = TransportCopy.stepBack,
                 onClick = { callbacks.onStepBar(-1) },
-                enabled = enabled,
+                enabled = enabled && state.seekEnabled,
                 testTag = STEP_BACK_TAG,
             )
             PlayPauseButton(
@@ -103,9 +107,17 @@ internal fun TransportBar(
                 icon = TembraIcon.FastForward,
                 description = TransportCopy.stepForward,
                 onClick = { callbacks.onStepBar(1) },
-                enabled = enabled,
+                enabled = enabled && state.seekEnabled,
                 testTag = STEP_FORWARD_TAG,
             )
+            if (recordInBar) {
+                RecordButton(
+                    state = state.record,
+                    onRecord = callbacks.onRecord,
+                    countInBeatsLeft = state.countInBeatsLeft,
+                    enabled = enabled,
+                )
+            }
             TimeReadout(
                 positionSeconds = state.positionSeconds,
                 lengthSeconds = state.lengthSeconds,
@@ -113,6 +125,7 @@ internal fun TransportBar(
                 telemetry = telemetry,
                 stacked = narrow,
                 maxWidth = readoutMax,
+                countInBeatsLeft = state.countInBeatsLeft,
             )
             MetronomeToggle(
                 on = state.metronomeOn,
@@ -128,6 +141,10 @@ internal fun TransportBar(
 private val MasterInlineFrom = 600.dp
 /** Below this width the one-line readout (about 150 dp) no longer fits beside the master volume and the five targets. */
 private val ReadoutStacksBelow = 520.dp
+/** From this bar width the Record button joins the bar (feature 010, FR-007); narrower, the armed track's header has it. */
+private val RecordInBarFrom = 432.dp
+/** With Record in the bar the one-line readout needs 600 dp (the master slider goes inline there too). */
+private val ReadoutStacksBelowWithRecord = 600.dp
 /** The narrow bar's gap: 4 + 6 × 2 + 44 speaker + 3 × 44 + 48 + 44 + a 56 dp stacked readout fit 360 dp. */
 private val NarrowGap = 2.dp
 

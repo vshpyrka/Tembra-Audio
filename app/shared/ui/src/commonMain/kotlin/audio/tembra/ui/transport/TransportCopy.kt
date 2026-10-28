@@ -22,4 +22,12 @@ object TransportCopy {
 
     /** "80%": the percentage drawn beside the master slider (spec FR-007). */
     fun masterVolumePercent(percent: Int): String = "$percent%"
+
+    // Feature 010 (contracts/timeline-recording-ui.md "Copy").
+    const val record = "Record"
+    const val recording = "Recording"
+    /** The readout's position while the count-in runs: "Count-in 4". */
+    fun countIn(beatsLeft: Int): String = "Count-in $beatsLeft"
+    /** Record's accessible name while the count-in runs: "Count-in, 3 beats left". */
+    fun countInBeatsLeft(beatsLeft: Int): String = if (beatsLeft == 1) "Count-in, 1 beat left" else "Count-in, $beatsLeft beats left"
 }

@@ -46,6 +46,8 @@ fun TimelineScreen(
     val layoutMode = rememberLayoutMode()
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val layout = TimelineLayout.from(maxWidth, maxHeight, layoutMode)
+        // The transport bar spans the screen: its width places Record and the monitor toggle (feature 010, spec FR-007).
+        LaunchedEffect(maxWidth) { viewModel.barWidthMeasured(maxWidth) }
         // The hand-off across 840 dp (spec FR-042): the open form moves between the nested entry and the inline row;
         // the typed draft travels through the session, so nothing is lost either way.
         LaunchedEffect(layout.inlineSettings, nestedTrackSettings, state.expandedTrack) {
@@ -112,12 +114,19 @@ fun TimelineScreen(
                 onSubdivision = viewModel::selectSubdivision,
                 onCycleBeat = viewModel::cycleBeat,
                 onStyle = viewModel::selectStyle,
+                onArm = viewModel::arm,
+                onRecord = viewModel::record,
+                onResetClip = { viewModel.resetClip() },
+                onMonitorToggle = viewModel::toggleMonitor,
+                onCountIn = viewModel::setCountIn,
+                onRequestMicrophone = viewModel::requestMicrophone,
             )
         }
         TimelineScreenContent(
             state = state,
             callbacks = callbacks,
             telemetry = viewModel.telemetry,
+            inputTelemetry = viewModel.inputTelemetry,
             layout = layout,
             snackbarHostState = snackbarHostState,
             modifier = Modifier.fillMaxSize(),

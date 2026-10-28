@@ -26,6 +26,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import audio.tembra.core.project.TempoMap
+import audio.tembra.ui.session.InputTelemetry
 import audio.tembra.ui.session.TransportTelemetry
 import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.ui.timeline.components.DeleteTrackDialog
@@ -62,6 +63,7 @@ internal fun TimelineScreenContent(
     layout: TimelineLayout,
     snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
+    inputTelemetry: InputTelemetry = InputTelemetry { _, _ -> },
 ) {
     val spacing = TembraTheme.spacing
     val daw = TembraTheme.daw
@@ -86,6 +88,7 @@ internal fun TimelineScreenContent(
         onMasterVolume = callbacks.onMasterVolume,
         onMetronomeToggle = callbacks.onMetronomeToggle,
         onMetronomeSettings = callbacks.onMetronomeSettings,
+        onRecord = callbacks.onRecord,
     )
     Box(
         modifier = modifier
@@ -135,7 +138,7 @@ internal fun TimelineScreenContent(
                 if (state.isEmpty) {
                     EmptyTimeline(onAddTrack = callbacks.onAddTrack, onAddAudio = callbacks.onAddAudioAsNewTrack)
                 } else {
-                    TrackList(state = state, layout = layout, callbacks = callbacks)
+                    TrackList(state = state, layout = layout, callbacks = callbacks, inputTelemetry = inputTelemetry)
                 }
                 PlayheadOverlay(
                     viewport = state.viewport,

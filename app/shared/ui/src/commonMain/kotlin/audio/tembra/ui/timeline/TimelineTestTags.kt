@@ -59,4 +59,20 @@ object TimelineTestTags {
     fun trackMenu(index: Int): String = "timeline.track.menu.$index"
     const val TRACK_MENU = "timeline.track.menu"
     fun clip(index: Int): String = if (index == 0) PerfAnchors.TIMELINE_CLIP_FIRST else "timeline.clip.$index"
+
+    // Feature 010 (contracts/timeline-recording-ui.md "Semantics and anchors"): the arm toggle, the meter and its clip
+    // square, Record in a compact header, the growing take, the transport's Record, the monitor toggle, the count-in
+    // setting, the denied snackbar's action and the stop-recording dialog's actions.
+    fun arm(index: Int): String = "timeline.track.arm.$index"
+    fun meter(index: Int): String = "timeline.track.meter.$index"
+    fun clipIndicator(index: Int): String = "timeline.track.clip.$index"
+    fun record(index: Int): String = "timeline.track.record.$index"
+    const val TAKE_CLIP = PerfAnchors.TIMELINE_CLIP_TAKE
+    const val RECORD = PerfAnchors.TRANSPORT_RECORD
+    const val MONITOR = PerfAnchors.TIMELINE_MONITOR
+    const val OVERFLOW_MONITOR = PerfAnchors.TIMELINE_OVERFLOW_MONITOR
+    const val COUNT_IN = PerfAnchors.METRONOME_COUNT_IN
+    const val DENIED_ACTION = PerfAnchors.SNACKBAR_MICROPHONE_SETTINGS
+    const val STOP_RECORDING_CONFIRM = PerfAnchors.DIALOG_STOP_RECORDING_CONFIRM
+    const val STOP_RECORDING_CANCEL = "dialog.stopRecording.cancel"
 }

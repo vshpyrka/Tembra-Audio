@@ -24,7 +24,11 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.unit.dp
+import audio.tembra.core.metronome.Tempo
 import audio.tembra.core.metronome.TimeSignature
+import audio.tembra.core.project.TempoMap
+import audio.tembra.ui.session.LiveTakeUi
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import audio.tembra.core.project.Beats
 import audio.tembra.core.project.GainDb
 import audio.tembra.core.project.GridSize
@@ -68,6 +72,27 @@ class TrackLaneTest {
         id = trackId, name = "Drums", label = InstrumentLabel.Drums, colorIndex = 0, gainDb = GainDb.Unity,
         muted = false, soloed = false, audible = true, clips = persistentListOf(*clips),
     )
+
+    private val tempoMap = TempoMap(Tempo(120), TimeSignature.FourFour)
+
+    private fun liveTake(on: TrackId = trackId) = LiveTakeUi(
+        trackId = on, clipName = "Take 2", startBeats = Beats(4.0), overview = FakeOverviews.overview(196_800),
+        framesCaptured = 196_800, sampleRate = 48000,
+    )
+
+    private fun ComposeUiTest.setLaneWithTake(track: TrackUi, take: LiveTakeUi, telemetry: ScriptedInputTelemetry) {
+        setContent {
+            TembraTheme {
+                densityScale = LocalDensity.current.density
+                TrackLane(
+                    track = track, index = 0, firstClipIndex = 0, viewport = viewport, selection = Selection.None,
+                    signature = TimeSignature.FourFour, height = 88.dp,
+                    onSelectClip = {}, onClearSelection = {},
+                    tempoMap = tempoMap, liveTake = take, inputTelemetry = telemetry,
+                )
+            }
+        }
+    }
 
     private fun ComposeUiTest.setLane(track: TrackUi, selection: Selection = Selection.None) {
         setContent {
@@ -191,6 +216,36 @@ class TrackLaneTest {
             inRun = snap
         }
         return starts
+    }
+
+    @Test
+    fun liveTakeNodeDescribesTheRecordingAndSitsOnTheTake() = runComposeUiTest {
+        setLaneWithTake(track(drums), liveTake(), ScriptedInputTelemetry.recording())
+        val node = onNodeWithTag(TimelineTestTags.TAKE_CLIP).assertContentDescriptionEquals("Recording, Take 2, 00:04.10")
+        val bounds = node.getUnclippedBoundsInRoot()
+        // 4.1 s at 120 BPM is 8.2 beats at 20 px per beat, starting on beat 4.
+        val expectedLeft = (viewport.xOf(Beats(4.0)) / densityScale).toFloat()
+        val expectedWidth = (8.2 * 20.0 / densityScale).toFloat()
+        assertTrue(abs(bounds.left.value - expectedLeft) <= 1.5f, "left ${bounds.left} expected $expectedLeft")
+        assertTrue(abs((bounds.right - bounds.left).value - expectedWidth) <= 1.5f, "width ${bounds.right - bounds.left} expected $expectedWidth")
+        onNodeWithTag(TimelineTestTags.clip(0)).assertExists()
+    }
+
+    @Test
+    fun liveTakeOfAnotherTrackDrawsNothing() = runComposeUiTest {
+        setLaneWithTake(track(drums), liveTake(on = TrackId("other")), ScriptedInputTelemetry.recording())
+        onNodeWithTag(TimelineTestTags.TAKE_CLIP).assertDoesNotExist()
+        onNodeWithTag(TimelineTestTags.clip(0)).assertExists()
+    }
+
+    @Test
+    fun liveTakeReadsTheInputTelemetryEveryFrame() = runComposeUiTest {
+        val telemetry = ScriptedInputTelemetry.recording()
+        mainClock.autoAdvance = false
+        setLaneWithTake(track(drums), liveTake(), telemetry)
+        mainClock.advanceTimeByFrame()
+        mainClock.advanceTimeByFrame()
+        assertTrue(telemetry.reads >= 1, "the draw phase never read the capture telemetry")
     }
 
     private fun assertGapsAtLeastFourDp(columns: List<Int>) {

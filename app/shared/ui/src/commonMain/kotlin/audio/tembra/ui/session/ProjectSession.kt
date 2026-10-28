@@ -280,10 +280,10 @@ class ProjectSession(
 
     fun disarm() = recording.disarm()
 
-    /** Record on the armed track with the project's count-in (ignored while playing). */
-    fun record() {
+    /** Record on the armed track with the project's count-in (ignored while playing); [armFirst] is armed first when nothing is (FR-008). */
+    fun record(armFirst: TrackId? = null) {
         val project = history?.present ?: return
-        recording.record(project.countIn.bars * project.timeSignature.beats)
+        recording.record(project.countIn.bars * project.timeSignature.beats, armFirst)
     }
 
     fun stopRecording() = recording.stop()
@@ -349,9 +349,27 @@ class ProjectSession(
 
     // --- Playback ----------------------------------------------------------------------------------------------------
 
-    fun play() = dispatch(PlaybackEvent.Play)
+    /** Play; during a count-in (the session is stopped while it runs) it cancels the count-in instead (FR-009). */
+    fun play() {
+        if (recording.state.value.phase is RecordingState.PreRoll) {
+            recording.cancel()
+            return
+        }
+        dispatch(PlaybackEvent.Play)
+    }
 
-    fun pause() = dispatch(PlaybackEvent.Pause)
+    /** Pause; a running take ends first and is kept, a count-in is cancelled and nothing else happens (FR-009). */
+    fun pause() {
+        when (recording.state.value.phase) {
+            is RecordingState.PreRoll -> {
+                recording.cancel()
+                return
+            }
+            is RecordingState.Recording -> recording.stop()
+            RecordingState.Disarmed, is RecordingState.Arming, is RecordingState.Armed, is RecordingState.Finalising -> Unit
+        }
+        dispatch(PlaybackEvent.Pause)
+    }
 
     fun seek(beats: Beats) = dispatch(PlaybackEvent.Seek(beats))
 

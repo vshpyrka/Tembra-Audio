@@ -40,6 +40,7 @@ fun TrackSettingsScreen(
             onMasterVolume = viewModel::setMasterVolume,
             onMetronomeToggle = viewModel::toggleMetronome,
             onMetronomeSettings = {},
+            onRecord = viewModel::record,
         )
     }
     TrackSettingsScreenContent(

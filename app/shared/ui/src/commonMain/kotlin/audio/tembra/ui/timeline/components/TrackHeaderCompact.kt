@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
@@ -28,6 +29,8 @@ import audio.tembra.ui.theme.TembraIcon
 import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.ui.timeline.TimelineTestTags
 import audio.tembra.ui.timeline.TrackUi
+import audio.tembra.ui.transport.RecordButton
+import audio.tembra.ui.transport.RecordButtonState
 import audio.tembra.ui.transport.TransportButton
 
 /**
@@ -51,6 +54,11 @@ internal fun TrackHeaderCompact(
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
     onDelete: () -> Unit,
+    onArm: (Boolean) -> Unit = {},
+    onRecord: () -> Unit = {},
+    recordState: RecordButtonState = RecordButtonState.Idle,
+    /** False while a take runs: Move up, Move down and Delete track are unavailable (feature 010, spec FR-018). */
+    canReorder: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     val colors = TembraTheme.colors
@@ -67,7 +75,8 @@ internal fun TrackHeaderCompact(
             .selectable(selected = selected, role = Role.Button, onClick = onSelect)
             .semantics { contentDescription = track.description }
             .padding(start = spacing.md, end = spacing.xs),
-        horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+        // xs gaps: with Record shown the 44 dp controls (Record, M, S, arm, menu) plus a 72 dp name must fit 360 dp.
+        horizontalArrangement = Arrangement.spacedBy(spacing.xs),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(Modifier.size(DotSize).background(if (track.audible) tint else tint.copy(alpha = DimmedAlpha), CircleShape))
@@ -77,12 +86,19 @@ internal fun TrackHeaderCompact(
             color = if (track.audible) colors.onSurface else colors.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f, fill = false),
+            modifier = Modifier.weight(1f, fill = false).widthIn(min = NameMinWidth).padding(start = spacing.xs),
         )
-        track.label?.let { InstrumentChip(it) }
+        // While armed with Record available here the chip makes room for the Record control (contract, "Layout rules").
+        if (track.armed && track.recordHere) {
+            RecordButton(state = recordState, onRecord = onRecord, testTag = TimelineTestTags.record(index))
+        } else {
+            track.label?.let { InstrumentChip(it) }
+        }
         Box(Modifier.weight(1f))
         MuteSoloButton(letter = "M", description = MUTE_DESCRIPTION, checked = track.muted, tint = tint, onCheckedChange = onMute, testTag = TimelineTestTags.mute(index))
         MuteSoloButton(letter = "S", description = SOLO_DESCRIPTION, checked = track.soloed, tint = tint, onCheckedChange = onSolo, testTag = TimelineTestTags.solo(index))
+        ArmButton(armed = track.armed, trackTint = tint, onToggle = onArm, testTag = TimelineTestTags.arm(index))
+        // US2: the input meter (TimelineTestTags.meter(index)) sits along this row's bottom edge while the track is armed.
         TrackMenu(
             expanded = menuOpen,
             isFirst = isFirst,
@@ -94,6 +110,7 @@ internal fun TrackHeaderCompact(
             onMoveDown = onMoveDown,
             onDelete = onDelete,
             testTag = TimelineTestTags.TRACK_MENU,
+            canReorder = canReorder,
         ) {
             TransportButton(icon = TembraIcon.MoreVert, description = TRACK_MENU_DESCRIPTION, onClick = { menuOpen = true }, testTag = TimelineTestTags.trackMenu(index))
         }
@@ -104,5 +121,6 @@ internal const val MUTE_DESCRIPTION = "Mute"
 internal const val SOLO_DESCRIPTION = "Solo"
 internal const val TRACK_MENU_DESCRIPTION = "Track menu"
 internal val HeaderHeight = 56.dp
+internal val NameMinWidth = 72.dp
 internal val DotSize = 10.dp
 internal const val DimmedAlpha = 0.4f

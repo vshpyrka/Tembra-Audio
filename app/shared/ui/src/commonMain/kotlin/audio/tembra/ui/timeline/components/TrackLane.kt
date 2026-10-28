@@ -49,6 +49,14 @@ import audio.tembra.core.project.AudioAssetId
 import audio.tembra.core.project.Beats
 import audio.tembra.core.project.ClipId
 import audio.tembra.core.project.GridSize
+import audio.tembra.core.project.TempoMap
+import audio.tembra.core.timeline.TimeFormat
+import audio.tembra.engine.CaptureSnapshot
+import audio.tembra.engine.perf.PerfSection
+import audio.tembra.engine.perf.PerfTrace
+import audio.tembra.ui.designsystem.rememberFrameTick
+import audio.tembra.ui.session.InputTelemetry
+import audio.tembra.ui.session.LiveTakeUi
 import audio.tembra.core.timeline.TimelineViewport
 import audio.tembra.data.projects.OverviewStatus
 import audio.tembra.ui.theme.TembraShapes
@@ -75,6 +83,11 @@ import kotlin.math.roundToInt
  * the lane it came from draws the clip ghosted and the lane it hovers draws the lifted copy and highlights itself;
  * near its edges the view auto-scrolls. Tagged `timeline.lane.<index>`; clips `timeline.clip.first` then
  * `timeline.clip.<n>` in project order.
+ *
+ * While a [liveTake] of this track runs (feature 010) the lane also draws the growing clip over the others through
+ * [drawLiveTake]: its right edge and waveform length are read per frame from [inputTelemetry] inside the draw lambda
+ * (`PerfSection.TIMELINE_TAKE_FRAME`), converted to beats by [tempoMap]; the take is rebuilt only from the 10 Hz
+ * mirror. One transparent node `timeline.clip.take` ("Recording, Take 2, 00:04.10", no click) sits on it.
  */
 @Composable
 internal fun TrackLane(
@@ -100,6 +113,9 @@ internal fun TrackLane(
     onClipDragCancel: () -> Unit = {},
     onSplit: () -> Unit = {},
     onDeleteClip: (ClipId) -> Unit = {},
+    tempoMap: TempoMap? = null,
+    liveTake: LiveTakeUi? = null,
+    inputTelemetry: InputTelemetry? = null,
 ) {
     val daw = TembraTheme.daw
     val colors = TembraTheme.colors
@@ -132,6 +148,18 @@ internal fun TrackLane(
     val currentOnScrollBy by rememberUpdatedState(onScrollBy)
     var menuClip by remember { mutableStateOf<ClipId?>(null) }
     var hoveredClip by remember { mutableStateOf<ClipId?>(null) }
+    val take = if (liveTake != null && liveTake.trackId == track.id && tempoMap != null && inputTelemetry != null) liveTake else null
+    val takeTick = rememberFrameTick(active = take != null)
+    val captureSnapshot = remember { CaptureSnapshot() }
+    val takeClip = remember(take) {
+        take?.let {
+            ClipUi(
+                id = ClipId("live-take"), assetId = AudioAssetId(""), name = it.clipName, startBeats = it.startBeats,
+                lengthBeats = Beats.Zero, offsetFrames = 0, lengthFrames = it.framesCaptured, sampleRate = it.sampleRate,
+                overview = it.overview, overviewStatus = OverviewStatus.Ready, available = true,
+            )
+        }
+    }
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -168,6 +196,17 @@ internal fun TrackLane(
                     drawClip(clip, left, right, tint, selected = clip.id == selectedClipId, style = style, measurer = measurer, hovered = clip.id == hoveredClip)
                 }
             }
+            // The growing take of a running recording, above the clips (feature 010): length from the capture telemetry per frame.
+            if (take != null && takeClip != null && tempoMap != null && inputTelemetry != null) {
+                PerfTrace.section(PerfSection.TIMELINE_TAKE_FRAME) {
+                    inputTelemetry.read(takeTick.longValue, captureSnapshot)
+                    val seconds = if (captureSnapshot.sampleRate > 0) captureSnapshot.framesCapturedSeconds else take.lengthSeconds
+                    val frames = if (captureSnapshot.sampleRate > 0) captureSnapshot.framesCaptured else take.framesCaptured
+                    val left = viewport.xOf(take.startBeats).toFloat()
+                    val right = viewport.xOf(take.startBeats + tempoMap.secondsToBeats(seconds)).toFloat()
+                    if (right >= 0f && left <= size.width) drawLiveTake(takeClip, left, right, frames, tint, style, measurer)
+                }
+            }
             // The lifted copy on the lane under the finger (spec FR-033): the drop position, snapped, outlined.
             if (dropTarget != null) {
                 val source = track.clips.firstOrNull { it.id == dropTarget.clipId } ?: ClipUi(
@@ -179,6 +218,21 @@ internal fun TrackLane(
                 val left = viewport.xOf(lifted.startBeats).toFloat()
                 val right = viewport.xOf(lifted.endBeats).toFloat()
                 if (right >= 0f && left <= size.width) drawClip(lifted, left, right, tint, selected = true, style = style, measurer = measurer)
+            }
+        }
+        if (take != null && tempoMap != null) {
+            val left = viewport.xOf(take.startBeats)
+            val right = viewport.xOf(take.startBeats + tempoMap.secondsToBeats(take.lengthSeconds))
+            if (viewport.widthPx > 0.0 && right >= 0.0 && left <= viewport.widthPx) {
+                val description = "$RECORDING_PREFIX, ${take.clipName}, ${TimeFormat.clock(take.lengthSeconds)}"
+                Box(
+                    modifier = Modifier
+                        .offset { IntOffset(left.roundToInt(), 0) }
+                        .width(with(density) { (right - left).toFloat().toDp() })
+                        .height(with(density) { heightPx.toDp() })
+                        .testTag(TimelineTestTags.TAKE_CLIP)
+                        .semantics { contentDescription = description },
+                )
             }
         }
         track.clips.forEachIndexed { clipIndex, clip ->
@@ -310,6 +364,7 @@ internal fun clipState(clip: ClipUi): String? = when (val status = clip.overview
     OverviewStatus.Ready, OverviewStatus.Failed -> null
 }
 
+internal const val RECORDING_PREFIX = "Recording"
 internal const val UNAVAILABLE = "audio unavailable"
 internal const val LOADING_WAVEFORM = "Loading waveform"
 private const val OUTLINE_WIDTH_DP = 2

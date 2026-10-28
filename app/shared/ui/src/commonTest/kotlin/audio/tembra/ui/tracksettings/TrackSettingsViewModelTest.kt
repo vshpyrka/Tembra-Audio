@@ -18,6 +18,7 @@ import audio.tembra.engine.FakeAudioEngine
 import audio.tembra.ui.platform.FakeBackgroundPlaybackHost
 import audio.tembra.ui.session.AppStartup
 import audio.tembra.ui.session.ProjectSession
+import audio.tembra.ui.transport.RecordButtonState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -26,6 +27,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
@@ -94,6 +96,16 @@ class TrackSettingsViewModelTest {
         }
     }
 
+    /** Recording tests cancel the session scope at the end: the controller's 10 Hz mirror never idles while a track is armed. */
+    private fun recordingTest(block: suspend TestScope.() -> Unit) = runTest(dispatcher) {
+        try {
+            block()
+        } finally {
+            viewModel.screenVisible(false)
+            scope.cancel()
+        }
+    }
+
     private fun TestScope.ui(): TrackSettingsUiState {
         runCurrent()
         return viewModel.uiState.value
@@ -110,6 +122,24 @@ class TrackSettingsViewModelTest {
     }
 
     private fun trackName(): String? = session.state.value.project?.tracks?.firstOrNull { it.id == drumsTrack }?.name
+
+    @Test
+    fun theTransportsRecordStateFollowsTheSessionsRecordingPhase() = recordingTest {
+        openDrums()
+        assertEquals(RecordButtonState.Idle, ui().transport.record)
+        assertTrue(ui().transport.seekEnabled)
+        assertEquals(-1, ui().transport.countInBeatsLeft)
+        session.arm(drumsTrack)
+        runCurrent()
+        viewModel.record()
+        runCurrent()
+        advanceTimeBy(101)
+        runCurrent()
+        val transport = ui().transport
+        assertTrue(session.state.value.recording.takeRunning, "a take should run: ${session.state.value.recording.phase}")
+        assertFalse(transport.seekEnabled)
+        assertTrue(transport.record == RecordButtonState.CountIn || transport.record == RecordButtonState.Recording, "record: ${transport.record}")
+    }
 
     @Test
     fun theFieldsComeFromTheSessionsTrack() = test {
