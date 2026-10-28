@@ -1,6 +1,8 @@
 package audio.tembra.engine
 
 import android.Manifest
+import android.app.Activity
+import android.content.Intent
 import android.content.pm.PackageManager
 import androidx.test.platform.app.InstrumentationRegistry
 import audio.tembra.core.metronome.Tempo
@@ -27,6 +29,18 @@ class NativeAudioEngineRecordingTest {
     private val context = instrumentation.targetContext
     private val engine = NativeAudioEngine(context)
     private val root = File(context.cacheDir, "recording-test-${System.nanoTime()}").apply { mkdirs() }
+    private var foreground: Activity? = null
+
+    /**
+     * Capture needs a foreground process: the audio policy refuses `getInputForAttr` (EX_SECURITY) to a background
+     * app, and the duplex input then never delivers a block (seen on the Pixels on 2026-10-28). The real-time tests
+     * show the same activity for the same reason.
+     */
+    @BeforeTest
+    fun bringTheProcessToTheForeground() {
+        val intent = Intent(instrumentation.context, ForegroundActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        foreground = instrumentation.startActivitySync(intent)
+    }
 
     @BeforeTest
     fun grantTheMicrophone() {
@@ -40,6 +54,7 @@ class NativeAudioEngineRecordingTest {
         engine.disarm()
         engine.closeTransport()
         root.deleteRecursively()
+        foreground?.finish()
     }
 
     private fun waitFor(timeoutMs: Long, condition: () -> Boolean): Boolean {
