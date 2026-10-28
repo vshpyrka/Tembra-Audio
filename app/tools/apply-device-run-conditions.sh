@@ -20,6 +20,9 @@ run input keyevent KEYCODE_WAKEUP
 run wm dismiss-keyguard
 run settings put system screen_brightness_mode 0
 run settings put system screen_brightness 0
-run media volume --stream 3 --set 0
+# The music stream: `media volume` on older builds, `cmd media_session volume` where the media shell command is gone (Android 15+).
+if ! adb -s "$serial" shell media volume --stream 3 --set 0 >/dev/null 2>&1; then
+  run cmd media_session volume --stream 3 --set 0
+fi
 run cmd notification set_dnd on
 echo "run conditions applied on $serial (brightness floor, music silent, do-not-disturb)"
