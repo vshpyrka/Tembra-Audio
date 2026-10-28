@@ -21,6 +21,24 @@ sounding step (the loopback check of §8) is recorded in `../evidence/alignment.
 | Redmi Note 5 (e9446ac2) | `checkAndroidDevice` | _pending_ | | API 28; Play Protect prompt answered "Don't send" |
 | iPhone 14 (00008110-001049660E3A401E) | perf trial round (T086) | **blocked**: the Perf build-for-testing succeeded (session 20261028T005156Z_010-recording) but the runner reported "Timed out while enabling automation mode" | | the phone is locked; the owner unlocks it (passcode after updates), then `uv run tracepulse run --device iphone14 --label 010-recording --rounds 1 --no-publish` |
 
+## Release builds (T093)
+
+| Target | Build | Installed | Commit |
+|---|---|---|---|
+| iPhone 18 Pro, iPad Pro 13-inch (M5), iPhone Duo simulators | `tools/release-ios.sh --no-launch` (Release, iphonesimulator) | yes, `audio.tembra.appP5QJJ5Y5V7` | 724c8ef (2026-10-28 03:25–03:38) |
+| iPhone 14 | `tools/release-ios.sh --no-launch` (Release, iphoneos) | yes (installed while locked, not launched) | 724c8ef |
+| Android targets | `./gradlew :androidApp:assembleRelease` done at 03:35 (R8, the committed baseline profile); `tools/release-android.sh --no-build` install _pending_ until the device lanes finish | | b737335 tree |
+
+## Trial round (T086)
+
+- iPhone 14: blocked by the locked phone (see the final-pass table).
+- Pixel 7 Pro (the Pixel 6 Pro being offline): session `20261028T014141Z_010-recording` with the prebuilt perf APKs ran the
+  `RecordingJourneyBenchmark` twice and it failed both times (`Tests run: 1, Failures: 1`; the pipeline's instrumentation
+  log under `app/perf/data/sessions/20261028T014141Z_010-recording/`). The journey was written against the built UI but never
+  driven on a device before this run; the first debugging step is to read that log for the step that did not find its
+  anchor (the microphone grant happens through `pm grant` before the round; the count-in readout wait is non-fatal).
+  Not resolved in this session.
+
 ## Captures (T080)
 
 _pending_: Android at 360, 432, 600, 840 and 1024 dp (`wm density`), phone landscape, the fold's
