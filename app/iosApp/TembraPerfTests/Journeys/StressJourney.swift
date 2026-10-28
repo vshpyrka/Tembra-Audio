@@ -19,6 +19,7 @@ struct StressJourney {
             lane.swipeLeft(velocity: .fast)
             lane.swipeRight(velocity: .fast)
         }
+        recordWhileScrolling(app, lane: lane)
         // The audio-health counters are written here, while the transport still owns the device: the metronome and the
         // tuner take it next and the engine restarts the counters per stream session (the release build has no devtools).
         let writeHealth = app.anchor(Anchors.devtoolsWriteHealth)
@@ -39,5 +40,31 @@ struct StressJourney {
         app.waitForAnchor(Anchors.tunerNoteReadout)
         app.tapAnchor(Anchors.navMetronome)
         app.tapAnchor(Anchors.metronomeStartStop)
+    }
+
+    /// Feature 010: add a track, arm it, record three seconds without count-in while the lane scrolls, stop, undo the take
+    /// and the track, so the health dump carries the recording counters. Every step tolerates a missing element (a build
+    /// without recording, a denied microphone) and leaves the document as it was.
+    private func recordWhileScrolling(_ app: XCUIApplication, lane: XCUIElement) {
+        let add = app.anchor(Anchors.timelineAddTrack)
+        guard add.exists else { return }
+        add.tap()
+        let last = RecordingJourney.demoTrackCount
+        let arm = app.anchor(Anchors.trackArm(last))
+        guard arm.waitForExistence(timeout: 2) else { return }
+        arm.tap()
+        PerfJourneyTestCase.answerMicrophoneAlertIfShown(timeout: 0)
+        let record = app.anchor(Anchors.transportRecord).exists ? app.anchor(Anchors.transportRecord) : app.anchor(Anchors.trackRecord(last))
+        guard record.waitForExistence(timeout: 2) else { return }
+        record.tap()
+        let scrollUntil = Date().addingTimeInterval(3)
+        while Date() < scrollUntil {
+            lane.swipeLeft(velocity: .fast)
+            lane.swipeRight(velocity: .fast)
+        }
+        let stop = app.anchor(Anchors.transportRecord).exists ? app.anchor(Anchors.transportRecord) : app.anchor(Anchors.trackRecord(last))
+        if stop.exists { stop.tap() }
+        let undo = app.anchor(Anchors.timelineUndo)
+        for _ in 0..<2 where undo.exists { undo.tap() }
     }
 }

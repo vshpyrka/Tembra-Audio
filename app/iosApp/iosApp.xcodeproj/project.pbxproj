@@ -25,9 +25,11 @@
 		7E5F000000000000000000D3 /* StressJourney.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F0000000000000000006F /* StressJourney.swift */; };
 		7E5F000000000000000000D5 /* TimelinePerfTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F00000000000000000071 /* TimelinePerfTests.swift */; };
 		7E5F000000000000000000D6 /* TimelineJourney.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F00000000000000000072 /* TimelineJourney.swift */; };
+		7E5F000000000000000000F0 /* RecordingPerfTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F000000000000000000F2 /* RecordingPerfTests.swift */; };
+		7E5F000000000000000000F1 /* RecordingJourney.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F000000000000000000F3 /* RecordingJourney.swift */; };
 		7E5F000000000000000000E1 /* ScreenshotMatrix.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F000000000000000000E0 /* ScreenshotMatrix.swift */; };
 		7E5F000000000000000000D4 /* AudioTracePass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F00000000000000000070 /* AudioTracePass.swift */; };
-		7E5F000000000000000000D5 /* ColdLaunchHitchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F00000000000000000071 /* ColdLaunchHitchTests.swift */; };
+		7E5F000000000000000000F5 /* ColdLaunchHitchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F000000000000000000F4 /* ColdLaunchHitchTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -65,13 +67,15 @@
 		7E5F0000000000000000006A /* MetronomePerfTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetronomePerfTests.swift; sourceTree = "<group>"; };
 		7E5F0000000000000000006B /* StressPerfTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StressPerfTests.swift; sourceTree = "<group>"; };
 		7E5F00000000000000000070 /* AudioTracePass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioTracePass.swift; sourceTree = "<group>"; };
-		7E5F00000000000000000071 /* ColdLaunchHitchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColdLaunchHitchTests.swift; sourceTree = "<group>"; };
+		7E5F000000000000000000F4 /* ColdLaunchHitchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColdLaunchHitchTests.swift; sourceTree = "<group>"; };
 		7E5F0000000000000000006C /* FacadeSelfCheckTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FacadeSelfCheckTests.swift; sourceTree = "<group>"; };
 		7E5F0000000000000000006D /* TunerJourney.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunerJourney.swift; sourceTree = "<group>"; };
 		7E5F0000000000000000006E /* MetronomeJourney.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetronomeJourney.swift; sourceTree = "<group>"; };
 		7E5F0000000000000000006F /* StressJourney.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StressJourney.swift; sourceTree = "<group>"; };
 		7E5F00000000000000000071 /* TimelinePerfTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelinePerfTests.swift; sourceTree = "<group>"; };
 		7E5F00000000000000000072 /* TimelineJourney.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineJourney.swift; sourceTree = "<group>"; };
+		7E5F000000000000000000F2 /* RecordingPerfTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingPerfTests.swift; sourceTree = "<group>"; };
+		7E5F000000000000000000F3 /* RecordingJourney.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingJourney.swift; sourceTree = "<group>"; };
 		7E5F000000000000000000E0 /* ScreenshotMatrix.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotMatrix.swift; sourceTree = "<group>"; };
 		7E5F00000000000000000004 /* TembraPerfTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TembraPerfTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -161,10 +165,11 @@
 				7E5F00000000000000000069 /* TunerPerfTests.swift */,
 				7E5F0000000000000000006A /* MetronomePerfTests.swift */,
 				7E5F00000000000000000071 /* TimelinePerfTests.swift */,
+				7E5F000000000000000000F2 /* RecordingPerfTests.swift */,
 				7E5F0000000000000000006B /* StressPerfTests.swift */,
 				7E5F0000000000000000006C /* FacadeSelfCheckTests.swift */,
 				7E5F00000000000000000070 /* AudioTracePass.swift */,
-				7E5F00000000000000000071 /* ColdLaunchHitchTests.swift */,
+				7E5F000000000000000000F4 /* ColdLaunchHitchTests.swift */,
 				7E5F0000000000000000000D /* Journeys */,
 			);
 			path = TembraPerfTests;
@@ -176,6 +181,7 @@
 				7E5F0000000000000000006D /* TunerJourney.swift */,
 				7E5F0000000000000000006E /* MetronomeJourney.swift */,
 				7E5F00000000000000000072 /* TimelineJourney.swift */,
+				7E5F000000000000000000F3 /* RecordingJourney.swift */,
 				7E5F0000000000000000006F /* StressJourney.swift */,
 			);
 			path = Journeys;
@@ -328,15 +334,17 @@
 				7E5F000000000000000000CD /* TunerPerfTests.swift in Sources */,
 				7E5F000000000000000000CE /* MetronomePerfTests.swift in Sources */,
 				7E5F000000000000000000D5 /* TimelinePerfTests.swift in Sources */,
+				7E5F000000000000000000F0 /* RecordingPerfTests.swift in Sources */,
 				7E5F000000000000000000CF /* StressPerfTests.swift in Sources */,
 				7E5F000000000000000000D0 /* FacadeSelfCheckTests.swift in Sources */,
 				7E5F000000000000000000D1 /* TunerJourney.swift in Sources */,
 				7E5F000000000000000000D2 /* MetronomeJourney.swift in Sources */,
 				7E5F000000000000000000D6 /* TimelineJourney.swift in Sources */,
+				7E5F000000000000000000F1 /* RecordingJourney.swift in Sources */,
 				7E5F000000000000000000E1 /* ScreenshotMatrix.swift in Sources */,
 				7E5F000000000000000000D3 /* StressJourney.swift in Sources */,
 				7E5F000000000000000000D4 /* AudioTracePass.swift in Sources */,
-				7E5F000000000000000000D5 /* ColdLaunchHitchTests.swift in Sources */,
+				7E5F000000000000000000F5 /* ColdLaunchHitchTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

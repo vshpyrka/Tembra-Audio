@@ -395,6 +395,7 @@ BENCHMARK_CLASS_OF = {
     "tuner": "TunerJourneyBenchmark",
     "metronome": "MetronomeJourneyBenchmark",
     "timeline": "TimelineJourneyBenchmark",
+    "recording": "RecordingJourneyBenchmark",
     "stress": "StressJourneyBenchmark",
 }
 _INSTRUMENT_FAILURE_MARKERS = ("FAILURES!!!", "INSTRUMENTATION_FAILED", "Process crashed", "shortMsg=")
