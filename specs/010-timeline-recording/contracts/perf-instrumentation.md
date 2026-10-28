@@ -30,7 +30,7 @@ floor; `takeAlignmentMs` and `monitorDelayMs`: 20 % gate with a 2 ms floor, info
 `traces_android.AUDIO_COUNTER_KEYS` (`audio.input_overruns`, `audio.record_backlog`,
 `audio.take_alignment_ms`, `audio.monitor_delay_ms`), `collect_ios._HEALTH_KEYS`,
 `tests/fixtures/engine-health.json` and `specs/007-performance-pipeline/contracts/metric-catalogue.md`
-gain the four counters. `trace_shim_test` expects 36 names.
+gain the four counters. `trace_shim_test` expects 40 names (the sections and the four counters together; the implementation counted them on 2026-10-28).
 
 ## Anchors (`PerfAnchors` + `PerfAnchorsCatalogueTest` 47 + the Android and iOS mirrors)
 
@@ -104,6 +104,6 @@ profile comparison and any `above_limit` notice with its explanation go into
 
 ## Tests
 
-`PerfSectionCatalogueTest`, `PerfAnchorsCatalogueTest` (47), `trace_shim_test` (36),
+`PerfSectionCatalogueTest`, `PerfAnchorsCatalogueTest` (47), `trace_shim_test` (40),
 `trace_poison_test` (the new RT files), `uv run pytest` (config, catalogue, collectors, report
 with the sixth journey and the four counters), the iOS `FacadeSelfCheckTests`.

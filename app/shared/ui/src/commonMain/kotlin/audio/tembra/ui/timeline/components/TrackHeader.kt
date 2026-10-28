@@ -26,6 +26,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import audio.tembra.core.project.GainDb
+import audio.tembra.ui.session.InputTelemetry
 import audio.tembra.ui.theme.TembraIcon
 import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.ui.timeline.TimelineCopy
@@ -59,6 +60,9 @@ internal fun TrackHeader(
     onArm: (Boolean) -> Unit = {},
     /** False while a take runs: Move up, Move down and Delete track are unavailable (feature 010, spec FR-018). */
     canReorder: Boolean = true,
+    /** The armed track's input, read per frame by the meter beneath row 2 (feature 010, spec FR-005); null leaves it out. */
+    inputTelemetry: InputTelemetry? = null,
+    onResetClip: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val colors = TembraTheme.colors
@@ -104,6 +108,7 @@ internal fun TrackHeader(
                 TransportButton(icon = TembraIcon.MoreVert, description = TRACK_MENU_DESCRIPTION, onClick = { menuOpen = true }, testTag = TimelineTestTags.trackMenu(index))
             }
         }
+        Column(verticalArrangement = Arrangement.spacedBy(spacing.xs), modifier = Modifier.fillMaxWidth()) {
         Row(horizontalArrangement = Arrangement.spacedBy(spacing.xs), verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
             GainReadout(gain = track.gainDb, onGain = onGain, modifier = Modifier.weight(1f), testTag = TimelineTestTags.gain(index))
             MuteSoloButton(letter = "M", description = MUTE_DESCRIPTION, checked = track.muted, tint = tint, onCheckedChange = onMute, size = SmallToggle, testTag = TimelineTestTags.mute(index))
@@ -116,7 +121,19 @@ internal fun TrackHeader(
                 testTag = TimelineTestTags.chevron(index),
             )
         }
-        // US2: the input meter (TimelineTestTags.meter(index)) sits beneath this row while the track is armed.
+        // The input meter beneath the gain row while the track is armed (spec FR-005); the column keeps its height.
+        if (track.armed && inputTelemetry != null) {
+            InputMeter(
+                telemetry = inputTelemetry,
+                armed = true,
+                onResetClip = onResetClip,
+                modifier = Modifier.fillMaxWidth(),
+                height = spacing.meterHeightExpanded,
+                testTag = TimelineTestTags.meter(index),
+                clipTestTag = TimelineTestTags.clipIndicator(index),
+            )
+        }
+        }
     }
 }
 

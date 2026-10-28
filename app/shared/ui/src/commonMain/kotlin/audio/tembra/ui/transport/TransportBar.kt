@@ -116,6 +116,7 @@ internal fun TransportBar(
                     onRecord = callbacks.onRecord,
                     countInBeatsLeft = state.countInBeatsLeft,
                     enabled = enabled,
+                    telemetry = telemetry,
                 )
             }
             TimeReadout(

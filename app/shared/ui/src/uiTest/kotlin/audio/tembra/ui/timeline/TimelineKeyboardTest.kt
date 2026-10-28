@@ -27,6 +27,8 @@ import audio.tembra.data.projects.OverviewStatus
 import audio.tembra.ui.designsystem.enterKeyboardMode
 import audio.tembra.ui.theme.TembraTheme
 import kotlinx.collections.immutable.persistentListOf
+import audio.tembra.ui.transport.RecordButtonState
+import androidx.compose.foundation.layout.requiredWidth
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -44,12 +46,13 @@ class TimelineKeyboardTest {
     private val track = TrackUi(TrackId("t1"), "Track 1", null, 0, GainDb.Unity, false, false, true, persistentListOf(clip))
     private var state = TimelineUiState(
         loaded = true, tracks = persistentListOf(track), timeSignature = TimeSignature.FourFour, grid = GridSize.Eighth,
-        positionBeats = Beats(8.0), selection = Selection.ClipSelected(track.id, clip.id), canSplit = true,
+        positionBeats = Beats(8.0), selection = Selection.ClipSelected(track.id, clip.id), canSplit = true, canUndo = true, canRedo = true,
     )
     private val callbacks = TimelineCallbacks.None.copy(
         onPlayPause = { calls += "playPause" }, onSkipToStart = { calls += "skipToStart" }, onSeek = { calls += "seek(${it.value})" },
         onSplit = { calls += "split" }, onDeleteClip = { calls += "delete(${it.value})" }, onUndo = { calls += "undo" }, onRedo = { calls += "redo" },
         onZoomStep = { calls += "zoom($it)" }, onToggleMute = { calls += "mute(${it.value})" }, onToggleSolo = { calls += "solo(${it.value})" },
+        onArm = { calls += "arm(${it.value})" }, onRecord = { calls += "record" }, onMonitorToggle = { calls += "monitor" },
     )
 
     /** Composes the key-handling root, enters keyboard mode and focuses it; false when this lane declares no keyboard mode. */
@@ -108,6 +111,47 @@ class TimelineKeyboardTest {
         assertEquals(listOf("zoom(1)", "zoom(-1)", "mute(t1)", "solo(t1)"), calls)
     }
 
+    /** Feature 010 (FR-028; T076): A arms the selected track, R records, I toggles monitoring. */
+    @Test
+    fun armRecordAndMonitorKeys() = runComposeUiTest {
+        if (!setRoot()) return@runComposeUiTest
+        press(Key.A)
+        press(Key.R)
+        press(Key.I)
+        assertEquals(listOf("arm(t1)", "record", "monitor"), calls)
+    }
+
+    /** Escape during a count-in cancels it through Record; at any other time it is left to whoever owns it (FR-028). */
+    @Test
+    fun escapeCancelsOnlyACountIn() = runComposeUiTest {
+        if (!setRoot()) return@runComposeUiTest
+        press(Key.Escape)
+        assertEquals(emptyList(), calls)
+        state = state.copy(takeRunning = true, recordPhase = RecordButtonState.CountIn, countInBeatsLeft = 3)
+        press(Key.Escape)
+        assertEquals(listOf("record"), calls)
+    }
+
+    /** While a take runs the keys of the actions FR-018 and FR-009 make unavailable do nothing; space still pauses (ending the take) and R ends it. */
+    @Test
+    fun theUnavailableKeysAreNoOpsWhileATakeRuns() = runComposeUiTest {
+        if (!setRoot()) return@runComposeUiTest
+        state = state.copy(takeRunning = true, recordPhase = RecordButtonState.Recording, canSplit = false, canUndo = false, canRedo = false)
+        press(Key.MoveHome)
+        press(Key.DirectionLeft)
+        press(Key.DirectionRight)
+        press(Key.S)
+        press(Key.Delete)
+        press(Key.Z, ctrl = true)
+        press(Key.Y, ctrl = true)
+        press(Key.A)
+        assertEquals(emptyList(), calls)
+        press(Key.Spacebar)
+        press(Key.R)
+        press(Key.M)
+        assertEquals(listOf("playPause", "record", "mute(t1)"), calls)
+    }
+
     /**
      * Tab walks toolbar → headers → clips → transport on the real screen (spec FR-057); since D1 the toolbar's tempo pill
      * comes after "+ Track". The overview strip takes no focus: the "+" and "−" keys zoom from the keyboard.
@@ -139,6 +183,42 @@ class TimelineKeyboardTest {
         }
         val order = targets.map { firstSeen[it] ?: throw AssertionError("$it never received focus in 40 tabs") }
         assertEquals(order.sorted(), order, "focus visits toolbar, headers, clips, transport in that order; steps $firstSeen")
+    }
+
+    /**
+     * Feature 010 (FR-028; T076): the arm toggle follows "S" in each header, Record follows play/pause in the bar and the
+     * monitor toggle follows the scissors, all by composition order on a 900 dp expanded screen with the bar wide enough for Record.
+     */
+    @Test
+    fun tabOrderPlacesArmAfterSoloRecordAfterPlayAndMonitorAfterTheScissors() = runComposeUiTest {
+        val screenState = state.copy(
+            viewport = audio.tembra.core.timeline.TimelineViewport.fitted(800.0, 1.0, Beats(64.0), 4), lengthBeats = Beats(64.0), isFirstContentReady = true,
+            barWidth = 900.dp,
+        )
+        setContent {
+            TembraTheme {
+                manager = LocalInputModeManager.current
+                Box(Modifier.requiredWidth(900.dp)) {
+                    TimelineScreenContent(screenState, callbacks, ScriptedTransportTelemetry.stopped(0.0), TimelineLayout.Expanded, androidx.compose.material3.SnackbarHostState())
+                }
+            }
+        }
+        if (!enterKeyboardMode(manager)) return@runComposeUiTest
+        onNodeWithTag(TimelineTestTags.ROOT).requestFocus()
+        val targets = listOf(
+            TimelineTestTags.SPLIT, TimelineTestTags.MONITOR, TimelineTestTags.UNDO,
+            TimelineTestTags.solo(0), TimelineTestTags.arm(0), TimelineTestTags.chevron(0),
+            audio.tembra.ui.perf.PerfAnchors.TRANSPORT_PLAY, audio.tembra.ui.perf.PerfAnchors.TRANSPORT_RECORD,
+        )
+        val firstSeen = mutableMapOf<String, Int>()
+        repeat(60) { step ->
+            onNodeWithTag(TimelineTestTags.ROOT).performKeyInput { pressKey(Key.Tab) }
+            for (tag in targets) {
+                if (tag !in firstSeen && androidx.compose.ui.test.isFocused().matches(onNodeWithTag(tag).fetchSemanticsNode())) firstSeen[tag] = step
+            }
+        }
+        val order = targets.map { firstSeen[it] ?: throw AssertionError("$it never received focus in 60 tabs") }
+        assertEquals(order.sorted(), order, "scissors, monitor, undo; S, arm, chevron; play, Record in that order; steps $firstSeen")
     }
 
     @Test

@@ -10,5 +10,9 @@ Maven through Prefab in `:engine:android`.
 | dr_wav (dr_libs) | 0.14.5 (tag `wav-0.14.5`) | MIT-0 / public domain (dual) | https://github.com/mackron/dr_libs (`dr_wav.h`, `LICENSE`) |
 | Signalsmith Stretch | 1.1.0 (with its `dsp/` headers) | MIT | https://github.com/Signalsmith-Audio/signalsmith-stretch (`signalsmith-stretch.h`, `dsp/`, `LICENSE.txt`) |
 
+dr_wav's writer stays test-only: `tests/wav_fixtures.h` writes fixtures with `drwav_init_file_write`. The engine reads WAV with dr_wav
+(`src/tuner/wav_decoder.cpp`, `src/metronome/custom_sound_loader.cpp`) and writes recorded takes with its own `src/capture/wav_writer.*`,
+because dr_wav's writer cannot rewrite the sizes mid-stream. Feature 010 added no vendored library.
+
 Update procedure: replace the files with the tagged upstream versions, bump the row here and in
 `app/THIRD_PARTY_LICENSES.md`, and let `engine_info_test.cpp` confirm the version strings.

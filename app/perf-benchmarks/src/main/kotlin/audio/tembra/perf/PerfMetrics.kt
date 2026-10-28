@@ -26,6 +26,12 @@ object PerfMetrics {
         "timeline.projectOpen", "timeline.waveform", "transport.play", "transport.seek", "timeline.zoom", "timeline.scroll",
         "timeline.clipSplit", "timeline.playheadFrame", "engine.prime", "engine.loadClip", "transport.masterPopup",
     )
+    // Feature 010 (contracts/perf-instrumentation.md): the recording sections and the timeline ones the journey shares.
+    private val recordingSections = listOf(
+        "timeline.arm", "transport.recordStart", "transport.countIn", "timeline.takeFrame", "transport.recordStop",
+        "timeline.monitorToggle", "engine.takeAlignment", "timeline.waveform", "transport.play", "timeline.playheadFrame",
+        "timeline.projectSave",
+    )
     private val stressSections = tunerSections + metronomeSections + listOf("timeline.scroll", "timeline.playheadFrame", "transport.play")
 
     fun journey(name: String): List<Metric> = listOf(
@@ -39,6 +45,7 @@ object PerfMetrics {
         "tuner" -> tunerSections
         "metronome" -> metronomeSections
         "timeline" -> timelineSections
+        "recording" -> recordingSections
         "stress" -> stressSections
         else -> emptyList()
     }

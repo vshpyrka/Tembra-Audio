@@ -120,7 +120,7 @@ class TrackHeaderTest {
     @Test
     fun armedCompactRowShowsRecordInPlaceOfTheChipAt360dp() = runComposeUiTest {
         setCompact(item = track.copy(armed = true, recordHere = true), narrow = true)
-        onNodeWithText("Guitar").assertDoesNotExist()
+        onNodeWithText("Guitar", useUnmergedTree = true).assertDoesNotExist()
         onNodeWithTag(TimelineTestTags.record(1)).assertExists().assertWidthIsAtLeast(44.dp).assertHeightIsAtLeast(44.dp)
         onNodeWithText("Track 2").assertWidthIsAtLeast(72.dp)
         onNodeWithTag(TimelineTestTags.arm(1)).assertExists().assertIsOn()
@@ -129,7 +129,7 @@ class TrackHeaderTest {
     @Test
     fun disarmedCompactRowKeepsTheChipAndHasNoRecord() = runComposeUiTest {
         setCompact(narrow = true)
-        onNodeWithText("Guitar").assertExists()
+        onNodeWithText("Guitar", useUnmergedTree = true).assertExists()
         onNodeWithTag(TimelineTestTags.record(1)).assertDoesNotExist()
         onNodeWithTag(TimelineTestTags.arm(1)).assertIsOff()
     }
@@ -137,7 +137,7 @@ class TrackHeaderTest {
     @Test
     fun armedButNotRecordHereKeepsTheChip() = runComposeUiTest {
         setCompact(item = track.copy(armed = true, recordHere = false), narrow = true)
-        onNodeWithText("Guitar").assertExists()
+        onNodeWithText("Guitar", useUnmergedTree = true).assertExists()
         onNodeWithTag(TimelineTestTags.record(1)).assertDoesNotExist()
     }
 

@@ -95,6 +95,10 @@ uint32_t tembra_capture_read_peaks(uint64_t from_index, tembra_peak_bucket* out,
    oldest kept bucket and *out_next_index − returned < from_index tells the host it missed some (it repeats the previous bucket) */
 
 int64_t tembra_storage_free_bytes(const char* path);      /* statvfs of the containing volume; any thread; −1 on error */
+
+/* Added by the implementation (2026-10-28): iOS reports the session's input latency after the duplex activation, so the
+   alignment (input + output latency) is known before the first take; Android's Oboe stream reports its own. */
+void tembra_capture_set_input_latency_ns(int64_t nanos);   /* host thread; 0 clears the override */
 ```
 
 ### Appended fields (revision 7)

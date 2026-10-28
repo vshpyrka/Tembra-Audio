@@ -8,11 +8,8 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
@@ -24,10 +21,12 @@ import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import audio.tembra.engine.TransportSnapshot
 import audio.tembra.ui.designsystem.TembraTooltip
 import audio.tembra.ui.designsystem.drawFocusRing
 import audio.tembra.ui.designsystem.rememberFrameTick
 import audio.tembra.ui.perf.PerfAnchors
+import audio.tembra.ui.session.TransportTelemetry
 import audio.tembra.ui.theme.TembraTheme
 
 /**
@@ -49,6 +48,8 @@ internal fun RecordButton(
     size: Dp = TembraTheme.spacing.touchTargetMin,
     interactionSource: MutableInteractionSource? = null,
     testTag: String = PerfAnchors.TRANSPORT_RECORD,
+    /** The transport's telemetry: the count-in's beats left per frame, so the pulse lands on the beat (spec FR-015). */
+    telemetry: TransportTelemetry? = null,
 ) {
     if (state == RecordButtonState.Hidden) return
     val colors = TembraTheme.colors
@@ -66,11 +67,9 @@ internal fun RecordButton(
     }
     val pulsing = state == RecordButtonState.CountIn && !reduceMotion
     val tick = rememberFrameTick(active = pulsing)
-    // The ring restarts on every beat: the frame the count changed on is the pulse's origin.
-    val pulseStart = remember { mutableLongStateOf(Long.MIN_VALUE) }
-    LaunchedEffect(countInBeatsLeft, pulsing) {
-        if (pulsing) pulseStart.longValue = withFrameNanos { it }
-    }
+    val snapshot = remember { TransportSnapshot() }
+    // The ring restarts on every beat: the frame the count changed on is the pulse's origin (kept in the draw phase).
+    val pulse = remember { LongArray(2) { Long.MIN_VALUE } }
     val fill = when {
         enabled && (hovered || pressed) -> colors.surfaceContainerHigh
         else -> null
@@ -93,8 +92,18 @@ internal fun RecordButton(
                         RecordButtonState.CountIn -> {
                             drawCircle(record, radius = disc)
                             if (pulsing) {
-                                val start = pulseStart.longValue
-                                val elapsed = if (start == Long.MIN_VALUE) PULSE_NANOS else (tick.longValue - start).coerceIn(0L, PULSE_NANOS)
+                                val frameNanos = tick.longValue
+                                var beats = countInBeatsLeft
+                                if (telemetry != null) {
+                                    telemetry.read(frameNanos, snapshot)
+                                    if (snapshot.countInBeatsLeft >= 0) beats = snapshot.countInBeatsLeft
+                                }
+                                if (beats.toLong() != pulse[PULSE_BEATS]) {
+                                    pulse[PULSE_BEATS] = beats.toLong()
+                                    pulse[PULSE_START] = frameNanos
+                                }
+                                val start = pulse[PULSE_START]
+                                val elapsed = if (start == Long.MIN_VALUE) PULSE_NANOS else (frameNanos - start).coerceIn(0L, PULSE_NANOS)
                                 val progress = elapsed.toFloat() / PULSE_NANOS
                                 if (progress < 1f) {
                                     drawCircle(
@@ -129,6 +138,8 @@ private val StrokeWidth = 2.dp
 private val PulseReach = 8.dp
 private val GlowReach = 6.dp
 private const val PULSE_NANOS = 400_000_000L
+private const val PULSE_START = 0
+private const val PULSE_BEATS = 1
 private const val PULSE_ALPHA = 0.7f
 private const val GLOW_ALPHA = 0.3f
 private const val DisabledAlpha = 0.38f

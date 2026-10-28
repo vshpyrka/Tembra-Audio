@@ -44,19 +44,23 @@ class IosAudioSessionTest {
         assertEquals(listOf<AudioEvent>(AudioEvent.Interrupted), collected)
     }
 
-    /** Wired, USB-C and AirPlay outputs alike: any lost output but the phone's own is reported (final review I4). */
+    /**
+     * Wired, USB-C and AirPlay outputs alike: any lost output but the phone's own is reported (final review I4), and
+     * since feature 010 every route change also reports where the output now is (the monitoring rule, FR-017).
+     */
     @Test
-    fun losingHeadphonesLosesTheOutputRoute() = runTest {
+    fun losingHeadphonesLosesTheOutputRouteAndReportsTheSpeaker() = runTest {
         val collected = collectWhile {
             IosAudioSession.handleRouteChange(AVAudioSessionRouteChangeReasonOldDeviceUnavailable, listOfNotNull(AVAudioSessionPortHeadphones))
             IosAudioSession.handleRouteChange(AVAudioSessionRouteChangeReasonOldDeviceUnavailable, listOfNotNull(AVAudioSessionPortUSBAudio))
             IosAudioSession.handleRouteChange(AVAudioSessionRouteChangeReasonOldDeviceUnavailable, listOfNotNull(AVAudioSessionPortAirPlay))
         }
-        assertEquals(List<AudioEvent>(3) { AudioEvent.OutputRouteLost }, collected)
+        assertEquals(List(3) { listOf<AudioEvent>(AudioEvent.OutputRouteLost, AudioEvent.OutputRouteChanged(isSpeaker = true)) }.flatten(), collected)
     }
 
+    /** The phone's own outputs going away is no loss (feature 004 R6); the route report alone follows (feature 010). */
     @Test
-    fun losingOnlyTheBuiltInSpeakerOrReceiverEmitsNothing() = runTest {
+    fun losingOnlyTheBuiltInSpeakerOrReceiverOnlyReportsTheRoute() = runTest {
         val collected = collectWhile {
             IosAudioSession.handleRouteChange(AVAudioSessionRouteChangeReasonOldDeviceUnavailable, listOfNotNull(AVAudioSessionPortBuiltInReceiver))
             IosAudioSession.handleRouteChange(
@@ -64,16 +68,17 @@ class IosAudioSessionTest {
                 listOfNotNull(AVAudioSessionPortBuiltInSpeaker, AVAudioSessionPortBuiltInReceiver),
             )
         }
-        assertEquals(emptyList(), collected)
+        assertEquals(List<AudioEvent>(2) { AudioEvent.OutputRouteChanged(isSpeaker = true) }, collected)
     }
 
     @Test
-    fun losingTheSpeakerOrGainingADeviceEmitsNothing() = runTest {
+    fun losingTheSpeakerOrGainingADeviceOnlyReportsTheRoute() = runTest {
         val collected = collectWhile {
             IosAudioSession.handleRouteChange(AVAudioSessionRouteChangeReasonOldDeviceUnavailable, listOfNotNull(AVAudioSessionPortBuiltInSpeaker))
             IosAudioSession.handleRouteChange(AVAudioSessionRouteChangeReasonNewDeviceAvailable, listOfNotNull(AVAudioSessionPortHeadphones))
         }
-        assertEquals(emptyList(), collected)
+        // The simulator's output stays its speaker whatever is announced; a device with headphones reports false.
+        assertEquals(List<AudioEvent>(2) { AudioEvent.OutputRouteChanged(isSpeaker = true) }, collected)
     }
 
     /** Subscribes to [IosAudioSession.events], runs [block], and returns what arrived within 200 ms of virtual time. */

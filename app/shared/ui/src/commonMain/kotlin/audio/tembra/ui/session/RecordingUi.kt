@@ -1,5 +1,6 @@
 package audio.tembra.ui.session
 
+import androidx.compose.runtime.Immutable
 import audio.tembra.core.project.TrackId
 import audio.tembra.core.recording.MonitorState
 import audio.tembra.core.recording.RecordingState
@@ -10,6 +11,7 @@ import audio.tembra.ui.platform.MicrophonePermissionStatus
  * the monitor toggle, the input's channels, the growing take and the permission as last read. Immutable; the meter's
  * level and the take's length never pass through here (they are read per frame from the capture telemetry).
  */
+@Immutable
 data class RecordingUi(
     val armedTrack: TrackId? = null,
     val phase: RecordingState = RecordingState.Disarmed,
