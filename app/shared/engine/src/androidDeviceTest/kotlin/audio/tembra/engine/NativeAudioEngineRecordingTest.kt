@@ -60,7 +60,9 @@ class NativeAudioEngineRecordingTest {
         assertTrue(armed.channels in 1..2, "channels ${armed.channels}")
         assertTrue(armed.sampleRate > 0)
         val snapshot = CaptureSnapshot()
-        assertTrue(waitFor(1_000) { engine.readCapture(snapshot); snapshot.armed })
+        // The callback publishes the armed snapshot once both streams run: on a device busy with a previous lane the
+        // duplex start can take over a second (02:54 on 2026-10-28), so the wait is generous.
+        assertTrue(waitFor(5_000) { engine.readCapture(snapshot); snapshot.armed }, "the capture snapshot never reported armed")
         assertEquals(armed.channels, snapshot.inputChannels)
         assertEquals(armed.sampleRate, snapshot.sampleRate)
         assertTrue(snapshot.alignmentFrames > 0, "the alignment is the input plus the output latency: ${snapshot.alignmentFrames}")
@@ -74,7 +76,7 @@ class NativeAudioEngineRecordingTest {
         assertEquals(RecordStartResult.Started, engine.recordStart(config))
         assertEquals(RecordStartResult.TakeRunning, engine.recordStart(config))
         val transport = TransportSnapshot()
-        assertTrue(waitFor(1_000) { engine.readTransport(transport); transport.playing && transport.countInBeatsLeft > 0 })
+        assertTrue(waitFor(3_000) { engine.readTransport(transport); transport.playing && transport.countInBeatsLeft > 0 }, "the count-in never started")
         assertEquals(4, transport.countInBeatsLeft)
         // One bar of count-in at 120 BPM is two seconds; the take then captures from the downbeat.
         assertTrue(waitFor(3_500) { engine.readCapture(snapshot); snapshot.recording }, "the take never started after the count-in")
