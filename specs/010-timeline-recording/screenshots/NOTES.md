@@ -8,18 +8,18 @@ sounding step (the loopback check of §8) is recorded in `../evidence/alignment.
 
 | Target | Lane | Result | Counts | Notes |
 |---|---|---|---|---|
-| Host (JVM, every module) | `checkAndroidHost` | green, zero warnings | ui 466 + core/engine/data/app | 2026-10-28 02:1x, after US1; re-run after US6 pending |
+| Host (JVM, every module) | `engineHostTest checkAndroidHost` | green, zero warnings | 929 JVM tests (ui 473, core 246, data 142, engine 68) + 40 Catch2 cases | 2026-10-28 02:56 at commit b737335 |
 | Engine (C++) | `engineHostTest` | green | 40 Catch2 cases | 2026-10-28 (T044) |
 | iPhone 18 Pro simulator | `checkIos` | green, zero warnings | core, engine (incl. NativeAudioEngineRecordingTest), data, ui (every uiTest class) | 2026-10-28 02:5x after US6 |
 | iPad Pro 13-inch (M5) simulator | `checkIos` | green, zero warnings | core, engine, data, ui (every uiTest class) | 2026-10-28 02:52, 1 min 14 s, commit 02a4593 |
 | iPhone Duo simulator | `checkIos` | green, zero warnings | core, engine, data, ui (every uiTest class; test tasks executed, binaries cached) | 2026-10-28 02:51, 27 s, commit 02a4593 |
-| Pixel 6 Pro (19021FDEE001AH) | `checkAndroidDevice` | engine 105, core 246, data 152, app green; ui 975 re-run _pending_ | | 02:14 run: 3 ui failures fixed in tree (meter tolerance, header semantics) |
+| Pixel 6 Pro (19021FDEE001AH) | `checkAndroidDevice` | green: engine 105, core 246, data 152, app (02:28 lane, commit 99dde16 tree); ui 975 green on the re-run (02:43–02:55, 12 min 23 s) | 1478 device tests | After the lanes the engine's recording test failed twice on an input HAL in a bad state (`in_get_mmap_position: pcm_sync_ptr failed: File descriptor in bad state`, `getInputForAttr EX_SECURITY`) with no client holding the microphone; the device was rebooted at 02:59 and had not re-enumerated over USB by 03:06 (not in `adb devices`, not in `system_profiler`): the owner reconnects it. The device-test wait for the duplex start was made generous (5 s) meanwhile. |
 | Pixel 7 Pro (33241FDH3000NZ) | `checkAndroidDevice` | _pending_ | | |
 | Pixel Tablet (3621105H803UFX) | `checkAndroidDevice` | _pending_ | | |
 | Fold emulator (emulator-5554) | `checkAndroidDevice` | _pending_ | | |
 | OPPO CPH2239 (O7PBYLZP4HMBW8S4) | `checkAndroidDevice` | _pending_ | | brightness by hand (ColorOS refuses adb) |
 | Redmi Note 5 (e9446ac2) | `checkAndroidDevice` | _pending_ | | API 28; Play Protect prompt answered "Don't send" |
-| iPhone 14 (00008110-001049660E3A401E) | release build + perf | _pending_ | | no simulator lane on a device |
+| iPhone 14 (00008110-001049660E3A401E) | perf trial round (T086) | **blocked**: the Perf build-for-testing succeeded (session 20261028T005156Z_010-recording) but the runner reported "Timed out while enabling automation mode" | | the phone is locked; the owner unlocks it (passcode after updates), then `uv run tracepulse run --device iphone14 --label 010-recording --rounds 1 --no-publish` |
 
 ## Captures (T080)
 
