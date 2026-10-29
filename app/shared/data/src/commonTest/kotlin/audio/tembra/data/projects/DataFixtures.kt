@@ -15,12 +15,12 @@ import audio.tembra.core.project.Track
 import audio.tembra.core.project.TrackId
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.collections.immutable.toPersistentMap
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 import okio.Buffer
 import okio.ByteString.Companion.toByteString
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 /** Builders shared by the data tests: deterministic projects, content ids and `.peaks` files. */
 internal object DataFixtures {

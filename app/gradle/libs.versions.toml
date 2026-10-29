@@ -30,7 +30,7 @@ androidx-test-espresso = "3.7.0"
 oboe = "1.11.0"
 # DataStore Preferences multiplatform for the tuner's remembered choices (feature 003, research R13).
 androidx-datastore = "1.3.0"
-# Okio at the version DataStore 1.2.1 resolves (3.9.1), now a direct dependency of :shared:data (feature 004, research R16).
+# Okio, a direct dependency of :shared:data (feature 004, research R16); DataStore 1.3.0 needs 3.17.0 or newer.
 okio = "3.18.2"
 # Performance pipeline (feature 007): Jetpack Macrobenchmark and UiAutomator for :perf-benchmarks (test module only).
 androidx-benchmark = "1.5.0"
