@@ -1,7 +1,7 @@
 package audio.tembra.ui.tuner
 
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -50,7 +50,7 @@ fun TunerScreen(modifier: Modifier = Modifier, viewModel: TunerViewModel = metro
     ReportFirstContentDrawn(state.isFirstContentReady)
     // A tabletop foldable splits the screen at its fold (feature 005); both are read from the window on every change.
     val fold = currentTabletopFold()
-    val layout = TunerLayout.from(currentWindowAdaptiveInfo().windowSizeClass, fold)
+    val layout = TunerLayout.from(currentWindowAdaptiveInfoV2().windowSizeClass, fold)
     val callbacks = remember(viewModel) {
         TunerCallbacks(
             onInstrument = viewModel::selectInstrument,
