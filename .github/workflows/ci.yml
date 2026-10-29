@@ -1,0 +1,123 @@
+# CI (constitution, Quality gates): the JVM host tests on every push; the iOS simulator tests and the C++ engine tests
+# on every pull request. Renovate merges its own pull requests only after every job here is green
+# (.github/renovate.json5). Setup and GitHub settings: app/README.md § CI and dependency updates.
+name: CI
+
+on:
+  push:
+    branches-ignore:
+      - 'renovate/**' # checked through their pull requests
+      - perf-history # append-only performance records, no code
+  pull_request:
+    branches: [main]
+  schedule:
+    # Sunday evening on main: checks main as merged and writes the caches that Monday's Renovate pull requests read
+    # (a pull request reads caches written on main, never another pull request's).
+    - cron: '0 18 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+    working-directory: app
+
+env:
+  # Zero compiler warnings and no Gradle deprecations: both fail the build here (tembra.kotlin.warnings).
+  GRADLE_GATES: -Ptembra.warningsAsErrors=true --warning-mode fail
+
+jobs:
+  android:
+    name: Android host tests and release build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install the NDK and CMake the catalog pins
+        run: |
+          ndk=$(sed -n 's/^android-ndk = "\(.*\)"$/\1/p' gradle/libs.versions.toml)
+          cmake=$(sed -n 's/^cmake = "\(.*\)"$/\1/p' gradle/libs.versions.toml)
+          (yes || true) | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;$ndk" "cmake;$cmake" > /dev/null
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+        with:
+          cache-provider: basic
+      - name: Size Gradle for the runner
+        # The project's settings (4 GB Gradle + 4 GB Kotlin daemon) suit a developer Mac; the runner has 8 GB.
+        run: printf '%s\n' 'org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8' 'kotlin.daemon.jvmargs=-Xmx1536m' >> ~/.gradle/gradle.properties
+      - name: Host tests and the R8 release build
+        # The release build runs R8, lintVital and the committed baseline profile: where a library update breaks
+        # shrinking. Linux cannot build the iOS targets; the iOS job does.
+        run: ./gradlew checkAndroidHost :androidApp:assembleRelease $GRADLE_GATES -Pkotlin.native.ignoreDisabledTargets=true
+
+  ios:
+    name: iOS simulator and C++ engine tests
+    if: github.event_name != 'push'
+    # The CI_MACOS_RUNNER repository variable can move this job to a self-hosted Mac (app/README.md § Cost).
+    runs-on: ${{ vars.CI_MACOS_RUNNER || 'macos-26' }}
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install the NDK and CMake the catalog pins
+        # The SDK's CMake builds the engine for iOS and the host; configuration also checks the NDK.
+        run: |
+          ndk=$(sed -n 's/^android-ndk = "\(.*\)"$/\1/p' gradle/libs.versions.toml)
+          cmake=$(sed -n 's/^cmake = "\(.*\)"$/\1/p' gradle/libs.versions.toml)
+          (yes || true) | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;$ndk" "cmake;$cmake" > /dev/null
+      - name: Pick an iPhone simulator
+        # The newest iOS runtime's first iPhone; the runner's device names change with each image. The iPhone Duo (on a
+        # self-hosted Mac) is skipped: it switches on the experimental fold layouts.
+        run: |
+          udid=$(xcrun simctl list devices available --json | python3 -c '
+          import json, sys
+          devices = json.load(sys.stdin)["devices"]
+          runtimes = sorted((r for r in devices if ".iOS-" in r),
+                            key=lambda r: [int(p) for p in r.rsplit(".iOS-", 1)[1].split("-")])
+          for runtime in reversed(runtimes):
+              for device in devices[runtime]:
+                  if device["name"].startswith("iPhone") and "Duo" not in device["name"]:
+                      print(device["udid"])
+                      sys.exit()
+          sys.exit("no available iPhone simulator")
+          ')
+          echo "IOS_SIMULATOR=$udid" >> "$GITHUB_ENV"
+      - name: Cache Kotlin/Native
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.konan
+          key: konan-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('app/gradle/libs.versions.toml') }}
+          restore-keys: konan-${{ runner.os }}-${{ runner.arch }}-
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+        with:
+          cache-provider: basic
+      - name: Size Gradle for the runner
+        # Kotlin/Native compiles inside the Gradle daemon; the runner has 7 GB and the simulator needs some of it.
+        run: printf '%s\n' 'org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8' 'kotlin.daemon.jvmargs=-Xmx1536m' >> ~/.gradle/gradle.properties
+      - name: iOS simulator tests and C++ engine tests
+        run: ./gradlew checkIos engineHostTest -Ptembra.iosSimulator="$IOS_SIMULATOR" $GRADLE_GATES
+
+  renovate-config:
+    name: Renovate config
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      # renovate: datasource=npm depName=renovate
+      RENOVATEBOT_VERSION: 44.192.2
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Validate .github/renovate.json5
+        working-directory: .
+        run: npx --yes -p node@24 -p "renovate@$RENOVATEBOT_VERSION" -- renovate-config-validator --strict
