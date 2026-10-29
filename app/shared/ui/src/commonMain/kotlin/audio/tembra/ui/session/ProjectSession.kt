@@ -523,7 +523,7 @@ class ProjectSession(
         sources.close(assetId)
         overviews.stop(assetId)
         pendingRetired += assetId
-        _state.update { it.copy(assetsReady = it.assetsReady.remove(assetId), overviews = it.overviews.remove(assetId), missingAssets = it.missingAssets.remove(assetId)) }
+        _state.update { it.copy(assetsReady = it.assetsReady.removing(assetId), overviews = it.overviews.removing(assetId), missingAssets = it.missingAssets.removing(assetId)) }
     }
 
     private fun coalesces(edit: ProjectEdit, last: ProjectEdit?): Boolean = when (edit) {
@@ -641,8 +641,8 @@ class ProjectSession(
         _state.update { current ->
             if (current.project?.assets?.containsKey(assetId) != true) return@update current
             current.copy(
-                assetsReady = current.assetsReady.put(assetId, status),
-                overviews = if (overview == null) current.overviews else current.overviews.put(assetId, overview),
+                assetsReady = current.assetsReady.putting(assetId, status),
+                overviews = if (overview == null) current.overviews else current.overviews.putting(assetId, overview),
             )
         }
     }
@@ -699,7 +699,7 @@ class ProjectSession(
         }
         val unplayable = accepted.map { it.assetId }.toSet() - playable.map { it.assetId }.toSet()
         if (unplayable.isNotEmpty()) {
-            _state.update { it.copy(missingAssets = it.missingAssets.addAll(unplayable)) }
+            _state.update { it.copy(missingAssets = it.missingAssets.addingAll(unplayable)) }
             _messages.trySend(SessionMessage.AssetsMissing(unplayable.size))
         }
         for (result in playable) overviews.track(projectId, result.assetId, result.overviewPath)

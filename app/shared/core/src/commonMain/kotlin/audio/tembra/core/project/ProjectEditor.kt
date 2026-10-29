@@ -44,7 +44,7 @@ object ProjectEditor {
     private fun addTrack(project: Project, edit: AddTrack): EditResult {
         if (project.tracks.size >= ProjectLimits.MAX_TRACKS) return EditResult.Rejected(EditRejection.TrackLimitReached)
         val track = Track.new(edit.id, Track.nextName(project.tracks.map { it.name }), nextColor(project.tracks))
-        return EditResult.Applied(project.copy(tracks = project.tracks.add(track)))
+        return EditResult.Applied(project.copy(tracks = project.tracks.adding(track)))
     }
 
     private fun renameTrack(project: Project, edit: RenameTrack): EditResult {
@@ -71,14 +71,14 @@ object ProjectEditor {
 
     private fun deleteTrack(project: Project, edit: DeleteTrack): EditResult {
         val track = project.findTrack(edit.id) ?: return EditResult.Rejected(EditRejection.UnknownTrack(edit.id))
-        val remaining = project.copy(tracks = project.tracks.remove(track))
+        val remaining = project.copy(tracks = project.tracks.removing(track))
         return EditResult.Applied(remaining.withoutUnusedAssets())
     }
 
     private inline fun updateTrack(project: Project, id: TrackId, transform: (Track) -> Track): EditResult {
         val index = project.tracks.indexOfFirst { it.id == id }
         if (index < 0) return EditResult.Rejected(EditRejection.UnknownTrack(id))
-        return EditResult.Applied(project.copy(tracks = project.tracks.set(index, transform(project.tracks[index]))))
+        return EditResult.Applied(project.copy(tracks = project.tracks.replacingAt(index, transform(project.tracks[index]))))
     }
 
     /** The tint after the last track's, or the first for an empty project: creation order, cycling (spec FR-022). */
@@ -88,7 +88,7 @@ object ProjectEditor {
 
     private fun importToTrack(project: Project, edit: ImportToTrack): EditResult {
         val track = project.findTrack(edit.trackId) ?: return EditResult.Rejected(EditRejection.UnknownTrack(edit.trackId))
-        val withAssets = project.copy(assets = project.assets.putAll(edit.assets))
+        val withAssets = project.copy(assets = project.assets.puttingAll(edit.assets))
         checkImport(withAssets, edit.clips)?.let { return EditResult.Rejected(it) }
         var clips = track.clips
         for (clip in edit.clips) {
@@ -101,14 +101,14 @@ object ProjectEditor {
 
     private fun importAsNewTracks(project: Project, edit: ImportAsNewTracks): EditResult {
         if (project.tracks.size + edit.tracks.size > ProjectLimits.MAX_TRACKS) return EditResult.Rejected(EditRejection.TrackLimitReached)
-        val withAssets = project.copy(assets = project.assets.putAll(edit.assets))
+        val withAssets = project.copy(assets = project.assets.puttingAll(edit.assets))
         checkImport(withAssets, edit.tracks.map { it.clip })?.let { return EditResult.Rejected(it) }
         var tracks = withAssets.tracks
         var color = nextColor(tracks)
         for (item in edit.tracks) {
             val name = importedTrackName(item.name, tracks.map { it.name })
             val clip = item.clip.copy(startBeats = item.clip.startBeats.coerceAtLeastZero())
-            tracks = tracks.add(Track(id = item.trackId, name = name, colorIndex = color, clips = persistentListOf(clip)))
+            tracks = tracks.adding(Track(id = item.trackId, name = name, colorIndex = color, clips = persistentListOf(clip)))
             color = (color + 1) % Track.PALETTE_SIZE
         }
         return EditResult.Applied(withAssets.copy(tracks = tracks))
@@ -162,7 +162,7 @@ object ProjectEditor {
             offsetFrames = clip.offsetFrames + splitFrames,
             lengthFrames = clip.lengthFrames - splitFrames,
         )
-        val clips = track.clips.remove(clip).insertSorted(left).insertSorted(right)
+        val clips = track.clips.removing(clip).insertSorted(left).insertSorted(right)
         return updateTrack(project, track.id) { it.copy(clips = clips) }
     }
 
@@ -173,7 +173,7 @@ object ProjectEditor {
         val length = project.clipLengthBeats(clip).value
         val requested = edit.startBeats.value.coerceAtLeast(0.0)
         if (source.id == target.id) {
-            val others = source.clips.remove(clip)
+            val others = source.clips.removing(clip)
             val currentStart = clip.startBeats.value
             val currentEnd = currentStart + length
             val previousEnd = others.map { project.clipEndBeats(it).value }.filter { it <= currentStart + EPSILON }.maxOrNull() ?: 0.0
@@ -186,7 +186,7 @@ object ProjectEditor {
         val moved = clip.copy(startBeats = Beats(requested))
         val tracks = project.tracks.map { track ->
             when (track.id) {
-                source.id -> track.copy(clips = track.clips.remove(clip))
+                source.id -> track.copy(clips = track.clips.removing(clip))
                 target.id -> track.copy(clips = track.clips.insertSorted(moved))
                 else -> track
             }
@@ -197,7 +197,7 @@ object ProjectEditor {
     private fun deleteClip(project: Project, edit: DeleteClip): EditResult {
         val track = project.trackOf(edit.clipId) ?: return EditResult.Rejected(EditRejection.UnknownClip(edit.clipId))
         val clip = track.clips.first { it.id == edit.clipId }
-        val result = updateTrack(project, track.id) { it.copy(clips = it.clips.remove(clip)) }
+        val result = updateTrack(project, track.id) { it.copy(clips = it.clips.removing(clip)) }
         return when (result) {
             is EditResult.Applied -> EditResult.Applied(result.project.withoutUnusedAssets())
             is EditResult.Rejected -> result
