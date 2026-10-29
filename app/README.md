@@ -97,6 +97,82 @@ Where tests live:
 | `iosTest`, `androidDeviceTest` (feature 009) | one platform | `NativeAudioEngineTransportTest` and `TransportTimingEndToEndTest` (the real transport: sources, arrangement, play, seek, pause, the inspector and the overview builder; the bare simulator test process has no output unit and skips the playback checks), `IosAudioFilePickerTest`, `AudioFilePickerHostTest` and `AndroidBackgroundPlaybackHostTest` (`:androidApp`) |
 | `engine/tests` | macOS host | Catch2, offline, no audio device: `engine_info_test`, `seqlock_test`, `ring_buffer_test`, `band_pass_test`, `mpm_test` (accuracy and octave), `tuner_analyzer_test`, `tone_generator_test`, `sample_player_test`, `recordings_on_pitch_test`, `engine_core_state_test` (with `fake_audio_device.h`); metronome: `metronome_renderer_test` (ten-minute timing), `click_synth_test`, `click_sample_builder_test`, `custom_sound_loader_test` (with `wav_fixtures.h`), `triple_buffer_test` |
 
+## CI and dependency updates
+
+GitHub Actions runs the lanes that need no device, and Renovate keeps the version catalog current: it opens a weekly
+batch of update pull requests and merges each one whose checks all pass.
+
+| Job (`.github/workflows/ci.yml`) | Runner | Runs on | Command (from `app/`) |
+|---|---|---|---|
+| Android host tests and release build | `ubuntu-24.04` | every push, every pull request to `main` | `checkAndroidHost :androidApp:assembleRelease` |
+| iOS simulator and C++ engine tests | `macos-26` (or `vars.CI_MACOS_RUNNER`) | every pull request to `main` | `checkIos engineHostTest` on the newest iPhone simulator |
+| Renovate config | `ubuntu-24.04` | every push, every pull request to `main` | `renovate-config-validator --strict` |
+
+Both Gradle jobs pass `-Ptembra.warningsAsErrors=true --warning-mode fail`, so a Kotlin compiler warning or a Gradle
+deprecation fails CI; without the property a local build still only reports warnings. A Sunday evening run on `main`
+checks `main` as merged and refreshes the caches that pull requests read. The Android device lanes, Compose UI tests
+on Android, baseline-profile generation and performance rounds stay on the Mac with its devices.
+
+### What Renovate does
+
+The config is `.github/renovate.json5`; Renovate runs from `.github/workflows/renovate.yml`.
+
+- **When.** New pull requests open on Mondays before 07:00 Kyiv time, for releases at least three days old. Renovate
+  runs daily, after each CI run on one of its branches, and after each push to `main`.
+- **What.** The version catalog, the Gradle wrapper (the wrapper jar and scripts are not regenerated, only
+  `distributionUrl`), and the actions in the workflows. Not the perf pipeline's Python packages, the JDK version or
+  the runner images: those change by hand.
+- **Groups.** One pull request per group: *Kotlin and Compose* (Kotlin and its compiler plugins, Compose Multiplatform,
+  the JetBrains androidx ports, androidx Compose, Metro), *kotlinx*, *Android Gradle Plugin and Gradle*, *AndroidX
+  runtime and Okio*, *Android test and benchmark*, *CI workflows*. A major update gets its own pull request. Oboe has
+  no group.
+- **Merging.** Renovate squash-merges a pull request once every check on it has passed, and never merges while a check
+  is pending or has failed; a failed pull request stays open for you. A pull request that is only behind `main` is
+  merged without a rebase (a rebase would re-run the macOS job), so two groups can meet for the first time on `main`;
+  the push to `main` runs the Android job on the combination. Renovate merges one pull request per run, and each merge
+  triggers the next run.
+- **Pinned lines.** Versions that are already pre-releases (JetBrains Material 3 `1.12.0-alpha03`, androidx Material 3
+  `1.5.0-beta01`) only move along their own `x.y.z`. The androidx Compose artifacts stay on the Jetpack line that
+  Compose Multiplatform is built on (`1.12.x`, Material 3 `1.5.x`); move both patterns in `renovate.json5` forward when
+  a Compose Multiplatform minor update lands. kotlinx-datetime never takes the `-0.6.x-compat` artifacts.
+
+After an automerged update that changes code on the startup path or a journey, regenerate the baseline profile and run
+a performance round as usual (`perf/README.md`).
+
+### One-time GitHub setup
+
+1. **Token.** Create a classic personal access token (Settings → Developer settings → Personal access tokens →
+   Tokens (classic)) with the `repo` and `workflow` scopes, and give it an expiry you will notice. Renovate decides
+   whether to merge by reading the pull request's checks, and Renovate's GitHub documentation lists no Checks access
+   for fine-grained tokens, so use a classic one. Renovate acts as you: its pull requests and merges appear under your
+   account, with commits authored by `Renovate Bot`.
+2. **Secret.** Repository → Settings → Secrets and variables → Actions → New repository secret: `RENOVATE_TOKEN`.
+   Until it exists the Renovate workflow only prints a notice.
+3. **Actions.** Settings → Actions → General: if you restrict which actions may run, allow `actions/checkout`,
+   `actions/setup-java`, `actions/cache`, `gradle/actions` and `renovatebot/github-action`. The workflows declare
+   their own `contents: read` permission, so the default workflow permission does not matter.
+4. **Merging.** Settings → General → Pull Requests: keep **Allow squash merging** on, and turn on **Automatically
+   delete head branches**. Leave **Allow auto-merge** as it is; Renovate does not use it.
+5. **Branch protection (optional).** Nothing here depends on it; a private repository gets protected branches only
+   on GitHub Pro or above. If you protect `main`, require the three checks above and do not require an approving
+   review: Renovate opens pull requests with your token, you cannot approve your own pull request, and Renovate
+   could never merge. Administrators bypass branch protection by default, which keeps your direct pushes to `main`
+   working; Renovate merges as you, so its merges bypass the rule too, and its own reading of the checks stays the
+   gate.
+6. **First run.** Actions → Renovate → Run workflow. It opens the *Dependency Dashboard* issue. Outside the Monday
+   window, updates wait there; tick one to have the next run open it now.
+
+### Cost
+
+On a private repository GitHub bills macOS minutes at about ten times the Linux rate ($0.062 against $0.006 per
+minute; GitHub Free includes $12 a month, Pro $18). The iOS job is nearly all of CI's cost: it runs on every pull
+request, again whenever Renovate updates one, and on Sunday; the Actions usage page shows the real figure after the
+first week. To run
+it on your own Mac for free, register a self-hosted runner (Settings → Actions → Runners → New self-hosted runner,
+macOS ARM64) with Xcode, the Android SDK and `ANDROID_HOME` set in the runner's `.env`, then set the repository
+variable `CI_MACOS_RUNNER` to `self-hosted`. The Mac must be awake for the job to run, and it builds the pull request's
+dependencies on that machine, as a local build would.
+
 ## Screenshots
 
 ```bash
