@@ -121,7 +121,7 @@ class OkioProjectRepositoryTest {
         val missingId = AudioAssetId("e".repeat(64))
         val unknownFormatId = AudioAssetId("f".repeat(64))
         val project = withLoop(created).let {
-            it.copy(assets = it.assets.put(missingId, DataFixtures.stereoAsset()).put(unknownFormatId, DataFixtures.stereoAsset().copy(format = null)))
+            it.copy(assets = it.assets.putting(missingId, DataFixtures.stereoAsset()).putting(unknownFormatId, DataFixtures.stereoAsset().copy(format = null)))
         }
         repository.save(project)
         val opened = assertIs<OpenResult.Opened>(repository.open(created.id)).opened
