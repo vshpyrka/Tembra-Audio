@@ -124,7 +124,8 @@ class OkioProjectRepositoryTest {
             it.copy(assets = it.assets.putting(missingId, DataFixtures.stereoAsset()).putting(unknownFormatId, DataFixtures.stereoAsset().copy(format = null)))
         }
         repository.save(project)
-        val opened = assertIs<OpenResult.Opened>(repository.open(created.id)).opened
+        val result = repository.open(created.id)
+        val opened = assertIs<OpenResult.Opened>(result, "$result").opened
         assertEquals(project, opened.project)
         val folder = folders.folder(created.id)
         assertEquals(folder.audioPath(loopId, AudioFormat.Wav).toString(), opened.audioPath(loopId))

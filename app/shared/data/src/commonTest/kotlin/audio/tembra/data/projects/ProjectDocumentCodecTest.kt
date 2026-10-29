@@ -106,6 +106,15 @@ class ProjectDocumentCodecTest {
     }
 
     @Test
+    fun anUnknownFormatIsWrittenWithoutItsKeyAndReadsBackUnknown() {
+        val padId = DemoProject.BUNDLED_ASSET_IDS.getValue("pad")
+        val project = demo.copy(assets = demo.assets.putting(padId, demo.assets.getValue(padId).copy(format = null)))
+        val text = codec.encode(ProjectDocument(project = project))
+        assertTrue("\"fileName\": \"pad.wav\",\n        \"channels\":" in text, "the null format was written")
+        assertEquals(project, decoded(text).project)
+    }
+
+    @Test
     fun malformedTextAndMissingVersionAreMalformed() {
         assertIs<DecodeResult.Malformed>(codec.decode("not json"))
         assertIs<DecodeResult.Malformed>(codec.decode("{ \"project\": {} }"))
