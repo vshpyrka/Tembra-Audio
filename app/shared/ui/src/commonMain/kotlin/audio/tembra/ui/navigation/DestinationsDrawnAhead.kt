@@ -2,7 +2,7 @@ package audio.tembra.ui.navigation
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -79,7 +79,7 @@ private fun TunerDrawnAhead(constraints: Constraints, hz: Float?) {
         ),
         callbacks = TunerCallbacks.None,
         telemetry = { into -> into.copyFrom(heard) },
-        layout = TunerLayout.from(currentWindowAdaptiveInfo().windowSizeClass, fold).forContentHeight(height),
+        layout = TunerLayout.from(currentWindowAdaptiveInfoV2().windowSizeClass, fold).forContentHeight(height),
         modifier = Modifier.fillMaxSize(),
         fold = fold,
         verticalFold = currentVerticalFold(),
@@ -94,7 +94,7 @@ private fun MetronomeDrawnAhead(constraints: Constraints) {
         state = MetronomeUiState(loaded = true),
         callbacks = MetronomeCallbacks.None,
         telemetry = { -1 },
-        layout = MetronomeLayout.from(currentWindowAdaptiveInfo().windowSizeClass, fold, isIphoneDuo).forContentHeight(height),
+        layout = MetronomeLayout.from(currentWindowAdaptiveInfoV2().windowSizeClass, fold, isIphoneDuo).forContentHeight(height),
         snackbarHostState = remember { SnackbarHostState() },
         modifier = Modifier.fillMaxSize(),
         fold = fold,
