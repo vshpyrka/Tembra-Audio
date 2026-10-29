@@ -37,6 +37,11 @@
   ],
   packageRules: [
     {
+      description: 'config:recommended sets fix/chore per dependency type in its own package rules, which outrank the top-level semanticCommitType; this restores build(deps) (the CI workflows rule below sets ci).',
+      matchPackageNames: ['*'],
+      semanticCommitType: 'build',
+    },
+    {
       description: 'Kotlin, its compiler plugins (Compose, serialization, Metro) and the Compose stack are released against each other: one pull request, so CI tests the combination that ships.',
       matchPackageNames: [
         '/^org\\.jetbrains\\.kotlin([.:]|$)/',
