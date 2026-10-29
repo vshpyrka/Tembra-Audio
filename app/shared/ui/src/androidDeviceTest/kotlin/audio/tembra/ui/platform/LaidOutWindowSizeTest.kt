@@ -16,7 +16,7 @@ import kotlin.test.assertEquals
 /**
  * In an activity that rotates in place, as MainActivity does, the window size the composition reads follows the
  * rotation. Compose's own value stayed one rotation behind on the Redmi Note 5 (API 28, 2026-10-15), so every
- * `currentWindowAdaptiveInfo()` reader laid out the previous orientation.
+ * `currentWindowAdaptiveInfoV2()` reader laid out the previous orientation.
  */
 class LaidOutWindowSizeTest {
 

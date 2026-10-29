@@ -1,7 +1,7 @@
 package audio.tembra.ui.posture
 
 import androidx.compose.material3.adaptive.Posture
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 
@@ -32,4 +32,4 @@ data class TabletopFold(val top: Float, val bottom: Float) {
 
 /** The current window's [TabletopFold], or null when it is not in tabletop posture; recomposes on every fold change. */
 @Composable
-fun currentTabletopFold(): TabletopFold? = TabletopFold.from(currentWindowAdaptiveInfo().windowPosture)
+fun currentTabletopFold(): TabletopFold? = TabletopFold.from(currentWindowAdaptiveInfoV2().windowPosture)
