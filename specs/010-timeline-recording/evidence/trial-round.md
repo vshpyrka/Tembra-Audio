@@ -63,3 +63,13 @@ mirror it and `build-for-testing` for the iPhone 18 Pro simulator succeeded; the
   stress audio.callbacks/max_callback_us/duration/memory/metronome.load and tuner/metronome journey durations): the baseline is an
   older, different journey set and a different build, so these are comparisons against a non-comparable reference, not
   regressions measured here. No screening notices.
+
+## Pixel 7 Pro, recording-only validation round (the count-in interval fixed, fd5d08c)
+
+Round `20261101T222912Z_010-recording` (perf APKs of 2026-11-02 00:05, `--journeys recording`, 20 iterations, status
+succeeded; battery 70 %, thermal 33.5 °C). The sections now pair as intended: `transport.countIn` 1972 ms median
+(the one-bar pre-roll at 124 BPM; p90 2014 ms), `transport.recordStart` 19.8 ms median (the engine call alone; it read
+1969 ms in the earlier round), `transport.recordStop` 0.10 ms, `timeline.arm` 2 × 0.16 ms; frames p50 7.8 ms, p90
+11.3 ms, p99 15.1 ms, overrun p90 −2.8 ms. The one gate notice is `app.size_bytes +285 %` against the phone's last
+published session of 2026-10-15 (before features 009 and 010).
+
