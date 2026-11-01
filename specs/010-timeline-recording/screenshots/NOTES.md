@@ -28,7 +28,32 @@ sounding step (the loopback check of §8) is recorded in `../evidence/alignment.
 | iPhone 18 Pro, iPad Pro 13-inch (M5), iPhone Duo simulators | `tools/release-ios.sh --no-launch` (Release, iphonesimulator) | yes, `audio.tembra.appP5QJJ5Y5V7` | 44b58bc (2026-11-01 22:58–23:10; the first attempt at 22:55 raced a concurrent simulator build and was retried) |
 | iPhone 14 | `tools/release-ios.sh --no-launch` (Release, iphoneos) | yes (installed while locked, not launched) | 44b58bc (2026-11-01 23:10) |
 | Pixel Tablet, Redmi Note 5, OPPO CPH2239, fold emulator | `./gradlew :androidApp:assembleRelease` at 22:55 (R8, the committed baseline profile) + `tools/release-android.sh --no-build --no-launch` | yes (the Redmi runs from the APK with the JIT, as before: its profile broadcast returns 1) | 20e974f (2026-11-01 22:57) |
-| Pixel 6 Pro, Pixel 7 Pro | `tools/release-android.sh --no-build` (2026-11-01 ~21:45, the 2026-10-28 03:35 APK) | yes; the Pixel 6 Pro then received the perf build for the soak and the Pixel 7 Pro the perf build for the rounds | b737335 tree (the 10-28 APK); to be reinstalled at HEAD after the perf work |
+| Pixel 6 Pro | `tools/release-android.sh --no-build --no-launch --serial 19021FDEE001AH` | yes, 2026-11-02 00:30, compiled from the baseline profile | 20e974f tree (the 22:55 APK) |
+| Pixel 7 Pro | `tools/release-android.sh --no-build --no-launch --serial 33241FDH3000NZ` | yes, 2026-11-02 00:40, compiled from the baseline profile | 20e974f tree (the 22:55 APK) |
+
+## Performance findings (T086, 2026-11-01/02)
+
+- Pixel 7 Pro round `20261101T205913Z_010-recording`: all six journeys, the recording journey 20/20 (22.1 s median;
+  frames p50 7.8 ms, p90 11.1 ms, p99 15.2 ms). Every recording section fired except `timeline.monitorToggle` (no
+  headphones: the toggle only explains) and `transport.play` (the journey pauses, it never presses play).
+- `transport.recordStart` measured 1.97 s and `transport.countIn` 0.02 ms in that round: the count-in's animation
+  interval was launched inside the record-start section and suspended there, and Android's thread-local sections
+  mis-paired around the suspension. Fixed in fd5d08c (async sections for animation intervals from API 29, the span
+  launched after the section closes); the recording-only round `20261101T222912Z` validates it: countIn 1972 ms,
+  recordStart 19.8 ms, 20/20 iterations.
+- Counters (only the stress journey publishes them): `audio.input_overruns` median 1 (0–2) while recording three
+  seconds right after arming under the stress scroll; `audio.starvation`, `audio.xruns`, `audio.over_budget` 0;
+  `audio.take_alignment_ms` 130–132 (the Oboe input opened at 118 ms latency in that process) against 17 ms in the
+  soak's process (a low-latency input): the counter mirrors what the streams report, the loopback check of §8 is the
+  judge of either. An "overrun" here is a short non-blocking read of the input inside the output callback once the
+  two warm-up bursts are over (`OboeAudioDevice::onAudioReady`, `CaptureSource::onInput`): the block is zero-padded
+  and the lag stays as a one-burst offset; a reservoir read that keeps a burst in hand would absorb it. Follow-up for
+  the next iteration, not changed here: the clean soak and the recording journey report 0.
+- Gate notices (13 above limit, among them app size +285 % and ttfd +89 %) compare with the Pixel 7 Pro's last
+  published session of 2026-10-15 (before features 009 and 010); the reference device's post-merge sessions decide.
+- Clean soak on the Pixel 7 Pro (perf build, fresh process, demo + one track, 24:40 take): overruns 0, starvation 0,
+  xruns 0, backlog 1152 frames, one callback over budget at 2.98 ms (avg 17 µs). The 30-minute cap was reached only in
+  the first soak on the Pixel 6 Pro's release build (the take ended by itself; a later Record started "Take 2").
 
 ## Captures (T080)
 
