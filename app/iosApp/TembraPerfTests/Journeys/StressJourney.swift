@@ -65,6 +65,8 @@ struct StressJourney {
         let stop = app.anchor(Anchors.transportRecord).exists ? app.anchor(Anchors.transportRecord) : app.anchor(Anchors.trackRecord(last))
         if stop.exists { stop.tap() }
         let undo = app.anchor(Anchors.timelineUndo)
+        _ = XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "isEnabled == true"), object: undo)], timeout: 10)
+        if arm.exists { arm.tap() }
         for _ in 0..<2 where undo.exists { undo.tap() }
     }
 }

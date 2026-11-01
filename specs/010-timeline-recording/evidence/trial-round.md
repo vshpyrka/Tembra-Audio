@@ -38,3 +38,28 @@ journey produced no data (`journeys: []` in `record.json`, no sections, no count
   previous iteration's engine session is still stopping. Journey not edited, as instructed.
 - Not observable from this round: the eleven recording sections, the four counters (`audio.input_overruns`,
   `audio.take_alignment_ms`, `audio.record_backlog`, `audio.monitor_delay_ms`).
+
+## Pixel 7 Pro, second round (journey fixed)
+
+Round `20261101T205913Z_010-recording` (Pixel 7 Pro 33241FDH3000NZ, perf build with the fixed journeys, `--rounds 1 --no-publish`,
+status succeeded, battery 65%, 28.4 C, all environment checks passed, no badges). The fix: after the second Record tap the
+journey waits for the take node to go and for `timeline.toolbar.undo` to be enabled again (adoption done), disarms
+`timeline.track.arm.4`, then pauses, undoes twice and skips to start (same in the stress journey's recording step; the iOS journeys
+mirror it and `build-for-testing` for the iPhone 18 Pro simulator succeeded; the iOS journeys were not run).
+
+- Journeys: startup, tuner, metronome, timeline, recording, stress all passed, 20 iterations each (the recording journey no longer
+  fails on iteration 12; 20/20, 22.1 s median, 21.9 to 22.7 s).
+- Recording sections (all 20 iterations): timeline.arm 2 (0.16 ms), transport.recordStart 1 (1969 ms median, includes the count-in
+  wait), transport.countIn 1, timeline.takeFrame 671 frames (93 ms), transport.recordStop 1 (0.1 ms), engine.takeAlignment 1 (66 ms),
+  timeline.waveform 1 (11.5 ms), timeline.playheadFrame 566 (2.3 ms), timeline.projectSave 2 to 3 (36 ms median, max 119 ms).
+  Absent: timeline.monitorToggle (count 0: without headphones the toggle was not tapped or refused) and transport.play (count 0
+  in the recording journey, the pause tap does not run the section there; it is 1 in stress).
+- Counters (the stress journey, which carries them; the recording journey has none): audio.input_overruns median 1 (0 to 2 across
+  iterations, 13 of 20 iterations at 1 or 2) so NOT zero in this round, audio.starvation 0, audio.xruns 0, audio.over_budget 0,
+  audio.record_backlog 672 frames (576 to 768), audio.monitor_delay_ms 0, audio.take_alignment_ms 130 to 132 (not the 5 to 60 ms
+  plausibility range; the section engine.takeAlignment is 66 ms and the soak's counter read 17 ms, so this stress value, a take
+  of 3 s without count-in, needs a look), audio.max_callback_us median 318 (max 507), audio.avg_us 19.
+- Gate notices: 13 above limit against the previous baseline of another build (app.size +285 %, startup ttfd +89 %, ttid +28 %,
+  stress audio.callbacks/max_callback_us/duration/memory/metronome.load and tuner/metronome journey durations): the baseline is an
+  older, different journey set and a different build, so these are comparisons against a non-comparable reference, not
+  regressions measured here. No screening notices.

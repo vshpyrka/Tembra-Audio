@@ -36,6 +36,13 @@ struct RecordingJourney {
         XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: gone, object: take)], timeout: 10), .completed,
                        "the growing take never ended")
         app.waitForAnchor(Anchors.trackClip(last))
+        // Undo is refused during a running or finalising take: enabled again means the adoption has finished.
+        let undoButton = app.anchor(Anchors.timelineUndo)
+        let enabled = NSPredicate(format: "isEnabled == true")
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: enabled, object: undoButton)], timeout: 10), .completed,
+                       "undo was not enabled after the take ended")
+        // Disarm so that every iteration starts disarmed.
+        app.tapAnchor(Anchors.trackArm(last))
         app.tapAnchor(Anchors.transportPlay)
         // The take, then the track: the document is unchanged across iterations.
         app.tapAnchor(Anchors.timelineUndo)

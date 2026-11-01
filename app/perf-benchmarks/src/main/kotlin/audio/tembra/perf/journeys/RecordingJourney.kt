@@ -36,6 +36,10 @@ class RecordingJourney {
         check(readout.wait(Until.descMatches("00:0[7-9].*|00:[1-5].*"), RECORD_TIMEOUT_MS)) { "the readout never passed 00:07 while recording" }
         device.tapRecord(NEW_TRACK_INDEX)
         check(device.wait(Until.gone(By.res(Anchors.TIMELINE_CLIP_TAKE)), ADOPT_TIMEOUT_MS)) { "the take was not adopted within $ADOPT_TIMEOUT_MS ms" }
+        // Undo is refused during a running or finalising take (FR-018): enabled again means the adoption has finished.
+        check(device.wait(Until.findObject(By.res(Anchors.TIMELINE_UNDO).enabled(true)), ADOPT_TIMEOUT_MS) != null) { "undo was not enabled within $ADOPT_TIMEOUT_MS ms of the take ending" }
+        // Disarm (refused while a take runs, so only now) so that every iteration starts disarmed.
+        device.tap(Anchors.trackArm(NEW_TRACK_INDEX))
         device.tap(Anchors.TRANSPORT_PLAY)
         device.tap(Anchors.TIMELINE_UNDO)
         device.tap(Anchors.TIMELINE_UNDO)

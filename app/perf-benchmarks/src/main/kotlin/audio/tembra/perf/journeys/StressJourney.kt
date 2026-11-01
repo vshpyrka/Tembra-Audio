@@ -64,6 +64,8 @@ class StressJourney {
             }
             device.tapRecord(index)
             device.wait(androidx.test.uiautomator.Until.gone(androidx.test.uiautomator.By.res(Anchors.TIMELINE_CLIP_TAKE)), ADOPT_TIMEOUT_MS)
+            device.wait(androidx.test.uiautomator.Until.findObject(androidx.test.uiautomator.By.res(Anchors.TIMELINE_UNDO).enabled(true)), ADOPT_TIMEOUT_MS)
+            device.tapIfPresent(Anchors.trackArm(index))
             device.tapIfPresent(Anchors.TIMELINE_UNDO)
         }
         device.tapIfPresent(Anchors.TIMELINE_UNDO)
