@@ -14,6 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
 /**
@@ -386,13 +387,23 @@ actual class NativeAudioEngine(context: Context) : AudioEngine {
     private val peakBuffer = PeakBucketBuffer(PeakBuckets.DEFAULT_CAPACITY)
     private val peakNext = LongArray(1)
 
-    /** Opening the second Oboe stream is a platform call (research R2): off the main thread. */
+    /**
+     * Opening the second Oboe stream is a platform call (research R2): off the main thread. The callback publishes the
+     * armed snapshot (channels, rate) on its next block, so the result waits for it, up to [ARM_SETTLE_MILLIS]; an
+     * input that never reaches the callback (no microphone path, a stream the policy silenced) is closed again and
+     * reported unavailable rather than armed at a rate of 0.
+     */
     override suspend fun arm(maxChannels: Int): ArmResult {
         val code = withContext(Dispatchers.IO) { nativeTransportArm(maxChannels) }
         if (code == STATE_REFUSED.code) return ArmResult.NotTransport
         if (code != 0) return ArmResult.InputUnavailable
-        nativeCaptureRead(captureLongs, captureFloats, captureInts)
-        return ArmResult.Armed(channels = captureInts[4].coerceAtLeast(1), sampleRate = captureInts[5])
+        repeat(ARM_SETTLE_MILLIS / ARM_POLL_MILLIS) {
+            nativeCaptureRead(captureLongs, captureFloats, captureInts)
+            if (captureInts[0] != 0 && captureInts[5] > 0) return ArmResult.Armed(channels = captureInts[4].coerceAtLeast(1), sampleRate = captureInts[5])
+            delay(ARM_POLL_MILLIS.toLong())
+        }
+        nativeTransportDisarm()
+        return ArmResult.InputUnavailable
     }
 
     override fun disarm() {
@@ -564,6 +575,8 @@ actual class NativeAudioEngine(context: Context) : AudioEngine {
         const val TAKE_LONGS = 3
         const val TAKE_DOUBLES = 1
         const val TAKE_INTS = 3
+        const val ARM_SETTLE_MILLIS = 2_000
+        const val ARM_POLL_MILLIS = 10
 
         /** `TEMBRA_ERR_IO`: the staging file could not be created. */
         const val IO_ERROR = -6
@@ -582,3 +595,7 @@ actual class NativeAudioEngine(context: Context) : AudioEngine {
         }
     }
 }
+
+/** How long [NativeAudioEngine.arm] waits for the callback to publish the armed snapshot before giving the input back. */
+private const val ARM_SETTLE_MILLIS = 2_000
+private const val ARM_POLL_MILLIS = 10

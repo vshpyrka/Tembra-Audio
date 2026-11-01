@@ -73,6 +73,7 @@ import audio.tembra.engine.cinterop.tembra_tuner_set_gate
 import audio.tembra.engine.cinterop.tembra_tuner_start
 import audio.tembra.engine.cinterop.tembra_tuner_start_test_signal
 import audio.tembra.engine.cinterop.tembra_tuner_stop
+import kotlinx.coroutines.delay
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.alloc
@@ -534,9 +535,18 @@ actual class NativeAudioEngine internal constructor(
             IosAudioSession.activateForPlayback()
             return if (code == STATE_REFUSED.code) ArmResult.NotTransport else ArmResult.InputUnavailable
         }
-        armed = true
-        tembra_capture_read(capture.ptr)
-        return ArmResult.Armed(channels = capture.input_channels.toInt().coerceAtLeast(1), sampleRate = capture.sample_rate.toInt())
+        // The render callback publishes the armed snapshot on its next block: wait for it rather than report a rate of 0.
+        repeat(ARM_SETTLE_MILLIS / ARM_POLL_MILLIS) {
+            tembra_capture_read(capture.ptr)
+            if (capture.armed.toInt() != 0 && capture.sample_rate.toInt() > 0) {
+                armed = true
+                return ArmResult.Armed(channels = capture.input_channels.toInt().coerceAtLeast(1), sampleRate = capture.sample_rate.toInt())
+            }
+            delay(ARM_POLL_MILLIS.toLong())
+        }
+        tembra_transport_disarm()
+        IosAudioSession.activateForPlayback()
+        return ArmResult.InputUnavailable
     }
 
     override fun disarm() {
@@ -666,3 +676,7 @@ actual class NativeAudioEngine internal constructor(
 }
 
 private const val GRID_LEVELS = 32
+
+/** How long [NativeAudioEngine.arm] waits for the render callback to publish the armed snapshot before giving the input back. */
+private const val ARM_SETTLE_MILLIS = 2_000
+private const val ARM_POLL_MILLIS = 10

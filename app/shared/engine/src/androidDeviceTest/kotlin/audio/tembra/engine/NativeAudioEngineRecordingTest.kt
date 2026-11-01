@@ -45,7 +45,13 @@ class NativeAudioEngineRecordingTest {
     @BeforeTest
     fun grantTheMicrophone() {
         if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) return
-        instrumentation.uiAutomation.grantRuntimePermission(context.packageName, Manifest.permission.RECORD_AUDIO)
+        try {
+            instrumentation.uiAutomation.grantRuntimePermission(context.packageName, Manifest.permission.RECORD_AUDIO)
+        } catch (refused: SecurityException) {
+            // ColorOS (the OPPO CPH2239) refuses the runner's grant unless its developer option allows it: the app's own
+            // tests answer the system prompt instead; this test app has no such flow, so the device is named and skipped.
+            throw org.junit.AssumptionViolatedException("the platform refuses the runtime grant: ${refused.message}")
+        }
         assertEquals(PackageManager.PERMISSION_GRANTED, context.checkSelfPermission(Manifest.permission.RECORD_AUDIO), "RECORD_AUDIO is needed on this device")
     }
 
