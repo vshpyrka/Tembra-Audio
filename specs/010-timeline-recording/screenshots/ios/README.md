@@ -22,6 +22,7 @@ simulator. Debug-like Perf build, demo project, microphone granted, simulator in
 | sheetCountIn | yes | yes | yes |
 | barRecord432 | no (no `transport.record` at 402 pt) | yes | yes |
 | largestFont | yes | yes | yes |
+| micDenied | yes | no | no |
 
 ## Limitations and missing states
 
@@ -30,8 +31,12 @@ simulator. Debug-like Perf build, demo project, microphone granted, simulator in
 - monitorOn and monitorSuspended are the same tap: a simulator's output is the speaker, so monitoring is refused and the
   snackbar "Connect headphones to monitor the input" shows; monitorOn is therefore the suspended state too.
 - countIn: caught as soon as the readout began with "Count-in" or the take appeared; the readout may already be moving.
-- micDenied: not captured. The test cannot revoke the permission mid-run; it needs `xcrun simctl privacy <udid> revoke microphone
-  audio.tembra.app` before a launch (not done here; the task asked only for the matrix).
+- micDenied: iPhone 18 Pro only (2026-11-01, `iphone-18-pro/ios-micDenied.png`: snackbar "Microphone access is needed to record"
+  with "Open settings"). The simulator runs the app under the signed bundle id `audio.tembra.appP5QJJ5Y5V7` (the
+  team-suffixed install), so the permission must be revoked for that id, not `audio.tembra.app`:
+  `xcrun simctl privacy <udid> revoke microphone audio.tembra.appP5QJJ5Y5V7`, run the state with
+  `TEST_RUNNER_TEMBRA_STATES=micDenied` (the test taps "+ Track" and the arm toggle, declines a system alert if one shows),
+  then `grant` again. Not taken on the iPad or the Duo.
 - barRecord432 on the iPhone 18 Pro: the bar has no Record at 402 pt portrait (Record sits in the armed track's header);
   a landscape capture was not added. The iPad and Duo files show the bar's Record (the Duo is 466 pt wide).
 - takeOverClips on the Duo: missing. The test could not scroll the track list back up to reach the drums track's arm
