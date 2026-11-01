@@ -25,8 +25,8 @@ sounding step (the loopback check of §8) is recorded in `../evidence/alignment.
 
 | Target | Build | Installed | Commit |
 |---|---|---|---|
-| iPhone 18 Pro, iPad Pro 13-inch (M5), iPhone Duo simulators | `tools/release-ios.sh --no-launch` (Release, iphonesimulator) | yes, `audio.tembra.appP5QJJ5Y5V7` | 724c8ef (2026-10-28); the rebuild at 20e974f is in progress on 2026-11-01 (the first attempt raced a concurrent simulator build and was retried) |
-| iPhone 14 | `tools/release-ios.sh --no-launch` (Release, iphoneos) | yes (installed while locked, not launched) | 724c8ef; rebuild at 20e974f in progress |
+| iPhone 18 Pro, iPad Pro 13-inch (M5), iPhone Duo simulators | `tools/release-ios.sh --no-launch` (Release, iphonesimulator) | yes, `audio.tembra.appP5QJJ5Y5V7` | 44b58bc (2026-11-01 22:58–23:10; the first attempt at 22:55 raced a concurrent simulator build and was retried) |
+| iPhone 14 | `tools/release-ios.sh --no-launch` (Release, iphoneos) | yes (installed while locked, not launched) | 44b58bc (2026-11-01 23:10) |
 | Pixel Tablet, Redmi Note 5, OPPO CPH2239, fold emulator | `./gradlew :androidApp:assembleRelease` at 22:55 (R8, the committed baseline profile) + `tools/release-android.sh --no-build --no-launch` | yes (the Redmi runs from the APK with the JIT, as before: its profile broadcast returns 1) | 20e974f (2026-11-01 22:57) |
 | Pixel 6 Pro, Pixel 7 Pro | `tools/release-android.sh --no-build` (2026-11-01 ~21:45, the 2026-10-28 03:35 APK) | yes; the Pixel 6 Pro then received the perf build for the soak and the Pixel 7 Pro the perf build for the rounds | b737335 tree (the 10-28 APK); to be reinstalled at HEAD after the perf work |
 

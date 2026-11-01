@@ -31,3 +31,26 @@ track "Track 1" (no imported stems, the system picker was not driven), so five t
   confirmed: the 30-minute take itself ran on the release build whose counters could not be read. Needs a rerun with the
   counters read at its end (for example a perf build soak with a trace spanning the take, or an owner-run with the
   health file pulled on a debuggable build).
+
+## Soak (T096), clean run on the Pixel 7 Pro
+
+Pixel 7 Pro (33241FDH3000NZ), 2026-11-02 (local 00:01 to 00:28), perf build (`androidApp-perf.apk`, installed by the
+second trial round, fresh process: force-stop, launch, demo, "+ Track", arm Track 1, Record via `timeline.track.record.4`;
+the bar's Record is absent at this width). Run conditions applied; the Mac drove the UI by uiautomator dump plus input tap.
+Not the specified nine-track project: the demo's four tracks plus the new track (five), count-in 1 bar.
+
+- One take of 24:39.97 (Record at 00:01:44 local, stopped at 00:26:26 when the readout showed 24:32.31 plus the tap
+  latency; the take stayed under the engine's 30:00 cap, so the cap was not exercised). The UI stayed responsive and the
+  growing take kept drawing (screenshot at 24:32).
+- One stop tap ended the recording: no second take appeared (the Pixel 6 Pro run's "Take 2" did not recur, but that run
+  went past 30:00, so this run does not explain it). Transport kept playing after the stop (the playhead passed the take's end).
+- After the stop the undo button was enabled within 2 s of the tap (the take was adopted); the project length is the take's
+  24:39.97. No "Take ended" snackbar was seen in the dump taken at 2 s and 5 s, nor in the screenshot at about 60 s
+  (the snackbar is expected only on the engine's automatic end, which did not happen).
+- Counters (70 s perfetto trace right after the stop, 70 samples each, cumulative since the process start, so they cover the
+  whole 25-minute take): `audio.inputOverruns` 0, `audio.starvation` 0, `audio.xruns` 0, `audio.recordBacklog` 1152 frames
+  (constant), `audio.takeAlignmentMs` 17, `audio.monitorDelayMs` 0, `audio.overBudget` 1, `audio.maxUs` 2984, `audio.avgUs` 17,
+  `audio.callbacks` 755441 to 790024 (plus 34.6k over the 70 s). SC-003 holds for zero overruns, starvation and xruns over a
+  24:40 take. Open points: one over-budget callback (max 2.98 ms, once in the process) and no 30-minute take (stopped at 24:40
+  to stay under the cap).
+- Trace: scratchpad file soak.pftrace (not committed).
