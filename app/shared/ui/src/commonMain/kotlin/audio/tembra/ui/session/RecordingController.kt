@@ -333,19 +333,22 @@ class RecordingController(
             take = PendingTake(manifest, project.id, wavPath, trackId)
             liveOverview = LiveOverview(channels = manifest.channels.coerceAtLeast(1))
             peakIndex = 0L
-            PerfTrace.section(PerfSection.TRANSPORT_RECORD_START) {
-                when (audio.recordStart(RecordConfig.of(wavPath, trackIndex, countInBeats, manifest.sampleRate))) {
-                    RecordStartResult.Started -> if (countInBeats == 0) {
-                        dispatch(RecordingEvent.TakeStarted(manifest.startBeats, manifest.startedAt))
-                        host.playbackStartedByTake()
-                    } else {
-                        // The pre-roll as one animation interval (contracts/perf-instrumentation.md): from the start to the first captured frame or the cancel.
-                        scope.launch(CoroutineName("countInSpan")) {
-                            PerfTrace.animation(PerfSection.TRANSPORT_COUNT_IN) { _state.first { it.phase !is RecordingState.PreRoll } }
-                        }
+            val started = PerfTrace.section(PerfSection.TRANSPORT_RECORD_START) {
+                audio.recordStart(RecordConfig.of(wavPath, trackIndex, countInBeats, manifest.sampleRate))
+            }
+            when (started) {
+                RecordStartResult.Started -> if (countInBeats == 0) {
+                    dispatch(RecordingEvent.TakeStarted(manifest.startBeats, manifest.startedAt))
+                    host.playbackStartedByTake()
+                } else {
+                    // The pre-roll as one animation interval (contracts/perf-instrumentation.md): from the start to the first
+                    // captured frame or the cancel. Launched outside the section above: the interval suspends, and on
+                    // Android it is an async section so no thread-local section is left open across the wait.
+                    scope.launch(CoroutineName("countInSpan")) {
+                        PerfTrace.animation(PerfSection.TRANSPORT_COUNT_IN) { _state.first { it.phase !is RecordingState.PreRoll } }
                     }
-                    RecordStartResult.NotArmed, RecordStartResult.TakeRunning, RecordStartResult.FileFailed -> dispatch(RecordingEvent.TakeEnded(TakeStopReason.WriteFailed))
                 }
+                RecordStartResult.NotArmed, RecordStartResult.TakeRunning, RecordStartResult.FileFailed -> dispatch(RecordingEvent.TakeEnded(TakeStopReason.WriteFailed))
             }
             publish()
         }
