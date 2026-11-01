@@ -225,6 +225,21 @@ final class ScreenshotMatrix: XCTestCase {
         guard wanted.contains(where: want) else { return }
         openDemo()
         tapIfPresent(Anchors.transportSkipStart, timeout: 2)
+        if want("micDenied") && states == ["micDenied"] {
+            // Run with the microphone revoked (simctl privacy): arming shows the denied snackbar; a system alert is declined.
+            if !app.anchor(Anchors.trackArm(newTrack)).exists { tapIfPresent(Anchors.timelineAddTrack); sleep(1) }
+            for _ in 0..<3 where !app.anchor(Anchors.trackArm(newTrack)).isHittable { app.anchor(Anchors.timelineLaneFirst).swipeUp(); sleep(1) }
+            if tapIfPresent(Anchors.trackArm(newTrack)) {
+                let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+                let deny = springboard.alerts.buttons["Don\u{2019}t Allow"].exists ? springboard.alerts.buttons["Don\u{2019}t Allow"] : springboard.alerts.buttons["Don't Allow"]
+                if deny.waitForExistence(timeout: 2) { deny.tap() }
+                let snack = app.anchor(Anchors.snackbarMicrophoneSettings)
+                let text = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'Microphone access'")).firstMatch
+                if snack.waitForExistence(timeout: 10) || text.exists { shot("micDenied") }
+                else { print("ScreenshotMatrix: micDenied: no snackbar"); shot("micDenied-nosnackbar") }
+            }
+            return
+        }
         let armed = armNewTrack()
         if !armed { print("ScreenshotMatrix: the track could not be armed") }
         // The simulator's input is the Mac's microphone: the three armed captures show whatever level the room gives.
@@ -284,7 +299,6 @@ final class ScreenshotMatrix: XCTestCase {
                 } else { print("ScreenshotMatrix: no take over clips") }
             }
         }
-        if want("micDenied") { print("ScreenshotMatrix: micDenied is captured outside the test (simctl privacy revoke)") }
     }
 
     /// The armed compact row at the largest accessibility text size (launch argument; the app reads the content size category).
