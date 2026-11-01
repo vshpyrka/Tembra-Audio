@@ -10,7 +10,7 @@ sounding step (the loopback check of §8) is recorded in `../evidence/alignment.
 |---|---|---|---|---|
 | Host (JVM, every module) | `engineHostTest checkAndroidHost` | green, zero warnings | 929 JVM tests (ui 473, core 246, data 142, engine 68) + 40 Catch2 cases | 2026-10-28 02:56 at commit b737335 |
 | Engine (C++) | `engineHostTest` | green | 40 Catch2 cases | 2026-10-28 (T044) |
-| iPhone 18 Pro simulator | `checkIos` | green, zero warnings | core, engine (incl. NativeAudioEngineRecordingTest), data, ui (every uiTest class) | 2026-10-28 02:5x after US6 |
+| iPhone 18 Pro simulator | `checkIos` | green, zero warnings | core, engine (incl. NativeAudioEngineRecordingTest with the arm settle), data, ui (every uiTest class) | 2026-11-01 21:43 at 691dcbc + the header-test click fix (also green 2026-10-28 at 02a4593, 9288305) |
 | iPad Pro 13-inch (M5) simulator | `checkIos` | green, zero warnings | core, engine, data, ui (every uiTest class) | 2026-10-28 02:52, 1 min 14 s, commit 02a4593 |
 | iPhone Duo simulator | `checkIos` | green, zero warnings | core, engine, data, ui (every uiTest class; test tasks executed, binaries cached) | 2026-10-28 02:51, 27 s, commit 02a4593 |
 | Pixel 6 Pro (19021FDEE001AH) | `checkAndroidDevice` | green: engine 105, core 246, data 152, app (02:28 lane, commit 99dde16 tree); ui 975 green on the re-run (02:43–02:55, 12 min 23 s) | 1478 device tests | After the lanes the engine's recording test failed twice on an input HAL in a bad state (`in_get_mmap_position: pcm_sync_ptr failed: File descriptor in bad state`, `getInputForAttr EX_SECURITY`) with no client holding the microphone; the device was rebooted at 02:59, was absent from USB until after 03:45 and at 06:01 is back as `unauthorized`: the owner accepts the USB-debugging prompt on it. The device-test wait for the duplex start was made generous (5 s) meanwhile. |
@@ -19,7 +19,7 @@ sounding step (the loopback check of §8) is recorded in `../evidence/alignment.
 | Fold emulator (emulator-5554) | `checkAndroidDevice` | _pending_ | | |
 | OPPO CPH2239 (O7PBYLZP4HMBW8S4) | `checkAndroidDevice` | _pending_ | | brightness by hand (ColorOS refuses adb) |
 | Redmi Note 5 (e9446ac2) | `checkAndroidDevice` | _pending_ | | API 28; Play Protect prompt answered "Don't send" |
-| iPhone 14 (00008110-001049660E3A401E) | perf trial round (T086) | **blocked**: the Perf build-for-testing succeeded (session 20261028T005156Z_010-recording) but the runner reported "Timed out while enabling automation mode" | | the phone is locked; the owner unlocks it (passcode after updates), then `uv run tracepulse run --device iphone14 --label 010-recording --rounds 1 --no-publish` |
+| iPhone 14 (00008110-001049660E3A401E) | perf trial round (T086) | **blocked**: 2026-10-28 "Timed out while enabling automation mode" (locked); 2026-11-01 twice `refused: runner_trusted` (rounds 20261101T192951Z, 20261101T193730Z) | | the owner trusts the TembraPerfTests developer profile (Settings → General → VPN & Device Management) and keeps the phone unlocked, then `uv run tracepulse run --device iphone14 --label 010-recording --rounds 1 --no-publish`; the Release build is installed (724c8ef) |
 
 ## Release builds (T093)
 
@@ -51,4 +51,19 @@ postures; iOS through `ScreenshotMatrix` with the recording states.
 
 ## Device checks (T057, T061, T066, T070, T075)
 
-_pending_.
+What the automated runs cover: every `uiTest` class of the feature on the Pixel 6 Pro, the Pixel 7 Pro, the Pixel
+Tablet, the Redmi and the three simulators (the arm toggle, Record in both placements, the growing take, the meter's
+levels from scripted telemetry, the count-in menu and readout, the monitor toggle's three states, the dialog variant,
+the denied snackbar, the keyboard map); the engine's duplex capture on the Pixels (arm, a 2-bar take with a count-in,
+the WAV header, the alignment); the recording perf journey (arm → count-in → take → stop → undo) on the Pixels and the
+iPhone 14 in the trial round; the captures of §9 at the five widths and the fold postures.
+
+What needs a person, a cable or a call (the owner's rows of quickstart §4–§7, not run here):
+- §4.2 the waveform drawing as you speak (the room was silent under the run conditions), §4.7 Record while playing by ear.
+- §5 the meter following a real level within 50 ms, the hold and the clip latch at full scale (needs sound into the mic).
+- §6 the count-in heard at 124 BPM in 4/4 and 7/8 with the toggle off and on (sound off during the runs).
+- §7 "Monitoring on headphones", "Speaker guard", "Unplug while monitoring", "Wireless headphones" (headphones), "Wired
+  headset microphone mid-take", "Call during a take" ×10, "Screen lock" ×10, "Force quit" ×10, "Permission revoked while
+  armed", "iOS arm during playback" gap by loopback, "30-minute cap and space" (a debug `maxFrames`, a filled volume).
+- §8 the loopback alignment and the monitoring delay (the one sounding step; `app/tools/measure-take-alignment.py`).
+- T081 TalkBack and VoiceOver by ear; T094 the owner's placement verdict for Record at 360 dp.
