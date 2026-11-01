@@ -18,6 +18,9 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.click
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.unit.dp
@@ -92,7 +95,8 @@ class TrackHeaderTest {
         setCompact()
         onNodeWithTag(TimelineTestTags.mute(1)).performClick()
         onNodeWithTag(TimelineTestTags.solo(1)).performClick()
-        onNodeWithTag(TimelineTestTags.header(1)).performClick()
+        // The centre of a narrow row lands on the buttons; the name area is at the left.
+        onNodeWithTag(TimelineTestTags.header(1)).performTouchInput { click(Offset(24f, centerY)) }
         assertEquals(listOf("mute(false)", "solo(true)", "select"), calls)
     }
 

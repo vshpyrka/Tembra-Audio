@@ -595,7 +595,3 @@ actual class NativeAudioEngine(context: Context) : AudioEngine {
         }
     }
 }
-
-/** How long [NativeAudioEngine.arm] waits for the callback to publish the armed snapshot before giving the input back. */
-private const val ARM_SETTLE_MILLIS = 2_000
-private const val ARM_POLL_MILLIS = 10
