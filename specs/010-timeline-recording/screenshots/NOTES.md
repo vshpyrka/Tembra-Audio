@@ -27,7 +27,7 @@ sounding step (the loopback check of §8) is recorded in `../evidence/alignment.
 |---|---|---|---|
 | iPhone 18 Pro, iPad Pro 13-inch (M5), iPhone Duo simulators | `tools/release-ios.sh --no-launch` (Release, iphonesimulator) | yes, `audio.tembra.appP5QJJ5Y5V7` | 724c8ef (2026-10-28 03:25–03:38) |
 | iPhone 14 | `tools/release-ios.sh --no-launch` (Release, iphoneos) | yes (installed while locked, not launched) | 724c8ef |
-| Android targets | `./gradlew :androidApp:assembleRelease` done at 03:35 (R8, the committed baseline profile); `tools/release-android.sh --no-build` install _pending_ until the device lanes finish | | b737335 tree |
+| Android targets (Pixel 6 Pro, Pixel 7 Pro) | `tools/release-android.sh --no-build` of the APK assembled 2026-10-28 03:35 (R8, the committed baseline profile, 12118 bytes; built from the b737335 tree, not rebuilt since) | yes, both, compiled `speed-profile`, launched (2026-11-01) | b7af79d at install time (HEAD); the APK itself is the b737335 build |
 
 ## Trial round (T086)
 
