@@ -13,7 +13,8 @@ The `NativeAudioEngineRecordingTest` device test logs the snapshot after the arm
 
 | Device | Route | Sample rate | `alignmentFrames` | ms | Input latency | Output latency | Date |
 |---|---|---|---|---|---|---|---|
-| Pixel 6 Pro (19021FDEE001AH) | built-in mic → speaker (muted stream) | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ | 2026-10-28 |
+| Pixel 6 Pro (19021FDEE001AH) | built-in mic → speaker (muted stream) | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ | 2026-11-01 |
+| Pixel 7 Pro (33241FDH3000NZ) | built-in mic → speaker (muted stream) | 48000 | 6284 | 130.9 | 118.0 ms | 12.9 ms | 2026-10-28 06:42 (engine device lane, per-test logcat) |
 
 ## Loopback measurement (T090, the one sounding step)
 

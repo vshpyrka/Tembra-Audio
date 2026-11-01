@@ -40,7 +40,9 @@ sounding step (the loopback check of §8) is recorded in `../evidence/alignment.
   Resolved 06:10: the journey arms `timeline.track.arm.4` right after "+ Track", and on a phone the new row lands below the
   visible lanes (the list did not scroll), so the tap hit another row. `TrackList` now scrolls a newly added, selected
   track into view (the screen test `aNewlyAddedTrackIsScrolledIntoViewOnAPhone`); the perf APKs are rebuilt and the round
-  re-run on the Pixel 7 Pro afterwards (see below).
+  re-run on the Pixel 7 Pro afterwards: that second round (`20261028T041246Z_010-recording`) failed in the timeline journey's
+  first step because the Android lanes agent was re-running the engine device tests on the same phone at the same time
+  (two instrumentations cannot share UiAutomation; logcat 06:35–06:39); a third round follows once the lanes are done.
 
 ## Captures (T080)
 
