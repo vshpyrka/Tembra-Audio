@@ -25,24 +25,10 @@ sounding step (the loopback check of §8) is recorded in `../evidence/alignment.
 
 | Target | Build | Installed | Commit |
 |---|---|---|---|
-| iPhone 18 Pro, iPad Pro 13-inch (M5), iPhone Duo simulators | `tools/release-ios.sh --no-launch` (Release, iphonesimulator) | yes, `audio.tembra.appP5QJJ5Y5V7` | 724c8ef (2026-10-28 03:25–03:38) |
-| iPhone 14 | `tools/release-ios.sh --no-launch` (Release, iphoneos) | yes (installed while locked, not launched) | 724c8ef |
-| Android targets (Pixel 6 Pro, Pixel 7 Pro) | `tools/release-android.sh --no-build` of the APK assembled 2026-10-28 03:35 (R8, the committed baseline profile, 12118 bytes; built from the b737335 tree, not rebuilt since) | yes, both, compiled `speed-profile`, launched (2026-11-01) | b7af79d at install time (HEAD); the APK itself is the b737335 build |
-
-## Trial round (T086)
-
-- iPhone 14: blocked by the locked phone (see the final-pass table).
-- Pixel 7 Pro (the Pixel 6 Pro being offline): session `20261028T014141Z_010-recording` with the prebuilt perf APKs ran the
-  `RecordingJourneyBenchmark` twice and it failed both times (`Tests run: 1, Failures: 1`; the pipeline's instrumentation
-  log under `app/perf/data/sessions/20261028T014141Z_010-recording/`). The journey was written against the built UI but never
-  driven on a device before this run; the first debugging step is to read that log for the step that did not find its
-  anchor (the microphone grant happens through `pm grant` before the round; the count-in readout wait is non-fatal).
-  Resolved 06:10: the journey arms `timeline.track.arm.4` right after "+ Track", and on a phone the new row lands below the
-  visible lanes (the list did not scroll), so the tap hit another row. `TrackList` now scrolls a newly added, selected
-  track into view (the screen test `aNewlyAddedTrackIsScrolledIntoViewOnAPhone`); the perf APKs are rebuilt and the round
-  re-run on the Pixel 7 Pro afterwards: that second round (`20261028T041246Z_010-recording`) failed in the timeline journey's
-  first step because the Android lanes agent was re-running the engine device tests on the same phone at the same time
-  (two instrumentations cannot share UiAutomation; logcat 06:35–06:39); a third round follows once the lanes are done.
+| iPhone 18 Pro, iPad Pro 13-inch (M5), iPhone Duo simulators | `tools/release-ios.sh --no-launch` (Release, iphonesimulator) | yes, `audio.tembra.appP5QJJ5Y5V7` | 724c8ef (2026-10-28); the rebuild at 20e974f is in progress on 2026-11-01 (the first attempt raced a concurrent simulator build and was retried) |
+| iPhone 14 | `tools/release-ios.sh --no-launch` (Release, iphoneos) | yes (installed while locked, not launched) | 724c8ef; rebuild at 20e974f in progress |
+| Pixel Tablet, Redmi Note 5, OPPO CPH2239, fold emulator | `./gradlew :androidApp:assembleRelease` at 22:55 (R8, the committed baseline profile) + `tools/release-android.sh --no-build --no-launch` | yes (the Redmi runs from the APK with the JIT, as before: its profile broadcast returns 1) | 20e974f (2026-11-01 22:57) |
+| Pixel 6 Pro, Pixel 7 Pro | `tools/release-android.sh --no-build` (2026-11-01 ~21:45, the 2026-10-28 03:35 APK) | yes; the Pixel 6 Pro then received the perf build for the soak and the Pixel 7 Pro the perf build for the rounds | b737335 tree (the 10-28 APK); to be reinstalled at HEAD after the perf work |
 
 ## Captures (T080)
 
