@@ -83,6 +83,20 @@ Cheap by construction and left on the caller's thread: `pause`, `setArrangement`
 `recordCancel`, `closeClipSource` (engine commands through the lock-free FIFO or a file close). Recorded in the 010 spec's
 session 2026-11-02 for the next feature; not changed here.
 
+The audit's three remaining rows were fixed the same evening, test-first (T102–T104):
+
+| Path | Fix | Test |
+|---|---|---|
+| iOS `openTransport` (session activation + RemoteIO create/init/start inline) and `closeTransport` on both platforms (unit teardown + session deactivation on iOS, Oboe close on Android) | one serial dispatcher for the whole app, `EngineDispatchers.blocking` in `:shared:engine`; the iOS open and both closes run on it; `TimelineAudio.closeTransport()` is suspend; `ProjectSession.detachTransport` launches the close under `transportMutex` (the hand-over is ordered on that dispatcher instead of synchronous; the tuner's `audioDispatcher` now defaults to the same one, so its start queues behind the close) | `NativeAudioEngineBlockingDispatchTest.openTransportAndCloseTransportHopToTheBlockingDispatcher` (iOS: watched failing with "openTransport ran on the caller's thread (DeviceFailed)"), its Android device twin, `ProjectSessionTest` adapted to the ordered hand-over |
+| Metronome `startMetronome`, `stopMetronome`, `previewClick` and the preview's `stopTone` from the view model on the main thread | `MetronomeViewModel(audioDispatcher = EngineDispatchers.blocking)`: Starting and Stopped shown at once, the engine start and stop and the preview on the dispatcher inside atomic non-cancellable launches (a cleared screen still settles the engine), Running only when nothing stopped the click during the start | `MetronomeViewModelTest.playStartsAndPauseStopsTheEngineOnTheAudioDispatcherNotTheCallersThread`, `aPauseDuringTheStartLeavesTheEngineIdleAndTheScreenStopped` (watched failing on the missing parameter); 14 existing cases adapted (the queued start now lands on `runCurrent()`) |
+
+Lanes and release after T102–T103 (T104, 2026-11-02 night):
+
+| Target | Lane / build | Result |
+|---|---|---|
+| Host (JVM, every module) + C++ | `checkAndroidHost engineHostTest --warning-mode all` | green, zero warnings: 931 JVM tests (ui 475, engine 68, core 246, data 142) |
+| iPhone 18 Pro simulator | `checkIos --warning-mode all` | green, zero warnings: core 246, engine 106, data 152, ui 983 (the open/close dispatcher test asserts on the refused path) |
+| Fold emulator (emulator-5554) | `:shared:engine:connectedAndroidDeviceTest` filtered to `NativeAudioEngineBlockingDispatchTest` | green: the transport opens and closes on the injected blocking dispatcher (1 test; the full device lane was not re-run) |
 Also seen, not a defect: the simulator's status bar draws no microphone indicator (the Pixel Tablet shows Android's green pill), and
 the simulator records whatever the Mac's microphone hears at its input volume (76 at the time; the owner's take peaked at −34 dBFS).
 

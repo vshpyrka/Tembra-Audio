@@ -15,7 +15,8 @@ interface TimelineAudio : AudioStatus {
     suspend fun openTransport(): TransportOpenResult
 
     /** Pauses with the release, joins the streamer, closes the stream → Idle; idempotent. */
-    fun closeTransport()
+    /** The unit or stream closes and the session is released on [EngineDispatchers.blocking] (T102); never the caller's thread. */
+    suspend fun closeTransport()
 
     /** Opens a decoder on the app's copy of an asset; allowed while Idle and Transport. */
     suspend fun openClipSource(path: String): ClipSourceResult

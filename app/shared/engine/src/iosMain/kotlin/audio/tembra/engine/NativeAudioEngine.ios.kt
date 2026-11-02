@@ -123,7 +123,7 @@ actual class NativeAudioEngine internal constructor(
      * overlaps an open and both keep their launch order; never the caller's thread, which is the main-immediate session
      * scope. Tests inject a counting dispatcher.
      */
-    private val blocking: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1),
+    private val blocking: CoroutineDispatcher = EngineDispatchers.blocking,
 ) : AudioEngine {
 
     constructor() : this({ nanos -> tembra_metronome_set_output_latency_ns(nanos) })
@@ -408,23 +408,23 @@ actual class NativeAudioEngine internal constructor(
 
     /**
      * From Idle only: `playback` session, the route's latency reported for both renderers, then the engine; a refusal
-     * deactivates again. Opening the output unit is a platform call, so it runs off the main thread.
+     * deactivates again. The session activation and the RemoteIO unit's create, initialise and start run on the
+     * [blocking] dispatcher (T102), never the caller's thread.
      */
-    override suspend fun openTransport(): TransportOpenResult {
+    override suspend fun openTransport(): TransportOpenResult = withContext(blocking) {
         val state = audioState
-        if (state != AudioState.Idle) return TransportOpenResult.Busy(state)
+        if (state != AudioState.Idle) return@withContext TransportOpenResult.Busy(state)
         cancelPreviewRelease()
         IosAudioSession.activateForPlayback()
         reportOutputLatencyNanos(IosAudioSession.outputLatencyNanos())
         transportConfig.reserved = 0u
-        // On the caller's thread like the metronome's start: the RemoteIO unit is created and started here, not primed.
         val code = tembra_transport_open(transportConfig.ptr)
         if (code != 0) {
             IosAudioSession.deactivate()
-            return if (code == STATE_REFUSED.code) TransportOpenResult.Busy(audioState) else TransportOpenResult.DeviceFailed
+            return@withContext if (code == STATE_REFUSED.code) TransportOpenResult.Busy(audioState) else TransportOpenResult.DeviceFailed
         }
         IosAudioSession.routeChangeListener = { reportLatencies() }
-        return TransportOpenResult.Opened
+        TransportOpenResult.Opened
     }
 
     /** Both latencies of the current route (feature 010, research R9): the output for the clock, the input for the alignment. */
@@ -433,7 +433,8 @@ actual class NativeAudioEngine internal constructor(
         if (armed) tembra_capture_set_input_latency_ns(IosAudioSession.inputLatencyNanos())
     }
 
-    override fun closeTransport() {
+    /** The unit stops and is disposed and the session is released, on the [blocking] dispatcher (T102). */
+    override suspend fun closeTransport() = withContext(blocking) {
         tembra_transport_close()
         armed = false
         if (audioState == AudioState.Idle) IosAudioSession.routeChangeListener = null

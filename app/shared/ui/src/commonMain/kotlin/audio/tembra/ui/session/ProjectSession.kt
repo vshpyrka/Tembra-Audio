@@ -439,8 +439,10 @@ class ProjectSession(
      */
     private fun detachTransport() {
         if (transportOpen) {
-            audio.closeTransport()
             transportOpen = false
+            // The close runs on the engine's serial dispatcher (T102), under the mutex so a re-attach waits for it; the
+            // next screen's start queues behind it on the same dispatcher, which keeps the hand-over ordered.
+            scope.launch(CoroutineName("closeTransport")) { transportMutex.withLock { audio.closeTransport() } }
             recording.transportClosed()
         }
         if (opened != null) detached = true

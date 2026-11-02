@@ -10,6 +10,7 @@ import audio.tembra.core.project.AudioFormat
 import audio.tembra.core.project.Beats
 import audio.tembra.core.recording.TakeStopReason
 import audio.tembra.engine.perf.AudioHealth
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -29,7 +30,11 @@ import kotlinx.coroutines.withContext
  * stream holds, and a stop leaves alone what another running stream holds. A preview click ends on its own, so the
  * actual closes its output stream and releases its focus itself once the engine is back to Idle.
  */
-actual class NativeAudioEngine(context: Context) : AudioEngine {
+actual class NativeAudioEngine(
+    context: Context,
+    /** Where the transport's stream opens and closes (T102): serial, never the caller's thread; tests inject a counting one. */
+    private val blocking: CoroutineDispatcher = EngineDispatchers.blocking,
+) : AudioEngine {
 
     /** Internal so device tests can observe what is held. */
     internal val focus = AndroidAudioFocus(context)
@@ -293,7 +298,7 @@ actual class NativeAudioEngine(context: Context) : AudioEngine {
         synchronized(previewLock) { cancelPreviewReleaseLocked() }
         if (!focus.request(FocusType.Gain)) return TransportOpenResult.DeviceFailed
         becomingNoisy.register()
-        val code = withContext(Dispatchers.IO) { nativeTransportOpen() }
+        val code = withContext(blocking) { nativeTransportOpen() }
         if (code != 0) {
             becomingNoisy.unregister()
             focus.abandon()
@@ -303,8 +308,8 @@ actual class NativeAudioEngine(context: Context) : AudioEngine {
         return TransportOpenResult.Opened
     }
 
-    override fun closeTransport() {
-        nativeTransportClose()
+    override suspend fun closeTransport() {
+        withContext(blocking) { nativeTransportClose() }
         routeWatcher.unregister()
         becomingNoisy.unregister()
         // A tone or preview still sounding owns the focus (its own stop or the preview check releases it).
