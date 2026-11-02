@@ -20,3 +20,29 @@ optimised (speed-profile)" (checked against the prebuilt perf APK, whose profile
 failed on `perf anchor 'timeline.track.meter.4' not found within 10000 ms` (RecordingJourney.kt:28) after eight completed iterations (iteration 9)
 (the same anchor failure as the Pixel 7 Pro's first trial, here in the comparison's fresh-install flow); logs in
 `app/perf/data/comparisons/20261102T053402Z_19021FDEE001AH/{gradle.log,profile/instrument.log}`. Journey not edited.
+
+## Pixel 6 Pro compare, 2026-11-02 (after the track-list fix, HEAD 2176267)
+
+Comparison id 20261102T055607Z_19021FDEE001AH (exit 0, recording journey, 20 iterations per state, build 2176267e35e1 dirty). The battery was at 58 % at the start and 57 % at the end. The earlier failure on the `timeline.track.meter.4` anchor did not recur.
+
+| metric (median) | none | profile | change |
+|---|---|---|---|
+| journey duration (ms) | 22111 | 22210 | +0.4 %, not confirmed |
+| frames p50 (ms) | 8.5 | 8.6 | +0.7 %, not confirmed |
+| frames p90 (ms) | 11.4 | 11.6 | +1.5 %, not confirmed |
+| frames p99 (ms) | 14.9 | 14.9 | +0.0 %, not confirmed |
+
+The profile gives no measurable change in the journey duration or the frame times of the recording journey. Confirmed differences (Mann-Whitney p < 0.01) are only in small sections: projectSave sum 56.4 to 33.3 ms (-41.1 %), recordStop sum 0.2 to 0.1 ms (-48.7 %), arm sum 0.3 to 0.2 ms (-33.5 %), playheadFrame sum +3.6 % (2.2 ms). The count-in dominates the journey (about 1980 ms) and is unchanged.
+
+Verify of `app/androidApp/build/outputs/apk/perf/androidApp-perf.apk`:
+
+```
+profile verify on Pixel 6 Pro (19021FDEE001AH)
+  [ok] adb_device — 19021FDEE001AH present and authorized
+  [ok] awake — mWakefulness=Awake
+  [ok] unlocked — keyguard not showing
+  [ok] profile present (12238 bytes, 0.0 %) in .../androidApp-perf.apk
+  [ok] recognised (result 1): installed
+  [ok] optimised (speed-profile)
+profile present (12238 bytes, 0.0 %); recognised (result 1); optimised (speed-profile)
+```
