@@ -149,8 +149,8 @@ arrangement is.
 ## Kotlin seam (`TimelineAudio`, `:shared:engine`)
 
 ```kotlin
-suspend fun arm(maxChannels: Int): ArmResult            // IO dispatcher; Android opens the input stream, iOS switches the session and restarts the unit
-fun disarm()
+suspend fun arm(maxChannels: Int): ArmResult            // off the caller's thread; Android opens the input stream on IO, iOS switches the session and restarts the unit on its serial blocking dispatcher, maxChannels bounded by the route's input channels (T098)
+suspend fun disarm()                                     // iOS: the unit restarts without its input and the session switches back, on the same blocking dispatcher (T100)
 fun setMonitor(enabled: Boolean, trackIndex: Int)
 suspend fun recordStart(config: RecordConfig): RecordStartResult
 fun recordCancel()
