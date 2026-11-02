@@ -27,7 +27,8 @@ status becomes denied while armed), `observeCaptureEnd` (the 10 Hz mirror of
 `count_in_beats_left` → `PreRollTick`), `livePeaks(takeId)` (10 Hz `readPeaks` into
 `LiveOverview`, replaces `RecordingUi.liveTake.overview`), `finaliseTake(takeId)` (`recordStop`
 on IO → `TakeAdopter.adopt` → `RecordTake` edit → `TakeFinalised`), `armJob` (`arm` on IO →
-`InputOpened`/`InputFailed`). No `init` launches; `start()` is called from the session's
+`InputOpened`/`InputFailed`), `closeInput` (`disarm`, suspend since T100: on iOS the unit restart and the
+session switch run on the engine's serial blocking dispatcher, queued behind any arm launched before it). No `init` launches; `start()` is called from the session's
 `start()`.
 
 ## State machine (the policy table; every row is a test)

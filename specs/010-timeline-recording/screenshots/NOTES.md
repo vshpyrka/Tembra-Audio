@@ -57,6 +57,32 @@ each fix was written test-first (the test watched failing, then passing) and is 
 | The input meter never shows in the expanded (pinned) header on tablets and the iPad | The iPad screenshot of 19:31 and the feature's own `pixel-tablet/1024dp-armedRest.png` and `ipad-pro-13-m5/armedLoud.png`: no bar beneath the gain row; 44 + 44 + 4 + 8 + 8 dp of padding exceed the 96 dp lane, so Compose measured the meter at 0 dp (node present, nothing drawn) | `TrackHeader` overlays the meter along the bottom edge inside a `Box`, as `TrackHeaderCompact` does; `meterHeightExpanded` 4 dp (the bottom padding); contract rows updated | `TrackHeaderTest.expandedArmedHeaderShowsTheMeterAlongItsBottomEdge` (failed "not displayed", then green) |
 | Arming on the iPhone 14 drops frames | The session scope is `Dispatchers.Main.immediate`; the iOS `arm()` ran the session switch and the RemoteIO restart on the caller's thread (`timeline.arm` 604 ms in the trial round `20261102T085708Z`) while the Android actual hops to IO; `disarm()` restarts the unit the same way | `NativeAudioEngine.ios.kt` runs `arm()` and `disarm()` under an injected serial blocking dispatcher (`Dispatchers.IO.limitedParallelism(1)`); `TimelineAudio.disarm()` is `suspend`; the controller launches `closeInput` on the session scope (never cancelled; the engine core's command lock serialises a close against a transport close) | `NativeAudioEngineBlockingDispatchTest` (asserts the hop on the refused path too, so it runs in the bare simulator process; watched failing with the hop disabled) |
 
+Lanes and release after Phase 10 (T101, 2026-11-02 evening, commit 55f6c16):
+
+| Target | Lane / build | Result |
+|---|---|---|
+| Host (JVM, every module) + C++ | `checkAndroidHost engineHostTest --warning-mode all` | green, zero warnings: 929 JVM tests (ui 473, engine 68, core 246, data 142) |
+| iPhone 18 Pro simulator | `checkIos --warning-mode all` | green, zero warnings: engine 105, data 152, ui 981 (core up to date, unchanged) |
+| Engine Android device tests | `:shared:engine:compileAndroidDeviceTest` | compiles (the `runBlocking` teardown); the device lane itself was not re-run (no physical Android attached; the fold emulator's full lane takes 2 h 27 min) |
+| Fold emulator (emulator-5554) | `:androidApp:assembleRelease` + `tools/release-android.sh --no-build` | release build installed 20:12, compiled from the baseline profile (speed-profile), launched |
+| iPhone 14, iPhone 18 Pro, iPad Pro 13-inch (M5), iPhone Duo | `tools/release-ios.sh` (Release, iphoneos + iphonesimulator) | installed and launched on all four, 20:17 |
+| iPad Pro 13-inch (M5) simulator, end to end | `ScreenshotMatrix.testRecordingStates` (`TEMBRA_STATES=takeDone`, Perf build): adds a track, arms it (the first arm after launch), records a take through the real UI | the take's WAV is mono (1 channel, 2.60 s, live audio at −40.6 dBFS peak, every sample non-zero), where every first take before the fix was stereo with a silent channel; `e2e-takeDone.png` shows the meter along the armed header's bottom edge. The Release build was reinstalled on the iPad afterwards. |
+
+Audit of the other engine calls on the main-immediate session scope (the owner's question of 2026-11-02, after T100): every
+override of both actuals was mapped to its dispatcher and its heavy native or session calls. Off the main thread already:
+`openClipSource`, `play`, `seek`, `recordStart`, `recordStop`, `inspect`, `buildOverview`, now `arm` and `disarm`; the tuner's
+start/stop/mode switch (the view model's serial `audioDispatcher`; `tuner.modeSwitch` 130 ms and `tuner.load` 106 ms on the
+iPhone 14 in round 20261012T101350Z are the cost of a session activation plus a unit start on that phone, paid off the
+screen's thread); sound loading (`prepareDispatcher`, `decodeDispatcher`). Still on the caller's thread, which is the main
+thread, and of the same shape as the arm: iOS `openTransport` (session activation + RemoteIO create/init/start; the Android
+actual hops to IO), `closeTransport` on both platforms (unit teardown + session deactivation on iOS, Oboe close on Android),
+the metronome view model's `startMetronome`, `stopMetronome` and the preview click (session activation/deactivation on iOS,
+stream open/close on Android), and `startTone`/`stopTone` from the metronome's preview. None of these has a perf section on
+iOS, so no round measured them; `timeline.projectOpen` is 0.4 ms on the Pixel 7 Pro because Android's open is dispatched.
+Cheap by construction and left on the caller's thread: `pause`, `setArrangement`, `setTempo`, `setTrack`, `setMonitor`,
+`recordCancel`, `closeClipSource` (engine commands through the lock-free FIFO or a file close). Recorded in the 010 spec's
+session 2026-11-02 for the next feature; not changed here.
+
 Also seen, not a defect: the simulator's status bar draws no microphone indicator (the Pixel Tablet shows Android's green pill), and
 the simulator records whatever the Mac's microphone hears at its input volume (76 at the time; the owner's take peaked at −34 dBFS).
 

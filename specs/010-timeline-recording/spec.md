@@ -94,6 +94,23 @@ specification and feature 009's.
   restarts the audio unit, so arming while a project plays may gap the output for a bounded
   time; FR-001 states the bound (30 ms) and the verification notes record the measurement.
 
+### Session 2026-11-02 (owner check of the first release build, tasks T098–T101)
+
+- Q: What does a take carry when the device's microphone is mono? → A: Exactly the route's
+  input channels: a mono microphone gives a mono take; a take MUST never carry a channel the
+  input did not provide (the first take after launch on iOS was a stereo file with a silent
+  second channel, which played back on one side only; no requirement had named the take's
+  channels before this session).
+- Q: Where does the input meter sit in the expanded (tablet) header, whose 96 dp lane holds its
+  two rows and nothing more? → A: Along the header's bottom edge beneath the gain row, 4 dp
+  tall, as the compact header's meter does along its edge; the header keeps its height (FR-005).
+- Q: May arming or disarming hold up the screen? → A: No: the Timeline MUST stay responsive
+  while the input opens and closes; the platform's own audio-unit restart happens off the
+  screen's thread (on the iPhone 14 the arm took about 600 ms and dropped every frame of it;
+  FR-001 names it). The same rule is the owner's standing expectation for opening and closing a
+  project's transport and for starting and stopping the metronome, which still do that work on
+  the screen's thread on iOS (audit of 2026-11-02, recorded for the next feature).
+
 ## User Scenarios & Testing *(mandatory)*
 
 Recording is how a musician's own playing gets into a project. Feature 009 gave the Timeline
@@ -389,7 +406,8 @@ and the growing clip with the screen reader.
   transport is stopped or playing: on Android without interrupting playback; on iOS, where
   enabling the input restarts the audio unit, with an output gap of at most 30 ms and the
   position and the project unaffected (planning finding 2026-10-27, measured in the
-  verification notes). The armed state is session
+  verification notes). Arming and disarming MUST keep the screen responsive: the input opens
+  and closes without holding up the Timeline's drawing (session 2026-11-02). The armed state is session
   state: it MUST NOT be saved with the project and MUST be cleared when the track is deleted,
   when another project is opened, when the app leaves Timeline and its track settings screen for
   any other destination (after the dialog of FR-022 when a take runs), and when the app is
