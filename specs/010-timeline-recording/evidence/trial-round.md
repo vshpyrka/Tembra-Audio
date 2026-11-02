@@ -73,3 +73,48 @@ succeeded; battery 70 %, thermal 33.5 °C). The sections now pair as intended: `
 11.3 ms, p99 15.1 ms, overrun p90 −2.8 ms. The one gate notice is `app.size_bytes +285 %` against the phone's last
 published session of 2026-10-15 (before features 009 and 010).
 
+
+## iPhone 14, 2026-11-02
+
+The phone connected and trusted this time (no `runner_trusted`, no automation-mode timeout). No record.json was produced by
+either attempt; no numbers to report.
+
+- Attempt 1, round `20261102T040913Z_010-recording` (full journey set, build-for-testing about 3 min): `RecordingPerfTests.testRecordingJourney`
+  PASSED (1172.6 s, the first time the iOS recording journey ran on a device). `StressPerfTests.testStressJourney` FAILED after
+  40.7 s at `StressJourney.swift:62`: `Failed to swipe left "timeline.lane.0" ... No matches found ... '"timeline.lane.0" IN identifiers'`.
+  `TimelinePerfTests.testTimelineJourney` exceeded the 30 minute execution allowance (the log ends in metronome/master taps at
+  t = 1800 s; the test hung or was too slow). Every later test (tuner, startup, metronome, facade self-checks) was then refused:
+  `PERF-REFUSED: thermal_state=serious limit=nominal`. xcresult: `app/perf/data/rounds/20261102T040913Z_010-recording/perf.xcresult`.
+- Attempt 2 (the one retry), round `20261102T050350Z_010-recording`, `--journeys recording`: refused before the journey,
+  `refused: thermal_state: thermal_state=serious limit=nominal` (the phone was still hot from attempt 1).
+- Open: let the phone cool to nominal, then run `--journeys recording` alone (then stress separately); the stress journey's
+  `timeline.lane.0` lookup needs a look on iOS (lane identifier absent after the add-track/arm step or the screen not on the
+  timeline), and the timeline journey's 30 min overrun needs its own investigation. RecordingJourney.swift was not edited.
+
+## Pixel 6 Pro (reference device, 2026-11-02)
+
+Round `20261102T040607Z_010-recording` (Pixel 6 Pro 19021FDEE001AH, the prebuilt perf APKs of 2026-11-02 00:05, `--rounds 1
+--no-publish --no-build`; battery 58 %, 27.7 C, all checks passed, badge `noisy`). Status succeeded; startup, tuner, metronome,
+timeline, recording and stress all passed, 20 iterations each (recording 22.2 s median, 21.2 to 22.6 s).
+
+- Recording journey sections (medians over 20 iterations; count per iteration, sum per iteration): timeline.arm 2 (0.15 ms),
+  transport.recordStart 1 (4.2 ms, max 27.9; the engine call alone), transport.countIn 1 (1975 ms), timeline.takeFrame 674
+  frames (68 ms, max 106), transport.recordStop 1 (0.10 ms), engine.takeAlignment 1 (77 ms), timeline.waveform 1 (13.7 ms,
+  5.6 to 29.5), timeline.playheadFrame 567 (2.25 ms), timeline.projectSave 2 (34 ms, max 66). Absent: timeline.monitorToggle
+  (count 0 in all 20, as on the Pixel 7 Pro: no headphones) and transport.play (count 0 in the recording journey).
+- Frames, recording journey: p50 8.51 ms, p90 11.48 ms, p99 14.53 ms (one iteration 23.8 ms), overrun p90 -2.96 ms.
+- Stress counters (medians, min to max): audio.input_overruns 6 (5 to 8) so NOT zero (the plan asks for 0; the Pixel 7 Pro read
+  1, 0 to 2), audio.take_alignment_ms 132 (130 to 132; above the 5 to 60 ms plausibility range, same as the Pixel 7 Pro's 130 to
+  132, while the engine.takeAlignment section reads 77 ms), audio.record_backlog 672 frames (576 to 768), audio.monitor_delay_ms
+  0, audio.starvation 0, audio.xruns 0, audio.over_budget 0, audio.max_callback_us 185 (125 to 339).
+- Gate notices (14 above limit, all against the phone's last published baselines of 2026-10-13, an older build and journey
+  set, so non-comparable): app.size_bytes +285 %, startup ttfd +86 % and ttid +34 %, metronome/tuner journey duration +69 % and
+  +36 %, stress audio.callbacks +3993 %, audio.max_callback_us +1053 %, frames.p50 +26 %, journey duration +480 %, memory end/peak
+  +44 %/+71 %, metronome.load.sum +71650 %, the stress journey's tuner.frame.count +132 % and the tuner journey's +222 %. No screening notices.
+
+## iPhone 14, recording journey alone (2026-11-02, after the stress-journey fix)
+
+- Fix: `StressJourney.swift` `recordWhileScrolling` now swipes the new track's lane (`Anchors.timelineLane(last)` = `timeline.lane.4`) instead of the lane 0 passed in; `Anchors.timelineLane(_:)` added. `build-for-testing` (TembraPerf, Perf, iPhone 18 Pro simulator) says TEST BUILD SUCCEEDED. The Android `StressJourney.kt` still scrolls `TIMELINE_LANE_FIRST` (not changed; the Android list scrolls differently and that journey passed).
+- Attempt 1, round `20261102T060116Z_010-recording`, after a 10 minute cool-down: failed at once with "The test runner failed to initialize for UI testing (Timed out while enabling automation mode)". The phone had been locked (`passcodeRequired: true`; it unlocked about 7 minutes after the owner was asked, per `devicectl device info lockState`).
+- Attempt 2, round `20261102T060859Z_010-recording` (phone unlocked): the recording journey PASSED (1175.5 s, per the coordinator), but the round ended `refused: thermal_state=serious limit=nominal`. No `record.json` was written, so there are no section medians, frame/hitch numbers or audio counters from this round.
+- Cause of the refusal: the iOS pipeline runs the whole test target regardless of `--journeys`, so the other tests self-refused after the 20 minute recording journey heated the phone. The pipeline is being changed to narrow the run to the selected journey's test class. No third attempt was made.
