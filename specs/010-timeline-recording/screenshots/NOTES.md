@@ -21,6 +21,10 @@ sounding step (the loopback check of §8) is recorded in `../evidence/alignment.
 | Redmi Note 5 (e9446ac2) | `checkAndroidDevice` | _pending_ | | API 28; Play Protect prompt answered "Don't send" |
 | iPhone 14 (00008110-001049660E3A401E) | perf trial round (T086) | **blocked**: 2026-10-28 "Timed out while enabling automation mode" (locked); 2026-11-01 twice `refused: runner_trusted` (rounds 20261101T192951Z, 20261101T193730Z) | | the owner trusts the TembraPerfTests developer profile (Settings → General → VPN & Device Management) and keeps the phone unlocked, then `uv run tracepulse run --device iphone14 --label 010-recording --rounds 1 --no-publish`; the Release build is installed (724c8ef) |
 
+Re-run of 2026-11-02 after the track-list fix (2176267): the host lane (`checkAndroidHost`, zero warnings, 09:0x) and
+the simulator lane on the iPhone 18 Pro (`checkIos`, 980 tests in 133 suites, 0 failures, 09:21) green; the pipeline's
+own suite 353 green, 1 skipped, the one pre-existing failure (the stale `regressions/r2-frames.patch`).
+
 ## Release builds (T093)
 
 | Target | Build | Installed | Commit |
@@ -39,6 +43,7 @@ each target reporting `audio.tembra.app/audio.tembra.android.MainActivity` as th
 | Pixel 6 Pro, Pixel Tablet, OPPO CPH2239, fold emulator | `./gradlew :androidApp:assembleRelease` at 08:22 (R8, the regenerated baseline profile, 25 MB) + `tools/release-android.sh --no-build` | yes, 08:30, compiled from the baseline profile (speed-profile); the OPPO refused the brightness settings (dimmed by hand), its profile compile worked this time | 0630113 tree |
 | Redmi Note 5 | same | yes, 08:30, runs from the APK with the JIT (profile broadcast result 1); it refused `set_dnd` | 0630113 tree |
 | Pixel 7 Pro | same, after its reference round | yes, 08:40, compiled from the baseline profile (speed-profile) | 0630113 tree |
+| iPhone 14, iPhone 18 Pro, iPad Pro 13-inch (M5), iPhone Duo | `tools/release-ios.sh` (Release, iphoneos + iphonesimulator) | yes, 09:17, launched on all four (`audio.tembra.appP5QJJ5Y5V7`, pids reported by devicectl and launchctl) | c9dbb96 tree |
 
 ## Performance findings (T086, 2026-11-01/02)
 
