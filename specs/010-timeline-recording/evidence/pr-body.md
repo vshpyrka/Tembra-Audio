@@ -51,7 +51,16 @@ Spec, plan and tasks: `specs/010-timeline-recording/` (97 tasks; the open ones a
   20/20 (22.1 s median; frames p50 7.8 ms, p90 11.3 ms, p99 15.1 ms); the recording-only round `20261101T222912Z`
   validates the count-in interval (1972 ms) and record start (19.8 ms). Counters in the stress journey:
   `audio.input_overruns` median 1 (short non-blocking reads right after arming under the stress scroll; a reservoir
-  read is the follow-up), starvation/xruns/over-budget 0, alignment 130–132 ms.
+  read is the follow-up), starvation/xruns/over-budget 0, alignment 130–132 ms. Pixel 6 Pro round `20261102T040607Z`:
+  all six journeys, the recording journey 20/20 (22.2 s median; frames p50 8.5 ms, p90 11.5 ms, p99 14.5 ms), input
+  overruns 6 under the stress scroll. The profile compare on it exposed a tap cancelled by the new track's
+  scroll-into-view animation once in 49 iterations (fixed in 2176267: an instant scroll); the rerun passed 40/40, the
+  regenerated profile verifies and leaves the recording journey's times unchanged (`evidence/profile.md`). The app-size
+  gate notice (7 MB to 27 MB) is feature 009's demo WAV files, not this feature. Against a reference round of the
+  pre-010 code on the same Pixel 7 Pro (`20261102T055511Z_009-main-reference`, built from the merge base f47014e):
+  app +0.6 %, startup ttid +4 % and ttfd +5 % (10 to 16 ms), the tuner, metronome and timeline journeys and their frame
+  times unchanged within 2 %; the stress journey records now, so it is longer and its memory peak is +21 % (a
+  follow-up to size).
 - Soak (`evidence/notes.md`): a 24:40 take on the Pixel 7 Pro's perf build: overruns 0, starvation 0, xruns 0,
   backlog 1152 frames, one callback over budget at 2.98 ms. The 30-minute cap ended a take by itself on the Pixel 6 Pro.
 - Screenshots: `screenshots/ios/` (14 states on three simulators) and `screenshots/android/` (five widths, the fold
@@ -59,10 +68,8 @@ Spec, plan and tasks: `specs/010-timeline-recording/` (97 tasks; the open ones a
 - Pipeline: the `recording` journey and the four counters registered (`uv run pytest`: 352 green; one pre-existing
   failure, the stale `regressions/r2-frames.patch`).
 
-## Open for the owner (quickstart §4–§8, T081, T086/T087 on the reference device, T090, T094, T095, T097)
+## Open for the owner (quickstart §4–§8, T081, T090, T094, T095, T097)
 
-- Charge the Pixel 6 Pro (12 %, the hub charges 1–2 % per half hour): `tracepulse run --device pixel6 --label
-  010-recording --rounds 1` and `profile generate|verify|compare --device pixel6` refuse below 50 %.
 - Trust the TembraPerfTests developer profile on the iPhone 14 (Settings → General → VPN & Device Management), keep it
   unlocked, then `uv run tracepulse run --device iphone14 --label 010-recording --rounds 1 --no-publish`.
 - The rows that need sound, headphones or a call: the meter by ear, the count-in by ear, monitoring on headphones /
