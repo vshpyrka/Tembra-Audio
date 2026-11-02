@@ -51,7 +51,9 @@ internal fun TrackList(
     LaunchedEffect(state.tracks.size) {
         val grew = state.tracks.size > knownTracks
         knownTracks = state.tracks.size
-        if (grew && selectedTrack != null && state.tracks.lastOrNull()?.id == selectedTrack) listState.animateScrollToItem(state.tracks.lastIndex)
+        // An instant scroll, not an animated one: a tap on the new track's header during the animation is cancelled
+        // when the row slides out from under the finger (the recording journey lost its arm tap once in 49 runs).
+        if (grew && selectedTrack != null && state.tracks.lastOrNull()?.id == selectedTrack) listState.scrollToItem(state.tracks.lastIndex)
     }
     LazyColumn(
         state = listState,
