@@ -5,6 +5,8 @@ import audio.tembra.core.metronome.TimeSignature
 import audio.tembra.core.recording.TakeStopReason
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.runBlocking
+import platform.AVFAudio.AVAudioSession
+import platform.AVFAudio.inputNumberOfChannels
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSTemporaryDirectory
 import platform.Foundation.NSThread
@@ -34,7 +36,7 @@ class NativeAudioEngineRecordingTest {
 
     @AfterTest
     fun tearDown() {
-        engine.disarm()
+        runBlocking { engine.disarm() }
         engine.closeTransport()
         NSFileManager.defaultManager.removeItemAtPath(root, error = null)
     }
@@ -107,6 +109,18 @@ class NativeAudioEngineRecordingTest {
         engine.disarm()
         assertTrue(waitFor(500) { engine.readCapture(snapshot); !snapshot.armed })
         assertEquals(AudioState.Transport, engine.audioState)
+    }
+
+    /**
+     * The first arm after the unit is created must open exactly the route's input channels: a client format wider than
+     * the hardware records a take whose extra channel is silence (seen as a stereo WAV with a dead right channel on
+     * every first take of 2026-11-02).
+     */
+    @Test
+    fun theFirstArmReportsTheRoutesInputChannels() = runBlocking {
+        val armed = openAndArmOrSkip("channels") ?: return@runBlocking
+        val route = AVAudioSession.sharedInstance().inputNumberOfChannels.toInt()
+        assertEquals(route, armed.channels, "the first arm must open the route's $route input channel(s), not a default")
     }
 
     @Test

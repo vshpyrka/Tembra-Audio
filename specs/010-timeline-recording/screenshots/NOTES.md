@@ -45,6 +45,21 @@ each target reporting `audio.tembra.app/audio.tembra.android.MainActivity` as th
 | Pixel 7 Pro | same, after its reference round | yes, 08:40, compiled from the baseline profile (speed-profile) | 0630113 tree |
 | iPhone 14, iPhone 18 Pro, iPad Pro 13-inch (M5), iPhone Duo | `tools/release-ios.sh` (Release, iphoneos + iphonesimulator) | yes, 09:17, launched on all four (`audio.tembra.appP5QJJ5Y5V7`, pids reported by devicectl and launchctl) | c9dbb96 tree |
 
+## Owner findings of 2026-11-02 (Phase 10: T098–T101)
+
+The owner's hands-on check of the Release build on the iPad Pro 13-inch (M5) simulator and the iPhone 14 after T093 surfaced
+three defects. The evidence was read from the simulator's app container, the CoreAudio log and the feature's own captures;
+each fix was written test-first (the test watched failing, then passing) and is listed in `tasks.md` Phase 10.
+
+| Finding | Evidence | Fix | Test |
+|---|---|---|---|
+| The first take after launch on iOS is a stereo WAV whose channel 1 is all zeros (the take plays left-only; the owner read it as "not recording") | The owner's take of 19:29 and every first take in the iPad and iPhone 18 Pro simulator containers (10-28 too): `ch0` live at −34 dBFS peak, `ch1` 0/157199 non-zero samples; the CoreAudio log shows the first arm's client format at 2 ch against a 1-ch hardware input and later arms at 1 ch; `configureDuplexLocked` reads bus 1's input-scope stream format on a unit that has never run with its input, a 2-channel default | `arm()` bounds the client channels by `AVAudioSession.inputNumberOfChannels` after `activateForRecording()` (`inputChannelLimit`, `IosAudioSession.inputChannels()`) | `InputChannelLimitTest` (pure clamp), `NativeAudioEngineRecordingTest.theFirstArmReportsTheRoutesInputChannels` (end to end; skips in the bare simulator test process, which has no output unit) |
+| The input meter never shows in the expanded (pinned) header on tablets and the iPad | The iPad screenshot of 19:31 and the feature's own `pixel-tablet/1024dp-armedRest.png` and `ipad-pro-13-m5/armedLoud.png`: no bar beneath the gain row; 44 + 44 + 4 + 8 + 8 dp of padding exceed the 96 dp lane, so Compose measured the meter at 0 dp (node present, nothing drawn) | `TrackHeader` overlays the meter along the bottom edge inside a `Box`, as `TrackHeaderCompact` does; `meterHeightExpanded` 4 dp (the bottom padding); contract rows updated | `TrackHeaderTest.expandedArmedHeaderShowsTheMeterAlongItsBottomEdge` (failed "not displayed", then green) |
+| Arming on the iPhone 14 drops frames | The session scope is `Dispatchers.Main.immediate`; the iOS `arm()` ran the session switch and the RemoteIO restart on the caller's thread (`timeline.arm` 604 ms in the trial round `20261102T085708Z`) while the Android actual hops to IO; `disarm()` restarts the unit the same way | `NativeAudioEngine.ios.kt` runs `arm()` and `disarm()` under an injected serial blocking dispatcher (`Dispatchers.IO.limitedParallelism(1)`); `TimelineAudio.disarm()` is `suspend`; the controller launches `closeInput` on the session scope (never cancelled; the engine core's command lock serialises a close against a transport close) | `NativeAudioEngineBlockingDispatchTest` (asserts the hop on the refused path too, so it runs in the bare simulator process; watched failing with the hop disabled) |
+
+Also seen, not a defect: the simulator's status bar draws no microphone indicator (the Pixel Tablet shows Android's green pill), and
+the simulator records whatever the Mac's microphone hears at its input volume (76 at the time; the owner's take peaked at −34 dBFS).
+
 ## Performance findings (T086, 2026-11-01/02)
 
 - Pixel 7 Pro round `20261101T205913Z_010-recording`: all six journeys, the recording journey 20/20 (22.1 s median;

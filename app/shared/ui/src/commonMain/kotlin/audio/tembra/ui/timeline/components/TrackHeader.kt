@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -70,15 +71,31 @@ internal fun TrackHeader(
     val spacing = TembraTheme.spacing
     val tint = daw.trackTints[track.colorIndex % daw.trackTints.size]
     var menuOpen by remember { mutableStateOf(false) }
-    Column(
+    Box(
         modifier = modifier
             .width(spacing.headerColumnWidth)
             .fillMaxHeight()
             .background(if (selected) daw.surfaceLevel2 else daw.surfaceLevel1)
             .testTag(TimelineTestTags.header(index))
             .selectable(selected = selected, role = Role.Button, onClick = onSelect)
-            .semantics { contentDescription = track.description }
-            .padding(horizontal = spacing.sm, vertical = spacing.xs),
+            .semantics { contentDescription = track.description },
+    ) {
+    // The input meter lies along the bottom edge, in the column's bottom padding, so the header keeps its height (spec
+    // FR-005; T099: the 96 dp lane holds the two 44 dp rows and the padding with nothing to spare, so a bar placed in
+    // the column's flow beneath the gain row was measured at 0 dp and never drawn).
+    if (track.armed && inputTelemetry != null) {
+        InputMeter(
+            telemetry = inputTelemetry,
+            armed = true,
+            onResetClip = onResetClip,
+            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = spacing.sm),
+            height = spacing.meterHeightExpanded,
+            testTag = TimelineTestTags.meter(index),
+            clipTestTag = TimelineTestTags.clipIndicator(index),
+        )
+    }
+    Column(
+        modifier = Modifier.fillMaxSize().padding(horizontal = spacing.sm, vertical = spacing.xs),
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(spacing.sm), verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
@@ -108,7 +125,6 @@ internal fun TrackHeader(
                 TransportButton(icon = TembraIcon.MoreVert, description = TRACK_MENU_DESCRIPTION, onClick = { menuOpen = true }, testTag = TimelineTestTags.trackMenu(index))
             }
         }
-        Column(verticalArrangement = Arrangement.spacedBy(spacing.xs), modifier = Modifier.fillMaxWidth()) {
         Row(horizontalArrangement = Arrangement.spacedBy(spacing.xs), verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
             GainReadout(gain = track.gainDb, onGain = onGain, modifier = Modifier.weight(1f), testTag = TimelineTestTags.gain(index))
             MuteSoloButton(letter = "M", description = MUTE_DESCRIPTION, checked = track.muted, tint = tint, onCheckedChange = onMute, size = SmallToggle, testTag = TimelineTestTags.mute(index))
@@ -121,19 +137,7 @@ internal fun TrackHeader(
                 testTag = TimelineTestTags.chevron(index),
             )
         }
-        // The input meter beneath the gain row while the track is armed (spec FR-005); the column keeps its height.
-        if (track.armed && inputTelemetry != null) {
-            InputMeter(
-                telemetry = inputTelemetry,
-                armed = true,
-                onResetClip = onResetClip,
-                modifier = Modifier.fillMaxWidth(),
-                height = spacing.meterHeightExpanded,
-                testTag = TimelineTestTags.meter(index),
-                clipTestTag = TimelineTestTags.clipIndicator(index),
-            )
-        }
-        }
+    }
     }
 }
 

@@ -111,8 +111,9 @@ data class TembraSpacing(
     val headerColumnWidth: Dp = 200.dp,
     /** The project card's overview chart. */
     val cardOverviewHeight: Dp = 56.dp,
-    // Timeline recording metrics (feature 010, contracts/timeline-recording-ui.md): the input meter along the compact
-    // header's bottom edge and beneath the expanded header's gain readout; neither changes the header's height.
+    // Timeline recording metrics (feature 010, contracts/timeline-recording-ui.md): the input meter along both headers'
+    // bottom edge, the expanded one inset by its horizontal padding; neither changes the header's height (T099: the
+    // 96 dp expanded lane leaves only its 4 dp bottom padding free beneath the two 44 dp rows).
     val meterHeightCompact: Dp = 4.dp,
-    val meterHeightExpanded: Dp = 8.dp,
+    val meterHeightExpanded: Dp = 4.dp,
 )

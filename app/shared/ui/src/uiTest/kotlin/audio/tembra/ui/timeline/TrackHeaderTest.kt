@@ -13,6 +13,8 @@ import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertHeightIsAtLeast
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.assertWidthIsEqualTo
@@ -27,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import audio.tembra.core.project.GainDb
 import audio.tembra.core.project.InstrumentLabel
 import audio.tembra.core.project.TrackId
+import audio.tembra.ui.session.InputTelemetry
 import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.ui.timeline.components.MENU_MOVE_DOWN
 import audio.tembra.ui.timeline.components.MENU_MOVE_UP
@@ -63,12 +66,13 @@ class TrackHeaderTest {
         }
     }
 
-    private fun ComposeUiTest.setExpanded() {
+    private fun ComposeUiTest.setExpanded(item: TrackUi = track, inputTelemetry: InputTelemetry? = null) {
         setContent {
             TembraTheme {
                 TrackHeader(
                     onArm = { calls += "arm($it)" },
-                    track = track, index = 1, selected = false, expanded = false, isFirst = false, isLast = true,
+                    inputTelemetry = inputTelemetry,
+                    track = item, index = 1, selected = false, expanded = false, isFirst = false, isLast = true,
                     onSelect = { calls += "select" }, onMute = { calls += "mute($it)" }, onSolo = { calls += "solo($it)" },
                     onGain = { calls += "gain(${it.readout})" }, onExpand = { calls += "expand($it)" },
                     onSettings = { calls += "settings" }, onAddAudio = { calls += "addAudio" }, onMoveUp = { calls += "up" },
@@ -158,6 +162,20 @@ class TrackHeaderTest {
         setCompact(item = armed)
         val description = onNodeWithTag(TimelineTestTags.header(1)).fetchSemanticsNode().config[SemanticsProperties.ContentDescription].joinToString()
         assertTrue(description.endsWith("armed"), description)
+    }
+
+    /**
+     * The 96 dp lane holds two 44 dp rows and the padding with nothing to spare, so a meter placed in the column's flow
+     * is measured at 0 dp and never drawn (the iPad and Pixel Tablet captures of 2026-11-02): it must lie along the
+     * header's bottom edge like the compact header's, visible and full height.
+     */
+    @Test
+    fun expandedArmedHeaderShowsTheMeterAlongItsBottomEdge() = runComposeUiTest {
+        setExpanded(item = track.copy(armed = true), inputTelemetry = InputTelemetry { _, _ -> })
+        val header = onNodeWithTag(TimelineTestTags.header(1)).assertHeightIsEqualTo(96.dp).getBoundsInRoot()
+        val meter = onNodeWithTag(TimelineTestTags.meter(1)).assertIsDisplayed().assertHeightIsEqualTo(4.dp).getBoundsInRoot()
+        val gap = (header.bottom - meter.bottom).value
+        assertTrue(gap in -0.5f..0.5f, "the meter's bottom is ${gap}dp above the header's bottom edge")
     }
 
     @Test

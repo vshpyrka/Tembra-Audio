@@ -57,7 +57,7 @@ class NativeAudioEngineRecordingTest {
 
     @AfterTest
     fun tearDown() {
-        engine.disarm()
+        runBlocking { engine.disarm() }
         engine.closeTransport()
         root.deleteRecursively()
         foreground?.finish()

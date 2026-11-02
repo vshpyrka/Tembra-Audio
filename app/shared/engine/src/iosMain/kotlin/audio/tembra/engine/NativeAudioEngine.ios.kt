@@ -89,10 +89,12 @@ import kotlinx.cinterop.toKString
 import kotlinx.cinterop.usePinned
 import kotlinx.cinterop.value
 import kotlinx.cinterop.ULongVar
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
+import kotlin.concurrent.Volatile
 import platform.Foundation.NSLock
 import platform.darwin.DISPATCH_TIME_NOW
 import platform.darwin.dispatch_after
@@ -116,6 +118,12 @@ import platform.darwin.dispatch_time
 actual class NativeAudioEngine internal constructor(
     /** Where [reportOutputLatencyNanos] delivers the latency: the engine; tests record it instead. */
     private val engineLatencySink: (Long) -> Unit,
+    /**
+     * Where [arm] and [disarm] run their session switch and unit restart (feature 010, T100): serial, so a close never
+     * overlaps an open and both keep their launch order; never the caller's thread, which is the main-immediate session
+     * scope. Tests inject a counting dispatcher.
+     */
+    private val blocking: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1),
 ) : AudioEngine {
 
     constructor() : this({ nanos -> tembra_metronome_set_output_latency_ns(nanos) })
@@ -516,40 +524,43 @@ actual class NativeAudioEngine internal constructor(
     // --- Capture, takes and monitoring (feature 010, contracts/engine-c-abi-v7.md "Kotlin seam") ---------------------
 
     /** True between a successful [arm] and [disarm] (or the transport closing). */
+    @Volatile
     private var armed = false
 
     /**
      * The session switches to `playAndRecord` before the unit restarts with its input bus (research R3), both
-     * latencies are reported, then the engine arms. On the caller's thread like the transport's open (the unit is
-     * reconfigured here, not primed).
+     * latencies are reported, then the engine arms. On the [blocking] dispatcher, never the caller's thread: the
+     * restart and the switch take hundreds of milliseconds (T100; the unit is reconfigured here, not primed).
      */
-    override suspend fun arm(maxChannels: Int): ArmResult {
-        if (audioState != AudioState.Transport) return ArmResult.NotTransport
+    override suspend fun arm(maxChannels: Int): ArmResult = withContext(blocking) {
+        if (audioState != AudioState.Transport) return@withContext ArmResult.NotTransport
         IosAudioSession.activateForRecording()
         reportOutputLatencyNanos(IosAudioSession.outputLatencyNanos())
         tembra_capture_set_input_latency_ns(IosAudioSession.inputLatencyNanos())
-        captureConfig.max_channels = maxChannels.toUInt()
+        // The route bounds the client format (T098): the unit's own hardware query is a 2-channel default on the first arm.
+        captureConfig.max_channels = inputChannelLimit(maxChannels, IosAudioSession.inputChannels()).toUInt()
         captureConfig.reserved = 0u
         val code = tembra_transport_arm(captureConfig.ptr)
         if (code != 0) {
             IosAudioSession.activateForPlayback()
-            return if (code == STATE_REFUSED.code) ArmResult.NotTransport else ArmResult.InputUnavailable
+            return@withContext if (code == STATE_REFUSED.code) ArmResult.NotTransport else ArmResult.InputUnavailable
         }
         // The render callback publishes the armed snapshot on its next block: wait for it rather than report a rate of 0.
         repeat(ARM_SETTLE_MILLIS / ARM_POLL_MILLIS) {
             tembra_capture_read(capture.ptr)
             if (capture.armed.toInt() != 0 && capture.sample_rate.toInt() > 0) {
                 armed = true
-                return ArmResult.Armed(channels = capture.input_channels.toInt().coerceAtLeast(1), sampleRate = capture.sample_rate.toInt())
+                return@withContext ArmResult.Armed(channels = capture.input_channels.toInt().coerceAtLeast(1), sampleRate = capture.sample_rate.toInt())
             }
             delay(ARM_POLL_MILLIS.toLong())
         }
         tembra_transport_disarm()
         IosAudioSession.activateForPlayback()
-        return ArmResult.InputUnavailable
+        ArmResult.InputUnavailable
     }
 
-    override fun disarm() {
+    /** The unit restarts without its input bus and the session returns to `playback`, on the [blocking] dispatcher (T100). */
+    override suspend fun disarm() = withContext(blocking) {
         tembra_transport_disarm()
         if (armed && audioState == AudioState.Transport) {
             IosAudioSession.activateForPlayback()

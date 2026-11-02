@@ -34,6 +34,7 @@ import platform.AVFAudio.AVAudioSessionSetActiveOptionNotifyOthersOnDeactivation
 import platform.AVFAudio.IOBufferDuration
 import platform.AVFAudio.currentRoute
 import platform.AVFAudio.inputLatency
+import platform.AVFAudio.inputNumberOfChannels
 import platform.AVFAudio.outputLatency
 import platform.AVFAudio.setActive
 import platform.AVFAudio.setPreferredIOBufferDuration
@@ -149,6 +150,9 @@ object IosAudioSession {
 
     /** The current output port's name, for the route monitor; empty when none. */
     fun currentOutputName(): String = session.currentRoute.outputs.firstNotNullOfOrNull { (it as? AVAudioSessionPortDescription)?.portName } ?: ""
+
+    /** The active route's input channels (feature 010, T098); 0 while the session has no input. */
+    fun inputChannels(): Long = session.inputNumberOfChannels
 
     /** The current input port's UID, for the route monitor; empty when none. */
     fun currentInputUid(): String = session.currentRoute.inputs.firstNotNullOfOrNull { (it as? AVAudioSessionPortDescription)?.UID } ?: ""

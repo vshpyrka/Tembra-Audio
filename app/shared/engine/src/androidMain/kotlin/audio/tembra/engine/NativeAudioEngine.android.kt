@@ -406,7 +406,7 @@ actual class NativeAudioEngine(context: Context) : AudioEngine {
         return ArmResult.InputUnavailable
     }
 
-    override fun disarm() {
+    override suspend fun disarm() {
         nativeTransportDisarm()
     }
 
