@@ -19,7 +19,7 @@ struct StressJourney {
             lane.swipeLeft(velocity: .fast)
             lane.swipeRight(velocity: .fast)
         }
-        recordWhileScrolling(app, lane: lane)
+        recordWhileScrolling(app)
         // The audio-health counters are written here, while the transport still owns the device: the metronome and the
         // tuner take it next and the engine restarts the counters per stream session (the release build has no devtools).
         let writeHealth = app.anchor(Anchors.devtoolsWriteHealth)
@@ -45,7 +45,7 @@ struct StressJourney {
     /// Feature 010: add a track, arm it, record three seconds without count-in while the lane scrolls, stop, undo the take
     /// and the track, so the health dump carries the recording counters. Every step tolerates a missing element (a build
     /// without recording, a denied microphone) and leaves the document as it was.
-    private func recordWhileScrolling(_ app: XCUIApplication, lane: XCUIElement) {
+    private func recordWhileScrolling(_ app: XCUIApplication) {
         let add = app.anchor(Anchors.timelineAddTrack)
         guard add.exists else { return }
         add.tap()
@@ -57,6 +57,8 @@ struct StressJourney {
         let record = app.anchor(Anchors.transportRecord).exists ? app.anchor(Anchors.transportRecord) : app.anchor(Anchors.trackRecord(last))
         guard record.waitForExistence(timeout: 2) else { return }
         record.tap()
+        // The track list scrolls the new track into view, so lane 0 may be off screen: swipe the new track's lane.
+        let lane = app.anchor(Anchors.timelineLane(last))
         let scrollUntil = Date().addingTimeInterval(3)
         while Date() < scrollUntil {
             lane.swipeLeft(velocity: .fast)

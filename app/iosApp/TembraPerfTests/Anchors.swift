@@ -61,6 +61,7 @@ enum Anchors {
     static let dialogStopRecordingConfirm = "dialog.stopRecording.confirm"
 
     /// The arm toggle, the meter and Record of track `index` (the recording journey's new track is the last one).
+    static func timelineLane(_ index: Int) -> String { "timeline.lane.\(index)" }
     static func trackArm(_ index: Int) -> String { "timeline.track.arm.\(index)" }
     static func trackMeter(_ index: Int) -> String { "timeline.track.meter.\(index)" }
     static func trackClip(_ index: Int) -> String { "timeline.track.clip.\(index)" }
