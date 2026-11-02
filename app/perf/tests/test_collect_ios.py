@@ -98,6 +98,25 @@ def test_cpu_cycles_and_unknown_metrics_are_skipped_not_fatal(cfg, caplog):
     assert "cpu.cycles" not in tuner
 
 
+def test_iterations_xctest_dropped_are_recorded_as_kept(cfg, tmp_path, caplog):
+    """XCTest drops a whole iteration whose signpost set differs from the first iteration's; a test whose metrics
+    all carry 13 of 20 is recorded with 13 iterations and the round carries the badge, a lone short metric stays
+    an error (the test below)."""
+    raw = json.load(open(METRICS))
+    for metric in raw[2]["testRuns"][0]["metrics"]:
+        metric["measurements"] = metric["measurements"][:13]
+    path = tmp_path / "metrics.json"
+    path.write_text(json.dumps(raw))
+    with caplog.at_level("WARNING"):
+        result = collect_round(str(path), cfg, simulator=False)
+    journeys = {j.journey: j for j in result.journeys}
+    short = next(j for j in journeys.values() if j.iterations == 13)
+    assert all(len(m.samples) == 13 for m in short.metrics.values())
+    assert all(j.iterations == 20 for j in journeys.values() if j is not short)
+    assert "short-iterations" in result.badges
+    assert "kept 13 of 20 iterations" in caplog.text
+
+
 def test_missing_measurement_count_is_an_error(cfg, tmp_path):
     with open(METRICS) as fh:
         raw = json.load(fh)
