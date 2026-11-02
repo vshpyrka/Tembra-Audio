@@ -97,6 +97,8 @@ Lanes and release after T102–T103 (T104, 2026-11-02 night):
 | Host (JVM, every module) + C++ | `checkAndroidHost engineHostTest --warning-mode all` | green, zero warnings: 931 JVM tests (ui 475, engine 68, core 246, data 142) |
 | iPhone 18 Pro simulator | `checkIos --warning-mode all` | green, zero warnings: core 246, engine 106, data 152, ui 983 (the open/close dispatcher test asserts on the refused path) |
 | Fold emulator (emulator-5554) | `:shared:engine:connectedAndroidDeviceTest` filtered to `NativeAudioEngineBlockingDispatchTest` | green: the transport opens and closes on the injected blocking dispatcher (1 test; the full device lane was not re-run) |
+| Fold emulator (emulator-5554) | `:androidApp:assembleRelease` + `tools/release-android.sh --no-build` | release build installed 21:31, compiled from the baseline profile (speed-profile), launched |
+| iPhone 14, iPhone 18 Pro, iPad Pro 13-inch (M5), iPhone Duo | `tools/release-ios.sh` (Release, iphoneos + iphonesimulator) | installed and launched on all four, 21:37; the Pixels, the Pixel Tablet, the OPPO and the Redmi were not attached |
 Also seen, not a defect: the simulator's status bar draws no microphone indicator (the Pixel Tablet shows Android's green pill), and
 the simulator records whatever the Mac's microphone hears at its input volume (76 at the time; the owner's take peaked at −34 dBFS).
 
