@@ -188,7 +188,7 @@ class NativeAudioEngineTest {
     @Test
     fun aZeroLatencyReportForwardsTheSessionsLatency() {
         val forwarded = mutableListOf<Long>()
-        val recording = NativeAudioEngine { forwarded += it }
+        val recording = NativeAudioEngine(engineLatencySink = { forwarded += it })
         assertTrue(IosAudioSession.activateForPlayback(), "activateForPlayback")
         try {
             recording.reportOutputLatencyNanos(0)

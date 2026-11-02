@@ -52,7 +52,7 @@ class TimelineTokensTest {
         for (color in listOf(daw.record, daw.meterBody, daw.meterWarning, daw.meterClip)) assertEquals(1f, color.alpha, "recording tokens are opaque")
         val spacing = TembraSpacing()
         assertEquals(4.dp, spacing.meterHeightCompact)
-        assertEquals(8.dp, spacing.meterHeightExpanded)
+        assertEquals(4.dp, spacing.meterHeightExpanded) // T099: the only room beneath the expanded header's rows
     }
 
     @Test

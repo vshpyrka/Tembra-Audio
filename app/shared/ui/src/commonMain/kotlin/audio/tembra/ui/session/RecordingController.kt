@@ -60,7 +60,7 @@ import kotlin.uuid.Uuid
  *
  * `kotlin-concurrency-and-flow`: [state] is renderable truth with a synchronous value; [inputTelemetry] is a hot,
  * replay-free per-frame read; every launch sits on the session scope under a name: `observeRoutes`,
- * `observePermission`, `observeCapture` (the 10 Hz mirror and the live peaks), `armJob`, `startTake`,
+ * `observePermission`, `observeCapture` (the 10 Hz mirror and the live peaks), `armJob`, `closeInput`, `startTake`,
  * `finaliseTake`, `requestPermission`, `rememberMonitor`. Nothing launches from `init`; [start] does, once.
  */
 @Inject
@@ -241,7 +241,7 @@ class RecordingController(
         when (effect) {
             RecordingEffect.OpenInput -> openInput()
             RecordingEffect.CloseInput -> {
-                audio.disarm()
+                closeInput()
                 liveOverview = null
                 publish()
             }
@@ -269,6 +269,15 @@ class RecordingController(
         MicrophonePermissionStatus.NotDetermined -> RecordingEvent.PermissionStatus.NotDetermined
         MicrophonePermissionStatus.DeniedCanAsk -> RecordingEvent.PermissionStatus.DeniedCanAsk
         MicrophonePermissionStatus.DeniedOpenSettings -> RecordingEvent.PermissionStatus.DeniedOpenSettings
+    }
+
+    /**
+     * The input closes on the session scope (never cancelled), not inline: on iOS the close restarts the unit and
+     * switches the session, work the engine runs on its serial blocking dispatcher after any arm launched before it
+     * (T100). An arm launched after it queues behind it there, so the policy's close-then-open order holds.
+     */
+    private fun closeInput() {
+        scope.launch(CoroutineName("closeInput")) { audio.disarm() }
     }
 
     private fun openInput() {

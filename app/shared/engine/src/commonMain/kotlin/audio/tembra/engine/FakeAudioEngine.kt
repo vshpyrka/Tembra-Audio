@@ -419,7 +419,7 @@ class FakeAudioEngine(
         return result
     }
 
-    override fun disarm() {
+    override suspend fun disarm() {
         _calls += "disarm"
         armed = false
         takeRunning = false

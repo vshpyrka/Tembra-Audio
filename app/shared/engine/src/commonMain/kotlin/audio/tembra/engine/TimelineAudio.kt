@@ -67,8 +67,11 @@ interface TimelineAudio : AudioStatus {
      */
     suspend fun arm(maxChannels: Int): ArmResult
 
-    /** Ends a running take (kept), turns monitoring off and closes the input; idempotent. */
-    fun disarm()
+    /**
+     * Ends a running take (kept), turns monitoring off and closes the input; idempotent (IO dispatcher on iOS: the unit
+     * restarts without its input bus and the session switches back, hundreds of milliseconds the caller must not block on).
+     */
+    suspend fun disarm()
 
     /** Monitoring of the armed track [trackIndex]'s input through its strip; the engine clears it on an output reopen. */
     fun setMonitor(enabled: Boolean, trackIndex: Int)
