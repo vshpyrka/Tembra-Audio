@@ -118,6 +118,22 @@ def _classify(identifier: str, display: str, unit: str, startup_variant: Optiona
     return None
 
 
+def _kept_iterations(run: Dict[str, Any], iterations: Optional[int], test_id: str) -> Optional[int]:
+    """XCTest drops an iteration whose set of signpost metrics differs from the first iteration's ("Received
+    unexpected number of metrics: 20 in iteration with index 2. Got 21 in iteration with index 0"), every metric
+    of it, so a test whose metrics all carry the same shortfall measured fewer iterations than asked and is
+    recorded with that count; metrics that disagree with each other stay an error."""
+    counts = {len(m.get("measurements", [])) for m in run.get("metrics", []) if m.get("measurements")}
+    if iterations is None or len(counts) != 1:
+        return iterations
+    kept = counts.pop()
+    if kept < iterations:
+        logger.warning("%s: XCTest kept %d of %d iterations (an iteration whose signpost set differs from the "
+                       "first is dropped with every metric of it); recorded with %d", test_id, kept, iterations, kept)
+        return kept
+    return iterations
+
+
 def _measurements(metric: Dict[str, Any], iterations: Optional[int], test_id: str) -> List[float]:
     values = [float(v) for v in metric.get("measurements", [])]
     if iterations is not None and len(values) != iterations:
@@ -137,6 +153,7 @@ def collect_round(metrics_json_path: str, cfg: Config, simulator: bool,
         data = data.get("tests") or data.get("testWithMetrics") or data.get("metrics") or []
     iterations = cfg.collection.iterations if iterations is None else iterations
     journeys: Dict[str, Dict[str, MetricResult]] = {}
+    short = False
     for entry in data:
         identifier = entry.get("testIdentifier") or entry.get("identifier") or ""
         target = journey_of_test(identifier)
@@ -146,6 +163,9 @@ def collect_round(metrics_json_path: str, cfg: Config, simulator: bool,
         journey, startup_variant = target
         metrics = journeys.setdefault(journey, {})
         for run in entry.get("testRuns", []):
+            kept = _kept_iterations(run, iterations, identifier)
+            if kept is not None and iterations is not None and kept < iterations:
+                short = True
             for metric in run.get("metrics", []):
                 classified = _classify(metric.get("identifier", ""), metric.get("displayName", ""),
                                        metric.get("unitOfMeasurement", ""), startup_variant, simulator)
@@ -156,7 +176,7 @@ def collect_round(metrics_json_path: str, cfg: Config, simulator: bool,
                 key, unit, conversion = classified
                 if key is None:
                     continue
-                values = _measurements(metric, iterations, identifier)
+                values = _measurements(metric, kept, identifier)
                 if conversion == "ms":
                     values = _to_ms(values, metric.get("unitOfMeasurement", ""))
                 elif conversion == "fps_deficit":
@@ -174,7 +194,8 @@ def collect_round(metrics_json_path: str, cfg: Config, simulator: bool,
                for j, ms in journeys.items()]
     order = {"startup": 0, "tuner": 1, "metronome": 2, "timeline": 3, "recording": 4, "stress": 5}
     results.sort(key=lambda r: order.get(r.journey, 9))
-    return CollectedRound(journeys=results, badges=["simulator"] if simulator else [], thermal_seconds=0.0)
+    badges = (["simulator"] if simulator else []) + (["short-iterations"] if short else [])
+    return CollectedRound(journeys=results, badges=badges, thermal_seconds=0.0)
 
 
 def _drop_frames_without_frames(journey: str, metrics: Dict[str, MetricResult]) -> None:
