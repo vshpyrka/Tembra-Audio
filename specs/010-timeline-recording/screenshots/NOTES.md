@@ -31,6 +31,15 @@ sounding step (the loopback check of §8) is recorded in `../evidence/alignment.
 | Pixel 6 Pro | `tools/release-android.sh --no-build --no-launch --serial 19021FDEE001AH` | yes, 2026-11-02 00:30, compiled from the baseline profile | 20e974f tree (the 22:55 APK) |
 | Pixel 7 Pro | `tools/release-android.sh --no-build --no-launch --serial 33241FDH3000NZ` | yes, 2026-11-02 00:40, compiled from the baseline profile | 20e974f tree (the 22:55 APK) |
 
+Second pass of 2026-11-02 (the regenerated profile a831049 and the track-list fix 2176267 inside), installed AND launched,
+each target reporting `audio.tembra.app/audio.tembra.android.MainActivity` as the focused activity:
+
+| Target | Build | Installed and launched | Commit |
+|---|---|---|---|
+| Pixel 6 Pro, Pixel Tablet, OPPO CPH2239, fold emulator | `./gradlew :androidApp:assembleRelease` at 08:22 (R8, the regenerated baseline profile, 25 MB) + `tools/release-android.sh --no-build` | yes, 08:30, compiled from the baseline profile (speed-profile); the OPPO refused the brightness settings (dimmed by hand), its profile compile worked this time | 0630113 tree |
+| Redmi Note 5 | same | yes, 08:30, runs from the APK with the JIT (profile broadcast result 1); it refused `set_dnd` | 0630113 tree |
+| Pixel 7 Pro | same, after its reference round | yes, 08:40, compiled from the baseline profile (speed-profile) | 0630113 tree |
+
 ## Performance findings (T086, 2026-11-01/02)
 
 - Pixel 7 Pro round `20261101T205913Z_010-recording`: all six journeys, the recording journey 20/20 (22.1 s median;
@@ -54,6 +63,28 @@ sounding step (the loopback check of §8) is recorded in `../evidence/alignment.
 - Clean soak on the Pixel 7 Pro (perf build, fresh process, demo + one track, 24:40 take): overruns 0, starvation 0,
   xruns 0, backlog 1152 frames, one callback over budget at 2.98 ms (avg 17 µs). The 30-minute cap was reached only in
   the first soak on the Pixel 6 Pro's release build (the take ended by itself; a later Record started "Take 2").
+- Pixel 6 Pro round `20261102T040607Z_010-recording` (2026-11-02, 58 % battery, prebuilt perf APKs): all six journeys,
+  the recording journey 20/20 (22.2 s median; frames p50 8.5 ms, p90 11.5 ms, p99 14.5 ms; countIn 1975 ms, recordStart
+  4.2 ms, takeAlignment 77 ms, projectSave 34 ms). Stress counters: `audio.input_overruns` 6 (5 to 8) against the Pixel 7
+  Pro's 1, `audio.take_alignment_ms` 132, starvation, xruns and over-budget 0, max callback 185 µs (`evidence/trial-round.md`).
+- The profile compare on the Pixel 6 Pro lost the recording journey's arm tap once in 49 iterations: the new track was
+  still animating into view when the tap landed, the row slid out from under the pointer and Compose cancelled the press
+  (no input stream was opened, the meter never appeared). `TrackList` now scrolls the new track into view instantly
+  (2176267); the rerun passed 40/40 and the verify reports the regenerated profile present, recognised and compiled
+  speed-profile. The profile does not change the recording journey's duration or frame times (the count-in dominates);
+  projectSave -41 % and recordStop -49 % are the confirmed gains (`evidence/profile.md`, T087).
+- The app-size gate notice (6.97 MB to 26.8 MB on the perf APK) is feature 009's four demo WAV files (17 MB under
+  `composeResources/files/demo/`, commit 23dee07), not recording: the native libraries and dex add 9 MB in total.
+- What recording costs, measured on the Pixel 7 Pro against a reference round of the pre-010 code (`f47014e`, the
+  branch's merge base, built in a detached worktree and measured the same morning with its own pipeline; round
+  `20261102T055511Z_009-main-reference`, record copied under `app/perf/data/rounds/`). Medians of one round each:
+  app size +0.6 % (26.64 to 26.80 MB); startup ttid 238 to 248 ms (+4 %), ttfd 349 to 365 ms (+5 %); the tuner,
+  metronome and timeline journeys unchanged (1783/1782 ms, 2970/2987 ms, 29.49/29.53 s) with frame p50/p90 within 2 %
+  and p99 within 10 % either way; timeline memory peak +2.6 %. The stress journey is longer by design (16.3 to 25.9 s:
+  it now records a three-second take and undoes it) and its memory peak grows 149 to 181 MB (+21 %), the recording
+  path's buffers and the take's adoption: a follow-up to size, not a regression of the playing journeys. The gate's
+  "+86 % ttfd" and "+285 % size" notices against the 2026-10-13 baselines are therefore feature 009's (and ttfd is now
+  reported after the timeline's first project draw, not at the first frame).
 
 ## Captures (T080)
 
