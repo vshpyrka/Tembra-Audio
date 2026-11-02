@@ -118,3 +118,29 @@ timeline, recording and stress all passed, 20 iterations each (recording 22.2 s 
 - Attempt 1, round `20261102T060116Z_010-recording`, after a 10 minute cool-down: failed at once with "The test runner failed to initialize for UI testing (Timed out while enabling automation mode)". The phone had been locked (`passcodeRequired: true`; it unlocked about 7 minutes after the owner was asked, per `devicectl device info lockState`).
 - Attempt 2, round `20261102T060859Z_010-recording` (phone unlocked): the recording journey PASSED (1175.5 s, per the coordinator), but the round ended `refused: thermal_state=serious limit=nominal`. No `record.json` was written, so there are no section medians, frame/hitch numbers or audio counters from this round.
 - Cause of the refusal: the iOS pipeline runs the whole test target regardless of `--journeys`, so the other tests self-refused after the 20 minute recording journey heated the phone. The pipeline is being changed to narrow the run to the selected journey's test class. No third attempt was made.
+
+The iPhone 14 recording-alone round 20261102T072547Z_010-recording was stopped by request (exit 144) during the measured XCTest run, after the build, install and warm-up; the iteration count is unknown and no record.json was written.
+
+## iPhone 14, recording journey alone, narrowed run (2026-11-02, third run)
+
+Round `20261102T085708Z_010-recording` on the iPhone 14 (iOS 27.0.1), command `tracepulse run --device iphone14 --label 010-recording --rounds 1 --no-publish --journeys recording`. Exit status 0. The record was written with the badge `short-iterations`, thermal nominal, network wifi, battery 1.0. XCTest kept 11 of the 20 iterations and dropped 9 (the log has 9 lines "Received unexpected number of metrics"). The gate is within limits; all 14 gate entries are inactive because there are fewer than 5 clean rounds, and none is above the limit.
+
+Medians over the 11 kept iterations:
+
+| Metric | Median |
+| --- | --- |
+| journey.duration_ms | 40570.6 ms |
+| cpu.time_ms | 14060.7 ms |
+| memory.peak_kb | 164726.7 kB |
+| memory.end_kb | 162809.8 kB |
+| section.transport.countIn sum_ms | 1977.7 ms |
+| section.timeline.arm sum_ms | 604.3 ms |
+| section.transport.recordStop sum_ms | 37.7 ms |
+| section.timeline.projectSave sum_ms | 21.9 ms |
+| section.engine.takeAlignment sum_ms | 19.7 ms |
+| section.transport.recordStart sum_ms | 15.1 ms |
+| section.timeline.waveform sum_ms | 5.7 ms |
+| section.timeline.takeFrame sum_ms | 0.35 ms |
+| section.timeline.playheadFrame sum_ms | 0.004 ms |
+
+The record carries no frames.* metrics (p50, p90, p99) and no section count metrics, only the sum_ms of each section; so frame percentiles and counts are not available from this round. All nine recorded sections are present in every kept iteration (none absent). The sections not in the record at all are the other recording sections and the four audio counters listed as unobservable earlier. Raw data: `app/perf/data/rounds/20261102T085708Z_010-recording/`.

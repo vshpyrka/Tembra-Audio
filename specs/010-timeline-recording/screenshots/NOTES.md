@@ -19,7 +19,7 @@ sounding step (the loopback check of §8) is recorded in `../evidence/alignment.
 | Fold emulator (emulator-5554) | `checkAndroidDevice` | recording test green on the re-run; two timing/probe flakes and three screenshot-capture flakes of earlier features remain | core 246, data 152, engine 105 (2 flakes), ui 976 (3 capture flakes) | 2026-11-01, the full lane took 2 h 27 min, `final-pass-android.md` |
 | OPPO CPH2239 (O7PBYLZP4HMBW8S4) | `checkAndroidDevice` | green with two engine recording tests skipped (ColorOS refuses the runner's microphone grant); TrackHeaderTest green on the re-run | core 246, data 152, engine 105 (2 skipped), ui 977 | 2026-11-01, brightness by hand (ColorOS refuses adb), `final-pass-android.md` |
 | Redmi Note 5 (e9446ac2) | `checkAndroidDevice` | green, 0 failures | core 246, data 152, engine 105, ui 977 | 2026-11-01 06:25, 9 min 27 s; API 28; Play Protect prompt answered "Don't send" |
-| iPhone 14 (00008110-001049660E3A401E) | perf trial round (T086) | **blocked**: 2026-10-28 "Timed out while enabling automation mode" (locked); 2026-11-01 twice `refused: runner_trusted` (rounds 20261101T192951Z, 20261101T193730Z) | | the owner trusts the TembraPerfTests developer profile (Settings → General → VPN & Device Management) and keeps the phone unlocked, then `uv run tracepulse run --device iphone14 --label 010-recording --rounds 1 --no-publish`; the Release build is installed (724c8ef) |
+| iPhone 14 (00008110-001049660E3A401E) | perf trial round (T086) | green on the third narrowed run of 2026-11-02: round `20261102T085708Z`, the recording journey alone, 11 of 20 iterations kept (XCTest drops an iteration whose signpost set differs from the first; badge `short-iterations`) | countIn 1978 ms, arm 604 ms, recordStart 15 ms, recordStop 38 ms, takeAlignment 20 ms, projectSave 22 ms, waveform 5.7 ms; journey 40.6 s; peak memory 165 MB; no frames family (the count-in interval draws no Core Animation frames) | 2026-11-01 twice `refused: runner_trusted`, then trusted; 2026-11-02 two journeys passed but the rounds were refused on thermal (the whole target ran) until `--journeys` narrowed the run (8def2ce); the phone's stuck spinner at 08:00 needed `devicectl device reboot`; `evidence/trial-round.md` |
 
 Re-run of 2026-11-02 after the track-list fix (2176267): the host lane (`checkAndroidHost`, zero warnings, 09:0x) and
 the simulator lane on the iPhone 18 Pro (`checkIos`, 980 tests in 133 suites, 0 failures, 09:21) green; the pipeline's
@@ -90,6 +90,14 @@ each target reporting `audio.tembra.app/audio.tembra.android.MainActivity` as th
   path's buffers and the take's adoption: a follow-up to size, not a regression of the playing journeys. The gate's
   "+86 % ttfd" and "+285 % size" notices against the 2026-10-13 baselines are therefore feature 009's (and ttfd is now
   reported after the timeline's first project draw, not at the first frame).
+- iPhone 14 (round `20261102T085708Z`, the recording journey alone, 11 of 20 iterations kept): countIn 1978 ms, arm
+  604 ms (the section wraps the input's start on iOS; on Android it wraps the controller call, 0.15 ms), recordStart
+  15 ms, recordStop 38 ms, takeAlignment 20 ms, projectSave 22 ms, waveform 5.7 ms, journey 40.6 s, peak memory 165 MB,
+  59 fps and no hitches during the count-in. Two follow-ups for the pipeline: XCTest discarded 7 then 9 of 20
+  iterations because one signpost kind was present in iteration 0 and absent later (the collector now records the
+  kept iterations under the badge `short-iterations`, 9b5d9ac; the kind is still to be identified, the candidates
+  are the sections that fire only on a first open or on an optional tap), and the count-in interval draws no Core
+  Animation frames for XCTest, so the frames family is absent on iOS as it is for the metronome's tempo change.
 
 ## Captures (T080)
 

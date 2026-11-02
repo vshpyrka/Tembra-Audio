@@ -60,7 +60,12 @@ Spec, plan and tasks: `specs/010-timeline-recording/` (97 tasks; the open ones a
   pre-010 code on the same Pixel 7 Pro (`20261102T055511Z_009-main-reference`, built from the merge base f47014e):
   app +0.6 %, startup ttid +4 % and ttfd +5 % (10 to 16 ms), the tuner, metronome and timeline journeys and their frame
   times unchanged within 2 %; the stress journey records now, so it is longer and its memory peak is +21 % (a
-  follow-up to size).
+  follow-up to size). iPhone 14 round `20261102T085708Z` (the recording journey alone, 11 of 20 iterations kept):
+  countIn 1978 ms, arm 604 ms, recordStart 15 ms, recordStop 38 ms, takeAlignment 20 ms, projectSave 22 ms, journey
+  40.6 s, peak memory 165 MB. Pipeline changes on the way: `--journeys` narrows the iOS run to the journeys' XCTest
+  classes (the classes left out could refuse a round on thermal after the twenty-minute journey), and a round keeps
+  the iterations XCTest kept under the badge `short-iterations` instead of failing (XCTest drops an iteration whose
+  signpost set differs from the first; which kind varies is a follow-up).
 - Soak (`evidence/notes.md`): a 24:40 take on the Pixel 7 Pro's perf build: overruns 0, starvation 0, xruns 0,
   backlog 1152 frames, one callback over budget at 2.98 ms. The 30-minute cap ended a take by itself on the Pixel 6 Pro.
 - Screenshots: `screenshots/ios/` (14 states on three simulators) and `screenshots/android/` (five widths, the fold
@@ -70,8 +75,6 @@ Spec, plan and tasks: `specs/010-timeline-recording/` (97 tasks; the open ones a
 
 ## Open for the owner (quickstart §4–§8, T081, T090, T094, T095, T097)
 
-- Trust the TembraPerfTests developer profile on the iPhone 14 (Settings → General → VPN & Device Management), keep it
-  unlocked, then `uv run tracepulse run --device iphone14 --label 010-recording --rounds 1 --no-publish`.
 - The rows that need sound, headphones or a call: the meter by ear, the count-in by ear, monitoring on headphones /
   speaker guard / unplug / wireless, the headset mic mid-take, calls, screen lock and force quit ×10, the loopback
   alignment and monitoring delay (`app/tools/measure-take-alignment.py`), TalkBack/VoiceOver, Record's placement at
