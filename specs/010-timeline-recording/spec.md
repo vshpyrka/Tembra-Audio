@@ -107,9 +107,11 @@ specification and feature 009's.
 - Q: May arming or disarming hold up the screen? → A: No: the Timeline MUST stay responsive
   while the input opens and closes; the platform's own audio-unit restart happens off the
   screen's thread (on the iPhone 14 the arm took about 600 ms and dropped every frame of it;
-  FR-001 names it). The same rule is the owner's standing expectation for opening and closing a
-  project's transport and for starting and stopping the metronome, which still do that work on
-  the screen's thread on iOS (audit of 2026-11-02, recorded for the next feature).
+  FR-001 names it). The same rule holds for opening and closing a project's transport and for
+  starting, stopping and previewing the metronome, which the audit of 2026-11-02 found doing that
+  work on the screen's thread (both platforms for the close and the metronome, iOS for the open);
+  fixed the same day as T102 and T103 on one serial engine dispatcher, so the hand-over of the
+  audio device between the Timeline, the tuner and the metronome keeps its order.
 
 ## User Scenarios & Testing *(mandatory)*
 

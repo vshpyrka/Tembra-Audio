@@ -87,3 +87,9 @@ abandoned; an injected `AUDIOFOCUS_LOSS` reaches the listener), `BecomingNoisyRe
 (+ `activateForPlayback` then `outputLatencyNanos() > 0` on the simulator; an injected
 interruption notification emits `Interrupted`; an injected route-change notification with a
 headphones, USB audio or AirPlay previous route emits `OutputRouteLost`, one with only the built-in speaker or receiver does not).
+
+Threading since feature 010 (T103): `MetronomeViewModel` calls `startMetronome`, `stopMetronome`, `stopTone` (before a
+start) and `previewClick` on its `audioDispatcher` (`EngineDispatchers.blocking` by default, the engine's one serial
+dispatcher shared with the tuner and the transport), never on the main thread: the session activation and the stream open
+took about 100 ms on an iPhone 14 and dropped frames on the Play tap. The screen shows Starting and Stopped at once; a
+pause that lands during a start queues its stop behind the start on the same dispatcher.

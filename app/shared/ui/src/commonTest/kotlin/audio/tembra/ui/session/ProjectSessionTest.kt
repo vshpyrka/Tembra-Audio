@@ -137,7 +137,8 @@ class ProjectSessionTest {
         advanceUntilIdle()
         val before = engine.calls.size
         session.transportHostVisible(false)
-        assertEquals(listOf("closeTransport"), callNames().drop(before), "the hand-over is synchronous")
+        runCurrent() // the close runs on the engine's serial dispatcher (T102), before anything launched after it
+        assertEquals(listOf("closeTransport"), callNames().drop(before), "the hand-over is ordered first")
         session.transportHostVisible(true)
         advanceUntilIdle()
         assertEquals(
@@ -173,6 +174,7 @@ class ProjectSessionTest {
     fun aSeekWhileDetachedStaysAwayFromTheEngine() = runTest(dispatcher) {
         openDemo()
         session.transportHostVisible(false)
+        runCurrent() // the hand-over close lands
         val before = engine.calls.size
         session.seek(Beats(12.0))
         advanceUntilIdle()
@@ -278,6 +280,7 @@ class ProjectSessionTest {
         assertEquals("seek(8.0)", engine.calls.last())
         assertEquals(AudioState.Transport, engine.audioState)
         session.transportHostVisible(false)
+        runCurrent()
         assertEquals("closeTransport", engine.calls.last(), "the next leave hands the device over")
         assertEquals(AudioState.Idle, engine.audioState)
     }
@@ -351,6 +354,7 @@ class ProjectSessionTest {
         assertEquals(listOf("closeTransport", "openTransport"), transport, "closed with the old project, opened once for the new: $transport")
         assertEquals(AudioState.Transport, engine.audioState)
         session.transportHostVisible(false)
+        runCurrent()
         assertEquals("closeTransport", engine.calls.last(), "the session still knows it holds the device")
         assertEquals(AudioState.Idle, engine.audioState)
     }
@@ -360,6 +364,7 @@ class ProjectSessionTest {
     fun metronomeSettingsChangedWhileDetachedStayAwayFromTheEngine() = runTest(dispatcher) {
         openDemo()
         session.transportHostVisible(false)
+        runCurrent() // the hand-over close lands
         val before = engine.calls.size
         preferences.update { it.copy(settings = it.settings.copy(subdivision = Subdivision.Two)) }
         advanceUntilIdle()

@@ -281,7 +281,7 @@ class FakeAudioEngine(
         }
     }
 
-    override fun closeTransport() {
+    override suspend fun closeTransport() {
         _calls += "closeTransport"
         if (audioState == AudioState.Transport) audioState = AudioState.Idle
         transportPlaying = false

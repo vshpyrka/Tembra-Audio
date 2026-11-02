@@ -36,7 +36,7 @@ class TransportTimingEndToEndTest {
 
     @AfterTest
     fun tearDown() {
-        engine.closeTransport()
+        runBlocking { engine.closeTransport() }
         NSFileManager.defaultManager.removeItemAtPath(root, error = null)
     }
 

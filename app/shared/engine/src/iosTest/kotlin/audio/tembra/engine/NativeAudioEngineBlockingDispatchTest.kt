@@ -52,6 +52,21 @@ class NativeAudioEngineBlockingDispatchTest {
         engine.disarm()
         assertTrue(blocking.dispatches > beforeDisarm, "disarm ran on the caller's thread instead of the blocking dispatcher")
     }
+
+    /**
+     * Opening the transport activates the session and creates, initialises and starts the RemoteIO unit; closing it tears
+     * the unit down and deactivates the session (T102). Both must hop like the arm: the session scope that calls them
+     * is main-immediate. In the bare simulator process the open is refused with DeviceFailed, still on the dispatcher.
+     */
+    @Test
+    fun openTransportAndCloseTransportHopToTheBlockingDispatcher() = runBlocking {
+        val beforeOpen = blocking.dispatches
+        val opened = engine.openTransport()
+        assertTrue(blocking.dispatches > beforeOpen, "openTransport ran on the caller's thread instead of the blocking dispatcher ($opened)")
+        val beforeClose = blocking.dispatches
+        engine.closeTransport()
+        assertTrue(blocking.dispatches > beforeClose, "closeTransport ran on the caller's thread instead of the blocking dispatcher")
+    }
 }
 
 /** Counts the blocks handed to [delegate]; a `withContext` onto it from another dispatcher counts at least once. */

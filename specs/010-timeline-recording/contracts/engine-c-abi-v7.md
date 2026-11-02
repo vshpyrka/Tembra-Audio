@@ -151,6 +151,9 @@ arrangement is.
 ```kotlin
 suspend fun arm(maxChannels: Int): ArmResult            // off the caller's thread; Android opens the input stream on IO, iOS switches the session and restarts the unit on its serial blocking dispatcher, maxChannels bounded by the route's input channels (T098)
 suspend fun disarm()                                     // iOS: the unit restarts without its input and the session switches back, on the same blocking dispatcher (T100)
+// Revision 6's openTransport() and closeTransport() (now suspend) run on the same dispatcher, `EngineDispatchers.blocking`, one serial
+// dispatcher for the whole app that the tuner's and the metronome's view models share (T102, T103), so starts, stops, opens and
+// closes keep the order they were asked in across screens.
 fun setMonitor(enabled: Boolean, trackIndex: Int)
 suspend fun recordStart(config: RecordConfig): RecordStartResult
 fun recordCancel()
