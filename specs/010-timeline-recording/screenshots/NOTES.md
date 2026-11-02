@@ -98,7 +98,8 @@ Lanes and release after T102–T103 (T104, 2026-11-02 night):
 | iPhone 18 Pro simulator | `checkIos --warning-mode all` | green, zero warnings: core 246, engine 106, data 152, ui 983 (the open/close dispatcher test asserts on the refused path) |
 | Fold emulator (emulator-5554) | `:shared:engine:connectedAndroidDeviceTest` filtered to `NativeAudioEngineBlockingDispatchTest` | green: the transport opens and closes on the injected blocking dispatcher (1 test; the full device lane was not re-run) |
 | Fold emulator (emulator-5554) | `:androidApp:assembleRelease` + `tools/release-android.sh --no-build` | release build installed 21:31, compiled from the baseline profile (speed-profile), launched |
-| iPhone 14, iPhone 18 Pro, iPad Pro 13-inch (M5), iPhone Duo | `tools/release-ios.sh` (Release, iphoneos + iphonesimulator) | installed and launched on all four, 21:37; the Pixels, the Pixel Tablet, the OPPO and the Redmi were not attached |
+| iPhone 14, iPhone 18 Pro, iPad Pro 13-inch (M5), iPhone Duo | `tools/release-ios.sh` (Release, iphoneos + iphonesimulator) | installed and launched on all four, 21:37; at 21:41 all four had the app process alive and the Timeline on screen (captures) |
+| Pixel 6 Pro, Pixel 7 Pro, Pixel Tablet, OPPO CPH2239, Redmi Note 5 | `tools/release-android.sh --no-build` once they were attached (21:40–21:43) | release build installed and launched on all five, compiled from the baseline profile (the Redmi runs from the APK with the JIT, as always); `MainActivity` resumed on every one, captures taken; the fold emulator had been shut down by then |
 Also seen, not a defect: the simulator's status bar draws no microphone indicator (the Pixel Tablet shows Android's green pill), and
 the simulator records whatever the Mac's microphone hears at its input volume (76 at the time; the owner's take peaked at −34 dBFS).
 
