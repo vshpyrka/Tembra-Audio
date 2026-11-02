@@ -114,6 +114,8 @@ def test_iterations_xctest_dropped_are_recorded_as_kept(cfg, tmp_path, caplog):
     assert all(len(m.samples) == 13 for m in short.metrics.values())
     assert all(j.iterations == 20 for j in journeys.values() if j is not short)
     assert "short-iterations" in result.badges
+    schema = json.load(open(os.path.join(os.path.dirname(__file__), "..", "tracepulse", "schema", "round-record.schema.json")))
+    assert "short-iterations" in schema["properties"]["badges"]["items"]["enum"]
     assert "kept 13 of 20 iterations" in caplog.text
 
 
