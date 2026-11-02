@@ -68,6 +68,7 @@ uv run tracepulse run --device pixel6 --label <feature> [--rounds 5] [--journeys
 uv run tracepulse run --device pixel6 --label <feature> --no-build --apk <app.apk> --test-apk <benchmarks.apk>
                                                         # reuse artifacts built elsewhere (an agent builds through the gradle-run wrapper)
 uv run tracepulse run --device iphone14 --label <feature> [--size] [--no-build --xctestrun <path>]
+                                                        # --journeys on iOS runs only those journeys' XCTest classes
 uv run tracepulse run --simulators --label <feature>    # every booted simulator, sequentially
 uv run tracepulse run --device pixel6 --label release-baseline --build-type release      # SC-007 comparison (Android)
 uv run tracepulse run --device iphone14 --label release-baseline --configuration Release # SC-007 comparison (iOS)
