@@ -132,7 +132,7 @@
      },
      {
       "displayName": "CPU Time (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_CPU-audio.tembra.appP5QJJ5Y5V7.time",
+      "identifier": "com.apple.dt.XCTMetric_CPU-com.tembraaudioP5QJJ5Y5V7.time",
       "unitOfMeasurement": "s",
       "measurements": [
        0.98,
@@ -162,7 +162,7 @@
      },
      {
       "displayName": "CPU Cycles (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_CPU-audio.tembra.appP5QJJ5Y5V7.cycles",
+      "identifier": "com.apple.dt.XCTMetric_CPU-com.tembraaudioP5QJJ5Y5V7.cycles",
       "unitOfMeasurement": "kC",
       "measurements": [
        1935730.0,
@@ -192,7 +192,7 @@
      },
      {
       "displayName": "CPU Instructions Retired (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_CPU-audio.tembra.appP5QJJ5Y5V7.instructions_retired",
+      "identifier": "com.apple.dt.XCTMetric_CPU-com.tembraaudioP5QJJ5Y5V7.instructions_retired",
       "unitOfMeasurement": "kI",
       "measurements": [
        2451360.0,
@@ -222,7 +222,7 @@
      },
      {
       "displayName": "Memory Physical (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_Memory-audio.tembra.appP5QJJ5Y5V7.physical",
+      "identifier": "com.apple.dt.XCTMetric_Memory-com.tembraaudioP5QJJ5Y5V7.physical",
       "unitOfMeasurement": "kB",
       "measurements": [
        1296.0,
@@ -252,7 +252,7 @@
      },
      {
       "displayName": "Memory Peak Physical (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_Memory-audio.tembra.appP5QJJ5Y5V7.physical_peak",
+      "identifier": "com.apple.dt.XCTMetric_Memory-com.tembraaudioP5QJJ5Y5V7.physical_peak",
       "unitOfMeasurement": "kB",
       "measurements": [
        96968.0,
@@ -372,7 +372,7 @@
      },
      {
       "displayName": "Absolute Memory Physical (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_Memory-audio.tembra.appP5QJJ5Y5V7.physical_absolute",
+      "identifier": "com.apple.dt.XCTMetric_Memory-com.tembraaudioP5QJJ5Y5V7.physical_absolute",
       "unitOfMeasurement": "kB",
       "measurements": [
        1296.0,
@@ -447,7 +447,7 @@
      },
      {
       "displayName": "CPU Time (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_CPU-audio.tembra.appP5QJJ5Y5V7.time",
+      "identifier": "com.apple.dt.XCTMetric_CPU-com.tembraaudioP5QJJ5Y5V7.time",
       "unitOfMeasurement": "s",
       "measurements": [
        1.101,
@@ -477,7 +477,7 @@
      },
      {
       "displayName": "CPU Cycles (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_CPU-audio.tembra.appP5QJJ5Y5V7.cycles",
+      "identifier": "com.apple.dt.XCTMetric_CPU-com.tembraaudioP5QJJ5Y5V7.cycles",
       "unitOfMeasurement": "kC",
       "measurements": [
        1954630.0,
@@ -507,7 +507,7 @@
      },
      {
       "displayName": "CPU Instructions Retired (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_CPU-audio.tembra.appP5QJJ5Y5V7.instructions_retired",
+      "identifier": "com.apple.dt.XCTMetric_CPU-com.tembraaudioP5QJJ5Y5V7.instructions_retired",
       "unitOfMeasurement": "kI",
       "measurements": [
        2668160.0,
@@ -537,7 +537,7 @@
      },
      {
       "displayName": "Memory Physical (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_Memory-audio.tembra.appP5QJJ5Y5V7.physical",
+      "identifier": "com.apple.dt.XCTMetric_Memory-com.tembraaudioP5QJJ5Y5V7.physical",
       "unitOfMeasurement": "kB",
       "measurements": [
        1680.0,
@@ -567,7 +567,7 @@
      },
      {
       "displayName": "Memory Peak Physical (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_Memory-audio.tembra.appP5QJJ5Y5V7.physical_peak",
+      "identifier": "com.apple.dt.XCTMetric_Memory-com.tembraaudioP5QJJ5Y5V7.physical_peak",
       "unitOfMeasurement": "kB",
       "measurements": [
        100388.0,
@@ -807,7 +807,7 @@
      },
      {
       "displayName": "Absolute Memory Physical (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_Memory-audio.tembra.appP5QJJ5Y5V7.physical_absolute",
+      "identifier": "com.apple.dt.XCTMetric_Memory-com.tembraaudioP5QJJ5Y5V7.physical_absolute",
       "unitOfMeasurement": "kB",
       "measurements": [
        1680.0,
@@ -882,7 +882,7 @@
      },
      {
       "displayName": "CPU Time (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_CPU-audio.tembra.appP5QJJ5Y5V7.time",
+      "identifier": "com.apple.dt.XCTMetric_CPU-com.tembraaudioP5QJJ5Y5V7.time",
       "unitOfMeasurement": "s",
       "measurements": [
        1.101,
@@ -912,7 +912,7 @@
      },
      {
       "displayName": "CPU Cycles (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_CPU-audio.tembra.appP5QJJ5Y5V7.cycles",
+      "identifier": "com.apple.dt.XCTMetric_CPU-com.tembraaudioP5QJJ5Y5V7.cycles",
       "unitOfMeasurement": "kC",
       "measurements": [
        1954630.0,
@@ -942,7 +942,7 @@
      },
      {
       "displayName": "CPU Instructions Retired (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_CPU-audio.tembra.appP5QJJ5Y5V7.instructions_retired",
+      "identifier": "com.apple.dt.XCTMetric_CPU-com.tembraaudioP5QJJ5Y5V7.instructions_retired",
       "unitOfMeasurement": "kI",
       "measurements": [
        2668160.0,
@@ -972,7 +972,7 @@
      },
      {
       "displayName": "Memory Physical (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_Memory-audio.tembra.appP5QJJ5Y5V7.physical",
+      "identifier": "com.apple.dt.XCTMetric_Memory-com.tembraaudioP5QJJ5Y5V7.physical",
       "unitOfMeasurement": "kB",
       "measurements": [
        1680.0,
@@ -1002,7 +1002,7 @@
      },
      {
       "displayName": "Memory Peak Physical (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_Memory-audio.tembra.appP5QJJ5Y5V7.physical_peak",
+      "identifier": "com.apple.dt.XCTMetric_Memory-com.tembraaudioP5QJJ5Y5V7.physical_peak",
       "unitOfMeasurement": "kB",
       "measurements": [
        100388.0,
@@ -1242,7 +1242,7 @@
      },
      {
       "displayName": "Absolute Memory Physical (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_Memory-audio.tembra.appP5QJJ5Y5V7.physical_absolute",
+      "identifier": "com.apple.dt.XCTMetric_Memory-com.tembraaudioP5QJJ5Y5V7.physical_absolute",
       "unitOfMeasurement": "kB",
       "measurements": [
        1680.0,
@@ -1317,7 +1317,7 @@
      },
      {
       "displayName": "CPU Time (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_CPU-audio.tembra.appP5QJJ5Y5V7.time",
+      "identifier": "com.apple.dt.XCTMetric_CPU-com.tembraaudioP5QJJ5Y5V7.time",
       "unitOfMeasurement": "s",
       "measurements": [
        1.622,
@@ -1347,7 +1347,7 @@
      },
      {
       "displayName": "CPU Cycles (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_CPU-audio.tembra.appP5QJJ5Y5V7.cycles",
+      "identifier": "com.apple.dt.XCTMetric_CPU-com.tembraaudioP5QJJ5Y5V7.cycles",
       "unitOfMeasurement": "kC",
       "measurements": [
        1973530.0,
@@ -1377,7 +1377,7 @@
      },
      {
       "displayName": "CPU Instructions Retired (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_CPU-audio.tembra.appP5QJJ5Y5V7.instructions_retired",
+      "identifier": "com.apple.dt.XCTMetric_CPU-com.tembraaudioP5QJJ5Y5V7.instructions_retired",
       "unitOfMeasurement": "kI",
       "measurements": [
        3304960.0,
@@ -1407,7 +1407,7 @@
      },
      {
       "displayName": "Memory Physical (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_Memory-audio.tembra.appP5QJJ5Y5V7.physical",
+      "identifier": "com.apple.dt.XCTMetric_Memory-com.tembraaudioP5QJJ5Y5V7.physical",
       "unitOfMeasurement": "kB",
       "measurements": [
        2164.0,
@@ -1437,7 +1437,7 @@
      },
      {
       "displayName": "Memory Peak Physical (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_Memory-audio.tembra.appP5QJJ5Y5V7.physical_peak",
+      "identifier": "com.apple.dt.XCTMetric_Memory-com.tembraaudioP5QJJ5Y5V7.physical_peak",
       "unitOfMeasurement": "kB",
       "measurements": [
        113808.0,
@@ -1587,7 +1587,7 @@
      },
      {
       "displayName": "Absolute Memory Physical (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_Memory-audio.tembra.appP5QJJ5Y5V7.physical_absolute",
+      "identifier": "com.apple.dt.XCTMetric_Memory-com.tembraaudioP5QJJ5Y5V7.physical_absolute",
       "unitOfMeasurement": "kB",
       "measurements": [
        2164.0,

@@ -30,7 +30,7 @@ _STARTUP_TESTS = {"testColdLaunchToFirstFrame": "ttid", "testColdLaunchToRespons
 # "<Column> (<name>)". An animation interval adds `.animation.frame.rate`, `.animation.frame.count`,
 # `.animation.hitch.number`, `.animation.hitch.time.ratio` and `.animation.hitches.total.duration`
 # (iPhone 14, iOS 27.0.1, Xcode 27.1, 2026-10-11). Memory and CPU carry the bundle id on a phone
-# (`XCTMetric_Memory-audio.tembra.appP5QJJ5Y5V7.physical_peak`) and not on the simulator
+# (`XCTMetric_Memory-com.tembraaudioP5QJJ5Y5V7.physical_peak`) and not on the simulator
 # (`XCTMetric_Memory.physical_peak`), so they are told by their last component.
 _SECTION_RE = re.compile(r"XCTMetric_OSSignpost-(?P<name>[a-z]+\.[A-Za-z0-9]+)(?P<rest>(?:\.[A-Za-z0-9_]+)*)$")
 _ANIMATION_COLUMNS = {

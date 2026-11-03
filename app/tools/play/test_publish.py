@@ -90,7 +90,7 @@ class PublishTest(unittest.TestCase):
 
     def play(self, script):
         fake = FakeGoogle(script)
-        return Play(Http("token", opener=fake), "audio.tembra.app"), fake
+        return Play(Http("token", opener=fake), "com.tembraaudio"), fake
 
     def test_releases_on_the_closed_track_and_commits(self):
         play, fake = self.play([
@@ -191,7 +191,7 @@ class PublishTest(unittest.TestCase):
         with mock.patch.dict(os.environ, {publish.TOKEN_ENV: "token"}), \
                 mock.patch("urllib.request.urlopen", unreachable), \
                 mock.patch("sys.stderr", new_callable=io.StringIO) as stderr:
-            status = publish.main(["publish", "--package", "audio.tembra.app", "--track", "alpha",
+            status = publish.main(["publish", "--package", "com.tembraaudio", "--track", "alpha",
                                    "--bundle", str(self.bundle)])
         self.assertEqual(status, 1)
         self.assertIn("network error", stderr.getvalue())

@@ -130,7 +130,7 @@ def test_engine_health_json_yields_the_nine_audio_series():
 
 def test_phone_identifier_forms_and_a_frameless_animation_interval(cfg, caplog):
     """The first iPhone 14 round (iOS 27.0.1, Xcode 27.1): memory and CPU carry the bundle id
-    (`XCTMetric_Memory-audio.tembra.appP5QJJ5Y5V7.physical_peak`), `physical_absolute` and
+    (`XCTMetric_Memory-com.tembraaudioP5QJJ5Y5V7.physical_peak`), `physical_absolute` and
     `cycles` are skipped, and the tempo change's animation interval held no frame in any
     iteration, so the hitch columns are dropped instead of publishing a 60 fps deficit."""
     with caplog.at_level("WARNING", logger="tracepulse.collect_ios"):

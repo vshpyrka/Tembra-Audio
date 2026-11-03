@@ -10,7 +10,7 @@ val playVersionCode: Provider<Int> = providers.gradleProperty("tembra.versionCod
 android {
     namespace = "audio.tembra.android"
     defaultConfig {
-        applicationId = "audio.tembra.app"
+        applicationId = "com.tembraaudio"
         versionCode = playVersionCode.getOrElse(1)
         versionName = "0.1.0" + playVersionCode.map { " ($it)" }.getOrElse("")
         // The engine ships for these two ABIs only (tembra.android.native; specs/001-project-scaffold/research.md R4).

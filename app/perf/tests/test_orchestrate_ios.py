@@ -33,7 +33,7 @@ def _ok(text=""):
 def cfg(tmp_path):
     root = tmp_path / "app"
     (root / "iosApp" / "Configuration").mkdir(parents=True)
-    (root / "iosApp" / "Configuration" / "Config.xcconfig").write_text("TEAM_ID=P5QJJ5Y5V7\nBUNDLE_ID=audio.tembra.app\nAPP_NAME=Tembra Audio\n")
+    (root / "iosApp" / "Configuration" / "Config.xcconfig").write_text("TEAM_ID=P5QJJ5Y5V7\nBUNDLE_ID=com.tembraaudio\nAPP_NAME=Tembra Audio\n")
     shutil.copy(DEFAULT_CONFIG_PATH, root / "tracepulse.yml")
     return load_config(str(root / "tracepulse.yml"))
 
@@ -147,7 +147,7 @@ def _xcode_rules(cfg, round_dir, refused=False, simulator=False, fail_journey=Fa
 
 
 def test_bundle_id_gains_the_team_suffix(cfg):
-    assert bundle_id_with_team(cfg) == "audio.tembra.appP5QJJ5Y5V7"
+    assert bundle_id_with_team(cfg) == "com.tembraaudioP5QJJ5Y5V7"
 
 
 def test_build_for_testing_once_per_session_and_the_xctestrun_is_found(cfg, tmp_path):
@@ -170,14 +170,14 @@ def test_round_runs_install_warm_up_test_and_collects(cfg, tmp_path):
     xctestrun = build_for_testing(cfg, IPHONE, runner, os.path.join(round_dir, "DerivedData"), "Perf")
     outcome = run_round(cfg, IPHONE, runner, FakeClock(), round_dir, IosRoundOptions(journeys=cfg.journeys, xctestrun=xctestrun))
     cmds = runner.commands()
-    uninstall = runner.index_of("devicectl", "device", "uninstall", "app", "audio.tembra.appP5QJJ5Y5V7")
+    uninstall = runner.index_of("devicectl", "device", "uninstall", "app", "com.tembraaudioP5QJJ5Y5V7")
     install = runner.index_of("devicectl", "device install", "app")
-    launch = runner.index_of("devicectl", "device", "process", "launch", "--terminate-existing", "audio.tembra.appP5QJJ5Y5V7")
+    launch = runner.index_of("devicectl", "device", "process", "launch", "--terminate-existing", "com.tembraaudioP5QJJ5Y5V7")
     test = runner.index_of("xcodebuild", "test-without-building")
     assert 0 <= uninstall < install < launch < test
     # `--device` goes before the bundle id: `process launch` hands everything after the bundle to the app
     assert cmds[launch][:7] == ["xcrun", "devicectl", "device", "process", "launch", "--device", UDID]
-    assert cmds[launch][-1] == "audio.tembra.appP5QJJ5Y5V7"
+    assert cmds[launch][-1] == "com.tembraaudioP5QJJ5Y5V7"
     # the warm-up ends the launched process by the pid devicectl reported (terminate takes a pid only)
     terminate = runner.index_of("devicectl", "device", "process", "terminate", "--pid", "4242")
     assert launch < terminate < test
@@ -271,10 +271,10 @@ def test_simulator_round_uses_simctl_and_the_simulator_destination(cfg, tmp_path
     assert runner.calls[0]["cmd"][runner.calls[0]["cmd"].index("-destination") + 1] == f"platform=iOS Simulator,id={SIM_UDID}"
     outcome = run_round(cfg, SIM, runner, FakeClock(), round_dir, IosRoundOptions(journeys=cfg.journeys, xctestrun=xctestrun))
     assert runner.index_of("simctl", "install", SIM_UDID) >= 0 and runner.index_of("simctl", "launch", SIM_UDID) >= 0
-    assert runner.index_of("simctl", "privacy", SIM_UDID, "grant", "microphone", "audio.tembra.appP5QJJ5Y5V7") > \
+    assert runner.index_of("simctl", "privacy", SIM_UDID, "grant", "microphone", "com.tembraaudioP5QJJ5Y5V7") > \
         runner.index_of("simctl", "install", SIM_UDID), "a fresh install is granted the microphone before the run"
     assert runner.index_of("devicectl", "device", "install") == -1
-    assert runner.index_of("simctl", "get_app_container", SIM_UDID, "audio.tembra.appP5QJJ5Y5V7", "data") >= 0
+    assert runner.index_of("simctl", "get_app_container", SIM_UDID, "com.tembraaudioP5QJJ5Y5V7", "data") >= 0
     assert outcome.badges == ["simulator"]
     assert not any(k.startswith("frames.") for j in outcome.journeys for k in j.metrics)
     assert runner.index_of("xctrace", "record") == -1, "a simulator has no HAL to trace"
