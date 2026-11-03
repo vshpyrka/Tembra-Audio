@@ -41,20 +41,20 @@ instrumentation and polish last.
 
 **Purpose**: targets, test harness projects and the spikes whose outcomes the later tasks depend on.
 
-- [ ] T001 Document both Android desktop emulator targets in `app/README.md` (§ Build and run and § Test lanes): the
+- [X] T001 Document both Android desktop emulator targets in `app/README.md` (§ Build and run and § Test lanes): the
   primary AVD `Tembra_Desktop_API37` (`sdkmanager --channel=3 --install
   "system-images;android-37.1;android-desktop;arm64-v8a"`, `avdmanager create avd … -d desktop_api37`,
   `hw.keyboard=yes`, `disk.dataPartition.size=4G` (the emulator wants about twice that free on the host), `-port
   5582`, and `adb -s emulator-5582 shell am switch-user 10` after a cold boot: the image's desktop session is user 10)
   and the secondary `Tembra_Desktop_API34` (no touchscreen, `-port 5580`), one desktop emulator at a time, and the lane
   commands from `specs/011-large-screens-desktop/quickstart.md` §1–§2
-- [ ] T002 [P] Add `androidx-window` (androidx.window `WindowMetricsCalculator`, latest stable) as a test-only library to
+- [X] T002 [P] Add `androidx-window` (androidx.window `WindowMetricsCalculator`, latest stable) as a test-only library to
   `app/gradle/libs.versions.toml` and to `androidTestImplementation` in `app/androidApp/build.gradle.kts`, with a
   comment naming feature 011's device tests
-- [ ] T003 [P] Create the XCUITest target `TembraDesktopTests` and its scheme in `app/iosApp/iosApp.xcodeproj`
+- [X] T003 [P] Create the XCUITest target `TembraDesktopTests` and its scheme in `app/iosApp/iosApp.xcodeproj`
   (iPad-only destinations, `XCUIDevice.supportsPointerInteraction` guard helper in
   `app/iosApp/TembraDesktopTests/DesktopTestCase.swift`)
-- [ ] T004 Spike R3: build `main`'s app with the decided manifest (`<layout android:minWidth="360dp"
+- [X] T004 Spike R3: build `main`'s app with the decided manifest (`<layout android:minWidth="360dp"
   android:minHeight="480dp"/>`, ChromeOS `WindowManagerPreference:FreeformWindowSize=tablet`, no default size) and
   record first-launch bounds, and relaunch bounds after a user resize (a mouse drag of the window's corner: a size set
   with `am task resize` is never remembered) and a window close with the caption's button (not a force-stop), using
@@ -63,10 +63,12 @@ instrumentation and polish last.
 - [ ] T005 [P] Spike R12: on the iPad simulator, drop a folder and an audio file from the Files app onto a throwaway
   `Modifier.dragAndDropTarget`, log each `UIDragItem.itemProvider`'s registered type identifiers and whether a
   folder's contents are readable; record the outcome in `specs/011-large-screens-desktop/research.md` R12
-- [ ] T006 [P] Spike R6: on the iPad simulator with a hardware keyboard, check whether a matched SwiftUI `.commands`
+  (2026-11-03: moved next to T107/T117, its only consumers: the drop needs a Files window beside the app's, driven
+  across apps on the iPad simulator, so it runs against the real drop target once T113 exists)
+- [X] T006 [P] Spike R6: on the iPad simulator with a hardware keyboard, check whether a matched SwiftUI `.commands`
   Command chord also reaches a Compose `onPreviewKeyEvent`; record the outcome in
   `specs/011-large-screens-desktop/research.md` R6 (decides contracts/keyboard-shortcuts.md rule 5)
-- [ ] T007 [P] Spike R22: on the iOS 16 and iOS 26 simulators, check whether `UTType(filenameExtension: "flac")` resolves
+- [X] T007 [P] Spike R22: on the iOS 16 and iOS 26 simulators, check whether `UTType(filenameExtension: "flac")` resolves
   to a system-declared type (`org.xiph.flac` or another identifier) or a dynamic one; record in
   `specs/011-large-screens-desktop/research.md` R22 whether `Info.plist` needs a `UTImportedTypeDeclarations` entry
 
@@ -78,21 +80,21 @@ instrumentation and polish last.
 
 **Purpose**: performance names and the device-test helpers every story's tests use.
 
-- [ ] T008 Add `SHELL` to `PerfFamily` and `SHELL_WINDOW_RELAYOUT`, `SHELL_SHORTCUT_NAVIGATE` (family SHELL),
+- [X] T008 Add `SHELL` to `PerfFamily` and `SHELL_WINDOW_RELAYOUT`, `SHELL_SHORTCUT_NAVIGATE` (family SHELL),
   `TIMELINE_CONTEXT_MENU` (family TIMELINE) to
   `app/shared/engine/src/commonMain/kotlin/audio/tembra/engine/perf/PerfSection.kt`, `PerfFamily.kt` and
   `app/shared/engine/perf-catalogue.txt` (lines `SHELL_WINDOW_RELAYOUT shell shell.windowRelayout`,
   `SHELL_SHORTCUT_NAVIGATE shell shell.shortcutNavigate`, `TIMELINE_CONTEXT_MENU timeline timeline.contextMenu`)
-- [ ] T009 [P] Teach the pipeline the `shell` family: write the failing test in `app/perf/tests/test_catalogue.py`,
+- [X] T009 [P] Teach the pipeline the `shell` family: write the failing test in `app/perf/tests/test_catalogue.py`,
   then extend `app/perf/tracepulse/catalogue.py`
-- [ ] T010 [P] Create the desktop-window test helpers in `ATEST/desktop/DesktopWindow.kt`: `launchFreeform()` (`am
+- [X] T010 [P] Create the desktop-window test helpers in `ATEST/desktop/DesktopWindow.kt`: `launchFreeform()` (`am
   start --windowingMode 5 -n com.tembraaudio/audio.tembra.android.MainActivity`), `taskId()`, `resizeTask(left, top,
   right, bottom)` (`am task resize` through `UiAutomation.executeShellCommand`; not clamped to any minimum),
   `dragResize(toX, toY)` (a mouse drag of the window's bottom-right corner with `input mouse swipe`, which the platform
   clamps to the window's minimum), `windowBoundsDp()`
   (`WindowMetricsCalculator`), `bringOtherTaskToFront()` and `bringAppToFront()` (for focus-loss tests),
   `assumeFreeform()` (skips with a visible reason on devices without `FEATURE_FREEFORM_WINDOW_MANAGEMENT`)
-- [ ] T011 [P] Create mouse and key injection helpers in `ATEST/desktop/DesktopInput.kt`: hover move, secondary press
+- [X] T011 [P] Create mouse and key injection helpers in `ATEST/desktop/DesktopInput.kt`: hover move, secondary press
   and release, primary press-drag, vertical and horizontal scroll with `MotionEvent` `SOURCE_MOUSE` through
   `UiAutomation.injectInputEvent`, the resolved pointer icon under a point (`View.onResolvePointerIcon` on the root
   view), and key combinations through `input keycombination`

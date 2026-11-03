@@ -24,6 +24,10 @@ TRANSPORT_SEEK transport transport.seek
 ENGINE_PRIME engine engine.prime
 # Feature 009, design iteration D1 (T146): the phone's master volume pop-up opening (its card's first measure).
 TRANSPORT_MASTER_POPUP transport transport.masterPopup
+# Feature 011 (large screens and desktop, contracts/perf-instrumentation.md): window changes, shortcut navigation, menus.
+SHELL_WINDOW_RELAYOUT shell shell.windowRelayout
+SHELL_SHORTCUT_NAVIGATE shell shell.shortcutNavigate
+TIMELINE_CONTEXT_MENU timeline timeline.contextMenu
 AUDIO_CALLBACKS counter audio.callbacks
 AUDIO_LAST_US counter audio.lastUs
 AUDIO_MAX_US counter audio.maxUs

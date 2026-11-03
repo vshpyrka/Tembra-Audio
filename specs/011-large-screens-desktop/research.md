@@ -113,6 +113,26 @@ and never prompts; By Ear and every other destination are untouched.
 **Rationale**: FR-004a has two halves; the platform decides the second, and the first is achievable without
 sacrificing it on every platform the evidence covers.
 
+**Spike outcome (T004, 2026-11-03): decision kept.** `main`'s debug build with the decided manifest (`<layout
+android:minWidth="360dp" android:minHeight="480dp"/>`, the ChromeOS `FreeformWindowSize=tablet` meta-data, no default
+size), launched from the launcher intent, resized by a mouse drag of the window's corner, closed with the caption's
+close button and relaunched:
+
+| Target | First launch | After a corner drag, close, relaunch | Corner drag towards 300 × 400 dp stops at |
+|---|---|---|---|
+| `Tembra_Desktop_API37` (Android 17, 240 dpi) | 1382 × 864 dp landscape at (403, 180) px | dragged to 1133 × 748 dp; reopened at the same Rect | 390 × 481 dp (the task reports `minWidth=540 minHeight=720` px = 360 × 480 dp; the platform's own 390 dp width floor is larger) |
+| `Tembra_Desktop_API34` (Android 14, 320 dpi) | 412 × 732 dp portrait (phone-sized, centred) | dragged to 794 × 648 dp; reopened at the same size, re-centred | 372 × 486 dp |
+| Pixel Tablet, Android 17 desktop windowing, held in portrait (`am start --windowingMode 5`) | 576 × 921 dp portrait (the platform's share of a portrait display) | dragged to 514 × 756 dp; reopened at the same Rect | 387 × 481 dp |
+
+Notes: the Android 14 image honours neither the ChromeOS hint (it is not ChromeOS) nor a desktop default, so its first
+window stays phone-shaped: FR-004a's "where the platform lets the app choose" covers it, and declaring a default size
+stays rejected because every target remembers a dragged size without one. On Android 17 the remembered size lives in
+SystemUI's desktop repository (`/data/user_de/0/com.android.systemui/files/datastore/desktop_persistent_repositories.pb`)
+and **survives `adb uninstall`**: a first-launch measurement needs that file removed and SystemUI restarted (emulator,
+`adb root`). On the API 34 image the caption's close button removes the task but the process stays cached, and the
+resize handle sits a few pixels outside the window's corner (`input mouse swipe` must start about 4 px beyond it). The
+minimum height counts the caption, so the content area at the minimum is about 33 dp shorter than 480 dp.
+
 **Alternatives**: `defaultWidth=1200dp defaultHeight=800dp` (reliable first launch, but the saved size is ignored on
 every launch); `ActivityOptions.setLaunchBounds` (only when the app launches itself, never from the launcher).
 
@@ -163,6 +183,15 @@ shortcut: its chord, scope (everywhere or one destination), the action id and it
 
 On iPad, Command chords are dispatched by the menu commands and plain keys by Compose, so no chord is handled twice;
 whether a matched `UIKeyCommand` still reaches Compose is unverified and pinned by an iOS test.
+
+**Spike outcome (T006, 2026-11-03): a matched menu command also reaches Compose; rule 5 stands.** On the iPad Pro
+13-inch (M5) simulator (iOS 27.0, Xcode 27.1), a throwaway SwiftUI `.commands { CommandMenu { Button(…)
+.keyboardShortcut("1", modifiers: .command) } }` in the shell and an `onPreviewKeyEvent` logger around the Compose root,
+driven by XCUITest `typeKey("1", modifierFlags: .command)`: Compose received the KeyDown (`Key` keyCode 30,
+`isMetaPressed` true, `utf16CodePoint` 49) 7 ms before the menu's action ran, then the KeyUp; a plain `x` and a ⌘2 with
+no menu item reached Compose only. So every Command chord the menu bar serves must be ignored by the Compose handlers on
+iOS (they would otherwise dispatch it twice), while plain keys stay with Compose. `KeyboardTests.swift` (T091) pins
+"exactly once".
 
 **Reserved chords** (research): Android desktop and ChromeOS reserve Meta/Search combinations, Alt+Tab, Alt+1–9,
 Alt+[ ] = -, Ctrl+Space and Ctrl+Shift+Space; iPadOS reserves ⌘Space, ⌘Tab, ⌘W, ⌘M, ⇧⌘3/4 and Globe combinations.
@@ -356,6 +385,15 @@ a project is playing. iOS: `CFBundleDocumentTypes` for `com.microsoft.waveform-a
 (`org.xiph.flac`; whether iOS 16 declares it system-wide is unverified, so an imported type declaration is added if
 not) with `LSHandlerRank` Alternate and `LSSupportsOpeningDocumentsInPlace` false (the system copies the file to the
 app); SwiftUI `.onOpenURL` forwards the URL to the iOS `OpenedFiles` binding. Desktop quality guideline File_Handlers.
+
+**Spike outcome (T007, 2026-11-03)**: a probe binary built for the simulator (`UTType(filenameExtension:)` and
+`UTType(_:)`) on the iOS 27.0 iPad Pro 13-inch (M5) and iOS 27.1 iPhone Duo simulators (and the macOS 27 host) resolves
+`flac` to `org.xiph.flac`, system-declared (`isDeclared` true, not dynamic), conforming to `public.audio`; `wav` to
+`com.microsoft.waveform-audio` and `mp3` to `public.mp3`, likewise. The iOS 16 and iOS 26 runtimes are not installed on
+this Mac (only 27.0 and 27.1; about 10 GB of disk free), so iOS 16–26 stay unverified. Decision: `Info.plist` carries
+a `UTImportedTypeDeclarations` entry for `org.xiph.flac` (conforming to `public.audio`, extension `flac`, MIME
+`audio/flac`): where the system declares the type its declaration wins and the import is inert, and where an older
+system does not, the import makes `flac` resolve to the identifier the document type names.
 
 `MainActivity` declares no launch mode today (standard), so a `VIEW` intent from the Files app would start a second
 `MainActivity` instance (in the Files app's task, or on top of the app's own task with `FLAG_ACTIVITY_NEW_TASK`), which

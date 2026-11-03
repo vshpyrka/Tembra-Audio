@@ -5,6 +5,7 @@ package audio.tembra.engine.perf
  * [PerfFamily]; the signpost names live in `perf-catalogue.txt` and reach the code through the generated
  * `signpostName()` (real strings in measurement builds, `""` otherwise). The TIMELINE, TRANSPORT and ENGINE_PRIME
  * entries are feature 009's (contracts/perf-instrumentation.md); TRANSPORT_MASTER_POPUP came with its design iteration D1.
+ * SHELL_WINDOW_RELAYOUT, SHELL_SHORTCUT_NAVIGATE and TIMELINE_CONTEXT_MENU are feature 011's (large screens and desktop).
  */
 enum class PerfSection(val family: PerfFamily) {
     TUNER_LOAD(PerfFamily.TUNER),
@@ -27,4 +28,7 @@ enum class PerfSection(val family: PerfFamily) {
     TRANSPORT_SEEK(PerfFamily.TRANSPORT),
     ENGINE_PRIME(PerfFamily.ENGINE),
     TRANSPORT_MASTER_POPUP(PerfFamily.TRANSPORT),
+    SHELL_WINDOW_RELAYOUT(PerfFamily.SHELL),
+    SHELL_SHORTCUT_NAVIGATE(PerfFamily.SHELL),
+    TIMELINE_CONTEXT_MENU(PerfFamily.TIMELINE),
 }

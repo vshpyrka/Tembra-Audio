@@ -12,6 +12,9 @@ from typing import Dict, Iterable, List, Mapping, Optional, Tuple
 PLATFORMS = ("android", "ios")
 FAMILIES = ("startup", "frames", "memory", "cpu", "journey", "section", "app", "audio")
 JOURNEYS_MEASURED = ("tuner", "metronome", "timeline", "stress")
+# The section families of app/shared/engine/perf-catalogue.txt (its second column, counters aside): a section key is
+# `section.<family>.<name>.<suffix>`. SHELL is feature 011's (window relayout, shortcut navigation).
+SECTION_FAMILIES = ("tuner", "metronome", "timeline", "transport", "engine", "shell")
 
 
 class CatalogueError(Exception):
@@ -150,6 +153,8 @@ def _section_metric(platform: str, key: str) -> Optional[Metric]:
     suffix = parts[-1]
     if suffix not in _SECTION_SUFFIXES:
         return None
+    if parts[1] not in SECTION_FAMILIES:
+        raise CatalogueError(f"section family {parts[1]!r} of {key!r} is not in perf-catalogue.txt ({SECTION_FAMILIES})")
     unit, gates = _SECTION_SUFFIXES[suffix]
     return _m(platform, key, "section", _SECTION_SOURCE[platform], unit, JOURNEYS_MEASURED,
               comparable=True, **gates)
