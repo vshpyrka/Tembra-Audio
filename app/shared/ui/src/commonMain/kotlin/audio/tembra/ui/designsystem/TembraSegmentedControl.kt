@@ -153,6 +153,7 @@ private fun RowScope.Segment(
         modifier = Modifier
             .then(if (equalWidth) Modifier.weight(1f) else Modifier)
             .testTagIfSet(testTag)
+            .focusIdentity(testTag)
             .selectable(
                 selected = selected,
                 interactionSource = interactionSource,

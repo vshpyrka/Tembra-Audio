@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -18,8 +20,10 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.testTag
 import audio.tembra.core.tuner.TunerMode
 import audio.tembra.engine.AudioState
+import audio.tembra.ui.designsystem.FocusMemory
 import audio.tembra.ui.designsystem.FoldSplit
 import audio.tembra.ui.designsystem.FoldSplitRow
+import audio.tembra.ui.designsystem.focusRestoringRoot
 import audio.tembra.ui.posture.TabletopFold
 import audio.tembra.ui.posture.VerticalFold
 import audio.tembra.ui.theme.TembraTheme
@@ -54,10 +58,17 @@ fun TunerScreenContent(
     LaunchedEffect(state.loaded) {
         if (state.loaded) rootFocus.requestFocus()
     }
+    // Above the layout branches: focus returns to the same control in the new form (feature 011, FR-007).
+    val focusMemory = remember { FocusMemory() }
     val root = modifier
         .fillMaxSize()
+        // A very wide window keeps the expanded width, centred (feature 011, spec FR-008).
+        .wrapContentWidth()
+        .widthIn(max = spacing.screenMaxWidth)
+        .fillMaxWidth()
         .padding(horizontal = spacing.pageMargin, vertical = spacing.sm)
         .testTag("screen.tuner")
+        .focusRestoringRoot(focusMemory)
         .focusRequester(rootFocus)
         .focusable()
     val gate = state.noiseGate

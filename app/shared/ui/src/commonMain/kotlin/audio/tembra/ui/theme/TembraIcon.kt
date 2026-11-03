@@ -10,6 +10,8 @@ import audio.tembra.ui.resources.ic_content_copy_24
 import audio.tembra.ui.resources.ic_content_cut_24
 import audio.tembra.ui.resources.ic_expand_less_24
 import audio.tembra.ui.resources.ic_expand_more_24
+import audio.tembra.ui.resources.ic_fullscreen_24
+import audio.tembra.ui.resources.ic_fullscreen_exit_24
 import audio.tembra.ui.resources.ic_fast_forward_24
 import audio.tembra.ui.resources.ic_fast_rewind_24
 import audio.tembra.ui.resources.ic_folder_24
@@ -94,6 +96,9 @@ enum class TembraIcon(internal val resource: DrawableResource) {
     Check(Res.drawable.ic_check_24),
     // The filled Custom sound's Replace action (feature 004, User Story 5).
     SwapHoriz(Res.drawable.ic_swap_horiz_24),
+    // The Timeline menu's full-screen items in a desktop window (feature 011, spec FR-010a).
+    Fullscreen(Res.drawable.ic_fullscreen_24),
+    FullscreenExit(Res.drawable.ic_fullscreen_exit_24),
     // Filled variants (FILL 1) for the metronome's play button, as the design draws them (`tools/fetch-material-symbols.sh --fill`).
     PlayArrowFilled(Res.drawable.ic_play_arrow_fill_24),
     PauseFilled(Res.drawable.ic_pause_fill_24),

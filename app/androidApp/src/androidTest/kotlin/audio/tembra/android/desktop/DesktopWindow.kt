@@ -112,8 +112,15 @@ object DesktopWindow {
         return bounds.width() / density to bounds.height() / density
     }
 
-    /** The display's size in pixels. */
-    fun displaySizePx(): Pair<Int, Int> = context.resources.displayMetrics.let { it.widthPixels to it.heightPixels }
+    /**
+     * The display's size in pixels: the largest window the activity can have. (The app's display metrics follow its
+     * free-form window, so they are not the display.)
+     */
+    fun displaySizePx(activity: Activity = resumedActivity()): Pair<Int, Int> {
+        var bounds = Rect()
+        instrumentation.runOnMainSync { bounds = WindowMetricsCalculator.getOrCreate().computeMaximumWindowMetrics(activity).bounds }
+        return bounds.width() to bounds.height()
+    }
 
     /** The [MainActivity] in the RESUMED stage, waiting up to ten seconds for one. */
     fun awaitResumed(): MainActivity {

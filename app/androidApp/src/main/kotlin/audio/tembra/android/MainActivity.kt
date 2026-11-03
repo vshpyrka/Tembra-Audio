@@ -1,5 +1,6 @@
 package audio.tembra.android
 
+import android.content.res.Configuration
 import android.os.Bundle
 import android.view.KeyEvent
 import androidx.activity.ComponentActivity
@@ -36,6 +37,8 @@ class MainActivity : ComponentActivity() {
         // The notifications prompt for the metronome's "Running" notification (Android 13+, contracts/background-playback.md).
         val notificationHost = appGraph.notificationPermissionHost
         notificationHost.attach(this, registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted -> notificationHost.onResult(granted) })
+        // Full screen from the Timeline's menu in a desktop window (feature 011, research R21).
+        appGraph.androidWindowControls.attach(this)
         // Debug builds accept the "tembra.developer.view" extra (feature 002, spec FR-022), the "tembra.tuner.testSignal"
         // extra (feature 003, spec FR-032), the "tembra.tuner.noiseGate" extra (feature 006, spec FR-023) and the
         // "tembra.metronome.syncopation" extra (feature 004, spec FR-037); the shrinker removes these branches from
@@ -63,6 +66,17 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    // Window changes reach the activity without recreating it (configChanges): the full-screen item follows the mode.
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        appGraph.androidWindowControls.refresh()
+    }
+
+    override fun onMultiWindowModeChanged(isInMultiWindowMode: Boolean, newConfig: Configuration) {
+        super.onMultiWindowModeChanged(isInMultiWindowMode, newConfig)
+        appGraph.androidWindowControls.onMultiWindowModeChanged()
+    }
+
     // A hardware keyboard's Escape goes back like the back key (desktop windowing), before Compose can consume it.
     override fun dispatchKeyEvent(event: KeyEvent): Boolean = dispatchEscapeAsBack(event) || super.dispatchKeyEvent(event)
 
@@ -70,6 +84,7 @@ class MainActivity : ComponentActivity() {
         appGraph.microphonePermissionHost.detach()
         appGraph.audioFilePickerHost.detach()
         appGraph.notificationPermissionHost.detach()
+        appGraph.androidWindowControls.detach(this)
         super.onDestroy()
     }
 }

@@ -27,6 +27,7 @@ import audio.tembra.engine.FakeAudioEngine
 import audio.tembra.engine.PlayResult
 import audio.tembra.ui.metronome.TapCaption
 import audio.tembra.ui.platform.FakeAudioFilePicker
+import audio.tembra.ui.platform.FakeWindowControls
 import audio.tembra.ui.platform.FakeBackgroundPlaybackHost
 import audio.tembra.ui.session.AppStartup
 import audio.tembra.ui.session.ProjectSession
@@ -72,6 +73,7 @@ class TimelineViewModelTest {
     private val picker = FakeAudioFilePicker()
     private val preferences = FakeMetronomePreferences()
     private val timelinePreferences = FakeTimelinePreferences()
+    private val windowControls = FakeWindowControls()
     private val session = ProjectSession(
         repository = repository,
         audio = engine,
@@ -87,7 +89,7 @@ class TimelineViewModelTest {
     @BeforeTest
     fun setUp() {
         Dispatchers.setMain(dispatcher)
-        viewModel = TimelineViewModel(session, picker, preferences, timelinePreferences)
+        viewModel = TimelineViewModel(session, picker, preferences, timelinePreferences, windowControls)
     }
 
     @AfterTest
@@ -127,6 +129,42 @@ class TimelineViewModelTest {
         val received = mutableListOf<TimelineMessage>()
         backgroundScope.launch { viewModel.messages.collect { received += it } }
         return received
+    }
+
+    @Test
+    fun theLeftEdgeBeatAndTheZoomSurviveEveryWindowWidth() = test {
+        // Feature 011 (spec FR-007, SC-003): bar 9 at the left edge and a closer zoom stay put as the window steps
+        // 1200 -> 700 -> 400 -> 1200 dp wide; each width re-derives the pixels from the beats.
+        openDemo()
+        viewModel.viewportMeasured(widthPx = 1200.0 * 2, densityScale = 2.0)
+        viewModel.zoomStep(2)
+        viewModel.scrollTo(Beats(32.0))
+        runCurrent()
+        val left = viewModel.uiState.value.viewport.scrollBeats
+        val zoom = viewModel.uiState.value.viewport.pixelsPerBeat
+        assertEquals(Beats(32.0), left)
+        for (widthDp in listOf(700.0, 400.0, 1200.0)) {
+            viewModel.viewportMeasured(widthPx = widthDp * 2, densityScale = 2.0)
+            runCurrent()
+            assertEquals(left, viewModel.uiState.value.viewport.scrollBeats, "left-edge beat at $widthDp dp")
+            assertEquals(zoom, viewModel.uiState.value.viewport.pixelsPerBeat, "zoom at $widthDp dp")
+        }
+    }
+
+    @Test
+    fun theFullScreenItemFollowsTheWindowControls() = test {
+        // Feature 011 (spec FR-010a, research R21).
+        openDemo()
+        assertEquals(FullScreenItem.Hidden, viewModel.uiState.value.fullScreenItem)
+        windowControls.fullScreenAvailable.value = true
+        runCurrent()
+        assertEquals(FullScreenItem.Enter, viewModel.uiState.value.fullScreenItem)
+        viewModel.setFullScreen(true)
+        windowControls.isFullScreen.value = true
+        runCurrent()
+        assertEquals(FullScreenItem.Exit, viewModel.uiState.value.fullScreenItem)
+        viewModel.setFullScreen(false)
+        assertEquals(listOf(true, false), windowControls.requests)
     }
 
     @Test
@@ -582,7 +620,7 @@ class TimelineViewModelTest {
         assertFalse(session.state.value.canUndo, "zoom and grid are not edits")
         assertEquals(demo, repository.saved.getValue(demo.id), "the document is untouched")
         // A fresh ViewModel after a relaunch measures the same lane and lands on the stored zoom.
-        val later = TimelineViewModel(session, picker, preferences, timelinePreferences)
+        val later = TimelineViewModel(session, picker, preferences, timelinePreferences, windowControls)
         later.screenVisible(true)
         later.viewportMeasured(1000.0, 2.0)
         runCurrent()
@@ -610,7 +648,7 @@ class TimelineViewModelTest {
         assertEquals("Second", ui().projectName)
         assertFalse(ui().overviewStripShown)
         // A fresh ViewModel after a relaunch reads the stored choice once the timeline shows.
-        val later = TimelineViewModel(session, picker, preferences, timelinePreferences)
+        val later = TimelineViewModel(session, picker, preferences, timelinePreferences, windowControls)
         later.screenVisible(true)
         runCurrent()
         assertFalse(later.uiState.value.overviewStripShown)
@@ -625,7 +663,7 @@ class TimelineViewModelTest {
     @Test
     fun aStoredHiddenStripIsReadWhenTheTimelineShows() = test {
         val hidden = FakeTimelinePreferences(initialShown = false)
-        val fresh = TimelineViewModel(session, picker, preferences, hidden)
+        val fresh = TimelineViewModel(session, picker, preferences, hidden, windowControls)
         fresh.screenVisible(true)
         runCurrent()
         assertFalse(fresh.uiState.value.overviewStripShown, "the stored choice hides the strip")

@@ -168,80 +168,80 @@ a 360 × 480 dp minimum on every platform.
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T025 [P] [US2] `ATEST/KeyboardAttachTest.kt`: a configuration change with `CONFIG_KEYBOARD | CONFIG_KEYBOARD_HIDDEN
+- [X] T025 [P] [US2] `ATEST/KeyboardAttachTest.kt`: a configuration change with `CONFIG_KEYBOARD | CONFIG_KEYBOARD_HIDDEN
   | CONFIG_NAVIGATION | CONFIG_TOUCHSCREEN` does not recreate `MainActivity` (same instance, no `onCreate`)
-- [ ] T026 [P] [US2] `ATEST/WindowResizeAudioTest.kt` (uses T010): in a freeform window, metronome at
+- [X] T026 [P] [US2] `ATEST/WindowResizeAudioTest.kt` (uses T010): in a freeform window, metronome at
   120 BPM, fifty window changes (resizes across 600 and 840 dp, maximise and restore, full screen and back) as SC-002
   requires; the engine's xrun and starvation counters stay 0 and the click count matches elapsed time ± 1; again with
   the demo project playing (playhead advancing, no restart)
-- [ ] T027 [P] [US2] `ATEST/MinimumWindowTest.kt`: `MainActivity`'s `ActivityInfo.windowLayout` declares `minWidth`
+- [X] T027 [P] [US2] `ATEST/MinimumWindowTest.kt`: `MainActivity`'s `ActivityInfo.windowLayout` declares `minWidth`
   360 dp and `minHeight` 480 dp, and `dragResize` towards 300 × 400 dp stops at no less than 360 × 480 dp (`am task
   resize` bypasses the minimum, research hands-on check "Desktop (Preview)")
-- [ ] T028 [P] [US2] `ATEST/SingleWindowTest.kt`: launching from the launcher intent while running brings the existing
+- [X] T028 [P] [US2] `ATEST/SingleWindowTest.kt`: launching from the launcher intent while running brings the existing
   task forward (same task id, one task, one `MainActivity`)
-- [ ] T029 [P] [US2] `CTEST/tuner/ListeningForegroundTest.kt`: `ON_PAUSE` alone keeps listening, `ON_STOP` stops it,
-  `ON_START` resumes it (FR-006 minimise, FR-009 focus loss)
-- [ ] T030 [P] [US2] `ATEST/ForegroundStateTest.kt` (uses T010): with the app in a freeform window, bringing
+- [X] T029 [P] [US2] `CTEST/tuner/ListeningForegroundTest.kt`: `ON_PAUSE` alone keeps listening, `ON_STOP` stops it,
+  `ON_START` resumes it (FR-006 minimise, FR-009 focus loss) (2026-11-03: written as `UITEST/tuner/ListeningForegroundTest.kt`: it drives the real `TunerScreen` through a lifecycle owner it moves, which needs Compose UI, so it runs on both device lanes)
+- [X] T030 [P] [US2] `ATEST/ForegroundStateTest.kt` (uses T010): with the app in a freeform window, bringing
   another task to the front (pause only) keeps `ForegroundState` true; minimising (stop) makes it false; restoring
-  (start) makes it true again
-- [ ] T031 [P] [US2] `IOSTEST/platform/IosForegroundTest.kt`: a resign-active notification alone keeps the iOS foreground
-  source true; did-enter-background makes it false; will-enter-foreground makes it true
-- [ ] T032 [P] [US2] `UITEST/timeline/PlaceAcrossLayoutsTest.kt`: demo project scrolled to bar 9, zoomed, a clip
+  (start) makes it true again (2026-11-03: named `ATEST/WindowForegroundTest.kt`: `ForegroundState` in the Android shell is the playback service's state, not this; minimise is `moveTaskToBack(true)`, which desktop windowing turns into a minimise)
+- [X] T031 [P] [US2] `IOSTEST/platform/IosForegroundTest.kt`: a resign-active notification alone keeps the iOS foreground
+  source true; did-enter-background makes it false; will-enter-foreground makes it true (2026-11-03: no separate iOS foreground source exists to test: the tuner follows Compose's lifecycle, whose iOS mapping is Compose Multiplatform's (resign-active `ON_PAUSE`, background `ON_STOP`, documented in its lifecycle guide), and `ListeningForegroundTest` drives exactly those states on the iOS lane)
+- [X] T032 [P] [US2] `UITEST/timeline/PlaceAcrossLayoutsTest.kt`: demo project scrolled to bar 9, zoomed, a clip
   selected and its menu open; host width 1200 → 700 → 400 → 1200 dp; after each step the same beat is at the left
   edge, zoom and selection unchanged, the menu still open on that clip
-- [ ] T033 [P] [US2] `UITEST/projects/PlaceAcrossLayoutsProjectsTest.kt`: search text "ba" typed and a card menu open
+- [X] T033 [P] [US2] `UITEST/projects/PlaceAcrossLayoutsProjectsTest.kt`: search text "ba" typed and a card menu open
   survive the same width steps
-- [ ] T034 [P] [US2] `UITEST/navigation/FocusAcrossLayoutsTest.kt`: a focused track header and a focused tuner control
+- [X] T034 [P] [US2] `UITEST/navigation/FocusAcrossLayoutsTest.kt`: a focused track header and a focused tuner control
   keep focus across width-class changes; fallback to the destination root when the control no longer exists
-- [ ] T035 [P] [US2] `ATEST/desktop/WindowFocusReturnTest.kt` (uses T010, T011): with a
+- [X] T035 [P] [US2] `ATEST/desktop/WindowFocusReturnTest.kt` (uses T010, T011): with a
   track header focused by Tab and the demo project playing, bring another task to the front and back; the same header
   is focused and the playhead never stopped (FR-009)
-- [ ] T036 [P] [US2] `app/iosApp/TembraDesktopTests/WindowMinimumTests.swift` (iPadOS 26+ simulator): launched with
+- [X] T036 [P] [US2] `app/iosApp/TembraDesktopTests/WindowMinimumTests.swift` (iPadOS 26+ simulator): launched with
   `-tembra.reportWindowMinimum`, the shell's reported scene minimum is 360 × 480
-- [ ] T037 [P] [US2] `UITEST/designsystem/WideWindowTest.kt`: at 2560 dp wide, Projects shows at most four columns,
+- [X] T037 [P] [US2] `UITEST/designsystem/WideWindowTest.kt`: at 2560 dp wide, Projects shows at most four columns,
   the tuner and metronome cards keep their expanded width centred, the timeline fills the width (FR-008)
-- [ ] T038 [P] [US2] `UITEST/timeline/FullScreenMenuItemTest.kt` (fake `WindowControls`): the Timeline's overflow
+- [X] T038 [P] [US2] `UITEST/timeline/FullScreenMenuItemTest.kt` (fake `WindowControls`): the Timeline's overflow
   menu shows "Full screen" while `fullScreenAvailable` and not full screen, "Exit full screen" while full screen, and
   neither when unavailable; choosing them calls `enterFullScreen()` / `exitFullScreen()` (FR-010a)
-- [ ] T039 [P] [US2] `ATEST/desktop/FullScreenTest.kt` (uses T010): in a freeform window with the
+- [X] T039 [P] [US2] `ATEST/desktop/FullScreenTest.kt` (uses T010): in a freeform window with the
   metronome running, "Full screen" makes the window bounds equal the display, "Exit full screen" returns the previous
   bounds, and the click count matches elapsed time ± 1 throughout
 
 ### Implementation for User Story 2
 
-- [ ] T040 [US2] In `app/androidApp/src/main/AndroidManifest.xml` add `keyboard|keyboardHidden|navigation|touchscreen`
+- [X] T040 [US2] In `app/androidApp/src/main/AndroidManifest.xml` add `keyboard|keyboardHidden|navigation|touchscreen`
   to `MainActivity`'s `android:configChanges` and `<layout android:minWidth="360dp" android:minHeight="480dp"/>`
-- [ ] T041 [P] [US2] iOS minimum window: `.frame(minWidth: 360, minHeight: 480)` on the Compose view in
+- [X] T041 [P] [US2] iOS minimum window: `.frame(minWidth: 360, minHeight: 480)` on the Compose view in
   `app/iosApp/iosApp/ContentView.swift`, `windowScene.sizeRestrictions?.minimumSize = CGSize(width: 360, height: 480)`
   on iPadOS 26+ in `app/iosApp/iosApp/iOSApp.swift`, and, in debug builds only, the `-tembra.reportWindowMinimum`
   launch argument that exposes the scene's minimum as an accessibility value
-- [ ] T042 [US2] Drive the tuner's `foreground` input from start/stop, not pause or resign-active: fix
+- [X] T042 [US2] Drive the tuner's `foreground` input from start/stop, not pause or resign-active: fix
   `ANDROID/ForegroundState.kt` (`ON_START`/`ON_STOP`) and its iOS counterpart in `UIIOS/platform/`
-  (will-enter-foreground / did-enter-background); `UI/tuner/PolicyInputs.kt` documents it
-- [ ] T043 [US2] Store the timeline's horizontal position as the beat at the left edge plus zoom in the per-project view
+  (will-enter-foreground / did-enter-background); `UI/tuner/PolicyInputs.kt` documents it (2026-11-03: already so since feature 003: `TunerScreen` uses `LifecycleStartEffect`; `ANDROID/ForegroundState.kt` is the playback service's state and was left alone; `PolicyInputs` now documents the rule)
+- [X] T043 [US2] Store the timeline's horizontal position as the beat at the left edge plus zoom in the per-project view
   state (`view.json`, owned by the session in `UI/session/`), and re-derive pixels from it in
-  `UI/timeline/TimelineScreen.kt` for every layout (`UI/timeline/TimelineLayout.kt`)
-- [ ] T044 [US2] Hoist the timeline's vertical `LazyListState` above the layout switch in
-  `UI/timeline/TimelineScreen.kt`, keyed by project id
-- [ ] T045 [P] [US2] Move open-menu state for clips, track headers, project cards and the toolbar overflow to the owning
+  `UI/timeline/TimelineScreen.kt` for every layout (`UI/timeline/TimelineLayout.kt`) (2026-11-03: already so: the viewport (left-edge beat and zoom) lives in the Timeline ViewModel and `viewportMeasured` keeps both on a new width; pinned by `TimelineViewModelTest.theLeftEdgeBeatAndTheZoomSurviveEveryWindowWidth`; nothing new is persisted)
+- [X] T044 [US2] Hoist the timeline's vertical `LazyListState` above the layout switch in
+  `UI/timeline/TimelineScreen.kt`, keyed by project id (2026-11-03: already so: `TrackList` sits at one call site for every layout and the shell keeps the destination content in one slot for bar and rail, so its `LazyListState` survives)
+- [X] T045 [P] [US2] Move open-menu state for clips, track headers, project cards and the toolbar overflow to the owning
   screen's `rememberSaveable`, keyed by item id: `UI/timeline/components/TrackLane.kt`, `TrackHeader.kt`,
-  `TrackHeaderCompact.kt`, `TimelineToolbar.kt`, `UI/projects/components/ProjectCard.kt`
-- [ ] T046 [US2] Cancel a clip drag in progress when the layout class changes (the clip returns via
+  `TrackHeaderCompact.kt`, `TimelineToolbar.kt`, `UI/projects/components/ProjectCard.kt` (2026-11-03: the lowest owner that outlives the row's two forms is `TrackRow`, the lazy item keyed by track id: `rememberSaveable` there; the toolbar's overflow and the project cards already kept theirs)
+- [X] T046 [US2] Cancel a clip drag in progress when the layout class changes (the clip returns via
   `onClipDragCancel`) in `UI/timeline/components/TrackLane.kt`
-- [ ] T047 [US2] Restore keyboard focus by semantic id after a layout switch and when the window regains focus,
+- [X] T047 [US2] Restore keyboard focus by semantic id after a layout switch and when the window regains focus,
   falling back to the destination root, in `UI/navigation/NavigationShellContent.kt`
-- [ ] T048 [P] [US2] Cap reading widths for very wide windows (FR-008): Projects at most four columns in
+- [X] T048 [P] [US2] Cap reading widths for very wide windows (FR-008): Projects at most four columns in
   `UI/projects/ProjectsLayout.kt`; tuner and metronome cards centred at their expanded width in
   `UI/tuner/TunerLayout.kt` and `UI/metronome/MetronomeLayout.kt`
-- [ ] T049 [US2] Create the seam `UI/platform/WindowControls.kt` (interface: `fullScreenAvailable: StateFlow<Boolean>`,
+- [X] T049 [US2] Create the seam `UI/platform/WindowControls.kt` (interface: `fullScreenAvailable: StateFlow<Boolean>`,
   `isFullScreen: StateFlow<Boolean>`, `enterFullScreen()`, `exitFullScreen()`) and the iOS binding
   `UIIOS/platform/IosWindowControls.kt` (always unavailable), bound in the iOS graph
-- [ ] T050 [US2] Create `ANDROID/AndroidWindowControls.kt`: available on API 34+ while `isInMultiWindowMode` or the
+- [X] T050 [US2] Create `ANDROID/AndroidWindowControls.kt`: available on API 34+ while `isInMultiWindowMode` or the
   window is free-form; `Activity.requestFullscreenMode(FULLSCREEN_MODE_REQUEST_ENTER/EXIT, receiver)`; state refreshed
   from configuration and multi-window changes; bind it in `ANDROID/AndroidAppGraph.kt` from `ANDROID/MainActivity.kt`
-- [ ] T051 [US2] Add the "Full screen" / "Exit full screen" item to the Timeline's overflow menu in
+- [X] T051 [US2] Add the "Full screen" / "Exit full screen" item to the Timeline's overflow menu in
   `UI/timeline/components/TimelineToolbar.kt` (copy in `UI/timeline/TimelineCopy.kt`), reading `WindowControls`
-- [ ] T052 [US2] Emit `SHELL_WINDOW_RELAYOUT` in `UI/navigation/NavigationShellContent.kt`: begin when the observed
+- [X] T052 [US2] Emit `SHELL_WINDOW_RELAYOUT` in `UI/navigation/NavigationShellContent.kt`: begin when the observed
   window size crosses a width or height class, end at the first frame at the new size
 
 **Checkpoint**: US1 + US2: the app is a resilient desktop window.

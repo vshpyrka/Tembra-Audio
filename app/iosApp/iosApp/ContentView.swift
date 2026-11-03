@@ -33,5 +33,8 @@ struct ContentView: View {
     var body: some View {
         ComposeView()
             .ignoresSafeArea()
+            // Feature 011 (spec FR-004): no window smaller than 360 × 480 points.
+            .frame(minWidth: WindowMinimum.size.width, minHeight: WindowMinimum.size.height)
+            .background(WindowMinimum().frame(width: 1, height: 1).allowsHitTesting(false))
     }
 }

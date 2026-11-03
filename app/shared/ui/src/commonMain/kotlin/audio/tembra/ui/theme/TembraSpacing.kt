@@ -18,6 +18,11 @@ data class TembraSpacing(
     val seam: Dp = 1.dp,
     /** Reading-width cap for centred content on wide windows (plan: placeholder wide layout). */
     val wideContentMaxWidth: Dp = 720.dp,
+    /**
+     * The widest the tuner and the metronome grow (feature 011, spec FR-008): in a wider desktop window they keep this
+     * width, centred, as in an ordinary expanded window; the timeline takes the whole width for time.
+     */
+    val screenMaxWidth: Dp = 1200.dp,
     // Chrome metrics of the navigation frame (feature 002, data-model.md §6, spec FR-019).
     /** [audio.tembra.ui.designsystem.TembraTopBar]'s content height (`h-14` on the wide design screens); the shell shows no top bar since 2026-10-16. */
     val topBarHeight: Dp = 56.dp,

@@ -1,6 +1,7 @@
 package audio.tembra.ui.timeline
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -13,19 +14,20 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.foundation.focusable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import audio.tembra.core.project.TempoMap
+import audio.tembra.ui.designsystem.FocusMemory
+import audio.tembra.ui.designsystem.focusRestoringRoot
 import audio.tembra.ui.session.TransportTelemetry
 import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.ui.timeline.components.DeleteTrackDialog
@@ -79,6 +81,8 @@ internal fun TimelineScreenContent(
     LaunchedEffect(state.loaded) {
         if (state.loaded) rootFocus.requestFocus()
     }
+    // Focus returns to the same track or control after a window change rebuilds the rows (feature 011, FR-007).
+    val focusMemory = remember { FocusMemory() }
     val transportCallbacks = TransportCallbacks(
         onPlayPause = callbacks.onPlayPause,
         onSkipToStart = callbacks.onSkipToStart,
@@ -93,6 +97,7 @@ internal fun TimelineScreenContent(
             .background(daw.canvasLevel0)
             .testTag(TimelineTestTags.ROOT)
             .semantics { stateDescription = if (ready) READY else LOADING }
+            .focusRestoringRoot(focusMemory)
             .focusRequester(rootFocus)
             .focusable()
             .timelineKeyHandling({ state }, callbacks),
@@ -111,6 +116,7 @@ internal fun TimelineScreenContent(
                 onGrid = callbacks.onGrid,
                 onSnapSheet = { callbacks.onOpenSheet(TimelineSheet.GridMenu) },
                 onOverviewStripShown = callbacks.onOverviewStripShown,
+                onFullScreen = callbacks.onFullScreen,
                 onMetronomeSettings = callbacks.onMetronomeSettings,
             )
             TimelineRuler(

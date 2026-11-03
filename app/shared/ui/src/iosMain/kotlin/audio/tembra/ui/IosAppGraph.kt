@@ -10,6 +10,8 @@ import audio.tembra.ui.platform.BackgroundPlaybackHost
 import audio.tembra.ui.platform.IosAudioFilePicker
 import audio.tembra.ui.platform.IosBackgroundPlaybackHost
 import audio.tembra.ui.platform.IosMicrophonePermission
+import audio.tembra.ui.platform.IosWindowControls
+import audio.tembra.ui.platform.WindowControls
 import audio.tembra.ui.platform.MicrophonePermission
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.DependencyGraph
@@ -41,4 +43,9 @@ interface IosAppGraph : AppGraph {
     @Provides
     @SingleIn(AppScope::class)
     fun provideAudioFilePicker(): AudioFilePicker = IosAudioFilePicker()
+
+    /** iPadOS's own window controls give full screen; the app requests none (feature 011, research R21). */
+    @Provides
+    @SingleIn(AppScope::class)
+    fun provideWindowControls(): WindowControls = IosWindowControls()
 }

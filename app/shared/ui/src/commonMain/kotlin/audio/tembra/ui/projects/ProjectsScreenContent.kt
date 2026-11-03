@@ -29,7 +29,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import audio.tembra.ui.designsystem.EmptyState
+import audio.tembra.ui.designsystem.FocusMemory
 import audio.tembra.ui.designsystem.TembraPill
+import audio.tembra.ui.designsystem.focusRestoringRoot
 import audio.tembra.ui.projects.components.DeleteProjectDialog
 import audio.tembra.ui.projects.components.DescribeProjectDialog
 import audio.tembra.ui.projects.components.KeyPickerDialog
@@ -62,12 +64,14 @@ internal fun ProjectsScreenContent(
     LaunchedEffect(state.loaded) {
         if (state.loaded) rootFocus.requestFocus()
     }
+    val focusMemory = remember { FocusMemory() }
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(TembraTheme.daw.canvasLevel0)
             .testTag(ProjectsTestTags.ROOT)
             .semantics { stateDescription = if (ready) READY else LOADING }
+            .focusRestoringRoot(focusMemory)
             .focusRequester(rootFocus)
             .focusable(),
     ) {

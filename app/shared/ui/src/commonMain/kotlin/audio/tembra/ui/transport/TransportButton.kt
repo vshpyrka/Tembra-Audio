@@ -22,6 +22,7 @@ import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.semantics
 import audio.tembra.ui.designsystem.TembraTooltip
 import audio.tembra.ui.designsystem.drawFocusRing
+import audio.tembra.ui.designsystem.focusIdentity
 import audio.tembra.ui.theme.TembraIcon
 import audio.tembra.ui.theme.TembraIcons
 import audio.tembra.ui.theme.TembraTheme
@@ -71,6 +72,7 @@ internal fun TransportButton(
                     if (fill != null) drawCircle(color = fill, radius = radius)
                     if (focused) drawFocusRing(ringColor, ring.toPx(), CornerRadius(radius))
                 }
+                .focusIdentity(testTag)
                 .clickable(interactionSource = source, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
                 .semantics {
                     contentDescription = description
