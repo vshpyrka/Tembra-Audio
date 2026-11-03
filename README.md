@@ -4,9 +4,14 @@ A free, open-source mobile DAW for Android and iOS. One shared C++ real-time aud
 audio work; a Kotlin Multiplatform control plane and a Compose Multiplatform UI run on top of it, so
 both platforms share the same DSP and the same screens.
 
-The project is at an early stage. You can use the tuner and the metronome today. The timeline, mixer,
-effects and recording come next, in that order.
+The project is at an early stage. You can use the timeline, the tuner and the metronome today.
+Recording, the mixer and effects come next.
 
+<p>
+  <img src="docs/screenshots/timeline-android-pixel6pro-playing.png" width="240" alt="Timeline playing the demo project: four tracks with waveforms, the playhead at bar 4 and the transport bar counting">
+  <img src="docs/screenshots/timeline-android-pixel6pro-track-menu.png" width="240" alt="A track's menu on the timeline with Track settings, Add audio, Move up, Move down and Delete track">
+  <img src="docs/screenshots/projects-android-pixel6pro-library.png" width="240" alt="Projects library with search, filters and two project cards showing tempo, key, length and track count">
+</p>
 <p>
   <img src="specs/005-tabletop-posture/screenshots/android-pixel6pro-autolisten.png" width="240" alt="Tuner in Auto Listen mode reading E2 from a guitar">
   <img src="specs/005-tabletop-posture/screenshots/android-pixel6pro-d2-byear.png" width="240" alt="Tuner in By Ear mode with a reference tone card for each guitar string">
@@ -15,6 +20,15 @@ effects and recording come next, in that order.
 
 ## What works now
 
+- **Timeline.** Play several tracks of audio clips together, with waveforms, a ruler in bars and
+  time, and a playhead you can tap or drag to a new position. Import WAV, FLAC and MP3 files onto a
+  track. The app keeps its own copy of each file in the project. Split, move and delete clips, with
+  undo and redo. Each track has mute, solo, gain and an instrument label. Zoom by pinching or
+  with the overview strip above the transport bar, and snap edits to a grid from whole bars down
+  to sixteenth notes. The metronome can click along at the project's tempo. On first launch the
+  timeline opens a demo project with four tracks.
+- **Projects.** A library of your projects with search, filters and sorting. Rename a project, add a
+  description or a key, duplicate it or delete it. Edits are saved automatically.
 - **Tuner.** *Auto Listen* detects pitch from the microphone and shows the note, the frequency and
   how far it is from the reference pitch. *By Ear* plays reference tones for each string, either once
   or on a loop. Guitar (6 or 7 strings, several tuning presets) and cello are supported.
@@ -24,8 +38,12 @@ effects and recording come next, in that order.
 - **Adaptive layout.** Separate layouts for phones (portrait and landscape), tablets and foldables.
   A foldable in tabletop or book posture splits the screen at the hinge.
 
-Timeline, Projects and Profile already appear in the navigation, but for now they only show a
-placeholder. The app opens on Timeline.
+The app opens on Timeline with the project you had open last. Profile already appears in the
+navigation, but for now it only shows a placeholder.
+
+The demo project on an iPad Pro in landscape:
+
+<img src="docs/screenshots/timeline-ios-ipadpro13-landscape.png" width="736" alt="The same demo project on an iPad Pro in landscape: a navigation rail, track headers with gain, mute and solo, the snap and tempo pills, and the overview strip above the transport bar">
 
 ## How it is built
 
@@ -36,7 +54,7 @@ Compose Multiplatform UI + ViewModels (Kotlin, shared)
 AudioEngine facade  ── JNI on Android, cinterop on iOS
         │  lock-free FIFOs and atomics
         ▼
-C++ real-time engine (tuner, metronome, later mixer and effects)
+C++ real-time engine (tuner, metronome, clip playback, later mixer and effects)
         │
 Oboe (Android) · RemoteIO (iOS)
 ```
