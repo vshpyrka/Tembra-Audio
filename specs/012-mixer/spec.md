@@ -45,9 +45,9 @@ FIFO") supply the behaviour used in the requirements.
 | "Solo" and "Mute" buttons per strip, Solo lit in lavender or amber, Mute dim | All three tablet split screens | **Kept** as the strip's solo and mute toggles with the meanings and colours feature 009 fixed for the headers' S and M (FR-010) |
 | Long-throw fader per strip with a dB scale "10, 5, 0, 5, 10, 20, 30, 40, 50, 60, 70" and a unity arrow at 0 | `tablet-split-console`, `tablet-split-v1`, `tablet-split-v2` (no scale) | **Kept** as the gain fader with feature 009's range: +6 dB at the top, silence at the bottom, a unity mark at 0 dB and a console-like throw where the upper part is fine (FR-003, FR-004); the "+10" top and the "−70" bottom are drift against 009 FR-023 |
 | Speaker button under each fader | `tablet-split-console`, `tablet-split-v1` | **Excluded**: it has no stated meaning on either screen, as feature 009 excluded the transport's muted-speaker button; the master volume keeps its place in the transport bar (009 D1) |
-| "MIXER" drawer handle over the phone timeline with a master fader, a dual-colour LED meter (green body, yellow warning, pink clip) and an "FX" dial | `phone-drawer` | **Kept** as the mixer sheet on phones with its handle (FR-018) and as the master strip (FR-011); the LED colours are already the design tokens `meter_body`, `meter_warning` and `meter_clip` that feature 010 sampled from this screen; the "FX" dial is **excluded** here: inserts and sends are the effects feature (013) |
+| "MIXER" drawer handle over the phone timeline with a master fader, a dual-colour LED meter (green body, yellow warning, pink clip) and an "FX" dial | `phone-drawer` | **Kept** as the mixer sheet on phones with its handle on the open sheet only (FR-018) and as the master strip (FR-011); the LED colours are already the design tokens `meter_body`, `meter_warning` and `meter_clip` that feature 010 sampled from this screen; the "FX" dial is **excluded** here: inserts and sends are the effects feature (013) |
 | Horizontal "Pan L/R" slider in each compact track header | `phone-drawer` | **Kept** as the pan slider in the track settings and as a readout in the expanded header (FR-007); the compact header has no room for it below 600 dp (010 US6 scenario 1) |
-| Mixer console filling the left part of a tablet window beside the timeline's lanes | All three tablet split screens | **Kept** as the mixer panel of expanded windows (FR-021); the two panes share the toolbar and the transport bar |
+| Mixer console filling the left part of a tablet window beside the timeline's lanes | All three tablet split screens | **Not followed**: the owner chose the sheet that slides up from the bottom on every window size (Clarifications, session 2026-11-03; FR-021); on desktop windowing the console may open as the app's own second window instead (FR-021a), with its strips side by side as these screens show |
 | "Sliders" glyph at the right of a thin toolbar row above the console, a "list" glyph at its left | `tablet-split-console`, `tablet-split-v1` | The sliders glyph is **kept** as the toolbar's Mixer button (FR-017); the list glyph is **excluded**, it has no stated meaning |
 | Transport at the top (play, record, skip, rewind, fast-forward, "120 BPM / 4/4"), a bottom navigation with "Mixer, Timeline, Library, Effects, Settings" or "Home, Mixer, Play, Levels, Settings", iOS status bars | The three tablet split screens | **Excluded**, as feature 009 decided: the transport bar stays at the bottom, feature 002 decided the navigation, the mixer is not a destination (FR-016) |
 | A sixth strip numbered "6" after "4" in `tablet-split-v2`, i.e. a missing "5" | `tablet-split-v2` | Export drift; strips are never skipped (FR-002) |
@@ -74,9 +74,34 @@ and master volume with their ranges, defaults, fades and keys (009 FR-007, FR-01
 FR-024, FR-057), the undo history in which a drag is one step (009 FR-035), the input meter's
 scale and behaviour (010 FR-005) and the rule that pointer and keyboard are first-class on every
 control (constitution Principle IV; 011 FR-012, FR-014, FR-019, FR-022). It adds **pan**, the
-**playback level meters** (per track and master) and the **mixer surface** (sheet, console and
-panel) where all of them are controlled together. Effects (inserts, sends, EQ) and automation are
-the next feature and MUST NOT be pulled into this one.
+**playback level meters** (per track and master) and the **mixer surface** (a sheet on every
+window and, optionally, its own window on desktops) where all of them are controlled together.
+Effects (inserts, sends, EQ) and automation are the next feature and MUST NOT be pulled into
+this one.
+
+## Clarifications
+
+### Session 2026-11-03
+
+- Q: On tablets and desktop windows, where should the mixer sit and how should it share the
+  window with the timeline lanes? → A: It slides up from the bottom on every window size, as
+  on a phone (no panel beside the lanes); on desktop windowing it may also open in its own
+  window, as an optional second window of the app (FR-021, FR-021a, User Story 7).
+- Q: Should each mixer strip carry the track's record-arm toggle, or should arming stay in the
+  timeline's track header only? → A: Header only: the strip carries no arm control and shows
+  the armed state through its meter alone (FR-014).
+- Q: Should the master strip's fader read in decibels like the track faders, or stay the
+  percentage that feature 009 gave the master volume? → A: The percentage, as today: the
+  master fader shows it, and the speaker popup, the master keys and the document field stay
+  unchanged (FR-011).
+- Q: How should the mixer sheet open on a phone: only from the Mixer button, or also from a
+  handle that stays visible above the transport bar? → A: Button only (and "X"): no permanent
+  handle on the timeline; the "Mixer" handle appears on the open sheet for dragging between its
+  heights and for closing (FR-018).
+- Q: On a phone, should the mixer sheet have two heights (half with compact strips, full with
+  the complete strips) or one height only? → A: Two heights: half keeps the lanes visible with
+  meter, Solo, Mute, fader and name; full shows the complete strips; the handle drags between
+  them (FR-018).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -222,14 +247,16 @@ master fader and see the transport bar's speaker state agree.
 ### User Story 5 - Fits every window, pointer, keyboard and screen reader (Priority: P2)
 
 The mixer works on a phone in one hand as a sheet over the timeline, on a phone held sideways as
-a console under the toolbar, on a tablet, a foldable or a desktop window as a panel beside the
-timeline that the user can show and hide, with a mouse (hover, tooltips, the scroll wheel on
-faders and knobs), a keyboard (arrow keys on the focused control, the shortcut sheet) and a
-screen reader (each fader and knob is an adjustable control that announces its value).
+a full-height sheet under the toolbar, on a tablet, a foldable or a desktop window as the same
+sheet with more strips (and on a desktop also as its own window, User Story 7), with a mouse
+(hover, tooltips, the scroll wheel on faders and knobs), a keyboard (arrow keys on the focused
+control, the shortcut sheet) and a screen reader (each fader and knob is an adjustable control
+that announces its value).
 
 **Why this priority**: constitution Principle IV; the owner asked for a mobile-first mixer that
-adapts to every screen size. It is P2 because the sheet and the panel are both needed for the
-first release, but each of the three layouts is verifiable on its own.
+adapts to every screen size. It is P2 because the sheet is needed on every window for the
+first release, but each window class is verifiable on its own; the separate window is User
+Story 7.
 
 **Independent Test**: take the screenshot set of FR-034 on both platforms; drive the mixer with
 the keyboard alone; read three strips and the master with the screen reader.
@@ -241,13 +268,13 @@ the keyboard alone; read three strips and the master with the screen reader.
    120 dp, the strips scroll sideways to reach the rest, and the toolbar and transport bar stay
    usable.
 2. **Given** a phone held sideways (at least 600 dp wide, shorter than 480 dp), **When** the
-   mixer opens, **Then** the console replaces the lanes between the toolbar and the transport
-   bar, the VU dials are dropped so each fader keeps a throw of at least 120 dp, and the Mixer
-   button closes it.
+   mixer opens, **Then** the sheet rises to its full height under the toolbar (the lanes are
+   covered), the VU dials are dropped so each fader keeps a throw of at least 120 dp, and the
+   Mixer button closes it.
 3. **Given** an expanded window (840 dp or wider and at least 480 dp tall), **When** the mixer
-   opens, **Then** it is a panel beside the lanes with the full strips (meter, VU, pan, Solo,
-   Mute, fader, name), the lanes keep at least 320 dp of width, both panes follow the same
-   playhead, and the panel's shown or hidden state is remembered for the next project.
+   opens, **Then** the same sheet slides up from the bottom with the full strips (meter, VU, pan,
+   Solo, Mute, fader, name), its half height leaves the ruler and at least two lanes visible,
+   and it shows as many strips as the width holds before scrolling, never stretched.
 4. **Given** a pointer, **Then** every fader, knob and button shows a hover state and a
    tooltip, the wheel over a fader changes it in 0.5 dB steps and over a knob in 1 % steps, and a
    secondary click on a strip opens the track's menu.
@@ -286,11 +313,42 @@ counters of the labelled session.
 
 ---
 
+### User Story 7 - The mixer in its own window on a desktop (Priority: P3)
+
+On a desktop with free-form windows the musician opens the mixer as its own window, puts it
+beside or below the timeline window, and mixes there while the timeline window shows the
+project; both windows show the same project, transport and selection, and a change made in one
+is visible in the other at once.
+
+**Why this priority**: the owner asked for it as an option for desktops; the sheet is complete
+without it, and feature 011 left several windows of the app out of its scope, so this is the
+app's first second window and MAY be deferred by the plan to a follow-up feature.
+
+**Independent Test**: on the Android desktop emulator, open the mixer in a window, drag a fader
+there and watch the track's gain readout change in the timeline window; solo a track in the
+timeline window and watch the strip light in the mixer window; close the project and see both
+windows close.
+
+**Acceptance Scenarios**:
+
+1. **Given** a desktop window with the sheet open, **When** the user taps "Open in a window",
+   **Then** the sheet closes, a second window opens with the console strips side by side and the
+   master strip, and the timeline window keeps the lanes, the toolbar and the transport bar.
+2. **Given** both windows open, **When** a fader moves in either, **Then** the other shows the
+   change within one frame, and undo in either window undoes it.
+3. **Given** the mixer window open, **When** the user presses the Mixer button or "X" in the
+   timeline window, **Then** the mixer window comes to the front; **When** the project closes,
+   **Then** the mixer window closes with it.
+4. **Given** a platform without several windows (a phone, a tablet without desktop windowing),
+   **Then** "Open in a window" is absent and the sheet is the only form.
+
+---
+
 ### Edge Cases
 
 - A project with one track: one strip and the master; the strips do not stretch to fill the row.
-- A project whose tracks exceed the visible strips on a tablet panel: the panel scrolls sideways
-  inside its width; it never grows beyond 60 % of the window.
+- A project whose tracks exceed the visible strips on a wide window: the row scrolls sideways;
+  the strips never stretch or shrink to fit the width.
 - A fader dragged while its track is muted: the gain changes, the meter stays at silence, the
   readout updates; unmuting reveals the new level.
 - A fader dragged to the very bottom: the readout shows "−∞", the track is silent, the meter
@@ -306,8 +364,8 @@ counters of the labelled session.
   on the first frame they are visible.
 - Playback stopped: the meters fall to silence within one second; the clip latches remain.
 - The window resized across a breakpoint with the mixer open (desktop, foldable): the sheet
-  becomes the panel or the console and back without losing the open state, the scroll position
-  or a drag in progress.
+  changes its heights and its strip form without losing the open state, the scroll position or
+  a drag in progress; a separate mixer window keeps its own size.
 - Tabletop or book posture (feature 005) with the mixer open: the sheet's half height aligns to
   the hinge where feature 005's split applies; nothing sits under the hinge.
 - The largest font size: strip texts (number, readouts, name) scale and the strip widens;
@@ -372,7 +430,8 @@ counters of the labelled session.
   each toggle applies within 20 ms with a short fade), lit with the design's active colour, and
   the two surfaces MUST never disagree.
 - **FR-011**: The master strip MUST show the master volume as a fader over feature 009's range
-  (0 to 100 %, default 80 %) with a percentage readout, and the summed output's level meter
+  (0 to 100 %, default 80 %) with a percentage readout (confirmed in the clarification session
+  of 2026-11-03: no decibel master), and the summed output's level meter
   (FR-012) with its own clip indicator; it MUST have no pan, Solo or Mute. The transport bar's
   speaker button and popup (009 D1) remain and show the same value.
 
@@ -391,8 +450,9 @@ counters of the labelled session.
   twitch on single peaks.
 - **FR-014**: While a track is armed (feature 010), its strip's meter MUST be the armed header's
   input meter (010 FR-005), with the same scale, hold and clip latch; when the track is
-  disarmed the strip MUST return to its playback meter. The armed state and the arm control
-  stay in the header; the strip does not add a second arm control.
+  disarmed the strip MUST return to its playback meter. The arm control stays in the header: the
+  strip MUST NOT carry one and shows the armed state through its meter alone (Clarifications,
+  session 2026-11-03).
 - **FR-015**: All meters MUST refresh at the display's rate, lag the sound by no more than
   50 ms, fall to silence within one second of a stop, and MUST be read along the same per-frame
   path as the playhead (constitution Principle II); a meter MUST NOT make the strip recompose on
@@ -406,25 +466,37 @@ counters of the labelled session.
 - **FR-017**: The toolbar MUST carry a Mixer button (the design's sliders glyph; icon-only, with
   a tooltip) that opens and closes the mixer; it is a toggle whose state is visible. On
   keyboards "X" MUST do the same (FR-029).
-- **FR-018 (compact, narrower than 600 dp)**: The mixer MUST be a bottom sheet over the lanes
-  with a handle labelled "Mixer", opened by the button or by dragging the handle up from the
-  transport bar's edge, closed by the button, a swipe down or Back. The sheet MUST have a half
-  height (at least 240 dp, strips in a compact form: meter, Solo, Mute, fader, name) and a full
-  height that leaves the toolbar visible (full strips); each fader's throw MUST be at least
+- **FR-018 (compact, narrower than 600 dp)**: The mixer MUST be a bottom sheet over the lanes,
+  opened by the Mixer button or "X" only (no handle or swipe target on the timeline while the
+  sheet is closed; Clarifications, session 2026-11-03), with a handle labelled "Mixer" on the
+  open sheet for dragging between its heights; closed by the button, a swipe down on the
+  handle or Back. The sheet MUST have two heights (confirmed in the clarification session of
+  2026-11-03): a half height (at least 240 dp, strips in a compact form: meter, Solo, Mute,
+  fader, name; the lanes stay visible above) and a full height that leaves the toolbar visible
+  (full strips); each fader's throw MUST be at least
   120 dp at either height. At 360 dp of width at least three track strips and the master MUST be
   visible at once.
 - **FR-019 (600 to 839 dp)**: The compact rules apply with more strips visible.
-- **FR-020 (landscape, at least 600 dp wide and shorter than 480 dp)**: The mixer MUST replace
-  the lanes between the toolbar and the transport bar as a full-width console; the VU dials are
-  dropped (FR-025) so the fader keeps a throw of at least 120 dp; the ruler and the lanes return
-  when the mixer closes.
-- **FR-021 (expanded, 840 dp or wider and at least 480 dp tall)**: The mixer MUST be a panel at
-  the left of the lanes, as the tablet split screens show, with the full strips; its width MUST
-  be what its strips need up to 60 % of the window, scrolling sideways beyond that; the lanes
-  MUST keep at least 320 dp of width. The panel's shown or hidden state MUST be remembered on
-  the device across projects and launches.
+- **FR-020 (landscape, at least 600 dp wide and shorter than 480 dp)**: The sheet MUST have one
+  height, the full height under the toolbar (the lanes are covered); the VU dials are dropped
+  (FR-025) so the fader keeps a throw of at least 120 dp; the ruler and the lanes return when
+  the sheet closes.
+- **FR-021 (expanded, 840 dp or wider and at least 480 dp tall)**: The mixer MUST be the same
+  bottom sheet, sliding up over the lanes as on a phone (the owner's choice over the design's
+  side-by-side console): its half height MUST leave the ruler and at least two lanes visible,
+  its full height MUST leave the toolbar visible, and it MUST show the full strips, as many as
+  the width holds before scrolling, never stretched to fill it.
+- **FR-021a (own window, optional)**: On a platform where the app may have several windows at
+  once (Android desktop windowing first; iPad later), the sheet's handle row MUST offer an
+  "Open in a window" button (icon-only, with a tooltip): the mixer then opens as the app's own
+  second window with the console strips side by side as the tablet split screens show, follows
+  the same project, transport, selection and undo history as the main window, closes with the
+  project, and while it is open the Mixer button and "X" in the main window bring it to the
+  front instead of opening the sheet. Feature 011 left several windows of the app out of its
+  scope, so this requirement is optional: the plan MAY deliver it last or defer it to a
+  follow-up feature, and MUST say which.
 - **FR-022**: When the window crosses a breakpoint while the mixer is open (a resized desktop
-  window, a fold, a rotation), the mixer MUST change form (sheet, console, panel) without losing
+  window, a fold, a rotation), the sheet MUST change its heights and its strip form without losing
   its open state, its scroll position or a drag in progress.
 - **FR-023**: Tapping a strip's number or name MUST select its track and scroll the timeline so
   the track's lane is visible; opening the mixer with a selected track MUST scroll the strips so
@@ -432,9 +504,9 @@ counters of the labelled session.
 - **FR-024**: Opening or closing the mixer MUST NOT interrupt playback or recording, and the
   meters MUST show live levels on the first visible frame.
 - **FR-025**: Each strip MUST be at least 72 dp wide on touch screens and its fader handle at
-  least 44 dp wide; when the window is too short for the full strip (the console in landscape,
-  the sheet's half height) the strip MUST drop first the VU dial and then the pan knob (reachable
-  in the track settings) before shortening the fader below 120 dp.
+  least 44 dp wide; when the window is too short for the full strip (the full-height sheet in
+  landscape, the sheet's half height) the strip MUST drop first the VU dial and then the pan
+  knob (reachable in the track settings) before shortening the fader below 120 dp.
 - **FR-026**: Nothing MUST overlap, clip or sit under system bars at any supported width,
   including the largest font size (Principle IV); the strip widens with its texts.
 
@@ -474,8 +546,9 @@ counters of the labelled session.
   reordering, grouping, buses or stereo width; a mixer destination in the navigation; pan on the
   compact header.
 - **FR-034**: The feature MUST deliver screenshots of the sheet at half and full height on a
-  360 dp phone, the console in phone landscape, the panel on a tablet, a foldable and a desktop
-  window, with meters live, on Android and on the iOS simulator, as the earlier features did;
+  360 dp phone, the full-height sheet in phone landscape, the sheet at both heights on a tablet,
+  a foldable and a desktop window, and the separate window on the desktop emulator where it is
+  delivered, with meters live, on Android and on the iOS simulator, as the earlier features did;
   the plan syncs the designed states to the Tembra Audio Stitch project.
 
 ### Performance instrumentation declared by this feature
@@ -492,7 +565,8 @@ counters of the labelled session.
   press to the first frame with live meters), mixer close, mixer frame (the per-frame cost of
   the visible strips' meters and VU readings), fader drag (the per-frame cost of a drag with
   the readout), pan turn, master drag, and pan apply (the engine's application of a pan change,
-  for the C++ test target's timing rather than the device sessions).
+  for the C++ test target's timing rather than the device sessions); the separate window
+  (FR-021a), where delivered, is measured through the same sections and anchors.
 - Counters added: master clips (blocks in which the master's sum exceeded full scale), meter
   frames dropped (meter readings the UI missed because a frame was late), and the peak callback
   load while the mixer is open (read from the existing callback-duration counters during the
@@ -520,10 +594,9 @@ counters of the labelled session.
   sides' current peak, held peak and clip latch, and the averaged (VU) level; telemetry, never
   saved.
 - **Master Level**: the same reading for the summed output before the device's limit.
-- **Mixer View State**: whether the mixer is open, its form (sheet at half or full height,
-  console, panel), the strips' scroll position and a drag in progress; held while the project is
-  open, never part of the project document. The panel's shown or hidden preference on expanded
-  windows is a device setting.
+- **Mixer View State**: whether the mixer is open, its form (sheet at half or full height, or
+  its own window), the strips' scroll position and a drag in progress; held while the project is
+  open, never part of the project document.
 - **Edit History** (feature 009): a fader drag, a knob turn, a toggle and a master drag are each
   one snapshot.
 - **Project Document** (feature 009): carries the pan of every track; documents without it read
@@ -550,8 +623,8 @@ counters of the labelled session.
 - **SC-006**: Two faders moved at once with two fingers each follow their own finger; the gains
   recorded in the project equal the fader positions within 0.1 dB.
 - **SC-007**: The screenshot set of FR-034 shows no clipped text, no overlap and no control
-  under a bar at 360 dp, in phone landscape, on the tablet, the foldable and the desktop
-  window, at the default and the largest font size.
+  under a bar at 360 dp, in phone landscape, on the tablet, the foldable, the desktop
+  window and the separate window where delivered, at the default and the largest font size.
 - **SC-008**: Every mixer control is reachable and operable with the keyboard alone and with a
   pointer alone, and every fader, knob and toggle is announced with its track and value by
   TalkBack and VoiceOver.
@@ -571,10 +644,11 @@ counters of the labelled session.
 - **Meters are after the fader, pan and mute** ("post-fader") so that what the user sees is
   what reaches the master; the armed track's input meter (feature 010) is the one exception and
   is pre-fader by nature.
-- **Placement follows feature 009's reading of the design**: a sheet on phones, a console in
-  phone landscape, a panel beside the lanes on expanded windows, and no mixer destination. The
-  panel sits at the left as all three tablet screens show. The panel's shown or hidden state is
-  a device preference like feature 009 D1's overview strip.
+- **Placement**: the owner chose a sheet that slides up from the bottom on every window size
+  (Clarifications, session 2026-11-03), departing from feature 009's reading of the tablet
+  screens as a console beside the lanes; there is no mixer destination. The side-by-side
+  console survives only as the optional separate window on desktops (FR-021a), the app's first
+  second window (feature 011 left several windows out of its scope).
 - **The fader's console-like throw** (0 dB at about 70 %, −12 dB near the middle) follows
   hardware consoles and most DAWs; feature 009's track-settings gain slider keeps its own law.
 - **Pan is a percentage per side** ("L 35") rather than degrees or a 0–127 value, matching the
@@ -586,9 +660,11 @@ counters of the labelled session.
   with "/"); the fader and knob key steps are feature 009's (FR-057).
 - **Multi-touch** is limited by the device; every supported phone and tablet reports at least
   two touch points.
-- **The master stays a percentage** as feature 009 defined it; a dB master is not introduced.
-- **The arm control stays in the header** (feature 010); the strip shows the armed state through
-  its meter only, so the two features' controls are not duplicated.
+- **The master stays a percentage** as feature 009 defined it (confirmed in the clarification
+  session of 2026-11-03); a dB master is not introduced.
+- **The arm control stays in the header** (feature 010, confirmed in the clarification session
+  of 2026-11-03); the strip shows the armed state through its meter only, so the two features'
+  controls are not duplicated.
 - **The stress and mixer journeys use the demo project** plus the fixtures of feature 009; the
   24-track project of SC-005 is built from them by the journey driver.
 - **Dark theme only, English only, left-to-right**, as in the earlier features.
