@@ -107,6 +107,11 @@ batch of update pull requests and merges each one whose checks all pass.
 | Android host tests and release build | `ubuntu-24.04` | every push, every pull request to `main` | `checkAndroidHost :androidApp:assembleRelease` |
 | iOS simulator and C++ engine tests | `macos-26` (or `vars.CI_MACOS_RUNNER`) | every pull request to `main` | `checkIos engineHostTest` on the newest iPhone simulator |
 | Renovate config | `ubuntu-24.04` | every push, every pull request to `main` | `renovate-config-validator --strict` |
+| Play closed testing (`.github/workflows/play-closed-testing.yml`) | `ubuntu-24.04` | every push to `main` that changes the Android app, or by hand | `checkAndroidHost :androidApp:bundleRelease`, then signs with the upload key and releases on Google Play's closed testing track |
+
+The Play workflow, its keyless Google Cloud trust, the upload key in Secret Manager and the one-time setup
+(`tools/play/setup-wizard.sh`) are described in [`docs/google-play-publishing.md`](../docs/google-play-publishing.md).
+Until its repository variables exist, the workflow only builds and tests.
 
 Both Gradle jobs pass `-Ptembra.warningsAsErrors=true --warning-mode fail`, so a Kotlin compiler warning or a Gradle
 deprecation fails CI; without the property a local build still only reports warnings. A Sunday evening run on `main`
@@ -149,7 +154,8 @@ a performance round as usual (`perf/README.md`).
 2. **Secret.** Repository → Settings → Secrets and variables → Actions → New repository secret: `RENOVATE_TOKEN`.
    Until it exists the Renovate workflow only prints a notice.
 3. **Actions.** Settings → Actions → General: if you restrict which actions may run, allow `actions/checkout`,
-   `actions/setup-java`, `actions/cache`, `gradle/actions` and `renovatebot/github-action`. The workflows declare
+   `actions/setup-java`, `actions/cache`, `gradle/actions` and `renovatebot/github-action`, and for the Play
+   workflow `actions/upload-artifact`, `actions/download-artifact` and `google-github-actions/auth`. The workflows declare
    their own `contents: read` permission, so the default workflow permission does not matter.
 4. **Merging.** Settings → General → Pull Requests: keep **Allow squash merging** on, and turn on **Automatically
    delete head branches**. Leave **Allow auto-merge** as it is; Renovate does not use it.
