@@ -21,6 +21,7 @@ Commands (run from `app/`, Gradle wrapper 9.7.0; prerequisites in `app/README.md
 - Baseline profiles (feature 008): `cd app/perf && uv run tracepulse profile generate|compare|verify --device pixel6` — generate writes `app/androidApp/src/main/generated/baselineProfiles/` (regenerate when the startup path, a primary destination, a journey or a main interaction changes; commit when covered code changed), compare proves the gain, verify checks an installed build; release-like Android builds are shrunk with R8 and refuse to build without a committed profile. Details: `app/perf/README.md` § Baseline profiles.
 - Add a Material Symbols glyph: `tools/fetch-material-symbols.sh [--fill] <glyph> [<glyph> ...]` (pinned commit, normalised for the Compose resource loader; `--fill` fetches the filled variant as `ic_<glyph>_fill_24.xml`), then add a `TembraIcon` value.
 - Regenerate the navigation's hand-drawn Tuner and Metronome glyphs: `tools/make-nav-glyphs.py [--preview <dir>]`
+- Google Play closed testing: every push to `main` that changes the Android app is tested, signed with the upload key (Secret Manager, keyless Workload Identity Federation) and released on the closed testing track by `.github/workflows/play-closed-testing.yml`; one-time setup `tools/play/setup-wizard.sh`, script tests `python3 -m unittest discover -s tools/play`, everything else in `docs/google-play-publishing.md`.
 
 ## Workflow: spec-kit drives all feature work
 
