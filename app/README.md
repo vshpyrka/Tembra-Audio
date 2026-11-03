@@ -107,7 +107,7 @@ batch of update pull requests and merges each one whose checks all pass.
 | Android host tests and release build | `ubuntu-24.04` | every push, every pull request to `main` | `checkAndroidHost :androidApp:assembleRelease` |
 | iOS simulator and C++ engine tests | `macos-26` (or `vars.CI_MACOS_RUNNER`) | every pull request to `main` | `checkIos engineHostTest` on the newest iPhone simulator |
 | Renovate config | `ubuntu-24.04` | every push, every pull request to `main` | `renovate-config-validator --strict` |
-| Play closed testing (`.github/workflows/play-closed-testing.yml`) | `ubuntu-24.04` | every push to `main` that changes the Android app, or by hand | `checkAndroidHost :androidApp:bundleRelease`, then signs with the upload key and releases on Google Play's closed testing track |
+| Google Play testing (`.github/workflows/play-closed-testing.yml`) | `ubuntu-24.04` | every push to `main` that changes the Android app, or by hand | `checkAndroidHost :androidApp:bundleRelease`, then signs with the upload key, releases on Google Play's internal testing track and deletes the run's bundle |
 
 The Play workflow, its keyless Google Cloud trust, the upload key in Secret Manager and the one-time setup
 (`tools/play/setup-wizard.sh`) are described in [`docs/google-play-publishing.md`](../docs/google-play-publishing.md).

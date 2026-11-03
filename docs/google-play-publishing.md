@@ -1,20 +1,21 @@
-# Publishing Tembra Audio to Google Play closed testing
+# Publishing Tembra Audio to Google Play testing
 
-Every push to `main` that changes the Android app becomes a release on the Google Play **closed testing** track: a
+Every push to `main` that changes the Android app becomes a release on Google Play's **internal testing** track: a
 merged pull request, a Renovate merge or a direct push. GitHub Actions tests and builds the release bundle, signs it
-with the upload key and hands it to the Google Play Developer API; Google reviews the release and then offers it to
-the testers on your list. The pipeline cannot release to production, and it refuses open testing.
+with the upload key and hands it to the Google Play Developer API, and the internal testers (up to 100) get it within
+minutes. Builds worth a wider audience are promoted by hand in Play Console to **closed testing**, where Google reviews
+them first. The pipeline cannot release to production, and it refuses open testing.
 
 This page explains how that works, why the keys and credentials are held the way they are, the one-time setup, and
 what to do when a run fails. The pieces live in:
 
 | File | What it does |
 |---|---|
-| `.github/workflows/play-closed-testing.yml` | The workflow: a `build` job and a `publish` job |
+| `.github/workflows/play-closed-testing.yml` | The workflow: a `build`, a `publish` and a `cleanup` job (the file name predates the internal track; Google Cloud's trust condition names it) |
 | `app/tools/play/publish.py` | Signs the bundle with the upload key and calls the Play Developer API (Python standard library only) |
 | `app/tools/play/test_publish.py` | Its tests: `python3 -m unittest discover -s app/tools/play` |
 | `app/tools/play/setup-wizard.sh` | Walks you through the one-time setup, stage by stage |
-| `app/androidApp/build.gradle.kts` | Takes the version code from `-Ptembra.versionCode`, limits the ABIs, ships the engine's symbols |
+| `app/androidApp/build.gradle.kts`, `app/gradle.properties` | The version code from `-Ptembra.versionCode`, the version name from `tembra.versionName`; the ABI filter; the engine's symbols |
 
 ## From a merge to the testers
 
@@ -25,10 +26,14 @@ what to do when a run fails. The pieces live in:
 2. **`publish` job** (a few minutes). Never runs Gradle. It asks GitHub for an OIDC token, exchanges it with Google
    Cloud for a 30-minute access token of the publishing service account, reads the upload key from Secret Manager into
    a private temporary folder, signs the bundle with the JDK's `jarsigner`, checks that the signer is the registered
-   upload certificate and deletes the key. It then opens a Play edit, uploads the bundle, puts it on the closed
-   testing track with release notes taken from the merge, and commits.
-3. **Google Play** reviews the release. Once it passes, testers who opted in get the update through the Play Store
-   like any other app update.
+   upload certificate and deletes the key. It then opens a Play edit, uploads the bundle, puts it on the track named by
+   `PLAY_TRACK` (`internal`) as release "0.1.0 (370)" with release notes taken from the merge, and commits.
+3. **`cleanup` job** deletes the run's unsigned bundle from GitHub as soon as `publish` has used it, so no build of the
+   app stays downloadable from the public repository. After a failed `publish` it stays for its one day, so
+   **Re-run failed jobs** can retry with the same build.
+4. **Google Play** offers the release to the internal testers within minutes, as an ordinary Play Store update. Google
+   says internal tests "might not be subject to standard Play policy or security reviews"; a build promoted to closed
+   testing is reviewed before its testers get it.
 
 The release notes ("What's new") are the pull request title for a pull request merge, the merge subject and the five
 newest commit subjects of the merged branch for a local `git merge --no-ff`, and the commit subject otherwise. They end
@@ -41,9 +46,11 @@ workflow, because they cannot change what Android users install. Run it by hand 
 ### Version numbers
 
 Play refuses a version code it has already seen, so each upload needs a larger one. The workflow passes the number of
-commits on `main` (`git rev-list --count HEAD`, 364 on 2026-11-03), which only grows as `main` moves forward and maps
-each Play build back to one commit. `versionName` becomes `0.1.0 (364)`; change the `0.1.0` in
-`app/androidApp/build.gradle.kts` by hand when a release deserves a new name. Local builds keep version code 1.
+commits on `main` (`git rev-list --count HEAD`), which only grows as `main` moves forward and maps each Play build back
+to one commit; the first upload was 369. The version name is `tembra.versionName` from `app/gradle.properties` with
+the build number appended, `0.1.0 (370)`, and the workflow gives the Play release the same name (Play's default,
+"version code (version name)", would read `370 (0.1.0 (370))`). Bump `tembra.versionName` by hand when a release
+deserves a new name. Local builds keep version code 1 and the bare version name.
 
 ## Keys and credentials
 
@@ -97,9 +104,10 @@ A pull request, a branch push or any other workflow is turned away, even one tha
 repository variables the workflow reads (`GCP_WORKLOAD_IDENTITY_PROVIDER`, `GCP_PLAY_SERVICE_ACCOUNT`, the secret
 names, the fingerprint) only name resources, so they are variables, not secrets.
 
-This also matters while the repository is private: on GitHub Free a private repository has no environments, which
-could otherwise limit a secret to `main`, so a repository secret is readable by a workflow on any branch pushed by
-anyone with write access, including Renovate's token.
+This matters because a repository secret is readable by a workflow on any branch pushed by anyone with write access,
+including Renovate's token, unless a GitHub environment limits it to `main`. Since the repository became public, its
+Actions logs and artifacts are public too: the logs never contain the key, its password or a token (the access token
+is masked and expires after 30 minutes), and the `cleanup` job deletes each run's bundle.
 
 ### The service account can only release to testing
 
@@ -121,7 +129,7 @@ you.
 
 | Option | Why not |
 |---|---|
-| Keystore and passwords in GitHub repository secrets | The common setup. Without environments (private repository on GitHub Free) any workflow on any branch could read them, and they never expire. |
+| Keystore and passwords in GitHub repository secrets | The common setup. Without an environment any workflow on any branch could read them, and they never expire. |
 | Upload key in Cloud KMS on a hardware security module | The private key would never leave the HSM. But Cloud KMS stores no certificates, `jarsigner` through Google's PKCS #11 library needs one, and no Google documentation covers signing app bundles this way (checked 2026-11-03); Play itself describes the upload key as a Java keystore. Because the upload key is resettable, the extra protection is small for the added moving parts. It stays a possible upgrade. |
 | A service account JSON key | Google Cloud and the `auth` action both recommend Workload Identity Federation over keys. |
 | A third-party upload action or Gradle Play Publisher | Each is community code that would receive the access token; the Play Developer API is the official interface, and `publish.py` calls it directly with no dependency outside Python's standard library. |
@@ -168,44 +176,57 @@ pull request that adds the workflow before stage 14, which starts the workflow o
 | 10 | Service account in Play Console | Invite it with **Release apps to testing tracks** on Tembra Audio only | Prints the e-mail address |
 | 11 | App content | Privacy policy, app access, ads, content rating, target audience, data safety, foreground services | Lists each declaration |
 | 12 | Store listing | Descriptions, icon, feature graphic, screenshots, category Music & Audio | Lists the assets |
-| 13 | Closed testing track | Add testers to the **Alpha** track, pick countries | |
+| 13 | Testers | Add up to 100 internal testers; later, closed testers on the **Alpha** track | |
 | 14 | First signed bundle | | Runs the workflow with `publish` off, waits, downloads the signed bundle |
-| 15 | First release by hand | Upload that bundle to closed testing, keep the Google-generated key, send for review | Prints the upload fingerprint to compare |
+| 15 | First release by hand | Upload that bundle to internal testing, keep the Google-generated key, name it after its version, roll it out | Prints the upload fingerprint to compare |
 
 Stage 2 can take days while Google verifies a new account; stop the wizard there and run it again afterwards.
 
 **Why the first upload is manual.** The Play Developer API cannot register a new app, and the first bundle you upload
 is what Play App Signing records as the upload key. After it, the API can do the rest.
 
-**Testers.** Closed testing reaches the people on the track's tester lists (e-mail lists or Google Groups). Each
-tester opens the opt-in link from Closed testing → Alpha → Testers, joins, and installs from the Play Store. A
-personal developer account created after 13 November 2023 needs 12 testers opted in for 14 days in a row before it
-can [apply for production access][testing-requirements]. Closed testing itself has no such threshold.
+**Tracks.** Google Play has four, and this pipeline uses the first two:
 
-**Track names.** Play Console's default closed testing track is **Alpha**, and its API name is `alpha`; the API's
-`beta` is open testing. If you create a custom closed track, set the `PLAY_TRACK` variable to its name. A wrong name
-fails with the list of the app's real tracks.
+| Track | Who gets it | Review | Here |
+|---|---|---|---|
+| Internal testing | Up to 100 testers on an e-mail list, within minutes | "Might not be" reviewed | Every merge to `main` |
+| Closed testing | E-mail lists of up to 2,000 or Google Groups | Reviewed | Builds you promote by hand |
+| Open testing | Anyone, from the Play Store | Reviewed | Refused by the script |
+| Production | Everyone | Reviewed | Out of the service account's reach |
+
+Testers open the link from the track's **Testers** tab, join, and install from the Play Store. A personal developer
+account created after 13 November 2023 gets open testing and production only after
+[applying for production access][testing-requirements], which needs a **closed** test with at least 12 testers opted
+in continuously for the 14 days before applying; internal testing does not count.
+
+**Track names.** The API calls the internal track `internal` (Google's API reference also says `qa`; `publish.py`
+accepts both) and Play Console's default closed testing track **Alpha** `alpha`; its `beta` is open testing. To
+release every merge to closed testing instead, set the `PLAY_TRACK` variable to `alpha` or a custom closed track's
+name. A wrong name fails with the list of the app's real tracks.
 
 ## Day to day
 
-- **Merge to `main`.** The release appears on the track, goes to review, then reaches the testers. If a newer release
-  arrives while an older one is still in review, Play cancels the older review and reviews the newer one (Play's
-  default for API commits), so the newest `main` wins. A burst of merges, such as Renovate's Monday batch, therefore
-  ends with one review of the last merge.
-- **Before the first review passes**, Play treats the app as a draft and accepts no automatic release; runs in that
-  window upload nothing, say so in a warning, and leave your first release untouched.
+- **Merge to `main`.** The release appears on the internal track and reaches the internal testers within minutes.
+- **Promote to closed testing.** Play Console → Test and release → Testing → Internal testing → the release →
+  **Promote release** → Closed testing (Alpha). It is the same signed bundle, so nothing is rebuilt; Google reviews it,
+  then the closed testers get it.
+- **Releasing to a reviewed track from the workflow.** With `PLAY_TRACK` set to a closed track, a newer release that
+  arrives while an older one is in review cancels that review and is reviewed in its place (Play's default for API
+  commits), so a burst of merges ends with one review of the last one.
+- **While Play still treats the app as a draft**, before the first release you rolled out by hand takes effect, it
+  accepts no automatic release; runs in that window upload nothing, say so in a warning, and leave your release
+  untouched.
 - **Release by hand.** `gh workflow run play-closed-testing.yml -f publish=true` releases the current `main`, for
   example after a documentation-only merge. With `-f publish=false` the run builds and signs only and keeps the signed
-  bundle as an artifact for three days.
+  bundle as an artifact for one day, public like every artifact of this repository: delete it once downloaded.
 - **Pause publishing.** Delete the `GCP_PLAY_SERVICE_ACCOUNT` variable: merges then only build and test. Or disable
   the workflow: `gh workflow disable play-closed-testing.yml`.
 - **Hold releases for review in Play Console.** Set `PLAY_RELEASE_STATUS` to `draft`: each run then saves a draft
   release that you roll out by hand. A draft never cancels a review: while something is in review, such a run fails
   with Play's message instead.
 - **Cost.** Play charges nothing per release. Secret Manager stays inside its free tier (two secret versions, two
-  reads per release), and Workload Identity Federation and the Play Developer API are free. GitHub bills a private
-  repository's Linux minutes at about $0.006 each; a release should take 10 to 15 (CI's Android job takes 8 to 9 on
-  `main`), well under $0.10.
+  reads per release), and Workload Identity Federation and the Play Developer API are free. GitHub Actions minutes are
+  free for a public repository.
 
 | Variable | Set by | Meaning |
 |---|---|---|
@@ -214,7 +235,7 @@ fails with the list of the app's real tracks.
 | `PLAY_UPLOAD_KEYSTORE_SECRET` | wizard | `projects/<project>/secrets/play-upload-keystore` |
 | `PLAY_UPLOAD_PASSWORD_SECRET` | wizard | `projects/<project>/secrets/play-upload-keystore-password` |
 | `PLAY_UPLOAD_CERT_SHA256` | wizard | The upload certificate's SHA-256 fingerprint |
-| `PLAY_TRACK` | wizard | `alpha` |
+| `PLAY_TRACK` | wizard | `internal` |
 | `PLAY_RELEASE_STATUS` | optional | `completed` (default) or `draft` |
 | `PLAY_NOTES_LANGUAGE` | optional | Language of the release notes, `en-US` by default |
 
@@ -231,7 +252,7 @@ fails with the list of the app's real tracks.
 | Publish | "the app has no track …" | `PLAY_TRACK` does not name one of the app's tracks; the message lists them. |
 | Sign or publish | "network error talking to Google" | A connection dropped. Re-run the failed jobs; an uncommitted upload leaves nothing behind. |
 | Publish | "version code … has already been used" | This commit is already on Play, typically a re-run after a successful upload. Nothing to do. |
-| Publish | Warning: "Play still treats the app as a draft" | The first release, uploaded by hand, has not been reviewed yet. The run released nothing on purpose; merges after the review release directly. |
+| Publish | Warning: "Play still treats the app as a draft" | The first release, uploaded by hand, has not taken effect yet. The run released nothing on purpose; later merges release directly. |
 | Publish | Warning: "could not send this release for review automatically" | Play needs you to send changes for review, for example after a rejection. Open Publishing overview and click **Send changes for review**. |
 
 Google Play can still reject a release in review for policy reasons; Play Console's inbox and Publishing overview say

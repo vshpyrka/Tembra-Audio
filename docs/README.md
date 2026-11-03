@@ -37,7 +37,7 @@ Editable `.excalidraw` source plus rendered `.png` for each:
 ## Release
 
 - **[privacy-policy.md](privacy-policy.md)** — the app's privacy policy, linked from Google Play: https://github.com/vshpyrka/Tembra-Audio/blob/main/docs/privacy-policy.md. Keep it true whenever a feature changes what the app does with data.
-- **[google-play-publishing.md](google-play-publishing.md)** — how a merge to `main` reaches Google Play's closed testing track: keys and credentials, one-time setup, troubleshooting.
+- **[google-play-publishing.md](google-play-publishing.md)** — how a merge to `main` reaches Google Play's internal testing track, and builds are promoted to closed testing: keys and credentials, one-time setup, troubleshooting.
 
 ## Reports (`reports/`)
 
