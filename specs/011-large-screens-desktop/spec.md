@@ -51,6 +51,22 @@ The owner's answers (Clarifications) add iPad windows with a keyboard and a trac
   with a keyboard and a trackpad as well, and the new performance journey runs on iPad too.
 - Q: Can the user drag audio files from the desktop's file manager onto the app to import them? → A: Yes. Files
   dropped on the timeline become new tracks; dropped on Projects, they start a new project (User Story 5, FR-026).
+- Q: When audio files are dropped onto an existing track, what happens? → A: A single file dropped on a track's lane
+  becomes a clip on that track at the drop point, snapped to the grid, as feature 009 adds one file to an existing
+  track; several files, or a drop on empty space, become new tracks.
+- Q: Where do users find the list of keyboard shortcuts inside the app? → A: The usual help shortcut (Ctrl+/ on
+  Android and ChromeOS, Command+/ on iPad) opens a shortcut sheet from anywhere, and a "Keyboard shortcuts" entry in
+  Profile opens the same sheet.
+- Q: What size does the window open at on a desktop, the first time and afterwards? → A: The first launch opens a
+  landscape window wide enough for the wide layout (at least 840 dp wide, about 1200 by 800 dp, never larger than the
+  display); later launches reopen at the size and place the system remembers.
+- Q: What happens when a folder, or a mix of audio and other files, is dropped? → A: A dropped folder contributes the
+  audio files directly inside it (not its sub-folders), as if they had been dropped one by one; non-audio files and
+  files the importer refuses are skipped and named together in one message.
+- Q: Does the Tuner get its own keyboard shortcuts? → A: Yes. A and E switch to Auto Listen and By Ear; in By Ear the
+  number keys play the reference tone of the string with that number on its card (1 is string I, the highest; up to 6
+  on guitar, 7 on a 7-string, 4 on cello), space stops the tone, and L toggles Loop Tone. (The answer offered "from the
+  lowest string"; the cards number strings from the highest, so the keys follow the cards.)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -82,6 +98,10 @@ import an audio file, split a clip and move one piece to another track, undo bot
    needs no touchscreen.
 4. **Given** the app opens in a desktop window, **When** the first screen appears, **Then** keyboard focus is in the
    window at a predictable place, so the first tab or shortcut works without a click first.
+5. **Given** the app has never run on this desktop device, **When** it opens, **Then** its window is landscape and
+   wide enough for the wide layout (at least 840 dp, about 1200 by 800 dp, never larger than the display); **Given**
+   the user resized or moved the window before, **When** the app opens again, **Then** it reopens at the size and place
+   the system remembers.
 
 ---
 
@@ -102,20 +122,24 @@ Repeat the resizing in an iPad window.
 **Acceptance Scenarios**:
 
 1. **Given** audio is running (metronome, project playback, a reference tone or Auto Listen), **When** the window is
-   resized, maximised, restored, snapped, minimised or moved to another display, **Then** the audio continues without
-   an audible gap, a missed or late click, or a restart of playback.
-2. **Given** any destination, **When** the window changes size, **Then** the layout matches the new size at once,
+   resized, maximised, restored, snapped or moved to another display, **Then** the audio continues without an audible
+   gap, a missed or late click, or a restart of playback.
+2. **Given** audio is running, **When** the window is minimised, **Then** the metronome and project playback keep
+   playing as they do with the screen off, while Auto Listen and a looping reference tone stop, as the tuner already
+   does when the app leaves the foreground, and resume when the window is restored on Tuner.
+3. **Given** any destination, **When** the window changes size, **Then** the layout matches the new size at once,
    using the same layouts the screens already define for each width, with nothing clipped, overlapping or hidden
    behind the transport bar or the navigation.
-3. **Given** the user's place (destination, open project, playhead, timeline scroll and zoom, selected clip, open
+4. **Given** the user's place (destination, open project, playhead, timeline scroll and zoom, selected clip, open
    sheet, dialog or menu, text being typed, keyboard focus), **When** the window changes size, **Then** that place is
    unchanged afterwards; the timeline keeps the same moment under the left edge of the view.
-4. **Given** the window is made as small as it allows, **When** the user tries to shrink it further, **Then** it stops
+5. **Given** the window is made as small as it allows, **When** the user tries to shrink it further, **Then** it stops
    at a minimum size at which every screen is still usable.
-5. **Given** a very large or very wide window (up to a 4K display and an ultrawide 21:9 display), **When** any
+6. **Given** a very large or very wide window (up to a 4K display and an ultrawide 21:9 display), **When** any
    destination is shown, **Then** it uses the space without stretching controls or text lines to an unreadable width.
-6. **Given** the window loses focus because the user clicks another app, **When** audio is running, **Then** it keeps
-   running, and when the user returns, keyboard focus is where it was.
+7. **Given** the window loses focus because the user clicks another app, **When** audio is running, **Then** it keeps
+   running, Auto Listen included while the window stays visible, and when the user returns, keyboard focus is where it
+   was.
 
 ---
 
@@ -161,9 +185,9 @@ for the mouse, and can look up every shortcut.
 but nothing ties them together or tells the user they exist.
 
 **Independent Test**: On a desktop device and on an iPad with a hardware keyboard, open each destination by its
-shortcut, start and stop the metronome and
-the project, change the tempo, tap a tempo, open and close a sheet and a dialog, search the projects, and open the
-list of shortcuts; then type in a text field and confirm no shortcut fires.
+shortcut, start and stop the metronome and the project, change the tempo, tap a tempo, switch the tuner's modes and
+play and stop a string's tone, open and close a sheet and a dialog, search the projects, and open the list of
+shortcuts; then type in a text field and confirm no shortcut fires.
 
 **Acceptance Scenarios**:
 
@@ -172,15 +196,21 @@ list of shortcuts; then type in a text field and confirm no shortcut fires.
 2. **Given** the Metronome, **When** the user presses space, **Then** the click starts or stops; up and down arrows
    change the tempo by 1 BPM, with Shift by 10 BPM, unless focus is on a control that uses the arrows itself (a
    slider or a selector), which keeps them; T taps the tempo.
-3. **Given** Timeline, **When** the user presses the keys feature 009 defines (space, home, arrows, S, delete, undo,
+3. **Given** the Tuner, **When** the user presses A or E, **Then** it switches to Auto Listen or By Ear; **Given** By
+   Ear, **When** the user presses a number key, **Then** the reference tone of the string with that number on its card
+   plays (1 is string I, the highest), as its Audition button would; space stops the tone and L toggles Loop Tone; a
+   number above the instrument's string count does nothing.
+4. **Given** Timeline, **When** the user presses the keys feature 009 defines (space, home, arrows, S, delete, undo,
    redo, plus, minus), **Then** they work in a desktop window exactly as specified there.
-4. **Given** a sheet, a dialog or a menu is open, **When** the user presses Escape, **Then** the topmost one closes
+5. **Given** a sheet, a dialog or a menu is open, **When** the user presses Escape, **Then** the topmost one closes
    and focus returns to the control that opened it.
-5. **Given** Projects, **When** the user presses the platform's find shortcut, **Then** focus moves to the search
+6. **Given** Projects, **When** the user presses the platform's find shortcut, **Then** focus moves to the search
    field; the platform's new shortcut starts a new project.
-6. **Given** any destination, **When** the user asks the system for the keyboard shortcut overview, or opens the
-   list from the app, **Then** every shortcut the app offers is listed, grouped by destination.
-7. **Given** focus is in a text field, **When** the user types, **Then** no app shortcut fires, except Escape to leave
+7. **Given** any destination, **When** the user presses the help shortcut (Ctrl+/ on Android and ChromeOS,
+   Command+/ on iPad) or chooses "Keyboard shortcuts" in Profile, **Then** a sheet lists every shortcut the app offers,
+   grouped by destination, and closes with Escape; **When** the user asks the system for its keyboard shortcut
+   overview, **Then** the same shortcuts appear there.
+8. **Given** focus is in a text field, **When** the user types, **Then** no app shortcut fires, except Escape to leave
    the field.
 
 ---
@@ -202,12 +232,20 @@ onto Projects; repeat the drag from the Files app into an iPad window.
 1. **Given** a desktop device, **When** the user imports audio, **Then** the system file picker offers the device's
    storage locations, including removable drives, and the files import as they do on a phone.
 2. **Given** audio files dragged from the desktop's file manager (or the Files app on iPad), **When** the user drops
-   them on the timeline, **Then** each becomes a new track, as a picker import of several files does; dropped on
-   Projects, they start a new project with them.
-3. **Given** files are dragged over the app, **When** they hover a place that accepts them, **Then** the place shows
-   that it will accept the drop; over a place that does not, nothing suggests a drop is possible.
-4. **Given** a dropped file the importer refuses (format, length, channels, size), **When** it is dropped, **Then** it
+   them on empty space in the timeline, **Then** each becomes a new track, as a picker import of several files does;
+   dropped on Projects, they start a new project with them.
+3. **Given** a single audio file dragged over a track's lane, **When** the user drops it, **Then** it becomes a clip on
+   that track starting at the drop point, snapped to the grid, by the same rules as adding a file to an existing track
+   in feature 009; **Given** several files dropped on a track's lane, **Then** each becomes a new track, as on empty
+   space.
+4. **Given** files are dragged over the app, **When** they hover a place that accepts them, **Then** the place shows
+   what the drop will do (a new track, a clip at this point on this track, a new project); over a place that does not
+   accept them, nothing suggests a drop is possible.
+5. **Given** a dropped file the importer refuses (format, length, channels, size), **When** it is dropped, **Then** it
    is refused with the importer's existing message, and the other files of the same drop still import.
+6. **Given** a folder is dropped, alone or with files, **When** it lands, **Then** the audio files directly inside it
+   (not in its sub-folders) count as dropped files and import by the rules above; non-audio files and refused files
+   are skipped and named together in one message.
 
 ---
 
@@ -254,6 +292,8 @@ phone screens.
   the earlier features specify on phones; nothing new is defined here.
 - **A screen reader on a desktop device** (ChromeOS's own or TalkBack): every element announces what the earlier
   features specify, and the shortcuts of User Story 4 do not collide with the screen reader's own.
+- **A drop with nothing importable** (only non-audio files, an empty folder, a folder of sub-folders): nothing is
+  added and one message says that no audio files were found.
 - **Recording (feature 010) is not on main yet:** the controls it adds MUST meet this feature's rules once both
   exist; this feature's tests cover what is on main when it is implemented.
 
@@ -276,13 +316,18 @@ phone screens.
   iPad windows, with whichever of these controls the platform offers.
 - **FR-004**: The minimum window size MUST be one at which every screen stays usable, and no smaller than 360 dp wide
   and 480 dp tall.
+- **FR-004a**: On its first launch on a desktop device, the app MUST open in a landscape window at least 840 dp wide
+  (about 1200 by 800 dp, never larger than the display), where the platform lets the app choose; on later launches it
+  MUST reopen at the size and place the system remembers.
 - **FR-005**: Every destination, sheet, dialog and menu MUST adopt the layout for the window's current size at once
   as the window changes, using the layouts the earlier features define for each width class and for short windows,
   with no restart of the app or of the screen.
-- **FR-006**: Changing the window (resize, maximise, restore, snap, minimise, move to another display, switching a
+- **FR-006**: Changing the window (resize, maximise, restore, snap or tile, move to another display, switching a
   convertible between laptop and tablet mode) MUST NOT interrupt, restart or audibly disturb running audio: the
   metronome's clicks stay on time, project playback continues without a gap, a reference tone continues, Auto Listen
-  keeps listening.
+  keeps listening. Minimising the window MUST follow each screen's existing background rules: the metronome and project
+  playback keep playing (features 004 and 009); Auto Listen and a looping reference tone stop and resume when the
+  window is restored on Tuner (feature 003).
 - **FR-007**: Changing the window MUST keep the user's place: destination, open project, playhead, timeline scroll
   (the same moment at the left edge of the view) and zoom, selection, open sheet, dialog or menu, text being edited
   and keyboard focus.
@@ -313,12 +358,16 @@ phone screens.
 - **FR-018**: On the Metronome, space MUST start and stop the click, up and down arrows MUST change the tempo by 1 BPM
   (10 BPM with Shift, repeating while held, within 40 to 240 BPM) unless focus is on a control that uses the arrows
   itself, and T MUST tap the tempo.
+- **FR-018a**: On the Tuner, A and E MUST switch to Auto Listen and By Ear; in By Ear, a number key MUST play the
+  reference tone of the string with that number on its card (1 is string I, the highest; up to the instrument's string
+  count), as its Audition button does; space MUST stop the tone and L MUST toggle Loop Tone.
 - **FR-019**: Timeline's keys from feature 009 MUST work unchanged in desktop windows.
 - **FR-020**: Escape MUST close the topmost sheet, dialog or menu and return focus to the control that opened it.
 - **FR-021**: In Projects, the platform's find shortcut MUST focus the search field and its new shortcut MUST start a
   new project.
 - **FR-022**: The app MUST list every shortcut it offers, grouped by destination, in the system's keyboard shortcut
-  overview and in a list the user can open from the app.
+  overview and in a shortcut sheet that the help shortcut (Ctrl+/ on Android and ChromeOS, Command+/ on iPad) opens
+  from any destination and that a "Keyboard shortcuts" entry in Profile opens.
 - **FR-023**: No shortcut except Escape MUST fire while focus is in a text field; shortcuts MUST follow the character
   on the key, not its position, and MUST use the platform's usual modifier (Ctrl on Android and ChromeOS, Command on
   iPad).
@@ -329,9 +378,13 @@ phone screens.
 
 - **FR-025**: Audio import MUST reach the desktop device's storage locations through the system file picker,
   including removable drives.
-- **FR-026**: Audio files dragged from the desktop's file manager or the iPad's Files app and dropped on the timeline
-  MUST import as new tracks, as a multi-file picker import does; dropped on Projects, they MUST start a new project
-  containing them. A place that accepts a drop MUST show it while files hover over it. Files the importer refuses MUST
+- **FR-026**: Audio files dragged from the desktop's file manager or the iPad's Files app and dropped on empty space in
+  the timeline MUST import as new tracks, as a multi-file picker import does; a single file dropped on a track's lane
+  MUST become a clip on that track at the drop point, snapped to the grid, by feature 009's rules for adding a file to
+  an existing track, while several files dropped there MUST become new tracks; dropped on Projects, files MUST start a
+  new project containing them. A place that accepts a drop MUST show what the drop will do while files hover over it.
+  A dropped folder MUST contribute the audio files directly inside it, not those in its sub-folders; non-audio files
+  and refused files MUST be skipped and named together in one message. Files the importer refuses MUST
   be refused with the importer's existing messages, without stopping the other files of the drop.
 
 **Store presence**
@@ -370,7 +423,7 @@ phone screens.
 - **Window**: the app's single free-form window on a desktop device; its size decides the layout (width class, short
   window), and its changes must leave audio and the user's place untouched.
 - **Keyboard shortcut**: a key or key combination, the destination where it applies (or everywhere), the action it
-  performs and the name under which the shortcut overview lists it.
+  performs and the name under which the shortcut sheet and the system's overview list it.
 - **Store screenshot (Chromebook)**: an image for Google Play's Chromebook slot, captured from the app in a desktop
   window, with its shape, size and the screen it shows.
 
