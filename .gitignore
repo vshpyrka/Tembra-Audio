@@ -37,6 +37,7 @@ app/perf/reports/
 app/perf/.history/
 app/perf/.venv/
 app/perf/**/__pycache__/
+app/tools/**/__pycache__/
 app/perf/**/*.pyc
 app/perf/.pytest_cache/
 app/perf/*.egg-info/
