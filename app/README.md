@@ -48,6 +48,42 @@ xcrun simctl launch "iPhone 18 Pro" com.tembraaudio
 Or open `app/iosApp/iosApp.xcodeproj` in Xcode and press Run. Signing: `Configuration/Config.xcconfig`
 (`TEAM_ID` empty is fine for the simulator).
 
+Android desktop windows (feature 011, `specs/011-large-screens-desktop/quickstart.md` §1): two desktop emulators, run
+one at a time next to the other targets. The primary is the Android 17 "Desktop (Preview)" image (a Googlebook-like
+1920×1200 dp desktop with a touchscreen; it is on the SDK's preview channel only); the secondary is the Android 14
+desktop image (1920×1080 dp, no touchscreen: the device Google Play filtered the app away from before 011, and the
+16:9 display the Chromebook store screenshots come from).
+
+```bash
+SDK=~/Library/Android/sdk
+# Primary: Tembra_Desktop_API37
+yes | $SDK/cmdline-tools/latest/bin/sdkmanager --channel=3 --install "system-images;android-37.1;android-desktop;arm64-v8a"
+echo no | $SDK/cmdline-tools/latest/bin/avdmanager create avd -n Tembra_Desktop_API37 \
+  -k "system-images;android-37.1;android-desktop;arm64-v8a" -d desktop_api37
+CFG=~/.android/avd/Tembra_Desktop_API37.avd/config.ini
+sed -i '' 's/^hw.keyboard=no/hw.keyboard=yes/' $CFG
+# The emulator wants about twice the data partition free on the host ("Not enough space to create userdata
+# partition"): 4G boots with 10–12 GB free, 6G does not.
+grep -q '^disk.dataPartition.size' $CFG && sed -i '' 's/^disk.dataPartition.size=.*/disk.dataPartition.size=4G/' $CFG \
+  || echo 'disk.dataPartition.size=4G' >> $CFG
+$SDK/emulator/emulator -avd Tembra_Desktop_API37 -port 5582 &            # add -no-window for headless runs
+# The image runs a headless system user: the desktop session is user 10. After every cold boot:
+adb -s emulator-5582 wait-for-device shell am switch-user 10
+adb -s emulator-5582 install -r androidApp/build/outputs/apk/debug/androidApp-debug.apk
+adb -s emulator-5582 shell am start --user current -n com.tembraaudio/audio.tembra.android.MainActivity
+
+# Secondary: Tembra_Desktop_API34 (no touchscreen)
+yes | $SDK/cmdline-tools/latest/bin/sdkmanager --install "system-images;android-34;android-desktop;arm64-v8a"
+echo no | $SDK/cmdline-tools/latest/bin/avdmanager create avd -n Tembra_Desktop_API34 \
+  -k "system-images;android-34;android-desktop;arm64-v8a" -d desktop_medium
+sed -i '' 's/^hw.keyboard=no/hw.keyboard=yes/' ~/.android/avd/Tembra_Desktop_API34.avd/config.ini
+$SDK/emulator/emulator -avd Tembra_Desktop_API34 -port 5580 &
+```
+
+Apps open in free-form windows on both. `adb shell am task resize <task> <l> <t> <r> <b>` resizes a window without
+recreating the activity (it is not clamped to the app's minimum and the system does not remember it); a mouse drag of
+the window's corner (`adb shell input mouse swipe …`) is clamped and remembered. The images take about 9 GB.
+
 Release builds, the way users get the app. Debug builds are debuggable on Android and link an unoptimised Kotlin
 framework on iOS, so Compose runs far slower there; judge smoothness on these only:
 
@@ -76,7 +112,19 @@ cd app
 # pillarboxed on the inner display (docs/research/iphone-duo.md)
 ./gradlew checkAndroidDevice   # connected Android device: Compose UI tests + native engine link + AppDirectories
 ./gradlew engineHostTest       # C++ engine Catch2 tests on the macOS host (no audio device)
+
+# One Android target while others stay attached (ANDROID_SERIAL): the desktop emulators (feature 011)
+tools/gradlew-device.sh emulator-5582 checkAndroidDevice                      # Desktop (Preview), primary
+tools/gradlew-device.sh emulator-5582 :androidApp:connectedDebugAndroidTest   # freeform window, mouse and key tests
+tools/gradlew-device.sh emulator-5580 :androidApp:connectedDebugAndroidTest   # Android 14 desktop, no touchscreen
+# iPad desktop behaviour (menu commands, keys, pointer, window minimum): the TembraDesktopTests XCUITest target
+cd iosApp && xcodebuild test -project iosApp.xcodeproj -scheme TembraDesktopTests \
+  -destination 'platform=iOS Simulator,name=iPad Pro 13-inch (M5)'
 ```
+
+The `:androidApp` desktop tests (`androidTest/.../desktop/`) skip with a visible reason on a device without free-form
+window management. On `Tembra_Desktop_API37`, run `adb -s emulator-5582 shell am switch-user 10` after a cold boot
+before any lane: instrumentation runs as the current user.
 
 Prove the lanes can fail: change an expected value in
 `shared/core/src/commonTest/kotlin/audio/tembra/core/version/SemanticVersionTest.kt`, run
