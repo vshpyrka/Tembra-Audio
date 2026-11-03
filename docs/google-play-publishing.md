@@ -136,7 +136,7 @@ Checked against the release bundle built on 2026-11-03:
 | 16 KB memory pages for native code | Every `.so` in the bundle has 16 KB-aligned `LOAD` segments (NDK 29) |
 | No device gets an app that cannot run | The bundle carries `arm64-v8a` and `x86_64` only, the engine's two ABIs, so Play offers the app to 64-bit devices only. Before this change the androidx libraries added `armeabi-v7a` and `x86` folders without the engine. |
 | Crash reports Play can read | R8's mapping file and the native symbol tables (`SYMBOL_TABLE`) ride in the bundle |
-| A privacy policy | Needed: the app records from the microphone |
+| A privacy policy, linked on the store listing and inside the app | [`docs/privacy-policy.md`](privacy-policy.md), linked in Play Console as https://github.com/vshpyrka/Tembra-Audio/blob/main/docs/privacy-policy.md; the in-app link is still to be built |
 | Foreground service declaration | Media playback now, microphone once recording (feature 010) is on `main`; each needs a short video |
 
 ## One-time setup
