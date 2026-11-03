@@ -20,7 +20,7 @@ from .catalogue import CatalogueError, Metric, apply_overrides
 PERF_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_CONFIG_PATH = os.path.join(os.path.dirname(PERF_DIR), "tracepulse.yml")
 
-DEFAULT_JOURNEYS = ["startup", "tuner", "metronome", "timeline", "stress"]
+DEFAULT_JOURNEYS = ["startup", "tuner", "metronome", "timeline", "stress", "windowing"]
 
 
 class ConfigError(Exception):

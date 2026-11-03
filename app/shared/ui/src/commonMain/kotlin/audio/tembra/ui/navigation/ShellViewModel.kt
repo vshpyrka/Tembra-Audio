@@ -57,6 +57,9 @@ class ShellViewModel(
     private var pendingLeave: Job? = null
 
     init {
+        // A new window's shell starts on the start destination: the session learns it shows, so it takes the device back
+        // from the standalone metronome or tuner a previous window left it with (found on the desktop emulator, 011).
+        guard.transportHostVisible(_uiState.value.selected.hostsTransport)
         // Audio opened with the app (feature 011, spec FR-026a): one request at a time, in order.
         viewModelScope.launch(CoroutineName("openedFiles")) {
             openedFiles.files.collect { items -> openFiles(items) }

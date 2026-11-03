@@ -34,9 +34,18 @@ class WindowResizeAudioTest {
     /** The anchor whose button stops what the test started (the same button starts and stops). */
     private var stopWith: String? = null
 
+    /**
+     * Stops what is still running: the button toggles, and the demo stops by itself at its end (31 s), which fifty changes
+     * can outlast; a tap then would start it again for the next test.
+     */
     @After
     fun stopTheMusic() {
-        stopWith?.let(DesktopApp::tap)
+        val running = when (stopWith) {
+            PerfAnchors.METRONOME_START_STOP -> DesktopApp.tick().running
+            PerfAnchors.TRANSPORT_PLAY -> DesktopApp.transport().playing
+            else -> false
+        }
+        if (running) stopWith?.let(DesktopApp::tap)
     }
 
     @Test
@@ -66,6 +75,9 @@ class WindowResizeAudioTest {
     fun aPlayingProjectKeepsGoingThroughFiftyWindowChanges() {
         DesktopApp.tap(PerfAnchors.NAV_TIMELINE)
         DesktopApp.find(PerfAnchors.TIMELINE_CLIP_FIRST)
+        // From the start: the session keeps the playhead where an earlier test left it, and a start in the demo's last
+        // seconds is refused ("Could not start playback").
+        DesktopApp.tap(PerfAnchors.TRANSPORT_SKIP_START)
         DesktopApp.tap(PerfAnchors.TRANSPORT_PLAY)
         stopWith = PerfAnchors.TRANSPORT_PLAY
         DesktopApp.waitUntil("the transport to play") { DesktopApp.transport().playing && DesktopApp.transport().audiblePositionSeconds > 0.2 }

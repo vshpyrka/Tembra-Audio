@@ -11,7 +11,7 @@ from typing import Dict, Iterable, List, Mapping, Optional, Tuple
 
 PLATFORMS = ("android", "ios")
 FAMILIES = ("startup", "frames", "memory", "cpu", "journey", "section", "app", "audio")
-JOURNEYS_MEASURED = ("tuner", "metronome", "timeline", "stress")
+JOURNEYS_MEASURED = ("tuner", "metronome", "timeline", "stress", "windowing")
 # The section families of app/shared/engine/perf-catalogue.txt (its second column, counters aside): a section key is
 # `section.<family>.<name>.<suffix>`. SHELL is feature 011's (window relayout, shortcut navigation).
 SECTION_FAMILIES = ("tuner", "metronome", "timeline", "transport", "engine", "shell")

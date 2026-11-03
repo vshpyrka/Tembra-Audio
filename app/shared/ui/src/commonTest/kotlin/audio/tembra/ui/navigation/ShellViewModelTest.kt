@@ -46,7 +46,8 @@ class ShellViewModelTest {
         shell.select(Destination.Tuner)
         shell.select(Destination.Metronome)
         shell.select(Destination.Timeline)
-        assertEquals(listOf(false, false, true), guard.hostVisibility)
+        // The first `true` is the new shell's own start on the Timeline (feature 011).
+        assertEquals(listOf(true, false, false, true), guard.hostVisibility)
     }
 
     @Test

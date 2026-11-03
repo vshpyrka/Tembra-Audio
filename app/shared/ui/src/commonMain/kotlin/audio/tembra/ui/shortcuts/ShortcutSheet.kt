@@ -31,13 +31,14 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.window.Dialog
 import audio.tembra.ui.designsystem.ScrollbarAdapter
 import audio.tembra.ui.designsystem.tembraScrollbar
+import audio.tembra.ui.perf.PerfAnchors
 import audio.tembra.ui.theme.TembraIcon
 import audio.tembra.ui.theme.TembraShapes
 import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.ui.transport.TransportButton
 
 /** The sheet's tag, its list's, and each group's (`shortcuts.group.<scope>`). */
-const val SHORTCUT_SHEET_TAG = "shortcuts.sheet"
+const val SHORTCUT_SHEET_TAG = PerfAnchors.SHORTCUT_SHEET
 const val SHORTCUT_LIST_TAG = "shortcuts.list"
 
 fun shortcutGroupTag(scope: ShortcutScope): String = "shortcuts.group.${scope.name.lowercase()}"

@@ -25,6 +25,10 @@ enum Metrics {
                                    "transport.masterPopup"]
     static let timelineEngineSections = ["engine.prime", "engine.loadClip"]
     static let stressTimelineSections = ["timeline.scroll", "timeline.playheadFrame", "transport.play"]
+    /// Feature 011 (contracts/perf-instrumentation.md): the window changes, the right-click menu and the destination chords,
+    /// with the metronome and the timeline they run over. An iPhone has no keys to press: its chords' section stays empty.
+    static let windowingSections = ["shell.windowRelayout", "timeline.contextMenu", "shell.shortcutNavigate", "metronome.load",
+                                    "timeline.projectOpen", "transport.play"]
 
     static func section(_ name: String) -> XCTOSSignpostMetric {
         section(name, category: "ui")
@@ -48,6 +52,7 @@ enum Metrics {
         case "metronome": return metronomeSections
         case "timeline": return timelineSections
         case "stress": return tunerSections + metronomeSections + stressTimelineSections
+        case "windowing": return windowingSections
         default: return []
         }
     }

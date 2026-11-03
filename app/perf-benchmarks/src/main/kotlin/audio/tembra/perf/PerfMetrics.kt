@@ -26,6 +26,11 @@ object PerfMetrics {
         "timeline.projectOpen", "timeline.waveform", "transport.play", "transport.seek", "timeline.zoom", "timeline.scroll",
         "timeline.clipSplit", "timeline.playheadFrame", "engine.prime", "engine.loadClip", "transport.masterPopup",
     )
+    // Feature 011 (contracts/perf-instrumentation.md): the window changes, the right-click menu and the destination chords,
+    // with the metronome and the timeline they run over.
+    private val windowingSections = listOf(
+        "shell.windowRelayout", "timeline.contextMenu", "shell.shortcutNavigate", "metronome.load", "timeline.projectOpen", "transport.play",
+    )
     private val stressSections = tunerSections + metronomeSections + listOf("timeline.scroll", "timeline.playheadFrame", "transport.play")
 
     fun journey(name: String): List<Metric> = listOf(
@@ -40,6 +45,7 @@ object PerfMetrics {
         "metronome" -> metronomeSections
         "timeline" -> timelineSections
         "stress" -> stressSections
+        "windowing" -> windowingSections
         else -> emptyList()
     }
 }

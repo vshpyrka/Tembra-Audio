@@ -25,6 +25,8 @@
 		7E5F000000000000000000D3 /* StressJourney.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F0000000000000000006F /* StressJourney.swift */; };
 		7E5F000000000000000000D5 /* TimelinePerfTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F00000000000000000071 /* TimelinePerfTests.swift */; };
 		7E5F000000000000000000D6 /* TimelineJourney.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F00000000000000000072 /* TimelineJourney.swift */; };
+		7E5F000000000000000000D7 /* WindowingPerfTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F00000000000000000073 /* WindowingPerfTests.swift */; };
+		7E5F000000000000000000D8 /* WindowingJourney.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F00000000000000000074 /* WindowingJourney.swift */; };
 		7E5F000000000000000000E1 /* ScreenshotMatrix.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F000000000000000000E0 /* ScreenshotMatrix.swift */; };
 		7E5F000000000000000000D4 /* AudioTracePass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F00000000000000000070 /* AudioTracePass.swift */; };
 		7E5F000000000000000000D5 /* ColdLaunchHitchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F00000000000000000071 /* ColdLaunchHitchTests.swift */; };
@@ -90,6 +92,8 @@
 		7E5F0000000000000000006F /* StressJourney.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StressJourney.swift; sourceTree = "<group>"; };
 		7E5F00000000000000000071 /* TimelinePerfTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelinePerfTests.swift; sourceTree = "<group>"; };
 		7E5F00000000000000000072 /* TimelineJourney.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineJourney.swift; sourceTree = "<group>"; };
+		7E5F00000000000000000073 /* WindowingPerfTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowingPerfTests.swift; sourceTree = "<group>"; };
+		7E5F00000000000000000074 /* WindowingJourney.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowingJourney.swift; sourceTree = "<group>"; };
 		7E5F000000000000000000E0 /* ScreenshotMatrix.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotMatrix.swift; sourceTree = "<group>"; };
 		7E5F00000000000000000004 /* TembraPerfTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TembraPerfTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		7E5F01100000000000000020 /* DesktopTestCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopTestCase.swift; sourceTree = "<group>"; };
@@ -198,6 +202,7 @@
 				7E5F00000000000000000069 /* TunerPerfTests.swift */,
 				7E5F0000000000000000006A /* MetronomePerfTests.swift */,
 				7E5F00000000000000000071 /* TimelinePerfTests.swift */,
+				7E5F00000000000000000073 /* WindowingPerfTests.swift */,
 				7E5F0000000000000000006B /* StressPerfTests.swift */,
 				7E5F0000000000000000006C /* FacadeSelfCheckTests.swift */,
 				7E5F00000000000000000070 /* AudioTracePass.swift */,
@@ -213,6 +218,7 @@
 				7E5F0000000000000000006D /* TunerJourney.swift */,
 				7E5F0000000000000000006E /* MetronomeJourney.swift */,
 				7E5F00000000000000000072 /* TimelineJourney.swift */,
+				7E5F00000000000000000074 /* WindowingJourney.swift */,
 				7E5F0000000000000000006F /* StressJourney.swift */,
 			);
 			path = Journeys;
@@ -410,11 +416,13 @@
 				7E5F000000000000000000CD /* TunerPerfTests.swift in Sources */,
 				7E5F000000000000000000CE /* MetronomePerfTests.swift in Sources */,
 				7E5F000000000000000000D5 /* TimelinePerfTests.swift in Sources */,
+				7E5F000000000000000000D7 /* WindowingPerfTests.swift in Sources */,
 				7E5F000000000000000000CF /* StressPerfTests.swift in Sources */,
 				7E5F000000000000000000D0 /* FacadeSelfCheckTests.swift in Sources */,
 				7E5F000000000000000000D1 /* TunerJourney.swift in Sources */,
 				7E5F000000000000000000D2 /* MetronomeJourney.swift in Sources */,
 				7E5F000000000000000000D6 /* TimelineJourney.swift in Sources */,
+				7E5F000000000000000000D8 /* WindowingJourney.swift in Sources */,
 				7E5F000000000000000000E1 /* ScreenshotMatrix.swift in Sources */,
 				7E5F000000000000000000D3 /* StressJourney.swift in Sources */,
 				7E5F000000000000000000D4 /* AudioTracePass.swift in Sources */,

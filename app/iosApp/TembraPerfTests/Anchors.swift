@@ -47,6 +47,10 @@ enum Anchors {
     static let timelineOverview = "timeline.overview"
     static let timelineOverviewWindow = "timeline.overview.window"
 
+    // Feature 011 (contracts/perf-instrumentation.md, journey `windowing`): the first clip's menu and the shortcut sheet.
+    static let timelineClipMenuFirst = "timeline.clip.first.menu"
+    static let shortcutSheet = "shortcuts.sheet"
+
     /// The `screen.timeline` value once every visible overview is built; "loading" before (not an anchor of its own).
     static let timelineReadyState = "ready"
 

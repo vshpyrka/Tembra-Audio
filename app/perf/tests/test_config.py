@@ -47,7 +47,7 @@ def test_shipped_yml_history_gate_and_platforms():
     assert cfg.ios.project == "iosApp/iosApp.xcodeproj" and cfg.ios.scheme == "TembraPerf"
     assert cfg.ios.configuration == "Perf" and cfg.ios.bundle_id == "com.tembraaudio"
     assert cfg.ios.test_target == "TembraPerfTests" and cfg.ios.size_variant == "iPhone14,7"
-    assert cfg.journeys == ["startup", "tuner", "metronome", "timeline", "stress"]
+    assert cfg.journeys == ["startup", "tuner", "metronome", "timeline", "stress", "windowing"]
 
 
 def test_shipped_yml_device_registry():
@@ -106,7 +106,7 @@ def test_missing_sections_fall_back_to_defaults(tmp_path):
     minimal = {"android": {"package": "a.b", "activity": "a.b.Main"}}
     cfg = load_config(_write(tmp_path, minimal))
     assert cfg.detection.width == 5 and cfg.gate.clean_rounds == 5
-    assert cfg.devices == {} and cfg.journeys == ["startup", "tuner", "metronome", "timeline", "stress"]
+    assert cfg.devices == {} and cfg.journeys == ["startup", "tuner", "metronome", "timeline", "stress", "windowing"]
 
 
 def test_catalogue_table_reflects_gate_overrides_and_disabled(tmp_path):

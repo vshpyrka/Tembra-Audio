@@ -28,6 +28,13 @@ class AndroidWindowControls : WindowControls {
     /** Accepted but the activity still reports its old mode: the multi-window change has not arrived yet. */
     private var awaitingModeChange = false
 
+    /**
+     * An enter request the callback called refused while the system may still carry it out: Android 17's window shell
+     * approves and runs the transition and the client still hears "denied by system policy" (desktop emulator, window
+     * animations off, 2026-11-03). The next multi-window change decides.
+     */
+    private var enterUndecided = false
+
     fun attach(activity: Activity) {
         this.activity = activity
         refresh()
@@ -41,6 +48,9 @@ class AndroidWindowControls : WindowControls {
 
     /** The activity's multi-window mode changed: whatever the app asked for has now taken effect. */
     fun onMultiWindowModeChanged() {
+        val current = activity
+        if (enterUndecided && current != null && !current.isInMultiWindowMode) requested = true
+        enterUndecided = false
         awaitingModeChange = false
         refresh()
     }
@@ -72,8 +82,13 @@ class AndroidWindowControls : WindowControls {
                 }
 
                 override fun onError(error: Throwable) {
-                    // The system refused (the window is not free-form, or another request is pending): nothing changed.
+                    // The system refused (the window is not free-form, or another request is pending), or says so for a
+                    // request it carries out anyway: the window's mode decides, now or at the next change.
                     Log.w(TAG, "full-screen request refused", error)
+                    if (enter) {
+                        val current = activity
+                        if (current != null && !current.isInMultiWindowMode) requested = true else enterUndecided = true
+                    }
                     refresh()
                 }
             },

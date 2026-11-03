@@ -30,6 +30,7 @@ def test_journey_of_test_identifier():
     assert journey_of_test("TembraPerfTests/MetronomePerfTests/testMetronomeJourney()") == ("metronome", None)
     assert journey_of_test("TembraPerfTests/TimelinePerfTests/testTimelineJourney()") == ("timeline", None)
     assert journey_of_test("TembraPerfTests/StressPerfTests/testStressJourney()") == ("stress", None)
+    assert journey_of_test("TembraPerfTests/WindowingPerfTests/testWindowingJourney()") == ("windowing", None)
     assert journey_of_test("TembraPerfTests/FacadeSelfCheckTests/testModeSwitchSectionIsMeasuredByName()") is None
 
 
