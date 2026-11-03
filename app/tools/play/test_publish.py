@@ -111,6 +111,27 @@ class PublishTest(unittest.TestCase):
         self.assertNotIn("changesNotSentForReview", fake.calls[5][1])
         self.assertTrue(all(call[1].startswith("https://") for call in fake.calls))
 
+    def test_the_internal_track_answers_to_both_of_its_names(self):
+        play, fake = self.play([
+            EDIT,
+            ("GET", "/edits/e1/tracks", 200, {"tracks": [{"track": "qa"}, {"track": "alpha"}]}, None),
+            UPLOAD_START, UPLOAD_PUT,
+            ("PUT", "/edits/e1/tracks/qa", 200, {}, None),
+            ("POST", "/edits/e1:commit", 200, {}, None),
+        ])
+        result = publish.publish(play, "internal", self.bundle, "completed", [])
+        self.assertEqual(result["track"], "qa")
+        self.assertEqual(fake.body(4)["track"], "qa")
+
+    def test_the_release_is_named_as_asked(self):
+        play, fake = self.play([
+            EDIT, TRACKS, UPLOAD_START, UPLOAD_PUT,
+            ("PUT", "/edits/e1/tracks/alpha", 200, {}, None),
+            ("POST", "/edits/e1:commit", 200, {}, None),
+        ])
+        publish.publish(play, "alpha", self.bundle, "completed", [], release_name="0.1.0 (812)")
+        self.assertEqual(fake.body(4)["releases"][0]["name"], "0.1.0 (812)")
+
     def test_refuses_production_and_open_testing_before_any_request(self):
         for track in ("production", "beta", "wear:production"):
             play, fake = self.play([])
