@@ -32,6 +32,7 @@ import audio.tembra.ui.designsystem.TembraNavigationBar
 import audio.tembra.ui.designsystem.TembraNavigationRail
 import audio.tembra.core.project.TrackId
 import audio.tembra.ui.session.DialogRequest
+import audio.tembra.ui.perf.traceWindowRelayout
 import audio.tembra.ui.theme.TembraTheme
 
 /**
@@ -66,7 +67,9 @@ fun NavigationShellContent(
         modifier = modifier
             .fillMaxSize()
             .background(TembraTheme.colors.background)
-            .testTag("nav.shell"),
+            .testTag("nav.shell")
+            // A window change that crosses a layout class is measured (feature 011, contracts/perf-instrumentation.md).
+            .traceWindowRelayout(),
     ) {
         if (layoutMode == LayoutMode.EndRail) {
             EndRailFrame(items = items, state = state, onSelect = select, onBack = onBack, onOpenTrackSettings = onOpenTrackSettings, onCloseTrackSettings = onCloseTrackSettings, onSelectDestination = onSelect)

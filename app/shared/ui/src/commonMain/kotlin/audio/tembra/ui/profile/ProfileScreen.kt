@@ -7,7 +7,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import audio.tembra.ui.designsystem.FocusMemory
 import audio.tembra.ui.designsystem.PlaceholderDestination
+import audio.tembra.ui.designsystem.focusRestoringRoot
 import audio.tembra.ui.navigation.Destination
 
 /**
@@ -18,5 +20,6 @@ import audio.tembra.ui.navigation.Destination
 fun ProfileScreen(modifier: Modifier = Modifier) {
     val rootFocus = remember { FocusRequester() }
     LaunchedEffect(rootFocus) { rootFocus.requestFocus() }
-    PlaceholderDestination(Destination.Profile, modifier.focusRequester(rootFocus).focusable())
+    val focusMemory = remember { FocusMemory() }
+    PlaceholderDestination(Destination.Profile, modifier.focusRestoringRoot(focusMemory).focusRequester(rootFocus).focusable())
 }

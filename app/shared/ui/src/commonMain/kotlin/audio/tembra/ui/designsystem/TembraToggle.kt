@@ -63,6 +63,7 @@ fun TembraToggle(
     Box(
         modifier = modifier
             .testTagIfSet(testTag)
+            .focusIdentity(testTag)
             .toggleable(value = checked, interactionSource = interactionSource, indication = null, role = Role.Switch, onValueChange = onCheckedChange)
             .minimumInteractiveComponentSize(),
         contentAlignment = Alignment.Center,

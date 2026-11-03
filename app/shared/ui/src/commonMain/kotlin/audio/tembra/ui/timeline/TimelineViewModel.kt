@@ -51,6 +51,7 @@ import audio.tembra.engine.TransportSnapshot
 import audio.tembra.engine.perf.PerfSection
 import audio.tembra.engine.perf.PerfTrace
 import audio.tembra.ui.platform.AudioFilePicker
+import audio.tembra.ui.platform.WindowControls
 import audio.tembra.ui.platform.AudioPickRequest
 import audio.tembra.ui.metronome.TapCaption
 import audio.tembra.ui.platform.AudioPickResult
@@ -98,6 +99,7 @@ class TimelineViewModel(
     private val picker: AudioFilePicker,
     private val preferences: MetronomePreferences,
     private val timelinePreferences: TimelinePreferences,
+    private val windowControls: WindowControls,
 ) : ViewModel() {
 
     private val view = MutableStateFlow(TimelineViewState())
@@ -108,7 +110,10 @@ class TimelineViewModel(
     /** The last global metronome settings the preferences emitted: outside [view] for the same reason (T147). */
     private val metronomeSettings = MutableStateFlow(MetronomeSettings())
 
-    val uiState: StateFlow<TimelineUiState> = combine(session.state, view, overviewStripShown, metronomeSettings, ::mapState)
+    /** The menu's full-screen row from the platform's window controls (feature 011, spec FR-010a). */
+    private val fullScreenItem = combine(windowControls.fullScreenAvailable, windowControls.isFullScreen, ::fullScreenItemOf)
+
+    val uiState: StateFlow<TimelineUiState> = combine(session.state, view, overviewStripShown, metronomeSettings, fullScreenItem, ::mapState)
         .stateIn(viewModelScope, SharingStarted.Eagerly, currentUi())
 
     /** One-shot snackbar messages: the session's, mapped, merged with the ViewModel's own, to the one collector. */
@@ -260,6 +265,11 @@ class TimelineViewModel(
     }
 
     /** The overflow menu's "Overview strip" entry (spec FR-015; T151): shown or hidden at once, remembered on the device. */
+    /** The menu's "Full screen" (true) or "Exit full screen" (false): the platform resizes the window (feature 011). */
+    fun setFullScreen(fullScreen: Boolean) {
+        if (fullScreen) windowControls.enterFullScreen() else windowControls.exitFullScreen()
+    }
+
     fun setOverviewStripShown(shown: Boolean) {
         overviewStripShown.value = shown
         viewModelScope.launch(CoroutineName("setOverviewStripShown")) { timelinePreferences.setOverviewStripShown(shown) }
@@ -434,11 +444,18 @@ class TimelineViewModel(
 
     // --- Mapping -----------------------------------------------------------------------------------------------------
 
-    private fun mapState(state: SessionState, view: TimelineViewState, overviewStripShown: Boolean, metronomeSettings: MetronomeSettings): TimelineUiState {
+    private fun mapState(
+        state: SessionState,
+        view: TimelineViewState,
+        overviewStripShown: Boolean,
+        metronomeSettings: MetronomeSettings,
+        fullScreenItem: FullScreenItem,
+    ): TimelineUiState {
         val project = state.project ?: return TimelineUiState(
             loaded = state.unavailable != null,
             playback = state.playback,
             overviewStripShown = overviewStripShown,
+            fullScreenItem = fullScreenItem,
             metronomeSettings = metronomeSettings,
         )
         val tempoMap = project.tempoMap
@@ -504,6 +521,7 @@ class TimelineViewModel(
             viewport = viewport,
             grid = grid,
             overviewStripShown = overviewStripShown,
+            fullScreenItem = fullScreenItem,
             following = view.following,
             playback = state.playback,
             positionBeats = positionBeats,
@@ -557,7 +575,19 @@ class TimelineViewModel(
     // --- Helpers -----------------------------------------------------------------------------------------------------
 
     /** The state an intent acts on, mapped now from the sources of truth: [uiState] is derived asynchronously. */
-    private fun currentUi(): TimelineUiState = mapState(session.state.value, view.value, overviewStripShown.value, metronomeSettings.value)
+    private fun currentUi(): TimelineUiState = mapState(
+        session.state.value,
+        view.value,
+        overviewStripShown.value,
+        metronomeSettings.value,
+        fullScreenItemOf(windowControls.fullScreenAvailable.value, windowControls.isFullScreen.value),
+    )
+
+    private fun fullScreenItemOf(available: Boolean, fullScreen: Boolean): FullScreenItem = when {
+        !available -> FullScreenItem.Hidden
+        fullScreen -> FullScreenItem.Exit
+        else -> FullScreenItem.Enter
+    }
 
     /** Applies [edit] through the session; a refusal with a reason the user can act on becomes a message. True when applied. */
     private fun edit(edit: ProjectEdit): Boolean {

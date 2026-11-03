@@ -15,6 +15,10 @@ import androidx.compose.ui.test.pinch
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.dp
+import audio.tembra.core.project.ClipId
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
 import audio.tembra.core.metronome.TimeSignature
 import audio.tembra.core.project.Beats
 import audio.tembra.core.project.GainDb
@@ -45,6 +49,9 @@ class TrackLaneGestureTest {
     private val moves = mutableListOf<String>()
     private var densityScale = 1f
 
+    /** The open clip menu as the row that owns it holds it (feature 011). */
+    private var menuClip by mutableStateOf<ClipId?>(null)
+
     private fun ComposeUiTest.setLane() {
         setContent {
             TembraTheme {
@@ -58,6 +65,7 @@ class TrackLaneGestureTest {
                     onClipDragStart = { moves += "start" }, onClipDrag = { _, beats, tracks -> moves += "drag(${(beats * 10).roundToInt() / 10.0},$tracks)" },
                     onClipDragEnd = { moves += "end" }, onClipDragCancel = { moves += "cancel" },
                     onSplit = { moves += "split" }, onDeleteClip = { moves += "delete" },
+                    menuClip = menuClip, onMenuClip = { menuClip = it },
                 )
             }
         }

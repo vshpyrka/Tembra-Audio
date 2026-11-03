@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.widthIn
@@ -58,9 +59,11 @@ import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.min
 import audio.tembra.ui.designsystem.CardDiscs
+import audio.tembra.ui.designsystem.FocusMemory
 import audio.tembra.ui.designsystem.FoldSplit
 import audio.tembra.ui.designsystem.FoldSplitRow
 import audio.tembra.ui.designsystem.TembraGradientCard
+import audio.tembra.ui.designsystem.focusRestoringRoot
 import audio.tembra.ui.metronome.components.AccentCells
 import audio.tembra.ui.metronome.components.AccentCellsForm
 import audio.tembra.ui.metronome.components.ClickSoundPicker
@@ -117,13 +120,16 @@ fun MetronomeScreenContent(
     LaunchedEffect(state.loaded) {
         if (state.loaded) rootFocus.requestFocus()
     }
+    // Above the layout branches: focus returns to the same control in the new form (feature 011, FR-007).
+    val focusMemory = remember { FocusMemory() }
     Box(modifier = modifier.fillMaxSize()) {
         // The tag sits inside the page margin, where the content starts, as the tuner's does.
         val margin = when (layout) {
             MetronomeLayout.Wide -> Modifier.padding(spacing.pageMargin)
             MetronomeLayout.Stacked, MetronomeLayout.Landscape, MetronomeLayout.Tabletop, MetronomeLayout.Pocket -> Modifier.padding(horizontal = spacing.pageMargin, vertical = spacing.sm)
         }
-        val root = Modifier.fillMaxSize().then(margin).testTag("screen.metronome").focusRequester(rootFocus).focusable()
+        // A very wide window keeps the expanded width, centred (feature 011, spec FR-008).
+        val root = Modifier.fillMaxSize().wrapContentWidth().widthIn(max = spacing.screenMaxWidth).fillMaxWidth().then(margin).testTag("screen.metronome").focusRestoringRoot(focusMemory).focusRequester(rootFocus).focusable()
         when (layout) {
             MetronomeLayout.Stacked -> StackedMetronome(state = state, callbacks = callbacks, telemetry = telemetry, modifier = root)
             MetronomeLayout.Wide -> WideMetronome(state = state, callbacks = callbacks, telemetry = telemetry, verticalFold = verticalFold, modifier = root)

@@ -100,6 +100,8 @@ internal fun TrackLane(
     onClipDragCancel: () -> Unit = {},
     onSplit: () -> Unit = {},
     onDeleteClip: (ClipId) -> Unit = {},
+    menuClip: ClipId? = null,
+    onMenuClip: (ClipId?) -> Unit = {},
 ) {
     val daw = TembraTheme.daw
     val colors = TembraTheme.colors
@@ -130,7 +132,6 @@ internal fun TrackLane(
     val edgePx = with(density) { EDGE_DP.dp.toPx() }
     val currentViewport by rememberUpdatedState(viewport)
     val currentOnScrollBy by rememberUpdatedState(onScrollBy)
-    var menuClip by remember { mutableStateOf<ClipId?>(null) }
     var hoveredClip by remember { mutableStateOf<ClipId?>(null) }
     Box(
         modifier = modifier
@@ -193,13 +194,13 @@ internal fun TrackLane(
             ClipMenu(
                 expanded = menuClip == clip.id,
                 canSplit = canSplit && selectedClipId == clip.id,
-                onDismiss = { menuClip = null },
+                onDismiss = { onMenuClip(null) },
                 onSplit = {
-                    menuClip = null
+                    onMenuClip(null)
                     onSplit()
                 },
                 onDelete = {
-                    menuClip = null
+                    onMenuClip(null)
                     onDeleteClip(clip.id)
                 },
                 testTag = "${TimelineTestTags.clip(firstClipIndex + clipIndex)}.menu",
@@ -224,7 +225,7 @@ internal fun TrackLane(
                                 if (event.buttons.isSecondaryPressed) {
                                     down.consume()
                                     onSelectClip(clip.id)
-                                    menuClip = clip.id
+                                    onMenuClip(clip.id)
                                     return@awaitEachGesture
                                 }
                                 // Pointer: past the slop; touch: after the long press (a plain drag is the lane's scroll).
@@ -235,16 +236,24 @@ internal fun TrackLane(
                                 } ?: return@awaitEachGesture
                                 onClipDragStart(clip.id)
                                 var total = Offset.Zero
-                                val completed = drag(start.id) { change ->
-                                    total += change.positionChange()
-                                    change.consume()
-                                    val port = currentViewport
-                                    onClipDrag(clip.id, total.x / port.devicePixelsPerBeat, (total.y / rowPitchPx).roundToInt())
-                                    // Auto-scroll when the finger nears the lane's edges.
-                                    val laneX = left.toFloat() + change.position.x
-                                    if (laneX < edgePx) currentOnScrollBy(-EDGE_SCROLL_PX) else if (laneX > port.widthPx - edgePx) currentOnScrollBy(EDGE_SCROLL_PX)
+                                var settled = false
+                                try {
+                                    val completed = drag(start.id) { change ->
+                                        total += change.positionChange()
+                                        change.consume()
+                                        val port = currentViewport
+                                        onClipDrag(clip.id, total.x / port.devicePixelsPerBeat, (total.y / rowPitchPx).roundToInt())
+                                        // Auto-scroll when the finger nears the lane's edges.
+                                        val laneX = left.toFloat() + change.position.x
+                                        if (laneX < edgePx) currentOnScrollBy(-EDGE_SCROLL_PX) else if (laneX > port.widthPx - edgePx) currentOnScrollBy(EDGE_SCROLL_PX)
+                                    }
+                                    settled = true
+                                    if (completed) onClipDragEnd() else onClipDragCancel()
+                                } finally {
+                                    // The gesture ended without a release: the lane left composition or changed form (a window
+                                    // crossed a layout class, feature 011 FR-007), so the clip returns rather than staying half-moved.
+                                    if (!settled) onClipDragCancel()
                                 }
-                                if (completed) onClipDragEnd() else onClipDragCancel()
                             }
                         },
                 )

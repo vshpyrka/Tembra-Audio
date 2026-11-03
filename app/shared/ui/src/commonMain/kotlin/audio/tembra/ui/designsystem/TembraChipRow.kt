@@ -161,6 +161,7 @@ private fun RowScope.Chip(
         modifier = Modifier
             .weight(1f)
             .testTagIfSet(testTag)
+            .focusIdentity(testTag)
             .selectable(
                 selected = selected,
                 interactionSource = interactionSource,

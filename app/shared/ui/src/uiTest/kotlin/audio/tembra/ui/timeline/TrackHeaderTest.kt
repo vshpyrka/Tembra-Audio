@@ -1,6 +1,9 @@
 package audio.tembra.ui.timeline
 
 import androidx.compose.foundation.layout.height
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -39,6 +42,9 @@ class TrackHeaderTest {
     )
     private val calls = mutableListOf<String>()
 
+    /** The open menu as the row that owns it holds it (feature 011: hoisted above the two header forms). */
+    private var menuOpen by mutableStateOf(false)
+
     private fun ComposeUiTest.setCompact(isFirst: Boolean = true, isLast: Boolean = false) {
         setContent {
             TembraTheme {
@@ -47,6 +53,7 @@ class TrackHeaderTest {
                     onSelect = { calls += "select" }, onMute = { calls += "mute($it)" }, onSolo = { calls += "solo($it)" },
                     onSettings = { calls += "settings" }, onAddAudio = { calls += "addAudio" }, onMoveUp = { calls += "up" },
                     onMoveDown = { calls += "down" }, onDelete = { calls += "delete" },
+                    menuOpen = menuOpen, onMenuOpen = { menuOpen = it },
                 )
             }
         }
@@ -61,6 +68,7 @@ class TrackHeaderTest {
                     onGain = { calls += "gain(${it.readout})" }, onExpand = { calls += "expand($it)" },
                     onSettings = { calls += "settings" }, onAddAudio = { calls += "addAudio" }, onMoveUp = { calls += "up" },
                     onMoveDown = { calls += "down" }, onDelete = { calls += "delete" },
+                    menuOpen = menuOpen, onMenuOpen = { menuOpen = it },
                     modifier = Modifier.height(96.dp),
                 )
             }

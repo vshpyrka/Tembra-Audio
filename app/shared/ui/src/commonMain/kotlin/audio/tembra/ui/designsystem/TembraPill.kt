@@ -66,6 +66,7 @@ fun TembraPill(
         Box(
             modifier = modifier
                 .testTagIfSet(testTag)
+                .focusIdentity(testTag)
                 .selectable(
                     selected = selected,
                     interactionSource = source,

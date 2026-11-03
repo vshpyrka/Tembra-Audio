@@ -9,6 +9,7 @@ import audio.tembra.ui.di.AppGraph
 import audio.tembra.ui.platform.BackgroundPlaybackHost
 import audio.tembra.ui.platform.MicrophonePermission
 import audio.tembra.ui.platform.AudioFilePicker
+import audio.tembra.ui.platform.WindowControls
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.DependencyGraph
 import dev.zacsweers.metro.Provides
@@ -26,6 +27,9 @@ interface AndroidAppGraph : AppGraph {
 
     /** The activity attaches its notifications-permission launcher here (contracts/background-playback.md). */
     val notificationPermissionHost: NotificationPermissionHost
+
+    /** The activity attaches itself here for app-requested full screen (feature 011, research R21). */
+    val androidWindowControls: AndroidWindowControls
 
     @Provides
     @SingleIn(AppScope::class)
@@ -65,6 +69,14 @@ interface AndroidAppGraph : AppGraph {
     @Provides
     @SingleIn(AppScope::class)
     fun provideAudioFilePicker(host: AudioFilePickerHost, context: Context): AudioFilePicker = AndroidAudioFilePicker(host, context)
+
+    @Provides
+    @SingleIn(AppScope::class)
+    fun provideAndroidWindowControls(): AndroidWindowControls = AndroidWindowControls()
+
+    /** Full screen from the Timeline's menu in a desktop window (feature 011, spec FR-010a). */
+    @Provides
+    fun provideWindowControls(controls: AndroidWindowControls): WindowControls = controls
 
     @DependencyGraph.Factory
     fun interface Factory {

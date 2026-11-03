@@ -29,6 +29,8 @@
 		7E5F000000000000000000D4 /* AudioTracePass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F00000000000000000070 /* AudioTracePass.swift */; };
 		7E5F000000000000000000D5 /* ColdLaunchHitchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F00000000000000000071 /* ColdLaunchHitchTests.swift */; };
 		7E5F01100000000000000040 /* DesktopTestCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F01100000000000000020 /* DesktopTestCase.swift */; };
+		7E5F01100000000000000041 /* WindowMinimumTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F01100000000000000021 /* WindowMinimumTests.swift */; };
+		7E5F01100000000000000061 /* WindowMinimum.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F01100000000000000060 /* WindowMinimum.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -89,6 +91,8 @@
 		7E5F00000000000000000004 /* TembraPerfTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TembraPerfTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		7E5F01100000000000000020 /* DesktopTestCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopTestCase.swift; sourceTree = "<group>"; };
 		7E5F01100000000000000004 /* TembraDesktopTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TembraDesktopTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		7E5F01100000000000000021 /* WindowMinimumTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowMinimumTests.swift; sourceTree = "<group>"; };
+		7E5F01100000000000000060 /* WindowMinimum.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowMinimum.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -160,6 +164,7 @@
 				7555FF82242A565900829871 /* ContentView.swift */,
 				7555FF8C242A565B00829871 /* Info.plist */,
 				2152FB032600AC8F00CF470E /* iOSApp.swift */,
+				7E5F01100000000000000060 /* WindowMinimum.swift */,
 				058557D7273AAEEB004C7B11 /* Preview Content */,
 			);
 			path = iosApp;
@@ -209,6 +214,7 @@
 			isa = PBXGroup;
 			children = (
 				7E5F01100000000000000020 /* DesktopTestCase.swift */,
+				7E5F01100000000000000021 /* WindowMinimumTests.swift */,
 			);
 			path = TembraDesktopTests;
 			sourceTree = "<group>";
@@ -377,6 +383,7 @@
 			files = (
 				2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */,
 				7555FF83242A565900829871 /* ContentView.swift in Sources */,
+				7E5F01100000000000000061 /* WindowMinimum.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -409,6 +416,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				7E5F01100000000000000040 /* DesktopTestCase.swift in Sources */,
+				7E5F01100000000000000041 /* WindowMinimumTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
