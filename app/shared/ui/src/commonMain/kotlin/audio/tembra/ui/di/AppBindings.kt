@@ -1,5 +1,7 @@
 package audio.tembra.ui.di
 
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
 import androidx.lifecycle.ViewModel
 import audio.tembra.data.AppDirectories
 import audio.tembra.data.metronome.CustomClickSoundStore
@@ -14,13 +16,14 @@ import audio.tembra.data.timeline.TimelinePreferences
 import audio.tembra.data.tuner.DataStoreTunerPreferences
 import audio.tembra.data.tuner.TembraDataStore
 import audio.tembra.data.tuner.TunerPreferences
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
 import audio.tembra.engine.AudioEngine
 import audio.tembra.engine.MetronomeAudio
 import audio.tembra.engine.TimelineAudio
 import audio.tembra.engine.TunerAudio
+import audio.tembra.ui.drop.ProjectFromAudio
+import audio.tembra.ui.drop.SessionProjectFromAudio
 import audio.tembra.ui.projects.ComposeDemoAudioSource
+import audio.tembra.ui.session.AppStartup
 import audio.tembra.ui.session.PlaybackGuard
 import audio.tembra.ui.session.ProjectSession
 import audio.tembra.ui.session.SessionActivity
@@ -35,11 +38,11 @@ import dev.zacsweers.metro.SingleIn
 import dev.zacsweers.metrox.viewmodel.ManualViewModelAssistedFactory
 import dev.zacsweers.metrox.viewmodel.MetroViewModelFactory
 import dev.zacsweers.metrox.viewmodel.ViewModelAssistedFactory
+import kotlin.reflect.KClass
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.SupervisorJob
-import kotlin.reflect.KClass
 
 /** Shared bindings contributed to every platform graph; the engine itself is provided by each platform graph (research R15). */
 @BindingContainer
@@ -117,6 +120,11 @@ object AppBindings {
     /** The navigation shell asks the session before leaving a playing timeline (spec FR-008a). */
     @Provides
     fun providePlaybackGuard(session: ProjectSession): PlaybackGuard = session
+
+    /** Files dropped on Projects or opened with the app become a new project (feature 011, spec FR-026, FR-026a). */
+    @Provides
+    fun provideProjectFromAudio(repository: ProjectRepository, session: ProjectSession, startup: AppStartup): ProjectFromAudio =
+        SessionProjectFromAudio(repository, session, beforeStart = startup::awaitStarted)
 
     /** The shell shows the busy pointer while the session imports (feature 011, spec FR-015a). */
     @Provides

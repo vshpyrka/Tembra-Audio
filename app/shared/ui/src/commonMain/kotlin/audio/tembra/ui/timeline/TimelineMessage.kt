@@ -1,6 +1,8 @@
 package audio.tembra.ui.timeline
 
 import audio.tembra.core.project.EditRejection
+import audio.tembra.ui.drop.DropCopy
+import audio.tembra.ui.drop.SkippedItem
 
 /** One-shot messages the timeline shows in its snackbar (contracts/project-session.md "Messages", spec FR-044, FR-005). */
 sealed interface TimelineMessage {
@@ -16,6 +18,8 @@ sealed interface TimelineMessage {
     data class EditRejected(val reason: EditRejection) : TimelineMessage
     /** The platform picker could not hand over the chosen file. */
     data object PickFailed : TimelineMessage
+    /** A drop held no audio file (feature 011, spec FR-026); [skipped] names what it held. */
+    data class NoAudioFound(val skipped: List<SkippedItem>) : TimelineMessage
     /** The sheet offers the sounds the Metronome holds; importing a new one is the Metronome's job. */
     data object CustomSoundFromMetronome : TimelineMessage
 
@@ -29,6 +33,7 @@ sealed interface TimelineMessage {
             ProjectTooLarge -> "The project has more tracks or clips than can play at once"
             is EditRejected -> TimelineCopy.rejected(reason)
             PickFailed -> TimelineCopy.pickFailed
+            is NoAudioFound -> DropCopy.noAudio(skipped)
             CustomSoundFromMetronome -> TimelineCopy.customSoundFromMetronome
         }
 }

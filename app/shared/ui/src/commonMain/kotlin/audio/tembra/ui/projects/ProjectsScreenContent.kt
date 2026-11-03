@@ -32,23 +32,29 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
+import audio.tembra.core.project.Beats
 import audio.tembra.ui.designsystem.EmptyState
 import audio.tembra.ui.designsystem.FocusMemory
 import audio.tembra.ui.designsystem.ScrollbarAdapter
 import audio.tembra.ui.designsystem.TembraPill
 import audio.tembra.ui.designsystem.focusRestoringRoot
 import audio.tembra.ui.designsystem.tembraScrollbar
+import audio.tembra.ui.drop.AudioDropState
+import audio.tembra.ui.drop.DropCopy
+import audio.tembra.ui.drop.DropHoverBanner
+import audio.tembra.ui.drop.DropZone
+import audio.tembra.ui.drop.audioDropTarget
 import audio.tembra.ui.projects.components.DeleteProjectDialog
 import audio.tembra.ui.projects.components.DescribeProjectDialog
 import audio.tembra.ui.projects.components.KeyPickerDialog
 import audio.tembra.ui.projects.components.LibraryFilterChips
 import audio.tembra.ui.projects.components.LibrarySearchField
-import audio.tembra.ui.shortcuts.LocalShortcutPlatform
-import audio.tembra.ui.shortcuts.RegisterShortcuts
-import audio.tembra.ui.shortcuts.ShortcutTargets
 import audio.tembra.ui.projects.components.ProjectCard
 import audio.tembra.ui.projects.components.RenameProjectDialog
 import audio.tembra.ui.projects.components.SortMenu
+import audio.tembra.ui.shortcuts.LocalShortcutPlatform
+import audio.tembra.ui.shortcuts.RegisterShortcuts
+import audio.tembra.ui.shortcuts.ShortcutTargets
 import audio.tembra.ui.theme.TembraTheme
 
 /**
@@ -80,6 +86,8 @@ internal fun ProjectsScreenContent(
     val onNewProject by rememberUpdatedState(callbacks.onNewProject)
     val shortcuts = remember(searchFocus) { ProjectsKeyTargets(searchFocus, onNewProject = { onNewProject() }) }
     RegisterShortcuts(ShortcutTargets(projects = shortcuts))
+    // Files dropped anywhere on the library become a new project (feature 011, spec FR-026).
+    val drops = remember { AudioDropState(zoneAt = { DropZone.ProjectsGrid }, beatsAt = { Beats.Zero }) }
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -89,7 +97,8 @@ internal fun ProjectsScreenContent(
             .focusRestoringRoot(focusMemory)
             .focusRequester(rootFocus)
             .focusable()
-            .projectsKeyHandling(shortcuts, LocalShortcutPlatform.current),
+            .projectsKeyHandling(shortcuts, LocalShortcutPlatform.current)
+            .audioDropTarget(drops, callbacks.onDrop),
     ) {
         Column(modifier = Modifier.fillMaxSize().padding(horizontal = spacing.pageMargin).padding(top = spacing.lg), verticalArrangement = Arrangement.spacedBy(spacing.md)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -139,6 +148,7 @@ internal fun ProjectsScreenContent(
             is ProjectsDialog.Delete -> DeleteProjectDialog(name = dialog.name, onConfirm = callbacks.onDeleteConfirm, onCancel = callbacks.onDialogDismiss)
             null -> Unit
         }
+        if (drops.hover != null) DropHoverBanner(DropCopy.newProject, Modifier.align(Alignment.TopCenter))
         SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
     }
 }

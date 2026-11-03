@@ -19,6 +19,7 @@ import audio.tembra.engine.perf.PerfBuild
 import audio.tembra.ui.devtools.DeveloperViewRequest
 import audio.tembra.ui.di.AppGraph
 import audio.tembra.ui.di.prebuiltForScreens
+import audio.tembra.ui.drop.LocalDroppedFilesReader
 import audio.tembra.ui.metronome.LocalMetronomeDebug
 import audio.tembra.ui.metronome.MetronomeDebugRequest
 import audio.tembra.ui.navigation.DestinationsDrawnAhead
@@ -66,6 +67,7 @@ fun App(
         LocalTunerNoiseGate provides tunerNoiseGate?.gate,
         LocalMetronomeDebug provides metronomeDebug,
         LocalTrackpadPinchSource provides appGraph.trackpadPinchSource,
+        LocalDroppedFilesReader provides appGraph.droppedFilesReader,
     ) {
         // The objects the screens' ViewModels are built from, built off the main thread once the first frame is up, so
         // the frame that opens a screen does not build them (AppGraph.prebuiltForScreens).

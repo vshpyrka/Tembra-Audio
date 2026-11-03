@@ -54,6 +54,7 @@ fun ProjectsScreen(
             onDescribeConfirm = viewModel::confirmDescription,
             onKeyConfirm = viewModel::confirmKey,
             onDeleteConfirm = viewModel::confirmDelete,
+            onDrop = viewModel::drop,
         )
     }
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {

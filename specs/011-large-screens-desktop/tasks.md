@@ -432,66 +432,91 @@ clarified rules; audio opened with Tembra Audio from the Files app starts a new 
 
 ### Tests for User Story 5 ⚠️
 
-- [ ] T104 [P] [US5] `CTEST/drop/DropPlannerTest.kt`: "exactly one audio file on a lane → `AddToTrack`" at the snapped
+- [X] T104 [P] [US5] `CTEST/drop/DropPlannerTest.kt`: "exactly one audio file on a lane → `AddToTrack`" at the snapped
   beat; two files on a lane → `NewTracks`; files on space → `NewTracks`; Projects → `NewProject`; a readable folder with
   3 WAVs, a text file and a sub-folder → 3 files and 2 skipped (sub-folders not entered); an unreadable folder →
   `SkippedItem(name, UnreadableFolder)`; only non-audio → `Nothing`
-- [ ] T105 [P] [US5] `UITEST/drop/AudioDropTargetTest.kt` (fake reader and event): hover shows "New track", "Add to
+  - Done 2026-11-03: a folder inside a dropped folder is named with a third reason, `NestedFolder`, so the message says
+    why it was left out.
+- [X] T105 [P] [US5] `UITEST/drop/AudioDropTargetTest.kt` (fake reader and event): hover shows "New track", "Add to
   <track> at bar N" or "New project" per zone; exit and end clear it; drop calls `ProjectSession.importAudio` with the
   planned `ImportTarget`; one message lists skipped names with reasons; no audio → "No audio files were found"
-- [ ] T106 [P] [US5] `ATEST/AndroidDroppedFilesReaderTest.kt`: `content://` audio URIs from a test provider are read
+  - Done 2026-11-03 as `CTEST/drop/AudioDropStateTest.kt` plus the view model tests: Compose's `DragAndDropEvent`
+    cannot be built in common tests (Android wraps a platform `DragEvent`), so `Modifier.audioDropTarget` is a thin
+    adapter and `AudioDropState` takes the hover and the drop as plain values (zone, snapped beat, preview, clear on exit
+    and end, plan on drop); `TimelineViewModelTest` and `ProjectsViewModelTest` cover the session call, the merged
+    skipped message and "No audio files were found".
+- [X] T106 [P] [US5] `ATEST/AndroidDroppedFilesReaderTest.kt`: `content://` audio URIs from a test provider are read
   under granted permissions and released; a `vnd.android.document/directory` URI yields `Folder(contents = null)`;
   `application/x-arc-uri-list` is accepted
-- [ ] T107 [P] [US5] `IOSTEST/drop/IosDroppedFilesReaderTest.kt`: item providers for an audio file and a folder map as
+- [X] T107 [P] [US5] `IOSTEST/drop/IosDroppedFilesReaderTest.kt`: item providers for an audio file and a folder map as
   T005 found
-- [ ] T108 [P] [US5] `CTEST/drop/OpenedFilesFlowTest.kt`: files from a fake `OpenedFiles` become a new project with one
+  - Done 2026-11-03: the test binary resolves no uniform types (no type database) and blocks its main run loop, so the
+    test spins the loop and the reader also takes a provider's file URL and judges the copy by name; a real drag from
+    Files carries typed providers (T005 still to run by hand).
+- [X] T108 [P] [US5] `CTEST/drop/OpenedFilesFlowTest.kt`: files from a fake `OpenedFiles` become a new project with one
   track per audio file; with a project playing, the stop-and-leave confirmation is requested first and nothing happens
   on cancel; non-audio items are named in the skipped message (FR-026a)
-- [ ] T109 [P] [US5] `ATEST/OpenWithTest.kt`: an `ACTION_VIEW` intent for a WAV `content://` URI from a test provider
+- [X] T109 [P] [US5] `ATEST/OpenWithTest.kt`: an `ACTION_VIEW` intent for a WAV `content://` URI from a test provider
   reaches `OpenedFiles` once; the package's intent filters resolve `ACTION_VIEW` for `audio/wav`, `audio/x-wav`,
   `audio/flac` and `audio/mpeg`; with the app running, a second `ACTION_VIEW` intent (with `FLAG_ACTIVITY_NEW_TASK`)
   arrives through `onNewIntent` in the same task (one task, one `MainActivity`)
-- [ ] T110 [P] [US5] `IOSTEST/drop/IosOpenedFilesTest.kt`: a file URL handed to `IosOpenedFiles` produces one
+  - Done 2026-11-03: resolution and delivery are tested; `onNewIntent` in the running task was checked on
+    Tembra_Desktop_API37 with `am start` (the request reached the running activity and made a second project). adb's
+    shell cannot hand on read access to MediaStore or documents URIs, so the file's bytes are a hand check (§5).
+- [X] T110 [P] [US5] `IOSTEST/drop/IosOpenedFilesTest.kt`: a file URL handed to `IosOpenedFiles` produces one
   `DroppedItem.AudioFile` emission; a non-audio URL produces `Other(name)`
 
 ### Implementation for User Story 5
 
-- [ ] T111 [P] [US5] Create the drop types in `UI/drop/`: `DropZone.kt` (sealed `TrackLane(trackId)`, `TimelineSpace`,
+- [X] T111 [P] [US5] Create the drop types in `UI/drop/`: `DropZone.kt` (sealed `TrackLane(trackId)`, `TimelineSpace`,
   `ProjectsGrid`), `DroppedItem.kt` (sealed `AudioFile(file: PickedFile)`, `Folder(name, contents:
   List<DroppedItem>?)` "null contents = the platform does not let the app read it", `Other(name)`), `DropPlan.kt`
   (sealed `AddToTrack(trackId, atBeats: Beats, file)`, `NewTracks(files, atBeats)`, `NewProject(files)`, `Nothing`),
   `DropOutcome.kt`, `SkippedItem.kt` (reasons `NotAudio`, `UnreadableFolder`), `DropHover.kt`
-- [ ] T112 [US5] Create `UI/drop/DropPlanner.kt` (`plan(zone, items, snappedBeats)`: flatten readable folders one
+- [X] T112 [US5] Create `UI/drop/DropPlanner.kt` (`plan(zone, items, snappedBeats)`: flatten readable folders one
   level; exactly one audio file on a lane → `AddToTrack`; otherwise lanes and space → `NewTracks`; Projects →
   `NewProject`; no audio → `Nothing`)
-- [ ] T113 [US5] Create the seam `UI/drop/DroppedFilesReader.kt` (`accepts(event)`, `suspend read(event):
+- [X] T113 [US5] Create the seam `UI/drop/DroppedFilesReader.kt` (`accepts(event)`, `suspend read(event):
   List<DroppedItem>`) and `UI/drop/DropTargetModifier.kt` (`Modifier.audioDropTarget(zone, reader, onHover, onDrop)` over
   `dragAndDropTarget`, hover feedback via `onEntered`/`onMoved`/`onExited`/`onEnded`)
-- [ ] T114 [US5] Add drop zones: each lane and the empty space in `UI/timeline/components/TrackLane.kt` and
+- [X] T114 [US5] Add drop zones: each lane and the empty space in `UI/timeline/components/TrackLane.kt` and
   `UI/timeline/TimelineScreen.kt` (drop position → snapped beats through the viewport), and the grid in
   `UI/projects/ProjectsScreen.kt` (new project, open it, import as new tracks)
-- [ ] T115 [US5] Messages: extend `UI/timeline/TimelineCopy.kt` (`filesRefused` merges skipped items with the importer's
+  - Done 2026-11-03: one target on the track list (the row under the pointer is the lane), one on the empty timeline
+    (found on the emulator: an empty project showed its empty state outside any target) and one on the Projects screen.
+    iOS gives no drop position with Compose Multiplatform 1.12 (session and location internal): there the timeline plans
+    new tracks at the playhead (research R12 follow-up; recheck with 1.13).
+- [X] T115 [US5] Messages: extend `UI/timeline/TimelineCopy.kt` (`filesRefused` merges skipped items with the importer's
   refusals; "No audio files were found"; hover labels)
-- [ ] T116 [US5] Create `ANDROID/AndroidDroppedFilesReader.kt` (accept `audio/*`, `application/x-arc-uri-list`,
+- [X] T116 [US5] Create `ANDROID/AndroidDroppedFilesReader.kt` (accept `audio/*`, `application/x-arc-uri-list`,
   `vnd.android.document/directory`; `activity.requestDragAndDropPermissions`, read, release after the import copied the
   files; directories → `Folder(contents = null)`) and bind it in `ANDROID/AndroidAppGraph.kt`
-- [ ] T117 [US5] Create `UIIOS/drop/IosDroppedFilesReader.kt` (`event.items` providers,
+- [X] T117 [US5] Create `UIIOS/drop/IosDroppedFilesReader.kt` (`event.items` providers,
   `loadFileRepresentationForTypeIdentifier("public.audio")` copied to the cache inside the callback; folders per
   T005) and bind it in the iOS graph
-- [ ] T118 [US5] Create the seam `UI/drop/OpenedFiles.kt` (interface: `files: Flow<List<DroppedItem>>`) and collect it
+- [X] T118 [US5] Create the seam `UI/drop/OpenedFiles.kt` (interface: `files: Flow<List<DroppedItem>>`) and collect it
   in `UI/navigation/NavigationShellContent.kt`: plan each emission as `DropZone.ProjectsGrid` (`NewProject`), behind
   the existing stop-and-leave confirmation when a project is playing
-- [ ] T119 [US5] Android open with: in `app/androidApp/src/main/AndroidManifest.xml` set `MainActivity`'s
+  - Done 2026-11-03: collected in `ShellViewModel` (it owns the stop-and-leave guard); `ProjectFromAudio` waits for
+    `AppStartup` (found on the emulator: the startup's reopening of the last project replaced the new one).
+- [X] T119 [US5] Android open with: in `app/androidApp/src/main/AndroidManifest.xml` set `MainActivity`'s
   `android:launchMode="singleTask"` and add the `VIEW` intent filter (category DEFAULT, scheme `content`, MIME types
   `audio/wav`, `audio/x-wav`, `audio/flac`, `audio/mpeg`); create `ANDROID/AndroidOpenedFiles.kt` fed from
   `ANDROID/MainActivity.kt`'s `onCreate` and `onNewIntent` (URIs read under the intent's grant, including `ClipData`
   for several files), bound in `ANDROID/AndroidAppGraph.kt`
-- [ ] T120 [US5] iOS open with: `CFBundleDocumentTypes` for `com.microsoft.waveform-audio`, `public.mp3` and FLAC (plus
+  - Done 2026-11-03: a name without an extension takes its type's (MediaStore URIs end in an id; the importer decides
+    the format by extension).
+- [X] T120 [US5] iOS open with: `CFBundleDocumentTypes` for `com.microsoft.waveform-audio`, `public.mp3` and FLAC (plus
   `UTImportedTypeDeclarations` if T007 requires it), `LSHandlerRank` Alternate,
   `LSSupportsOpeningDocumentsInPlace` false in `app/iosApp/iosApp/Info.plist`; `.onOpenURL` in
   `app/iosApp/iosApp/iOSApp.swift` forwarding to `UIIOS/drop/IosOpenedFiles.kt`, bound in the iOS graph
 - [ ] T121 [US5] Verify FR-025 by hand on the desktop emulators and the tablet: the picker offers Downloads and a
   removable drive (emulated USB storage); record in `specs/011-large-screens-desktop/quickstart.md` §5 notes
+  - 2026-11-03, Tembra_Desktop_API37: the picker, opened from the empty timeline's "Add audio…" inside the app's
+    free-form window, offers Recent, Audio, Downloads, Android Desktop and a removable "Virtual SD card"
+    (`sm set-virtual-disk true`, `sm partition disk:7,88 public`); `screenshots/us5-picker-roots-api37.png`.
+    Tembra_Desktop_API34 and the tablet in desktop mode remain.
 
 **Checkpoint**: US1–US5 complete.
 

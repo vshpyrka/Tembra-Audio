@@ -9,6 +9,7 @@ import audio.tembra.ui.projects.ProjectsSeedRequest
 import audio.tembra.ui.tuner.TunerNoiseGateRequest
 import audio.tembra.ui.tuner.TunerTestSignalRequest
 import dev.zacsweers.metro.createGraph
+import platform.Foundation.NSURL
 import platform.UIKit.UIViewController
 
 private val appGraph: IosAppGraph = createGraph<IosAppGraph>()
@@ -50,3 +51,6 @@ fun MainViewController(
  */
 @Suppress("unused")
 fun reportTrackpadPinch(scale: Double, x: Double, y: Double) = appGraph.iosTrackpadPinchSource.report(scale, x, y)
+
+/** The shell's `.onOpenURL`: a file opened with the app from the Files app becomes a new project (feature 011, FR-026a). */
+fun openFile(url: NSURL) = appGraph.iosOpenedFiles.open(url)

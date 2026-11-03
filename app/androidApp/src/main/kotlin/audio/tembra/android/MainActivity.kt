@@ -1,5 +1,6 @@
 package audio.tembra.android
 
+import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
 import android.view.KeyEvent
@@ -42,6 +43,10 @@ class MainActivity : ComponentActivity() {
         notificationHost.attach(this, registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted -> notificationHost.onResult(granted) })
         // Full screen from the Timeline's menu in a desktop window (feature 011, research R21).
         appGraph.androidWindowControls.attach(this)
+        // Drops request their permissions through this activity; "open with" intents arrive here (feature 011, R12, R22).
+        // A recreated activity carries the intent it was started with: it was delivered then.
+        appGraph.androidDroppedFilesReader.attach(this)
+        if (savedInstanceState == null) appGraph.androidOpenedFiles.deliver(intent)
         // Debug builds accept the "tembra.developer.view" extra (feature 002, spec FR-022), the "tembra.tuner.testSignal"
         // extra (feature 003, spec FR-032), the "tembra.tuner.noiseGate" extra (feature 006, spec FR-023) and the
         // "tembra.metronome.syncopation" extra (feature 004, spec FR-037); the shrinker removes these branches from
@@ -69,6 +74,13 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    // One task, one activity (singleTask): files opened while the app runs arrive here (feature 011, research R22).
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        appGraph.androidOpenedFiles.deliver(intent)
+    }
+
     // Window changes reach the activity without recreating it (configChanges): the full-screen item follows the mode.
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
@@ -94,6 +106,7 @@ class MainActivity : ComponentActivity() {
         appGraph.audioFilePickerHost.detach()
         appGraph.notificationPermissionHost.detach()
         appGraph.androidWindowControls.detach(this)
+        appGraph.androidDroppedFilesReader.detach(this)
         super.onDestroy()
     }
 }

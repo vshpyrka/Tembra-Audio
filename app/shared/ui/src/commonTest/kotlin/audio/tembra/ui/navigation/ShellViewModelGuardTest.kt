@@ -5,6 +5,8 @@ import audio.tembra.ui.session.DialogRequest
 import audio.tembra.ui.session.FakePlaybackGuard
 import audio.tembra.ui.session.FakeSessionActivity
 import audio.tembra.ui.tracksettings.TrackSettingsKey
+import audio.tembra.ui.drop.FakeProjectFromAudio
+import audio.tembra.ui.drop.NoOpenedFiles
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -33,7 +35,7 @@ class ShellViewModelGuardTest {
     fun setUp() {
         Dispatchers.setMain(dispatcher)
         guard = FakePlaybackGuard(isPlaying = true)
-        viewModel = ShellViewModel(guard, FakeSessionActivity())
+        viewModel = ShellViewModel(guard, FakeSessionActivity(), NoOpenedFiles, FakeProjectFromAudio())
     }
 
     @AfterTest

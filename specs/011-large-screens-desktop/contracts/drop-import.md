@@ -16,6 +16,8 @@ with Activity-owned Android and iOS bindings; planning in common code), `kotlin-
    `vnd.android.document/directory`; iOS true when any item conforms to `public.audio` or `public.folder`.
 2. While hovering, the zone resolves a preview `DropPlan` from the item count and types available before reading
    (`DropHover`) and shows it ("New track", "Add to <track> at bar N", "New project"); leaving or ending clears it.
+   Where the platform gives no drop position (iOS with Compose Multiplatform 1.12, research R12 findings), the timeline
+   plans new tracks at the playhead.
 3. On drop, the reader reads items: audio files become `PickedFile`s (Android: after
    `requestDragAndDropPermissions`, released when the import has copied them; iOS: copied into the cache inside the
    provider's completion handler); folders become `Folder(name, contents)` with direct children only, or
