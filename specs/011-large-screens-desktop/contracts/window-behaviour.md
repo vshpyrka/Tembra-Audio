@@ -58,5 +58,8 @@ playback continue; the tuner's `ListeningPolicy` stops listening and looping ton
   maximise and restore, full screen and back) as spec SC-002 requires;
   the engine's xrun and starvation counters stay 0 and the click count matches elapsed time ± 1; repeat with the demo
   project playing (playhead keeps advancing, no restart).
-- `MinimumWindowTest` (androidApp androidTest): resizing below 360 × 480 dp is clamped by the system.
+- `MinimumWindowTest` (androidApp androidTest, desktop emulator): a mouse drag of the window's corner towards
+  300 × 400 dp stops at no less than 360 × 480 dp. The drag goes through `input mouse swipe`: `am task resize` is not
+  clamped to any minimum (research hands-on check "Desktop (Preview)"); with nothing declared the platform's own
+  minimum on Android 17 is 390 × 357 dp.
 - `KeyboardAttachTest`: see platform-shells.md.
