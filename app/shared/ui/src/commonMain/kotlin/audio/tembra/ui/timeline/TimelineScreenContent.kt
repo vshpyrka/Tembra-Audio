@@ -31,13 +31,21 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
+import audio.tembra.core.project.Beats
 import audio.tembra.core.project.TempoMap
 import audio.tembra.engine.perf.PerfSection
 import audio.tembra.engine.perf.PerfTrace
 import audio.tembra.ui.designsystem.FocusMemory
 import audio.tembra.ui.designsystem.focusRestoringRoot
+import audio.tembra.ui.drop.AudioDropState
+import audio.tembra.ui.drop.DropCopy
+import audio.tembra.ui.drop.DropHoverBanner
+import audio.tembra.ui.drop.DropZone
+import audio.tembra.ui.drop.audioDropTarget
 import audio.tembra.ui.platform.LocalTrackpadPinchSource
 import audio.tembra.ui.session.TransportTelemetry
+import audio.tembra.ui.shortcuts.RegisterShortcuts
+import audio.tembra.ui.shortcuts.ShortcutTargets
 import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.ui.timeline.components.DeleteTrackDialog
 import audio.tembra.ui.timeline.components.EmptyTimeline
@@ -52,8 +60,6 @@ import audio.tembra.ui.timeline.components.TimelineToolbar
 import audio.tembra.ui.timeline.components.TrackList
 import audio.tembra.ui.transport.TransportBar
 import audio.tembra.ui.transport.TransportCallbacks
-import audio.tembra.ui.shortcuts.RegisterShortcuts
-import audio.tembra.ui.shortcuts.ShortcutTargets
 
 /**
  * The stateless Timeline (contracts/timeline-screen.md "Layouts"): toolbar (with the tempo pill at every width, spec
@@ -172,7 +178,12 @@ internal fun TimelineScreenContent(
                     .onGloballyPositioned { coordinates -> lanesLeft.floatValue = coordinates.positionInRoot().x + headerColumn.toPx(density) },
             ) {
                 if (state.isEmpty) {
-                    EmptyTimeline(onAddTrack = callbacks.onAddTrack, onAddAudio = callbacks.onAddAudioAsNewTrack)
+                    // An empty project takes dropped files as its first tracks, from the start (feature 011, FR-026).
+                    val drops = remember { AudioDropState(zoneAt = { DropZone.TimelineSpace }, beatsAt = { Beats.Zero }) }
+                    Box(modifier = Modifier.fillMaxSize().audioDropTarget(drops, callbacks.onDrop)) {
+                        EmptyTimeline(onAddTrack = callbacks.onAddTrack, onAddAudio = callbacks.onAddAudioAsNewTrack)
+                        if (drops.hover != null) DropHoverBanner(DropCopy.newTrack, Modifier.align(Alignment.TopCenter))
+                    }
                 } else {
                     TrackList(state = state, layout = layout, callbacks = callbacks)
                 }

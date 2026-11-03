@@ -91,6 +91,7 @@ fun TimelineScreen(
                 onDismissDeleteTrack = viewModel::dismissDeleteTrack,
                 onAddAudio = viewModel::addAudio,
                 onAddAudioAsNewTrack = viewModel::addAudioAsNewTrack,
+                onDrop = viewModel::drop,
                 onExpandTrack = viewModel::expandTrack,
                 onSelectClip = viewModel::selectClip,
                 onClearSelection = viewModel::clearSelection,

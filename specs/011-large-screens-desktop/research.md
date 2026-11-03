@@ -302,6 +302,17 @@ will do. A `DroppedFilesReader` interface turns a `DragAndDropEvent` into `Picke
 **Spec impact**: the folder rule now reads "where the platform lets the app read a dropped folder; otherwise the folder
 is refused by name in the same message" (spec FR-026, planning findings).
 
+**Implementation findings (US5, 2026-11-03)**:
+- iOS: Compose Multiplatform 1.12 keeps the drop session and `positionInRoot` internal on iOS; only the dragged items are
+  public (`DragAndDropEvent.items`, experimental). A drop on the iPad timeline therefore cannot name a lane or a beat:
+  it plans new tracks at the playhead (`AudioDropState` takes an optional position). Recheck with 1.13.
+- Android: `positionInRoot` is internal in common code; the platform `DragEvent`'s x and y are the Compose view's
+  pixels. The app module has no Compose UI dependency, so `AndroidDroppedFilesReader` works on `DragEvent` and a
+  `:shared:ui` adapter (`androidDroppedFilesReader`) bridges Compose's event.
+- adb's shell cannot hand on read access to MediaStore or documents-provider URIs (`am start --grant-read-uri-permission`
+  completes, the app's reads fail), and `input draganddrop` cannot start a DocumentsUI drag on the desktop AVD (touch
+  selects, mouse scrolls). A real drag and a real "open with" stay hand checks (quickstart §5).
+
 ## R13. Window size observation and place-keeping (FR-005, FR-007, SC-003)
 
 **Decision**: No new size plumbing: `LocalWindowInfo`/`currentWindowAdaptiveInfoV2()` already update live on both

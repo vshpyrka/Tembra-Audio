@@ -6,6 +6,7 @@ import audio.tembra.data.metronome.MetronomePreferences
 import audio.tembra.data.projects.ProjectRepository
 import audio.tembra.data.tuner.TunerPreferences
 import audio.tembra.engine.AudioEngine
+import audio.tembra.ui.drop.DroppedFilesReader
 import audio.tembra.ui.platform.AudioFilePicker
 import audio.tembra.ui.platform.BackgroundPlaybackHost
 import audio.tembra.ui.platform.MicrophonePermission
@@ -31,6 +32,7 @@ interface AppGraph : ViewModelGraph {
     val audioFilePicker: AudioFilePicker
     val windowControls: WindowControls
     val trackpadPinchSource: TrackpadPinchSource
+    val droppedFilesReader: DroppedFilesReader
     val projectRepository: ProjectRepository
     val projectSession: ProjectSession
     val appStartup: AppStartup

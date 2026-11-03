@@ -10,6 +10,7 @@ import audio.tembra.core.project.ClipId
 import audio.tembra.core.project.GainDb
 import audio.tembra.core.project.GridSize
 import audio.tembra.core.project.TrackId
+import audio.tembra.ui.drop.DropOutcome
 
 /** The timeline's intents as plain functions (Constitution II); [None] for previews and tests. */
 data class TimelineCallbacks(
@@ -76,6 +77,8 @@ data class TimelineCallbacks(
     val onSubdivision: (Subdivision) -> Unit,
     val onCycleBeat: (Int) -> Unit,
     val onStyle: (MetronomeStyle) -> Unit,
+    // Files dropped on the tracks or the space below (feature 011, spec FR-026)
+    val onDrop: (DropOutcome) -> Unit = {},
 ) {
     companion object {
         val None = TimelineCallbacks(

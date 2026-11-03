@@ -50,11 +50,13 @@ import audio.tembra.data.timeline.TimelinePreferences
 import audio.tembra.engine.TransportSnapshot
 import audio.tembra.engine.perf.PerfSection
 import audio.tembra.engine.perf.PerfTrace
-import audio.tembra.ui.platform.AudioFilePicker
-import audio.tembra.ui.platform.WindowControls
-import audio.tembra.ui.platform.AudioPickRequest
+import audio.tembra.ui.drop.DropOutcome
+import audio.tembra.ui.drop.DropPlan
 import audio.tembra.ui.metronome.TapCaption
+import audio.tembra.ui.platform.AudioFilePicker
+import audio.tembra.ui.platform.AudioPickRequest
 import audio.tembra.ui.platform.AudioPickResult
+import audio.tembra.ui.platform.WindowControls
 import audio.tembra.ui.session.ImportTarget
 import audio.tembra.ui.session.ProjectSession
 import audio.tembra.ui.session.SessionMessage
@@ -64,6 +66,7 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metrox.viewmodel.ViewModelKey
+import kotlin.math.pow
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
@@ -82,7 +85,6 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlin.math.pow
 
 /**
  * The Timeline's state holder (contracts/timeline-screen.md; Constitution II): maps the session's project and the
@@ -322,6 +324,20 @@ class TimelineViewModel(
     }
 
     fun addAudioAsNewTrack() = pickAudio(ImportTarget.NewTracks(insertionPoint()))
+
+    /**
+     * Files dropped on the timeline (feature 011, spec FR-026): the planned target goes to the session, which names the
+     * items the drop left out in its refusal message; with no audio at all, a message says so. Projects' plan never
+     * reaches the timeline.
+     */
+    fun drop(outcome: DropOutcome) {
+        when (val plan = outcome.plan) {
+            is DropPlan.AddToTrack -> session.importAudio(listOf(plan.file), ImportTarget.Track(plan.trackId, plan.atBeats), outcome.skipped)
+            is DropPlan.NewTracks -> session.importAudio(plan.files, ImportTarget.NewTracks(plan.atBeats), outcome.skipped)
+            is DropPlan.NewProject -> session.importAudio(plan.files, ImportTarget.NewTracks(insertionPoint()), outcome.skipped)
+            DropPlan.Nothing -> local.trySend(TimelineMessage.NoAudioFound(outcome.skipped))
+        }
+    }
 
     // --- Clips -------------------------------------------------------------------------------------------------------
 
