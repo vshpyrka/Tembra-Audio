@@ -21,7 +21,7 @@ REPORT = os.path.join(FIXTURES, "App Thinning Size Report.txt")
 def cfg(tmp_path):
     root = tmp_path / "app"
     (root / "iosApp" / "Configuration").mkdir(parents=True)
-    (root / "iosApp" / "Configuration" / "Config.xcconfig").write_text("TEAM_ID=P5QJJ5Y5V7\nBUNDLE_ID=audio.tembra.app\n")
+    (root / "iosApp" / "Configuration" / "Config.xcconfig").write_text("TEAM_ID=P5QJJ5Y5V7\nBUNDLE_ID=com.tembraaudio\n")
     shutil.copy(DEFAULT_CONFIG_PATH, root / "tracepulse.yml")
     return load_config(str(root / "tracepulse.yml"))
 

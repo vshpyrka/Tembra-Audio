@@ -34,6 +34,10 @@ Editable `.excalidraw` source plus rendered `.png` for each:
 3. `03-tuner-pipeline` — mic to pitch readout
 4. `04-metronome` — drift-free scheduling model
 
+## Release
+
+- **[google-play-publishing.md](google-play-publishing.md)** — how a merge to `main` reaches Google Play's closed testing track: keys and credentials, one-time setup, troubleshooting.
+
 ## Reports (`reports/`)
 
 - `competitor-native-audio-analysis.md` — the competitor binary analysis (source of truth).

@@ -112,7 +112,7 @@ class DeviceEntry:
 
 @dataclass
 class Android:
-    package: str = "audio.tembra.app"
+    package: str = "com.tembraaudio"
     activity: str = "audio.tembra.android.MainActivity"
     build_type: str = "perf"
     benchmarks_module: str = ":perf-benchmarks"
@@ -125,7 +125,7 @@ class IOS:
     project: str = "iosApp/iosApp.xcodeproj"
     scheme: str = "TembraPerf"
     configuration: str = "Perf"
-    bundle_id: str = "audio.tembra.app"
+    bundle_id: str = "com.tembraaudio"
     test_target: str = "TembraPerfTests"
     size_variant: str = "iPhone14,7"
 

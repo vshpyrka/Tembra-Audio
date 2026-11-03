@@ -341,10 +341,10 @@ forced optimisation pass, whether the app is *optimised* from it (`speed-profile
 
 ```
 adb install -r -t androidApp/build/outputs/apk/perf/androidApp-perf.apk
-adb shell am start -W -n audio.tembra.app/audio.tembra.android.MainActivity ; sleep 5
-adb shell am broadcast -a androidx.profileinstaller.action.INSTALL_PROFILE -n audio.tembra.app/androidx.profileinstaller.ProfileInstallReceiver
-adb shell cmd package compile -r bg-dexopt audio.tembra.app
-adb shell dumpsys package dexopt | grep -A2 audio.tembra.app        # expect status=speed-profile
+adb shell am start -W -n com.tembraaudio/audio.tembra.android.MainActivity ; sleep 5
+adb shell am broadcast -a androidx.profileinstaller.action.INSTALL_PROFILE -n com.tembraaudio/androidx.profileinstaller.ProfileInstallReceiver
+adb shell cmd package compile -r bg-dexopt com.tembraaudio
+adb shell dumpsys package dexopt | grep -A2 com.tembraaudio        # expect status=speed-profile
 ```
 
 `--build-type release` inspects the unsigned release APK only (no signing config, so nothing is installed).
