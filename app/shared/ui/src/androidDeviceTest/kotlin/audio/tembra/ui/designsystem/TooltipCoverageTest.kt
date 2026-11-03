@@ -78,8 +78,9 @@ class TooltipCoverageTest {
         !config.getOrNull(SemanticsProperties.Text).isNullOrEmpty() || children.any { it.showsText() }
 
     private fun ComposeUiTest.assertEveryIconOnlyControlHasATooltip(screen: String, content: @Composable () -> Unit) {
-        // Clear of the top of the test window (the iPad keeps its status bar there), so a tooltip has room above a toolbar.
-        setContent { TembraTheme { Box(Modifier.requiredSize(1200.dp, 900.dp).padding(top = 100.dp)) { content() } } }
+        // Inside a default desktop window (1382 × 864 dp less its caption on Tembra_Desktop_API37), so the transport bar at
+        // the foot can be hovered; clear of the window's top so a tooltip has room above a toolbar.
+        setContent { TembraTheme { Box(Modifier.requiredSize(1200.dp, 780.dp).padding(top = 60.dp)) { content() } } }
         waitForIdle()
         val controls = onAllNodes(iconOnly, useUnmergedTree = true).fetchSemanticsNodes().map { it.config[SemanticsProperties.ContentDescription].first() }
         val missing = mutableListOf<String>()

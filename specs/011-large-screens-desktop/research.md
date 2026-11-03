@@ -403,6 +403,12 @@ is in multi-window or free-form mode; on iOS the binding reports unavailable (iP
 window controls). The Timeline's overflow menu shows "Full screen" or "Exit full screen" while available. Desktop
 quality guideline Request_Fullscreen_Mode.
 
+**Finding (lanes, 2026-11-03), full screen on Android 17**: with window animations off (as `am instrument
+--no-window-animation`, AGP's connected tests, run it), the window shell approves `requestFullscreenMode(ENTER)` and
+carries out the transition, yet the app's callback receives `onError("Fullscreen request denied by system policy")`.
+`AndroidWindowControls` therefore lets the window's mode decide a refused enter request: full screen if the activity has
+left multi-window mode when the error arrives or at the next multi-window change.
+
 ## R22. Opening audio files from the Files app (FR-026a)
 
 **Decision**: Android: an `<intent-filter>` on `MainActivity` for `android.intent.action.VIEW` (category DEFAULT) with

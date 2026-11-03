@@ -25,8 +25,17 @@ def test_journey_of_benchmark_class():
     assert journey_of("audio.tembra.perf.MetronomeJourneyBenchmark") == "metronome"
     assert journey_of("audio.tembra.perf.TimelineJourneyBenchmark") == "timeline"
     assert journey_of("audio.tembra.perf.StressJourneyBenchmark") == "stress"
+    assert journey_of("audio.tembra.perf.WindowingJourneyBenchmark") == "windowing"
     with pytest.raises(CollectError):
         journey_of("audio.tembra.perf.ScrollBenchmark")
+
+
+def test_a_windowing_round_needs_its_three_sections():
+    # Feature 011 (contracts/perf-instrumentation.md): the trial round fails when a section is absent from the trace.
+    from tracepulse.collect_android import _REQUIRED
+    for key in ("section.shell.windowRelayout.sum_ms", "section.shell.shortcutNavigate.sum_ms",
+                "section.timeline.contextMenu.sum_ms"):
+        assert key in _REQUIRED["windowing"]
 
 
 def test_collect_round_yields_one_journey_per_class_with_twenty_samples(cfg):

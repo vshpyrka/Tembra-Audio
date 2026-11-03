@@ -17,9 +17,10 @@ class FullScreenTest {
 
     private var playing = false
 
+    /** Stops the transport if it still plays (the button toggles; the demo also stops at its end). */
     @After
     fun stopPlaying() {
-        if (playing) DesktopApp.tap(PerfAnchors.TRANSPORT_PLAY)
+        if (playing && DesktopApp.transport().playing) DesktopApp.tap(PerfAnchors.TRANSPORT_PLAY)
     }
 
     @Test
@@ -31,6 +32,9 @@ class FullScreenTest {
         val windowed = DesktopWindow.windowBoundsPx()
         DesktopApp.tap(PerfAnchors.NAV_TIMELINE)
         DesktopApp.find(PerfAnchors.TIMELINE_CLIP_FIRST)
+        // From the start: the session keeps the playhead where an earlier test left it, and a start in the demo's last
+        // seconds is refused ("Could not start playback").
+        DesktopApp.tap(PerfAnchors.TRANSPORT_SKIP_START)
         DesktopApp.tap(PerfAnchors.TRANSPORT_PLAY)
         playing = true
         DesktopApp.waitUntil("the transport to play") { DesktopApp.transport().playing }

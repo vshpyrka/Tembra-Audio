@@ -23,6 +23,7 @@ _TEST_JOURNEYS = {
     "MetronomePerfTests": "metronome",
     "TimelinePerfTests": "timeline",
     "StressPerfTests": "stress",
+    "WindowingPerfTests": "windowing",
 }
 _STARTUP_TESTS = {"testColdLaunchToFirstFrame": "ttid", "testColdLaunchToResponsive": "ttfd"}
 # `XCTMetric_OSSignpost-<family>.<camelCase>.<suffix>` is how xcresulttool names a signpost metric
@@ -169,7 +170,7 @@ def collect_round(metrics_json_path: str, cfg: Config, simulator: bool,
         raise CollectError(f"no journey test with metrics in {metrics_json_path}")
     results = [JourneyResult(journey=j, iterations=max(len(m.samples) for m in ms.values()), metrics=ms)
                for j, ms in journeys.items()]
-    order = {"startup": 0, "tuner": 1, "metronome": 2, "timeline": 3, "stress": 4}
+    order = {"startup": 0, "tuner": 1, "metronome": 2, "timeline": 3, "stress": 4, "windowing": 5}
     results.sort(key=lambda r: order.get(r.journey, 9))
     return CollectedRound(journeys=results, badges=["simulator"] if simulator else [], thermal_seconds=0.0)
 

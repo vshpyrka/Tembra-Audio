@@ -551,33 +551,53 @@ guideline self-check (quickstart §6) records a pass for every test listed in SC
 
 ## Phase 9: Performance instrumentation (cross-cutting, constitution)
 
-- [ ] T126 [P] Add anchors `METRONOME_START`, `TIMELINE_FIRST_CLIP` (if absent), `PROJECTS_SEARCH`, `SHORTCUT_SHEET`
+- [X] T126 [P] Add anchors `METRONOME_START`, `TIMELINE_FIRST_CLIP` (if absent), `PROJECTS_SEARCH`, `SHORTCUT_SHEET`
   to `UI/perf/PerfAnchors.kt`, tag the controls, and extend `CTEST/perf/PerfAnchorsCatalogueTest.kt`
-- [ ] T127 Create the Android `windowing` journey `app/perf-benchmarks/src/main/kotlin/audio/tembra/perf/journeys/WindowingJourney.kt`
+  - Done 2026-11-03: `METRONOME_START_STOP`, `TIMELINE_CLIP_FIRST` and `PROJECTS_SEARCH` existed; added
+    `TIMELINE_CLIP_MENU_FIRST` (the right-clicked clip's menu) and `SHORTCUT_SHEET`, mirrored in both drivers.
+- [X] T127 Create the Android `windowing` journey `app/perf-benchmarks/src/main/kotlin/audio/tembra/perf/journeys/WindowingJourney.kt`
   and `WindowingJourneyBenchmark.kt` (contracts/perf-instrumentation.md steps; `am task resize` on freeform devices,
   rotation on phones)
-- [ ] T128 [P] Create the iOS journey `app/iosApp/TembraPerfTests/Journeys/WindowingJourney.swift` (rotation as the
+  - Done 2026-11-03: the pause comes before Ctrl+2/Ctrl+1 (leaving a playing Timeline would ask the stop-and-leave
+    question). A dry run on Tembra_Desktop_API37 went through every step; Macrobenchmark cannot write its trace from the
+    desktop session's user 10 there (`EACCES` under `/data/local/tmp`), so rounds stay on the phones.
+- [X] T128 [P] Create the iOS journey `app/iosApp/TembraPerfTests/Journeys/WindowingJourney.swift` (rotation as the
   window change, `rightClick()`, `typeKey(_:modifierFlags: .command)`; iPhone falls back to rotation and keys)
+  - Done 2026-11-03: iPad uses `rightClick()` and ⌘2/⌘1; an iPhone a long press and the navigation items.
 - [ ] T129 Add `windowing` to `journeys` in `app/tracepulse.yml` and to the pipeline's journey list; run one trial round
   on the Pixel 6 Pro and the iPhone 14; the round fails if `shell.windowRelayout`, `shell.shortcutNavigate` or
   `timeline.contextMenu` is absent from either trace, or if any xrun is recorded (this is the sections' test:
   `PerfTrace` records only in measurement builds through a sink internal to `:shared:engine`)
-- [ ] T130 Compare the startup family with `tracepulse profile compare`; regenerate and commit the baseline profile
+  - 2026-11-03, Pixel 6 Pro (`--journeys windowing --no-publish`, round 20261103T183547Z_011-large-screens-trial):
+    succeeded, 20 iterations, gate within limits; per iteration `shell.windowRelayout` ×6 (≈40 ms in all),
+    `shell.shortcutNavigate` ×2 (≈143 ms), `timeline.contextMenu` ×1 (≈0.15 ms); the Android collector now refuses a
+    windowing round without the three sections. The pipeline collects audio counters for the stress journey only, so
+    xruns during this journey are asserted by `WindowResizeAudioTest` (zero xruns through fifty window changes). iOS:
+    the journey ran its 20 measured iterations on the iPad simulator (871 s); the iPhone 14 round remains.
+- [X] T130 Compare the startup family with `tracepulse profile compare`; regenerate and commit the baseline profile
   (`app/androidApp/src/main/generated/baselineProfiles/`) only if it regresses beyond its gate
+  - Done 2026-11-03, Pixel 6 Pro (comparison 20261103T190645Z, `--journeys startup`, 20 iterations per state): the
+    committed profile still pays: TTID 259.5 → 196.7 ms (−24.2 %), TTFD 379.9 → 274.3 ms (−27.8 %), both confirmed; no
+    regeneration (`BaselineProfileCoverageTest` passes in the host lane).
 
 ---
 
 ## Phase 10: Polish & Cross-Cutting Concerns
 
-- [ ] T131 [P] Add README rows for the shortcut catalogue, drop import and open with, pointer helpers, scrollbars,
+- [X] T131 [P] Add README rows for the shortcut catalogue, drop import and open with, pointer helpers, scrollbars,
   window controls and the desktop lanes in `app/README.md` (module map and "where does X go")
-- [ ] T132 [P] Add the desktop emulator commands (`Tembra_Desktop_API37` primary, `Tembra_Desktop_API34`) to `CLAUDE.md`'s
+- [X] T132 [P] Add the desktop emulator commands (`Tembra_Desktop_API37` primary, `Tembra_Desktop_API34`) to `CLAUDE.md`'s
   command list and correct its build-order note (the mixer is now feature 012)
+  - Done 2026-11-03: the constitution still names the mixer 011; its amendment goes through `/speckit-constitution`.
 - [ ] T133 Screenshots for UI verification (constitution): compact and expanded widths on Android and the iOS
   simulator, plus desktop-window captures on `Tembra_Desktop_API37` (windowed and full screen) and an iPad window, into
   `specs/011-large-screens-desktop/screenshots/` with `NOTES.md`
-- [ ] T134 Produce the Compose compiler report (`-PcomposeReports=true`) and explain any new non-skippable composable in
+  - 2026-11-03, in progress: Tembra_Desktop_API37 windowed and full screen (`t133-api37-timeline-*.png`); the phone,
+    tablet and iPad captures follow the lanes.
+- [X] T134 Produce the Compose compiler report (`-PcomposeReports=true`) and explain any new non-skippable composable in
   `specs/011-large-screens-desktop/screenshots/NOTES.md`
+  - Done 2026-11-03: every restartable composable of `:shared:ui` (204) is skippable; nothing new to explain
+    (`screenshots/NOTES.md`).
 - [ ] T135 Run every lane on every attached target: `checkAndroidHost`, `checkIos` (iPhone and iPad simulators),
   `checkAndroidDevice` and `:androidApp:connectedDebugAndroidTest` on `emulator-5582` (Desktop (Preview)),
   `:androidApp:connectedDebugAndroidTest` on `emulator-5580` (Android 14 desktop), the tablet and the phones,

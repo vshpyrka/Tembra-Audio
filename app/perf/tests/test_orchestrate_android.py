@@ -212,17 +212,19 @@ def test_round_runs_every_step_in_order(cfg, tmp_path):
     stop = runner.index_of("am", "force-stop", "com.tembraaudio")
     assert gradle < uninstall < install_app < install_test < warm < stop
     instruments = [c for c in runner.commands() if any("am instrument" in part for part in c)]
-    assert len(instruments) == 5
-    for journey_class in ("StartupBenchmark", "TunerJourneyBenchmark", "MetronomeJourneyBenchmark", "TimelineJourneyBenchmark", "StressJourneyBenchmark"):
+    assert len(instruments) == 6
+    for journey_class in ("StartupBenchmark", "TunerJourneyBenchmark", "MetronomeJourneyBenchmark", "TimelineJourneyBenchmark", "StressJourneyBenchmark",
+                          "WindowingJourneyBenchmark"):
         assert any(journey_class in " ".join(c) and "additionalTestOutputDir" in " ".join(c) for c in instruments), journey_class
     assert warm < runner.index_of("am instrument")
-    assert runner.count("adb", "-s", SERIAL, "pull") == 5
+    assert runner.count("adb", "-s", SERIAL, "pull") == 6
+    # The fixture's benchmark output predates feature 011's windowing journey: six classes run, five report.
     assert [j.journey for j in outcome.journeys] == ["startup", "tuner", "metronome", "timeline", "stress"]
     assert outcome.app_size_bytes == 1234
     assert outcome.badges == [] and outcome.checks and all(c["passed"] for c in outcome.checks)
     assert outcome.fingerprint["os_version"] == "17"
     assert {a["kind"] for a in outcome.artifacts} >= {"benchmark_json", "trace", "gradle_log"}
-    assert clock.sleeps.count(120) == 4, "a cooldown between classes, never after the last one"
+    assert clock.sleeps.count(120) == 5, "a cooldown between classes, never after the last one"
 
 
 def test_a_fresh_install_is_granted_the_microphone_and_notifications_before_the_warm_up(cfg, tmp_path):

@@ -55,6 +55,10 @@ object Anchors {
     const val TIMELINE_OVERVIEW = "timeline.overview"
     const val TIMELINE_OVERVIEW_WINDOW = "timeline.overview.window"
 
+    // Feature 011 (contracts/perf-instrumentation.md, journey `windowing`): the first clip's menu and the shortcut sheet.
+    const val TIMELINE_CLIP_MENU_FIRST = "timeline.clip.first.menu"
+    const val SHORTCUT_SHEET = "shortcuts.sheet"
+
     /**
      * A 1 dp marker node the Timeline shows once every visible overview is built (the `stateDescription` "ready" the
      * contract names is not reachable through UiAutomator's selectors; XCUITest reads it as the root's `value`).

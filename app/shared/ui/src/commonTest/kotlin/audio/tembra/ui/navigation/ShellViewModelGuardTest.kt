@@ -55,6 +55,15 @@ class ShellViewModelGuardTest {
     }
 
     @Test
+    fun aNewShellTellsTheSessionTheTimelineShows() = runTest(dispatcher) {
+        // A new activity's shell starts on the Timeline: the session takes the device back from the standalone
+        // metronome a previous window left it with, or Play cannot open the transport (desktop emulator, 2026-11-03).
+        val fresh = FakePlaybackGuard(isPlaying = false)
+        ShellViewModel(fresh, FakeSessionActivity(), NoOpenedFiles, FakeProjectFromAudio())
+        assertEquals(listOf(true), fresh.hostVisibility)
+    }
+
+    @Test
     fun keepPlayingStaysOnTheTimeline() = runTest(dispatcher) {
         viewModel.select(Destination.Tuner)
         runCurrent()
