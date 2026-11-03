@@ -135,6 +135,8 @@ dependencies {
     // Feature 011's desktop tests (androidTest/.../desktop/: window resize, minimum, full screen, focus return) read the
     // free-form window's bounds with WindowMetricsCalculator.
     androidTestImplementation(libs.androidx.window)
+    // PointerShapesDesktopTest starts a long import through the session, which takes beats from the domain module.
+    androidTestImplementation(project(":shared:core"))
     // BaselineProfileCoverageTest (feature 008, FR-011): a JVM test over two text files of this module. The JUnit 4
     // variant is named because the Kotlin plugin's framework inference covers KMP commonTest, not a plain Android
     // module's unit tests (`kotlin.test.Test` stayed unresolved with `kotlin-test` alone).

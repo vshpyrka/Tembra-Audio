@@ -5,7 +5,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +12,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -39,6 +39,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -153,7 +155,7 @@ private fun SoundDropdown(
             Box(
                 modifier = Modifier
                     .testTag(testTag)
-                    .clickable(interactionSource = source, indication = null, role = Role.Button) { open = true }
+                    .pointerHoverIcon(PointerIcon.Hand).clickable(interactionSource = source, indication = null, role = Role.Button) { open = true }
                     .semantics {
                         contentDescription = MetronomeCopy.clickSound(name)
                         stateDescription = if (open) MetronomeCopy.expanded else MetronomeCopy.collapsed
@@ -387,7 +389,7 @@ private fun ReplaceCustomButton(onReplace: () -> Unit, testTag: String, modifier
                 Box(
                     modifier = Modifier
                         .testTag(testTag)
-                        .clickable(interactionSource = source, indication = null, role = Role.Button, onClick = onReplace)
+                        .pointerHoverIcon(PointerIcon.Hand).clickable(interactionSource = source, indication = null, role = Role.Button, onClick = onReplace)
                         .semantics { contentDescription = MetronomeCopy.replaceCustomSound }
                         .minimumInteractiveComponentSize()
                         .drawBehind { if (focused) drawFocusRing(ringColor, ring.toPx(), CornerRadius(size.minDimension / 2)) },

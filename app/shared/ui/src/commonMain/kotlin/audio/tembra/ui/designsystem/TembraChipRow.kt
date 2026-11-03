@@ -30,6 +30,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -162,7 +164,8 @@ private fun RowScope.Chip(
             .weight(1f)
             .testTagIfSet(testTag)
             .focusIdentity(testTag)
-            .selectable(
+            .hoverArea(hovered, TembraShapes.small)
+            .pointerHoverIcon(PointerIcon.Hand).selectable(
                 selected = selected,
                 interactionSource = interactionSource,
                 indication = null,

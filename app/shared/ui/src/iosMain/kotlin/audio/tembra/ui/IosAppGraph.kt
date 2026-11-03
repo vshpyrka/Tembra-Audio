@@ -10,7 +10,9 @@ import audio.tembra.ui.platform.BackgroundPlaybackHost
 import audio.tembra.ui.platform.IosAudioFilePicker
 import audio.tembra.ui.platform.IosBackgroundPlaybackHost
 import audio.tembra.ui.platform.IosMicrophonePermission
+import audio.tembra.ui.platform.IosTrackpadPinchSource
 import audio.tembra.ui.platform.IosWindowControls
+import audio.tembra.ui.platform.TrackpadPinchSource
 import audio.tembra.ui.platform.WindowControls
 import audio.tembra.ui.platform.MicrophonePermission
 import dev.zacsweers.metro.AppScope
@@ -48,4 +50,15 @@ interface IosAppGraph : AppGraph {
     @Provides
     @SingleIn(AppScope::class)
     fun provideWindowControls(): WindowControls = IosWindowControls()
+
+    /** The shell's trackpad pinch bridge reports here (feature 011, research R9); deleted with Compose 1.13. */
+    @Provides
+    @SingleIn(AppScope::class)
+    fun provideIosTrackpadPinchSource(): IosTrackpadPinchSource = IosTrackpadPinchSource()
+
+    @Provides
+    fun provideTrackpadPinchSource(source: IosTrackpadPinchSource): TrackpadPinchSource = source
+
+    /** The shell's bridge reaches the source through this. */
+    val iosTrackpadPinchSource: IosTrackpadPinchSource
 }

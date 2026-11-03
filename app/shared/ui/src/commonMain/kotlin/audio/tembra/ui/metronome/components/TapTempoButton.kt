@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import audio.tembra.ui.designsystem.stepBasedFitFirst
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,6 +32,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
@@ -45,6 +46,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import audio.tembra.ui.designsystem.drawFocusRing
+import audio.tembra.ui.designsystem.stepBasedFitFirst
 import audio.tembra.ui.metronome.MetronomeCopy
 import audio.tembra.ui.theme.TembraIcon
 import audio.tembra.ui.theme.TembraIcons
@@ -105,7 +107,7 @@ internal fun TapTempoButton(
                 if (alpha > 0f) drawRect(flashColor, alpha = MetronomeDefaults.TAP_FLASH_ALPHA * alpha)
                 if (focused) drawFocusRing(ringColor, ring.toPx(), CornerRadius(TembraShapes.medium.toPx()))
             }
-            .clickable(interactionSource = source, indication = null, role = Role.Button) {
+            .pointerHoverIcon(PointerIcon.Hand).clickable(interactionSource = source, indication = null, role = Role.Button) {
                 taps++
                 scope.launch { withFrameNanos { currentOnTap(it) } }
             }

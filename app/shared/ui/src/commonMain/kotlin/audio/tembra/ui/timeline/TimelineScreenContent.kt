@@ -16,18 +16,27 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import audio.tembra.core.project.TempoMap
+import audio.tembra.engine.perf.PerfSection
+import audio.tembra.engine.perf.PerfTrace
 import audio.tembra.ui.designsystem.FocusMemory
 import audio.tembra.ui.designsystem.focusRestoringRoot
+import audio.tembra.ui.platform.LocalTrackpadPinchSource
 import audio.tembra.ui.session.TransportTelemetry
 import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.ui.timeline.components.DeleteTrackDialog
@@ -67,6 +76,7 @@ internal fun TimelineScreenContent(
 ) {
     val spacing = TembraTheme.spacing
     val daw = TembraTheme.daw
+    val density = LocalDensity.current
     val tempoMap = TempoMap(state.tempo, state.timeSignature)
     val ready = state.isFirstContentReady
     val transportHeight = if (layout == TimelineLayout.Expanded) spacing.transportHeightExpanded else spacing.transportHeightCompact
@@ -83,6 +93,17 @@ internal fun TimelineScreenContent(
     }
     // Focus returns to the same track or control after a window change rebuilds the rows (feature 011, FR-007).
     val focusMemory = remember { FocusMemory() }
+    // The iPad's trackpad pinch arrives from the shell's bridge in root pixels (feature 011, research R9): it zooms
+    // around its focus, measured from the lanes' left edge (written at layout, read only by the collector).
+    val lanesLeft = remember { mutableFloatStateOf(0f) }
+    val pinchSource = LocalTrackpadPinchSource.current
+    val onZoomAround by rememberUpdatedState(callbacks.onZoomAround)
+    LaunchedEffect(pinchSource) {
+        pinchSource.pinches.collect { pinch ->
+            val x = pinch.focus.x - lanesLeft.floatValue
+            if (x >= 0f) PerfTrace.animation(PerfSection.TIMELINE_ZOOM) { onZoomAround(x.toDouble(), pinch.scale.toDouble()) }
+        }
+    }
     val transportCallbacks = TransportCallbacks(
         onPlayPause = callbacks.onPlayPause,
         onSkipToStart = callbacks.onSkipToStart,
@@ -137,7 +158,12 @@ internal fun TimelineScreenContent(
                     null
                 },
             )
-            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .onGloballyPositioned { coordinates -> lanesLeft.floatValue = coordinates.positionInRoot().x + headerColumn.toPx(density) },
+            ) {
                 if (state.isEmpty) {
                     EmptyTimeline(onAddTrack = callbacks.onAddTrack, onAddAudio = callbacks.onAddAudioAsNewTrack)
                 } else {
@@ -210,3 +236,5 @@ internal fun TimelineScreenContent(
 
 internal const val READY = "ready"
 internal const val LOADING = "loading"
+
+private fun androidx.compose.ui.unit.Dp.toPx(density: androidx.compose.ui.unit.Density): Float = with(density) { toPx() }

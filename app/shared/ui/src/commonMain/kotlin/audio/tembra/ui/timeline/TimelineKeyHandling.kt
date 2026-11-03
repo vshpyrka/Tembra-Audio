@@ -17,7 +17,9 @@ import audio.tembra.core.project.Beats
  * click or traversal, consume exactly the handled event). Events bubble up from the focused control, so a text
  * field keeps its characters and a focused button its Space; what reaches the root: Space play/pause, Home skip to
  * start, ←/→ one grid step (a bar when the grid is off), Shift+←/→ one bar, S split, Delete/Backspace delete the
- * selected clip, Ctrl/⌘+Z undo, Ctrl/⌘+Shift+Z and Ctrl/⌘+Y redo, +/− zoom, M and O mute and solo the selected track.
+ * selected clip, Ctrl/⌘+Z undo, Ctrl/⌘+Shift+Z and Ctrl/⌘+Y redo, +/− zoom, M and O mute and solo the selected track;
+ * Escape cancels a clip drag in progress, which returns the clip (feature 011, spec FR-013), and is otherwise left to the
+ * shell.
  */
 internal fun Modifier.timelineKeyHandling(state: () -> TimelineUiState, callbacks: TimelineCallbacks): Modifier =
     onKeyEvent { event -> handleTimelineKey(event, state(), callbacks) }
@@ -27,6 +29,7 @@ internal fun handleTimelineKey(event: KeyEvent, state: TimelineUiState, callback
     val command = event.isCtrlPressed || event.isMetaPressed
     val step = if (event.isShiftPressed) Beats(state.timeSignature.beats.toDouble()) else gridStep(state)
     return when (event.key) {
+        Key.Escape if state.drag != null -> consumed { callbacks.onClipDragCancel() }
         Key.Spacebar -> consumed { callbacks.onPlayPause() }
         Key.MoveHome -> consumed { callbacks.onSkipToStart() }
         Key.DirectionLeft -> consumed { callbacks.onSeek((state.positionBeats - step).coerceAtLeastZero()) }

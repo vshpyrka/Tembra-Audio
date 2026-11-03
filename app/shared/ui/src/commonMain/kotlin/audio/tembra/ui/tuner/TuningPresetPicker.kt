@@ -25,6 +25,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -61,7 +63,7 @@ internal fun TuningPresetPicker(current: TuningPreset, presets: List<TuningPrese
                 .heightIn(min = spacing.touchTargetMin)
                 .background(colors.surfaceContainerLow, shape)
                 .border(if (focused) spacing.focusRingWidth else spacing.seam, border, shape)
-                .clickable(interactionSource = interactionSource, indication = null, role = Role.Button) { open = true }
+                .pointerHoverIcon(PointerIcon.Hand).clickable(interactionSource = interactionSource, indication = null, role = Role.Button) { open = true }
                 .semantics { contentDescription = "${TunerCopy.tuningPreset}, ${current.name}" }
                 .padding(horizontal = spacing.md, vertical = spacing.sm),
             horizontalArrangement = Arrangement.spacedBy(spacing.sm),

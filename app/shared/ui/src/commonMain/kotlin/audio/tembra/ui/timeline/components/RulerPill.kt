@@ -19,6 +19,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -58,7 +60,7 @@ internal fun RulerPill(
         Box(
             modifier = modifier
                 .then(if (testTag != null) Modifier.testTag(testTag) else Modifier)
-                .clickable(interactionSource = source, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
+                .pointerHoverIcon(PointerIcon.Hand).clickable(interactionSource = source, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
                 .semantics {
                     contentDescription = description
                     if (!enabled) disabled()

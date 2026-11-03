@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -23,6 +22,7 @@ import audio.tembra.core.tuner.GuitarStringCount
 import audio.tembra.core.tuner.TargetString
 import audio.tembra.core.tuner.TuningPreset
 import audio.tembra.ui.designsystem.TembraGradientCard
+import audio.tembra.ui.designsystem.verticalScrollWithScrollbar
 import audio.tembra.ui.theme.TembraTheme
 
 /**
@@ -56,7 +56,7 @@ internal fun ByEarPane(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
+                    .verticalScrollWithScrollbar(rememberScrollState())
                     .padding(spacing.md),
                 verticalArrangement = Arrangement.spacedBy(spacing.md),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -105,7 +105,7 @@ private fun WideByEarCard(
     TembraGradientCard(glow = TembraTheme.gradients.byEarWide, modifier = modifier, testTag = "tuner.byEar") {
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             val viewport = maxHeight - spacing.md * 2
-            Box(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(spacing.md)) {
+            Box(modifier = Modifier.fillMaxSize().verticalScrollWithScrollbar(rememberScrollState()).padding(spacing.md)) {
                 FittedByEarBlock(
                     viewportHeight = viewport,
                     gap = spacing.md,
@@ -210,7 +210,7 @@ private fun FilledStringCards(strings: List<TargetString>, playingIndex: Int?, l
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+                .verticalScrollWithScrollbar(rememberScrollState())
                 .padding(spacing.md),
         ) {
             StringCardGrid(

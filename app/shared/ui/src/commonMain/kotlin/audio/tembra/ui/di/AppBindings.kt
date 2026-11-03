@@ -23,6 +23,7 @@ import audio.tembra.engine.TunerAudio
 import audio.tembra.ui.projects.ComposeDemoAudioSource
 import audio.tembra.ui.session.PlaybackGuard
 import audio.tembra.ui.session.ProjectSession
+import audio.tembra.ui.session.SessionActivity
 import audio.tembra.ui.tuner.ComposeResourceReader
 import audio.tembra.ui.tuner.ReferenceSoundRepository
 import dev.zacsweers.metro.AppScope
@@ -116,6 +117,10 @@ object AppBindings {
     /** The navigation shell asks the session before leaving a playing timeline (spec FR-008a). */
     @Provides
     fun providePlaybackGuard(session: ProjectSession): PlaybackGuard = session
+
+    /** The shell shows the busy pointer while the session imports (feature 011, spec FR-015a). */
+    @Provides
+    fun provideSessionActivity(session: ProjectSession): SessionActivity = session
 
     /** Drop-in recordings or the synthesized tone (research R5). */
     @Provides

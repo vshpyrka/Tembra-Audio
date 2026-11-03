@@ -1,6 +1,7 @@
 package audio.tembra.ui.transport
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
@@ -15,6 +16,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -73,6 +76,9 @@ internal fun TransportButton(
                     if (focused) drawFocusRing(ringColor, ring.toPx(), CornerRadius(radius))
                 }
                 .focusIdentity(testTag)
+                // A disabled clickable reports no hover: a disabled button tracks it itself, so it still names itself (FR-011).
+                .then(if (enabled) Modifier else Modifier.hoverable(source))
+                .pointerHoverIcon(PointerIcon.Hand)
                 .clickable(interactionSource = source, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
                 .semantics {
                     contentDescription = description

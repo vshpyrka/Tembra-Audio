@@ -2,6 +2,7 @@ package audio.tembra.ui.projects
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -30,8 +32,10 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import audio.tembra.ui.designsystem.EmptyState
 import audio.tembra.ui.designsystem.FocusMemory
+import audio.tembra.ui.designsystem.ScrollbarAdapter
 import audio.tembra.ui.designsystem.TembraPill
 import audio.tembra.ui.designsystem.focusRestoringRoot
+import audio.tembra.ui.designsystem.tembraScrollbar
 import audio.tembra.ui.projects.components.DeleteProjectDialog
 import audio.tembra.ui.projects.components.DescribeProjectDialog
 import audio.tembra.ui.projects.components.KeyPickerDialog
@@ -65,6 +69,7 @@ internal fun ProjectsScreenContent(
         if (state.loaded) rootFocus.requestFocus()
     }
     val focusMemory = remember { FocusMemory() }
+    val gridState = rememberLazyGridState()
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -101,7 +106,12 @@ internal fun ProjectsScreenContent(
                 state.noMatch -> EmptyState(ProjectsCopy.noMatch, modifier = Modifier.testTag(ProjectsTestTags.NO_MATCH))
                 else -> LazyVerticalGrid(
                     columns = GridCells.Fixed(layout.columns),
-                    modifier = Modifier.fillMaxSize().testTag(ProjectsTestTags.GRID),
+                    state = gridState,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .testTag(ProjectsTestTags.GRID)
+                        // A scrollbar while a mouse or trackpad scrolls the library (feature 011, spec FR-014a).
+                        .tembraScrollbar(ScrollbarAdapter(gridState, layout.columns), Orientation.Vertical),
                     horizontalArrangement = Arrangement.spacedBy(spacing.md),
                     verticalArrangement = Arrangement.spacedBy(spacing.md),
                 ) {

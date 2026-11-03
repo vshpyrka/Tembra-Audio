@@ -17,14 +17,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
@@ -45,6 +44,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
@@ -64,6 +65,7 @@ import audio.tembra.ui.designsystem.FoldSplit
 import audio.tembra.ui.designsystem.FoldSplitRow
 import audio.tembra.ui.designsystem.TembraGradientCard
 import audio.tembra.ui.designsystem.focusRestoringRoot
+import audio.tembra.ui.designsystem.verticalScrollWithScrollbar
 import audio.tembra.ui.metronome.components.AccentCells
 import audio.tembra.ui.metronome.components.AccentCellsForm
 import audio.tembra.ui.metronome.components.ClickSoundPicker
@@ -159,7 +161,7 @@ private fun StackedMetronome(state: MetronomeUiState, callbacks: MetronomeCallba
         SettingsOverDial(
             gap = spacing.md,
             minDialCardHeight = compactDialMin() + dialCardChrome(),
-            modifier = Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()),
+            modifier = Modifier.fillMaxWidth().weight(1f).verticalScrollWithScrollbar(rememberScrollState()),
             settings = {
                 MetronomeSettingsPanel(
                     state = state,
@@ -237,7 +239,7 @@ private fun PocketMetronome(state: MetronomeUiState, callbacks: MetronomeCallbac
                     pocketCells = !tier.cells,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .verticalScroll(rememberScrollState())
+                        .verticalScrollWithScrollbar(rememberScrollState())
                         .padding(start = spacing.pageMargin, end = spacing.pageMargin, bottom = spacing.lg)
                         .testTag(SETTINGS_TAG),
                 )
@@ -344,7 +346,7 @@ private fun SettingsButton(onClick: () -> Unit, modifier: Modifier) {
             .size(TembraTheme.spacing.touchTargetMin)
             .clip(CircleShape)
             .background(colors.surfaceContainerHigh)
-            .clickable(role = Role.Button, onClickLabel = MetronomeCopy.metronomeSettings, onClick = onClick)
+            .pointerHoverIcon(PointerIcon.Hand).clickable(role = Role.Button, onClickLabel = MetronomeCopy.metronomeSettings, onClick = onClick)
             .semantics { contentDescription = MetronomeCopy.metronomeSettings }
             .testTag(POCKET_SETTINGS_TAG),
         contentAlignment = Alignment.Center,
@@ -422,7 +424,7 @@ private fun WideMetronome(
             modifier = size
                 .fillMaxHeight()
                 .testTag(SETTINGS_TAG)
-                .verticalScroll(rememberScrollState()),
+                .verticalScrollWithScrollbar(rememberScrollState()),
         )
     }
     val dialPane: @Composable (Modifier) -> Unit = { size ->
@@ -493,7 +495,7 @@ private fun LandscapeMetronome(state: MetronomeUiState, callbacks: MetronomeCall
                     .widthFraction(MetronomeDefaults.LANDSCAPE_SETTINGS_FRACTION, min = columnMin, max = columnMax)
                     .fillMaxHeight()
                     .testTag(SETTINGS_TAG)
-                    .verticalScroll(rememberScrollState()),
+                    .verticalScrollWithScrollbar(rememberScrollState()),
             )
             LandscapeDialPane(state = state, callbacks = callbacks, block = block, modifier = Modifier.weight(1f).fillMaxHeight())
         }
@@ -571,7 +573,7 @@ private fun TabletopControlDeck(state: MetronomeUiState, callbacks: MetronomeCal
     Column(
         modifier = modifier
             .tabletopCard(TembraTheme.colors.surfaceContainerLow)
-            .verticalScroll(rememberScrollState())
+            .verticalScrollWithScrollbar(rememberScrollState())
             .padding(spacing.md)
             .testTag(SETTINGS_TAG),
         verticalArrangement = Arrangement.spacedBy(spacing.md, Alignment.CenterVertically),
@@ -632,7 +634,7 @@ private fun TabletopDialCard(state: MetronomeUiState, callbacks: MetronomeCallba
     ) {
         BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(spacing.sm), contentAlignment = Alignment.Center) {
             val ring = min(min(maxWidth, maxHeight), spacing.tempoDialMaxWidthWide)
-            val scroll = if (ring < MetronomeDefaults.DialMin) Modifier.verticalScroll(rememberScrollState()) else Modifier
+            val scroll = if (ring < MetronomeDefaults.DialMin) Modifier.verticalScrollWithScrollbar(rememberScrollState()) else Modifier
             Box(modifier = Modifier.fillMaxSize().then(scroll), contentAlignment = Alignment.Center) {
                 TempoDialFor(state, callbacks, Modifier.size(max(ring, MetronomeDefaults.DialMin)))
             }
@@ -652,7 +654,7 @@ private fun FilledAccentCard(state: MetronomeUiState, callbacks: MetronomeCallba
         val fontScale = LocalDensity.current.fontScale.coerceAtLeast(1f)
         val room = maxHeight - spacing.sm * 2 - MetronomeDefaults.CellPadding * 2 - MetronomeDefaults.TabletopCellLabelRoom * fontScale
         val bar = room.coerceIn(spacing.accentCellBarHeight, MetronomeDefaults.TabletopCellBarMax)
-        val scroll = if (room < spacing.accentCellBarHeight) Modifier.verticalScroll(rememberScrollState()) else Modifier
+        val scroll = if (room < spacing.accentCellBarHeight) Modifier.verticalScrollWithScrollbar(rememberScrollState()) else Modifier
         AccentCard(state = state, callbacks = callbacks, telemetry = telemetry, barHeight = bar, modifier = Modifier.fillMaxSize().then(scroll))
     }
 }
@@ -731,7 +733,7 @@ private fun LandscapeDialPane(state: MetronomeUiState, callbacks: MetronomeCallb
             callbacks = callbacks,
             discs = CardDiscs.None,
             modifier = if (block.scrolls) {
-                Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
+                Modifier.weight(1f).fillMaxWidth().verticalScrollWithScrollbar(rememberScrollState())
             } else {
                 Modifier.weight(1f).fillMaxWidth()
             },

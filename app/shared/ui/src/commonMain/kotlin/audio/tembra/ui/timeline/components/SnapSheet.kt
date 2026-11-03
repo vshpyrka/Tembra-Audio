@@ -22,6 +22,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
@@ -98,7 +100,7 @@ private fun SnapRow(size: GridSize, current: Boolean, onClick: () -> Unit) {
             .fillMaxWidth()
             .heightIn(min = ROW_MIN_HEIGHT)
             .testTag(TimelineTestTags.snapSheetRow(size))
-            .selectable(selected = current, role = Role.RadioButton, onClick = onClick)
+            .pointerHoverIcon(PointerIcon.Hand).selectable(selected = current, role = Role.RadioButton, onClick = onClick)
             .padding(horizontal = spacing.pageMargin),
         horizontalArrangement = Arrangement.spacedBy(spacing.md),
         verticalAlignment = Alignment.CenterVertically,

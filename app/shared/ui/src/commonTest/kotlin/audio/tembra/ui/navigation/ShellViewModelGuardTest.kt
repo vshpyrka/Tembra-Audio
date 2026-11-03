@@ -3,6 +3,7 @@ package audio.tembra.ui.navigation
 import audio.tembra.core.project.TrackId
 import audio.tembra.ui.session.DialogRequest
 import audio.tembra.ui.session.FakePlaybackGuard
+import audio.tembra.ui.session.FakeSessionActivity
 import audio.tembra.ui.tracksettings.TrackSettingsKey
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -32,7 +33,7 @@ class ShellViewModelGuardTest {
     fun setUp() {
         Dispatchers.setMain(dispatcher)
         guard = FakePlaybackGuard(isPlaying = true)
-        viewModel = ShellViewModel(guard)
+        viewModel = ShellViewModel(guard, FakeSessionActivity())
     }
 
     @AfterTest

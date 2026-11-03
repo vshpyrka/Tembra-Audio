@@ -6,6 +6,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -17,7 +19,9 @@ import kotlin.math.abs
  * Material's slider with the design system's own [thumb] and [track]. Material 1.5 moves a horizontal slider with Left
  * and Right only, where 1.4 also took Up and Down; the design's sliders answer every arrow key (feature 004's keyboard
  * scenario, feature 006 FR-018), so Up and Down move one step here when Material leaves them unhandled, and their
- * release ends the change as Material's keys do.
+ * release ends the change as Material's keys do. The wheel moves it the same step per notch, up (away from the user)
+ * raising it (feature 011, spec FR-014): one step per wheel event whatever its magnitude, so a mouse notch and a
+ * trackpad flick each move it once, on both platforms.
  */
 @Composable
 internal fun TembraSlider(
@@ -39,7 +43,20 @@ internal fun TembraSlider(
     PlatformSlider(
         value = value,
         onValueChange = onValueChange,
-        modifier = modifier.onKeyEvent { event ->
+        modifier = modifier.pointerInput(Unit) {
+            awaitPointerEventScope {
+                while (true) {
+                    val event = awaitPointerEvent()
+                    if (event.type != PointerEventType.Scroll) continue
+                    val delta = event.changes.sumOf { it.scrollDelta.y.toDouble() }
+                    if (delta == 0.0) continue
+                    val direction = if (delta < 0) 1 else -1
+                    currentOnValueChange((currentValue + direction * step).coerceIn(valueRange))
+                    currentOnValueChangeFinished?.invoke()
+                    event.changes.forEach { it.consume() }
+                }
+            }
+        }.onKeyEvent { event ->
             val direction = when (event.key) {
                 Key.DirectionUp, Key.NumPadDirectionUp -> 1
                 Key.DirectionDown, Key.NumPadDirectionDown -> -1
