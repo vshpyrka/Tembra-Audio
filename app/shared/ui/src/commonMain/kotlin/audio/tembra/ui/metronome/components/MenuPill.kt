@@ -46,6 +46,7 @@ import audio.tembra.ui.theme.TembraIcon
 import audio.tembra.ui.theme.TembraIcons
 import audio.tembra.ui.theme.TembraShapes
 import audio.tembra.ui.theme.TembraTheme
+import audio.tembra.ui.shortcuts.RegisterOverlay
 
 /**
  * The compact layouts' menu pill (design iteration D1): a fully rounded pill in the selected-chip accent
@@ -121,6 +122,8 @@ internal fun MenuPill(
                 }
             }
         }
+        // Escape's close-overlay action closes it (feature 011, contracts/keyboard-shortcuts.md rule 4).
+        if (open) RegisterOverlay { open = false }
         DropdownMenu(
             expanded = open,
             onDismissRequest = { open = false },

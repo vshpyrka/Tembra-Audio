@@ -86,6 +86,7 @@ import audio.tembra.ui.theme.TembraIcons
 import audio.tembra.ui.theme.TembraShapes
 import audio.tembra.ui.theme.TembraTheme
 import kotlin.math.roundToInt
+import audio.tembra.ui.shortcuts.RegisterOverlay
 
 /**
  * The stateless metronome screen the UI tests drive (contracts/metronome-screen.md, spec FR-028). Three forms:
@@ -132,6 +133,8 @@ fun MetronomeScreenContent(
         }
         // A very wide window keeps the expanded width, centred (feature 011, spec FR-008).
         val root = Modifier.fillMaxSize().wrapContentWidth().widthIn(max = spacing.screenMaxWidth).fillMaxWidth().then(margin).testTag("screen.metronome").focusRestoringRoot(focusMemory).focusRequester(rootFocus).focusable()
+            // Space, ↑/↓ (Shift for 10) and T (feature 011, spec FR-018), after the focused control.
+            .metronomeKeyHandling(callbacks)
         when (layout) {
             MetronomeLayout.Stacked -> StackedMetronome(state = state, callbacks = callbacks, telemetry = telemetry, modifier = root)
             MetronomeLayout.Wide -> WideMetronome(state = state, callbacks = callbacks, telemetry = telemetry, verticalFold = verticalFold, modifier = root)
@@ -227,6 +230,7 @@ private fun PocketMetronome(state: MetronomeUiState, callbacks: MetronomeCallbac
             TransportRow(state = state, callbacks = callbacks, modifier = Modifier.fillMaxWidth())
         }
         if (settingsOpen) {
+            RegisterOverlay { settingsOpen = false }
             ModalBottomSheet(
                 onDismissRequest = { settingsOpen = false },
                 containerColor = TembraTheme.colors.surfaceContainerLowest,

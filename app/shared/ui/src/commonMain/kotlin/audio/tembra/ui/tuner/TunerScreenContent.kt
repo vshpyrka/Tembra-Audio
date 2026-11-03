@@ -24,6 +24,7 @@ import audio.tembra.ui.designsystem.FocusMemory
 import audio.tembra.ui.designsystem.FoldSplit
 import audio.tembra.ui.designsystem.FoldSplitRow
 import audio.tembra.ui.designsystem.focusRestoringRoot
+import audio.tembra.ui.shortcuts.LocalShortcutPlatform
 import audio.tembra.ui.posture.TabletopFold
 import audio.tembra.ui.posture.VerticalFold
 import audio.tembra.ui.theme.TembraTheme
@@ -60,6 +61,7 @@ fun TunerScreenContent(
     }
     // Above the layout branches: focus returns to the same control in the new form (feature 011, FR-007).
     val focusMemory = remember { FocusMemory() }
+    val platform = LocalShortcutPlatform.current
     val root = modifier
         .fillMaxSize()
         // A very wide window keeps the expanded width, centred (feature 011, spec FR-008).
@@ -71,6 +73,8 @@ fun TunerScreenContent(
         .focusRestoringRoot(focusMemory)
         .focusRequester(rootFocus)
         .focusable()
+        // A, E, the string numbers, Space and L (feature 011, spec FR-018a), after the focused control.
+        .tunerKeyHandling({ state }, callbacks, platform)
     val gate = state.noiseGate
     val listening = state.audio == AudioState.Listening
     val soundAboveGate = state.soundAboveGate

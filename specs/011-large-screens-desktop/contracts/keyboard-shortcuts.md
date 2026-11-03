@@ -23,8 +23,15 @@ Per destination: `metronome/MetronomeKeyHandling.kt`, `tuner/TunerKeyHandling.kt
    control that consumes arrows).
 4. Escape closes the topmost overlay in this order: menu, shortcut sheet, sheet, dialog; focus returns to the control
    that opened it, else the destination root. With nothing open, Escape keeps today's Android behaviour (Back).
+   Overlays register their dismissal in the shell's `OverlayStack` while open (`RegisterOverlay`); the catalogue's
+   close-overlay action (Escape, and Ctrl/⌘+.) closes the newest. Android's focused pop-ups and dialogs take Escape
+   themselves; on iPad, where UIKit keeps a hardware Escape from the app (research R6 follow-up), the menu bar serves
+   ⌘., Apple's cancel chord.
 5. On iPad, Command chords arrive through the menu commands and call `ShortcutDispatcher`; the Compose handler ignores
-   Command chords on iOS to avoid double dispatch (pinned by a test, research R6).
+   Command chords on iOS to avoid double dispatch (pinned by a test, research R6). A menu item has one key equivalent,
+   so the menu serves each entry's first Command chord (`Shortcut.menuChord`) and Compose keeps the rest (Redo's ⌘Y);
+   the Timeline's Undo and Redo replace the Edit menu's. A menu command waits while a text field has focus for the
+   shell's chords and Undo/Redo, as rule 1 does.
 6. Matching: `KeyChord.matches(event)` compares `utf16CodePoint` for `Character` keys (lower-cased; layout-independent)
    and `Key` for `Named` keys; `primary` means Ctrl on Android and ChromeOS, Command on iPad; KeyDown only; key repeat
    repeats tempo changes within 40–240 BPM.

@@ -32,6 +32,8 @@
 		7E5F01100000000000000041 /* WindowMinimumTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F01100000000000000021 /* WindowMinimumTests.swift */; };
 		7E5F01100000000000000061 /* WindowMinimum.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F01100000000000000060 /* WindowMinimum.swift */; };
 		7E5F01100000000000000063 /* TrackpadPinchBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F01100000000000000062 /* TrackpadPinchBridge.swift */; };
+		7E5F01100000000000000065 /* ShortcutCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F01100000000000000064 /* ShortcutCommands.swift */; };
+		7E5F01100000000000000043 /* KeyboardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F01100000000000000023 /* KeyboardTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -95,6 +97,8 @@
 		7E5F01100000000000000021 /* WindowMinimumTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowMinimumTests.swift; sourceTree = "<group>"; };
 		7E5F01100000000000000060 /* WindowMinimum.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowMinimum.swift; sourceTree = "<group>"; };
 		7E5F01100000000000000062 /* TrackpadPinchBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackpadPinchBridge.swift; sourceTree = "<group>"; };
+		7E5F01100000000000000064 /* ShortcutCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutCommands.swift; sourceTree = "<group>"; };
+		7E5F01100000000000000023 /* KeyboardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -168,6 +172,7 @@
 				2152FB032600AC8F00CF470E /* iOSApp.swift */,
 				7E5F01100000000000000060 /* WindowMinimum.swift */,
 				7E5F01100000000000000062 /* TrackpadPinchBridge.swift */,
+				7E5F01100000000000000064 /* ShortcutCommands.swift */,
 				058557D7273AAEEB004C7B11 /* Preview Content */,
 			);
 			path = iosApp;
@@ -218,6 +223,7 @@
 			children = (
 				7E5F01100000000000000020 /* DesktopTestCase.swift */,
 				7E5F01100000000000000021 /* WindowMinimumTests.swift */,
+				7E5F01100000000000000023 /* KeyboardTests.swift */,
 			);
 			path = TembraDesktopTests;
 			sourceTree = "<group>";
@@ -388,6 +394,7 @@
 				7555FF83242A565900829871 /* ContentView.swift in Sources */,
 				7E5F01100000000000000061 /* WindowMinimum.swift in Sources */,
 				7E5F01100000000000000063 /* TrackpadPinchBridge.swift in Sources */,
+				7E5F01100000000000000065 /* ShortcutCommands.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -421,6 +428,7 @@
 			files = (
 				7E5F01100000000000000040 /* DesktopTestCase.swift in Sources */,
 				7E5F01100000000000000041 /* WindowMinimumTests.swift in Sources */,
+				7E5F01100000000000000043 /* KeyboardTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

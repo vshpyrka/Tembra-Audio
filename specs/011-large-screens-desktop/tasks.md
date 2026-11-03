@@ -351,60 +351,73 @@ ChromeOS.
 
 ### Tests for User Story 4 ⚠️
 
-- [ ] T083 [P] [US4] `CTEST/shortcuts/ShortcutCatalogueTest.kt`: no duplicate chord within `Everywhere` plus any one
+- [X] T083 [P] [US4] `CTEST/shortcuts/ShortcutCatalogueTest.kt`: no duplicate chord within `Everywhere` plus any one
   destination; no chord uses Alt or Meta; every label non-empty; every `ShortcutAction` has a handler
-- [ ] T084 [P] [US4] `CTEST/shortcuts/KeyChordTest.kt`: `Character('s')` matches by `utf16CodePoint` even when `Key`
+- [X] T084 [P] [US4] `CTEST/shortcuts/KeyChordTest.kt`: `Character('s')` matches by `utf16CodePoint` even when `Key`
   differs (AZERTY); `primary` matches Ctrl on Android-like events and Meta on iOS-like events; KeyDown only
-- [ ] T085 [P] [US4] `UITEST/shortcuts/ShellKeyHandlingTest.kt`: Ctrl+1–5 open Timeline, Tuner, Metronome, Projects,
+- [X] T085 [P] [US4] `UITEST/shortcuts/ShellKeyHandlingTest.kt`: Ctrl+1–5 open Timeline, Tuner, Metronome, Projects,
   Profile; Ctrl+/ opens the sheet; Escape closes the topmost overlay (menu, sheet, sheet, dialog order) and returns
   focus to its opener; with focus in the Projects search field, "2" and "/" are typed and Ctrl+2 does nothing
-- [ ] T086 [P] [US4] `UITEST/metronome/MetronomeKeyHandlingTest.kt`: Space starts and stops; ↑/↓ ±1 BPM; Shift ±10;
+- [X] T086 [P] [US4] `UITEST/metronome/MetronomeKeyHandlingTest.kt`: Space starts and stops; ↑/↓ ±1 BPM; Shift ±10;
   repeat clamps to 40–240 BPM; T taps; arrows go to a focused slider instead
-- [ ] T087 [P] [US4] `UITEST/tuner/TunerKeyHandlingTest.kt`: A and E switch modes; in By Ear, 1 plays string I (the
+- [X] T087 [P] [US4] `UITEST/tuner/TunerKeyHandlingTest.kt`: A and E switch modes; in By Ear, 1 plays string I (the
   highest) and 6 string VI on a 6-string guitar; 7 does nothing on 6 strings and plays on a 7-string; 4 is the last on
   cello; Space stops the tone; L toggles Loop Tone
-- [ ] T088 [P] [US4] `UITEST/projects/ProjectsKeyHandlingTest.kt` (extend): Ctrl+F focuses the search; Ctrl+N starts a
+- [X] T088 [P] [US4] `UITEST/projects/ProjectsKeyHandlingTest.kt` (extend): Ctrl+F focuses the search; Ctrl+N starts a
   new project
-- [ ] T089 [P] [US4] `UITEST/shortcuts/ShortcutSheetTest.kt`: every catalogue entry is listed, grouped by scope in
+- [X] T089 [P] [US4] `UITEST/shortcuts/ShortcutSheetTest.kt`: every catalogue entry is listed, grouped by scope in
   navigation order; Profile's "Keyboard shortcuts" row opens the sheet; the sheet stays open across a width change;
   a wheel scroll over a long sheet shows its scrollbar
-- [ ] T090 [P] [US4] `ATEST/KeyboardShortcutsHelperTest.kt`: `MainActivity.onProvideKeyboardShortcuts` returns one
+- [X] T090 [P] [US4] `ATEST/KeyboardShortcutsHelperTest.kt`: `MainActivity.onProvideKeyboardShortcuts` returns one
   `KeyboardShortcutGroup` per scope containing every catalogue entry with Ctrl
-- [ ] T091 [P] [US4] `app/iosApp/TembraDesktopTests/KeyboardTests.swift`: `typeKey("1", modifierFlags: .command)` opens
+- [X] T091 [P] [US4] `app/iosApp/TembraDesktopTests/KeyboardTests.swift`: `typeKey("1", modifierFlags: .command)` opens
   Timeline, `typeKey("/", modifierFlags: .command)` opens the sheet, `typeKey(.escape, modifierFlags: [])` closes it; a
   Command chord dispatches exactly once (per T006)
 
 ### Implementation for User Story 4
 
-- [ ] T092 [P] [US4] Create the catalogue types in `UI/shortcuts/`: `ShortcutScope.kt` (enum `Everywhere`, `Timeline`,
+- [X] T092 [P] [US4] Create the catalogue types in `UI/shortcuts/`: `ShortcutScope.kt` (enum `Everywhere`, `Timeline`,
   `Tuner`, `Metronome`, `Projects`), `ChordKey.kt` (sealed `Character(char: Char)` lower-case, `Named(key: Key)`),
   `KeyChord.kt` (`key`, `primary: Boolean`, `shift: Boolean`, `matches(event)`: code point for `Character`, `Key` for
   `Named`, KeyDown only), `ShortcutAction.kt`, `Shortcut.kt`, `ShortcutCopy.kt`
-- [ ] T093 [US4] Create `UI/shortcuts/ShortcutCatalogue.kt` with every entry of data-model.md's table (timeline entries
+- [X] T093 [US4] Create `UI/shortcuts/ShortcutCatalogue.kt` with every entry of data-model.md's table (timeline entries
   mirroring `UI/timeline/TimelineKeyHandling.kt`)
-- [ ] T094 [US4] Create `UI/shortcuts/ShortcutDispatcher.kt` (exhaustive `when` over `ShortcutAction`, no `else`) and
+  - Done 2026-11-03: zoom is `Character('+')`/`('=')` and `('-')`, not the named keys, so "+" typed as Shift+= zooms
+    in (a symbol matches whatever Shift typed it; `KeyChordTest`, `TimelineKeyboardTest`). The iPad menu serves each
+    entry's first Command chord (`Shortcut.menuChord`; a menu item takes one key equivalent), Compose keeps the others
+    (Redo's ⌘Y).
+- [X] T094 [US4] Create `UI/shortcuts/ShortcutDispatcher.kt` (exhaustive `when` over `ShortcutAction`, no `else`) and
   `UI/shortcuts/ShellKeyHandling.kt` (`Modifier.shellKeyHandling`, preview pass, global chords, text-field rule, Escape
   order and focus return), attached in `UI/navigation/NavigationShellContent.kt`
-- [ ] T095 [P] [US4] Create `UI/metronome/MetronomeKeyHandling.kt` and attach it to the metronome's content root in
+- [X] T095 [P] [US4] Create `UI/metronome/MetronomeKeyHandling.kt` and attach it to the metronome's content root in
   `UI/metronome/MetronomeScreen.kt`
-- [ ] T096 [P] [US4] Create `UI/tuner/TunerKeyHandling.kt` (string number = the card's number, 1 = string I) and attach it
+- [X] T096 [P] [US4] Create `UI/tuner/TunerKeyHandling.kt` (string number = the card's number, 1 = string I) and attach it
   in `UI/tuner/TunerScreen.kt`
-- [ ] T097 [P] [US4] Create `UI/projects/ProjectsKeyHandling.kt` and attach it in `UI/projects/ProjectsScreen.kt`
-- [ ] T098 [US4] Make `UI/timeline/TimelineKeyHandling.kt` read its chords from `ShortcutCatalogue` (behaviour unchanged;
+- [X] T097 [P] [US4] Create `UI/projects/ProjectsKeyHandling.kt` and attach it in `UI/projects/ProjectsScreen.kt`
+- [X] T098 [US4] Make `UI/timeline/TimelineKeyHandling.kt` read its chords from `ShortcutCatalogue` (behaviour unchanged;
   `TimelineKeyboardTest` stays green)
-- [ ] T099 [US4] Create `UI/shortcuts/ShortcutSheet.kt` and `UI/shortcuts/ShortcutSheetGroup.kt` (`modifier` first, key
+  - Done 2026-11-03: a key-input `Modifier.Node` reading `LocalShortcutPlatform`; `TimelineKeyTargets` reads the
+    current state and callbacks, so the iPad menu's Undo/Redo use the same instance through the registry.
+- [X] T099 [US4] Create `UI/shortcuts/ShortcutSheet.kt` and `UI/shortcuts/ShortcutSheetGroup.kt` (`modifier` first, key
   caps per chord, groups as data, a `TembraScrollbar` from T078); its open state is `rememberSaveable` in
   `UI/navigation/NavigationShellContent.kt`
-- [ ] T100 [US4] Add the "Keyboard shortcuts" row to `UI/profile/ProfileScreen.kt` (no ViewModel; callback from the
+- [X] T100 [US4] Add the "Keyboard shortcuts" row to `UI/profile/ProfileScreen.kt` (no ViewModel; callback from the
   shell)
-- [ ] T101 [US4] Override `onProvideKeyboardShortcuts` in `ANDROID/MainActivity.kt`, building groups from
+- [X] T101 [US4] Override `onProvideKeyboardShortcuts` in `ANDROID/MainActivity.kt`, building groups from
   `ShortcutCatalogue`
-- [ ] T102 [US4] iPad menu commands: export the catalogue's Command chords and `ShortcutDispatcher` to Swift through the
+- [X] T102 [US4] iPad menu commands: export the catalogue's Command chords and `ShortcutDispatcher` to Swift through the
   shared framework (`UIIOS/shortcuts/IosShortcutBridge.kt`), and build one `CommandMenu` per scope in
   `app/iosApp/iosApp/iOSApp.swift`; ignore Command chords in the Compose handlers on iOS if T006 showed double
   dispatch
-- [ ] T103 [US4] Emit `SHELL_SHORTCUT_NAVIGATE` in `UI/shortcuts/ShortcutDispatcher.kt` for destination chords, ending
+  - 2026-11-03: the menu lives in `app/iosApp/iosApp/ShortcutCommands.swift`, attached in `iOSApp.swift`; Undo/Redo
+    replace the Edit menu's items. UIKit keeps a hardware Escape from the app on iPad, even as a menu item (research R6
+    follow-up), so close-overlay gained ⌘. (Ctrl+. on Android), which the menu serves; it closes the newest overlay of
+    the new `OverlayStack` (`UI/shortcuts/OverlayStack.kt`), which every menu, pop-up, sheet and dialog registers with
+    (`OverlayStackTest`, `OverlayEscapeTest`). T091's Escape step is ⌘. on iPad.
+- [X] T103 [US4] Emit `SHELL_SHORTCUT_NAVIGATE` in `UI/shortcuts/ShortcutDispatcher.kt` for destination chords, ending
   at the destination's first frame
+  - Done 2026-11-03: PerfTrace sections are synchronous, so the section spans the key to the navigation call; the
+    destination's first frame after it is the existing navigation journeys' anchor (Phase 9 adds the keyboard journey).
 
 **Checkpoint**: US1–US4: the full desktop input set.
 

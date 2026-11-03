@@ -52,6 +52,8 @@ import audio.tembra.ui.timeline.components.TimelineToolbar
 import audio.tembra.ui.timeline.components.TrackList
 import audio.tembra.ui.transport.TransportBar
 import audio.tembra.ui.transport.TransportCallbacks
+import audio.tembra.ui.shortcuts.RegisterShortcuts
+import audio.tembra.ui.shortcuts.ShortcutTargets
 
 /**
  * The stateless Timeline (contracts/timeline-screen.md "Layouts"): toolbar (with the tempo pill at every width, spec
@@ -98,6 +100,11 @@ internal fun TimelineScreenContent(
     val lanesLeft = remember { mutableFloatStateOf(0f) }
     val pinchSource = LocalTrackpadPinchSource.current
     val onZoomAround by rememberUpdatedState(callbacks.onZoomAround)
+    // The ⌘ chords' menu commands on iPad (feature 011, spec FR-018a) act on the state showing now.
+    val currentState by rememberUpdatedState(state)
+    val currentCallbacks by rememberUpdatedState(callbacks)
+    val menuTargets = remember { TimelineKeyTargets({ currentState }, { currentCallbacks }) }
+    RegisterShortcuts(ShortcutTargets(timeline = menuTargets))
     LaunchedEffect(pinchSource) {
         pinchSource.pinches.collect { pinch ->
             val x = pinch.focus.x - lanesLeft.floatValue

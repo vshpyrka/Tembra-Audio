@@ -21,7 +21,9 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -41,6 +43,9 @@ import audio.tembra.ui.projects.components.DescribeProjectDialog
 import audio.tembra.ui.projects.components.KeyPickerDialog
 import audio.tembra.ui.projects.components.LibraryFilterChips
 import audio.tembra.ui.projects.components.LibrarySearchField
+import audio.tembra.ui.shortcuts.LocalShortcutPlatform
+import audio.tembra.ui.shortcuts.RegisterShortcuts
+import audio.tembra.ui.shortcuts.ShortcutTargets
 import audio.tembra.ui.projects.components.ProjectCard
 import audio.tembra.ui.projects.components.RenameProjectDialog
 import audio.tembra.ui.projects.components.SortMenu
@@ -70,6 +75,11 @@ internal fun ProjectsScreenContent(
     }
     val focusMemory = remember { FocusMemory() }
     val gridState = rememberLazyGridState()
+    // Ctrl/⌘+F and Ctrl/⌘+N (feature 011, spec FR-021): the root's keys and, on iPad, the menu bar's commands.
+    val searchFocus = remember { FocusRequester() }
+    val onNewProject by rememberUpdatedState(callbacks.onNewProject)
+    val shortcuts = remember(searchFocus) { ProjectsKeyTargets(searchFocus, onNewProject = { onNewProject() }) }
+    RegisterShortcuts(ShortcutTargets(projects = shortcuts))
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -78,7 +88,8 @@ internal fun ProjectsScreenContent(
             .semantics { stateDescription = if (ready) READY else LOADING }
             .focusRestoringRoot(focusMemory)
             .focusRequester(rootFocus)
-            .focusable(),
+            .focusable()
+            .projectsKeyHandling(shortcuts, LocalShortcutPlatform.current),
     ) {
         Column(modifier = Modifier.fillMaxSize().padding(horizontal = spacing.pageMargin).padding(top = spacing.lg), verticalArrangement = Arrangement.spacedBy(spacing.md)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -88,7 +99,7 @@ internal fun ProjectsScreenContent(
                 }
                 TembraPill(text = ProjectsCopy.newProject, selected = true, onClick = callbacks.onNewProject, testTag = ProjectsTestTags.NEW_PROJECT)
             }
-            LibrarySearchField(text = state.query.text, onText = callbacks.onQuery, modifier = Modifier.fillMaxWidth())
+            LibrarySearchField(text = state.query.text, onText = callbacks.onQuery, modifier = Modifier.fillMaxWidth().focusRequester(searchFocus))
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
                 LibraryFilterChips(filter = state.query.filter, onFilter = callbacks.onFilter, modifier = Modifier.width(FILTER_WIDTH))
                 Spacer(Modifier.weight(1f))
