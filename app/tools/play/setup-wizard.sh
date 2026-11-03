@@ -252,7 +252,7 @@ billing_enabled() {
   [[ "$(printf '%s' "$enabled" | tr '[:upper:]' '[:lower:]')" == "true" ]]
 }
 
-banner "Tembra Audio: Google Play closed testing setup"
+banner "Tembra Audio: Google Play testing setup"
 
 # ──────────────────────────────────────────────────────────────────────────
 stage "Tools on this Mac"
@@ -289,7 +289,7 @@ open_url "https://play.google.com/console/signup"
 step "Sign in with the Google account that will own the app."
 step "Pick the account type: Personal (you) or Organization (needs a D-U-N-S number)."
 note "Personal accounts created after 13 Nov 2023 need 12 testers opted in for 14 days in a row before"
-note "production access; closed testing, the only track this pipeline uses, works from day one."
+note "production access; internal and closed testing, the tracks this pipeline uses, work from day one."
 step "Pay the one-time US\$25 fee and finish identity and contact verification (can take a few days)."
 step "Turn on 2-Step Verification for the account: Google asks every Play Console user to."
 open_url "https://myaccount.google.com/signinoptions/twosv"
@@ -350,7 +350,7 @@ if gcloud iam service-accounts describe "$SA_EMAIL" --project="$GCP_PROJECT_ID" 
 else
   gcloud iam service-accounts create "$SA_NAME" --project="$GCP_PROJECT_ID" \
     --display-name="Google Play publisher (GitHub Actions)" \
-    --description="Releases Tembra Audio to closed testing from $WORKFLOW_FILE on main. Never give it a key."
+    --description="Releases Tembra Audio to testing tracks from $WORKFLOW_FILE on main. Never give it a key."
 fi
 write_env GCP_PLAY_SERVICE_ACCOUNT "$SA_EMAIL"
 note "It gets no project role: only read access to the two upload-key secrets (stage 8) and, in"
@@ -469,7 +469,7 @@ set_var PLAY_UPLOAD_CERT_SHA256 "$PLAY_UPLOAD_CERT_SHA256"
 if [[ -n "$(gh variable get PLAY_TRACK 2>/dev/null || true)" ]]; then
   note "PLAY_TRACK stays $(gh variable get PLAY_TRACK)."
 else
-  set_var PLAY_TRACK "alpha"
+  set_var PLAY_TRACK "internal"
 fi
 note "From now on the workflow's publish job runs. Optional variables: PLAY_RELEASE_STATUS (completed or"
 note "draft) and PLAY_NOTES_LANGUAGE (en-US). Deleting GCP_PLAY_SERVICE_ACCOUNT pauses publishing."
@@ -514,15 +514,14 @@ note "Closed testers see this listing, so it must be complete before the first r
 pause "Press Enter once the listing is saved"
 
 # ──────────────────────────────────────────────────────────────────────────
-stage "Play Console: closed testing track and testers"
+stage "Play Console: testers"
 open_url "https://play.google.com/console"
-step "Test and release → Testing → Closed testing → the default track 'Alpha' → Manage track."
-step "Testers → Create email list (for example 'Tembra testers'), add your own address and the testers', Save."
-step "Countries / regions → add where testers live."
-step "Feedback URL or e-mail for testers. Save."
-note "The API calls this track 'alpha' (PLAY_TRACK). For a custom closed track, set PLAY_TRACK to its name;"
-note "the workflow refuses 'beta' (open testing) and 'production'."
-pause "Press Enter once the track has testers"
+step "Test and release → Testing → Internal testing → Testers: create an email list (up to 100 people,"
+say  "  your own address included) and Save. Every merge to main reaches them within minutes."
+step "Later, for a wider group: Closed testing → the default track 'Alpha' → Manage track → Testers"
+say  "  (email lists or Google Groups) and Countries / regions. You promote chosen builds there by hand."
+note "PLAY_TRACK is 'internal'. The workflow refuses 'beta' (open testing) and 'production'."
+pause "Press Enter once the internal testers are listed"
 
 # ──────────────────────────────────────────────────────────────────────────
 stage "First signed bundle from GitHub Actions"
@@ -560,16 +559,18 @@ pause "Press Enter to continue"
 # ──────────────────────────────────────────────────────────────────────────
 stage "First release by hand, then automatic"
 open_url "https://play.google.com/console"
-step "Test and release → Testing → Closed testing → Alpha → Create new release."
+step "Test and release → Testing → Internal testing → Create new release."
 step "Play app signing: keep 'Google-generated key' (the default). Do not choose your own key."
 step "App bundles → Upload: $FIRST_BUNDLE"
-step "Release notes: paste $FIRST_UPLOAD_DIR/release-notes.txt. Next → Save → Send changes for review."
+step "Release name: the bundle's version, as written in its release notes, e.g. '0.1.0 (369)'."
+step "Release notes: paste $FIRST_UPLOAD_DIR/release-notes.txt. Next → Save → Start rollout to Internal testing."
 step "Then: Test and release → App integrity → Play app signing → Upload key certificate."
 say  "  Its SHA-256 must be: $PLAY_UPLOAD_CERT_SHA256"
-step "Share the testers' opt-in link: Closed testing → Alpha → Testers → 'Join on the web'."
-note "After this, every merge to main that changes the app goes to review and then to the testers."
+step "Share the testers' link: Internal testing → Testers → 'Copy link'."
+note "After this, every merge to main that changes the app reaches the internal testers within minutes."
+note "Promote a build to closed testing in Play Console: the release → Promote release → Closed testing."
 note "Release main by hand at any time: gh workflow run play-closed-testing.yml -f publish=true"
-pause "Press Enter when the first release is sent for review"
+pause "Press Enter when the first release is rolled out"
 
 finish
 }
