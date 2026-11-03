@@ -35,6 +35,7 @@ import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.ui.timeline.TimelineCopy
 import audio.tembra.ui.timeline.TimelineTestTags
 import kotlinx.coroutines.launch
+import audio.tembra.ui.shortcuts.RegisterOverlay
 
 /**
  * The snap picker as a sheet (spec FR-018, D1), shown for `TimelineSheet.GridMenu`: "Snap to grid" over a caption saying
@@ -51,6 +52,7 @@ internal fun SnapSheet(grid: GridSize, onGrid: (GridSize) -> Unit, onDismiss: ()
     // Hidden until shown, then straight to expanded: the list is short, a half-open sheet would only hide rows.
     val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
     val scope = rememberCoroutineScope()
+    RegisterOverlay(onDismiss)
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         modifier = modifier.anchorRoot().testTag(TimelineTestTags.SNAP_SHEET),

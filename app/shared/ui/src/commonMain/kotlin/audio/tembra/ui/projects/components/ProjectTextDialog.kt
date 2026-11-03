@@ -17,6 +17,7 @@ import audio.tembra.ui.projects.ProjectsCopy
 import audio.tembra.ui.projects.ProjectsTestTags
 import audio.tembra.ui.theme.TembraShapes
 import audio.tembra.ui.theme.TembraTheme
+import audio.tembra.ui.shortcuts.RegisterOverlay
 
 /**
  * A dialog with one text field (spec FR-052): the rename and the description. The field keeps the draft; Save hands
@@ -37,6 +38,7 @@ internal fun ProjectTextDialog(
 ) {
     val colors = TembraTheme.colors
     var draft by remember(initial) { mutableStateOf(initial) }
+    RegisterOverlay(onDismiss)
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {

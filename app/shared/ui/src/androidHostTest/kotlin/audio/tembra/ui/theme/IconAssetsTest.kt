@@ -30,7 +30,7 @@ class IconAssetsTest {
     )
 
     /** Feature 011 (large screens and desktop): the Timeline menu's "Full screen" and "Exit full screen". */
-    private val desktopGlyphs = listOf("ic_fullscreen_24.xml", "ic_fullscreen_exit_24.xml")
+    private val desktopGlyphs = listOf("ic_fullscreen_24.xml", "ic_fullscreen_exit_24.xml", "ic_close_24.xml")
 
     /** The filled variants (FILL 1) the play button uses, fetched with `--fill`. */
     private val filledGlyphs = listOf("ic_play_arrow_fill_24.xml", "ic_pause_fill_24.xml")

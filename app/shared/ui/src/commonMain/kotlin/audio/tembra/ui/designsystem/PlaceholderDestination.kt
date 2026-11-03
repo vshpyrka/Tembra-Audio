@@ -2,6 +2,7 @@ package audio.tembra.ui.designsystem
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
@@ -14,13 +15,15 @@ import audio.tembra.ui.theme.WindowWidth
 
 /**
  * The placeholder form every destination takes in this feature (spec FR-011, FR-013): the title and one sentence
- * from the registry, page margins, nothing else. Root testTag `screen.<id>`, message testTag `screen.<id>.message`.
+ * from the registry, page margins, then whatever [content] a destination already offers below them (Profile's
+ * "Keyboard shortcuts" row, feature 011). Root testTag `screen.<id>`, message testTag `screen.<id>.message`.
  */
 @Composable
 fun PlaceholderDestination(
     destination: Destination,
     modifier: Modifier = Modifier,
     windowWidth: WindowWidth = WindowWidth.Compact,
+    content: @Composable ColumnScope.() -> Unit = {},
 ) {
     val spacing = TembraTheme.spacing
     Column(
@@ -41,5 +44,6 @@ fun PlaceholderDestination(
             color = TembraTheme.colors.onSurfaceVariant,
             modifier = Modifier.testTag("screen.${destination.id}.message"),
         )
+        content()
     }
 }

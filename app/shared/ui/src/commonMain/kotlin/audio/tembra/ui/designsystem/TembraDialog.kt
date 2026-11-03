@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import audio.tembra.ui.perf.anchorRoot
 import audio.tembra.ui.theme.TembraShapes
 import audio.tembra.ui.theme.TembraTheme
+import audio.tembra.ui.shortcuts.RegisterOverlay
 
 /**
  * The app's confirmation dialog (contracts/design-system-additions.md): [title] in `headlineSmall`, [text] in
@@ -26,6 +27,8 @@ fun TembraDialog(
     testTag: String? = null,
 ) {
     val colors = TembraTheme.colors
+    // Escape's close-overlay action answers as dismissing does (feature 011, contracts/keyboard-shortcuts.md rule 4).
+    RegisterOverlay(dismiss.onClick)
     AlertDialog(
         onDismissRequest = dismiss.onClick,
         confirmButton = {

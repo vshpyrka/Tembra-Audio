@@ -59,6 +59,7 @@ import audio.tembra.ui.theme.TembraIcon
 import audio.tembra.ui.theme.TembraIcons
 import audio.tembra.ui.theme.TembraShapes
 import audio.tembra.ui.theme.TembraTheme
+import audio.tembra.ui.shortcuts.RegisterOverlay
 
 /**
  * The click sound picker (spec FR-021, FR-022; contracts/design-system-additions.md): the five built-in sounds in the
@@ -200,6 +201,8 @@ private fun SoundDropdown(
                 }
             }
         }
+        // Escape's close-overlay action closes it (feature 011, contracts/keyboard-shortcuts.md rule 4).
+        if (open) RegisterOverlay { open = false }
         DropdownMenu(
             expanded = open,
             onDismissRequest = { open = false },

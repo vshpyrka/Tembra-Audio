@@ -6,6 +6,7 @@ import audio.tembra.ui.resources.ic_arrow_left_24
 import audio.tembra.ui.resources.ic_arrow_right_24
 import audio.tembra.ui.resources.ic_audio_file_24
 import audio.tembra.ui.resources.ic_check_24
+import audio.tembra.ui.resources.ic_close_24
 import audio.tembra.ui.resources.ic_content_copy_24
 import audio.tembra.ui.resources.ic_content_cut_24
 import audio.tembra.ui.resources.ic_expand_less_24
@@ -99,6 +100,8 @@ enum class TembraIcon(internal val resource: DrawableResource) {
     // The Timeline menu's full-screen items in a desktop window (feature 011, spec FR-010a).
     Fullscreen(Res.drawable.ic_fullscreen_24),
     FullscreenExit(Res.drawable.ic_fullscreen_exit_24),
+    // The shortcut sheet's close button (feature 011, spec FR-022).
+    Close(Res.drawable.ic_close_24),
     // Filled variants (FILL 1) for the metronome's play button, as the design draws them (`tools/fetch-material-symbols.sh --fill`).
     PlayArrowFilled(Res.drawable.ic_play_arrow_fill_24),
     PauseFilled(Res.drawable.ic_pause_fill_24),

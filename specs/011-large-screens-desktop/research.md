@@ -198,6 +198,18 @@ no menu item reached Compose only. So every Command chord the menu bar serves mu
 iOS (they would otherwise dispatch it twice), while plain keys stay with Compose. `KeyboardTests.swift` (T091) pins
 "exactly once".
 
+**Follow-up (T102, 2026-11-03): UIKit keeps a hardware Escape from Compose on iPad.** With the shortcut sheet open and
+focused on the iPad Pro 13-inch (M5) simulator (iOS 27.0), an XCUITest `typeKey("x")` and Tab reached the sheet's
+`onKeyEvent`, but `typeKey(.escape)` reached neither it nor a `BackHandler` in the dialog, and Escape on the Tuner did
+not navigate back; a SwiftUI menu item with Escape as its key equivalent did not run either, while the ⌘ items beside
+it did. So the iPad's close key is ⌘. (Apple's cancel chord), a second chord of the catalogue's close-overlay entry
+(Ctrl+. on Android) that the menu bar serves; the action closes the newest overlay registered in the shell's
+`OverlayStack` (menus, pop-ups, sheets, dialogs and the shortcut sheet register while open). On Android a focused
+pop-up or dialog keeps taking Escape itself. A hardware Escape on iPad stays a Compose Multiplatform limitation
+(follow-up: recheck with Compose Multiplatform 1.13).
+A menu item takes one key equivalent, so the menu serves each entry's first Command chord (`Shortcut.menuChord`;
+Redo's ⇧⌘Z) and Compose keeps the others (⌘Y). `KeyboardTests.swift` pins both.
+
 **Reserved chords** (research): Android desktop and ChromeOS reserve Meta/Search combinations, Alt+Tab, Alt+1–9,
 Alt+[ ] = -, Ctrl+Space and Ctrl+Shift+Space; iPadOS reserves ⌘Space, ⌘Tab, ⌘W, ⌘M, ⇧⌘3/4 and Globe combinations.
 Free on all three: Ctrl/⌘+1–5, Ctrl/⌘+/, Ctrl/⌘+F, Ctrl/⌘+N, Ctrl/⌘+Z, Ctrl/⌘+Shift+Z, Escape, Space. Android's

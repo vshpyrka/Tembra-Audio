@@ -37,6 +37,7 @@ import audio.tembra.ui.theme.TembraIcon
 import audio.tembra.ui.theme.TembraIcons
 import audio.tembra.ui.theme.TembraShapes
 import audio.tembra.ui.theme.TembraTheme
+import audio.tembra.ui.shortcuts.RegisterOverlay
 
 /**
  * The app's dropdown (contracts/design-system-additions.md, feature 009): [anchor] is the caller's control that opens
@@ -64,6 +65,8 @@ fun TembraMenu(
     val spacing = TembraTheme.spacing
     Box(modifier = modifier) {
         anchor()
+        // Escape's close-overlay action closes it (feature 011, contracts/keyboard-shortcuts.md rule 4).
+        if (expanded) RegisterOverlay(onDismiss)
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = onDismiss,

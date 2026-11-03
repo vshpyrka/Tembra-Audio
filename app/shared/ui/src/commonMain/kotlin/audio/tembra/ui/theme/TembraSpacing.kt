@@ -28,6 +28,9 @@ data class TembraSpacing(
     val scrollbarThickness: Dp = 6.dp,
     val scrollbarInset: Dp = 2.dp,
     val scrollbarMinThumb: Dp = 32.dp,
+    /** The shortcut sheet's design size (feature 011, spec FR-022): the dialog's width and its list's tallest. */
+    val shortcutSheetMaxWidth: Dp = 560.dp,
+    val shortcutSheetMaxHeight: Dp = 520.dp,
     // Chrome metrics of the navigation frame (feature 002, data-model.md §6, spec FR-019).
     /** [audio.tembra.ui.designsystem.TembraTopBar]'s content height (`h-14` on the wide design screens); the shell shows no top bar since 2026-10-16. */
     val topBarHeight: Dp = 56.dp,

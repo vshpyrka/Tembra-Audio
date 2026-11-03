@@ -19,11 +19,13 @@ import audio.tembra.ui.projects.ProjectsCopy
 import audio.tembra.ui.projects.ProjectsTestTags
 import audio.tembra.ui.theme.TembraShapes
 import audio.tembra.ui.theme.TembraTheme
+import audio.tembra.ui.shortcuts.RegisterOverlay
 
 /** The project key (spec FR-052): "None" and the 24 major and minor keys; choosing one confirms at once. Rows `dialog.projectKey.<name>`. */
 @Composable
 internal fun KeyPickerDialog(selected: MusicalKey?, onConfirm: (MusicalKey?) -> Unit, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
     val colors = TembraTheme.colors
+    RegisterOverlay(onDismiss)
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {},

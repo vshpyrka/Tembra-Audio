@@ -3,6 +3,8 @@ package audio.tembra.android
 import android.content.res.Configuration
 import android.os.Bundle
 import android.view.KeyEvent
+import android.view.KeyboardShortcutGroup
+import android.view.Menu
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -10,6 +12,7 @@ import audio.tembra.ui.App
 import audio.tembra.ui.devtools.DeveloperViewRequest
 import audio.tembra.ui.metronome.MetronomeDebugRequest
 import audio.tembra.ui.projects.ProjectsSeedRequest
+import audio.tembra.ui.shortcuts.systemShortcutGroups
 import audio.tembra.ui.platform.ProvideLaidOutWindowSize
 import audio.tembra.ui.platform.dispatchEscapeAsBack
 import audio.tembra.ui.platform.enableEdgeToEdgeOverDarkContent
@@ -79,6 +82,12 @@ class MainActivity : ComponentActivity() {
 
     // A hardware keyboard's Escape goes back like the back key (desktop windowing), before Compose can consume it.
     override fun dispatchKeyEvent(event: KeyEvent): Boolean = dispatchEscapeAsBack(event) || super.dispatchKeyEvent(event)
+
+    // Meta+/ lists the app's shortcuts, from the same catalogue as the in-app sheet (feature 011, spec FR-022).
+    override fun onProvideKeyboardShortcuts(data: MutableList<KeyboardShortcutGroup>, menu: Menu?, deviceId: Int) {
+        super.onProvideKeyboardShortcuts(data, menu, deviceId)
+        data.addAll(systemShortcutGroups())
+    }
 
     override fun onDestroy() {
         appGraph.microphonePermissionHost.detach()
