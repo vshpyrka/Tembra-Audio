@@ -227,13 +227,24 @@ specifications technology-free and the test-first loop of Principle III intact.
   track source before effects; loops and speed stay after effects. Recording precedes the mixer
   (amended 2026-10-27, feature 010): the owner chose recording as the feature after the
   timeline, with the input level meter on the armed track's header, so recording no longer
-  waits for the mixer's meters and the mixer reuses that meter; recording is feature 010 and
-  the mixer feature 011. The amendment of 2026-10-13 had been lost from this file when `main`
-  was merged into the 009 branch on 2026-10-17 (merge 18460a5) and is restored here. These
-  amendments invalidate no spec or plan: `specs/010-timeline-recording/spec.md` is written to
-  this order; `specs/009-timeline-arranger/spec.md` names the mixer "feature 010" and
-  recording "feature 011" and is read with the two swapped; the order quoted in earlier specs
-  is historical.
+  waits for the mixer's meters and the mixer reuses that meter; recording is feature 010. The
+  amendment of 2026-10-13 had been lost from this file when `main` was merged into the 009
+  branch on 2026-10-17 (merge 18460a5) and is restored here. Large screens and desktop sit
+  between recording and the mixer (amended 2026-11-03, feature 011): while recording awaited
+  its merge the owner started feature 011, Large Screens and Desktop, which carries Principle
+  IV's existing promise (windows of any size, pointer and keyboard as first-class input) to
+  real Chromebooks, Googlebooks and Android desktop windowing, to devices without a touchscreen
+  or a microphone, to iPad windows with a keyboard and a trackpad, to drag and drop of audio
+  files and to the app's Google Play presence on those devices. It adds no musical capability,
+  so it is not later work in the sense of this order and pulls nothing forward; the order
+  stands and only the numbering moves: recording is feature 010, large screens and desktop
+  feature 011, the mixer feature 012, and effects and automation, loops and speed and
+  collaboration follow the mixer in that order. These amendments invalidate no spec or plan:
+  `specs/011-large-screens-desktop/spec.md` is written to this order;
+  `specs/010-timeline-recording/spec.md` is written to this order but names the mixer
+  "feature 011" and is read as "feature 012"; `specs/009-timeline-arranger/spec.md` names the
+  mixer "feature 010" and recording "feature 011" and is read with the two swapped; the order
+  quoted in earlier specs is historical.
 - Every feature instruments itself (amended 2026-10-08): every feature after the performance
   pipeline (feature 007) that adds a user-facing interaction or an engine path MUST add, in the
   same feature, its performance instrumentation: catalogue sections for its main interactions,
@@ -273,4 +284,4 @@ specifications technology-free and the test-first loop of Principle III intact.
 - `CLAUDE.md` is the runtime guidance file for agents working in this repository; it MUST point
   at this constitution and MUST NOT restate rules in a way that drifts from it.
 
-**Version**: 1.3.4 | **Ratified**: 2026-09-19 | **Last Amended**: 2026-10-27
+**Version**: 1.3.5 | **Ratified**: 2026-09-19 | **Last Amended**: 2026-11-03
