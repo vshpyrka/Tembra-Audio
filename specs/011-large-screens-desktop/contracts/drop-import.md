@@ -24,11 +24,18 @@ with Activity-owned Android and iOS bindings; planning in common code), `kotlin-
    items; then the rules of data-model.md. `AddToTrack` and `NewTracks` call `ProjectSession.importAudio(files,
    ImportTarget.Track(trackId, atBeats) / ImportTarget.NewTracks(atBeats))`; `NewProject` creates a project, opens it
    and imports as new tracks.
-5. One message lists every skipped name with its reason, merged with the importer's refusals
+5. Opening files from the Files app (research R22) enters the same planner: `OpenedFiles` (interface, platform-bound:
+   `AndroidOpenedFiles`, `IosOpenedFiles`) emits `List<DroppedItem>`; the session plans them as `DropZone.ProjectsGrid`
+   (a new project) behind the existing stop-and-leave confirmation when a project is playing.
+6. One message lists every skipped name with its reason, merged with the importer's refusals
    (`TimelineCopy.filesRefused`); `Nothing` with no audio shows "No audio files were found".
 
 ## Tests first
 
+- `ProjectSessionBusyTest` (commonTest): `ProjectSession.busy` is true while an import copies files (a suspended fake
+  importer) and false after it ends or fails; the shell's busy pointer (pointer-input.md) follows it.
+- `OpenedFilesFlowTest` (commonTest): files from a fake `OpenedFiles` become a new project; with a project playing, the
+  stop-and-leave confirmation is requested first and nothing happens on cancel.
 - `DropPlannerTest` (commonTest): one file on a lane → `AddToTrack` at the snapped beat; two files on a lane →
   `NewTracks`; files on space → `NewTracks`; Projects → `NewProject`; a readable folder with 3 WAVs, a text file and a
   sub-folder → 3 files, 2 skipped; an unreadable folder → skipped as `UnreadableFolder`; only non-audio → `Nothing`.

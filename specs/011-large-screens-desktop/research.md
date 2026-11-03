@@ -2,7 +2,7 @@
 
 Evidence gathered on 2026-11-03 by four parallel surveys (Android and ChromeOS platform; iPadOS windowing; Compose
 Multiplatform 1.12.2 input APIs read from the pinned artifacts' sources and klib ABIs; the repository's existing input
-code) and one hands-on check on Android's desktop emulator. "Unverified" marks what no source settled; each has a
+code) and hands-on checks on Android's desktop emulators (Android 14 and Android 17). "Unverified" marks what no source settled; each has a
 spike or a device check in the tasks.
 
 ## Hands-on check: the desktop emulator (2026-11-03)
@@ -17,6 +17,66 @@ spike or a device check in the tasks.
 - `adb shell am task resize 3 200 120 2600 1720` resized it to 1200×800 dp: same process, same `ActivityRecord` (no
   recreation, as the manifest's `configChanges` promise), and the layout switched to the rail and the wide timeline
   under the window's caption bar. Tests can therefore drive real window changes.
+
+## Hands-on check: the Desktop (Preview) emulator, Android 17 (2026-11-03, analysis remediation)
+
+- Installed `system-images;android-37.1;android-desktop;arm64-v8a` (4.3 GB, SDK preview channel; Android 17, SDK 37)
+  and created AVD `Tembra_Desktop_API37` from the `desktop_api37` profile (2880×1800 at 240 dpi, 1920×1200 dp) with
+  `hw.keyboard=yes`. With 11.7 GB free the emulator refused the profile's 6 GB data partition ("need 12288 MB"):
+  `disk.dataPartition.size=4G` in the AVD's `config.ini` boots it (`-port 5582 -no-window -no-audio`, about a minute).
+- It reports `android.hardware.type.pc`, `android.software.freeform_window_management`, a microphone **and** a
+  touchscreen, while its configuration says `-touch qwerty` (no touch, hardware keyboard). It therefore cannot show
+  Play's touchscreen filter: reach stays proven by `aapt2 dump badging` and `ManifestFeaturesTest`, and the API 34 image
+  remains the no-touchscreen device.
+- The image runs a headless system user: user 0 shows a login launcher and the desktop session is **user 10**. After a
+  cold boot, `adb shell am switch-user 10` starts the session; `adb install` installs for every user, and launches need
+  `am start --user 10` (or `--user current` once switched). Instrumented runs target the current user, so the lane
+  switches first (T001).
+- `main`'s debug build, launched from the launcher intent with today's manifest (no `<layout>`, no ChromeOS
+  meta-data), opens a **freeform** window of 2073×1296 px = **1382×864 dp, landscape**, at (403, 180): about 72% of the
+  display, the wide timeline with the rail. Android 17's desktop already gives FR-004a's first launch without a
+  declared default size (Android 14's image opened 412×732 dp portrait).
+- `am task resize` to 600×600, 467×667, 200×200 and 1333×867 dp changed the bounds with the same process and the same
+  `ActivityRecord` (no recreation). It is **not** clamped by any minimum (200×200 dp was accepted) and is **not**
+  remembered: after closing the window with its caption's close button (the task is removed and the process ends) the
+  relaunch opened at the default 1382×864 dp again.
+- A mouse drag on the window's corner (`input mouse swipe` from the bottom-right corner) resized it to 1000×648 dp;
+  closing and relaunching reopened it at exactly those bounds: the system remembers a size the user set, with today's
+  manifest. Dragging the corner towards the top-left stopped at 585×535 px = **390×357 dp**, the platform's own
+  minimum with nothing declared; at that size the timeline shows a single track row above the transport, which is the
+  short-window case the declared 480 dp minimum height prevents.
+- Consequences: tests that need the platform's minimum or its remembered size resize by mouse drag (T009's
+  `dragResize`), not with `am task resize`; tests that only need a size change keep `am task resize`; T004 repeats the
+  first-launch, drag-resize, close and relaunch sequence with the decided manifest on both images and the tablet.
+
+## Googlebook and the Desktop (Preview) emulator (added 2026-11-03, analysis remediation)
+
+The owner pointed to Google's post "Land your apps on Googlebook with adaptive development" (22 September 2026) after
+the first research pass, which had missed it. Googlebooks are Android laptops "built on the Android technology stack and
+ChromeOS desktop foundations" (Googlebook developer overview) with touchscreens, keyboards and trackpads; apps run in
+free-form windows. Google Play labels apps for desktop ("Compatible with desktop", "Optimized for desktop", "Made for
+desktop"); a single report (9to5Google) says Google assigns them, and Google publishes no checklist: the overview and
+the post point to the desktop app quality guidelines as the bar. The tooling Google names is Android Studio's desktop
+emulator ("Desktop (Preview)"): `sdkmanager --channel=3` lists `system-images;android-37.1;android-desktop;arm64-v8a`
+("Google APIs Desktop (Preview)") and the `desktop_api37` device profile ("Desktop (Preview)"). This changes R14 (the
+primary verification target), R16 (store presence) and adds R18–R23. Google's official `adaptive` skill
+(`android/skills`, jetpack-compose/adaptive, installable through the Android CLI) is an optional reference during
+implementation; Principle VIII binds the Chris Banes skills, which stay the contract.
+
+### Hands-on check: Desktop (Preview), 2026-11-03
+
+- Installed `system-images;android-37.1;android-desktop;arm64-v8a` (4.3 GB, Android 17, API 37) from the preview channel
+  and created AVD `Tembra_Desktop_API37` from the `desktop_api37` profile (2880×1800 at 240 dpi, 1920×1200 dp),
+  `hw.keyboard=yes` and `disk.dataPartition.size=6G` (the default 12 GB did not fit the Mac's free space). It boots
+  headless in about ten seconds (`-port 5582 -no-window`).
+- It reports `type.pc`, `freeform_window_management`, a microphone and a touchscreen (Googlebooks have touchscreens;
+  the Android 14 desktop image had none).
+- `main`'s debug build opens in a free-form window at **1382×864 dp, landscape**, with no `<layout>` default: the
+  platform's own default (about 72% of the display) already meets FR-004a's first window here, confirming R3's choice
+  not to declare a default. The caption bar shows the app's name and the system's window controls; the taskbar carries
+  the app's icon.
+- `am task resize` resized it with the process kept; after `am force-stop` and a relaunch the window reopened at the
+  default size, so whether a user's own drag-resize and close are remembered is a manual check (quickstart §4 step 6).
 
 ## R1. Reach on Google Play: declared hardware features
 
@@ -55,9 +115,10 @@ and never prompts; By Ear and every other destination are untouched.
   task at 75% of the display (`DesktopModeBoundsCalculator`), a wide landscape window on any desktop display.
 - Add ChromeOS's `<meta-data android:name="WindowManagerPreference:FreeformWindowSize" android:value="tablet"/>`
   (chromeos.dev window management) so ChromeOS opens the app at its landscape tablet size the first time.
-- Spike before implementation (tasks): measure first-launch and relaunch bounds on the desktop emulator (Android 14)
-  and on the owner's tablet in desktop mode with the decided manifest; Android 14's freeform launches phone-sized
-  (412×732 dp above). If a platform still opens portrait, record it; FR-004a's "where the platform lets the app choose"
+- Spike before implementation (tasks): measure first-launch and relaunch bounds on both desktop emulators and on the
+  owner's tablet in desktop mode with the decided manifest, resizing by mouse drag (a size set with `am task resize` is
+  not remembered); Android 14's freeform launches phone-sized (412×732 dp above), Android 17's opens 1382×864 dp
+  landscape and remembers a dragged size with today's manifest (hands-on check above). If a platform still opens portrait, record it; FR-004a's "where the platform lets the app choose"
   covers platforms that do not honour a hint, and declaring a default size is rejected because it breaks restoring.
 
 **Rationale**: FR-004a has two halves; the platform decides the second, and the first is achievable without
@@ -217,12 +278,17 @@ moves to the session, the destination's ViewModel or `rememberSaveable`, keyed b
 ## R14. Testing in desktop windows (FR-028, FR-029)
 
 **Decision**:
-- Android desktop emulator lane: `tools/gradlew-device.sh emulator-5580 checkAndroidDevice` for the shared modules'
-  device tests and `:androidApp:connectedDebugAndroidTest` for the app-level tests that need the real Activity (window
-  resize while audio runs, drops, the system shortcut list). Tests launch the app with `am start --windowingMode 5`,
-  resize with `am task resize <taskId> L T R B` through `UiAutomation.executeShellCommand`, read bounds from
-  `WindowMetricsCalculator`, inject mouse hover, secondary press and scroll with `UiAutomation.injectInputEvent`
-  (`SOURCE_MOUSE`), and keys with `input keycombination`.
+- Primary Android desktop target: AVD `Tembra_Desktop_API37` from the `desktop_api37` "Desktop (Preview)" profile and the
+  `android-37.1` Google APIs Desktop (Preview) image (the Googlebook-era desktop; installed from the SDK preview channel,
+  hands-on results below). Secondary: `Tembra_Desktop_API34` (Android 14 desktop image), which first proved the approach.
+- Android desktop emulator lane: `tools/gradlew-device.sh emulator-5582 checkAndroidDevice` (and `emulator-5580` for
+  the API 34 image) for the shared modules' device tests and `:androidApp:connectedDebugAndroidTest` for the app-level
+  tests that need the real Activity (window resize while audio runs, drops, the system shortcut list), after `am
+  switch-user 10` on the API 37.1 image. Tests launch the app with `am start --windowingMode 5`, resize with `am task
+  resize <taskId> L T R B` through `UiAutomation.executeShellCommand` where only a size change matters, resize by a
+  mouse drag on the window's corner where the platform's minimum or remembered size matters (hands-on check), read
+  bounds from `WindowMetricsCalculator`, inject mouse hover, secondary press and scroll with
+  `UiAutomation.injectInputEvent` (`SOURCE_MOUSE`), and keys with `input keycombination`.
 - Compose UI tests (`uiTest`, both platforms): pointer and key behaviour with `performMouseInput` (`moveTo`,
   `rightClick`, `scroll`) and `performKeyInput`; hover appearance through injected `MutableInteractionSource`
   (`compose-ui-testing-patterns`); layout continuity by changing the test host's size.
@@ -230,9 +296,8 @@ moves to the session, the destination's ViewModel or `rememberSaveable`, keyed b
   `XCUIDevice.supportsPointerInteraction`) in a new `TembraDesktopTests` target on an iPad simulator. Nothing can
   resize an iPad window or drag from Files in tests: those are manual checks (quickstart); rotation is the automated
   window change on iPad.
-- Caveat: Google now calls "Desktop (Preview)" in Android Studio Canary the desktop test emulator; whether the API 34
-  image runs Android 15/16's desktop windowing behaviour is unverified, so the owner's tablet in desktop mode is the
-  second Android target.
+- The owner's tablet in desktop mode is the physical Android target; a Googlebook or a Chromebook is used if one becomes
+  available.
 
 ## R15. Performance instrumentation (spec section, constitution)
 
@@ -245,14 +310,79 @@ and 009 (xruns, starvation, callback load) gate it at zero underruns while the w
 items (exist), metronome start, first clip, Projects search; the window itself is addressed by its task id. The
 pipeline's `catalogue.py` learns the new family; `tracepulse.yml` lists the journey.
 
-## R16. Google Play large-screen presence (FR-027)
+## R16. Google Play large-screen presence (FR-027, SC-010)
 
-**Decision**: Chromebook screenshots are captured on the desktop emulator from the release build after the behaviour is
-done: the window maximised to the 1920×1080 dp desktop with the taskbar visible, captured at 3840×2160 and scaled to
-2560×1440 (16:9, within 1,080–7,680 px), showing the demo project playing, the tuner (By Ear, since Auto Listen captures
+**Decision**: Aim at Google Play's "Optimized for desktop" label by passing the tests of the desktop app quality
+guidelines in scope (spec SC-010); the label is Google's to give, so the feature delivers the bar, not the badge.
+Chromebook-slot screenshots (the slot Googlebooks and Chromebooks show) are captured on the Android 14 desktop
+emulator (`Tembra_Desktop_API34`, a 3840×2160 display) from the release build after the behaviour is done: the
+Desktop (Preview) image's display is 2880×1800, which is 16:10 and is not accepted by the slot. The window is
+maximised with the taskbar visible, captured at 3840×2160 and scaled to 2560×1440 (16:9, within 1,080–7,680 px), showing the demo project playing, the tuner (By Ear, since Auto Listen captures
 need a real tone and debug captures show the debug-only test-signal chip), the metronome running and a library of
 realistic projects (not the test seed data). Nothing else is required for Chromebook availability: no opt-in exists;
 the quality tiers and the large-screen badge are optional.
+
+## R18. Scrollbars while scrolling with a mouse or trackpad (FR-014a)
+
+**Decision**: One common design-system component, `TembraScrollbar`, drawn from the scroll state it is given
+(`LazyListState`, `ScrollState`, or the timeline viewport's position and extent), shown while the content scrolls
+because of a pointer (wheel or trackpad: the scroll arrives as `PointerEventType.Scroll` or Android's `Pan`, both from
+`PointerType.Mouse`) and faded out after a second of rest; it is draggable with the mouse. Applied to the timeline's
+track list and time axis, the Projects grid, the tuner's and metronome's scrolling panes and the shortcut sheet.
+
+**Rationale**: Compose Multiplatform ships `VerticalScrollbar`/`HorizontalScrollbar` only in its skiko source set
+(iOS, desktop, web: `foundation/skikoMain/.../Scrollbar.skiko.kt`); Android's Compose has none. One common component
+from the design tokens keeps both platforms identical (Complexity Tracking).
+
+**Alternatives**: the skiko scrollbar on iOS plus a custom one on Android (two looks, two behaviours).
+
+## R19. Busy pointer (FR-015a)
+
+**Decision**: While `ProjectSession` reports work in progress (an import copying files, waveform overviews being
+built), the shell's root carries `pointerHoverIcon(PointerShapes.busy)`; `PointerShapes.busy` is
+`PointerIcon(android.view.PointerIcon.TYPE_WAIT)` on Android and `PointerIcon.Default` on iOS (R7).
+
+## R20. Pointer areas that match what is drawn (FR-016a)
+
+**Decision**: Design-system components draw their hover indication across their whole interactive bounds and keep the
+44 dp minimum as visible size, not invisible padding (no `minimumInteractiveComponentSize` growth beyond the drawn
+shape); a UI test compares each component's clickable node bounds with its drawn container's bounds.
+
+## R21. Full screen from a desktop window (FR-010a)
+
+**Decision**: A `WindowControls` interface in `:shared:ui` (`fullScreenAvailable: StateFlow<Boolean>`,
+`enterFullScreen()`, `exitFullScreen()`), bound on Android by `MainActivity` with `Activity.requestFullscreenMode(
+FULLSCREEN_MODE_REQUEST_ENTER / FULLSCREEN_MODE_REQUEST_EXIT, receiver)` (API 34+) and available only while the activity
+is in multi-window or free-form mode; on iOS the binding reports unavailable (iPadOS gives full screen through its own
+window controls). The Timeline's overflow menu shows "Full screen" or "Exit full screen" while available. Desktop
+quality guideline Request_Fullscreen_Mode.
+
+## R22. Opening audio files from the Files app (FR-026a)
+
+**Decision**: Android: an `<intent-filter>` on `MainActivity` for `android.intent.action.VIEW` (category DEFAULT) with
+`audio/wav`, `audio/x-wav`, `audio/flac`, `audio/mpeg` and `content` scheme; `MainActivity` hands each incoming URI (in
+`onCreate` and `onNewIntent`) to an `OpenedFiles` stream in common code, which `ProjectSession` turns into a new project
+through the same path as a drop on Projects (`DropPlan.NewProject`), behind the existing stop-and-leave confirmation when
+a project is playing. iOS: `CFBundleDocumentTypes` for `com.microsoft.waveform-audio`, `public.mp3` and FLAC
+(`org.xiph.flac`; whether iOS 16 declares it system-wide is unverified, so an imported type declaration is added if
+not) with `LSHandlerRank` Alternate and `LSSupportsOpeningDocumentsInPlace` false (the system copies the file to the
+app); SwiftUI `.onOpenURL` forwards the URL to the iOS `OpenedFiles` binding. Desktop quality guideline File_Handlers.
+
+`MainActivity` declares no launch mode today (standard), so a `VIEW` intent from the Files app would start a second
+`MainActivity` instance (in the Files app's task, or on top of the app's own task with `FLAG_ACTIVITY_NEW_TASK`), which
+breaks the single window (FR-010). It becomes `android:launchMode="singleTask"`: the file arrives through `onNewIntent`
+in the existing window, and launcher intents keep bringing the same task forward. The cost: tapping the launcher icon
+while the system file picker is open on top of the app closes the picker (nothing is lost; the import had not
+started).
+
+## R23. Desktop quality guidelines left to later features
+
+Recorded in the spec's assumptions with the owner's answer: Multi-Instance (several windows), Input_Combinations
+(Ctrl/Shift-click multi-select: the timeline selects one clip today), dragging content out to other apps (the "from
+the app" half of Drag_Drop_Support), UI_Config (resizable or collapsible panels, list/grid toggles),
+Multitasking_PiP, Cross_Device_Handoff (Continue On), Printing_Support (export arrives with a later feature),
+Triple_Click (the app has no multi-line text) and widgets. Each is a feature of its own size; none blocks the
+guidelines in scope (SC-010).
 
 ## R17. Dependencies
 

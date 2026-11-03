@@ -41,3 +41,7 @@
   Google Play's screenshot slot. These are the platforms the feature serves, not technology choices; earlier
   features name their test devices the same way.
 - Window sizes are given in dp, as in features 002 to 009.
+- Iteration 3 (2026-11-03, after `/speckit-analyze` and Google's Googlebook post): FR-010a, FR-014a, FR-015a, FR-016a,
+  FR-026a and SC-010 added, US2, US3, US5 and US6 extended, the Googlebook context and the emulator assumption updated.
+  SC-010 names the desktop app quality guideline tests by their published IDs: they are the bar the store applies, not
+  a technology choice. All items still pass.

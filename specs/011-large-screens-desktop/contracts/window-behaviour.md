@@ -26,6 +26,13 @@ uses the full width for time.
 | Text being typed | `TextFieldState` | hoisted with its screen's other state |
 | Keyboard focus | focus tree | restored to the same semantic id after a layout switch (falls back to the destination root) |
 
+## Full screen (research R21)
+
+`WindowControls` (`UI/platform/WindowControls.kt`, interface): `fullScreenAvailable: StateFlow<Boolean>`,
+`isFullScreen: StateFlow<Boolean>`, `enterFullScreen()`, `exitFullScreen()`. Android binding in `MainActivity`
+(`requestFullscreenMode`, API 34+, only in multi-window or free-form mode); iOS binding always unavailable. The Timeline's
+overflow menu shows "Full screen" or "Exit full screen" while available.
+
 ## Audio across window changes
 
 The engine and `ProjectSession` never observe the window, so resize, maximise, snap, tiling, display moves and a
@@ -40,9 +47,15 @@ playback continue; the tuner's `ListeningPolicy` stops listening and looping ton
   same beat is at the left edge, zoom and selection are unchanged, the menu is open on the same clip and the text is
   intact.
 - `FocusAcrossLayoutsTest` (uiTest): a focused track header keeps focus across a width-class change.
+- `WindowFocusReturnTest` (androidApp androidTest, desktop emulator): with a track header focused, bring another task to
+  the front and back; focus is on the same header and audio never stopped (FR-009).
+- `FullScreenTest` (androidApp androidTest, desktop emulator): "Full screen" in the Timeline's menu fills the display,
+  "Exit full screen" returns the previous bounds, the metronome keeps clicking; the item is absent when the activity is
+  not in a multi-window or free-form mode (uiTest with a fake `WindowControls`).
 - `ListeningForegroundTest` (commonTest): `ON_PAUSE` alone keeps listening; `ON_STOP` stops it; `ON_START` resumes.
 - `WindowResizeAudioTest` (androidApp androidTest, desktop emulator): launch in freeform (`am start --windowingMode 5`),
-  start the metronome at 120 BPM, resize across 600 and 840 dp twenty times (`am task resize`), maximise and restore;
+  start the metronome at 120 BPM, make fifty window changes (resizes across 600 and 840 dp with `am task resize`,
+  maximise and restore, full screen and back) as spec SC-002 requires;
   the engine's xrun and starvation counters stay 0 and the click count matches elapsed time ± 1; repeat with the demo
   project playing (playhead keeps advancing, no restart).
 - `MinimumWindowTest` (androidApp androidTest): resizing below 360 × 480 dp is clamped by the system.
