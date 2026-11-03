@@ -1,424 +1,207 @@
-<!DOCTYPE html><html class="dark" lang="en"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {
-  "darkMode": "class",
-  "theme": {
-    "extend": {
-      "colors": {
-        "on-tertiary-container": "#40009b",
-        "on-tertiary-fixed": "#23005c",
-        "on-tertiary": "#3c0091",
-        "on-secondary-container": "#ff93c8",
-        "error-container": "#93000a",
-        "primary-container": "#a78bfa",
-        "surface-container-high": "#2a2a2d",
-        "secondary-container": "#85145a",
-        "surface-container-low": "#1b1b1e",
-        "tertiary": "#d0bcff",
-        "primary-fixed-dim": "#cebdff",
-        "inverse-primary": "#674bb5",
-        "tertiary-container": "#ab88ff",
-        "surface-dim": "#131316",
-        "surface-variant": "#353438",
-        "on-error": "#690005",
-        "surface": "#131316",
-        "secondary-fixed-dim": "#ffafd3",
-        "background": "#131316",
-        "secondary-fixed": "#ffd8e7",
-        "secondary": "#ffafd3",
-        "tertiary-fixed": "#e9ddff",
-        "on-secondary": "#620040",
-        "outline-variant": "#494552",
-        "on-error-container": "#ffdad6",
-        "surface-bright": "#39393c",
-        "surface-container-lowest": "#0e0e11",
-        "outline": "#948e9d",
-        "on-surface": "#e4e1e6",
-        "on-secondary-fixed-variant": "#85145a",
-        "on-primary": "#381385",
-        "on-primary-container": "#3c1989",
-        "on-background": "#e4e1e6",
-        "primary": "#cebdff",
-        "tertiary-fixed-dim": "#d0bcff",
-        "inverse-surface": "#e4e1e6",
-        "surface-container": "#1f1f22",
-        "on-secondary-fixed": "#3d0026",
-        "on-surface-variant": "#cac4d4",
-        "primary-fixed": "#e8ddff",
-        "on-primary-fixed-variant": "#4f319c",
-        "error": "#ffb4ab",
-        "surface-container-highest": "#353438",
-        "surface-tint": "#cebdff",
-        "on-tertiary-fixed-variant": "#5516be",
-        "on-primary-fixed": "#21005e",
-        "inverse-on-surface": "#303033"
-      },
-      "borderRadius": {
-        "DEFAULT": "0.25rem",
-        "lg": "0.5rem",
-        "xl": "0.75rem",
-        "full": "9999px"
-      },
-      "spacing": {
-        "space-xl": "1.75rem",
-        "gutter": "0.75rem",
-        "space-xs": "0.25rem",
-        "space-md": "0.75rem",
-        "space-sm": "0.5rem",
-        "space-lg": "1.25rem",
-        "margin": "1rem"
-      },
-      "fontFamily": {
-        "label-lg": ["Space Grotesk"],
-        "headline-md": ["Space Grotesk"],
-        "headline-sm": ["Space Grotesk"],
-        "body-lg": ["Inter"],
-        "label-sm": ["Space Grotesk"],
-        "headline-lg-mobile": ["Space Grotesk"],
-        "tabular-param": ["Inter"],
-        "tabular-timecode": ["Space Grotesk"],
-        "label-md": ["Space Grotesk"],
-        "body-sm": ["Inter"],
-        "headline-lg": ["Space Grotesk"],
-        "body-md": ["Inter"]
-      },
-      "fontSize": {
-        "label-lg": ["14px", {"lineHeight": "18px", "letterSpacing": "0.01em", "fontWeight": "500"}],
-        "headline-md": ["22px", {"lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
-        "headline-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
-        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
-        "label-sm": ["10px", {"lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600"}],
-        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
-        "tabular-param": ["11px", {"lineHeight": "14px", "letterSpacing": "0.02em", "fontWeight": "500"}],
-        "tabular-timecode": ["15px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "500"}],
-        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
-        "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
-        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
-        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
-      }
-    }
-  }
-};</script></head><body class="bg-surface font-body-md text-on-surface select-none"><header class="fixed top-0 left-0 right-0 h-14 bg-surface-container-low/95 backdrop-blur-xl z-50 flex items-center justify-between px-3 shadow-[0_1px_8px_rgba(0,0,0,0.35)]"><div class="flex items-center gap-space-sm"><button class="w-9 h-9 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[20px]">menu</span></button><div class="flex items-center gap-2 pl-1"><div class="w-6 h-6 rounded bg-primary-container flex items-center justify-center text-on-primary-container"><span class="material-symbols-outlined text-[16px]">graphic_eq</span></div><span class="font-headline-sm text-headline-sm tracking-tight text-on-surface font-bold">TEMBRA</span></div><div class="h-4 w-px bg-outline-variant mx-1"></div><div class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container-lowest text-on-surface-variant"><span class="font-label-md text-label-md text-on-surface font-medium">Music project - 001</span><span class="material-symbols-outlined text-primary text-[15px]">cloud_done</span></div></div><div class="hidden md:flex items-center gap-1"><button class="px-2.5 py-1 rounded font-label-md text-label-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors">File</button><button class="px-2.5 py-1 rounded font-label-md text-label-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors">Edit</button><button class="px-2.5 py-1 rounded font-label-md text-label-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors">Settings</button><button class="px-2.5 py-1 rounded font-label-md text-label-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors">Tutorials</button></div><div class="flex items-center gap-2"><button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[18px]">help_outline</span></button><button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[18px]">cloud_sync</span></button><button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[18px]">share</span></button><div class="relative p-0.5 rounded-full bg-secondary-container flex items-center justify-center"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><aside class="fixed left-0 top-14 bottom-16 w-24 bg-surface-container-lowest z-40 flex flex-col items-center pt-11 pb-2" data-purpose="navigation-rail"><nav class="w-full flex flex-col items-center gap-1" aria-label="Primary" data-active-classes="rounded-full bg-secondary-container text-on-secondary-container"><a aria-current="page" class="w-14 h-14 rounded-full flex items-center justify-center bg-secondary-container text-on-secondary-container" data-path="timeline" href="#" aria-label="Timeline"><span class="material-symbols-outlined text-[24px] leading-none">waves</span></a><a class="w-14 h-14 rounded-full flex items-center justify-center text-on-surface-variant" data-path="tuner" href="#" aria-label="Tuner"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true" style="display:block;flex:none" data-glyph="tuning_fork"><path d="M9.5 3V10.5A2.5 2.5 0 0 0 14.5 10.5V3"></path><path d="M12 13V21.5"></path><path d="M5.6 4.5A6 6 0 0 0 5.6 10.5"></path><path d="M18.4 4.5A6 6 0 0 1 18.4 10.5"></path></svg></a><a class="w-14 h-14 rounded-full flex items-center justify-center text-on-surface-variant" data-path="effects" href="#" aria-label="Effects"><span class="material-symbols-outlined text-[24px] leading-none">tune</span></a><a class="w-14 h-14 rounded-full flex items-center justify-center text-on-surface-variant" data-path="pads" href="#" aria-label="Pads"><span class="material-symbols-outlined text-[24px] leading-none">grid_view</span></a><a class="w-14 h-14 rounded-full flex items-center justify-center text-on-surface-variant" data-path="remote" href="#" aria-label="Remote"><span class="material-symbols-outlined text-[24px] leading-none">sensors</span></a><a class="w-14 h-14 rounded-full flex items-center justify-center text-on-surface-variant" data-path="projects" href="#" aria-label="Projects"><span class="material-symbols-outlined text-[24px] leading-none">folder_open</span></a></nav></aside><div class="pl-24"><main class="relative pt-14 pb-16 min-h-screen bg-surface w-full px-space-md"><div class="flex flex-col w-full pb-6 select-none relative overflow-x-hidden">
-<!-- Quick Arrange Tools Ribbon -->
-<section class="flex items-center justify-between gap-2 py-2 px-1 mb-2">
-<div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-<button class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary-container text-on-primary-container font-label-md text-label-md active:scale-95 transition-transform shadow-[0_0_10px_rgba(167,139,250,0.35)]">
-<span class="material-symbols-outlined text-[16px]">add</span>
-<span class="">Track</span>
-</button>
-<button class="w-8 h-8 rounded-lg bg-surface-container-high text-on-surface-variant hover:text-on-surface flex items-center justify-center active:scale-95 transition-colors">
-<span class="material-symbols-outlined text-[17px]">content_cut</span>
-</button>
-<button class="w-8 h-8 rounded-lg bg-surface-container-high text-on-surface-variant hover:text-on-surface flex items-center justify-center active:scale-95 transition-colors">
-<span class="material-symbols-outlined text-[17px]">headphones</span>
-</button>
-<div class="h-4 w-px bg-outline-variant mx-0.5"></div>
-<button class="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-surface-container text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm">
-<span class="material-symbols-outlined text-[14px]">grid_4x4</span>
-<span class="">1/16</span>
-</button>
-<button class="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-surface-container text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm">
-<span class="material-symbols-outlined text-[14px]">zoom_in</span>
-<span class="">1x</span>
-</button>
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><title>Tembra Audio - Timeline (Mobile) v4</title><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "surface-container-highest": "#353438", "tertiary": "#d0bcff", "error-container": "#93000a", "on-tertiary-container": "#40009b", "surface-container-lowest": "#0e0e11", "on-primary-container": "#3c1989", "outline-variant": "#494552", "on-error": "#690005", "inverse-surface": "#e4e1e6", "on-surface-variant": "#cac4d4", "surface-bright": "#39393c", "surface-container": "#1f1f22", "inverse-primary": "#674bb5", "on-background": "#e4e1e6", "on-tertiary-fixed-variant": "#5516be", "surface-container-low": "#1b1b1e", "on-secondary-fixed-variant": "#85145a", "on-secondary-fixed": "#3d0026", "secondary-fixed": "#ffd8e7", "tertiary-container": "#ab88ff", "on-tertiary-fixed": "#23005c", "error": "#ffb4ab", "inverse-on-surface": "#303033", "secondary-container": "#85145a", "primary-container": "#a78bfa", "on-primary-fixed-variant": "#4f319c", "surface-dim": "#131316", "on-secondary": "#620040", "secondary-fixed-dim": "#ffafd3", "on-primary-fixed": "#21005e", "tertiary-fixed": "#e9ddff", "on-tertiary": "#3c0091", "on-primary": "#381385", "on-surface": "#e4e1e6", "primary": "#cebdff", "tertiary-fixed-dim": "#d0bcff", "on-error-container": "#ffdad6", "primary-fixed": "#e8ddff", "surface-variant": "#353438", "surface": "#131316", "background": "#131316", "surface-tint": "#cebdff", "surface-container-high": "#2a2a2d", "outline": "#948e9d", "secondary": "#ffafd3", "primary-fixed-dim": "#cebdff", "on-secondary-container": "#ff93c8", "canvas-level0": "#0f0f12", "surface-level1": "#18171c", "surface-level2": "#212026", "playhead": "#c084fc", "playhead-chip": "#c4b5fd", "selection-outline": "#cebdff", "clip-caption-band": "#212026b3", "grid-overlay": "#c084fc33", "grid-overlay-faint": "#a855f71f", "tint-lavender": "#c4b5fd", "tint-rose": "#fda4af", "tint-dusty-rose": "#e0a0c0", "tint-peach": "#f5be9e", "tint-mint": "#a4d4bc", "tint-violet": "#c4a2dc" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "gutter": "0.75rem", "space-xl": "1.75rem", "space-xs": "0.25rem", "space-md": "0.75rem", "margin": "1rem", "space-lg": "1.25rem", "space-sm": "0.5rem" }, fontFamily: { "headline-lg": ["Space Grotesk"], "label-lg": ["Space Grotesk"], "label-md": ["Space Grotesk"], "tabular-param": ["Inter"], "headline-lg-mobile": ["Space Grotesk"], "body-sm": ["Inter"], "label-sm": ["Space Grotesk"], "body-lg": ["Inter"], "headline-md": ["Space Grotesk"], "tabular-timecode": ["Space Grotesk"], "headline-sm": ["Space Grotesk"], "body-md": ["Inter"] }, fontSize: { "headline-lg": ["32px", { lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "600" }], "label-lg": ["14px", { lineHeight: "18px", letterSpacing: "0.01em", fontWeight: "500" }], "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "500" }], "tabular-param": ["11px", { lineHeight: "14px", letterSpacing: "0.02em", fontWeight: "500" }], "headline-lg-mobile": ["24px", { lineHeight: "32px", letterSpacing: "-0.01em", fontWeight: "600" }], "body-sm": ["12px", { lineHeight: "16px", fontWeight: "400" }], "label-sm": ["10px", { lineHeight: "14px", letterSpacing: "0.04em", fontWeight: "600" }], "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }], "headline-md": ["22px", { lineHeight: "28px", letterSpacing: "-0.01em", fontWeight: "600" }], "tabular-timecode": ["15px", { lineHeight: "20px", letterSpacing: "0.05em", fontWeight: "500" }], "headline-sm": ["18px", { lineHeight: "24px", fontWeight: "600" }], "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }] } } } };</script><style>
+@layer base {
+  html, body { width: 100%; height: 100vh; max-height: 844px; margin: 0; padding: 0; overflow: hidden; }
+  body { overscroll-behavior: none; }
+}
+::-webkit-scrollbar { display: none; }
+.material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; line-height: 1; }
+.ms-fill { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+.tnum { font-variant-numeric: tabular-nums; }
+/* micro-label: the clip caption (Space Grotesk 11 px semibold) */
+.micro-label { font-family: "Space Grotesk"; font-size: 11px; line-height: 14px; font-weight: 600; letter-spacing: 0.04em; }
+/* ruler: hairlines one device pixel wide at 2x */
+.rl { position: absolute; width: 0; border-left: 0.5px solid; }
+/* lane grid: a faint bar line (grid_overlay_faint) and the snap line (grid_overlay) at every bar, 32 bars across */
+.lane-grid { background-image: linear-gradient(to right, #c084fc33 0, #c084fc33 0.5px, transparent 0.5px), linear-gradient(to right, #a855f71f 0, #a855f71f 0.5px, transparent 0.5px); background-size: calc(100% / 32) 100%; background-repeat: repeat-x; }
+</style></head><body class="bg-canvas-level0 font-body-md text-body-md text-on-surface antialiased flex flex-col h-screen max-h-[844px] select-none overflow-hidden">
+<!-- 1. Toolbar (48): + Track, scissors, undo, redo (disabled: nothing to split, no history yet), the tempo pill right-aligned, overflow -->
+<header class="h-12 w-full px-1 flex items-center flex-shrink-0 bg-canvas-level0" data-purpose="timeline-toolbar">
+<button class="w-11 h-11 rounded-full flex items-center justify-center text-on-surface-variant flex-none" aria-label="Add track"><span class="material-symbols-outlined !text-[24px]">add</span></button>
+<button class="w-11 h-11 rounded-full flex items-center justify-center text-on-surface-variant/[0.38] flex-none" aria-label="Split" disabled><span class="material-symbols-outlined !text-[24px]">content_cut</span></button>
+<button class="w-11 h-11 rounded-full flex items-center justify-center text-on-surface-variant/[0.38] flex-none" aria-label="Undo" disabled><span class="material-symbols-outlined !text-[24px]">undo</span></button>
+<button class="w-11 h-11 rounded-full flex items-center justify-center text-on-surface-variant/[0.38] flex-none" aria-label="Redo" disabled><span class="material-symbols-outlined !text-[24px]">redo</span></button>
+<div class="flex-1 min-w-0 h-11 flex items-center justify-end">
+<button class="h-8 px-3 rounded-full bg-secondary-container text-on-secondary-container font-tabular-param text-tabular-param tnum whitespace-nowrap" aria-label="Tempo 124 beats per minute">124 BPM</button>
 </div>
-<!-- Mode Badge -->
-<div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary-container/60 text-secondary font-label-sm text-label-sm shrink-0">
-<span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>
-<span class="">ARRANGE</span>
+<button class="w-11 h-11 rounded-full flex items-center justify-center text-on-surface-variant flex-none" aria-label="More"><span class="material-symbols-outlined !text-[24px]">more_vert</span></button>
+</header>
+<!-- 2. Ruler (44): bar row over time row, the playhead's "bar.beat" chip -->
+<div class="relative h-11 w-full flex-shrink-0 overflow-hidden bg-canvas-level0 font-tabular-param text-tabular-param tnum text-on-surface-variant" data-purpose="ruler">
+<!-- bar row (22): ticks every 2 bars, grid lines and labels every 4 bars -->
+<span class="rl top-[15.4px] h-[6.6px] border-outline-variant" style="left:6.25%"></span>
+<span class="rl top-[15.4px] h-[6.6px] border-outline-variant" style="left:18.75%"></span>
+<span class="rl top-[15.4px] h-[6.6px] border-outline-variant" style="left:31.25%"></span>
+<span class="rl top-[15.4px] h-[6.6px] border-outline-variant" style="left:43.75%"></span>
+<span class="rl top-[15.4px] h-[6.6px] border-outline-variant" style="left:56.25%"></span>
+<span class="rl top-[15.4px] h-[6.6px] border-outline-variant" style="left:68.75%"></span>
+<span class="rl top-[15.4px] h-[6.6px] border-outline-variant" style="left:81.25%"></span>
+<span class="rl top-[15.4px] h-[6.6px] border-outline-variant" style="left:93.75%"></span>
+<span class="rl inset-y-0 border-grid-overlay" style="left:0%"></span>
+<span class="rl inset-y-0 border-grid-overlay" style="left:12.5%"></span>
+<span class="rl inset-y-0 border-grid-overlay" style="left:25%"></span>
+<span class="rl inset-y-0 border-grid-overlay" style="left:37.5%"></span>
+<span class="rl inset-y-0 border-grid-overlay" style="left:50%"></span>
+<span class="rl inset-y-0 border-grid-overlay" style="left:62.5%"></span>
+<span class="rl inset-y-0 border-grid-overlay" style="left:75%"></span>
+<span class="rl inset-y-0 border-grid-overlay" style="left:87.5%"></span>
+<span class="absolute top-1 leading-[14px]" style="left:calc(0% + 4px)">1</span>
+<span class="absolute top-1 leading-[14px]" style="left:calc(12.5% + 4px)">5</span>
+<span class="absolute top-1 leading-[14px]" style="left:calc(25% + 4px)">9</span>
+<span class="absolute top-1 leading-[14px]" style="left:calc(37.5% + 4px)">13</span>
+<span class="absolute top-1 leading-[14px]" style="left:calc(50% + 4px)">17</span>
+<span class="absolute top-1 leading-[14px]" style="left:calc(62.5% + 4px)">21</span>
+<span class="absolute top-1 leading-[14px]" style="left:calc(75% + 4px)">25</span>
+<span class="absolute top-1 leading-[14px]" style="left:calc(87.5% + 4px)">29</span>
+<!-- time row (22): ticks every 5 s, lines and labels every 10 s -->
+<span class="rl top-[37.4px] bottom-0 border-outline-variant" style="left:8.0729%"></span>
+<span class="rl top-[37.4px] bottom-0 border-outline-variant" style="left:24.2188%"></span>
+<span class="rl top-[37.4px] bottom-0 border-outline-variant" style="left:40.3646%"></span>
+<span class="rl top-[37.4px] bottom-0 border-outline-variant" style="left:56.5104%"></span>
+<span class="rl top-[37.4px] bottom-0 border-outline-variant" style="left:72.6562%"></span>
+<span class="rl top-[37.4px] bottom-0 border-outline-variant" style="left:88.8021%"></span>
+<span class="rl top-[37.4px] bottom-0 border-outline-variant" style="left:104.9479%"></span>
+<span class="rl top-[22px] bottom-0 border-outline-variant" style="left:0%"></span>
+<span class="rl top-[22px] bottom-0 border-outline-variant" style="left:16.1458%"></span>
+<span class="rl top-[22px] bottom-0 border-outline-variant" style="left:32.2917%"></span>
+<span class="rl top-[22px] bottom-0 border-outline-variant" style="left:48.4375%"></span>
+<span class="rl top-[22px] bottom-0 border-outline-variant" style="left:64.5833%"></span>
+<span class="rl top-[22px] bottom-0 border-outline-variant" style="left:80.7292%"></span>
+<span class="rl top-[22px] bottom-0 border-outline-variant" style="left:96.875%"></span>
+<span class="absolute top-[26px] leading-[14px]" style="left:calc(0% + 4px)">00:00</span>
+<span class="absolute top-[26px] leading-[14px]" style="left:calc(16.1458% + 4px)">00:10</span>
+<span class="absolute top-[26px] leading-[14px]" style="left:calc(32.2917% + 4px)">00:20</span>
+<span class="absolute top-[26px] leading-[14px]" style="left:calc(48.4375% + 4px)">00:30</span>
+<span class="absolute top-[26px] leading-[14px]" style="left:calc(64.5833% + 4px)">00:40</span>
+<span class="absolute top-[26px] leading-[14px]" style="left:calc(80.7292% + 4px)">00:50</span>
+<span class="absolute top-[26px] leading-[14px]" style="left:calc(96.875% + 4px)">01:00</span>
+<!-- playhead: the bar.beat chip (playhead_chip, 1 px playhead outline) and the 2 px line through the time row -->
+<span class="absolute top-[3px] h-4 px-2 -translate-x-1/2 rounded-full bg-playhead-chip border border-playhead flex items-center text-on-primary-container leading-[14px] whitespace-nowrap" style="left:11.5%">4.3</span>
+<span class="absolute top-[22px] bottom-0 w-[2px] -translate-x-1/2 bg-playhead" style="left:11.5%"></span>
+</div>
+<!-- 3. Track list: per track a 56 header strip above an 88 lane; the playhead line over all of it -->
+<main class="relative flex-1 min-h-0 w-full overflow-hidden bg-canvas-level0" data-purpose="track-list">
+<!-- track 1: Drums -->
+<section class="w-full" aria-label="Track 1, Drums">
+<div class="h-14 w-full pl-3 pr-1 flex items-center gap-2 bg-surface-level1">
+<span class="w-2.5 h-2.5 rounded-full bg-tint-lavender flex-none"></span>
+<span class="font-label-lg text-label-lg text-on-surface whitespace-nowrap flex-none">Drums</span>
+<span class="h-5 px-2 rounded-full bg-surface-container-highest flex items-center justify-center gap-1 flex-none" style="width:48.6px"><span class="font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap">Drums</span></span>
+<span class="flex-none" style="width:calc((100% - 190px - 48.6px) / 2)"></span>
+<button class="w-11 h-11 rounded bg-surface-container-high font-label-lg text-label-lg text-on-surface-variant flex items-center justify-center flex-none" aria-label="Mute">M</button>
+<button class="w-11 h-11 rounded bg-surface-container-high font-label-lg text-label-lg text-on-surface-variant flex items-center justify-center flex-none" aria-label="Solo">S</button>
+<button class="w-11 h-11 rounded-full flex items-center justify-center text-on-surface-variant flex-none" aria-label="Track menu"><span class="material-symbols-outlined !text-[24px]">more_vert</span></button>
+</div>
+<div class="relative h-[88px] w-full bg-canvas-level0 lane-grid">
+<div class="absolute top-[1.143px] bottom-[1.143px] rounded-xl overflow-hidden" style="left:0%; width:50%; background:rgba(196,181,253,0.35);" aria-label="drums">
+<div class="h-[15.714px] bg-clip-caption-band"></div>
+<span class="absolute left-[1.714px] top-[0.857px] micro-label text-on-surface whitespace-nowrap">drums</span>
+<svg class="absolute left-0 right-0 bottom-0 top-[15.714px] w-full h-[calc(100%-15.714px)]" viewBox="0 0 720 245" preserveAspectRatio="none" aria-hidden="true"><path d="M1.5 56V189M4.5 84V161M7.5 110V135M10.5 70V175M13.5 101V144M16.5 94V151M19.5 122V123M22.5 52V193M25.5 107V138M28.5 77V168M31.5 122V123M34.5 64V181M37.5 114V131M40.5 110V135M43.5 122V123M46.5 99V146M49.5 115V130M52.5 122V123M55.5 122V123M58.5 110V135M61.5 119V126M64.5 122V123M67.5 54V191M70.5 112V133M73.5 107V138M76.5 122V123M79.5 102V143M82.5 118V127M85.5 104V141M88.5 118V127M91.5 107V138M94.5 117V128M97.5 122V123M100.5 122V123M103.5 113V132M106.5 85V160M109.5 122V123M112.5 65V180M115.5 115V130M118.5 86V159M121.5 122V123M124.5 71V174M127.5 119V126M130.5 95V150M133.5 122V123M136.5 57V188M139.5 64V181M142.5 106V139M145.5 69V176M148.5 100V145M151.5 86V159M154.5 122V123M157.5 122V123M160.5 57V188M163.5 64V181M166.5 106V139M169.5 69V176M172.5 100V145M175.5 86V159M178.5 108V137M181.5 97V148M184.5 114V131M187.5 122V123M190.5 75V170M193.5 109V136M196.5 91V154M199.5 122V123M202.5 61V184M205.5 112V133M208.5 107V138M211.5 122V123M214.5 98V147M217.5 117V128M220.5 122V123M223.5 122V123M226.5 107V138M229.5 117V128M232.5 122V123M235.5 122V123M238.5 110V135M241.5 90V155M244.5 122V123M247.5 55V190M250.5 114V131M253.5 92V153M256.5 122V123M259.5 69V176M262.5 118V127M265.5 80V165M268.5 122V123M271.5 53V192M274.5 86V159M277.5 96V149M280.5 76V169M283.5 98V147M286.5 94V151M289.5 121V124M292.5 52V193M295.5 107V138M298.5 94V151M301.5 122V123M304.5 64V181M307.5 112V133M310.5 100V145M313.5 65V180M316.5 95V150M319.5 91V154M322.5 121V124M325.5 77V168M328.5 108V137M331.5 99V146M334.5 122V123M337.5 46V199M340.5 111V134M343.5 106V139M346.5 122V123M349.5 100V145M352.5 116V129M355.5 90V155M358.5 111V134M361.5 107V138M364.5 116V129M367.5 122V123M370.5 122V123M373.5 112V133M376.5 90V155M379.5 122V123M382.5 60V185M385.5 114V131M388.5 92V153M391.5 122V123M394.5 65V180M397.5 119V126M400.5 90V155M403.5 122V123M406.5 62V183M409.5 88V157M412.5 85V160M415.5 70V175M418.5 95V150M421.5 91V154M424.5 120V125M427.5 55V190M430.5 106V139M433.5 87V158M436.5 122V123M439.5 57V188M442.5 83V162M445.5 75V170M448.5 59V186M451.5 92V153M454.5 93V152M457.5 119V126M460.5 75V170M463.5 107V138M466.5 94V151M469.5 122V123M472.5 59V186M475.5 111V134M478.5 91V154M481.5 122V123M484.5 93V152M487.5 115V130M490.5 120V125M493.5 122V123M496.5 106V139M499.5 116V129M502.5 122V123M505.5 122V123M508.5 111V134M511.5 120V125M514.5 122V123M517.5 45V200M520.5 113V132M523.5 75V170M526.5 122V123M529.5 63V182M532.5 119V126M535.5 72V173M538.5 118V127M541.5 60V185M544.5 118V127M547.5 92V153M550.5 51V194M553.5 86V159M556.5 86V159M559.5 122V123M562.5 52V193M565.5 116V129M568.5 89V156M571.5 122V123M574.5 75V170M577.5 120V125M580.5 83V162M583.5 39V206M586.5 84V161M589.5 94V151M592.5 118V127M595.5 64V181M598.5 106V139M601.5 91V154M604.5 122V123M607.5 66V179M610.5 109V136M613.5 89V156M616.5 122V123M619.5 83V162M622.5 115V130M625.5 95V150M628.5 117V128M631.5 105V140M634.5 116V129M637.5 122V123M640.5 122V123M643.5 111V134M646.5 119V126M649.5 122V123M652.5 68V177M655.5 113V132M658.5 91V154M661.5 122V123M664.5 55V190M667.5 118V127M670.5 94V151M673.5 122V123M676.5 56V189M679.5 118V127M682.5 122V123M685.5 61V184M688.5 115V130M691.5 89V156M694.5 122V123M697.5 66V179M700.5 116V129M703.5 81V164M706.5 122V123M709.5 69V176M712.5 119V126M715.5 71V174M718.5 120V125" stroke="#c4b5fd" stroke-width="2" fill="none"/></svg>
+</div>
 </div>
 </section>
-<!-- Timeline Container with Full-Height Dynamic Playhead -->
-<div class="relative w-full rounded-xl bg-surface-container-lowest overflow-hidden shadow-[inset_0_1px_3px_rgba(0,0,0,0.6)]">
-<!-- Timeline Ruler -->
-<div class="relative h-7 bg-surface-container-low flex items-end px-3">
-<div class="grid grid-cols-8 w-full font-tabular-timecode text-[11px] text-outline font-semibold pb-1">
-<div class="flex items-center gap-1"><span class="">1</span><span class="text-[9px] text-outline-variant">|..</span></div>
-<div class="flex items-center gap-1"><span class="">2</span><span class="text-[9px] text-outline-variant">|..</span></div>
-<div class="flex items-center gap-1"><span class="">3</span><span class="text-[9px] text-outline-variant">|..</span></div>
-<div class="flex items-center gap-1"><span class="">4</span><span class="text-[9px] text-outline-variant">|..</span></div>
-<div class="flex items-center gap-1"><span class="">5</span><span class="text-[9px] text-outline-variant">|..</span></div>
-<div class="flex items-center gap-1"><span class="">6</span><span class="text-[9px] text-outline-variant">|..</span></div>
-<div class="flex items-center gap-1"><span class="">7</span><span class="text-[9px] text-outline-variant">|..</span></div>
-<div class="flex items-center gap-1"><span class="">8</span><span class="text-[9px] text-outline-variant">|..</span></div>
+<!-- track 2: Bass -->
+<section class="w-full" aria-label="Track 2, Bass">
+<div class="h-14 w-full pl-3 pr-1 flex items-center gap-2 bg-surface-level1">
+<span class="w-2.5 h-2.5 rounded-full bg-tint-rose flex-none"></span>
+<span class="font-label-lg text-label-lg text-on-surface whitespace-nowrap flex-none">Bass</span>
+<span class="h-5 px-2 rounded-full bg-surface-container-highest flex items-center justify-center gap-1 flex-none" style="width:40.3px"><span class="font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap">Bass</span></span>
+<span class="flex-none" style="width:calc((100% - 190px - 40.3px) / 2)"></span>
+<button class="w-11 h-11 rounded bg-surface-container-high font-label-lg text-label-lg text-on-surface-variant flex items-center justify-center flex-none" aria-label="Mute">M</button>
+<button class="w-11 h-11 rounded bg-surface-container-high font-label-lg text-label-lg text-on-surface-variant flex items-center justify-center flex-none" aria-label="Solo">S</button>
+<button class="w-11 h-11 rounded-full flex items-center justify-center text-on-surface-variant flex-none" aria-label="Track menu"><span class="material-symbols-outlined !text-[24px]">more_vert</span></button>
 </div>
+<div class="relative h-[88px] w-full bg-canvas-level0 lane-grid">
+<div class="absolute top-[1.143px] bottom-[1.143px] rounded-xl overflow-hidden" style="left:0%; width:50%; background:rgba(253,164,175,0.35);" aria-label="bass">
+<div class="h-[15.714px] bg-clip-caption-band"></div>
+<span class="absolute left-[1.714px] top-[0.857px] micro-label text-on-surface whitespace-nowrap">bass</span>
+<svg class="absolute left-0 right-0 bottom-0 top-[15.714px] w-full h-[calc(100%-15.714px)]" viewBox="0 0 720 245" preserveAspectRatio="none" aria-hidden="true"><path d="M1.5 63V182M4.5 63V182M7.5 64V181M10.5 63V182M13.5 67V178M16.5 63V182M19.5 69V176M22.5 63V182M25.5 71V174M28.5 63V182M31.5 73V172M34.5 63V182M37.5 75V170M40.5 64V181M43.5 76V169M46.5 67V178M49.5 78V167M52.5 69V176M55.5 79V166M58.5 71V174M61.5 81V164M64.5 73V172M67.5 63V182M70.5 75V170M73.5 65V180M76.5 76V169M79.5 66V179M82.5 77V168M85.5 69V176M88.5 79V166M91.5 71V174M94.5 81V164M97.5 73V172M100.5 82V163M103.5 75V170M106.5 63V182M109.5 75V170M112.5 64V181M115.5 77V168M118.5 64V181M121.5 79V166M124.5 64V181M127.5 81V164M130.5 63V182M133.5 82V163M136.5 63V182M139.5 63V182M142.5 64V181M145.5 63V182M148.5 67V178M151.5 62V183M154.5 68V177M157.5 82V163M160.5 63V182M163.5 63V182M166.5 64V181M169.5 63V182M172.5 67V178M175.5 62V183M178.5 75V170M181.5 66V179M184.5 77V168M187.5 68V177M190.5 63V182M193.5 71V174M196.5 63V182M199.5 73V172M202.5 63V182M205.5 74V171M208.5 64V181M211.5 75V170M214.5 66V179M217.5 77V168M220.5 68V177M223.5 78V167M226.5 70V175M229.5 80V165M232.5 73V172M235.5 82V163M238.5 75V170M241.5 63V182M244.5 75V170M247.5 63V182M250.5 77V168M253.5 63V182M256.5 78V167M259.5 63V182M262.5 80V165M265.5 63V182M268.5 81V164M271.5 64V181M274.5 83V162M277.5 64V181M280.5 64V181M283.5 66V179M286.5 63V182M289.5 68V177M292.5 64V181M295.5 71V174M298.5 64V181M301.5 72V173M304.5 64V181M307.5 74V171M310.5 63V182M313.5 63V182M316.5 66V179M319.5 63V182M322.5 68V177M325.5 63V182M328.5 70V175M331.5 62V183M334.5 72V173M337.5 63V182M340.5 74V171M343.5 63V182M346.5 75V170M349.5 66V179M352.5 76V169M355.5 68V177M358.5 78V167M361.5 70V175M364.5 80V165M367.5 72V173M370.5 81V164M373.5 74V171M376.5 71V174M379.5 75V170M382.5 63V182M385.5 77V168M388.5 63V182M391.5 78V167M394.5 63V182M397.5 80V165M400.5 63V182M403.5 81V164M406.5 63V182M409.5 82V163M412.5 63V182M415.5 63V182M418.5 65V180M421.5 63V182M424.5 68V177M427.5 63V182M430.5 70V175M433.5 63V182M436.5 81V164M439.5 63V182M442.5 82V163M445.5 63V182M448.5 64V181M451.5 66V179M454.5 64V181M457.5 67V178M460.5 64V181M463.5 69V176M466.5 63V182M469.5 72V173M472.5 64V181M475.5 74V171M478.5 64V181M481.5 75V170M484.5 66V179M487.5 76V169M490.5 67V178M493.5 77V168M496.5 69V176M499.5 79V166M502.5 71V174M505.5 81V164M508.5 74V171M511.5 82V163M514.5 75V170M517.5 63V182M520.5 76V169M523.5 63V182M526.5 77V168M529.5 63V182M532.5 79V166M535.5 62V183M538.5 80V165M541.5 63V182M544.5 82V163M547.5 63V182M550.5 63V182M553.5 64V181M556.5 63V182M559.5 77V168M562.5 63V182M565.5 79V166M568.5 63V182M571.5 80V165M574.5 63V182M577.5 82V163M580.5 63V182M583.5 63V182M586.5 65V180M589.5 63V182M592.5 66V179M595.5 63V182M598.5 69V176M601.5 63V182M604.5 71V174M607.5 63V182M610.5 73V172M613.5 63V182M616.5 75V170M619.5 65V180M622.5 76V169M625.5 66V179M628.5 77V168M631.5 69V176M634.5 79V166M637.5 71V174M640.5 81V164M643.5 72V173M646.5 82V163M649.5 75V170M652.5 71V174M655.5 76V169M658.5 64V181M661.5 77V168M664.5 64V181M667.5 79V166M670.5 63V182M673.5 80V165M676.5 63V182M679.5 81V164M682.5 75V170M685.5 63V182M688.5 75V170M691.5 62V183M694.5 77V168M697.5 63V182M700.5 78V167M703.5 63V182M706.5 80V165M709.5 63V182M712.5 81V164M715.5 62V183M718.5 83V162" stroke="#fda4af" stroke-width="2" fill="none"/></svg>
 </div>
-<!-- Playhead Needle Overlay -->
-<div class="absolute top-0 bottom-0 left-[48%] w-px bg-primary pointer-events-none z-30 shadow-[0_0_8px_rgba(206,189,255,0.85)]" id="playhead-needle" style="left: 26.55%;">
-<!-- Playhead Cap Knob -->
-<div class="absolute -top-0 -left-[5px] w-2.5 h-3 bg-primary rounded-b flex items-center justify-center shadow-[0_0_6px_rgba(206,189,255,0.9)]">
-<div class="w-1 h-1 bg-surface-container-lowest rounded-full"></div>
-</div>
-</div>
-<!-- Track Arrange Canvas -->
-<div class="flex flex-col gap-1.5 p-1.5">
-<!-- Track 1: Lead Vocal / Synth -->
-<div class="flex flex-col rounded-lg bg-surface-container-low p-2">
-<div class="flex items-center justify-between mb-1.5">
-<div class="flex items-center gap-2">
-<span class="font-headline-sm text-headline-sm text-on-surface">Track 1</span>
-<span class="px-1.5 py-0.5 rounded bg-surface-container-high font-label-sm text-label-sm text-tertiary">Lead Vocal</span>
-</div>
-<div class="flex items-center gap-1.5">
-<button class="w-5 h-5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-[10px] hover:text-secondary active:scale-95">M</button>
-<button class="w-5 h-5 rounded bg-primary-container text-on-primary-container font-label-sm text-[10px] font-bold active:scale-95">S</button>
-<button class="text-on-surface-variant hover:text-on-surface">
-<span class="material-symbols-outlined text-[16px]">more_horiz</span>
-</button>
-</div>
-</div>
-<!-- Waveform Clip 1 (Continuous Full Take) -->
-<div class="relative w-full h-14 rounded-lg bg-primary-container/85 hover:bg-primary-container text-on-primary-container p-2 flex items-center overflow-hidden cursor-pointer shadow-[0_0_12px_rgba(167,139,250,0.22)] transition-colors">
-<div class="absolute left-2 top-1 font-label-sm text-[9px] uppercase tracking-wider opacity-60">take_01_vox.wav</div>
-<!-- Waveform SVG -->
-<svg class="w-full h-9 stroke-on-primary-container fill-none" preserveAspectRatio="none" viewBox="0 0 400 36">
-<path d="M 2,18 L 6,12 L 10,24 L 14,8 L 18,28 L 22,14 L 26,22 L 30,6 L 34,30 L 38,16 L 42,20 L 46,10 L 50,26 L 54,4 L 58,32 L 62,14 L 66,22 L 70,12 L 74,24 L 78,16 L 82,20 L 86,6 L 90,30 L 94,14 L 98,22 L 102,10 L 106,26 L 110,18 L 114,18 L 118,10 L 122,26 L 126,6 L 130,30 L 134,14 L 138,22 L 142,4 L 146,32 L 150,16 L 154,20 L 158,12 L 162,24 L 166,16 L 170,20 L 174,8 L 178,28 L 182,14 L 186,22 L 190,4 L 194,32 L 198,12 L 202,24 L 206,10 L 210,26 L 214,16 L 218,20 L 222,6 L 226,30 L 230,14 L 234,22 L 238,12 L 242,24 L 246,16 L 250,20 L 254,8 L 258,28 L 262,14 L 266,22 L 270,10 L 274,26 L 278,18 L 282,18 L 286,12 L 290,24 L 294,8 L 298,28 L 302,14 L 306,22 L 310,6 L 314,30 L 318,14 L 322,22 L 326,10 L 330,26 L 334,14 L 338,22 L 342,16 L 346,20 L 350,10 L 354,26 L 358,16 L 362,20 L 366,12 L 370,24 L 374,16 L 378,20 L 382,14 L 386,22 L 390,16 L 394,19 L 398,18" stroke-linecap="round" stroke-width="2"></path>
-</svg>
-</div>
-</div>
-<!-- Track 2: Bassline / 808 -->
-<div class="flex flex-col rounded-lg bg-surface-container-low p-2">
-<div class="flex items-center justify-between mb-1.5">
-<div class="flex items-center gap-2">
-<span class="font-headline-sm text-headline-sm text-on-surface">Track 2</span>
-<span class="px-1.5 py-0.5 rounded bg-surface-container-high font-label-sm text-label-sm text-secondary">Bass 808</span>
-</div>
-<div class="flex items-center gap-1.5">
-<button class="w-5 h-5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-[10px] hover:text-secondary">M</button>
-<button class="w-5 h-5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-[10px]">S</button>
-<button class="text-on-surface-variant hover:text-on-surface">
-<span class="material-symbols-outlined text-[16px]">more_horiz</span>
-</button>
-</div>
-</div>
-<!-- Two Waveform Blocks with Gaps -->
-<div class="grid grid-cols-2 gap-2 w-full">
-<div class="h-14 rounded-lg bg-secondary/80 hover:bg-secondary text-on-secondary p-2 flex items-center overflow-hidden cursor-pointer shadow-[0_0_10px_rgba(255,175,211,0.25)] transition-colors">
-<svg class="w-full h-8 stroke-on-secondary fill-none" preserveAspectRatio="none" viewBox="0 0 180 32">
-<path d="M 4,16 L 12,8 L 20,24 L 28,6 L 36,26 L 44,10 L 52,22 L 60,4 L 68,28 L 76,8 L 84,24 L 92,12 L 100,20 L 108,6 L 116,26 L 124,10 L 132,22 L 140,4 L 148,28 L 156,12 L 164,20 L 172,16" stroke-linecap="round" stroke-width="2.5"></path>
-</svg>
-</div>
-<div class="h-14 rounded-lg bg-secondary/80 hover:bg-secondary text-on-secondary p-2 flex items-center overflow-hidden cursor-pointer shadow-[0_0_10px_rgba(255,175,211,0.25)] transition-colors">
-<svg class="w-full h-8 stroke-on-secondary fill-none" preserveAspectRatio="none" viewBox="0 0 180 32">
-<path d="M 4,16 L 12,10 L 20,22 L 28,8 L 36,24 L 44,4 L 52,28 L 60,10 L 68,22 L 76,6 L 84,26 L 92,8 L 100,24 L 108,12 L 116,20 L 124,8 L 132,24 L 140,10 L 148,22 L 156,6 L 164,26 L 172,16" stroke-linecap="round" stroke-width="2.5"></path>
-</svg>
-</div>
-</div>
-</div>
-<!-- Track 3: Acoustic Drums / Perc (Segmented Rhythmic Pattern Blocks) -->
-<div class="flex flex-col rounded-lg bg-surface-container-low p-2">
-<div class="flex items-center justify-between mb-1.5">
-<div class="flex items-center gap-2">
-<span class="font-headline-sm text-headline-sm text-on-surface">Track 3</span>
-<span class="px-1.5 py-0.5 rounded bg-surface-container-high font-label-sm text-label-sm text-tertiary">Perc / Loops</span>
-</div>
-<div class="flex items-center gap-1.5">
-<button class="w-5 h-5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-[10px]">M</button>
-<button class="w-5 h-5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-[10px]">S</button>
-<button class="text-on-surface-variant hover:text-on-surface">
-<span class="material-symbols-outlined text-[16px]">more_horiz</span>
-</button>
-</div>
-</div>
-<div class="grid grid-cols-4 gap-1.5 w-full">
-<div class="h-12 rounded-lg bg-tertiary/70 hover:bg-tertiary text-on-tertiary flex items-center justify-center p-1.5 cursor-pointer transition-colors">
-<svg class="w-full h-7 stroke-on-tertiary fill-none" preserveAspectRatio="none" viewBox="0 0 60 28">
-<path d="M 6,14 L 14,4 L 22,24 L 30,8 L 38,20 L 46,6 L 54,22" stroke-linecap="round" stroke-width="2"></path>
-</svg>
-</div>
-<div class="h-12 rounded-lg bg-tertiary/70 hover:bg-tertiary text-on-tertiary flex items-center justify-center p-1.5 cursor-pointer transition-colors">
-<svg class="w-full h-7 stroke-on-tertiary fill-none" preserveAspectRatio="none" viewBox="0 0 60 28">
-<path d="M 6,14 L 14,4 L 22,24 L 30,8 L 38,20 L 46,6 L 54,22" stroke-linecap="round" stroke-width="2"></path>
-</svg>
-</div>
-<div class="h-12 rounded-lg bg-tertiary/70 hover:bg-tertiary text-on-tertiary flex items-center justify-center p-1.5 cursor-pointer transition-colors">
-<svg class="w-full h-7 stroke-on-tertiary fill-none" preserveAspectRatio="none" viewBox="0 0 60 28">
-<path d="M 6,14 L 14,4 L 22,24 L 30,8 L 38,20 L 46,6 L 54,22" stroke-linecap="round" stroke-width="2"></path>
-</svg>
-</div>
-<div class="h-12 rounded-lg bg-tertiary/70 hover:bg-tertiary text-on-tertiary flex items-center justify-center p-1.5 cursor-pointer transition-colors">
-<svg class="w-full h-7 stroke-on-tertiary fill-none" preserveAspectRatio="none" viewBox="0 0 60 28">
-<path d="M 6,14 L 14,4 L 22,24 L 30,8 L 38,20 L 46,6 L 54,22" stroke-linecap="round" stroke-width="2"></path>
-</svg>
-</div>
-</div>
-</div>
-<!-- Track 4: Rhythm Guitar / Pad with Interactive Automation Envelope HUD -->
-<div class="flex flex-col rounded-lg bg-surface-container-low p-2">
-<div class="flex items-center justify-between mb-1.5">
-<div class="flex items-center gap-2">
-<span class="font-headline-sm text-headline-sm text-on-surface">Track 4</span>
-<span class="px-1.5 py-0.5 rounded bg-surface-container-high font-label-sm text-label-sm text-on-secondary-container">Pad Filter</span>
-</div>
-<div class="flex items-center gap-1.5">
-<span class="font-label-sm text-[9px] text-primary px-1.5 py-0.5 rounded bg-surface-container-highest">LPF Cutoff</span>
-<button class="text-on-surface-variant hover:text-on-surface">
-<span class="material-symbols-outlined text-[16px]">more_horiz</span>
-</button>
-</div>
-</div>
-<!-- Automation Curve Canvas & Node HUD -->
-<div class="relative w-full h-20 rounded-lg bg-surface-container-lowest overflow-hidden">
-<!-- Ambient gridlines -->
-<div class="absolute inset-0 grid grid-cols-4 grid-rows-2 opacity-15">
-<div class="bg-surface-variant/40"></div>
-<div class="bg-surface-variant/20"></div>
-<div class="bg-surface-variant/40"></div>
-<div class="bg-surface-variant/20"></div>
-</div>
-<!-- Bezier Envelope SVG -->
-<svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 380 80">
-<defs>
-<linearGradient id="curveGradient" x1="0" x2="0" y1="0" y2="1">
-<stop offset="0%" stop-color="#a78bfa" stop-opacity="0.35"></stop>
-<stop offset="100%" stop-color="#a78bfa" stop-opacity="0.0"></stop>
-</linearGradient>
-</defs>
-<path d="M 0,65 C 60,65 90,20 160,25 C 230,30 260,60 380,15 L 380,80 L 0,80 Z" fill="url(#curveGradient)"></path>
-<path d="M 0,65 C 60,65 90,20 160,25 C 230,30 260,60 380,15" fill="none" stroke="#cebdff" stroke-width="2.5"></path>
-<!-- Draggable Node 1 -->
-<circle class="shadow-lg" cx="160" cy="25" fill="#cebdff" r="5"></circle>
-<circle cx="160" cy="25" fill="#131316" r="2.5"></circle>
-<!-- Draggable Node 2 -->
-<circle cx="270" cy="50" fill="#ffafd3" r="5"></circle>
-<circle cx="270" cy="50" fill="#131316" r="2.5"></circle>
-</svg>
-<!-- Floating Parameter Card HUD (as seen in Screenshot reference) -->
-<div class="absolute left-16 top-1.5 px-2.5 py-1.5 rounded-lg bg-surface-container-high/95 backdrop-blur shadow-md flex items-center gap-3">
-<div class="flex flex-col">
-<span class="font-label-sm text-[8px] text-outline-variant uppercase">Speed</span>
-<span class="font-tabular-param text-tabular-param text-on-surface">1.24x</span>
-</div>
-<div class="w-px h-5 bg-outline-variant/60"></div>
-<div class="flex flex-col">
-<span class="font-label-sm text-[8px] text-outline-variant uppercase">Ease</span>
-<span class="font-tabular-param text-tabular-param text-primary">Cubic</span>
-</div>
-<div class="w-px h-5 bg-outline-variant/60"></div>
-<div class="flex flex-col">
-<span class="font-label-sm text-[8px] text-outline-variant uppercase">Blend</span>
-<span class="font-tabular-param text-tabular-param text-secondary">82%</span>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<!-- Collapsible Sound Matrix & MPC Pads Drawer -->
-<section class="flex flex-col mt-3 rounded-xl bg-surface-container-low p-2.5 shadow-md">
-<!-- Category Filter Pill Bar -->
-<div class="flex items-center justify-between gap-1.5 pb-2 overflow-x-auto no-scrollbar">
-<div class="flex items-center gap-1.5">
-<button class="px-3 py-1 rounded-full bg-secondary-container text-on-secondary-container font-label-md text-label-md active:scale-95 shadow-sm">Bass</button>
-<button class="px-3 py-1 rounded-full bg-surface-container-highest text-on-surface-variant hover:text-on-surface font-label-md text-label-md">Drums</button>
-<button class="px-3 py-1 rounded-full bg-surface-container-highest text-on-surface-variant hover:text-on-surface font-label-md text-label-md">Piano</button>
-<button class="px-3 py-1 rounded-full bg-surface-container-highest text-on-surface-variant hover:text-on-surface font-label-md text-label-md">Rock</button>
-<button class="px-3 py-1 rounded-full bg-surface-container-highest text-on-surface-variant hover:text-on-surface font-label-md text-label-md">Pop</button>
-<button class="px-3 py-1 rounded-full bg-surface-container-highest text-on-surface-variant hover:text-on-surface font-label-md text-label-md">Vocals</button>
-</div>
-<button class="w-7 h-7 rounded-lg bg-surface-container flex items-center justify-center text-on-surface-variant shrink-0">
-<span class="material-symbols-outlined text-[16px]">expand_less</span>
-</button>
-</div>
-<!-- Tactile Sound Trigger Pads Matrix (4x2 / 7-col scroll grid) -->
-<div class="grid grid-cols-7 gap-1.5 pt-1">
-<!-- Pad 033 -->
-<button class="h-14 rounded-lg bg-[#5b2a3d] hover:bg-[#85145a] active:bg-[#9d4b68] flex flex-col justify-between p-1.5 text-secondary-fixed transition-all active:scale-95 shadow-sm" onclick="triggerPad(this)">
-<span class="font-tabular-param text-[8px] opacity-70">033</span>
-<span class="material-symbols-outlined text-[18px] mx-auto">drag_handle</span>
-</button>
-<!-- Pad 034 (Active Pulsing Pad) -->
-<button class="h-14 rounded-lg bg-[#85145a] active:bg-[#9d4b68] flex flex-col justify-between p-1.5 text-on-secondary-container transition-all active:scale-95 shadow-[0_0_10px_rgba(255,147,200,0.35)]" onclick="triggerPad(this)">
-<span class="font-tabular-param text-[8px] font-bold">034</span>
-<span class="material-symbols-outlined text-[18px] mx-auto">grid_view</span>
-</button>
-<!-- Pad 035 -->
-<button class="h-14 rounded-lg bg-[#5b2a3d] hover:bg-[#85145a] active:bg-[#9d4b68] flex flex-col justify-between p-1.5 text-secondary-fixed transition-all active:scale-95 shadow-sm" onclick="triggerPad(this)">
-<span class="font-tabular-param text-[8px] opacity-70">035</span>
-<span class="material-symbols-outlined text-[18px] mx-auto">adjust</span>
-</button>
-<!-- Pad 036 -->
-<button class="h-14 rounded-lg bg-[#5b2a3d] hover:bg-[#85145a] active:bg-[#9d4b68] flex flex-col justify-between p-1.5 text-secondary-fixed transition-all active:scale-95 shadow-sm" onclick="triggerPad(this)">
-<span class="font-tabular-param text-[8px] opacity-70">036</span>
-<span class="material-symbols-outlined text-[18px] mx-auto">flare</span>
-</button>
-<!-- Pad 037 -->
-<button class="h-14 rounded-lg bg-[#5b2a3d] hover:bg-[#85145a] active:bg-[#9d4b68] flex flex-col justify-between p-1.5 text-secondary-fixed transition-all active:scale-95 shadow-sm" onclick="triggerPad(this)">
-<span class="font-tabular-param text-[8px] opacity-70">037</span>
-<span class="material-symbols-outlined text-[18px] mx-auto">horizontal_split</span>
-</button>
-<!-- Pad 038 -->
-<button class="h-14 rounded-lg bg-[#5b2a3d] hover:bg-[#85145a] active:bg-[#9d4b68] flex flex-col justify-between p-1.5 text-secondary-fixed transition-all active:scale-95 shadow-sm" onclick="triggerPad(this)">
-<span class="font-tabular-param text-[8px] opacity-70">038</span>
-<span class="material-symbols-outlined text-[18px] mx-auto">grain</span>
-</button>
-<!-- Pad 039 -->
-<button class="h-14 rounded-lg bg-[#5b2a3d] hover:bg-[#85145a] active:bg-[#9d4b68] flex flex-col justify-between p-1.5 text-secondary-fixed transition-all active:scale-95 shadow-sm" onclick="triggerPad(this)">
-<span class="font-tabular-param text-[8px] opacity-70">039</span>
-<span class="material-symbols-outlined text-[18px] mx-auto">menu</span>
-</button>
-<!-- Row 2: Pad 042 -->
-<button class="h-14 rounded-lg bg-[#5b2a3d] hover:bg-[#85145a] active:bg-[#9d4b68] flex flex-col justify-between p-1.5 text-secondary-fixed transition-all active:scale-95 shadow-sm" onclick="triggerPad(this)">
-<span class="font-tabular-param text-[8px] opacity-70">042</span>
-<span class="material-symbols-outlined text-[18px] mx-auto">emergency</span>
-</button>
-<!-- Pad 040 -->
-<button class="h-14 rounded-lg bg-[#5b2a3d] hover:bg-[#85145a] active:bg-[#9d4b68] flex flex-col justify-between p-1.5 text-secondary-fixed transition-all active:scale-95 shadow-sm" onclick="triggerPad(this)">
-<span class="font-tabular-param text-[8px] opacity-70">040</span>
-<span class="material-symbols-outlined text-[18px] mx-auto">radio_button_unchecked</span>
-</button>
-<!-- Pad 043 -->
-<button class="h-14 rounded-lg bg-[#5b2a3d] hover:bg-[#85145a] active:bg-[#9d4b68] flex flex-col justify-between p-1.5 text-secondary-fixed transition-all active:scale-95 shadow-sm" onclick="triggerPad(this)">
-<span class="font-tabular-param text-[8px] opacity-70">043</span>
-<span class="material-symbols-outlined text-[18px] mx-auto">height</span>
-</button>
-<!-- Pad 041 -->
-<button class="h-14 rounded-lg bg-[#5b2a3d] hover:bg-[#85145a] active:bg-[#9d4b68] flex flex-col justify-between p-1.5 text-secondary-fixed transition-all active:scale-95 shadow-sm" onclick="triggerPad(this)">
-<span class="font-tabular-param text-[8px] opacity-70">041</span>
-<span class="material-symbols-outlined text-[18px] mx-auto">all_out</span>
-</button>
-<!-- Pad 044 -->
-<button class="h-14 rounded-lg bg-[#5b2a3d] hover:bg-[#85145a] active:bg-[#9d4b68] flex flex-col justify-between p-1.5 text-secondary-fixed transition-all active:scale-95 shadow-sm" onclick="triggerPad(this)">
-<span class="font-tabular-param text-[8px] opacity-70">044</span>
-<span class="material-symbols-outlined text-[18px] mx-auto">waves</span>
-</button>
-<!-- Pad 054 -->
-<button class="h-14 rounded-lg bg-[#5b2a3d] hover:bg-[#85145a] active:bg-[#9d4b68] flex flex-col justify-between p-1.5 text-secondary-fixed transition-all active:scale-95 shadow-sm" onclick="triggerPad(this)">
-<span class="font-tabular-param text-[8px] opacity-70">054</span>
-<span class="material-symbols-outlined text-[18px] mx-auto">light_mode</span>
-</button>
-<!-- Pad 056 -->
-<button class="h-14 rounded-lg bg-[#5b2a3d] hover:bg-[#85145a] active:bg-[#9d4b68] flex flex-col justify-between p-1.5 text-secondary-fixed transition-all active:scale-95 shadow-sm" onclick="triggerPad(this)">
-<span class="font-tabular-param text-[8px] opacity-70">056</span>
-<span class="material-symbols-outlined text-[18px] mx-auto">reorder</span>
-</button>
 </div>
 </section>
-<!-- Reference Snapshot Card -->
-
+<!-- track 3: Keys -->
+<section class="w-full" aria-label="Track 3, Keys">
+<div class="h-14 w-full pl-3 pr-1 flex items-center gap-2 bg-surface-level1">
+<span class="w-2.5 h-2.5 rounded-full bg-tint-dusty-rose flex-none"></span>
+<span class="font-label-lg text-label-lg text-on-surface whitespace-nowrap flex-none">Keys</span>
+<span class="h-5 px-2 rounded-full bg-surface-container-highest flex items-center justify-center gap-1 flex-none" style="width:58.9px"><span class="material-symbols-outlined !text-[14px] text-on-surface-variant">piano</span><span class="font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap">Keys</span></span>
+<span class="flex-none" style="width:calc((100% - 190px - 58.9px) / 2)"></span>
+<button class="w-11 h-11 rounded bg-surface-container-high font-label-lg text-label-lg text-on-surface-variant flex items-center justify-center flex-none" aria-label="Mute">M</button>
+<button class="w-11 h-11 rounded bg-surface-container-high font-label-lg text-label-lg text-on-surface-variant flex items-center justify-center flex-none" aria-label="Solo">S</button>
+<button class="w-11 h-11 rounded-full flex items-center justify-center text-on-surface-variant flex-none" aria-label="Track menu"><span class="material-symbols-outlined !text-[24px]">more_vert</span></button>
 </div>
-<script>
-  function triggerPad(el) {
-    el.classList.add('bg-secondary', 'text-on-secondary', 'scale-95');
-    setTimeout(() => {
-      el.classList.remove('bg-secondary', 'text-on-secondary', 'scale-95');
-    }, 160);
-  }
-
-  // Simple animated playhead drift for delightful live feel
-  (function() {
-    const playhead = document.getElementById('playhead-needle');
-    if (!playhead) return;
-    let pos = 48;
-    let dir = 0.05;
-    function step() {
-      pos += dir;
-      if (pos > 85) dir = -0.05;
-      if (pos < 20) dir = 0.05;
-      playhead.style.left = pos + '%';
-      requestAnimationFrame(step);
-    }
-    requestAnimationFrame(step);
-  })();
-</script></main></div><footer class="fixed bottom-0 left-0 right-0 h-16 bg-surface-container-low/95 backdrop-blur-xl z-50 flex items-center justify-between px-4 shadow-[0_-1px_12px_rgba(0,0,0,0.45)]"><div class="flex items-center gap-space-sm w-56"><button class="text-on-surface-variant hover:text-on-surface transition-colors flex items-center"><span class="material-symbols-outlined text-[20px]">volume_up</span></button><div class="relative w-28 h-1.5 bg-surface-container-highest rounded-full overflow-hidden flex items-center"><div class="h-full w-3/4 bg-primary rounded-full"></div></div><span class="font-tabular-param text-tabular-param text-on-surface-variant">78%</span></div><div class="flex items-center gap-3"><div class="px-2.5 py-1 rounded bg-surface-container-lowest font-tabular-timecode text-tabular-timecode text-primary flex items-center gap-1"><span class="font-semibold">00:00.00</span><span class="text-outline text-label-sm">/</span><span class="text-on-surface-variant">00:42.20</span></div><div class="flex items-center gap-1.5"><button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[18px]">skip_previous</span></button><button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[18px]">fast_rewind</span></button><button class="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center hover:opacity-95 shadow-[0_0_12px_rgba(167,139,250,0.45)] transition-transform active:scale-95"><span class="material-symbols-outlined text-[24px]">play_arrow</span></button><button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[18px]">fast_forward</span></button><button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[18px]">repeat</span></button></div></div><div class="flex items-center gap-space-sm"><button class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-container text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[16px]">schedule</span><span class="font-label-sm text-label-sm">Metronome Off</span></button><div class="px-2 py-0.5 rounded bg-surface-container-highest font-label-sm text-label-sm text-on-surface font-semibold">1 x</div><button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[20px]">more_vert</span></button></div></footer>
-
+<div class="relative h-[88px] w-full bg-canvas-level0 lane-grid">
+<div class="absolute top-[1.143px] bottom-[1.143px] rounded-xl overflow-hidden" style="left:0%; width:50%; background:rgba(224,160,192,0.35);" aria-label="keys">
+<div class="h-[15.714px] bg-clip-caption-band"></div>
+<span class="absolute left-[1.714px] top-[0.857px] micro-label text-on-surface whitespace-nowrap">keys</span>
+<svg class="absolute left-0 right-0 bottom-0 top-[15.714px] w-full h-[calc(100%-15.714px)]" viewBox="0 0 720 245" preserveAspectRatio="none" aria-hidden="true"><path d="M1.5 76V169M4.5 86V159M7.5 91V154M10.5 97V148M13.5 100V145M16.5 87V158M19.5 87V158M22.5 101V144M25.5 103V142M28.5 83V162M31.5 86V159M34.5 88V157M37.5 91V154M40.5 102V143M43.5 104V141M46.5 75V170M49.5 81V164M52.5 93V152M55.5 93V152M58.5 104V141M61.5 105V140M64.5 94V151M67.5 102V143M70.5 104V141M73.5 109V136M76.5 108V137M79.5 111V134M82.5 112V133M85.5 96V149M88.5 100V145M91.5 77V168M94.5 84V161M97.5 94V151M100.5 91V154M103.5 101V144M106.5 92V153M109.5 89V156M112.5 98V147M115.5 106V139M118.5 93V152M121.5 98V147M124.5 97V148M127.5 97V148M130.5 104V141M133.5 106V139M136.5 72V173M139.5 84V161M142.5 93V152M145.5 103V142M148.5 103V142M151.5 88V157M154.5 88V157M157.5 106V139M160.5 72V173M163.5 84V161M166.5 93V152M169.5 103V142M172.5 103V142M175.5 88V157M178.5 99V146M181.5 69V176M184.5 69V176M187.5 82V163M190.5 91V154M193.5 93V152M196.5 87V158M199.5 89V156M202.5 101V144M205.5 103V142M208.5 83V162M211.5 88V157M214.5 88V157M217.5 92V153M220.5 102V143M223.5 106V139M226.5 80V165M229.5 81V164M232.5 93V152M235.5 96V149M238.5 104V141M241.5 94V151M244.5 94V151M247.5 98V147M250.5 104V141M253.5 107V138M256.5 108V137M259.5 111V134M262.5 116V129M265.5 92V153M268.5 100V145M271.5 71V174M274.5 84V161M277.5 88V157M280.5 91V154M283.5 98V147M286.5 81V164M289.5 83V162M292.5 98V147M295.5 103V142M298.5 93V152M301.5 96V149M304.5 95V150M307.5 94V151M310.5 104V141M313.5 72V173M316.5 82V163M319.5 84V161M322.5 93V152M325.5 103V142M328.5 103V142M331.5 88V157M334.5 90V155M337.5 103V142M340.5 103V142M343.5 107V138M346.5 108V137M349.5 111V134M352.5 112V133M355.5 96V149M358.5 99V146M361.5 76V169M364.5 69V176M367.5 91V154M370.5 89V156M373.5 96V149M376.5 102V143M379.5 92V153M382.5 98V147M385.5 105V140M388.5 84V161M391.5 88V157M394.5 88V157M397.5 94V151M400.5 101V144M403.5 106V139M406.5 72V173M409.5 82V163M412.5 91V154M415.5 100V145M418.5 105V140M421.5 87V158M424.5 89V156M427.5 99V146M430.5 105V140M433.5 108V137M436.5 109V136M439.5 111V134M442.5 116V129M445.5 92V153M448.5 94V151M451.5 71V174M454.5 84V161M457.5 90V155M460.5 94V151M463.5 101V144M466.5 81V164M469.5 85V160M472.5 98V147M475.5 106V139M478.5 93V152M481.5 97V148M484.5 94V151M487.5 94V151M490.5 105V140M493.5 105V140M496.5 82V163M499.5 82V163M502.5 93V152M505.5 99V146M508.5 103V142M511.5 106V139M514.5 91V154M517.5 97V148M520.5 104V141M523.5 107V138M526.5 110V135M529.5 110V135M532.5 115V130M535.5 92V153M538.5 99V146M541.5 69V176M544.5 76V169M547.5 82V163M550.5 90V155M553.5 93V152M556.5 90V155M559.5 93V152M562.5 98V147M565.5 105V140M568.5 83V162M571.5 88V157M574.5 88V157M577.5 98V147M580.5 101V144M583.5 88V157M586.5 72V173M589.5 82V163M592.5 93V152M595.5 101V144M598.5 105V140M601.5 87V158M604.5 93V152M607.5 100V145M610.5 104V141M613.5 109V136M616.5 108V137M619.5 111V134M622.5 112V133M625.5 94V151M628.5 100V145M631.5 75V170M634.5 84V161M637.5 91V154M640.5 91V154M643.5 101V144M646.5 102V143M649.5 88V157M652.5 97V148M655.5 106V139M658.5 93V152M661.5 98V147M664.5 98V147M667.5 97V148M670.5 104V141M673.5 106V139M676.5 72V173M679.5 84V161M682.5 93V152M685.5 102V143M688.5 107V138M691.5 88V157M694.5 91V154M697.5 100V145M700.5 105V140M703.5 107V138M706.5 110V135M709.5 110V135M712.5 119V126M715.5 92V153M718.5 99V146" stroke="#e0a0c0" stroke-width="2" fill="none"/></svg>
+</div>
+</div>
+</section>
+<!-- track 4: Pad -->
+<section class="w-full" aria-label="Track 4, Pad">
+<div class="h-14 w-full pl-3 pr-1 flex items-center gap-2 bg-surface-level1">
+<span class="w-2.5 h-2.5 rounded-full bg-tint-peach flex-none"></span>
+<span class="font-label-lg text-label-lg text-on-surface whitespace-nowrap flex-none">Pad</span>
+<span class="h-5 px-2 rounded-full bg-surface-container-highest flex items-center justify-center gap-1 flex-none" style="width:47.4px"><span class="font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap">Synth</span></span>
+<span class="flex-none" style="width:calc((100% - 190px - 47.4px) / 2)"></span>
+<button class="w-11 h-11 rounded bg-surface-container-high font-label-lg text-label-lg text-on-surface-variant flex items-center justify-center flex-none" aria-label="Mute">M</button>
+<button class="w-11 h-11 rounded bg-surface-container-high font-label-lg text-label-lg text-on-surface-variant flex items-center justify-center flex-none" aria-label="Solo">S</button>
+<button class="w-11 h-11 rounded-full flex items-center justify-center text-on-surface-variant flex-none" aria-label="Track menu"><span class="material-symbols-outlined !text-[24px]">more_vert</span></button>
+</div>
+<div class="relative h-[88px] w-full bg-canvas-level0 lane-grid">
+<div class="absolute top-[1.143px] bottom-[1.143px] rounded-xl overflow-hidden" style="left:0%; width:25%; background:rgba(245,190,158,0.35);" aria-label="pad">
+<div class="h-[15.714px] bg-clip-caption-band"></div>
+<span class="absolute left-[1.714px] top-[0.857px] micro-label text-on-surface whitespace-nowrap">pad</span>
+<svg class="absolute left-0 right-0 bottom-0 top-[15.714px] w-full h-[calc(100%-15.714px)]" viewBox="0 0 360 245" preserveAspectRatio="none" aria-hidden="true"><path d="M1.5 115V130M4.5 97V148M7.5 91V154M10.5 87V158M13.5 89V156M16.5 87V158M19.5 82V163M22.5 87V158M25.5 88V157M28.5 90V155M31.5 88V157M34.5 82V163M37.5 87V158M40.5 84V161M43.5 85V160M46.5 90V155M49.5 96V149M52.5 88V157M55.5 88V157M58.5 87V158M61.5 83V162M64.5 90V155M67.5 87V158M70.5 90V155M73.5 89V156M76.5 89V156M79.5 92V153M82.5 83V162M85.5 88V157M88.5 84V161M91.5 91V154M94.5 89V156M97.5 87V158M100.5 86V159M103.5 90V155M106.5 89V156M109.5 90V155M112.5 92V153M115.5 81V164M118.5 90V155M121.5 90V155M124.5 88V157M127.5 91V154M130.5 82V163M133.5 87V158M136.5 85V160M139.5 94V151M142.5 89V156M145.5 87V158M148.5 91V154M151.5 89V156M154.5 91V154M157.5 87V158M160.5 85V160M163.5 94V151M166.5 89V156M169.5 87V158M172.5 91V154M175.5 89V156M178.5 92V153M181.5 91V154M184.5 92V153M187.5 87V158M190.5 89V156M193.5 88V157M196.5 87V158M199.5 82V163M202.5 91V154M205.5 88V157M208.5 90V155M211.5 88V157M214.5 82V163M217.5 89V156M220.5 84V161M223.5 85V160M226.5 94V151M229.5 94V151M232.5 88V157M235.5 88V157M238.5 90V155M241.5 83V162M244.5 90V155M247.5 87V158M250.5 90V155M253.5 89V156M256.5 88V157M259.5 89V156M262.5 83V162M265.5 88V157M268.5 84V161M271.5 88V157M274.5 91V154M277.5 87V158M280.5 87V158M283.5 88V157M286.5 89V156M289.5 87V158M292.5 87V158M295.5 81V164M298.5 89V156M301.5 86V159M304.5 87V158M307.5 87V158M310.5 82V163M313.5 87V158M316.5 85V160M319.5 92V153M322.5 87V158M325.5 87V158M328.5 86V159M331.5 89V156M334.5 91V154M337.5 89V156M340.5 91V154M343.5 84V161M346.5 87V158M349.5 90V155M352.5 83V162M355.5 92V153M358.5 92V153" stroke="#f5be9e" stroke-width="2" fill="none"/></svg>
+</div>
+<div class="absolute top-[1.143px] bottom-[1.143px] rounded-xl overflow-hidden" style="left:25%; width:25%; background:rgba(245,190,158,0.35);" aria-label="pad">
+<div class="h-[15.714px] bg-clip-caption-band"></div>
+<span class="absolute left-[1.714px] top-[0.857px] micro-label text-on-surface whitespace-nowrap">pad</span>
+<svg class="absolute left-0 right-0 bottom-0 top-[15.714px] w-full h-[calc(100%-15.714px)]" viewBox="0 0 360 245" preserveAspectRatio="none" aria-hidden="true"><path d="M1.5 93V152M4.5 92V153M7.5 86V159M10.5 87V158M13.5 85V160M16.5 87V158M19.5 82V163M22.5 86V159M25.5 88V157M28.5 89V156M31.5 88V157M34.5 82V163M37.5 91V154M40.5 88V157M43.5 88V157M46.5 85V160M49.5 94V151M52.5 91V154M55.5 91V154M58.5 87V158M61.5 83V162M64.5 89V156M67.5 87V158M70.5 90V155M73.5 89V156M76.5 88V157M79.5 91V154M82.5 83V162M85.5 88V157M88.5 84V161M91.5 96V149M94.5 91V154M97.5 87V158M100.5 87V158M103.5 90V155M106.5 89V156M109.5 87V158M112.5 87V158M115.5 81V164M118.5 89V156M121.5 86V159M124.5 87V158M127.5 89V156M130.5 82V163M133.5 89V156M136.5 91V154M139.5 92V153M142.5 87V158M145.5 87V158M148.5 86V159M151.5 89V156M154.5 91V154M157.5 85V160M160.5 92V153M163.5 85V160M166.5 87V158M169.5 90V155M172.5 83V162M175.5 90V155M178.5 91V154M181.5 89V156M184.5 93V152M187.5 87V158M190.5 87V158M193.5 89V156M196.5 87V158M199.5 82V163M202.5 86V159M205.5 88V157M208.5 90V155M211.5 87V158M214.5 82V163M217.5 91V154M220.5 84V161M223.5 85V160M226.5 90V155M229.5 94V151M232.5 88V157M235.5 88V157M238.5 87V158M241.5 83V162M244.5 90V155M247.5 87V158M250.5 90V155M253.5 89V156M256.5 89V156M259.5 92V153M262.5 86V159M265.5 88V157M268.5 84V161M271.5 91V154M274.5 89V156M277.5 87V158M280.5 86V159M283.5 90V155M286.5 89V156M289.5 90V155M292.5 93V152M295.5 81V164M298.5 90V155M301.5 86V159M304.5 91V154M307.5 90V155M310.5 85V160M313.5 87V158M316.5 85V160M319.5 92V153M322.5 87V158M325.5 87V158M328.5 86V159M331.5 89V156M334.5 89V156M337.5 85V160M340.5 93V152M343.5 84V161M346.5 87V158M349.5 90V155M352.5 91V154M355.5 103V142M358.5 118V127" stroke="#f5be9e" stroke-width="2" fill="none"/></svg>
+</div>
+</div>
+</section>
+<div class="absolute inset-y-0 w-[1.5px] -translate-x-1/2 bg-playhead pointer-events-none" style="left: 11.5%;" data-purpose="playhead"></div>
+</main>
+<!-- 4. Overview strip (24): the whole project at the strip's width (32 bars), a thin row per track, the window over the visible span -->
+<div class="h-6 w-full px-[30px] flex-shrink-0 bg-canvas-level0" data-purpose="overview-strip">
+<div class="relative h-full w-full bg-surface-level1 overflow-hidden">
+<!-- one 3.5 px row per track (3 px pad, 4.5 px pitch), the 16-bar project over the strip's 32 bars -->
+<span class="absolute h-[3.5px] bg-tint-lavender" style="top:3.0px; left:0%; width:50%"></span>
+<span class="absolute h-[3.5px] bg-tint-rose" style="top:7.5px; left:0%; width:50%"></span>
+<span class="absolute h-[3.5px] bg-tint-dusty-rose" style="top:12.0px; left:0%; width:50%"></span>
+<span class="absolute h-[3.5px] bg-tint-peach" style="top:16.5px; left:0%; width:25%"></span>
+<span class="absolute h-[3.5px] bg-tint-peach" style="top:16.5px; left:25%; width:25%"></span>
+<span class="absolute h-[3.5px] w-0 border-l-[0.5px] border-canvas-level0/40" style="top:16.5px; left:25%"></span>
+<!-- the window over the visible span (all 32 bars at this zoom): grid_overlay at 24 %, 1 px primary outline, 8 px handles with on-primary grips -->
+<div class="absolute inset-0 rounded bg-[#c084fc3d] border border-primary"></div>
+<div class="absolute left-0 inset-y-0 w-2 rounded bg-primary flex items-center justify-center"><span class="w-px h-[40%] bg-on-primary"></span></div>
+<div class="absolute right-0 inset-y-0 w-2 rounded bg-primary flex items-center justify-center"><span class="w-px h-[40%] bg-on-primary"></span></div>
+<span class="absolute inset-y-0 w-px bg-playhead" style="left:11.43%"></span>
+</div>
+</div>
+<!-- 5. Transport bar (64): master volume, skip to start, bar back, pause (playing), bar forward, stacked readout, metronome toggle -->
+<div class="h-16 w-full px-1 flex items-center justify-between flex-shrink-0 bg-surface-level1" data-purpose="transport-bar">
+<button class="w-11 h-11 rounded-full flex items-center justify-center text-on-surface-variant flex-none" aria-label="Master volume"><span class="material-symbols-outlined !text-[24px]">volume_up</span></button>
+<button class="w-11 h-11 rounded-full flex items-center justify-center text-on-surface-variant flex-none" aria-label="Skip to start"><span class="material-symbols-outlined !text-[24px]">skip_previous</span></button>
+<button class="w-11 h-11 rounded-full flex items-center justify-center text-on-surface-variant flex-none" aria-label="One bar back"><span class="material-symbols-outlined !text-[24px]">fast_rewind</span></button>
+<button class="relative w-12 h-12 flex-none flex items-center justify-center" aria-label="Pause">
+<!-- playGlow (#FFAFD3 at 35 %, 8 px) drawn as a radial brush, at the breathing pulse's 0.6 low point as captured -->
+<span class="absolute -inset-2 rounded-full" style="background: radial-gradient(circle closest-side, rgba(255,175,211,0.21) 0, rgba(255,175,211,0.21) 75%, rgba(255,175,211,0) 100%);"></span>
+<span class="relative w-12 h-12 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center"><span class="material-symbols-outlined ms-fill !text-[25.5px]">pause</span></span>
+</button>
+<button class="w-11 h-11 rounded-full flex items-center justify-center text-on-surface-variant flex-none" aria-label="One bar forward"><span class="material-symbols-outlined !text-[24px]">fast_forward</span></button>
+<div class="w-[57px] flex-none flex flex-col items-center font-tabular-timecode text-[12px] leading-[15px] tracking-[0.05em] font-medium tnum text-on-surface" aria-label="00:07 of 00:30"><span>00:07.10</span><span>00:30.96</span></div>
+<button class="w-11 h-11 rounded-full flex items-center justify-center text-on-surface-variant flex-none" aria-label="Turn metronome on"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true" style="display:block;flex:none" data-glyph="metronome"><path d="M15.45 6.05L14.6 3H9.4L4.4 21H19.6L16.56 10.05"></path><path d="M7.34 14H16.66"></path><path d="M12 14L18.6 4.2"></path></svg></button>
+</div>
+<!-- 6. Bottom navigation (M3 Expressive ShortNavigationBar): five icon-only cells, Timeline selected on a 56 x 32 primary-container pill -->
+<nav class="h-16 w-full bg-surface-container-lowest flex items-center flex-shrink-0 z-30" aria-label="Primary" data-purpose="short-navigation-bar" data-active-classes="w-14 h-8 rounded-full bg-primary-container text-on-primary-container">
+<a class="flex-1 h-full flex items-center justify-center" href="#" aria-label="Timeline" aria-current="page"><span class="w-14 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center"><span class="material-symbols-outlined !text-[24px] leading-none" style="font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">graphic_eq</span></span></a>
+<a class="flex-1 h-full flex items-center justify-center text-on-surface-variant" href="#" aria-label="Tuner"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true" style="display:block;flex:none" data-glyph="tuning_fork"><path d="M9.5 3V10.5A2.5 2.5 0 0 0 14.5 10.5V3"></path><path d="M12 13V21.5"></path><path d="M5.6 4.5A6 6 0 0 0 5.6 10.5"></path><path d="M18.4 4.5A6 6 0 0 1 18.4 10.5"></path></svg></a>
+<a class="flex-1 h-full flex items-center justify-center text-on-surface-variant" href="#" aria-label="Metronome"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true" style="display:block;flex:none" data-glyph="metronome"><path d="M15.45 6.05L14.6 3H9.4L4.4 21H19.6L16.56 10.05"></path><path d="M7.34 14H16.66"></path><path d="M12 14L18.6 4.2"></path></svg></a>
+<a class="flex-1 h-full flex items-center justify-center text-on-surface-variant" href="#" aria-label="Projects"><span class="material-symbols-outlined !text-[24px] leading-none" style="font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">folder</span></a>
+<a class="flex-1 h-full flex items-center justify-center text-on-surface-variant" href="#" aria-label="Profile"><span class="material-symbols-outlined !text-[24px] leading-none" style="font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">person</span></a>
+</nav>
 </body></html>
