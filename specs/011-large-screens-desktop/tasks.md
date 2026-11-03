@@ -114,43 +114,43 @@ touchscreen and microphone not required.
 
 ### Tests for User Story 1 ⚠️ (write first, must fail)
 
-- [ ] T012 [P] [US1] `ATEST/ManifestFeaturesTest.kt`: the installed package's `reqFeatures` declare
+- [X] T012 [P] [US1] `ATEST/ManifestFeaturesTest.kt`: the installed package's `reqFeatures` declare
   `android.hardware.touchscreen` and `android.hardware.microphone` with `required = false`, and `MainActivity`'s
   meta-data carries `WindowManagerPreference:FreeformWindowSize` = `tablet` (the window minimum is asserted by
   T027)
-- [ ] T013 [P] [US1] `ATEST/MicrophoneAvailabilityTest.kt`: with a fake audio-device seam reporting no input devices,
+- [X] T013 [P] [US1] `ATEST/MicrophoneAvailabilityTest.kt`: with a fake audio-device seam reporting no input devices,
   `AndroidMicrophonePermission` reports `MicrophonePermissionStatus.Unavailable` without prompting; with one input it
   reports the permission status as today
-- [ ] T014 [P] [US1] `IOSTEST/platform/IosMicrophonePermissionTest.kt`: `isInputAvailable == false` on a fake session
+- [X] T014 [P] [US1] `IOSTEST/platform/IosMicrophonePermissionTest.kt`: `isInputAvailable == false` on a fake session
   maps to `Unavailable`
-- [ ] T015 [P] [US1] `CTEST/tuner/ListeningPolicyTest.kt` (extend): `Unavailable` never requests listening and never
+- [X] T015 [P] [US1] `CTEST/tuner/ListeningPolicyTest.kt` (extend): `Unavailable` never requests listening and never
   prompts; By Ear is unaffected
-- [ ] T016 [P] [US1] `UITEST/tuner/TunerNoMicrophoneTest.kt`: Auto Listen with `Unavailable` shows "No microphone is
+- [X] T016 [P] [US1] `UITEST/tuner/TunerNoMicrophoneTest.kt`: Auto Listen with `Unavailable` shows "No microphone is
   available on this device" and no permission card; By Ear works
-- [ ] T017 [P] [US1] `UITEST/navigation/InitialFocusTest.kt`: for each destination (Timeline, Tuner, Metronome, Projects,
+- [X] T017 [P] [US1] `UITEST/navigation/InitialFocusTest.kt`: for each destination (Timeline, Tuner, Metronome, Projects,
   Profile) the content root is focused once it appears, so one Tab press focuses its first control
   (`performKeyInput`; the lane declares keyboard support via `supportsKeyboardInputMode`)
 
 ### Implementation for User Story 1
 
-- [ ] T018 [US1] Declare `<uses-feature android:name="android.hardware.touchscreen" android:required="false"/>`,
+- [X] T018 [US1] Declare `<uses-feature android:name="android.hardware.touchscreen" android:required="false"/>`,
   `<uses-feature android:name="android.hardware.microphone" android:required="false"/>` and the ChromeOS
   `<meta-data android:name="WindowManagerPreference:FreeformWindowSize" android:value="tablet"/>` (inside
   `MainActivity`) in `app/androidApp/src/main/AndroidManifest.xml`, per T004's outcome
-- [ ] T019 [US1] Add `Unavailable` to `UI/platform/MicrophonePermissionStatus.kt` (`isDenied` stays false for it) and
+- [X] T019 [US1] Add `Unavailable` to `UI/platform/MicrophonePermissionStatus.kt` (`isDenied` stays false for it) and
   handle it in every exhaustive `when` over the status (no `else`)
-- [ ] T020 [US1] Report `Unavailable` in `ANDROID/AndroidMicrophonePermission.kt` when
+- [X] T020 [US1] Report `Unavailable` in `ANDROID/AndroidMicrophonePermission.kt` when
   `!packageManager.hasSystemFeature(PackageManager.FEATURE_MICROPHONE)` or `AudioManager.getDevices(GET_DEVICES_INPUTS)`
   is empty, re-evaluated on resume, behind a small audio-device seam the test fakes
-- [ ] T021 [P] [US1] Report `Unavailable` in `UIIOS/platform/IosMicrophonePermission.kt` when
+- [X] T021 [P] [US1] Report `Unavailable` in `UIIOS/platform/IosMicrophonePermission.kt` when
   `AVAudioSession.sharedInstance().isInputAvailable` is false
-- [ ] T022 [US1] Make the tuner honour `Unavailable`: `UI/tuner/ListeningPolicy.kt` (cannot listen) and the Auto Listen
+- [X] T022 [US1] Make the tuner honour `Unavailable`: `UI/tuner/ListeningPolicy.kt` (cannot listen) and the Auto Listen
   pane's message in `UI/tuner/` (copy "No microphone is available on this device" in the tuner copy file)
-- [ ] T023 [US1] Request initial focus on each destination's content root from a `LaunchedEffect` keyed to its
+- [X] T023 [US1] Request initial focus on each destination's content root from a `LaunchedEffect` keyed to its
   presence, with `Modifier.focusRequester(...).focusable()` (not `clickable`): `UI/tuner/TunerScreen.kt`,
   `UI/metronome/MetronomeScreen.kt`, `UI/projects/ProjectsScreen.kt`, `UI/profile/ProfileScreen.kt` (the timeline's
   existing request in `UI/timeline/TimelineScreenContent.kt` stays)
-- [ ] T024 [US1] Audit every touch gesture (long-press, pinch, swipe, sheet drag) for a pointer or keyboard equivalent
+- [X] T024 [US1] Audit every touch gesture (long-press, pinch, swipe, sheet drag) for a pointer or keyboard equivalent
   and complete the "Gesture equivalents" table in `specs/011-large-screens-desktop/contracts/pointer-input.md`
   (FR-016); add a task to this file for any gap found
 

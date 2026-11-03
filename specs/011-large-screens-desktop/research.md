@@ -80,6 +80,11 @@ D-pad-only televisions, which it does not support. Nothing else (Play Console op
 
 **Alternatives**: Excluding devices in Play Console's device catalog (manual, opposite of the goal).
 
+**Implemented (T018, 2026-11-03)**: `aapt2 dump badging` of the debug APK lists `uses-feature-not-required` for
+`android.hardware.microphone` and `android.hardware.touchscreen` and no implied feature at all: once the touchscreen is
+declared, aapt2 stops implying `faketouch`. Televisions stay out regardless: Google Play offers an app to Android TV only
+when it declares a `LEANBACK_LAUNCHER` activity and is opted into the TV form factor, neither of which the app does.
+
 ## R2. A microphone that may not exist (FR-002)
 
 **Decision**: Extend the existing seam rather than add one: `MicrophonePermissionStatus` gains `Unavailable`, reported

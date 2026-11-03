@@ -8,6 +8,7 @@ import platform.AVFAudio.AVAudioSession
 import platform.AVFAudio.AVAudioSessionRecordPermissionDenied
 import platform.AVFAudio.AVAudioSessionRecordPermissionGranted
 import platform.AVFAudio.AVAudioSessionRecordPermissionUndetermined
+import platform.AVFAudio.inputAvailable
 import platform.Foundation.NSURL
 import platform.UIKit.UIApplication
 import platform.UIKit.UIApplicationOpenSettingsURLString
@@ -17,12 +18,17 @@ import kotlin.coroutines.resume
  * Microphone access through `AVAudioSession` (research R6). iOS never re-prompts, so a denial is always
  * [MicrophonePermissionStatus.DeniedOpenSettings]. The deployment target is iOS 16, hence `AVAudioSession` rather than
  * iOS 17's `AVAudioApplication`, which replaces `recordPermission` and `requestRecordPermission` once the target moves.
+ * An iPad with no audio input route ([inputAvailable], feature 011, research R2) is
+ * [MicrophonePermissionStatus.Unavailable] before any prompt.
  */
-class IosMicrophonePermission : MicrophonePermission {
+class IosMicrophonePermission(
+    private val inputAvailable: () -> Boolean = { AVAudioSession.sharedInstance().inputAvailable },
+) : MicrophonePermission {
     private val _status = MutableStateFlow(read())
     override val status: StateFlow<MicrophonePermissionStatus> = _status.asStateFlow()
 
     override suspend fun request(): MicrophonePermissionStatus {
+        // Unavailable is not NotDetermined either: no prompt without a microphone.
         if (read() != MicrophonePermissionStatus.NotDetermined) {
             refresh()
             return _status.value
@@ -45,7 +51,9 @@ class IosMicrophonePermission : MicrophonePermission {
         UIApplication.sharedApplication.openURL(url, options = emptyMap<Any?, Any>(), completionHandler = null)
     }
 
-    private fun read(): MicrophonePermissionStatus = when (AVAudioSession.sharedInstance().recordPermission) {
+    private fun read(): MicrophonePermissionStatus = if (!inputAvailable()) MicrophonePermissionStatus.Unavailable else readPermission()
+
+    private fun readPermission(): MicrophonePermissionStatus = when (AVAudioSession.sharedInstance().recordPermission) {
         AVAudioSessionRecordPermissionGranted -> MicrophonePermissionStatus.Granted
         AVAudioSessionRecordPermissionDenied -> MicrophonePermissionStatus.DeniedOpenSettings
         AVAudioSessionRecordPermissionUndetermined -> MicrophonePermissionStatus.NotDetermined

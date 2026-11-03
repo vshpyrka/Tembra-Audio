@@ -1,6 +1,7 @@
 package audio.tembra.ui.projects
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,8 +18,12 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -52,12 +57,19 @@ internal fun ProjectsScreenContent(
     val spacing = TembraTheme.spacing
     val colors = TembraTheme.colors
     val ready = state.isFirstContentReady
+    // Keyboard focus starts on the content root once the index is read (feature 011, spec FR-024).
+    val rootFocus = remember { FocusRequester() }
+    LaunchedEffect(state.loaded) {
+        if (state.loaded) rootFocus.requestFocus()
+    }
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(TembraTheme.daw.canvasLevel0)
             .testTag(ProjectsTestTags.ROOT)
-            .semantics { stateDescription = if (ready) READY else LOADING },
+            .semantics { stateDescription = if (ready) READY else LOADING }
+            .focusRequester(rootFocus)
+            .focusable(),
     ) {
         Column(modifier = Modifier.fillMaxSize().padding(horizontal = spacing.pageMargin).padding(top = spacing.lg), verticalArrangement = Arrangement.spacedBy(spacing.md)) {
             Row(verticalAlignment = Alignment.CenterVertically) {

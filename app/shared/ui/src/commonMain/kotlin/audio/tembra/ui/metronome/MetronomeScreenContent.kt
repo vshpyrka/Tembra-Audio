@@ -2,6 +2,7 @@ package audio.tembra.ui.metronome
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -31,13 +32,17 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layout
@@ -107,13 +112,18 @@ fun MetronomeScreenContent(
     verticalFold: VerticalFold? = null,
 ) {
     val spacing = TembraTheme.spacing
+    // Keyboard focus starts on the content root once the settings are in (feature 011, spec FR-024).
+    val rootFocus = remember { FocusRequester() }
+    LaunchedEffect(state.loaded) {
+        if (state.loaded) rootFocus.requestFocus()
+    }
     Box(modifier = modifier.fillMaxSize()) {
         // The tag sits inside the page margin, where the content starts, as the tuner's does.
         val margin = when (layout) {
             MetronomeLayout.Wide -> Modifier.padding(spacing.pageMargin)
             MetronomeLayout.Stacked, MetronomeLayout.Landscape, MetronomeLayout.Tabletop, MetronomeLayout.Pocket -> Modifier.padding(horizontal = spacing.pageMargin, vertical = spacing.sm)
         }
-        val root = Modifier.fillMaxSize().then(margin).testTag("screen.metronome")
+        val root = Modifier.fillMaxSize().then(margin).testTag("screen.metronome").focusRequester(rootFocus).focusable()
         when (layout) {
             MetronomeLayout.Stacked -> StackedMetronome(state = state, callbacks = callbacks, telemetry = telemetry, modifier = root)
             MetronomeLayout.Wide -> WideMetronome(state = state, callbacks = callbacks, telemetry = telemetry, verticalFold = verticalFold, modifier = root)

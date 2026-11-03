@@ -41,16 +41,24 @@ sheet.
 
 ## Gesture equivalents (FR-016)
 
-Every touch gesture has a pointer or keyboard equivalent that needs no precise or multi-finger input. Known rows; the
-audit task completes the table:
+Every touch gesture has a pointer or keyboard equivalent that needs no precise or multi-finger input. Audited on
+2026-11-03 (T024) over every `pointerInput`, `combinedClickable`, `detect*Gestures`, long-press and `ModalBottomSheet` in
+`:shared:ui` `commonMain`; no gap needs a task (FR-016 asks for a pointer *or* a keyboard path, and each row has one):
 
-| Touch gesture | Pointer | Keyboard |
+| Touch gesture (where) | Pointer | Keyboard |
 |---|---|---|
-| Long-press a clip, track header or project card for its menu | secondary click | audit: a focused item's menu key or overflow button |
-| Pinch the timeline | Ctrl/⌘+wheel, trackpad pinch | + / − |
-| Drag a clip | press-drag with the mouse | audit: record what feature 009 offers; a gap becomes a follow-up note |
-| Drag the tempo dial | drag, wheel | ↑/↓, Shift+↑/↓ |
-| Swipe a sheet down to close | click the close button or outside | Escape |
+| Long-press a clip for its menu (`TrackLane`) | secondary click (exists, lifted into `onSecondaryClick` by T065) | the menu's two actions have keys: S splits, Delete/Backspace deletes the selected clip; Tab reaches the clip, Enter selects it |
+| A track header's or a project card's menu (`TrackHeader`, `TrackHeaderCompact`, `ProjectCard`) | the ⋮ overflow button; secondary click (T067, T068) | Tab to the ⋮ button, Enter |
+| Long-press a clip, then drag it (`TrackLane`) | press-drag past the slop (exists since 009); Escape cancels (T080) | none: moving a clip by keys is not offered by feature 009 (follow-up note, not an FR-016 gap: the mouse path needs no touchscreen) |
+| Pinch the timeline (`ViewportGestures`) | Ctrl/⌘+wheel (exists), Android trackpad `Scale` and the iPad bridge (T074, T081) | + / − (exists) |
+| Two-finger pan of the timeline (`ViewportGestures`) | wheel, Shift+wheel (T074), trackpad pan | ←/→ move the playhead a bar; the viewport follows the playhead |
+| Drag or pinch the overview strip (`OverviewStrip`) | press-drag the window; Ctrl/⌘+wheel over the timeline | + / − |
+| Tap or drag on the ruler to seek (`TimelineRuler`) | click, press-drag | ←/→, Shift+←/→, Home |
+| Drag a gain readout up or down; double-tap for 0 dB (`GainReadout`) | press-drag, double-click | ↑/↓/←/→ (0.5 dB), Page Up/Down |
+| Rotate the tempo dial (`TempoDial`) | drag, wheel (exists) | ↑/↓, Shift+↑/↓ on the Metronome (T095) |
+| Press and hold a tempo stepper to repeat (`TempoStepper`) | press and hold with the mouse (same handler) | ↑/↓ held repeats (T095) |
+| Long-press the transport's metronome toggle for its settings (`MetronomeToggle`) | press and hold, or the toolbar's metronome-settings button (in the overflow menu when the toolbar is narrow) | Tab to that button, Enter |
+| Swipe a sheet down to close (`SnapSheet`, `MetronomeSettingsSheet`, the metronome's sound sheet) | click outside the sheet | Escape (Android's `EscapeAsBack` today; the shell's Escape order, T094) |
 
 ## Tests first
 

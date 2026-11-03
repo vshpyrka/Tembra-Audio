@@ -15,16 +15,20 @@ import kotlinx.coroutines.flow.asStateFlow
 /**
  * Microphone access on Android (research R6): `checkSelfPermission` for the state, the activity's request launcher
  * through [MicrophonePermissionHost] for the prompt, and the app's details page in the system settings once the OS
- * stops asking.
+ * stops asking. A device with no microphone ([availability], feature 011) is
+ * [MicrophonePermissionStatus.Unavailable] before any of that, and is never prompted.
  */
 class AndroidMicrophonePermission(
     private val context: Context,
     private val host: MicrophonePermissionHost,
+    private val availability: MicrophoneAvailability = AndroidMicrophoneAvailability(context),
 ) : MicrophonePermission {
     private val _status = MutableStateFlow(read())
     override val status: StateFlow<MicrophonePermissionStatus> = _status.asStateFlow()
 
     override suspend fun request(): MicrophonePermissionStatus {
+        refresh()
+        if (_status.value == MicrophonePermissionStatus.Unavailable) return _status.value
         host.launch()
         refresh()
         return _status.value
@@ -41,6 +45,7 @@ class AndroidMicrophonePermission(
     }
 
     private fun read(): MicrophonePermissionStatus = when {
+        !availability.hasInput() -> MicrophonePermissionStatus.Unavailable
         context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED -> MicrophonePermissionStatus.Granted
         host.shouldShowRationale() -> MicrophonePermissionStatus.DeniedCanAsk
         host.hasAsked() -> MicrophonePermissionStatus.DeniedOpenSettings

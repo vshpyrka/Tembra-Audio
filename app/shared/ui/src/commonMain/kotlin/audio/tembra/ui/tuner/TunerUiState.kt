@@ -49,13 +49,25 @@ data class TunerUiState(
             AudioState.Metronome, AudioState.Transport -> null
         }
 
-    /** The meter is replaced by the denied panel (spec FR-015); a test signal never needs the microphone. */
+    /**
+     * What replaces Auto Listen's meter, or null when the meter shows: the denied panel (spec FR-015) or the
+     * no-microphone message (feature 011, spec FR-002). A test signal never needs the microphone.
+     */
+    internal val microphoneNotice: MicrophoneNotice?
+        get() = when {
+            mode != TunerMode.AutoListen || testSignal != null -> null
+            microphone == MicrophonePermissionStatus.Unavailable -> MicrophoneNotice.Unavailable
+            microphone.isDenied -> MicrophoneNotice.Denied
+            else -> null
+        }
+
+    /** The meter is replaced by the denied panel (spec FR-015). */
     val showDeniedState: Boolean
-        get() = mode == TunerMode.AutoListen && microphone.isDenied && testSignal == null
+        get() = microphoneNotice == MicrophoneNotice.Denied
 
     /** The noise gate control is shown wherever Auto Listen shows its meter (feature 006, spec FR-001). */
     val showNoiseGate: Boolean
-        get() = mode == TunerMode.AutoListen && !showDeniedState
+        get() = mode == TunerMode.AutoListen && microphoneNotice == null
 
     /**
      * What the noise gate control announces beside its value (spec FR-019): whether the sound is above the gate, or
