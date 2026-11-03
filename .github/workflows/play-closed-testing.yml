@@ -50,7 +50,7 @@ defaults:
     shell: bash
 
 env:
-  PACKAGE_NAME: audio.tembra.app
+  PACKAGE_NAME: com.tembraaudio
   # Zero compiler warnings and no Gradle deprecations, as in CI.
   GRADLE_GATES: -Ptembra.warningsAsErrors=true --warning-mode fail
 

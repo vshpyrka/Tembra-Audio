@@ -40,12 +40,12 @@ def test_shipped_yml_history_gate_and_platforms():
     assert cfg.history.worktree == "perf/.history"
     assert cfg.gate.clean_rounds == 5 and cfg.gate.simulators == "inactive"
     assert cfg.gate.limits_pct["app.size_bytes"] == 2
-    assert cfg.android.package == "audio.tembra.app"
+    assert cfg.android.package == "com.tembraaudio"
     assert cfg.android.activity == "audio.tembra.android.MainActivity"
     assert cfg.android.build_type == "perf" and cfg.android.benchmarks_module == ":perf-benchmarks"
     assert cfg.android.test_package == "audio.tembra.perf"
     assert cfg.ios.project == "iosApp/iosApp.xcodeproj" and cfg.ios.scheme == "TembraPerf"
-    assert cfg.ios.configuration == "Perf" and cfg.ios.bundle_id == "audio.tembra.app"
+    assert cfg.ios.configuration == "Perf" and cfg.ios.bundle_id == "com.tembraaudio"
     assert cfg.ios.test_target == "TembraPerfTests" and cfg.ios.size_variant == "iPhone14,7"
     assert cfg.journeys == ["startup", "tuner", "metronome", "timeline", "stress"]
 

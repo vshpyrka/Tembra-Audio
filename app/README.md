@@ -31,7 +31,7 @@ Android (connected device or emulator):
 ```bash
 cd app
 ./gradlew :androidApp:installDebug
-adb shell am start -n audio.tembra.app/audio.tembra.android.MainActivity
+adb shell am start -n com.tembraaudio/audio.tembra.android.MainActivity
 ```
 
 iOS (simulator; Xcode runs `./gradlew :shared:ui:embedAndSignAppleFrameworkForXcode` in a build phase):
@@ -42,7 +42,7 @@ xcodebuild -project iosApp.xcodeproj -scheme iosApp -configuration Debug \
   -destination 'platform=iOS Simulator,name=iPhone 18 Pro' -derivedDataPath build build
 xcrun simctl boot "iPhone 18 Pro"
 xcrun simctl install "iPhone 18 Pro" "build/Build/Products/Debug-iphonesimulator/Tembra Audio.app"
-xcrun simctl launch "iPhone 18 Pro" audio.tembra.app
+xcrun simctl launch "iPhone 18 Pro" com.tembraaudio
 ```
 
 Or open `app/iosApp/iosApp.xcodeproj` in Xcode and press Run. Signing: `Configuration/Config.xcconfig`
@@ -192,7 +192,7 @@ Wide Android capture: rotate to landscape (`adb shell settings put system user_r
 turns a 1440 px Pixel into a 606 dp window (`wm density reset` afterwards). Name captures
 `<platform>-<compact|medium|expanded|short>-<destination>.png` and record devices, OS versions and outcomes of manual
 checks in `specs/<feature>/screenshots/NOTES.md`. The iOS simulator bundle identifier carries the local `TEAM_ID`
-(`audio.tembra.app<TEAM_ID>`); read it from the built `Info.plist` before `simctl launch`. Large fonts: `adb shell settings put system font_scale 2.0`
+(`com.tembraaudio<TEAM_ID>`); read it from the built `Info.plist` before `simctl launch`. Large fonts: `adb shell settings put system font_scale 2.0`
 and `xcrun simctl ui "iPhone 18 Pro" content_size accessibility-extra-extra-extra-large`; restore to `1.0` /
 `medium`. Compare against `design/stitch/theme.json` and `design/stitch/screens/*/screenshot.jpg`.
 

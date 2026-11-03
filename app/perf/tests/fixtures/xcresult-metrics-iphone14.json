@@ -10,7 +10,7 @@
     "metrics": [
      {
       "displayName": "Absolute Memory Physical (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_Memory-audio.tembra.appP5QJJ5Y5V7.physical_absolute",
+      "identifier": "com.apple.dt.XCTMetric_Memory-com.tembraaudioP5QJJ5Y5V7.physical_absolute",
       "measurements": [
        120637.28,
        120751.968,
@@ -37,7 +37,7 @@
      },
      {
       "displayName": "Memory Peak Physical (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_Memory-audio.tembra.appP5QJJ5Y5V7.physical_peak",
+      "identifier": "com.apple.dt.XCTMetric_Memory-com.tembraaudioP5QJJ5Y5V7.physical_peak",
       "measurements": [
        125060.96,
        124585.824,
@@ -118,7 +118,7 @@
      },
      {
       "displayName": "CPU Time (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_CPU-audio.tembra.appP5QJJ5Y5V7.time",
+      "identifier": "com.apple.dt.XCTMetric_CPU-com.tembraaudioP5QJJ5Y5V7.time",
       "measurements": [
        6.389701,
        6.347688,
@@ -145,7 +145,7 @@
      },
      {
       "displayName": "CPU Instructions Retired (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_CPU-audio.tembra.appP5QJJ5Y5V7.instructions_retired",
+      "identifier": "com.apple.dt.XCTMetric_CPU-com.tembraaudioP5QJJ5Y5V7.instructions_retired",
       "measurements": [
        14027545.56,
        14071388.534,
@@ -172,7 +172,7 @@
      },
      {
       "displayName": "Memory Physical (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_Memory-audio.tembra.appP5QJJ5Y5V7.physical",
+      "identifier": "com.apple.dt.XCTMetric_Memory-com.tembraaudioP5QJJ5Y5V7.physical",
       "measurements": [
        120637.28,
        120751.968,
@@ -361,7 +361,7 @@
      },
      {
       "displayName": "CPU Cycles (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_CPU-audio.tembra.appP5QJJ5Y5V7.cycles",
+      "identifier": "com.apple.dt.XCTMetric_CPU-com.tembraaudioP5QJJ5Y5V7.cycles",
       "measurements": [
        10281900.592,
        10206843.156,
@@ -405,7 +405,7 @@
     "metrics": [
      {
       "displayName": "Absolute Memory Physical (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_Memory-audio.tembra.appP5QJJ5Y5V7.physical_absolute",
+      "identifier": "com.apple.dt.XCTMetric_Memory-com.tembraaudioP5QJJ5Y5V7.physical_absolute",
       "measurements": [
        120637.28,
        120751.968,
@@ -432,7 +432,7 @@
      },
      {
       "displayName": "Memory Peak Physical (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_Memory-audio.tembra.appP5QJJ5Y5V7.physical_peak",
+      "identifier": "com.apple.dt.XCTMetric_Memory-com.tembraaudioP5QJJ5Y5V7.physical_peak",
       "measurements": [
        125060.96,
        124585.824,
@@ -513,7 +513,7 @@
      },
      {
       "displayName": "CPU Time (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_CPU-audio.tembra.appP5QJJ5Y5V7.time",
+      "identifier": "com.apple.dt.XCTMetric_CPU-com.tembraaudioP5QJJ5Y5V7.time",
       "measurements": [
        6.389701,
        6.347688,
@@ -540,7 +540,7 @@
      },
      {
       "displayName": "CPU Instructions Retired (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_CPU-audio.tembra.appP5QJJ5Y5V7.instructions_retired",
+      "identifier": "com.apple.dt.XCTMetric_CPU-com.tembraaudioP5QJJ5Y5V7.instructions_retired",
       "measurements": [
        14027545.56,
        14071388.534,
@@ -567,7 +567,7 @@
      },
      {
       "displayName": "Memory Physical (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_Memory-audio.tembra.appP5QJJ5Y5V7.physical",
+      "identifier": "com.apple.dt.XCTMetric_Memory-com.tembraaudioP5QJJ5Y5V7.physical",
       "measurements": [
        120637.28,
        120751.968,
@@ -756,7 +756,7 @@
      },
      {
       "displayName": "CPU Cycles (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_CPU-audio.tembra.appP5QJJ5Y5V7.cycles",
+      "identifier": "com.apple.dt.XCTMetric_CPU-com.tembraaudioP5QJJ5Y5V7.cycles",
       "measurements": [
        10281900.592,
        10206843.156,
@@ -827,7 +827,7 @@
      },
      {
       "displayName": "Memory Physical (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_Memory-audio.tembra.appP5QJJ5Y5V7.physical",
+      "identifier": "com.apple.dt.XCTMetric_Memory-com.tembraaudioP5QJJ5Y5V7.physical",
       "measurements": [
        124880.688,
        126044,
@@ -854,7 +854,7 @@
      },
      {
       "displayName": "CPU Time (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_CPU-audio.tembra.appP5QJJ5Y5V7.time",
+      "identifier": "com.apple.dt.XCTMetric_CPU-com.tembraaudioP5QJJ5Y5V7.time",
       "measurements": [
        3.025891,
        3.212715,
@@ -962,7 +962,7 @@
      },
      {
       "displayName": "Absolute Memory Physical (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_Memory-audio.tembra.appP5QJJ5Y5V7.physical_absolute",
+      "identifier": "com.apple.dt.XCTMetric_Memory-com.tembraaudioP5QJJ5Y5V7.physical_absolute",
       "measurements": [
        124880.688,
        126044,
@@ -989,7 +989,7 @@
      },
      {
       "displayName": "CPU Cycles (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_CPU-audio.tembra.appP5QJJ5Y5V7.cycles",
+      "identifier": "com.apple.dt.XCTMetric_CPU-com.tembraaudioP5QJJ5Y5V7.cycles",
       "measurements": [
        5044672.41,
        5349628.825,
@@ -1016,7 +1016,7 @@
      },
      {
       "displayName": "Memory Peak Physical (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_Memory-audio.tembra.appP5QJJ5Y5V7.physical_peak",
+      "identifier": "com.apple.dt.XCTMetric_Memory-com.tembraaudioP5QJJ5Y5V7.physical_peak",
       "measurements": [
        127469.36,
        129353.568,
@@ -1043,7 +1043,7 @@
      },
      {
       "displayName": "CPU Instructions Retired (appP5QJJ5Y5V7)",
-      "identifier": "com.apple.dt.XCTMetric_CPU-audio.tembra.appP5QJJ5Y5V7.instructions_retired",
+      "identifier": "com.apple.dt.XCTMetric_CPU-com.tembraaudioP5QJJ5Y5V7.instructions_retired",
       "measurements": [
        8363507.01,
        8667226.819,

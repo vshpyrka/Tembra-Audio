@@ -209,7 +209,7 @@ cd "$REPO_ROOT"
 # Replaced in stage 1 by the name GitHub reports for this checkout's remote, which follows a rename.
 GITHUB_REPO="vshpyrka/Tembra-Audio"
 WORKFLOW_FILE=".github/workflows/play-closed-testing.yml"
-PACKAGE_NAME="audio.tembra.app"
+PACKAGE_NAME="com.tembraaudio"
 SA_NAME="play-publisher"
 POOL_ID="github"
 PROVIDER_ID="tembra-audio"

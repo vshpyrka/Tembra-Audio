@@ -2,6 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Macrobenchmark needs the target to be profileable; the app's `perf` build type sets it. -->
     <queries>
-        <package android:name="audio.tembra.app" />
+        <package android:name="com.tembraaudio" />
     </queries>
 </manifest>

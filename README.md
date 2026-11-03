@@ -63,7 +63,7 @@ echo "sdk.dir=$HOME/Library/Android/sdk" > local.properties
 
 # Android: on a connected device or an emulator
 ./gradlew :androidApp:installDebug
-adb shell am start -n audio.tembra.app/audio.tembra.android.MainActivity
+adb shell am start -n com.tembraaudio/audio.tembra.android.MainActivity
 
 # iOS: open app/iosApp/iosApp.xcodeproj in Xcode and press Run,
 # or build from the command line as described in app/README.md
