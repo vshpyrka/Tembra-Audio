@@ -15,6 +15,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -63,7 +65,7 @@ internal fun MuteSoloButton(
                 drawRoundRect(fill, cornerRadius = radius)
                 if (focused) drawFocusRing(ringColor, ring.toPx(), radius)
             }
-            .toggleable(value = checked, interactionSource = source, indication = null, role = Role.Switch, onValueChange = onCheckedChange)
+            .pointerHoverIcon(PointerIcon.Hand).toggleable(value = checked, interactionSource = source, indication = null, role = Role.Switch, onValueChange = onCheckedChange)
             .semantics { contentDescription = description },
         contentAlignment = Alignment.Center,
     ) {

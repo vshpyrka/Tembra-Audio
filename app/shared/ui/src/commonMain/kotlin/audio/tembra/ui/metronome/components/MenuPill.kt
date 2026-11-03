@@ -30,6 +30,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -82,7 +84,7 @@ internal fun MenuPill(
             Box(
                 modifier = Modifier
                     .testTag(testTag)
-                    .clickable(interactionSource = source, indication = null, role = Role.Button) { open = true }
+                    .pointerHoverIcon(PointerIcon.Hand).clickable(interactionSource = source, indication = null, role = Role.Button) { open = true }
                     .semantics {
                         contentDescription = description
                         stateDescription = if (open) MetronomeCopy.expanded else MetronomeCopy.collapsed

@@ -14,15 +14,29 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.DpOffset
 import audio.tembra.core.project.GainDb
+import audio.tembra.engine.perf.PerfSection
+import audio.tembra.engine.perf.PerfTrace
 import audio.tembra.ui.designsystem.focusIdentity
+import audio.tembra.ui.designsystem.onSecondaryClick
+import audio.tembra.ui.designsystem.pointerMenuAnchor
+import audio.tembra.ui.designsystem.pointerMenuItem
+import audio.tembra.ui.designsystem.rememberPointerMenuAnchor
 import audio.tembra.ui.theme.TembraIcon
 import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.ui.timeline.TimelineCopy
@@ -61,6 +75,10 @@ internal fun TrackHeader(
     val daw = TembraTheme.daw
     val spacing = TembraTheme.spacing
     val tint = daw.trackTints[track.colorIndex % daw.trackTints.size]
+    // A secondary click anywhere on the header opens the track menu at the pointer (feature 011, spec FR-012).
+    val density = LocalDensity.current
+    val menuAnchor = rememberPointerMenuAnchor()
+    var menuOffset by remember { mutableStateOf(DpOffset.Zero) }
     Column(
         modifier = modifier
             .width(spacing.headerColumnWidth)
@@ -69,7 +87,14 @@ internal fun TrackHeader(
             .testTag(TimelineTestTags.header(index))
             // Keyboard focus follows the track, not the row index or the form (feature 011, spec FR-007).
             .focusIdentity("timeline.track.${track.id.value}")
-            .selectable(selected = selected, role = Role.Button, onClick = onSelect)
+            .pointerMenuItem(menuAnchor)
+            .onSecondaryClick(track.id) { position ->
+                PerfTrace.section(PerfSection.TIMELINE_CONTEXT_MENU) {
+                    menuOffset = menuAnchor.offsetFor(position, density)
+                    onMenuOpen(true)
+                }
+            }
+            .pointerHoverIcon(PointerIcon.Hand).selectable(selected = selected, role = Role.Button, onClick = onSelect)
             .semantics { contentDescription = track.description }
             .padding(horizontal = spacing.sm, vertical = spacing.xs),
         verticalArrangement = Arrangement.SpaceBetween,
@@ -96,8 +121,18 @@ internal fun TrackHeader(
                 onMoveDown = onMoveDown,
                 onDelete = onDelete,
                 testTag = TimelineTestTags.TRACK_MENU,
+                offset = menuOffset,
             ) {
-                TransportButton(icon = TembraIcon.MoreVert, description = TRACK_MENU_DESCRIPTION, onClick = { onMenuOpen(true) }, testTag = TimelineTestTags.trackMenu(index))
+                TransportButton(
+                icon = TembraIcon.MoreVert,
+                description = TRACK_MENU_DESCRIPTION,
+                onClick = {
+                    menuOffset = DpOffset.Zero
+                    onMenuOpen(true)
+                },
+                modifier = Modifier.pointerMenuAnchor(menuAnchor),
+                testTag = TimelineTestTags.trackMenu(index),
+            )
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(spacing.xs), verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {

@@ -23,12 +23,13 @@ import audio.tembra.ui.metronome.LocalMetronomeDebug
 import audio.tembra.ui.metronome.MetronomeDebugRequest
 import audio.tembra.ui.navigation.DestinationsDrawnAhead
 import audio.tembra.ui.navigation.NavigationShell
-import audio.tembra.ui.session.AppStartup
 import audio.tembra.ui.perf.AudioHealthTicker
 import audio.tembra.ui.perf.AudioHealthWriteButton
 import audio.tembra.ui.perf.anchorRoot
+import audio.tembra.ui.platform.LocalTrackpadPinchSource
 import audio.tembra.ui.projects.ProjectsSeedRequest
 import audio.tembra.ui.session.AppLifecycleObserver
+import audio.tembra.ui.session.AppStartup
 import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.ui.theme.WarmUpText
 import audio.tembra.ui.tuner.LocalTunerNoiseGate
@@ -64,6 +65,7 @@ fun App(
         LocalTunerTestSignal provides tunerTestSignal,
         LocalTunerNoiseGate provides tunerNoiseGate?.gate,
         LocalMetronomeDebug provides metronomeDebug,
+        LocalTrackpadPinchSource provides appGraph.trackpadPinchSource,
     ) {
         // The objects the screens' ViewModels are built from, built off the main thread once the first frame is up, so
         // the frame that opens a screen does not build them (AppGraph.prebuiltForScreens).

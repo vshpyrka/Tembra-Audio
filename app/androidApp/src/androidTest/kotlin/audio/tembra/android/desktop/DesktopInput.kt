@@ -18,11 +18,14 @@ import androidx.test.platform.app.InstrumentationRegistry
 object DesktopInput {
     private val instrumentation get() = InstrumentationRegistry.getInstrumentation()
 
-    /** Moves the hovering pointer to ([x], [y]) with no button pressed. */
+    /**
+     * Moves the hovering pointer to ([x], [y]) with no button pressed, in two steps so the window sees movement. The
+     * platform refuses injected hover enter and exit events: it derives them from the moves itself.
+     */
     fun hover(x: Float, y: Float) {
         val now = SystemClock.uptimeMillis()
-        inject(mouseEvent(now, now, MotionEvent.ACTION_HOVER_ENTER, x, y, buttons = 0))
-        inject(mouseEvent(now, now, MotionEvent.ACTION_HOVER_MOVE, x, y, buttons = 0))
+        inject(mouseEvent(now, now, MotionEvent.ACTION_HOVER_MOVE, x - 1f, y - 1f, buttons = 0))
+        inject(mouseEvent(now, SystemClock.uptimeMillis(), MotionEvent.ACTION_HOVER_MOVE, x, y, buttons = 0))
         instrumentation.waitForIdleSync()
     }
 

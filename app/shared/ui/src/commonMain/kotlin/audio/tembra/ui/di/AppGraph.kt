@@ -9,6 +9,7 @@ import audio.tembra.engine.AudioEngine
 import audio.tembra.ui.platform.AudioFilePicker
 import audio.tembra.ui.platform.BackgroundPlaybackHost
 import audio.tembra.ui.platform.MicrophonePermission
+import audio.tembra.ui.platform.TrackpadPinchSource
 import audio.tembra.ui.platform.WindowControls
 import audio.tembra.ui.projects.ProjectsSeeder
 import audio.tembra.ui.session.AppStartup
@@ -29,6 +30,7 @@ interface AppGraph : ViewModelGraph {
     val backgroundPlaybackHost: BackgroundPlaybackHost
     val audioFilePicker: AudioFilePicker
     val windowControls: WindowControls
+    val trackpadPinchSource: TrackpadPinchSource
     val projectRepository: ProjectRepository
     val projectSession: ProjectSession
     val appStartup: AppStartup

@@ -2,6 +2,7 @@ package audio.tembra.ui.timeline.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.DpOffset
 import audio.tembra.ui.designsystem.MenuItemSpec
 import audio.tembra.ui.designsystem.TembraMenu
 import audio.tembra.ui.theme.TembraIcon
@@ -17,6 +18,7 @@ internal fun ClipMenu(
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
     testTag: String? = null,
+    offset: DpOffset = DpOffset.Zero,
     anchor: @Composable () -> Unit,
 ) {
     TembraMenu(
@@ -34,6 +36,7 @@ internal fun ClipMenu(
         },
         modifier = modifier,
         testTag = testTag,
+        offset = offset,
         anchor = anchor,
     )
 }

@@ -258,85 +258,85 @@ ChromeOS.
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T053 [P] [US3] `UITEST/designsystem/SecondaryClickTest.kt` (`performMouseInput { rightClick() }`): a clip, a
+- [X] T053 [P] [US3] `UITEST/designsystem/SecondaryClickTest.kt` (`performMouseInput { rightClick() }`): a clip, a
   track header (both layouts) and a project card open their menus at the click position; the primary `onClick` is not
   called on a right-click
-- [ ] T054 [P] [US3] `UITEST/designsystem/TooltipCoverageTest.kt`: walking Timeline, Tuner, Metronome, Projects and the
+- [X] T054 [P] [US3] `UITEST/designsystem/TooltipCoverageTest.kt`: walking Timeline, Tuner, Metronome, Projects and the
   shell, every icon-only control shows a tooltip after an injected `HoverInteraction.Enter`, and every interactive
   control renders a hover state (screenshot of each design-system component hovered through an injected
-  `MutableInteractionSource`)
-- [ ] T055 [P] [US3] `UITEST/timeline/ViewportGesturesTest.kt` (extend): wheel scrolls tracks; Shift+wheel scrolls time;
+  `MutableInteractionSource`) (2026-11-03: in `androidDeviceTest`: on the iOS lane the test's mouse hover reaches a disabled button's `hoverable` but not an enabled `clickable`; the iPad's hover tooltips are an owner check. It found the gaps T076 fixed: disabled toolbar buttons showed no tooltip, since a disabled `clickable` reports no hover)
+- [X] T055 [P] [US3] `UITEST/timeline/ViewportGesturesTest.kt` (extend): wheel scrolls tracks; Shift+wheel scrolls time;
   Ctrl+wheel and ⌘+wheel zoom keeping the beat under the pointer; an Android `PointerEventType.Scale` event zooms and a
-  `Pan` event scrolls
-- [ ] T056 [P] [US3] `UITEST/timeline/ClipDragEscapeTest.kt`: Escape during a mouse drag returns the clip to its start
-- [ ] T057 [P] [US3] `UITEST/designsystem/TembraSliderWheelTest.kt`: one wheel notch up raises each slider (gain, noise
+  `Pan` event scrolls (2026-11-03: the wheel rules extend `UITEST/timeline/TrackLaneGestureTest.kt`; the trackpad `Scale`/`Pan` cases are `androidDeviceTest/.../timeline/TrackpadGesturesTest.kt`, because Compose Multiplatform's iOS test API injects no trackpad gestures)
+- [X] T056 [P] [US3] `UITEST/timeline/ClipDragEscapeTest.kt`: Escape during a mouse drag returns the clip to its start (2026-11-03: the Escape seam is the timeline's key handling, so the test drives `timelineKeyHandling` with a drag in the state; the ViewModel already ignores the gesture's later moves)
+- [X] T057 [P] [US3] `UITEST/designsystem/TembraSliderWheelTest.kt`: one wheel notch up raises each slider (gain, noise
   gate, master volume) by one step, down lowers it
-- [ ] T058 [P] [US3] `IOSTEST/timeline/TrackpadPinchTest.kt`: a `TrackpadPinch(scale = 2f, focus)` from a fake
-  `TrackpadPinchSource` zooms the viewport around `focus`
-- [ ] T059 [P] [US3] `ATEST/desktop/PointerOnDesktopTest.kt` (uses T011): on the desktop emulator, a real
+- [X] T058 [P] [US3] `IOSTEST/timeline/TrackpadPinchTest.kt`: a `TrackpadPinch(scale = 2f, focus)` from a fake
+  `TrackpadPinchSource` zooms the viewport around `focus` (2026-11-03: in `uiTest` as `TrackpadPinchTest`, running on both lanes against a fake source provided through `LocalTrackpadPinchSource`)
+- [X] T059 [P] [US3] `ATEST/desktop/PointerOnDesktopTest.kt` (uses T011): on the desktop emulator, a real
   secondary mouse press on the first clip opens its menu, a real wheel event scrolls the timeline
-- [ ] T060 [P] [US3] `ATEST/desktop/PointerShapesDesktopTest.kt` (uses T011; written before
+- [X] T060 [P] [US3] `ATEST/desktop/PointerShapesDesktopTest.kt` (uses T011; written before
   `PointerShapes`): the resolved pointer icon over a design-system button is `TYPE_HAND`, over the Projects search
   field `TYPE_TEXT`, over a clip `TYPE_GRAB` and `TYPE_GRABBING` while dragging it, and over the window while a long
   import runs `TYPE_WAIT` (FR-015, FR-015a)
-- [ ] T061 [P] [US3] `CTEST/session/ProjectSessionBusyTest.kt`: `ProjectSession.busy` is true while an import copies files
+- [X] T061 [P] [US3] `CTEST/session/ProjectSessionBusyTest.kt`: `ProjectSession.busy` is true while an import copies files
   (a suspended fake importer) and false after it ends or fails
-- [ ] T062 [P] [US3] `UITEST/designsystem/TembraScrollbarTest.kt`: a mouse wheel scroll over a list shows the scrollbar,
+- [X] T062 [P] [US3] `UITEST/designsystem/TembraScrollbarTest.kt`: a mouse wheel scroll over a list shows the scrollbar,
   it fades after a second at rest, a touch scroll does not show it, dragging the thumb with the mouse scrolls the
   content (FR-014a)
-- [ ] T063 [P] [US3] `UITEST/designsystem/PointerAreaTest.kt`: for every design-system interactive component, the
-  clickable node's bounds equal the bounds its hover indication is drawn over (FR-016a)
+- [X] T063 [P] [US3] `UITEST/designsystem/PointerAreaTest.kt`: for every design-system interactive component, the
+  clickable node's bounds equal the bounds its hover indication is drawn over (FR-016a) (2026-11-03: a pixel test: hovering changes the drawing at the four edge midpoints of each component's clickable node)
 
 ### Implementation for User Story 3
 
-- [ ] T064 [US3] Create `Modifier.onSecondaryClick(key: Any?, onSecondaryClick: (Offset) -> Unit)` in
+- [X] T064 [US3] Create `Modifier.onSecondaryClick(key: Any?, onSecondaryClick: (Offset) -> Unit)` in
   `UI/designsystem/OnSecondaryClick.kt`: `PointerEventPass.Initial`, `PointerEventType.Press` with
   `buttons.isSecondaryPressed`, consume, report the local position
-- [ ] T065 [US3] Replace the inline secondary-click code in `UI/timeline/components/TrackLane.kt` (lines ~224–228) with
+- [X] T065 [US3] Replace the inline secondary-click code in `UI/timeline/components/TrackLane.kt` (lines ~224–228) with
   `onSecondaryClick`, opening the clip menu at the pointer
-- [ ] T066 [US3] Add `offset: DpOffset = DpOffset.Zero` to `UI/designsystem/TembraMenu.kt` so a menu opened by a
+- [X] T066 [US3] Add `offset: DpOffset = DpOffset.Zero` to `UI/designsystem/TembraMenu.kt` so a menu opened by a
   secondary click drops at the pointer
-- [ ] T067 [P] [US3] Open the track menu at the pointer on secondary click in
+- [X] T067 [P] [US3] Open the track menu at the pointer on secondary click in
   `UI/timeline/components/TrackHeader.kt` and `UI/timeline/components/TrackHeaderCompact.kt`
-- [ ] T068 [P] [US3] Open the card menu at the pointer on secondary click in
+- [X] T068 [P] [US3] Open the card menu at the pointer on secondary click in
   `UI/projects/components/ProjectCard.kt`
-- [ ] T069 [P] [US3] Create `expect object PointerShapes { val grab: PointerIcon; val grabbing: PointerIcon; val busy:
+- [X] T069 [P] [US3] Create `expect object PointerShapes { val grab: PointerIcon; val grabbing: PointerIcon; val busy:
   PointerIcon }` in `UI/designsystem/PointerShapes.kt` with actuals in
   `UIANDROID/designsystem/PointerShapes.android.kt` (`PointerIcon(android.view.PointerIcon.TYPE_GRAB / TYPE_GRABBING /
   TYPE_WAIT)`) and `UIIOS/designsystem/PointerShapes.ios.kt` (`PointerIcon.Default`)
-- [ ] T070 [US3] Apply pointer shapes: `PointerIcon.Hand` on the design system's clickable components
+- [X] T070 [US3] Apply pointer shapes: `PointerIcon.Hand` on the design system's clickable components
   (`UI/designsystem/` buttons, pills, chips, toggles, menu items, navigation items), `PointerIcon.Text` on text
   fields, grab/grabbing on clips in `UI/timeline/components/TrackLane.kt`
-- [ ] T071 [US3] Add `busy: StateFlow<Boolean>` to `UI/session/ProjectSession.kt`, true while an import copies files or
-  waveform overviews are built (a counter of in-flight jobs, decremented in `finally`)
-- [ ] T072 [US3] Show `PointerShapes.busy` over the shell's root in `UI/navigation/NavigationShellContent.kt` while
+- [X] T071 [US3] Add `busy: StateFlow<Boolean>` to `UI/session/ProjectSession.kt`, true while an import copies files or
+  waveform overviews are built (a counter of in-flight jobs, decremented in `finally`) (2026-11-03: through a `SessionActivity` seam the shell's ViewModel reads; it counts imports only: overview polling can outlive an import or never settle, which would leave the busy pointer stuck)
+- [X] T072 [US3] Show `PointerShapes.busy` over the shell's root in `UI/navigation/NavigationShellContent.kt` while
   `ProjectSession.busy` is true (FR-015a)
-- [ ] T073 [P] [US3] Create `expect fun scrollNotches(delta: Offset): Offset` in `UI/designsystem/ScrollNotches.kt`
+- [X] T073 [P] [US3] Create `expect fun scrollNotches(delta: Offset): Offset` in `UI/designsystem/ScrollNotches.kt`
   with actuals in `UIANDROID/designsystem/` (pass through) and `UIIOS/designsystem/` (divide by the 0.01 pan
-  multiplier)
-- [ ] T074 [US3] Extend `UI/timeline/components/ViewportGestures.kt`: use `scrollNotches`, Shift swaps axes, handle
+  multiplier) (2026-11-03: no `scrollNotches` needed: a slider steps once per wheel event by its sign, and the viewport keeps feature 009's mapping on both platforms, so no platform constant remained to specialise)
+- [X] T074 [US3] Extend `UI/timeline/components/ViewportGestures.kt`: use `scrollNotches`, Shift swaps axes, handle
   `PointerEventType.Scale` (zoom around the pointer) and `PointerEventType.Pan` (scroll) for Android trackpads
-- [ ] T075 [US3] Add wheel stepping to `UI/designsystem/TembraSlider.kt` (one notch = one step, up increases)
-- [ ] T076 [US3] Fix the tooltip and hover-state gaps T054 finds, using `UI/designsystem/TembraTooltip.kt` and
+- [X] T075 [US3] Add wheel stepping to `UI/designsystem/TembraSlider.kt` (one notch = one step, up increases)
+- [X] T076 [US3] Fix the tooltip and hover-state gaps T054 finds, using `UI/designsystem/TembraTooltip.kt` and
   the components' interaction sources
-- [ ] T077 [US3] Make every design-system interactive component draw its hover indication over its whole interactive
+- [X] T077 [US3] Make every design-system interactive component draw its hover indication over its whole interactive
   bounds, with no invisible growth beyond the drawn shape and the 44 dp targets kept, fixing what T063
-  finds in `UI/designsystem/` (research R20)
-- [ ] T078 [P] [US3] Create `UI/designsystem/TembraScrollbar.kt` (`modifier` first, tokens only, vertical and
+  finds in `UI/designsystem/` (research R20) (2026-11-03: `HoverArea.kt`: a state-layer tint drawn over the whole clickable bounds, outside the 44 dp padding, on pills, segments, chips and toggles; icon buttons already filled theirs)
+- [X] T078 [P] [US3] Create `UI/designsystem/TembraScrollbar.kt` (`modifier` first, tokens only, vertical and
   horizontal) and `UI/designsystem/ScrollbarAdapter.kt` (from `LazyListState`, `ScrollState` and the timeline
   viewport's position and extent): visible while content scrolls from a pointer, fading after one second at rest,
-  draggable with the mouse (research R18)
-- [ ] T079 [US3] Apply `TembraScrollbar` to the timeline's track list and time axis (`UI/timeline/TimelineScreen.kt`),
+  draggable with the mouse (research R18) (2026-11-03: a `Modifier.tembraScrollbar(adapter, orientation)` node on the scrolling element itself instead of a separate composable, so a dozen existing scroll containers keep their structure; `ScrollbarShown` in semantics for tests)
+- [X] T079 [US3] Apply `TembraScrollbar` to the timeline's track list and time axis (`UI/timeline/TimelineScreen.kt`),
   the Projects grid (`UI/projects/ProjectsScreen.kt`) and the tuner's and metronome's scrolling panes
   (`UI/tuner/`, `UI/metronome/`)
-- [ ] T080 [US3] Cancel a clip drag on Escape (`onClipDragCancel`) in `UI/timeline/components/TrackLane.kt` and the
+- [X] T080 [US3] Cancel a clip drag on Escape (`onClipDragCancel`) in `UI/timeline/components/TrackLane.kt` and the
   timeline key handling
-- [ ] T081 [US3] Create the iOS trackpad pinch path: interface `TrackpadPinchSource` (`Flow<TrackpadPinch>`) in
+- [X] T081 [US3] Create the iOS trackpad pinch path: interface `TrackpadPinchSource` (`Flow<TrackpadPinch>`) in
   `UI/platform/TrackpadPinchSource.kt` and `UI/platform/TrackpadPinch.kt` (data: `scale: Float`, `focus: Offset`), the
   iOS binding `UIIOS/platform/IosTrackpadPinchSource.kt`, the Swift bridge `app/iosApp/iosApp/TrackpadPinchBridge.swift`
   (`UIPinchGestureRecognizer`, `allowedTouchTypes = [.indirectPointer]`), and its consumption in
   `UI/timeline/components/ViewportGestures.kt`; add a comment that the bridge is deleted on Compose Multiplatform 1.13
-- [ ] T082 [US3] Emit `TIMELINE_CONTEXT_MENU` from the secondary press on a clip or track header to the menu's first
+- [X] T082 [US3] Emit `TIMELINE_CONTEXT_MENU` from the secondary press on a clip or track header to the menu's first
   frame (`UI/timeline/components/`)
 
 **Checkpoint**: US1–US3: desktop-grade pointer behaviour.

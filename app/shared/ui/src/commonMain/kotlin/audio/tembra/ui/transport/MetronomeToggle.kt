@@ -14,6 +14,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -68,7 +70,7 @@ internal fun MetronomeToggle(
                     if (fill != null) drawCircle(color = fill, radius = radius)
                     if (focused) drawFocusRing(ringColor, ring.toPx(), CornerRadius(radius))
                 }
-                .combinedClickable(
+                .pointerHoverIcon(PointerIcon.Hand).combinedClickable(
                     interactionSource = source,
                     indication = null,
                     enabled = enabled,

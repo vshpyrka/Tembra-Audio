@@ -9,6 +9,8 @@ import audio.tembra.ui.di.AppGraph
 import audio.tembra.ui.platform.BackgroundPlaybackHost
 import audio.tembra.ui.platform.MicrophonePermission
 import audio.tembra.ui.platform.AudioFilePicker
+import audio.tembra.ui.platform.NoTrackpadPinches
+import audio.tembra.ui.platform.TrackpadPinchSource
 import audio.tembra.ui.platform.WindowControls
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.DependencyGraph
@@ -77,6 +79,10 @@ interface AndroidAppGraph : AppGraph {
     /** Full screen from the Timeline's menu in a desktop window (feature 011, spec FR-010a). */
     @Provides
     fun provideWindowControls(controls: AndroidWindowControls): WindowControls = controls
+
+    /** Android trackpads pinch through Compose's own `Scale` pointer events (feature 011, research R9). */
+    @Provides
+    fun provideTrackpadPinchSource(): TrackpadPinchSource = NoTrackpadPinches
 
     @DependencyGraph.Factory
     fun interface Factory {

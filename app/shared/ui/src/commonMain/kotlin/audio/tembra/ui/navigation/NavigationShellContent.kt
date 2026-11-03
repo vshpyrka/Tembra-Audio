@@ -24,6 +24,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import audio.tembra.ui.designsystem.PointerShapes
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import audio.tembra.ui.designsystem.NavigationItemSpec
@@ -40,7 +42,8 @@ import audio.tembra.ui.theme.TembraTheme
  * bar below or the rail at the start according to [layoutMode] (research R4); the content slot hosts the NavDisplay.
  * There is no top bar (removed 2026-10-16: the selected item already names the destination), so the content clears
  * the status bar, a desktop caption and a top cutout itself. UI tests drive this composable with an explicit layout mode.
- * [dialog] is the session's pending stop-and-leave question (feature 009, spec FR-008a), rendered above everything.
+ * [dialog] is the session's pending stop-and-leave question (feature 009, spec FR-008a), rendered above everything;
+ * [busy] shows the busy pointer over the window while the session imports (feature 011, FR-015a).
  */
 @Composable
 fun NavigationShellContent(
@@ -50,6 +53,7 @@ fun NavigationShellContent(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     dialog: DialogRequest? = null,
+    busy: Boolean = false,
     onOpenTrackSettings: (TrackId) -> Unit = {},
     onCloseTrackSettings: () -> Unit = {},
 ) {
@@ -69,7 +73,9 @@ fun NavigationShellContent(
             .background(TembraTheme.colors.background)
             .testTag("nav.shell")
             // A window change that crosses a layout class is measured (feature 011, contracts/perf-instrumentation.md).
-            .traceWindowRelayout(),
+            .traceWindowRelayout()
+            // The system's busy pointer over the whole window while the session works (feature 011, spec FR-015a).
+            .then(if (busy) Modifier.pointerHoverIcon(PointerShapes.busy, overrideDescendants = true) else Modifier),
     ) {
         if (layoutMode == LayoutMode.EndRail) {
             EndRailFrame(items = items, state = state, onSelect = select, onBack = onBack, onOpenTrackSettings = onOpenTrackSettings, onCloseTrackSettings = onCloseTrackSettings, onSelectDestination = onSelect)

@@ -1,8 +1,10 @@
 package audio.tembra.ui.timeline.components
 
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -11,6 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import audio.tembra.ui.designsystem.ScrollbarAdapter
+import audio.tembra.ui.designsystem.tembraScrollbar
 import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.ui.timeline.TimelineCallbacks
 import audio.tembra.ui.timeline.TimelineLayout
@@ -37,11 +41,17 @@ internal fun TrackList(
         var running = 0
         state.tracks.map { track -> running.also { running += track.clips.size } }
     }
+    val listState = rememberLazyListState()
+    val onScrollBy by rememberUpdatedState(callbacks.onScrollBy)
     LazyColumn(
+        state = listState,
         modifier = modifier
             .fillMaxSize()
             .onSizeChanged { size -> onMeasured((size.width - headerWidthPx).toDouble(), density.density.toDouble()) }
-            .testTag(TimelineTestTags.TRACK_LIST),
+            .testTag(TimelineTestTags.TRACK_LIST)
+            // Scrollbars while a mouse or trackpad scrolls (feature 011, spec FR-014a): the tracks, and time along the foot.
+            .tembraScrollbar(ScrollbarAdapter(listState), Orientation.Vertical)
+            .tembraScrollbar(TimelineScrollbarAdapter(state.viewport, state.lengthBeats) { onScrollBy(it.toDouble()) }, Orientation.Horizontal),
     ) {
         itemsIndexed(state.tracks, key = { _, track -> track.id.value }) { index, track ->
             TrackRow(

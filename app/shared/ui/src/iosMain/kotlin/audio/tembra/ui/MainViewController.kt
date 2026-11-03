@@ -43,3 +43,10 @@ fun MainViewController(
             projectsSeed = ProjectsSeedRequest.parse(projectsSeed),
         )
     }
+
+/**
+ * Called by the shell's `TrackpadPinchBridge` on the main thread for each change of a trackpad pinch (feature 011,
+ * research R9): [scale] relative to the previous call, ([x], [y]) the pinch's centre in the Compose view's pixels.
+ */
+@Suppress("unused")
+fun reportTrackpadPinch(scale: Double, x: Double, y: Double) = appGraph.iosTrackpadPinchSource.report(scale, x, y)

@@ -9,6 +9,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performMouseInput
+import androidx.compose.ui.test.ScrollWheel
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.rightClick
 import androidx.compose.ui.test.pinch
@@ -150,20 +151,29 @@ class TrackLaneGestureTest {
     }
 
     @Test
-    fun theWheelScrollsAndWithControlZooms() = runComposeUiTest {
+    fun theWheelLeavesTheTracksToTheListShiftScrollsTimeAndControlZooms() = runComposeUiTest {
+        // Feature 011 (spec FR-014): a plain vertical notch scrolls the track list, not time; Shift or a horizontal
+        // swipe scrolls time; Ctrl (Command on iPad) zooms around the pointer.
         setLane()
         val lane = onNodeWithTag(TimelineTestTags.lane(0))
         lane.performMouseInput {
             moveTo(Offset(160f, 44f))
             scroll(1f)
         }
-        assertEquals(1, scrolls.size, "one notch, one scroll")
-        assertTrue(zooms.isEmpty())
+        assertTrue(scrolls.isEmpty() && zooms.isEmpty(), "a vertical notch moved the timeline: scrolls $scrolls, zooms $zooms")
+        lane.performKeyInput { keyDown(Key.ShiftLeft) }
+        lane.performMouseInput { scroll(1f) }
+        lane.performKeyInput { keyUp(Key.ShiftLeft) }
+        assertEquals(1, scrolls.size, "Shift and a notch scroll time")
+        assertTrue(scrolls.single() > 0.0, "a notch towards the user moves later in time: $scrolls")
+        lane.performMouseInput { scroll(-1f, ScrollWheel.Horizontal) }
+        assertEquals(2, scrolls.size, "a horizontal swipe scrolls time")
         lane.performKeyInput { keyDown(Key.CtrlLeft) }
         lane.performMouseInput { scroll(-1f) }
         lane.performKeyInput { keyUp(Key.CtrlLeft) }
         assertEquals(1, zooms.size, "a notch with Control zooms")
         assertTrue(zooms.single().second > 1.0, "scrolling away from the user zooms in")
-        assertEquals(1, scrolls.size)
+        assertEquals(160f * 1, zooms.single().first.toFloat(), "the zoom is centred on the pointer")
+        assertEquals(2, scrolls.size)
     }
 }

@@ -11,6 +11,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import audio.tembra.ui.navigation.TestViewModelFactory
 import audio.tembra.ui.session.FakePlaybackGuard
+import audio.tembra.ui.session.FakeSessionActivity
 import dev.zacsweers.metrox.viewmodel.LocalMetroViewModelFactory
 import audio.tembra.ui.theme.TembraTheme
 import org.junit.Rule
@@ -29,7 +30,7 @@ class AndroidBackTest {
             // The real destinations compose their ViewModels from the graph; the shell test factory stands in for it.
             val factory = remember { TestViewModelFactory() }
             CompositionLocalProvider(LocalMetroViewModelFactory provides factory) {
-                TembraTheme { NavigationShell(viewModel = ShellViewModel(FakePlaybackGuard()), layoutMode = LayoutMode.BottomBar) }
+                TembraTheme { NavigationShell(viewModel = ShellViewModel(FakePlaybackGuard(), FakeSessionActivity()), layoutMode = LayoutMode.BottomBar) }
             }
         }
         rule.onNodeWithTag("nav.item.projects").performClick()

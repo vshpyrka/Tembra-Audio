@@ -23,6 +23,11 @@ data class TembraSpacing(
      * width, centred, as in an ordinary expanded window; the timeline takes the whole width for time.
      */
     val screenMaxWidth: Dp = 1200.dp,
+    /** The scrollbar that shows while a mouse or trackpad scrolls (feature 011, spec FR-014a): its thickness, its gap
+     * from the edge and the shortest its thumb gets. */
+    val scrollbarThickness: Dp = 6.dp,
+    val scrollbarInset: Dp = 2.dp,
+    val scrollbarMinThumb: Dp = 32.dp,
     // Chrome metrics of the navigation frame (feature 002, data-model.md §6, spec FR-019).
     /** [audio.tembra.ui.designsystem.TembraTopBar]'s content height (`h-14` on the wide design screens); the shell shows no top bar since 2026-10-16. */
     val topBarHeight: Dp = 56.dp,

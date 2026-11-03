@@ -4,14 +4,19 @@ import TembraShared
 
 /// Hosts the Compose Multiplatform UI. All screens live in the shared Kotlin module.
 struct ComposeView: UIViewControllerRepresentable {
+    /// The trackpad pinch bridge lives as long as the view (feature 011; removed with Compose Multiplatform 1.13).
+    func makeCoordinator() -> TrackpadPinchBridge { TrackpadPinchBridge() }
+
     func makeUIViewController(context: Context) -> UIViewController {
-        MainViewControllerKt.MainViewController(
+        let controller = MainViewControllerKt.MainViewController(
             developerView: launchArgument(prefix: "--tembra-developer-view="),
             tunerTestSignal: launchArgument(prefix: "--tembra-tuner-test-signal="),
             tunerNoiseGate: launchArgument(prefix: "--tembra-tuner-noise-gate="),
             metronomeSyncopation: launchArgument(prefix: "--tembra-metronome-syncopation="),
             projectsSeed: launchArgument(prefix: "--tembra-projects-seed=")
         )
+        context.coordinator.attach(to: controller.view)
+        return controller
     }
 
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}

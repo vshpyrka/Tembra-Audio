@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
@@ -18,6 +17,7 @@ import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Constraints
 import audio.tembra.ui.designsystem.TembraGradientCard
+import audio.tembra.ui.designsystem.verticalScrollWithScrollbar
 import audio.tembra.ui.theme.TembraTheme
 
 /**
@@ -61,7 +61,7 @@ internal fun AutoListenPane(
             else -> Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
+                    .verticalScrollWithScrollbar(rememberScrollState())
                     .padding(horizontal = spacing.md, vertical = spacing.lg),
                 contentAlignment = Alignment.Center,
             ) {
@@ -106,7 +106,7 @@ private fun MeterOverFooter(
     val currentListening by rememberUpdatedState(listening)
     val currentFooter by rememberUpdatedState(footer)
     // A layer of its own: each reading measures and places the card again, which re-records only this layer.
-    SubcomposeLayout(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).graphicsLayer()) { constraints ->
+    SubcomposeLayout(modifier = Modifier.fillMaxSize().verticalScrollWithScrollbar(rememberScrollState()).graphicsLayer()) { constraints ->
         val width = constraints.maxWidth
         // A scroll container hands its own height down as the minimum height: the viewport this content should fill.
         val viewport = constraints.minHeight
@@ -183,7 +183,7 @@ private fun FittedMeter(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .then(if (scrolls) Modifier.verticalScroll(scrollState) else Modifier)
+                .then(if (scrolls) Modifier.verticalScrollWithScrollbar(scrollState) else Modifier)
                 .padding(spacing.md),
             contentAlignment = Alignment.Center,
         ) {

@@ -10,6 +10,8 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.testTag
@@ -51,7 +53,7 @@ fun AudioHealthWriteButton(
                     .size(TembraTheme.spacing.sm)
                     .clip(CircleShape)
                     .background(TembraTheme.colors.onSurfaceVariant)
-                    .clickable(role = Role.Button) { writer.write(engineHealthJson(engine.audioHealth())) }
+                    .pointerHoverIcon(PointerIcon.Hand).clickable(role = Role.Button) { writer.write(engineHealthJson(engine.audioHealth())) }
                     .testTag(PerfAnchors.DEVTOOLS_WRITE_HEALTH)
                     .semantics { contentDescription = "Write engine health" },
             )

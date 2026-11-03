@@ -22,7 +22,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.semantics.Role
+import audio.tembra.ui.theme.TembraShapes
 import audio.tembra.ui.theme.TembraTheme
 
 /**
@@ -64,7 +67,8 @@ fun TembraToggle(
         modifier = modifier
             .testTagIfSet(testTag)
             .focusIdentity(testTag)
-            .toggleable(value = checked, interactionSource = interactionSource, indication = null, role = Role.Switch, onValueChange = onCheckedChange)
+            .hoverArea(hovered, TembraShapes.extraLarge)
+            .pointerHoverIcon(PointerIcon.Hand).toggleable(value = checked, interactionSource = interactionSource, indication = null, role = Role.Switch, onValueChange = onCheckedChange)
             .minimumInteractiveComponentSize(),
         contentAlignment = Alignment.Center,
     ) {

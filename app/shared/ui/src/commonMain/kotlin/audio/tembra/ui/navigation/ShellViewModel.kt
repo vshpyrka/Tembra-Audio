@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import audio.tembra.core.project.TrackId
 import audio.tembra.ui.session.DialogRequest
 import audio.tembra.ui.session.PlaybackGuard
+import audio.tembra.ui.session.SessionActivity
 import audio.tembra.ui.tracksettings.TrackSettingsKey
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
@@ -29,13 +30,16 @@ import kotlinx.coroutines.launch
 @Inject
 @ContributesIntoMap(AppScope::class)
 @ViewModelKey
-class ShellViewModel(private val guard: PlaybackGuard) : ViewModel() {
+class ShellViewModel(private val guard: PlaybackGuard, activity: SessionActivity) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ShellUiState())
     val uiState: StateFlow<ShellUiState> = _uiState.asStateFlow()
 
     /** The pending stop-and-leave question the shell renders (null when none). */
     val dialog: StateFlow<DialogRequest?> = guard.dialog
+
+    /** True while the session works for a noticeable time: the window shows the busy pointer (feature 011, FR-015a). */
+    val busy: StateFlow<Boolean> = activity.busy
 
     private var pendingLeave: Job? = null
 
