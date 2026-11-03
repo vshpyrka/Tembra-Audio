@@ -8,6 +8,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <functional>
 #include <string>
@@ -199,7 +200,7 @@ TEST_CASE("the header's completed count is updated at least every 10 s of audio 
     std::remove(out.c_str());
 }
 
-TEST_CASE("a five-minute stereo 48 kHz WAV builds in under 1.5 s on the host", "[timeline][overview][slow]") {
+TEST_CASE("a five-minute stereo 48 kHz WAV builds in under 1.5 s on the host, 3 s on CI", "[timeline][overview][slow]") {
     const std::string wav = tembra::fixtures::tempPath("tembra-overview-5min.wav");
     const int64_t frames = 48000LL * 60 * 5;
     REQUIRE(writeStreamedWav(wav, 48000, 2, frames, [](int64_t i, uint32_t c) {
@@ -210,8 +211,11 @@ TEST_CASE("a five-minute stereo 48 kHz WAV builds in under 1.5 s on the host", "
     REQUIRE(tembra::OverviewBuilder::build(wav.c_str(), out.c_str()) == TEMBRA_OK);
     const double seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count();
     std::remove(wav.c_str());
-    INFO("built in " << seconds << " s");
-    CHECK(seconds < 1.5);
+    // SC-007 allows 3 s on a phone; 1.5 s on a development Mac is the early warning (task T022). GitHub's shared
+    // macOS runners take 2.0 to 2.4 s, so under GitHub Actions the check uses the SC-007 budget itself.
+    const double budget = std::getenv("GITHUB_ACTIONS") != nullptr ? 3.0 : 1.5;
+    INFO("built in " << seconds << " s, budget " << budget << " s");
+    CHECK(seconds < budget);
     Peaks peaks;
     REQUIRE(peaks.read(out));
     CHECK(peaks.frames == frames);
