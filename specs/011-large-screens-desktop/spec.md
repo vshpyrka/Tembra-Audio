@@ -13,6 +13,9 @@ only to Chromebooks with a touchscreen. The feature: make Tembra Audio a first-c
 desktop windowing (free-form, resizable windows), including devices without a touchscreen, used with a mouse or
 trackpad and a keyboard; give it a Google Play presence on those devices; verify it on Android's desktop emulator.
 The owner's answers (Clarifications) add iPad windows with a keyboard and a trackpad, and drag and drop of audio files.
+Later the same day the owner pointed to Google's Googlebook post ("Land your apps on Googlebook with adaptive
+development", 22 September 2026) and asked for the analysis's recommended approach to it (Clarifications, analysis
+remediation).
 
 ## What exists today *(evidence for every decision below)*
 
@@ -34,6 +37,14 @@ The owner's answers (Clarifications) add iPad windows with a keyboard and a trac
 - **Google Play's large-screen presence.** Play shows Chromebook screenshots in their own slot: at least four
   recommended, up to eight, landscape 16:9 or portrait 9:16, each side between 1,080 and 7,680 pixels, showing the
   real large-screen experience without added text (Play Console help, checked 2026-11-03). The store listing has none.
+- **Googlebook is the new desktop target.** Googlebooks (announced 22 September 2026; HP, Dell, Lenovo, Acer, Asus)
+  are laptops "built on the Android technology stack and ChromeOS desktop foundations", with touchscreens, keyboards
+  and trackpads, where Android apps run in free-form windows. Google Play labels apps for desktop ("Compatible with
+  desktop", "Optimized for desktop", "Made for desktop"), applied by Google; optimized apps get the badge, better search
+  placement, curated collections and a place in the transfer list when a Googlebook is set up from a phone. Google
+  publishes no badge checklist; its desktop app quality guidelines are the stated bar.
+- **The Googlebook-era emulator.** Android Studio's desktop emulator for Googlebook is the "Desktop (Preview)" device
+  with the `android-37.1` Google APIs Desktop (Preview) system image (SDK preview channel), checked 2026-11-03.
 - **iPad has desktop-style windows too.** iPadOS lets apps run in freely resizable windows used with a hardware
   keyboard and a trackpad; the same shared screens serve it.
 - **A desktop emulator exists.** Android's SDK ships desktop system images (API 32, 33 and 34, for ARM64 and x86_64)
@@ -81,6 +92,20 @@ Planning (research.md) found three platform limits; the answers above keep their
 - On Android a dragged folder arrives without access to its contents; on iPad it is unverified. FR-026's folder rule
   applies where the platform lets the app read the folder; elsewhere the folder is refused by name in the same message.
 
+### Session 2026-11-03 (analysis remediation)
+
+The owner asked for the analysis's recommended approach ("Please use recommended approach for them"):
+
+- Q: Which desktop target does the feature aim at? → A: Googlebook first, with Chromebooks and Android desktop windowing,
+  aiming at Google Play's "Optimized for desktop" label by meeting the desktop app quality guidelines in scope (SC-010).
+- Q: Which items of Google's desktop app quality guidelines join this feature? → A: The small ones: scrollbars while
+  scrolling with a mouse or trackpad (FR-014a), a busy pointer and pointer areas that match what is drawn (FR-015a,
+  FR-016a), a full-screen toggle (FR-010a), and opening audio files from the Files app (FR-026a). Several windows of the
+  app, multi-select with Ctrl/Shift-click, dragging content out to other apps, panels the user resizes or collapses,
+  picture-in-picture and continuing a task on another device become later features (Assumptions).
+- Q: Which emulator is the desktop verification target? → A: The Googlebook-era "Desktop (Preview)" emulator
+  (`android-37.1` desktop image); the earlier Android 14 desktop image stays a secondary check.
+
 ## User Scenarios & Testing *(mandatory)*
 
 The people this feature serves: a musician practising at a desk with a Chromebook or an Android laptop and no
@@ -127,9 +152,10 @@ follows the window continuously and the music never stops.
 **Why this priority**: Resizing is what a desktop user does constantly; a click that drops or a project that stops
 when the window changes would make the app unusable for practice.
 
-**Independent Test**: With the metronome at 120 BPM, and again with the demo project playing, drag the window across
-the 600 dp and 840 dp widths and back twenty times, maximise and restore it, snap it to each half, minimise and
-restore it, and move it to a second display of a different density; listen for gaps and check the place in the app.
+**Independent Test**: With the metronome at 120 BPM, and again with the demo project playing, make fifty window changes
+in all: drag the window across the 600 dp and 840 dp widths and back, maximise and restore it, snap it to each half,
+minimise and restore it, and move it to a second display of a different density; listen for gaps and check the place
+in the app.
 Repeat the resizing in an iPad window.
 
 **Acceptance Scenarios**:
@@ -153,6 +179,9 @@ Repeat the resizing in an iPad window.
 7. **Given** the window loses focus because the user clicks another app, **When** audio is running, **Then** it keeps
    running, Auto Listen included while the window stays visible, and when the user returns, keyboard focus is where it
    was.
+8. **Given** a desktop window on Android, **When** the user chooses "Full screen" in the Timeline's menu, **Then** the
+   app fills the display without window decorations, the music keeps playing, and "Exit full screen" (or the system's
+   own way back) returns it to the same window size and place.
 
 ---
 
@@ -187,6 +216,13 @@ the tempo with the wheel, and watch the pointer shape over each kind of element.
 6. **Given** the pointer over an element on Android or ChromeOS, **Then** its shape says what it does: a hand over
    something to click, an open and a closed hand over a clip that can be dragged and while dragging it, a text cursor
    over a text field; on iPad the system pointer adapts as it does in every app.
+7. **Given** scrollable content (the timeline's tracks and time, the Projects list, the tuner's and metronome's
+   scrolling panes, the shortcut sheet), **When** the user scrolls it with a wheel or a trackpad, **Then** a scrollbar
+   appears while it scrolls and fades shortly after.
+8. **Given** the app is busy for a noticeable time (importing files, preparing waveforms), **When** the pointer is over
+   the window on Android or ChromeOS, **Then** it shows the system's busy shape until the work ends.
+9. **Given** any interactive control, **When** the pointer moves over it, **Then** the area that shows the hover state is
+   exactly the area that responds to a click, so what looks clickable is what is clickable.
 
 ---
 
@@ -261,24 +297,31 @@ onto Projects; repeat the drag from the Files app into an iPad window.
    it, the audio files directly inside it (not in its sub-folders) count as dropped files and import by the rules
    above; where it does not, the folder is refused by name; non-audio files, refused files and refused folders are
    named together in one message.
+7. **Given** a WAV, FLAC or MP3 file in the desktop's Files app (or the iPad's), **When** the user opens it with Tembra
+   Audio, **Then** the app opens a new project containing it, as a drop on Projects does, asking first if a project is
+   playing as leaving Timeline already does.
 
 ---
 
 ### User Story 6 - Show the desktop experience in Google Play (Priority: P3)
 
-A person browsing Google Play on a Chromebook sees screenshots of Tembra Audio in a desktop window, not stretched
-phone screens.
+A person browsing Google Play on a Googlebook or a Chromebook sees screenshots of Tembra Audio in a desktop window, not
+stretched phone screens, and the app qualifies for Google Play's "Optimized for desktop" label.
 
 **Why this priority**: It changes no behaviour, but it decides whether a desktop user installs the app.
 
-**Independent Test**: Open the store listing's Chromebook screenshots and check their count, shape and content.
+**Independent Test**: Open the store listing's Chromebook screenshots and check their count, shape and content; run
+the tests of Google's desktop app quality guidelines in scope (SC-010).
 
 **Acceptance Scenarios**:
 
-1. **Given** the store listing, **When** it is viewed on a Chromebook, **Then** it shows at least four screenshots
-   taken from the app in a desktop window: the timeline playing, the tuner, the metronome and the projects library.
+1. **Given** the store listing, **When** it is viewed on a Googlebook or a Chromebook, **Then** it shows at least four
+   screenshots taken from the app in a desktop window: the timeline playing, the tuner, the metronome and the projects
+   library.
 2. **Given** those screenshots, **Then** each is landscape 16:9, at least 1,920 by 1,080 pixels, shows content a real
    user would have (no test data, no debug-only controls, no added text), and matches the current release.
+3. **Given** Google's desktop app quality guidelines, **When** the app is checked against the tests of the guidelines
+   in scope (SC-010), **Then** each passes.
 
 ---
 
@@ -347,10 +390,14 @@ phone screens.
 - **FR-007**: Changing the window MUST keep the user's place: destination, open project, playhead, timeline scroll
   (the same moment at the left edge of the view) and zoom, selection, open sheet, dialog or menu, text being edited
   and keyboard focus.
-- **FR-008**: In windows wider than the widest layout the earlier features define, content MUST stay readable: text
-  lines and control groups keep a sensible maximum width, while the timeline uses the full width for time.
+- **FR-008**: In windows wider than the widest layout the earlier features define, content MUST stay readable: Projects
+  shows at most four columns of cards, the tuner's and metronome's cards keep their expanded width centred, sheets and
+  dialogs keep their design widths, and the timeline uses the full width for time.
 - **FR-009**: Losing window focus MUST NOT stop audio; returning MUST restore keyboard focus to where it was.
 - **FR-010**: The app MUST run as a single window; opening it again MUST bring the existing window to the front.
+- **FR-010a**: In a desktop window on Android, the Timeline's menu MUST offer "Full screen", which makes the app fill the
+  display without window decorations, and "Exit full screen", which returns it to the same window size and place;
+  audio MUST continue throughout. Where the platform offers no app-requested full screen (iPad), the item is absent.
 
 **Pointer**
 
@@ -363,11 +410,18 @@ phone screens.
 - **FR-014**: Wheel and trackpad scrolling MUST scroll lists and the timeline (vertically by default, horizontally
   with Shift or a horizontal swipe); the platform's zoom modifier with the wheel, or a trackpad pinch, MUST zoom the
   timeline around the pointer; the wheel over a dial or a slider MUST change it in the control's own steps.
+- **FR-014a**: Scrollable content (the timeline's tracks and time, the Projects list, the tuner's and metronome's scrolling
+  panes, the shortcut sheet) MUST show a scrollbar while it is scrolled with a wheel or a trackpad, fading shortly
+  after scrolling stops.
 - **FR-015**: On Android and ChromeOS, the pointer's shape MUST indicate the action: a hand over clickable elements, an
   open hand over a draggable clip and a closed hand while dragging, a text cursor over text fields. On iPad the
   system's pointer, which adapts to controls by itself, applies.
+- **FR-015a**: On Android and ChromeOS, while the app is busy for a noticeable time (importing files, preparing
+  waveforms), the pointer over its window MUST show the system's busy shape until the work ends.
 - **FR-016**: Every action that touch reaches through a gesture MUST have a pointer or keyboard equivalent that needs
   no touchscreen.
+- **FR-016a**: For every interactive control, the area that shows the hover state MUST be exactly the area that responds
+  to a click or a secondary click.
 
 **Keyboard**
 
@@ -404,10 +458,14 @@ phone screens.
   lets the app read a dropped folder; otherwise the folder MUST be refused by name. Non-audio files, refused files and
   refused folders MUST be skipped and named together in one message. Files the importer refuses MUST
   be refused with the importer's existing messages, without stopping the other files of the drop.
+- **FR-026a**: The app MUST offer itself in the Files app (Android and ChromeOS, and the iPad's) for WAV, FLAC and MP3
+  files; opening one or several such files with it MUST start a new project containing them, as a drop on Projects
+  does, and MUST ask first if a project is playing, as leaving Timeline already does.
 
 **Store presence**
 
-- **FR-027**: The Google Play listing MUST include at least four Chromebook screenshots taken from the app in a
+- **FR-027**: The Google Play listing MUST include at least four Chromebook screenshots (the slot Googlebooks and
+  Chromebooks show) taken from the app in a
   desktop window (the timeline playing, the tuner, the metronome, the projects library), landscape 16:9, at least
   1,920 by 1,080 pixels, with real content, no debug-only controls and no added text.
 
@@ -424,7 +482,8 @@ phone screens.
 - Journeys added: one new journey, `windowing`, run in a desktop window: open the Metronome and start the click, drag
   the window across the 600 dp and 840 dp widths and back, maximise and restore it, stop the click; open the demo
   project, press play, resize again across both widths, right-click a clip and close its menu, switch destinations by
-  shortcut, and pause. The same journey runs on iPad in a resizable window, so the journey exists on both platforms.
+  shortcut, and pause. The same journey runs on iPad, with rotation as the window change because tests cannot resize an
+  iPad window, so the journey exists on both platforms.
 - Sections added: window relayout (from a size change to the first frame at the new size, per width class crossed),
   destination switch by shortcut, and context menu open (secondary click to the first frame of the menu).
 - Counters: the audio-thread health counters of feature 007 (underruns, callback load) during every window change;
@@ -468,13 +527,18 @@ phone screens.
   window with zero failures, as on the existing targets.
 - **SC-009**: Dropping audio files onto the timeline or Projects imports 100% of the files the picker would accept,
   and refuses the rest with the importer's messages, on a desktop device and on iPad.
+- **SC-010**: The app passes these tests of Google's desktop app quality guidelines: T-Scrollbar_Display, T-Hover_Parity,
+  T-Desktop_Menus, T-Request_Fullscreen_Mode, T-Keyboard_Navigation, T-Keyboard_Parity (for the shortcuts the app's
+  features have), T-Custom_Cursors, T-Cursor_Target_Size, T-Drag_Drop_Batch (into the app), T-File_Picker,
+  T-File_Handlers and T-Offline_Support.
 
 ## Assumptions
 
 - "Desktop" means Chromebooks and Android desktop windowing (desktop mode on tablets and on external displays, and
   Android devices sold as computers). Google Play Games on PC is for games and is not a target.
-- The desktop emulator used for verification is the newest Android desktop system image available (API 34 on
-  2026-11-03); the app's minimum Android version (8.0) is below it, so the app runs there unchanged. The owner's tablet
+- The desktop emulator used for verification is Android Studio's "Desktop (Preview)" with the `android-37.1` desktop
+  system image (the Googlebook-era desktop, SDK preview channel, 2026-11-03); the Android 14 desktop image is a
+  secondary check. The app's minimum Android version (8.0) is below both, so it runs there unchanged. The owner's tablet
   in desktop mode is the physical check; a real Chromebook is used if one becomes available, and its absence does not
   block the feature.
 - The platform's usual modifier is Ctrl on Android and ChromeOS and Command on iPad.
@@ -486,7 +550,13 @@ phone screens.
   work.
 - Audio device behaviour (default output and input, what happens when a device is plugged or unplugged) is unchanged
   from the earlier features.
-- Out of scope: a desktop menu bar, several windows, keyboard remapping, MIDI and hardware controllers, stylus input,
-  game controllers, and any new musical capability.
+- Out of scope: a desktop menu bar on Android, keyboard remapping, MIDI and hardware controllers, stylus input, game
+  controllers, and any new musical capability.
+- Later features (desktop app quality guidelines this feature does not take on, by the owner's answer): several
+  windows of the app (Multi-Instance), multi-select with Ctrl/Shift-click (Input_Combinations), dragging content out of
+  the app to other apps or windows (the "from the app" half of Drag_Drop_Support), panels the user resizes, collapses
+  or rearranges and list/grid toggles (UI_Config), picture-in-picture (Multitasking_PiP), continuing a task on another
+  device (Cross_Device_Handoff, Continue On), printing or export (Printing_Support; export arrives with a later feature)
+  and widgets.
 - The store screenshots are captured after the feature's behaviour is done, from the release build, and are uploaded
   by the owner (or by the publishing workflow, if it later learns to update the listing).

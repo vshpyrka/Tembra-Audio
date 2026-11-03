@@ -23,13 +23,16 @@ TIMELINE_CONTEXT_MENU timeline timeline.contextMenu
 ## Journey `windowing` (both platforms)
 
 Android (`perf-benchmarks/.../journeys/WindowingJourney.kt` + `WindowingJourneyBenchmark.kt`): open Metronome and start
-it; change the window across the 600 and 840 dp classes and back three times (freeform devices: `am task resize`;
+it; change the window across the 600 and 840 dp classes and back three times (free-form devices, including the
+Desktop (Preview) emulator: `am task resize`;
 phones: rotation); stop; open the demo project, play, change the window again, right-click the first clip (mouse
 injection) and dismiss the menu, press Ctrl+2 then Ctrl+1, pause.
 iOS (`iosApp/TembraPerfTests/Journeys/WindowingJourney.swift`): the same steps with rotation as the window change,
 `rightClick()` and `typeKey(_:modifierFlags: .command)` on an iPad simulator, iPhone falling back to rotation and keys.
 
-Gates: zero xruns and zero starvation during the journey on the reference devices; the three sections recorded.
+Gates: zero xruns and zero starvation during the journey on the reference devices; the trial round fails if any of
+the three sections is absent from the trace. This is the sections' test: `PerfTrace` records only in measurement builds,
+through a sink internal to `:shared:engine`, so emission is proven by the measured round rather than a unit test.
 `tracepulse.yml`: `journeys: [startup, tuner, metronome, timeline, stress, windowing]`.
 
 ## Anchors (`ui/perf/PerfAnchors.kt`, checked by `PerfAnchorsCatalogueTest`)

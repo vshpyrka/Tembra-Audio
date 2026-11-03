@@ -40,6 +40,11 @@ The catalogue's entries (chords are written with Ctrl; Command on iPad):
 `DroppedFilesReader` (interface, platform-bound): `suspend fun read(event: DragAndDropEvent): List<DroppedItem>` and
 `fun accepts(event: DragAndDropEvent): Boolean` (MIME types only; contents are read on drop).
 
+`OpenedFiles` (interface, platform-bound: `AndroidOpenedFiles`, `IosOpenedFiles`): `val files: Flow<List<DroppedItem>>`,
+each emission one "open with Tembra Audio" request from the Files app (research R22). The shell plans it as
+`DropZone.ProjectsGrid`, so it becomes `NewProject`; while a project plays, the existing stop-and-leave confirmation
+comes first and cancel drops the request.
+
 ## Pointer (`ui.designsystem`)
 
 | Type | Shape | Rules |
@@ -48,12 +53,24 @@ The catalogue's entries (chords are written with Ctrl; Command on iPad):
 | `onSecondaryClick` | `Modifier.onSecondaryClick(key: Any?, onSecondaryClick: (Offset) -> Unit)` | Consumes the secondary press in the `Initial` pass; the offset is local to the modified element. |
 | `scrollNotches` | `expect fun scrollNotches(delta: Offset): Offset` | Platform deltas to wheel notches (research R9). |
 | `TrackpadPinch` | data: `scale: Float`, `focus: Offset` | iOS only: emitted by the shell bridge into a `TrackpadPinchSource` (interface, `Flow<TrackpadPinch>`) the timeline viewport collects; Android gets pinches as Compose `Scale` events. |
+| `PointerShapes.busy` | `PointerIcon` | Android `TYPE_WAIT`, iOS `PointerIcon.Default` (research R19); shown at the shell root while `ProjectSession` reports work in progress (import, project open). |
+| `TembraScrollbar` | composable: `modifier`, `adapter: ScrollbarAdapter` (from `LazyListState`, `ScrollState` or the timeline viewport), `orientation` | Visible while the content scrolls from a pointer, fades after one second at rest, draggable with the mouse; touch scrolling does not show it (research R18). |
 
 ## Microphone (`ui.platform`)
 
 `MicrophonePermissionStatus` gains `Unavailable` (no input device). `isDenied` stays false for it; the tuner's
 `ListeningPolicy` treats it as "cannot listen", and the Auto Listen pane shows the no-microphone message instead of the
 permission card.
+
+## Window controls (`ui.platform`)
+
+`WindowControls` (interface, platform-bound): `fullScreenAvailable: StateFlow<Boolean>` (Android: API 34+ and the
+activity is in a multi-window or free-form mode; iOS: always false), `isFullScreen: StateFlow<Boolean>`,
+`enterFullScreen()`, `exitFullScreen()` (research R21). The Timeline's overflow menu shows "Full screen" or "Exit full
+screen" while available.
+
+`ForegroundState` follows `ON_START`/`ON_STOP` on Android and `willEnterForeground`/`didEnterBackground` on iOS, not
+pause or resign-active, so a window that loses focus to another window stays in the foreground.
 
 ## Window (manifest and shell values, not Kotlin types)
 
@@ -62,7 +79,9 @@ permission card.
 | Minimum | `<layout android:minWidth="360dp" android:minHeight="480dp"/>` | `.frame(minWidth: 360, minHeight: 480)` + `sizeRestrictions.minimumSize` (iPadOS 26+) |
 | First size | system default (75% of the display on Android desktop); ChromeOS `FreeformWindowSize=tablet` | system's choice (no API) |
 | Later sizes | system-remembered (no `<layout>` default) | system-remembered |
-| Instances | one task (launcher intents reuse it) | `UIApplicationSupportsMultipleScenes` false |
+| Instances | one task, `launchMode="singleTask"` (launcher and Files-app intents reuse it) | `UIApplicationSupportsMultipleScenes` false |
+| Full screen | `requestFullscreenMode` from the Timeline's menu (API 34+, desktop and multi-window only) | system's (no app item) |
+| Open with | `VIEW` intent filter: `audio/wav`, `audio/x-wav`, `audio/flac`, `audio/mpeg` on `content` | `CFBundleDocumentTypes`, rank Alternate, `.onOpenURL` |
 
 ## Shell state (`ui.navigation`)
 
