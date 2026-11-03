@@ -1,5 +1,6 @@
 package audio.tembra.ui.tuner
 
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,7 +10,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.testTag
 import audio.tembra.core.tuner.TunerMode
 import audio.tembra.engine.AudioState
@@ -43,10 +48,18 @@ fun TunerScreenContent(
     verticalFold: VerticalFold? = null,
 ) {
     val spacing = TembraTheme.spacing
+    // Keyboard focus starts on the content root once the screen is in (feature 011, spec FR-024), so the first Tab
+    // reaches the first control without a click; never requested again after.
+    val rootFocus = remember { FocusRequester() }
+    LaunchedEffect(state.loaded) {
+        if (state.loaded) rootFocus.requestFocus()
+    }
     val root = modifier
         .fillMaxSize()
         .padding(horizontal = spacing.pageMargin, vertical = spacing.sm)
         .testTag("screen.tuner")
+        .focusRequester(rootFocus)
+        .focusable()
     val gate = state.noiseGate
     val listening = state.audio == AudioState.Listening
     val soundAboveGate = state.soundAboveGate
@@ -171,7 +184,7 @@ private fun ModePane(
         TunerMode.AutoListen -> AutoListenPane(
             reading = state.reading,
             listening = state.audio == AudioState.Listening,
-            showDeniedState = state.showDeniedState,
+            microphoneNotice = state.microphoneNotice,
             telemetry = telemetry,
             layout = layout,
             onRequestMicrophone = callbacks.onRequestMicrophone,

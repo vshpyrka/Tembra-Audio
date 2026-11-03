@@ -4,6 +4,14 @@
     <!-- Auto Listen hears the instrument through the microphone (feature 003, spec FR-014). -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
+    <!--
+        Reach (feature 011, spec FR-001/FR-002, research R1): without these, Google Play implies a touchscreen for every
+        app and a microphone from RECORD_AUDIO, and filters out Chromebooks and desktops that lack them. Auto Listen
+        says so when there is no microphone; everything else works by mouse and keyboard.
+    -->
+    <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
+
     <!-- The metronome (feature 004) and the project transport (feature 009) keep playing with the screen off through a media-playback foreground service. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
@@ -27,6 +35,8 @@
             android:exported="true"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|uiMode|density"
             android:resizeableActivity="true">
+            <!-- ChromeOS opens the first window at its landscape tablet size (feature 011, research R3, FR-004a). -->
+            <meta-data android:name="WindowManagerPreference:FreeformWindowSize" android:value="tablet" />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
