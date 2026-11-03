@@ -13,9 +13,11 @@ Run from `app/` unless noted. Every Gradle command goes through `gradle-run` in 
     -k "system-images;android-37.1;android-desktop;arm64-v8a" -d desktop_api37
   CFG=~/.android/avd/Tembra_Desktop_API37.avd/config.ini
   sed -i '' 's/^hw.keyboard=no/hw.keyboard=yes/' $CFG
-  grep -q '^disk.dataPartition.size' $CFG && sed -i '' 's/^disk.dataPartition.size=.*/disk.dataPartition.size=6G/' $CFG \
-    || echo 'disk.dataPartition.size=6G' >> $CFG
+  # the emulator wants about twice the data partition free on the host; 4G fits with 11 GB free
+  grep -q '^disk.dataPartition.size' $CFG && sed -i '' 's/^disk.dataPartition.size=.*/disk.dataPartition.size=4G/' $CFG \
+    || echo 'disk.dataPartition.size=4G' >> $CFG
   $SDK/emulator/emulator -avd Tembra_Desktop_API37 -port 5582 &      # add -no-window for headless runs
+  $SDK/platform-tools/adb -s emulator-5582 wait-for-device shell am switch-user 10   # the desktop session is user 10
   ```
   A 1920×1200 dp desktop with a touchscreen, like a Googlebook; drive it with the Mac's mouse, trackpad and keyboard.
   Apps open in free-form windows by default (the app's first window is 1382×864 dp, landscape).
@@ -79,9 +81,24 @@ All green, zero warnings (`--warning-mode all`).
     stopped.
 5b. Move the window to a second display (the emulator's extended displays, or the tablet's external monitor) and back:
     the layout follows the new size and density, audio continues.
-6. Resize the window, then quit (close the window) and relaunch from the launcher: the window reopens at its last size
-   and place. This is the platform's memory, not testable from instrumentation (a force-stop resets it, research
-   "Hands-on check: Desktop (Preview)"), so it stays a manual check; record what each target does.
+6. Resize the window by dragging its corner, close it with the caption's close button and relaunch from the launcher:
+   the window reopens at the size and place it was left at. Closing the window ends the process that would host an
+   instrumented test, and a size set with `am task resize` is never remembered (research hands-on check "Desktop
+   (Preview)"), so this is an adb-scripted check on the emulators (by hand on the tablet); record what each target does:
+   ```sh
+   A() { adb -s emulator-5582 "$@"; }
+   task() { A shell dumpsys activity activities | grep -m1 -oE '\* Task\{[0-9a-f]+ #[0-9]+ type=standard A=[0-9]+:com.tembraaudio' \
+     | grep -oE '#[0-9]+' | tr -d '#'; }
+   bounds() { A shell dumpsys activity activities | awk "/Task\{.*#$1 /{f=1} f&&/mBounds=/{print; exit}" \
+     | grep -oE 'mBounds=Rect\([^)]*\)'; }                       # Rect(L, T - R, B) in px
+   T=$(task); bounds $T
+   A shell input mouse swipe <right-2> <bottom-2> <newRight> <newBottom> 1500     # drag the bottom-right corner
+   A shell input mouse tap <right-58> <top+36>                    # the caption's close button (240 dpi)
+   A shell am start --user current -n com.tembraaudio/audio.tembra.android.MainActivity
+   bounds $(task)                                               # equals the dragged bounds
+   ```
+   Verified on Android 17 with `main`'s manifest: dragged to Rect(403, 180 - 1905, 1155), closed, relaunched at the
+   same Rect.
 7. First launch after `adb uninstall`: record the window's size and shape (expected: landscape, wide).
 8. iPad: steps 1–4 in a resizable window, by dragging the window corner; rotation as well.
 

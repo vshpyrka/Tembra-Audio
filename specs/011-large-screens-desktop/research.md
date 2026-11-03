@@ -2,8 +2,8 @@
 
 Evidence gathered on 2026-11-03 by four parallel surveys (Android and ChromeOS platform; iPadOS windowing; Compose
 Multiplatform 1.12.2 input APIs read from the pinned artifacts' sources and klib ABIs; the repository's existing input
-code) and hands-on checks on Android's desktop emulators (Android 14 and Android 17). "Unverified" marks what no source settled; each has a
-spike or a device check in the tasks.
+code) and hands-on checks on Android's desktop emulators (Android 14 and Android 17). "Unverified" marks what no
+source settled; each has a spike or a device check in the tasks.
 
 ## Hands-on check: the desktop emulator (2026-11-03)
 
@@ -17,37 +17,6 @@ spike or a device check in the tasks.
 - `adb shell am task resize 3 200 120 2600 1720` resized it to 1200×800 dp: same process, same `ActivityRecord` (no
   recreation, as the manifest's `configChanges` promise), and the layout switched to the rail and the wide timeline
   under the window's caption bar. Tests can therefore drive real window changes.
-
-## Hands-on check: the Desktop (Preview) emulator, Android 17 (2026-11-03, analysis remediation)
-
-- Installed `system-images;android-37.1;android-desktop;arm64-v8a` (4.3 GB, SDK preview channel; Android 17, SDK 37)
-  and created AVD `Tembra_Desktop_API37` from the `desktop_api37` profile (2880×1800 at 240 dpi, 1920×1200 dp) with
-  `hw.keyboard=yes`. With 11.7 GB free the emulator refused the profile's 6 GB data partition ("need 12288 MB"):
-  `disk.dataPartition.size=4G` in the AVD's `config.ini` boots it (`-port 5582 -no-window -no-audio`, about a minute).
-- It reports `android.hardware.type.pc`, `android.software.freeform_window_management`, a microphone **and** a
-  touchscreen, while its configuration says `-touch qwerty` (no touch, hardware keyboard). It therefore cannot show
-  Play's touchscreen filter: reach stays proven by `aapt2 dump badging` and `ManifestFeaturesTest`, and the API 34 image
-  remains the no-touchscreen device.
-- The image runs a headless system user: user 0 shows a login launcher and the desktop session is **user 10**. After a
-  cold boot, `adb shell am switch-user 10` starts the session; `adb install` installs for every user, and launches need
-  `am start --user 10` (or `--user current` once switched). Instrumented runs target the current user, so the lane
-  switches first (T001).
-- `main`'s debug build, launched from the launcher intent with today's manifest (no `<layout>`, no ChromeOS
-  meta-data), opens a **freeform** window of 2073×1296 px = **1382×864 dp, landscape**, at (403, 180): about 72% of the
-  display, the wide timeline with the rail. Android 17's desktop already gives FR-004a's first launch without a
-  declared default size (Android 14's image opened 412×732 dp portrait).
-- `am task resize` to 600×600, 467×667, 200×200 and 1333×867 dp changed the bounds with the same process and the same
-  `ActivityRecord` (no recreation). It is **not** clamped by any minimum (200×200 dp was accepted) and is **not**
-  remembered: after closing the window with its caption's close button (the task is removed and the process ends) the
-  relaunch opened at the default 1382×864 dp again.
-- A mouse drag on the window's corner (`input mouse swipe` from the bottom-right corner) resized it to 1000×648 dp;
-  closing and relaunching reopened it at exactly those bounds: the system remembers a size the user set, with today's
-  manifest. Dragging the corner towards the top-left stopped at 585×535 px = **390×357 dp**, the platform's own
-  minimum with nothing declared; at that size the timeline shows a single track row above the transport, which is the
-  short-window case the declared 480 dp minimum height prevents.
-- Consequences: tests that need the platform's minimum or its remembered size resize by mouse drag (T009's
-  `dragResize`), not with `am task resize`; tests that only need a size change keep `am task resize`; T004 repeats the
-  first-launch, drag-resize, close and relaunch sequence with the decided manifest on both images and the tablet.
 
 ## Googlebook and the Desktop (Preview) emulator (added 2026-11-03, analysis remediation)
 
@@ -66,17 +35,36 @@ implementation; Principle VIII binds the Chris Banes skills, which stay the cont
 ### Hands-on check: Desktop (Preview), 2026-11-03
 
 - Installed `system-images;android-37.1;android-desktop;arm64-v8a` (4.3 GB, Android 17, API 37) from the preview channel
-  and created AVD `Tembra_Desktop_API37` from the `desktop_api37` profile (2880×1800 at 240 dpi, 1920×1200 dp),
-  `hw.keyboard=yes` and `disk.dataPartition.size=6G` (the default 12 GB did not fit the Mac's free space). It boots
-  headless in about ten seconds (`-port 5582 -no-window`).
-- It reports `type.pc`, `freeform_window_management`, a microphone and a touchscreen (Googlebooks have touchscreens;
-  the Android 14 desktop image had none).
-- `main`'s debug build opens in a free-form window at **1382×864 dp, landscape**, with no `<layout>` default: the
-  platform's own default (about 72% of the display) already meets FR-004a's first window here, confirming R3's choice
-  not to declare a default. The caption bar shows the app's name and the system's window controls; the taskbar carries
-  the app's icon.
-- `am task resize` resized it with the process kept; after `am force-stop` and a relaunch the window reopened at the
-  default size, so whether a user's own drag-resize and close are remembered is a manual check (quickstart §4 step 6).
+  and created AVD `Tembra_Desktop_API37` from the `desktop_api37` profile (2880×1800 at 240 dpi, 1920×1200 dp) with
+  `hw.keyboard=yes`. The emulator wants about twice the data partition free on the host: with 11.7 GB free it refused
+  6 GB ("need 12288 MB") and boots with `disk.dataPartition.size=4G`. It boots headless in under a minute (`-port 5582
+  -no-window -no-audio`).
+- It reports `type.pc`, `freeform_window_management`, a microphone **and** a touchscreen (Googlebooks have
+  touchscreens), while its configuration says `-touch qwerty`. It therefore cannot show Play's touchscreen filter: reach
+  stays proven by `aapt2 dump badging` and `ManifestFeaturesTest`, and the Android 14 image remains the no-touchscreen
+  device.
+- The image runs a headless system user: user 0 shows a login launcher and the desktop session is **user 10**. After a
+  cold boot, `adb shell am switch-user 10` starts the session; `adb install` installs for every user, and launches need
+  `am start --user 10` (or `--user current` once switched). Instrumented runs target the current user, so the lane
+  switches first (T001).
+- `main`'s debug build, launched from the launcher intent with today's manifest (no `<layout>`, no ChromeOS meta-data),
+  opens a free-form window of 2073×1296 px = **1382×864 dp, landscape**, at (403, 180): the platform's own default
+  (about 72% of the display) already meets FR-004a's first window here, confirming R3's choice not to declare a default
+  (Android 14's image opened 412×732 dp portrait). The caption bar shows the app's name and the system's window
+  controls; the taskbar carries the app's icon.
+- `am task resize` to 600×600, 467×667, 200×200 and 1333×867 dp changed the bounds with the same process and the same
+  `ActivityRecord` (no recreation). It is **not** clamped by any minimum (200×200 dp was accepted) and **not**
+  remembered: after closing the window (its caption's close button removes the task and ends the process; `am
+  force-stop` likewise) the relaunch opened at the default 1382×864 dp again.
+- A mouse drag on the window's corner (`input mouse swipe` from the bottom-right corner) resized it to 1000×648 dp;
+  closing with the caption's button and relaunching reopened it at exactly those bounds: the system remembers a size the
+  user sets, with today's manifest. Dragging the corner towards the top-left stopped at 585×535 px = **390×357 dp**, the
+  platform's own minimum with nothing declared; at that size the timeline shows a single track row above the
+  transport, the short-window case that the declared 480 dp minimum height prevents.
+- Consequences: tests that need the platform's minimum resize by mouse drag (T009's `dragResize`), not with `am task
+  resize`; tests that only need a size change keep `am task resize`. The remembered size cannot be an instrumented test
+  (closing the window ends the process that hosts the instrumentation), so it is an adb-scripted check (quickstart §4
+  step 6) that T004 runs with the decided manifest on both images and the tablet.
 
 ## R1. Reach on Google Play: declared hardware features
 
@@ -118,8 +106,9 @@ and never prompts; By Ear and every other destination are untouched.
 - Spike before implementation (tasks): measure first-launch and relaunch bounds on both desktop emulators and on the
   owner's tablet in desktop mode with the decided manifest, resizing by mouse drag (a size set with `am task resize` is
   not remembered); Android 14's freeform launches phone-sized (412×732 dp above), Android 17's opens 1382×864 dp
-  landscape and remembers a dragged size with today's manifest (hands-on check above). If a platform still opens portrait, record it; FR-004a's "where the platform lets the app choose"
-  covers platforms that do not honour a hint, and declaring a default size is rejected because it breaks restoring.
+  landscape and remembers a dragged size with today's manifest (hands-on check "Desktop (Preview)"). If a platform
+  still opens portrait, record it; FR-004a's "where the platform lets the app choose" covers platforms that do not
+  honour a hint, and declaring a default size is rejected because it breaks restoring.
 
 **Rationale**: FR-004a has two halves; the platform decides the second, and the first is achievable without
 sacrificing it on every platform the evidence covers.
@@ -286,7 +275,7 @@ moves to the session, the destination's ViewModel or `rememberSaveable`, keyed b
   tests that need the real Activity (window resize while audio runs, drops, the system shortcut list), after `am
   switch-user 10` on the API 37.1 image. Tests launch the app with `am start --windowingMode 5`, resize with `am task
   resize <taskId> L T R B` through `UiAutomation.executeShellCommand` where only a size change matters, resize by a
-  mouse drag on the window's corner where the platform's minimum or remembered size matters (hands-on check), read
+  mouse drag on the window's corner where the platform's minimum matters (hands-on check "Desktop (Preview)"), read
   bounds from `WindowMetricsCalculator`, inject mouse hover, secondary press and scroll with
   `UiAutomation.injectInputEvent` (`SOURCE_MOUSE`), and keys with `input keycombination`.
 - Compose UI tests (`uiTest`, both platforms): pointer and key behaviour with `performMouseInput` (`moveTo`,

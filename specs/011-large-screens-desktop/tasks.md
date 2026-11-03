@@ -44,9 +44,10 @@ instrumentation and polish last.
 - [ ] T001 Document both Android desktop emulator targets in `app/README.md` (§ Build and run and § Test lanes): the
   primary AVD `Tembra_Desktop_API37` (`sdkmanager --channel=3 --install
   "system-images;android-37.1;android-desktop;arm64-v8a"`, `avdmanager create avd … -d desktop_api37`,
-  `hw.keyboard=yes`, `disk.dataPartition.size=6G`, `-port 5582`) and the secondary `Tembra_Desktop_API34` (no
-  touchscreen, `-port 5580`), one desktop emulator at a time, and the lane commands from
-  `specs/011-large-screens-desktop/quickstart.md` §1–§2
+  `hw.keyboard=yes`, `disk.dataPartition.size=4G` (the emulator wants about twice that free on the host), `-port
+  5582`, and `adb -s emulator-5582 shell am switch-user 10` after a cold boot: the image's desktop session is user 10)
+  and the secondary `Tembra_Desktop_API34` (no touchscreen, `-port 5580`), one desktop emulator at a time, and the lane
+  commands from `specs/011-large-screens-desktop/quickstart.md` §1–§2
 - [ ] T002 [P] Add `androidx-window` (androidx.window `WindowMetricsCalculator`, latest stable) as a test-only library to
   `app/gradle/libs.versions.toml` and to `androidTestImplementation` in `app/androidApp/build.gradle.kts`, with a
   comment naming feature 011's device tests
@@ -55,8 +56,9 @@ instrumentation and polish last.
   `app/iosApp/TembraDesktopTests/DesktopTestCase.swift`)
 - [ ] T004 Spike R3: build `main`'s app with the decided manifest (`<layout android:minWidth="360dp"
   android:minHeight="480dp"/>`, ChromeOS `WindowManagerPreference:FreeformWindowSize=tablet`, no default size) and
-  record first-launch bounds, and relaunch bounds after a user resize and a window close (not a force-stop, which resets
-  them), on `Tembra_Desktop_API37`, `Tembra_Desktop_API34` and the owner's tablet in desktop mode; write the outcome
+  record first-launch bounds, and relaunch bounds after a user resize (a mouse drag of the window's corner: a size set
+  with `am task resize` is never remembered) and a window close with the caption's button (not a force-stop), using
+  the adb script in quickstart §4 step 6, on `Tembra_Desktop_API37`, `Tembra_Desktop_API34` and the owner's tablet in desktop mode; write the outcome
   into `specs/011-large-screens-desktop/research.md` R3 (keep or revise the decision)
 - [ ] T005 [P] Spike R12: on the iPad simulator, drop a folder and an audio file from the Files app onto a throwaway
   `Modifier.dragAndDropTarget`, log each `UIDragItem.itemProvider`'s registered type identifiers and whether a
@@ -85,7 +87,9 @@ instrumentation and polish last.
   then extend `app/perf/tracepulse/catalogue.py`
 - [ ] T010 [P] Create the desktop-window test helpers in `ATEST/desktop/DesktopWindow.kt`: `launchFreeform()` (`am
   start --windowingMode 5 -n com.tembraaudio/audio.tembra.android.MainActivity`), `taskId()`, `resizeTask(left, top,
-  right, bottom)` (`am task resize` through `UiAutomation.executeShellCommand`), `windowBoundsDp()`
+  right, bottom)` (`am task resize` through `UiAutomation.executeShellCommand`; not clamped to any minimum),
+  `dragResize(toX, toY)` (a mouse drag of the window's bottom-right corner with `input mouse swipe`, which the platform
+  clamps to the window's minimum), `windowBoundsDp()`
   (`WindowMetricsCalculator`), `bringOtherTaskToFront()` and `bringAppToFront()` (for focus-loss tests),
   `assumeFreeform()` (skips with a visible reason on devices without `FEATURE_FREEFORM_WINDOW_MANAGEMENT`)
 - [ ] T011 [P] Create mouse and key injection helpers in `ATEST/desktop/DesktopInput.kt`: hover move, secondary press
@@ -169,7 +173,8 @@ a 360 × 480 dp minimum on every platform.
   requires; the engine's xrun and starvation counters stay 0 and the click count matches elapsed time ± 1; again with
   the demo project playing (playhead advancing, no restart)
 - [ ] T027 [P] [US2] `ATEST/MinimumWindowTest.kt`: `MainActivity`'s `ActivityInfo.windowLayout` declares `minWidth`
-  360 dp and `minHeight` 480 dp, and `resizeTask` to 300 × 400 dp is clamped to at least 360 × 480 dp
+  360 dp and `minHeight` 480 dp, and `dragResize` towards 300 × 400 dp stops at no less than 360 × 480 dp (`am task
+  resize` bypasses the minimum, research hands-on check "Desktop (Preview)")
 - [ ] T028 [P] [US2] `ATEST/SingleWindowTest.kt`: launching from the launcher intent while running brings the existing
   task forward (same task id, one task, one `MainActivity`)
 - [ ] T029 [P] [US2] `CTEST/tuner/ListeningForegroundTest.kt`: `ON_PAUSE` alone keeps listening, `ON_STOP` stops it,
