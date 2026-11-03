@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta content="width=device-width, initial-scale=1.0" name="viewport">
-<title>Tembra Audio - Timeline (Tablet) v4</title>
+<title>Tembra Audio - Timeline (Tablet) v5</title>
 <link href="https://fonts.googleapis.com" rel="preconnect">
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet">
@@ -82,7 +82,11 @@
             "track-dusty-rose": "#e0a0c0",
             "track-peach": "#f5be9e",
             "track-mint": "#a4d4bc",
-            "track-violet": "#c4a2dc"
+            "track-violet": "#c4a2dc",
+            "record": "#e36f7e",
+            "meter-body": "#94d39a",
+            "meter-warning": "#f5e786",
+            "meter-clip": "#f472b6"
           },
           borderRadius: {
             DEFAULT: "0.25rem",
@@ -146,15 +150,16 @@
   </nav>
 </aside>
 
-<!-- EXPANDED TIMELINE: toolbar, ruler, pinned header column beside the lanes, overview strip, transport bar -->
+<!-- EXPANDED TIMELINE, RECORDING (feature 010): Track 1 armed, Take 1 growing to the playhead; toolbar, ruler, pinned header column beside the lanes, overview strip, transport bar -->
 <main class="flex-1 min-w-0 flex flex-col bg-canvas-level0">
 
-  <!-- TOOLBAR (48 px): + Track, Add audio, Add audio as new track, Split / Undo / Redo (disabled) ... Snap pill, tempo pill, metronome settings, overflow -->
+  <!-- TOOLBAR (48 px): + Track, Add audio, Add audio as new track, Split (all disabled during a take), Monitor input (headphones, off), Undo / Redo (disabled) ... Snap pill, tempo pill, metronome settings, overflow -->
   <header class="h-12 flex-shrink-0 flex items-center gap-1 px-1" data-purpose="timeline-toolbar">
-      <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Add track"><span class="material-symbols-outlined !text-[24px] leading-none">add</span></button>
-      <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Add audio…"><span class="material-symbols-outlined !text-[24px] leading-none">audio_file</span></button>
-      <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Add audio as new track"><span class="material-symbols-outlined !text-[24px] leading-none">playlist_add</span></button>
+      <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant opacity-[0.38]" aria-label="Add track" disabled><span class="material-symbols-outlined !text-[24px] leading-none">add</span></button>
+      <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant opacity-[0.38]" aria-label="Add audio…" disabled><span class="material-symbols-outlined !text-[24px] leading-none">audio_file</span></button>
+      <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant opacity-[0.38]" aria-label="Add audio as new track" disabled><span class="material-symbols-outlined !text-[24px] leading-none">playlist_add</span></button>
       <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant opacity-[0.38]" aria-label="Split" disabled><span class="material-symbols-outlined !text-[24px] leading-none">content_cut</span></button>
+      <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Monitor input" role="switch" aria-checked="false" data-purpose="monitor-toggle"><span class="material-symbols-outlined !text-[24px] leading-none">headphones</span></button>
       <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant opacity-[0.38]" aria-label="Undo" disabled><span class="material-symbols-outlined !text-[24px] leading-none">undo</span></button>
       <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant opacity-[0.38]" aria-label="Redo" disabled><span class="material-symbols-outlined !text-[24px] leading-none">redo</span></button>
       <div class="flex-1"></div>
@@ -164,7 +169,7 @@
       <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="More"><span class="material-symbols-outlined !text-[24px] leading-none">more_vert</span></button>
   </header>
 
-  <!-- RULER (44 px): an empty 200 px slot over the header column, then bars (every 2nd labelled) above time (every 5 s), the playhead chip "1.1" -->
+  <!-- RULER (44 px): an empty 200 px slot over the header column, then bars (every 2nd labelled) above time (every 5 s), the playhead chip "3.4" at 00:05.59 -->
   <div class="h-11 flex-shrink-0 flex" data-purpose="timeline-ruler">
     <div class="w-[200px] flex-shrink-0"></div>
     <div class="relative flex-1 min-w-0 font-tabular-param text-tabular-param font-medium tnum text-on-surface-variant whitespace-nowrap">
@@ -198,29 +203,32 @@
         <span class="absolute top-[26px] left-[798.38px]">00:50</span>
         <span class="absolute top-[26px] left-[877.81px]">00:55</span>
         <span class="absolute top-[26px] left-[957.25px]">01:00</span>
-        <div class="absolute top-[22px] left-[-1px] w-[2px] h-[22px] bg-playhead"></div>
-        <div class="absolute top-[3px] left-0 -translate-x-1/2 h-4 px-2 rounded-full bg-playhead-chip border border-playhead flex items-center text-on-primary-container leading-none">1.1</div>
+        <div class="absolute top-[22px] left-[87.81px] w-[2px] h-[22px] bg-playhead"></div>
+        <div class="absolute top-[3px] left-[88.81px] -translate-x-1/2 h-4 px-2 rounded-full bg-playhead-chip border border-playhead flex items-center text-on-primary-container leading-none">3.4</div>
     </div>
   </div>
 
-  <!-- TRACK LIST: four 96 px rows (pinned 200 px header + lane); faint bar lines and beat snap lines behind the clips; the playhead line over them -->
+  <!-- TRACK LIST: five 96 px rows (pinned 200 px header + lane); faint bar lines and beat snap lines behind the clips; the playhead line over them -->
   <section class="relative flex-1 min-h-0 overflow-hidden" data-purpose="track-list">
-    <svg class="absolute top-0 left-[200px] pointer-events-none" width="984" height="384" viewBox="0 0 984 384" aria-hidden="true"><path d="M0 0V384M30.75 0V384M61.5 0V384M92.25 0V384M123 0V384M153.75 0V384M184.5 0V384M215.25 0V384M246 0V384M276.75 0V384M307.5 0V384M338.25 0V384M369 0V384M399.75 0V384M430.5 0V384M461.25 0V384M492 0V384M522.75 0V384M553.5 0V384M584.25 0V384M615 0V384M645.75 0V384M676.5 0V384M707.25 0V384M738 0V384M768.75 0V384M799.5 0V384M830.25 0V384M861 0V384M891.75 0V384M922.5 0V384M953.25 0V384M984 0V384" stroke="#A855F7" stroke-opacity="0.12" stroke-width="0.5" fill="none"/><path d="M0.25 0V384M7.75 0V384M15.25 0V384M23.25 0V384M30.75 0V384M38.25 0V384M46.25 0V384M53.75 0V384M61.75 0V384M69.25 0V384M76.75 0V384M84.75 0V384M92.25 0V384M99.75 0V384M107.75 0V384M115.25 0V384M123.25 0V384M130.75 0V384M138.25 0V384M146.25 0V384M153.75 0V384M161.25 0V384M169.25 0V384M176.75 0V384M184.75 0V384M192.25 0V384M199.75 0V384M207.75 0V384M215.25 0V384M222.75 0V384M230.75 0V384M238.25 0V384M246.25 0V384M253.75 0V384M261.25 0V384M269.25 0V384M276.75 0V384M284.25 0V384M292.25 0V384M299.75 0V384M307.75 0V384M315.25 0V384M322.75 0V384M330.75 0V384M338.25 0V384M345.75 0V384M353.75 0V384M361.25 0V384M369.25 0V384M376.75 0V384M384.25 0V384M392.25 0V384M399.75 0V384M407.25 0V384M415.25 0V384M422.75 0V384M430.75 0V384M438.25 0V384M445.75 0V384M453.75 0V384M461.25 0V384M468.75 0V384M476.75 0V384M484.25 0V384M492.25 0V384M499.75 0V384M507.25 0V384M515.25 0V384M522.75 0V384M530.25 0V384M538.25 0V384M545.75 0V384M553.75 0V384M561.25 0V384M568.75 0V384M576.75 0V384M584.25 0V384M591.75 0V384M599.75 0V384M607.25 0V384M615.25 0V384M622.75 0V384M630.25 0V384M638.25 0V384M645.75 0V384M653.25 0V384M661.25 0V384M668.75 0V384M676.75 0V384M684.25 0V384M691.75 0V384M699.75 0V384M707.25 0V384M714.75 0V384M722.75 0V384M730.25 0V384M738.25 0V384M745.75 0V384M753.25 0V384M761.25 0V384M768.75 0V384M776.25 0V384M784.25 0V384M791.75 0V384M799.75 0V384M807.25 0V384M814.75 0V384M822.75 0V384M830.25 0V384M837.75 0V384M845.75 0V384M853.25 0V384M861.25 0V384M868.75 0V384M876.25 0V384M884.25 0V384M891.75 0V384M899.25 0V384M907.25 0V384M914.75 0V384M922.75 0V384M930.25 0V384M937.75 0V384M945.75 0V384M953.25 0V384M960.75 0V384M968.75 0V384M976.25 0V384" stroke="#C084FC" stroke-opacity="0.2" stroke-width="0.5" fill="none"/></svg>
+    <svg class="absolute top-0 left-[200px] pointer-events-none" width="984" height="480" viewBox="0 0 984 480" aria-hidden="true"><path d="M0 0V480M30.75 0V480M61.5 0V480M92.25 0V480M123 0V480M153.75 0V480M184.5 0V480M215.25 0V480M246 0V480M276.75 0V480M307.5 0V480M338.25 0V480M369 0V480M399.75 0V480M430.5 0V480M461.25 0V480M492 0V480M522.75 0V480M553.5 0V480M584.25 0V480M615 0V480M645.75 0V480M676.5 0V480M707.25 0V480M738 0V480M768.75 0V480M799.5 0V480M830.25 0V480M861 0V480M891.75 0V480M922.5 0V480M953.25 0V480M984 0V480" stroke="#A855F7" stroke-opacity="0.12" stroke-width="0.5" fill="none"/><path d="M0.25 0V480M7.75 0V480M15.25 0V480M23.25 0V480M30.75 0V480M38.25 0V480M46.25 0V480M53.75 0V480M61.75 0V480M69.25 0V480M76.75 0V480M84.75 0V480M92.25 0V480M99.75 0V480M107.75 0V480M115.25 0V480M123.25 0V480M130.75 0V480M138.25 0V480M146.25 0V480M153.75 0V480M161.25 0V480M169.25 0V480M176.75 0V480M184.75 0V480M192.25 0V480M199.75 0V480M207.75 0V480M215.25 0V480M222.75 0V480M230.75 0V480M238.25 0V480M246.25 0V480M253.75 0V480M261.25 0V480M269.25 0V480M276.75 0V480M284.25 0V480M292.25 0V480M299.75 0V480M307.75 0V480M315.25 0V480M322.75 0V480M330.75 0V480M338.25 0V480M345.75 0V480M353.75 0V480M361.25 0V480M369.25 0V480M376.75 0V480M384.25 0V480M392.25 0V480M399.75 0V480M407.25 0V480M415.25 0V480M422.75 0V480M430.75 0V480M438.25 0V480M445.75 0V480M453.75 0V480M461.25 0V480M468.75 0V480M476.75 0V480M484.25 0V480M492.25 0V480M499.75 0V480M507.25 0V480M515.25 0V480M522.75 0V480M530.25 0V480M538.25 0V480M545.75 0V480M553.75 0V480M561.25 0V480M568.75 0V480M576.75 0V480M584.25 0V480M591.75 0V480M599.75 0V480M607.25 0V480M615.25 0V480M622.75 0V480M630.25 0V480M638.25 0V480M645.75 0V480M653.25 0V480M661.25 0V480M668.75 0V480M676.75 0V480M684.25 0V480M691.75 0V480M699.75 0V480M707.25 0V480M714.75 0V480M722.75 0V480M730.25 0V480M738.25 0V480M745.75 0V480M753.25 0V480M761.25 0V480M768.75 0V480M776.25 0V480M784.25 0V480M791.75 0V480M799.75 0V480M807.25 0V480M814.75 0V480M822.75 0V480M830.25 0V480M837.75 0V480M845.75 0V480M853.25 0V480M861.25 0V480M868.75 0V480M876.25 0V480M884.25 0V480M891.75 0V480M899.25 0V480M907.25 0V480M914.75 0V480M922.75 0V480M930.25 0V480M937.75 0V480M945.75 0V480M953.25 0V480M960.75 0V480M968.75 0V480M976.25 0V480" stroke="#C084FC" stroke-opacity="0.2" stroke-width="0.5" fill="none"/></svg>
     <div class="relative">
     <!-- TRACK: Drums -->
     <div class="flex h-24">
-      <div class="w-[200px] flex-shrink-0 bg-surface-level1 px-2 py-1 flex flex-col justify-between" data-purpose="track-header">
-        <div class="h-11 flex items-center gap-2">
-          <span class="w-2.5 h-2.5 flex-shrink-0 rounded-full bg-track-lavender"></span>
-          <span class="flex-1 min-w-0 truncate font-label-lg text-label-lg font-medium text-on-surface">Drums</span>
-          <span class="h-5 px-2 flex-shrink-0 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center gap-1"><span class="font-label-sm text-label-sm font-semibold tracking-[0.04em]">Drums</span></span>
-          <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Track menu"><span class="material-symbols-outlined !text-[24px] leading-none">more_vert</span></button>
-        </div>
-        <div class="h-11 flex items-center gap-1">
-          <div class="flex-1 min-w-0 h-11 rounded bg-surface-container-high flex items-center justify-center font-tabular-param text-tabular-param tnum text-on-surface" aria-label="Gain">+0.0dB</div>
-          <button class="w-9 h-9 flex-shrink-0 rounded bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg font-medium" aria-label="Mute">M</button>
-          <button class="w-9 h-9 flex-shrink-0 rounded bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg font-medium" aria-label="Solo">S</button>
-          <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Track settings"><span class="material-symbols-outlined !text-[24px] leading-none">expand_more</span></button>
+      <div class="relative w-[200px] flex-shrink-0 bg-surface-level1" data-purpose="track-header">
+        <div class="h-full px-2 py-1 flex flex-col justify-between">
+          <div class="h-11 flex items-center gap-2">
+            <span class="w-2.5 h-2.5 flex-shrink-0 rounded-full bg-track-lavender"></span>
+            <span class="flex-1 min-w-0 truncate font-label-lg text-label-lg font-medium text-on-surface">Drums</span>
+            <span class="h-5 px-2 flex-shrink-0 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center gap-1"><span class="font-label-sm text-label-sm font-semibold tracking-[0.04em]">Drums</span></span>
+            <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Track menu"><span class="material-symbols-outlined !text-[24px] leading-none">more_vert</span></button>
+          </div>
+          <div class="h-11 flex items-center gap-1">
+            <div class="flex-1 min-w-0 h-11 rounded bg-surface-container-high overflow-hidden flex items-center justify-center font-tabular-param text-tabular-param tnum text-on-surface whitespace-nowrap" aria-label="Gain +0.0dB">+0</div>
+            <button class="w-9 h-9 flex-shrink-0 rounded bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg font-medium" aria-label="Mute">M</button>
+            <button class="w-9 h-9 flex-shrink-0 rounded bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg font-medium" aria-label="Solo">S</button>
+            <button class="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Arm for recording" role="switch" aria-checked="false"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+            <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Track settings"><span class="material-symbols-outlined !text-[24px] leading-none">expand_more</span></button>
+          </div>
         </div>
       </div>
       <div class="relative flex-1 min-w-0" data-purpose="lane">
@@ -232,18 +240,21 @@
     </div>
     <!-- TRACK: Bass -->
     <div class="flex h-24">
-      <div class="w-[200px] flex-shrink-0 bg-surface-level1 px-2 py-1 flex flex-col justify-between" data-purpose="track-header">
-        <div class="h-11 flex items-center gap-2">
-          <span class="w-2.5 h-2.5 flex-shrink-0 rounded-full bg-track-rose"></span>
-          <span class="flex-1 min-w-0 truncate font-label-lg text-label-lg font-medium text-on-surface">Bass</span>
-          <span class="h-5 px-2 flex-shrink-0 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center gap-1"><span class="font-label-sm text-label-sm font-semibold tracking-[0.04em]">Bass</span></span>
-          <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Track menu"><span class="material-symbols-outlined !text-[24px] leading-none">more_vert</span></button>
-        </div>
-        <div class="h-11 flex items-center gap-1">
-          <div class="flex-1 min-w-0 h-11 rounded bg-surface-container-high flex items-center justify-center font-tabular-param text-tabular-param tnum text-on-surface" aria-label="Gain">+0.0dB</div>
-          <button class="w-9 h-9 flex-shrink-0 rounded bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg font-medium" aria-label="Mute">M</button>
-          <button class="w-9 h-9 flex-shrink-0 rounded bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg font-medium" aria-label="Solo">S</button>
-          <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Track settings"><span class="material-symbols-outlined !text-[24px] leading-none">expand_more</span></button>
+      <div class="relative w-[200px] flex-shrink-0 bg-surface-level1" data-purpose="track-header">
+        <div class="h-full px-2 py-1 flex flex-col justify-between">
+          <div class="h-11 flex items-center gap-2">
+            <span class="w-2.5 h-2.5 flex-shrink-0 rounded-full bg-track-rose"></span>
+            <span class="flex-1 min-w-0 truncate font-label-lg text-label-lg font-medium text-on-surface">Bass</span>
+            <span class="h-5 px-2 flex-shrink-0 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center gap-1"><span class="font-label-sm text-label-sm font-semibold tracking-[0.04em]">Bass</span></span>
+            <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Track menu"><span class="material-symbols-outlined !text-[24px] leading-none">more_vert</span></button>
+          </div>
+          <div class="h-11 flex items-center gap-1">
+            <div class="flex-1 min-w-0 h-11 rounded bg-surface-container-high overflow-hidden flex items-center justify-center font-tabular-param text-tabular-param tnum text-on-surface whitespace-nowrap" aria-label="Gain +0.0dB">+0</div>
+            <button class="w-9 h-9 flex-shrink-0 rounded bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg font-medium" aria-label="Mute">M</button>
+            <button class="w-9 h-9 flex-shrink-0 rounded bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg font-medium" aria-label="Solo">S</button>
+            <button class="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Arm for recording" role="switch" aria-checked="false"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+            <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Track settings"><span class="material-symbols-outlined !text-[24px] leading-none">expand_more</span></button>
+          </div>
         </div>
       </div>
       <div class="relative flex-1 min-w-0" data-purpose="lane">
@@ -255,18 +266,21 @@
     </div>
     <!-- TRACK: Keys -->
     <div class="flex h-24">
-      <div class="w-[200px] flex-shrink-0 bg-surface-level1 px-2 py-1 flex flex-col justify-between" data-purpose="track-header">
-        <div class="h-11 flex items-center gap-2">
-          <span class="w-2.5 h-2.5 flex-shrink-0 rounded-full bg-track-dusty-rose"></span>
-          <span class="flex-1 min-w-0 truncate font-label-lg text-label-lg font-medium text-on-surface">Keys</span>
-          <span class="h-5 px-2 flex-shrink-0 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center gap-1"><span class="material-symbols-outlined !text-[14px] leading-none">piano</span><span class="font-label-sm text-label-sm font-semibold tracking-[0.04em]">Keys</span></span>
-          <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Track menu"><span class="material-symbols-outlined !text-[24px] leading-none">more_vert</span></button>
-        </div>
-        <div class="h-11 flex items-center gap-1">
-          <div class="flex-1 min-w-0 h-11 rounded bg-surface-container-high flex items-center justify-center font-tabular-param text-tabular-param tnum text-on-surface" aria-label="Gain">+0.0dB</div>
-          <button class="w-9 h-9 flex-shrink-0 rounded bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg font-medium" aria-label="Mute">M</button>
-          <button class="w-9 h-9 flex-shrink-0 rounded bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg font-medium" aria-label="Solo">S</button>
-          <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Track settings"><span class="material-symbols-outlined !text-[24px] leading-none">expand_more</span></button>
+      <div class="relative w-[200px] flex-shrink-0 bg-surface-level1" data-purpose="track-header">
+        <div class="h-full px-2 py-1 flex flex-col justify-between">
+          <div class="h-11 flex items-center gap-2">
+            <span class="w-2.5 h-2.5 flex-shrink-0 rounded-full bg-track-dusty-rose"></span>
+            <span class="flex-1 min-w-0 truncate font-label-lg text-label-lg font-medium text-on-surface">Keys</span>
+            <span class="h-5 px-2 flex-shrink-0 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center gap-1"><span class="material-symbols-outlined !text-[14px] leading-none">piano</span><span class="font-label-sm text-label-sm font-semibold tracking-[0.04em]">Keys</span></span>
+            <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Track menu"><span class="material-symbols-outlined !text-[24px] leading-none">more_vert</span></button>
+          </div>
+          <div class="h-11 flex items-center gap-1">
+            <div class="flex-1 min-w-0 h-11 rounded bg-surface-container-high overflow-hidden flex items-center justify-center font-tabular-param text-tabular-param tnum text-on-surface whitespace-nowrap" aria-label="Gain +0.0dB">+0</div>
+            <button class="w-9 h-9 flex-shrink-0 rounded bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg font-medium" aria-label="Mute">M</button>
+            <button class="w-9 h-9 flex-shrink-0 rounded bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg font-medium" aria-label="Solo">S</button>
+            <button class="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Arm for recording" role="switch" aria-checked="false"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+            <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Track settings"><span class="material-symbols-outlined !text-[24px] leading-none">expand_more</span></button>
+          </div>
         </div>
       </div>
       <div class="relative flex-1 min-w-0" data-purpose="lane">
@@ -278,18 +292,21 @@
     </div>
     <!-- TRACK: Pad -->
     <div class="flex h-24">
-      <div class="w-[200px] flex-shrink-0 bg-surface-level1 px-2 py-1 flex flex-col justify-between" data-purpose="track-header">
-        <div class="h-11 flex items-center gap-2">
-          <span class="w-2.5 h-2.5 flex-shrink-0 rounded-full bg-track-peach"></span>
-          <span class="flex-1 min-w-0 truncate font-label-lg text-label-lg font-medium text-on-surface">Pad</span>
-          <span class="h-5 px-2 flex-shrink-0 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center gap-1"><span class="font-label-sm text-label-sm font-semibold tracking-[0.04em]">Synth</span></span>
-          <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Track menu"><span class="material-symbols-outlined !text-[24px] leading-none">more_vert</span></button>
-        </div>
-        <div class="h-11 flex items-center gap-1">
-          <div class="flex-1 min-w-0 h-11 rounded bg-surface-container-high flex items-center justify-center font-tabular-param text-tabular-param tnum text-on-surface" aria-label="Gain">+0.0dB</div>
-          <button class="w-9 h-9 flex-shrink-0 rounded bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg font-medium" aria-label="Mute">M</button>
-          <button class="w-9 h-9 flex-shrink-0 rounded bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg font-medium" aria-label="Solo">S</button>
-          <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Track settings"><span class="material-symbols-outlined !text-[24px] leading-none">expand_more</span></button>
+      <div class="relative w-[200px] flex-shrink-0 bg-surface-level1" data-purpose="track-header">
+        <div class="h-full px-2 py-1 flex flex-col justify-between">
+          <div class="h-11 flex items-center gap-2">
+            <span class="w-2.5 h-2.5 flex-shrink-0 rounded-full bg-track-peach"></span>
+            <span class="flex-1 min-w-0 truncate font-label-lg text-label-lg font-medium text-on-surface">Pad</span>
+            <span class="h-5 px-2 flex-shrink-0 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center gap-1"><span class="font-label-sm text-label-sm font-semibold tracking-[0.04em]">Synth</span></span>
+            <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Track menu"><span class="material-symbols-outlined !text-[24px] leading-none">more_vert</span></button>
+          </div>
+          <div class="h-11 flex items-center gap-1">
+            <div class="flex-1 min-w-0 h-11 rounded bg-surface-container-high overflow-hidden flex items-center justify-center font-tabular-param text-tabular-param tnum text-on-surface whitespace-nowrap" aria-label="Gain +0.0dB">+0</div>
+            <button class="w-9 h-9 flex-shrink-0 rounded bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg font-medium" aria-label="Mute">M</button>
+            <button class="w-9 h-9 flex-shrink-0 rounded bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg font-medium" aria-label="Solo">S</button>
+            <button class="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Arm for recording" role="switch" aria-checked="false"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+            <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Track settings"><span class="material-symbols-outlined !text-[24px] leading-none">expand_more</span></button>
+          </div>
         </div>
       </div>
       <div class="relative flex-1 min-w-0" data-purpose="lane">
@@ -303,16 +320,49 @@
         </div>
       </div>
     </div>
+    <!-- TRACK: Track 1 (armed, recording) -->
+    <div class="flex h-24">
+      <div class="relative w-[200px] flex-shrink-0 bg-surface-level1" data-purpose="track-header">
+        <!-- INPUT METER (armed): 4 px along the header's bottom edge, -60..0 dB; body to the level, the hold mark, the clip square (off) -->
+        <div class="absolute left-2 right-2 bottom-0 h-1" data-purpose="input-meter" aria-label="Input level, -12 dB">
+          <div class="absolute left-0 top-0 h-1 w-[178px] rounded-full bg-surface-container-highest"></div>
+          <div class="absolute left-0 top-0 h-1 w-[142.4px] rounded-full bg-meter-body"></div>
+          <div class="absolute top-0 h-1 w-[2px] left-[152.27px] bg-on-surface"></div>
+          <div class="absolute right-0 top-0 w-1 h-1 rounded-full bg-surface-container-highest" aria-label="Clip indicator"></div>
+        </div>
+        <div class="h-full px-2 py-1 flex flex-col justify-between">
+          <div class="h-11 flex items-center gap-2">
+            <span class="w-2.5 h-2.5 flex-shrink-0 rounded-full bg-track-mint"></span>
+            <span class="flex-1 min-w-0 truncate font-label-lg text-label-lg font-medium text-on-surface">Track 1</span>
+            
+            <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Track menu"><span class="material-symbols-outlined !text-[24px] leading-none">more_vert</span></button>
+          </div>
+          <div class="h-11 flex items-center gap-1">
+            <div class="flex-1 min-w-0 h-11 rounded bg-surface-container-high overflow-hidden flex items-center justify-center font-tabular-param text-tabular-param tnum text-on-surface whitespace-nowrap" aria-label="Gain +0.0dB">+0</div>
+            <button class="w-9 h-9 flex-shrink-0 rounded bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg font-medium" aria-label="Mute">M</button>
+            <button class="w-9 h-9 flex-shrink-0 rounded bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg font-medium" aria-label="Solo">S</button>
+            <button class="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-full" aria-label="Arm for recording" role="switch" aria-checked="true"><span class="w-4 h-4 rounded-full bg-record"></span></button>
+            <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Track settings"><span class="material-symbols-outlined !text-[24px] leading-none">expand_more</span></button>
+          </div>
+        </div>
+      </div>
+      <div class="relative flex-1 min-w-0" data-purpose="lane">
+        <div class="absolute top-[2px] h-[92px] left-[0px] w-[88.81px] rounded-xl overflow-hidden bg-track-mint/35" data-purpose="live-take">
+          <div class="h-[17px] bg-surface-level2/70 pl-[3px] pt-[1.5px] font-label-sm text-[11px] leading-[14px] font-semibold tracking-[0.04em] text-on-surface whitespace-nowrap">Take 1</div>
+          <svg class="block" width="88.81" height="75" viewBox="0 0 88.81 75" aria-hidden="true"><path d="M0.75 27.24V47.76M2.25 31.31V43.69M3.75 33.6V41.4M5.25 35.22V39.78M6.75 36.1V38.9M8.25 30.53V44.47M9.75 32.65V42.35M11.25 34.65V40.35M12.75 35.94V39.06M14.25 36.03V38.97M15.75 27.97V47.03M17.25 32.37V42.63M18.75 33.85V41.15M20.25 35.45V39.55M21.75 36.22V38.78M23.25 28.45V46.55M24.75 32.62V42.38M26.25 34.59V40.41M27.75 35.71V39.29M29.25 35.79V39.21M30.75 25.34V49.66M32.25 29.78V45.22M33.75 32.77V42.23M35.25 34.56V40.44M36.75 35.67V39.33M38.25 36.08V38.92M39.75 31.7V43.3M41.25 33.89V41.11M42.75 35.57V39.43M44.25 36.04V38.96M45.75 36.15V38.85M47.25 30.69V44.31M48.75 33.48V41.52M50.25 34.94V40.06M51.75 35.81V39.19M53.25 36.01V38.99M54.75 31.24V43.76M56.25 33.99V41.01M57.75 35.24V39.76M59.25 36.03V38.97M60.75 36.07V38.93M62.25 26.64V48.36M63.75 31.72V43.28M65.25 33.53V41.47M66.75 35.25V39.75M68.25 36.02V38.98M69.75 30.31V44.69M71.25 33.01V41.99M72.75 34.85V40.15M74.25 35.72V39.28M75.75 36.28V38.72M77.25 29.21V45.79M78.75 32.46V42.54M80.25 34.43V40.57M81.75 35.3V39.7M83.25 36.04V38.96M84.75 29.17V45.83M86.25 32.26V42.74M87.75 34.36V40.64" stroke="#A4D4BC" stroke-width="1" fill="none"/></svg>
+        </div>
+      </div>
     </div>
-    <div class="absolute top-0 bottom-0 left-[199.25px] w-[1.5px] bg-playhead" data-purpose="playhead"></div>
+    </div>
+    <div class="absolute top-0 bottom-0 left-[288.06px] w-[1.5px] bg-playhead" data-purpose="playhead"></div>
   </section>
 
   <!-- OVERVIEW STRIP (28 px): the whole project at fit scale, one row of blocks per track, the view window with its two handles -->
   <div class="h-7 flex-shrink-0 ml-[216px] mr-[20px]" data-purpose="overview-strip">
-    <svg class="block overflow-visible" width="948" height="28" viewBox="0 0 948 28" aria-label="Overview" role="img"><rect width="948" height="28" fill="#18171C"/><rect x="0" y="3" width="474" height="4.5" fill="#C4B5FD"/><rect x="0" y="8.5" width="474" height="4.5" fill="#FDA4AF"/><rect x="0" y="14" width="474" height="4.5" fill="#E0A0C0"/><rect x="0" y="19.5" width="474" height="4.5" fill="#F5BE9E"/><rect width="948" height="28" rx="4" fill="#C084FC" fill-opacity="0.24"/><rect x="0.5" y="0.5" width="947" height="27" rx="4" fill="none" stroke="#CEBDFF" stroke-width="1"/><rect x="0" y="0" width="8" height="28" rx="4" fill="#CEBDFF"/><rect x="940" y="0" width="8" height="28" rx="4" fill="#CEBDFF"/><path d="M4 8.4V19.6M944 8.4V19.6" stroke="#381385" stroke-width="1"/><rect x="-0.5" y="0" width="1" height="28" fill="#C084FC"/></svg>
+    <svg class="block overflow-visible" width="948" height="28" viewBox="0 0 948 28" aria-label="Overview" role="img"><rect width="948" height="28" fill="#18171C"/><rect x="0" y="3" width="474" height="3.4" fill="#C4B5FD"/><rect x="0" y="7.4" width="474" height="3.4" fill="#FDA4AF"/><rect x="0" y="11.8" width="474" height="3.4" fill="#E0A0C0"/><rect x="0" y="16.2" width="474" height="3.4" fill="#F5BE9E"/><rect width="948" height="28" rx="4" fill="#C084FC" fill-opacity="0.24"/><rect x="0.5" y="0.5" width="947" height="27" rx="4" fill="none" stroke="#CEBDFF" stroke-width="1"/><rect x="0" y="0" width="8" height="28" rx="4" fill="#CEBDFF"/><rect x="940" y="0" width="8" height="28" rx="4" fill="#CEBDFF"/><path d="M4 8.4V19.6M944 8.4V19.6" stroke="#381385" stroke-width="1"/><rect x="85" y="0" width="1" height="28" fill="#C084FC"/></svg>
   </div>
 
-  <!-- TRANSPORT BAR (72 px): master volume inline, skip to start, bar back, play, bar forward, time readout, metronome toggle -->
+  <!-- TRANSPORT BAR (72 px): master volume inline, skip to start / bar back (disabled while recording), pause, bar forward (disabled), Record (recording: filled record circle with its glow), time readout, metronome toggle -->
   <footer class="h-[72px] flex-shrink-0 bg-surface-level1 px-2 flex items-center gap-1" data-purpose="transport-bar">
     <div class="flex items-center flex-shrink-0">
       <div class="relative w-[160px] h-11" aria-label="Master volume">
@@ -321,14 +371,17 @@
       </div>
       <span class="ml-[19.5px] font-tabular-param text-tabular-param font-medium tnum text-on-surface-variant">80%</span>
     </div>
-    <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Skip to start"><span class="material-symbols-outlined !text-[24px] leading-none">skip_previous</span></button>
-    <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="One bar back"><span class="material-symbols-outlined !text-[24px] leading-none">fast_rewind</span></button>
+    <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant opacity-[0.38]" aria-label="Skip to start" disabled><span class="material-symbols-outlined !text-[24px] leading-none">skip_previous</span></button>
+    <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant opacity-[0.38]" aria-label="One bar back" disabled><span class="material-symbols-outlined !text-[24px] leading-none">fast_rewind</span></button>
     <div class="relative w-12 h-12 flex-shrink-0">
       <div class="absolute -inset-2 rounded-full pointer-events-none" style="background: radial-gradient(circle closest-side, rgba(255,175,211,0.35) 75%, rgba(255,175,211,0) 100%);"></div>
-      <button class="relative w-12 h-12 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center" aria-label="Play"><span class="material-symbols-outlined !text-[25.5px] leading-none" style="font-variation-settings:'FILL' 1">play_arrow</span></button>
+      <button class="relative w-12 h-12 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center" aria-label="Pause"><span class="material-symbols-outlined !text-[25.5px] leading-none" style="font-variation-settings:'FILL' 1">pause</span></button>
     </div>
-    <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="One bar forward"><span class="material-symbols-outlined !text-[24px] leading-none">fast_forward</span></button>
-    <span class="px-px font-tabular-timecode text-tabular-timecode font-medium tnum text-on-surface whitespace-nowrap">00:00.00 / 00:30.96</span>
+    <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant opacity-[0.38]" aria-label="One bar forward" disabled><span class="material-symbols-outlined !text-[24px] leading-none">fast_forward</span></button>
+    <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full" aria-label="Recording" data-purpose="record">
+      <span class="w-8 h-8 rounded-full bg-record/30 flex items-center justify-center"><span class="w-5 h-5 rounded-full bg-record"></span></span>
+    </button>
+    <span class="px-px font-tabular-timecode text-tabular-timecode font-medium tnum text-on-surface whitespace-nowrap">00:05.59 / 00:30.96</span>
     <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Metronome"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true" style="display:block;flex:none" data-glyph="metronome"><path d="M15.45 6.05L14.6 3H9.4L4.4 21H19.6L16.56 10.05"></path><path d="M7.34 14H16.66"></path><path d="M12 14L18.6 4.2"></path></svg></button>
   </footer>
 </main>

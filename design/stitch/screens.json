@@ -46,23 +46,23 @@
     },
     {
       "slug": "timeline-arranger/phone",
-      "screenId": "7337347737859736378",
-      "title": "Tembra Audio - Timeline (Mobile) v4",
+      "screenId": "5526405064297585693",
+      "title": "Tembra Audio - Timeline (Mobile) v5",
       "device": "MOBILE",
       "width": "2560",
       "height": "1600",
-      "html": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/7337347737859739172:download",
-      "screenshot": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/7337347737859735727:download"
+      "html": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/5526405064297586583:download",
+      "screenshot": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/5526405064297584090:download"
     },
     {
       "slug": "timeline-arranger/tablet",
-      "screenId": "255034238828911682",
-      "title": "Tembra Audio - Timeline (Tablet) v4",
+      "screenId": "5002931713168646568",
+      "title": "Tembra Audio - Timeline (Tablet) v5",
       "device": "DESKTOP",
       "width": "2560",
       "height": "1600",
-      "html": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/255034238828911520:download",
-      "screenshot": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/255034238828911601:download"
+      "html": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/5002931713168650070:download",
+      "screenshot": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/5002931713168648319:download"
     },
     {
       "slug": "drum-sequencer/phone",
