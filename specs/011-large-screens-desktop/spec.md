@@ -68,6 +68,19 @@ The owner's answers (Clarifications) add iPad windows with a keyboard and a trac
   on guitar, 7 on a 7-string, 4 on cello), space stops the tone, and L toggles Loop Tone. (The answer offered "from the
   lowest string"; the cards number strings from the highest, so the keys follow the cards.)
 
+### Session 2026-11-03 (planning findings)
+
+Planning (research.md) found three platform limits; the answers above keep their intent within them:
+
+- iPadOS offers no way for an app to choose its first window size and remembers sizes itself; Android's window manager
+  lets a declared default size override the remembered one. FR-004a's first window applies where the platform takes a
+  hint (Android desktop opens new windows wide on its own; ChromeOS takes a tablet-size hint), and later sizes are
+  always the system's.
+- iPadOS's pointer adapts to controls by itself and Compose on iOS cannot set pointer shapes; FR-015's shapes apply to
+  Android and ChromeOS.
+- On Android a dragged folder arrives without access to its contents; on iPad it is unverified. FR-026's folder rule
+  applies where the platform lets the app read the folder; elsewhere the folder is refused by name in the same message.
+
 ## User Scenarios & Testing *(mandatory)*
 
 The people this feature serves: a musician practising at a desk with a Chromebook or an Android laptop and no
@@ -98,10 +111,10 @@ import an audio file, split a clip and move one piece to another track, undo bot
    needs no touchscreen.
 4. **Given** the app opens in a desktop window, **When** the first screen appears, **Then** keyboard focus is in the
    window at a predictable place, so the first tab or shortcut works without a click first.
-5. **Given** the app has never run on this desktop device, **When** it opens, **Then** its window is landscape and
-   wide enough for the wide layout (at least 840 dp, about 1200 by 800 dp, never larger than the display); **Given**
-   the user resized or moved the window before, **When** the app opens again, **Then** it reopens at the size and place
-   the system remembers.
+5. **Given** the app has never run on a Chromebook or in Android desktop windowing, **When** it opens, **Then** its
+   window is landscape and wide enough for the wide layout (at least 840 dp, about 1200 by 800 dp, never larger than
+   the display); **Given** the user resized or moved the window before, **When** the app opens again, **Then** it
+   reopens at the size and place the system remembers (on iPad as well).
 
 ---
 
@@ -171,8 +184,9 @@ the tempo with the wheel, and watch the pointer shape over each kind of element.
    pinch, the timeline zooms around the pointer.
 5. **Given** a dial or a slider (tempo, noise gate, gain, master volume), **When** the user turns the wheel over it,
    **Then** the value changes in the control's own steps, in the same direction everywhere.
-6. **Given** the pointer over an element, **Then** its shape says what it does: a hand over something to click, an
-   open and a closed hand over a clip that can be dragged and while dragging it, a text cursor over a text field.
+6. **Given** the pointer over an element on Android or ChromeOS, **Then** its shape says what it does: a hand over
+   something to click, an open and a closed hand over a clip that can be dragged and while dragging it, a text cursor
+   over a text field; on iPad the system pointer adapts as it does in every app.
 
 ---
 
@@ -243,9 +257,10 @@ onto Projects; repeat the drag from the Files app into an iPad window.
    accept them, nothing suggests a drop is possible.
 5. **Given** a dropped file the importer refuses (format, length, channels, size), **When** it is dropped, **Then** it
    is refused with the importer's existing message, and the other files of the same drop still import.
-6. **Given** a folder is dropped, alone or with files, **When** it lands, **Then** the audio files directly inside it
-   (not in its sub-folders) count as dropped files and import by the rules above; non-audio files and refused files
-   are skipped and named together in one message.
+6. **Given** a folder is dropped, alone or with files, **When** it lands, **Then** where the platform lets the app read
+   it, the audio files directly inside it (not in its sub-folders) count as dropped files and import by the rules
+   above; where it does not, the folder is refused by name; non-audio files, refused files and refused folders are
+   named together in one message.
 
 ---
 
@@ -317,8 +332,9 @@ phone screens.
 - **FR-004**: The minimum window size MUST be one at which every screen stays usable, and no smaller than 360 dp wide
   and 480 dp tall.
 - **FR-004a**: On its first launch on a desktop device, the app MUST open in a landscape window at least 840 dp wide
-  (about 1200 by 800 dp, never larger than the display), where the platform lets the app choose; on later launches it
-  MUST reopen at the size and place the system remembers.
+  (about 1200 by 800 dp, never larger than the display), where the platform lets the app influence the first size
+  (Android desktop windowing and ChromeOS; not iPadOS); on later launches it MUST reopen at the size and place the
+  system remembers, and nothing the app declares may override that.
 - **FR-005**: Every destination, sheet, dialog and menu MUST adopt the layout for the window's current size at once
   as the window changes, using the layouts the earlier features define for each width class and for short windows,
   with no restart of the app or of the screen.
@@ -347,8 +363,9 @@ phone screens.
 - **FR-014**: Wheel and trackpad scrolling MUST scroll lists and the timeline (vertically by default, horizontally
   with Shift or a horizontal swipe); the platform's zoom modifier with the wheel, or a trackpad pinch, MUST zoom the
   timeline around the pointer; the wheel over a dial or a slider MUST change it in the control's own steps.
-- **FR-015**: The pointer's shape MUST indicate the action: a hand over clickable elements, an open hand over a
-  draggable clip and a closed hand while dragging, a text cursor over text fields.
+- **FR-015**: On Android and ChromeOS, the pointer's shape MUST indicate the action: a hand over clickable elements, an
+  open hand over a draggable clip and a closed hand while dragging, a text cursor over text fields. On iPad the
+  system's pointer, which adapts to controls by itself, applies.
 - **FR-016**: Every action that touch reaches through a gesture MUST have a pointer or keyboard equivalent that needs
   no touchscreen.
 
@@ -383,8 +400,9 @@ phone screens.
   MUST become a clip on that track at the drop point, snapped to the grid, by feature 009's rules for adding a file to
   an existing track, while several files dropped there MUST become new tracks; dropped on Projects, files MUST start a
   new project containing them. A place that accepts a drop MUST show what the drop will do while files hover over it.
-  A dropped folder MUST contribute the audio files directly inside it, not those in its sub-folders; non-audio files
-  and refused files MUST be skipped and named together in one message. Files the importer refuses MUST
+  A dropped folder MUST contribute the audio files directly inside it, not those in its sub-folders, where the platform
+  lets the app read a dropped folder; otherwise the folder MUST be refused by name. Non-audio files, refused files and
+  refused folders MUST be skipped and named together in one message. Files the importer refuses MUST
   be refused with the importer's existing messages, without stopping the other files of the drop.
 
 **Store presence**
