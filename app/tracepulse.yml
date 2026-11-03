@@ -40,7 +40,7 @@ devices:
   4CD6879C-8FBA-4CEF-B4EC-31968D0144B0: { platform: ios, model: "iPhone 17 (simulator)", kind: simulator, reference: false }
 
 android:
-  package: audio.tembra.app
+  package: com.tembraaudio
   activity: audio.tembra.android.MainActivity
   build_type: perf
   benchmarks_module: ":perf-benchmarks"
@@ -51,7 +51,7 @@ ios:
   project: iosApp/iosApp.xcodeproj
   scheme: TembraPerf
   configuration: Perf
-  bundle_id: audio.tembra.app          # team suffix appended from Config.xcconfig at run time
+  bundle_id: com.tembraaudio          # team suffix appended from Config.xcconfig at run time
   test_target: TembraPerfTests
   size_variant: iPhone14,7
 

@@ -3,12 +3,22 @@ plugins {
     id("tembra.android.app")
 }
 
+// Google Play needs a larger version code on every upload: the closed testing workflow passes the number of commits on
+// main as -Ptembra.versionCode (docs/google-play-publishing.md); local builds keep 1.
+val playVersionCode: Provider<Int> = providers.gradleProperty("tembra.versionCode").map(String::toInt)
+
 android {
     namespace = "audio.tembra.android"
     defaultConfig {
-        applicationId = "audio.tembra.app"
-        versionCode = 1
-        versionName = "0.1.0"
+        applicationId = "com.tembraaudio"
+        versionCode = playVersionCode.getOrElse(1)
+        versionName = "0.1.0" + playVersionCode.map { " ($it)" }.getOrElse("")
+        // The engine ships for these two ABIs only (tembra.android.native; specs/001-project-scaffold/research.md R4).
+        // Without the same filter here the androidx libraries' 32-bit copies give the bundle armeabi-v7a and x86
+        // folders, and Google Play would offer the app to 32-bit devices, where loading the engine fails.
+        ndk {
+            abiFilters += listOf("arm64-v8a", "x86_64")
+        }
     }
     // BuildConfig.DEBUG gates the developer-view launch argument (feature 002, FR-022).
     buildFeatures {
@@ -17,10 +27,14 @@ android {
     buildTypes {
         // Shrunk and obfuscated since feature 008 (spec FR-005a, D3): R8 is what lays the startup profile's classes
         // out together, and it makes the app smaller. Keep rules live in proguard-rules.pro, each with its reason.
+        // No signing config: the bundle leaves Gradle unsigned and the Play workflow signs it with the upload key in a
+        // separate job that never runs Gradle (docs/google-play-publishing.md § Keys and credentials).
         release {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            // The engine's symbol table rides in the bundle, so Play Console names the C++ frames of a crash or ANR.
+            ndk.debugSymbolLevel = "SYMBOL_TABLE"
         }
         // Measurement build (feature 007, D3): release optimisations, profileable, debug signing so the
         // pipeline can install it fresh. Macrobenchmark (:perf-benchmarks) targets this type; build it with

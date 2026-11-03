@@ -26,7 +26,7 @@ from perfetto.protos.perfetto.trace.perfetto_trace_pb2 import Trace, TracePacket
 
 
 PROCESS_PID = 1234
-PROCESS_NAME = "audio.tembra.app"
+PROCESS_NAME = "com.tembraaudio"
 PROCESS_TRACK_UUID = 1
 THREAD_TRACK_UUID = 2
 SEQUENCE_ID = 1

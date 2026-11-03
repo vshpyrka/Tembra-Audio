@@ -15,7 +15,7 @@ import androidx.benchmark.macro.TraceSectionMetric
  * Section names are the signpost names of `app/shared/engine/perf-catalogue.txt`.
  */
 object PerfMetrics {
-    const val PACKAGE = "audio.tembra.app"
+    const val PACKAGE = "com.tembraaudio"
     const val ITERATIONS = 20
 
     private val tunerSections = listOf("tuner.load", "tuner.modeSwitch", "tuner.frame")

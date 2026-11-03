@@ -205,11 +205,11 @@ def test_round_runs_every_step_in_order(cfg, tmp_path):
     assert gradle >= 0 and runner.calls[gradle]["cwd"] == cfg.root
     assert runner.index_of("dumpsys", "battery") < gradle, "doctor runs before the build"
     assert os.path.isfile(os.path.join(round_dir, "gradle.log")) and os.path.getsize(os.path.join(round_dir, "gradle.log")) > 5000
-    uninstall = runner.index_of("pm", "uninstall", "audio.tembra.app")
+    uninstall = runner.index_of("pm", "uninstall", "com.tembraaudio")
     install_app = runner.index_of("install", app_apk)
     install_test = runner.index_of("install", test_apk)
-    warm = runner.index_of("am", "start", "-W", "audio.tembra.app/audio.tembra.android.MainActivity")
-    stop = runner.index_of("am", "force-stop", "audio.tembra.app")
+    warm = runner.index_of("am", "start", "-W", "com.tembraaudio/audio.tembra.android.MainActivity")
+    stop = runner.index_of("am", "force-stop", "com.tembraaudio")
     assert gradle < uninstall < install_app < install_test < warm < stop
     instruments = [c for c in runner.commands() if any("am instrument" in part for part in c)]
     assert len(instruments) == 5
@@ -233,9 +233,9 @@ def test_a_fresh_install_is_granted_the_microphone_and_notifications_before_the_
     runner = TableRunner([_gradle_rule(cfg, app_apk, test_apk)] + rules)
     run_round(cfg, PIXEL, runner, FakeClock(), str(tmp_path / "r"), RoundOptions(journeys=["startup"]))
     install_test = runner.index_of("install", test_apk)
-    warm = runner.index_of("am", "start", "-W", "audio.tembra.app/audio.tembra.android.MainActivity")
+    warm = runner.index_of("am", "start", "-W", "com.tembraaudio/audio.tembra.android.MainActivity")
     for permission in ("android.permission.RECORD_AUDIO", "android.permission.POST_NOTIFICATIONS"):
-        grant = runner.index_of("pm", "grant", "audio.tembra.app", permission)
+        grant = runner.index_of("pm", "grant", "com.tembraaudio", permission)
         assert install_test < grant < warm, permission
 
 

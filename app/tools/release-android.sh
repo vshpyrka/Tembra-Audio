@@ -8,14 +8,14 @@
 # Usage: tools/release-android.sh [--no-build] [--serial <serial>]... [--clean] [--no-profile] [--no-launch]
 #   --no-build    reuse the APK of the last `./gradlew :androidApp:assembleRelease`
 #   --serial      only this adb serial (repeatable); default: every device `adb devices` lists as ready
-#   --clean       uninstall audio.tembra.app first, which deletes its projects and settings; without it the install
+#   --clean       uninstall com.tembraaudio first, which deletes its projects and settings; without it the install
 #                 replaces a debug or perf build in place (all three carry the debug key)
 #   --no-profile  skip the baseline-profile compilation; the first runs are then JIT-only, unlike a Play install
 #   --no-launch   install only
 # Output: androidApp/build/outputs/apk/release/androidApp-release-debugkey.apk
 set -euo pipefail
 
-PACKAGE=audio.tembra.app
+PACKAGE=com.tembraaudio
 ACTIVITY=audio.tembra.android.MainActivity
 PROFILE_RECEIVER=androidx.profileinstaller.ProfileInstallReceiver
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
