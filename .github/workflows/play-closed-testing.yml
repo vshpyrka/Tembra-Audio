@@ -1,5 +1,7 @@
-# Google Play closed testing: every push to main that changes the Android app (a merged pull request, a Renovate merge,
-# a direct push) is tested, built, signed with the upload key and released on the closed testing track.
+# Google Play testing: every push to main that changes the Android app (a merged pull request, a Renovate merge, a
+# direct push) is tested, built, signed with the upload key and released on the testing track PLAY_TRACK: internal
+# testing, from which chosen builds are promoted to closed testing by hand in Play Console. The file keeps its name
+# because Google Cloud's trust condition names it.
 #
 # Two jobs, so build code and credentials never meet:
 # - build runs Gradle (the host tests and the R8 release bundle) with no credentials at all; the bundle leaves it
@@ -8,11 +10,12 @@
 #   GitHub's OIDC token for this workflow on main is exchanged for a short-lived token of the publishing service
 #   account), reads the upload key from Secret Manager, signs with the JDK's jarsigner and calls the Play Developer
 #   API with app/tools/play/publish.py (standard library only).
+# - cleanup deletes the run's unsigned bundle from GitHub once publish has used it, so no build stays downloadable.
 #
 # One-time setup (Play Console, Google Cloud, the upload key, the repository variables) and the security model:
 # docs/google-play-publishing.md, or run app/tools/play/setup-wizard.sh. Until the variables exist, the publish job
 # is skipped and a merge only builds and tests.
-name: Play closed testing
+name: Google Play testing
 
 on:
   push:
@@ -31,8 +34,8 @@ on:
     inputs:
       publish:
         description: >-
-          Release on the closed testing track. Off: build, test and sign only, and keep the signed bundle as an
-          artifact (the first upload, which must go through Play Console by hand).
+          Release on the testing track (PLAY_TRACK). Off: build, test and sign only, and keep the signed bundle as an
+          artifact for one day (for an upload by hand).
         type: boolean
         default: true
 
@@ -62,6 +65,8 @@ jobs:
     defaults:
       run:
         working-directory: app
+    outputs:
+      release-name: ${{ steps.version.outputs.name }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -86,11 +91,14 @@ jobs:
           cache-read-only: true
       - name: Size Gradle for the runner
         run: printf '%s\n' 'org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8' 'kotlin.daemon.jvmargs=-Xmx1536m' >> ~/.gradle/gradle.properties
-      - name: Version code and release notes
+      - name: Version code, release name and release notes
         id: version
         run: |
           code=$(git rev-list --count HEAD)
           echo "code=$code" >> "$GITHUB_OUTPUT"
+          # The release name Play Console shows, and the app's version name: "0.1.0 (370)".
+          base=$(sed -n 's/^tembra\.versionName=//p' gradle.properties)
+          echo "name=$base ($code)" >> "$GITHUB_OUTPUT"
           # "What's new" for the testers: a pull request merge gives its title; a local merge its subject and the
           # merged branch's five newest commit subjects; any other commit its subject.
           subject=$(git log -1 --format=%s HEAD)
@@ -107,7 +115,7 @@ jobs:
           notes=${notes:0:$((500 - ${#footer} - 2))}
           mkdir -p build/play
           printf '%s\n\n%s\n' "$notes" "$footer" > build/play/release-notes.txt
-          echo "Version code $code for $(git rev-parse --short HEAD)"
+          echo "Version code $code, release $base ($code), commit $(git rev-parse --short HEAD)"
       - name: Host tests and the release bundle
         env:
           VERSION_CODE: ${{ steps.version.outputs.code }}
@@ -124,7 +132,7 @@ jobs:
           retention-days: 1
 
   publish:
-    name: Sign with the upload key and release on closed testing
+    name: Sign with the upload key and release on the testing track
     needs: build
     # Skipped until the one-time setup has set the repository variables (docs/google-play-publishing.md), and on any
     # branch but main, which Google Cloud would refuse anyway.
@@ -176,13 +184,14 @@ jobs:
             --keystore-secret "$KEYSTORE_SECRET" \
             --password-secret "$PASSWORD_SECRET" \
             --expect-sha256 "$UPLOAD_CERT_SHA256"
-      - name: Release on the closed testing track
+      - name: Release on the testing track
         if: github.event_name == 'push' || inputs.publish
         env:
           GOOGLE_OAUTH_ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
-          # The closed testing track's API name: 'alpha' is Play's default closed track.
-          PLAY_TRACK: ${{ vars.PLAY_TRACK || 'alpha' }}
-          # 'completed' sends each release to review and then to the testers; 'draft' only saves it in Play Console.
+          # 'internal' (internal testing), or a closed testing track ('alpha' is Play's default closed track).
+          PLAY_TRACK: ${{ vars.PLAY_TRACK || 'internal' }}
+          RELEASE_NAME: ${{ needs.build.outputs.release-name }}
+          # 'completed' releases to the testers (after Google's review on closed testing); 'draft' only saves it.
           PLAY_RELEASE_STATUS: ${{ vars.PLAY_RELEASE_STATUS || 'completed' }}
           PLAY_NOTES_LANGUAGE: ${{ vars.PLAY_NOTES_LANGUAGE || 'en-US' }}
         run: |
@@ -192,8 +201,9 @@ jobs:
             --status "$PLAY_RELEASE_STATUS" \
             --bundle "$RUNNER_TEMP/play/tembra-audio.aab" \
             --notes-file "$RUNNER_TEMP/play/release-notes.txt" \
-            --notes-language "$PLAY_NOTES_LANGUAGE"
-      - name: Keep the signed bundle for a manual upload
+            --notes-language "$PLAY_NOTES_LANGUAGE" \
+            --release-name "$RELEASE_NAME"
+      - name: Keep the signed bundle for an upload by hand
         if: github.event_name == 'workflow_dispatch' && !inputs.publish
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -202,4 +212,27 @@ jobs:
             ${{ runner.temp }}/play/tembra-audio.aab
             ${{ runner.temp }}/play/release-notes.txt
           if-no-files-found: error
-          retention-days: 3
+          retention-days: 1
+
+  cleanup:
+    name: Delete the run's unsigned bundle
+    needs: [build, publish]
+    # Once publish has used the bundle, or was skipped. After a failed or cancelled publish the bundle stays for its one
+    # day, so "Re-run failed jobs" can sign and release the same build.
+    if: always() && needs.build.result == 'success' && needs.publish.result != 'failure' && needs.publish.result != 'cancelled'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: write
+    steps:
+      - name: Delete the unsigned-bundle artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          ids=$(gh api "repos/$REPO/actions/runs/$RUN_ID/artifacts" --jq '.artifacts[] | select(.name == "unsigned-bundle") | .id')
+          for id in $ids; do
+            gh api -X DELETE "repos/$REPO/actions/artifacts/$id"
+            echo "deleted artifact $id"
+          done

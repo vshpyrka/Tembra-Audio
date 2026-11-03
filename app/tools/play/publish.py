@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Signs Tembra Audio's release bundle with the upload key and publishes it to a Google Play closed testing track.
+"""Signs Tembra Audio's release bundle with the upload key and publishes it to a Google Play testing track.
 
 Runs in .github/workflows/play-closed-testing.yml; the setup and the reasons behind it are in
 docs/google-play-publishing.md. Standard library only, so no third-party package ever sees the access token or the
@@ -10,7 +10,7 @@ Commands:
   sign     fetch the upload keystore and its password from Secret Manager into a private temporary directory, sign
            the bundle with jarsigner, check the signer is the registered upload certificate, delete the key
   tracks   list the app's tracks and their releases (the closed testing track's API name is among them)
-  publish  upload a signed bundle and release it on a closed testing track
+  publish  upload a signed bundle and release it on a testing track (internal or closed)
 
 Every command reads an OAuth 2.0 access token from $GOOGLE_OAUTH_ACCESS_TOKEN. `sign` needs the cloud-platform scope
 (Secret Manager), `tracks` and `publish` the androidpublisher scope; the workflow asks for both in one token.
@@ -41,9 +41,13 @@ TOKEN_ENV = "GOOGLE_OAUTH_ACCESS_TOKEN"
 # jarsigner reads the keystore password from this variable (-storepass:env), never from its command line.
 STOREPASS_ENV = "TEMBRA_PLAY_UPLOAD_STOREPASS"
 UPLOAD_KEY_ALIAS = "upload"
-# Production and open testing ("beta") are refused: this pipeline releases to closed testing. The service account's
-# Play permission covers every testing track, so this check is the one that keeps the open track out.
+# Production and open testing ("beta") are refused: this pipeline releases to internal or closed testing. The service
+# account's Play permission covers every testing track, so this check is the one that keeps the open track out.
 REFUSED_TRACKS = {"production", "beta"}
+# Google's API documentation names the internal testing track "qa", while Play and most tools call it "internal".
+TRACK_ALIASES = {"internal": "qa", "qa": "internal"}
+# Play's limit on a release name.
+RELEASE_NAME_LIMIT = 50
 # Play's limit on one language's release notes.
 RELEASE_NOTES_LIMIT = 500
 # The bundle upload: Play processes the bundle before it answers, which can take minutes for a large one.
@@ -277,13 +281,26 @@ def sign_bundle(
 # ── Google Play Developer API ───────────────────────────────────────────────────────────────────────────────────────
 
 
-def check_closed_track(track: str) -> None:
+def check_testing_track(track: str) -> None:
     base = track.split(":")[-1]
     if base in REFUSED_TRACKS:
         raise Failure(
-            f"refusing track {track!r}: this pipeline releases to closed testing only (the API calls open testing "
-            "'beta' and the default closed testing track 'alpha')"
+            f"refusing track {track!r}: this pipeline releases to internal or closed testing only (the API calls "
+            "open testing 'beta'; internal testing is 'internal' and the default closed testing track 'alpha')"
         )
+
+
+def resolve_track(track: str, names: list) -> str:
+    if track in names:
+        return track
+    alias = TRACK_ALIASES.get(track)
+    if alias in names:
+        log(f"the app calls track {track!r} {alias!r}")
+        return alias
+    raise Failure(
+        f"the app has no track {track!r}; its tracks are: {', '.join(sorted(n for n in names if n))}. Set "
+        "the PLAY_TRACK repository variable to one of them"
+    )
 
 
 def release_notes(path: Optional[Path], language: str) -> list[dict]:
@@ -378,17 +395,13 @@ def publish(
     status: str,
     notes: list[dict],
     validate_only: bool = False,
+    release_name: Optional[str] = None,
 ) -> dict:
-    check_closed_track(track)
+    check_testing_track(track)
     edit = play.insert_edit()
     committed = False
     try:
-        names = [entry.get("track") for entry in play.tracks(edit)]
-        if track not in names:
-            raise Failure(
-                f"the app has no track {track!r}; its tracks are: {', '.join(sorted(n for n in names if n))}. Set "
-                "the PLAY_TRACK repository variable to the closed testing track's API name"
-            )
+        track = resolve_track(track, [entry.get("track") for entry in play.tracks(edit)])
         uploaded = play.upload_bundle(edit, bundle)
         version_code = uploaded.get("versionCode")
         if version_code is None:
@@ -396,6 +409,9 @@ def publish(
         log(f"uploaded {bundle.name}: version code {version_code}, sha256 {uploaded.get('sha256', '?')}")
 
         release: dict = {"versionCodes": [str(version_code)], "status": status}
+        if release_name:
+            # Play's default is "<version code> (<version name>)", which repeats the build number of "0.1.0 (370)".
+            release["name"] = release_name[:RELEASE_NAME_LIMIT]
         if notes:
             release["releaseNotes"] = notes
         try:
@@ -483,7 +499,7 @@ def command_tracks(args: argparse.Namespace) -> None:
 
 
 def command_publish(args: argparse.Namespace) -> None:
-    check_closed_track(args.track)
+    check_testing_track(args.track)
     play = Play(Http(access_token()), args.package)
     result = publish(
         play,
@@ -492,6 +508,7 @@ def command_publish(args: argparse.Namespace) -> None:
         args.status,
         release_notes(Path(args.notes_file) if args.notes_file else None, args.notes_language),
         validate_only=args.validate_only,
+        release_name=args.release_name,
     )
     if result.get("skipped"):
         state = f"not released: {result['skipped']}"
@@ -527,13 +544,14 @@ def main(argv: Optional[list[str]] = None) -> int:
     tracks.add_argument("--package", required=True)
     tracks.set_defaults(run=command_tracks)
 
-    pub = commands.add_parser("publish", help="release a signed bundle on a closed testing track")
+    pub = commands.add_parser("publish", help="release a signed bundle on a testing track")
     pub.add_argument("--package", required=True)
-    pub.add_argument("--track", required=True, help="the closed testing track's API name (default track: alpha)")
+    pub.add_argument("--track", required=True, help="'internal', or a closed testing track ('alpha' by default)")
     pub.add_argument("--bundle", required=True, help="the signed .aab")
     pub.add_argument("--status", choices=["completed", "draft"], default="completed")
     pub.add_argument("--notes-file", help="release notes ('What's new'), cut to 500 characters")
     pub.add_argument("--notes-language", default="en-US")
+    pub.add_argument("--release-name", help="the name Play Console shows for the release, e.g. '0.1.0 (370)'")
     pub.add_argument("--validate-only", action="store_true", help="upload and validate, then discard the edit")
     pub.set_defaults(run=command_publish)
 
