@@ -3,16 +3,18 @@ plugins {
     id("tembra.android.app")
 }
 
-// Google Play needs a larger version code on every upload: the closed testing workflow passes the number of commits on
-// main as -Ptembra.versionCode (docs/google-play-publishing.md); local builds keep 1.
+// Google Play needs a larger version code on every upload: the Play workflow passes the number of commits on main as
+// -Ptembra.versionCode (docs/google-play-publishing.md); local builds keep 1. The version name comes from
+// gradle.properties, with the build number appended when there is one: "0.1.0 (370)".
 val playVersionCode: Provider<Int> = providers.gradleProperty("tembra.versionCode").map(String::toInt)
+val baseVersionName: String = providers.gradleProperty("tembra.versionName").get()
 
 android {
     namespace = "audio.tembra.android"
     defaultConfig {
         applicationId = "com.tembraaudio"
         versionCode = playVersionCode.getOrElse(1)
-        versionName = "0.1.0" + playVersionCode.map { " ($it)" }.getOrElse("")
+        versionName = baseVersionName + playVersionCode.map { " ($it)" }.getOrElse("")
         // The engine ships for these two ABIs only (tembra.android.native; specs/001-project-scaffold/research.md R4).
         // Without the same filter here the androidx libraries' 32-bit copies give the bundle armeabi-v7a and x86
         // folders, and Google Play would offer the app to 32-bit devices, where loading the engine fails.
