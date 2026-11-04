@@ -25,6 +25,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -38,6 +40,7 @@ import audio.tembra.ui.theme.TembraIcon
 import audio.tembra.ui.theme.TembraIcons
 import audio.tembra.ui.theme.TembraShapes
 import audio.tembra.ui.theme.TembraTheme
+import audio.tembra.ui.shortcuts.RegisterOverlay
 
 /** The "Tuning Preset" button and its menu (spec FR-003, FR-017, research R9); every preset is listed by name and strings. */
 @Composable
@@ -61,7 +64,7 @@ internal fun TuningPresetPicker(current: TuningPreset, presets: List<TuningPrese
                 .heightIn(min = spacing.touchTargetMin)
                 .background(colors.surfaceContainerLow, shape)
                 .border(if (focused) spacing.focusRingWidth else spacing.seam, border, shape)
-                .clickable(interactionSource = interactionSource, indication = null, role = Role.Button) { open = true }
+                .pointerHoverIcon(PointerIcon.Hand).clickable(interactionSource = interactionSource, indication = null, role = Role.Button) { open = true }
                 .semantics { contentDescription = "${TunerCopy.tuningPreset}, ${current.name}" }
                 .padding(horizontal = spacing.md, vertical = spacing.sm),
             horizontalArrangement = Arrangement.spacedBy(spacing.sm),
@@ -80,6 +83,8 @@ internal fun TuningPresetPicker(current: TuningPreset, presets: List<TuningPrese
             }
             Icon(imageVector = TembraIcons.vector(TembraIcon.ExpandMore), contentDescription = null, tint = colors.outlineVariant, modifier = Modifier.size(spacing.pickerIconSize))
         }
+        // Escape's close-overlay action closes it (feature 011, contracts/keyboard-shortcuts.md rule 4).
+        if (open) RegisterOverlay { open = false }
         DropdownMenu(
             expanded = open,
             onDismissRequest = { open = false },

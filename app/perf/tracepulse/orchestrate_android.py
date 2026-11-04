@@ -396,6 +396,7 @@ BENCHMARK_CLASS_OF = {
     "metronome": "MetronomeJourneyBenchmark",
     "timeline": "TimelineJourneyBenchmark",
     "stress": "StressJourneyBenchmark",
+    "windowing": "WindowingJourneyBenchmark",
 }
 _INSTRUMENT_FAILURE_MARKERS = ("FAILURES!!!", "INSTRUMENTATION_FAILED", "Process crashed", "shortMsg=")
 _INSTRUMENT_TERMINAL_MARKERS = ("OK (", "FAILURES!!!", "INSTRUMENTATION_CODE:")

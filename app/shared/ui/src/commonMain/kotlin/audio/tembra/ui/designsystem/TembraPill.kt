@@ -21,8 +21,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
+import audio.tembra.ui.theme.TembraShapes
 import audio.tembra.ui.theme.TembraTheme
 
 /**
@@ -66,7 +69,9 @@ fun TembraPill(
         Box(
             modifier = modifier
                 .testTagIfSet(testTag)
-                .selectable(
+                .focusIdentity(testTag)
+                .hoverArea(hovered, TembraShapes.extraLarge)
+                .pointerHoverIcon(PointerIcon.Hand).selectable(
                     selected = selected,
                     interactionSource = source,
                     indication = null,

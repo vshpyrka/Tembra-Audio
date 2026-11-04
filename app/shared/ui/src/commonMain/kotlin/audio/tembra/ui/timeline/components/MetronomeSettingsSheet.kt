@@ -33,6 +33,7 @@ import audio.tembra.ui.perf.anchorRoot
 import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.ui.timeline.TimelineCopy
 import audio.tembra.ui.timeline.TimelineTestTags
+import audio.tembra.ui.shortcuts.RegisterOverlay
 
 /**
  * The transport's metronome settings (spec FR-037, FR-038, FR-039; D1): the project's tempo read-only ("124 BPM, from
@@ -62,6 +63,7 @@ internal fun MetronomeSettingsSheet(
     val colors = TembraTheme.colors
     val pattern = settings.style?.pattern(signature) ?: settings.pattern.resizedTo(signature.beats)
     val customSound = settings.customSound?.let { CustomSoundState.Available(it.displayName) } ?: CustomSoundState.None
+    RegisterOverlay(onDismiss)
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         modifier = modifier.anchorRoot().testTag(METRONOME_SHEET_TAG),

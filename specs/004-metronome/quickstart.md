@@ -103,7 +103,7 @@ Every lane ends green with zero warnings (`--warning-mode all`). What each test 
 
 Tap once: no change, caption "Tap again". Tap again within two seconds: the dial takes the
 interval; keep tapping at a steady 100 BPM: it settles on 100 ± 1 and the caption counts the taps.
-Stop for three seconds: the caption returns to "Sync finger rhythm"; the next tap starts over.
+Stop for three seconds: the caption returns to "Tap along to the beat"; the next tap starts over.
 Tap at 300 BPM: 240; at 30 BPM: 40. Running, the click adopts each new tempo on the next tick.
 
 ## 7. Background, calls, other apps, headphones (User Story 6, spec FR-027)

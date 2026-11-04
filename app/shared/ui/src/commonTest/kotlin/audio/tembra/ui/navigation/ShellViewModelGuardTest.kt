@@ -3,7 +3,10 @@ package audio.tembra.ui.navigation
 import audio.tembra.core.project.TrackId
 import audio.tembra.ui.session.DialogRequest
 import audio.tembra.ui.session.FakePlaybackGuard
+import audio.tembra.ui.session.FakeSessionActivity
 import audio.tembra.ui.tracksettings.TrackSettingsKey
+import audio.tembra.ui.drop.FakeProjectFromAudio
+import audio.tembra.ui.drop.NoOpenedFiles
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -32,7 +35,7 @@ class ShellViewModelGuardTest {
     fun setUp() {
         Dispatchers.setMain(dispatcher)
         guard = FakePlaybackGuard(isPlaying = true)
-        viewModel = ShellViewModel(guard)
+        viewModel = ShellViewModel(guard, FakeSessionActivity(), NoOpenedFiles, FakeProjectFromAudio())
     }
 
     @AfterTest
@@ -49,6 +52,15 @@ class ShellViewModelGuardTest {
         runCurrent()
         assertEquals(Destination.Tuner, viewModel.uiState.value.selected)
         assertNull(viewModel.dialog.value)
+    }
+
+    @Test
+    fun aNewShellTellsTheSessionTheTimelineShows() = runTest(dispatcher) {
+        // A new activity's shell starts on the Timeline: the session takes the device back from the standalone
+        // metronome a previous window left it with, or Play cannot open the transport (desktop emulator, 2026-11-03).
+        val fresh = FakePlaybackGuard(isPlaying = false)
+        ShellViewModel(fresh, FakeSessionActivity(), NoOpenedFiles, FakeProjectFromAudio())
+        assertEquals(listOf(true), fresh.hostVisibility)
     }
 
     @Test

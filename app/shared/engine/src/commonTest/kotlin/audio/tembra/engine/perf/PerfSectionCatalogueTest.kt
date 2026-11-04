@@ -69,5 +69,6 @@ class PerfSectionCatalogueTest {
         PerfFamily.TIMELINE -> "timeline"
         PerfFamily.TRANSPORT -> "transport"
         PerfFamily.ENGINE -> "engine"
+        PerfFamily.SHELL -> "shell"
     }
 }

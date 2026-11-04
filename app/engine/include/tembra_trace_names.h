@@ -24,6 +24,9 @@
 #define TEMBRA_TRACE_TRANSPORT_SEEK "transport.seek"
 #define TEMBRA_TRACE_ENGINE_PRIME "engine.prime"
 #define TEMBRA_TRACE_TRANSPORT_MASTER_POPUP "transport.masterPopup"
+#define TEMBRA_TRACE_SHELL_WINDOW_RELAYOUT "shell.windowRelayout"
+#define TEMBRA_TRACE_SHELL_SHORTCUT_NAVIGATE "shell.shortcutNavigate"
+#define TEMBRA_TRACE_TIMELINE_CONTEXT_MENU "timeline.contextMenu"
 #define TEMBRA_TRACE_AUDIO_CALLBACKS "audio.callbacks"
 #define TEMBRA_TRACE_AUDIO_LAST_US "audio.lastUs"
 #define TEMBRA_TRACE_AUDIO_MAX_US "audio.maxUs"
@@ -56,6 +59,9 @@
     X(TRANSPORT_SEEK, "transport.seek") \
     X(ENGINE_PRIME, "engine.prime") \
     X(TRANSPORT_MASTER_POPUP, "transport.masterPopup") \
+    X(SHELL_WINDOW_RELAYOUT, "shell.windowRelayout") \
+    X(SHELL_SHORTCUT_NAVIGATE, "shell.shortcutNavigate") \
+    X(TIMELINE_CONTEXT_MENU, "timeline.contextMenu") \
     X(AUDIO_CALLBACKS, "audio.callbacks") \
     X(AUDIO_LAST_US, "audio.lastUs") \
     X(AUDIO_MAX_US, "audio.maxUs") \
@@ -66,6 +72,6 @@
     X(AUDIO_STARVATION, "audio.starvation") \
     X(AUDIO_CLIPS_ACTIVE, "audio.clipsActive")
 
-#define TEMBRA_TRACE_NAME_COUNT 29
+#define TEMBRA_TRACE_NAME_COUNT 32
 
 #endif /* TEMBRA_TRACE_NAMES_H */

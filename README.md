@@ -57,6 +57,14 @@ a key, duplicate it or delete it. Edits are saved automatically.
 Separate layouts for phones (portrait and landscape), tablets and foldables. A foldable in tabletop
 or book posture splits the screen at the hinge.
 
+### Desktop windows, mouse and keyboard
+
+On Chromebooks, Android desktop windows and iPad windows the app resizes live without stopping the
+audio. Controls show tooltips on hover, right-click opens a clip's or a project's menu, and the
+wheel or trackpad scrolls and zooms the timeline. Ctrl+1 to Ctrl+5 (⌘ on iPad) switch screens, and
+Ctrl+/ lists every shortcut. Audio files dropped on the timeline or the project list are imported,
+and WAV, FLAC and MP3 files open from the Files app as a new project.
+
 ## How it is built
 
 ```

@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
@@ -22,10 +21,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import audio.tembra.core.project.GridSize
+import audio.tembra.ui.designsystem.verticalScrollWithScrollbar
 import audio.tembra.ui.perf.anchorRoot
 import audio.tembra.ui.theme.TembraIcon
 import audio.tembra.ui.theme.TembraIcons
@@ -33,6 +35,7 @@ import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.ui.timeline.TimelineCopy
 import audio.tembra.ui.timeline.TimelineTestTags
 import kotlinx.coroutines.launch
+import audio.tembra.ui.shortcuts.RegisterOverlay
 
 /**
  * The snap picker as a sheet (spec FR-018, D1), shown for `TimelineSheet.GridMenu`: "Snap to grid" over a caption saying
@@ -49,6 +52,7 @@ internal fun SnapSheet(grid: GridSize, onGrid: (GridSize) -> Unit, onDismiss: ()
     // Hidden until shown, then straight to expanded: the list is short, a half-open sheet would only hide rows.
     val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
     val scope = rememberCoroutineScope()
+    RegisterOverlay(onDismiss)
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         modifier = modifier.anchorRoot().testTag(TimelineTestTags.SNAP_SHEET),
@@ -56,7 +60,7 @@ internal fun SnapSheet(grid: GridSize, onGrid: (GridSize) -> Unit, onDismiss: ()
         containerColor = colors.surfaceContainerHigh,
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(bottom = spacing.lg).navigationBarsPadding(),
+            modifier = Modifier.fillMaxWidth().verticalScrollWithScrollbar(rememberScrollState()).padding(bottom = spacing.lg).navigationBarsPadding(),
             verticalArrangement = Arrangement.spacedBy(spacing.xs),
         ) {
             Text(
@@ -98,7 +102,7 @@ private fun SnapRow(size: GridSize, current: Boolean, onClick: () -> Unit) {
             .fillMaxWidth()
             .heightIn(min = ROW_MIN_HEIGHT)
             .testTag(TimelineTestTags.snapSheetRow(size))
-            .selectable(selected = current, role = Role.RadioButton, onClick = onClick)
+            .pointerHoverIcon(PointerIcon.Hand).selectable(selected = current, role = Role.RadioButton, onClick = onClick)
             .padding(horizontal = spacing.pageMargin),
         horizontalArrangement = Arrangement.spacedBy(spacing.md),
         verticalAlignment = Alignment.CenterVertically,

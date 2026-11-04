@@ -2,6 +2,7 @@ package audio.tembra.engine
 
 import android.media.AudioAttributes
 import android.media.AudioManager
+import android.media.AudioPlaybackConfiguration
 import androidx.test.platform.app.InstrumentationRegistry
 import audio.tembra.core.metronome.Tempo
 import audio.tembra.core.version.SemanticVersion
@@ -199,23 +200,31 @@ class NativeAudioEngineTest {
         assertTrue(awaitMediaStreams { it <= before }, "the preview's output stream was still open after the click ended")
     }
 
-    /** The stream probe the preview test relies on sees an open output: a looping tone's stream, gone after its stop. */
+    /**
+     * The stream probe the preview test relies on sees an open output: a looping tone's stream, gone after its stop. The
+     * streams are told apart by player, not counted: a stream the previous test closed can still be listed when this one
+     * starts (the configurations arrive asynchronously) and leave as the tone's arrives, keeping the count unchanged
+     * (seen on the desktop and fold emulators, 2026-11-04).
+     */
     @Test
     fun theStreamProbeSeesAnOpenOutput() {
-        val before = openMediaStreams()
+        val before = mediaStreams()
         assertEquals(AudioResult.Ok, engine.startTone(440.0, 0))
-        assertTrue(awaitMediaStreams { it > before }, "the probe did not see the tone's output stream")
+        var opened = emptySet<AudioPlaybackConfiguration>()
+        assertTrue(awaitMediaStreams { opened = mediaStreams() - before; opened.isNotEmpty() }, "the probe did not see the tone's output stream")
         engine.stopTone()
-        assertTrue(awaitMediaStreams { it <= before }, "the tone's output stream was still open after its stop")
+        assertTrue(awaitMediaStreams { mediaStreams().none { it in opened } }, "the tone's output stream was still open after its stop")
     }
 
     /**
      * Started players with the engine's media usage: an open output stream. The content type is not compared because
      * the system anonymises it (to unknown) in the configurations an unprivileged app receives.
      */
-    private fun openMediaStreams(): Int = audioManager.activePlaybackConfigurations.count {
-        it.audioAttributes.usage == AudioAttributes.USAGE_MEDIA
-    }
+    private fun openMediaStreams(): Int = mediaStreams().size
+
+    /** The started players with the engine's media usage; a configuration equals another of the same player. */
+    private fun mediaStreams(): Set<AudioPlaybackConfiguration> =
+        audioManager.activePlaybackConfigurations.filter { it.audioAttributes.usage == AudioAttributes.USAGE_MEDIA }.toSet()
 
     /** Playback configurations reach the app asynchronously: polls [condition] for up to 1 s. */
     private fun awaitMediaStreams(condition: (Int) -> Boolean): Boolean {

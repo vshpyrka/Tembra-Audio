@@ -56,6 +56,11 @@ object PerfAnchors {
     const val TIMELINE_OVERVIEW = "timeline.overview"
     const val TIMELINE_OVERVIEW_WINDOW = "timeline.overview.window"
 
+    // Feature 011 (contracts/perf-instrumentation.md, journey `windowing`): the first clip's menu a right-click opens,
+    // and the shortcut sheet. The Metronome's start, the first clip and the library's search are anchors already.
+    const val TIMELINE_CLIP_MENU_FIRST = "timeline.clip.first.menu"
+    const val SHORTCUT_SHEET = "shortcuts.sheet"
+
     /** Every anchor, for the parity test and the journey drivers' documentation. */
     val all: List<String> = listOf(
         NAV_TUNER, NAV_METRONOME,
@@ -68,5 +73,6 @@ object PerfAnchors {
         TRANSPORT_PLAY, TRANSPORT_SKIP_START, TRANSPORT_METRONOME, TRANSPORT_READOUT,
         DIALOG_STOP_AND_LEAVE_CONFIRM,
         TRANSPORT_MASTER_BUTTON, TRANSPORT_MASTER, TIMELINE_OVERVIEW, TIMELINE_OVERVIEW_WINDOW,
+        TIMELINE_CLIP_MENU_FIRST, SHORTCUT_SHEET,
     )
 }

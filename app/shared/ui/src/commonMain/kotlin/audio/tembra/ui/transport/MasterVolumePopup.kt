@@ -46,6 +46,7 @@ import audio.tembra.ui.perf.traceFirstMeasure
 import audio.tembra.ui.theme.TembraIcon
 import audio.tembra.ui.theme.TembraShapes
 import audio.tembra.ui.theme.TembraTheme
+import audio.tembra.ui.shortcuts.RegisterOverlay
 
 /**
  * The phone bar's master volume (spec FR-007, D1 2026-10-26): below 600 dp of bar width the inline slider gives way to
@@ -112,6 +113,7 @@ internal fun MasterVolumePopup(
     val position = remember(density, clearance, margin) {
         with(density) { AboveAnchor(clearance = clearance.roundToPx(), margin = margin.roundToPx()) }
     }
+    RegisterOverlay(onDismiss)
     Popup(popupPositionProvider = position, onDismissRequest = onDismiss, properties = PopupProperties(focusable = true)) {
         Surface(
             modifier = Modifier

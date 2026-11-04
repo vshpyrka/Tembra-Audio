@@ -7,11 +7,12 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.unit.IntSize
 import androidx.test.platform.app.InstrumentationRegistry
+import kotlin.test.assertEquals
 import org.junit.After
+import org.junit.Assume.assumeFalse
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import kotlin.test.assertEquals
 
 /**
  * In an activity that rotates in place, as MainActivity does, the window size the composition reads follows the
@@ -42,6 +43,8 @@ class LaidOutWindowSizeTest {
 
     @Test
     fun containerSizeFollowsAnInPlaceRotation() {
+        // A desktop window does not rotate with the display (Android's desktop windowing, feature 011).
+        assumeFalse("a free-form window: run on a phone or a tablet in full screen", rule.activity.isInMultiWindowMode)
         var containerSize = IntSize.Zero
         rule.setContent {
             ProvideLaidOutWindowSize {

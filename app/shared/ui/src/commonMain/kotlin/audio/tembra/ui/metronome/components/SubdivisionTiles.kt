@@ -27,6 +27,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -128,7 +130,7 @@ private fun SubdivisionTile(
                     drawRoundRect(color = fill, cornerRadius = radius)
                     if (focused) drawFocusRing(ringColor, ring.toPx(), radius)
                 }
-                .selectable(selected = selected, interactionSource = source, indication = null, role = Role.Tab, onClick = onClick)
+                .pointerHoverIcon(PointerIcon.Hand).selectable(selected = selected, interactionSource = source, indication = null, role = Role.Tab, onClick = onClick)
                 .semantics { contentDescription = label },
             contentAlignment = Alignment.Center,
         ) {

@@ -6,10 +6,26 @@ import audio.tembra.core.project.MusicalKey
 import audio.tembra.core.project.Project
 import audio.tembra.data.metronome.FakeMetronomePreferences
 import audio.tembra.data.projects.FakeProjectRepository
+import audio.tembra.data.projects.PickedFile
 import audio.tembra.data.projects.WaveformOverview
 import audio.tembra.engine.FakeAudioEngine
+import audio.tembra.ui.drop.DropOutcome
+import audio.tembra.ui.drop.DropPlan
+import audio.tembra.ui.drop.SkipReason
+import audio.tembra.ui.drop.SkippedItem
 import audio.tembra.ui.platform.FakeBackgroundPlaybackHost
 import audio.tembra.ui.session.ProjectSession
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertIs
+import kotlin.test.assertNotEquals
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+import kotlin.time.Clock
+import kotlin.time.Instant
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -23,17 +39,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertIs
-import kotlin.test.assertNotEquals
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
-import kotlin.time.Clock
-import kotlin.time.Instant
+import okio.Buffer
 
 /** The library's ViewModel over the fakes (spec FR-050 to FR-054; T116). */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -175,6 +181,30 @@ class ProjectsViewModelTest {
         assertTrue(created.isActive)
         assertEquals(created.id, session.state.value.project?.id)
         assertEquals("120 BPM", created.tempoText)
+    }
+
+    @Test
+    fun aDropOnTheLibraryMakesANewProjectAndOpensIt() = runTest(dispatcher) {
+        // Feature 011 (spec FR-026): the dropped files become "Project N", opened on the Timeline.
+        library()
+        val events = mutableListOf<ProjectsEvent>()
+        backgroundScope.launch { viewModel.events.collect { events += it } }
+        viewModel.drop(DropOutcome(DropPlan.NewProject(listOf(PickedFile("kick.wav") { Buffer() })), emptyList()))
+        runCurrent()
+        val created = ui().cards.first { it.name == "Project 1" }
+        assertEquals(created.id, session.state.value.project?.id)
+        assertEquals(listOf<ProjectsEvent>(ProjectsEvent.OpenedInTimeline), events)
+    }
+
+    @Test
+    fun aDropWithNoAudioSaysSoAndMakesNothing() = runTest(dispatcher) {
+        library()
+        val messages = mutableListOf<ProjectsMessage>()
+        backgroundScope.launch { viewModel.messages.collect { messages += it } }
+        viewModel.drop(DropOutcome(DropPlan.Nothing, listOf(SkippedItem("notes.txt", SkipReason.NotAudio))))
+        runCurrent()
+        assertEquals(3, ui().total)
+        assertEquals(listOf("No audio files were found: notes.txt (not an audio file)"), messages.map { it.text })
     }
 
     @Test

@@ -3,6 +3,7 @@ package audio.tembra.ui.timeline
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.key.Key
@@ -25,6 +26,9 @@ import audio.tembra.core.project.GridSize
 import audio.tembra.core.project.TrackId
 import audio.tembra.data.projects.OverviewStatus
 import audio.tembra.ui.designsystem.enterKeyboardMode
+import audio.tembra.ui.shortcuts.LocalShortcutPlatform
+import audio.tembra.ui.shortcuts.PrimaryModifier
+import audio.tembra.ui.shortcuts.ShortcutPlatform
 import audio.tembra.ui.theme.TembraTheme
 import kotlinx.collections.immutable.persistentListOf
 import kotlin.test.Test
@@ -57,7 +61,10 @@ class TimelineKeyboardTest {
         setContent {
             TembraTheme {
                 manager = LocalInputModeManager.current
-                Box(Modifier.size(200.dp).testTag("root").focusable().timelineKeyHandling({ state }, callbacks))
+                // Ctrl on both lanes: on iPad the menu bar serves the Command chords, so the test takes Android's way.
+                CompositionLocalProvider(LocalShortcutPlatform provides ShortcutPlatform(PrimaryModifier.Ctrl, menuServesPrimaryChords = false)) {
+                    Box(Modifier.size(200.dp).testTag("root").focusable().timelineKeyHandling({ state }, callbacks))
+                }
             }
         }
         if (!enterKeyboardMode(manager)) return false
@@ -102,10 +109,12 @@ class TimelineKeyboardTest {
     fun zoomAndTrackKeys() = runComposeUiTest {
         if (!setRoot()) return@runComposeUiTest
         press(Key.Plus)
+        // "+" typed as Shift+= on a US keyboard (feature 011, spec FR-023: chords follow the character typed).
+        press(Key.Equals, shift = true)
         press(Key.Minus)
         press(Key.M)
         press(Key.O)
-        assertEquals(listOf("zoom(1)", "zoom(-1)", "mute(t1)", "solo(t1)"), calls)
+        assertEquals(listOf("zoom(1)", "zoom(1)", "zoom(-1)", "mute(t1)", "solo(t1)"), calls)
     }
 
     /**
