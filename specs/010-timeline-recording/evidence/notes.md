@@ -54,3 +54,27 @@ Not the specified nine-track project: the demo's four tracks plus the new track 
   24:40 take. Open points: one over-budget callback (max 2.98 ms, once in the process) and no 30-minute take (stopped at 24:40
   to stay under the cap).
 - Trace: scratchpad file soak.pftrace (not committed).
+
+## Soak (T096), iPhone 14 after the merge with main
+
+iPhone 14 (00008110-001049660E3A401E, iOS build 24A94232), 2026-11-04 (local 14:49 to 15:19), the `Perf` configuration
+of the `TembraPerf` scheme built for testing at 394aac8 (main with feature 011 merged into this branch) plus the soak
+test itself, driven by `TembraPerfTests/RecordingSoakTests` (by hand; `orchestrate_ios` skips it in a round). Phone
+volume down (owner), the screen kept awake by the test-only `-tembra.keepScreenOn` launch argument. Not the specified
+nine-track project: the demo's four tracks plus a new track (five), count-in 1 bar, the input is the room.
+
+- One take of 29:35.00 (Record at t = 33 s, the readout rolling at t = 36 s, stop tapped at t = 1809.9 s through the
+  armed header's Record, as the bar's Record is absent at 390 pt; the readout read 29:37.00 of a 29:35.00 project right
+  after the stop because the transport keeps playing). It stayed under the engine's 30:00 cap.
+- One stop tap ended the recording: the growing take was gone 1.5 s after the tap and undo was enabled 2.6 s after it
+  (the take was adopted); no second take.
+- Counters (`engine-health.json` written by `devtools.writeHealth` right after the stop, copied off the phone with
+  `xcrun devicectl device copy from`; 335,016 callbacks, about 30 minutes of the one stream session that recorded the
+  take): `input_overruns` 0, `starvation` 0, `xruns` 0, `over_budget` 0, `max_us` 87, `avg_us` 12, `record_backlog` 0,
+  `take_alignment_ms` 20, `monitor_delay_ms` 0, `realtime` 1. SC-003 holds on the iPhone 14 for a 29:35 take.
+- xcodebuild reported the test failed with "Test exceeded execution time allowance of 30 minutes" at t = 1814 s, after
+  every assertion had passed and while the last tap ran: `TembraPerf.xctestplan` caps every test at 1800 s, which wins
+  over the test's own 45 minutes. The test's doc comment now gives the by-hand command with
+  `-maximum-test-execution-time-allowance 2700`; the measured rounds keep the plan's cap.
+- Not checked here: the playback of the take at its start, middle and end by ear (a sounding step, the owner's), and the
+  nine-track project.

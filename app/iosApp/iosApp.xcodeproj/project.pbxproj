@@ -26,6 +26,7 @@
 		7E5F000000000000000000D5 /* TimelinePerfTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F00000000000000000071 /* TimelinePerfTests.swift */; };
 		7E5F000000000000000000D6 /* TimelineJourney.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F00000000000000000072 /* TimelineJourney.swift */; };
 		7E5F000000000000000000F0 /* RecordingPerfTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F000000000000000000F2 /* RecordingPerfTests.swift */; };
+		7E5F000000000000000000F6 /* RecordingSoakTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F000000000000000000F7 /* RecordingSoakTests.swift */; };
 		7E5F000000000000000000F1 /* RecordingJourney.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F000000000000000000F3 /* RecordingJourney.swift */; };
 		7E5F000000000000000000D7 /* WindowingPerfTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F00000000000000000073 /* WindowingPerfTests.swift */; };
 		7E5F000000000000000000D8 /* WindowingJourney.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F00000000000000000074 /* WindowingJourney.swift */; };
@@ -95,6 +96,7 @@
 		7E5F00000000000000000071 /* TimelinePerfTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelinePerfTests.swift; sourceTree = "<group>"; };
 		7E5F00000000000000000072 /* TimelineJourney.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineJourney.swift; sourceTree = "<group>"; };
 		7E5F000000000000000000F2 /* RecordingPerfTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingPerfTests.swift; sourceTree = "<group>"; };
+		7E5F000000000000000000F7 /* RecordingSoakTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingSoakTests.swift; sourceTree = "<group>"; };
 		7E5F000000000000000000F3 /* RecordingJourney.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingJourney.swift; sourceTree = "<group>"; };
 		7E5F00000000000000000073 /* WindowingPerfTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowingPerfTests.swift; sourceTree = "<group>"; };
 		7E5F00000000000000000074 /* WindowingJourney.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowingJourney.swift; sourceTree = "<group>"; };
@@ -207,6 +209,7 @@
 				7E5F0000000000000000006A /* MetronomePerfTests.swift */,
 				7E5F00000000000000000071 /* TimelinePerfTests.swift */,
 				7E5F000000000000000000F2 /* RecordingPerfTests.swift */,
+				7E5F000000000000000000F7 /* RecordingSoakTests.swift */,
 				7E5F00000000000000000073 /* WindowingPerfTests.swift */,
 				7E5F0000000000000000006B /* StressPerfTests.swift */,
 				7E5F0000000000000000006C /* FacadeSelfCheckTests.swift */,
@@ -423,6 +426,7 @@
 				7E5F000000000000000000CE /* MetronomePerfTests.swift in Sources */,
 				7E5F000000000000000000D5 /* TimelinePerfTests.swift in Sources */,
 				7E5F000000000000000000F0 /* RecordingPerfTests.swift in Sources */,
+				7E5F000000000000000000F6 /* RecordingSoakTests.swift in Sources */,
 				7E5F000000000000000000D7 /* WindowingPerfTests.swift in Sources */,
 				7E5F000000000000000000CF /* StressPerfTests.swift in Sources */,
 				7E5F000000000000000000D0 /* FacadeSelfCheckTests.swift in Sources */,

@@ -215,6 +215,8 @@ def test_round_runs_install_warm_up_test_and_collects(cfg, tmp_path):
     assert outcome.app_size_bytes is None, "size is opt-in on iOS"
     # the audio-trace pass: the measured run skips AudioTracePass, the pass runs it alone while xctrace records
     assert any("-skip-testing:TembraPerfTests/AudioTracePass" in c for c in cmds if c[:2] == ["xcodebuild", "test-without-building"])
+    # The 30-minute recording soak (feature 010, T096) runs by hand only, never in a measured round.
+    assert any("-skip-testing:TembraPerfTests/RecordingSoakTests" in c for c in cmds if c[:2] == ["xcodebuild", "test-without-building"])
     assert any("-skip-testing:TembraPerfTests/ColdLaunchHitchTests" in c for c in cmds if c[:2] == ["xcodebuild", "test-without-building"])
     audio_pass = runner.index_of("xcodebuild", "test-without-building", "-only-testing:TembraPerfTests/AudioTracePass")
     record = runner.index_of("xctrace", "record", "--all-processes", f"--device {UDID}")
