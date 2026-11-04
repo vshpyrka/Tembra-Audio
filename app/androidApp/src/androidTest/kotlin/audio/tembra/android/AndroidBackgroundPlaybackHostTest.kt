@@ -65,7 +65,11 @@ class AndroidBackgroundPlaybackHostTest {
     @Test
     fun keepAliveWithTheRecordingNotificationShowsRecordingAndHoldsTheMicrophoneType() {
         // The type needs the microphone granted (Android 14 refuses it otherwise): the runner's grant, as the permission test does.
-        if (context.checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+        // Below Android 14 the type is not checked, so the grant is not asked for there: ColorOS on Android 11 (the OPPO CPH2239)
+        // refuses the runner's grant, and the notification is still checked on it.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
+            context.checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
             androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().uiAutomation.grantRuntimePermission(context.packageName, android.Manifest.permission.RECORD_AUDIO)
         }
         assertTrue(host.keepAlive(PlaybackNotification.recording("Demo project")))
