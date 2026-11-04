@@ -70,6 +70,10 @@ object PerfAnchors {
     const val TIMELINE_CLIP_TAKE = "timeline.clip.take"
     const val SNACKBAR_MICROPHONE_SETTINGS = "snackbar.microphone.settings"
     const val DIALOG_STOP_RECORDING_CONFIRM = "dialog.stopRecording.confirm"
+    // Feature 011 (contracts/perf-instrumentation.md, journey `windowing`): the first clip's menu a right-click opens,
+    // and the shortcut sheet. The Metronome's start, the first clip and the library's search are anchors already.
+    const val TIMELINE_CLIP_MENU_FIRST = "timeline.clip.first.menu"
+    const val SHORTCUT_SHEET = "shortcuts.sheet"
 
     /** Every anchor, for the parity test and the journey drivers' documentation. */
     val all: List<String> = listOf(
@@ -86,5 +90,6 @@ object PerfAnchors {
         TIMELINE_TRACK_ARM_FIRST, TIMELINE_TRACK_METER_FIRST, TIMELINE_TRACK_RECORD_FIRST, TIMELINE_TRACK_CLIP_FIRST,
         TRANSPORT_RECORD, TIMELINE_MONITOR, TIMELINE_OVERFLOW_MONITOR, METRONOME_COUNT_IN, TIMELINE_CLIP_TAKE,
         SNACKBAR_MICROPHONE_SETTINGS, DIALOG_STOP_RECORDING_CONFIRM,
+        TIMELINE_CLIP_MENU_FIRST, SHORTCUT_SHEET,
     )
 }

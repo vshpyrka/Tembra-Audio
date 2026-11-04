@@ -54,10 +54,13 @@ import audio.tembra.data.timeline.TimelinePreferences
 import audio.tembra.engine.TransportSnapshot
 import audio.tembra.engine.perf.PerfSection
 import audio.tembra.engine.perf.PerfTrace
+import audio.tembra.ui.drop.DropOutcome
+import audio.tembra.ui.drop.DropPlan
+import audio.tembra.ui.metronome.TapCaption
 import audio.tembra.ui.platform.AudioFilePicker
 import audio.tembra.ui.platform.AudioPickRequest
-import audio.tembra.ui.metronome.TapCaption
 import audio.tembra.ui.platform.AudioPickResult
+import audio.tembra.ui.platform.WindowControls
 import audio.tembra.ui.session.ImportTarget
 import audio.tembra.ui.session.InputTelemetry
 import audio.tembra.ui.session.ProjectSession
@@ -69,6 +72,7 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metrox.viewmodel.ViewModelKey
+import kotlin.math.pow
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
@@ -88,7 +92,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.math.max
-import kotlin.math.pow
 
 /**
  * The Timeline's state holder (contracts/timeline-screen.md; Constitution II): maps the session's project and the
@@ -109,6 +112,7 @@ class TimelineViewModel(
     private val picker: AudioFilePicker,
     private val preferences: MetronomePreferences,
     private val timelinePreferences: TimelinePreferences,
+    private val windowControls: WindowControls,
 ) : ViewModel() {
 
     private val view = MutableStateFlow(TimelineViewState())
@@ -122,7 +126,15 @@ class TimelineViewModel(
     /** The transport bar's width (feature 010, spec FR-007): decides where Record and the monitor toggle sit. */
     private val barWidth = MutableStateFlow(0.dp)
 
-    val uiState: StateFlow<TimelineUiState> = combine(session.state, view, overviewStripShown, metronomeSettings, barWidth, ::mapState)
+    /** The menu's full-screen row from the platform's window controls (feature 011, spec FR-010a). */
+    private val fullScreenItem = combine(windowControls.fullScreenAvailable, windowControls.isFullScreen, ::fullScreenItemOf)
+
+    /** The window's chrome: the bar's width and the full-screen row, paired so the state combines five flows. */
+    private val chrome = combine(barWidth, fullScreenItem, ::Pair)
+
+    val uiState: StateFlow<TimelineUiState> = combine(session.state, view, overviewStripShown, metronomeSettings, chrome) { state, view, strip, metronome, (width, fullScreen) ->
+        mapState(state, view, strip, metronome, width, fullScreen)
+    }
         .stateIn(viewModelScope, SharingStarted.Eagerly, currentUi())
 
     /** One-shot snackbar messages: the session's, mapped, merged with the ViewModel's own, to the one collector. */
@@ -285,6 +297,11 @@ class TimelineViewModel(
     }
 
     /** The overflow menu's "Overview strip" entry (spec FR-015; T151): shown or hidden at once, remembered on the device. */
+    /** The menu's "Full screen" (true) or "Exit full screen" (false): the platform resizes the window (feature 011). */
+    fun setFullScreen(fullScreen: Boolean) {
+        if (fullScreen) windowControls.enterFullScreen() else windowControls.exitFullScreen()
+    }
+
     fun setOverviewStripShown(shown: Boolean) {
         overviewStripShown.value = shown
         viewModelScope.launch(CoroutineName("setOverviewStripShown")) { timelinePreferences.setOverviewStripShown(shown) }
@@ -403,6 +420,20 @@ class TimelineViewModel(
     fun requestMicrophone() = session.requestMicrophone()
 
     private fun takeRunning(): Boolean = session.state.value.recording.takeRunning
+
+    /**
+     * Files dropped on the timeline (feature 011, spec FR-026): the planned target goes to the session, which names the
+     * items the drop left out in its refusal message; with no audio at all, a message says so. Projects' plan never
+     * reaches the timeline.
+     */
+    fun drop(outcome: DropOutcome) {
+        when (val plan = outcome.plan) {
+            is DropPlan.AddToTrack -> session.importAudio(listOf(plan.file), ImportTarget.Track(plan.trackId, plan.atBeats), outcome.skipped)
+            is DropPlan.NewTracks -> session.importAudio(plan.files, ImportTarget.NewTracks(plan.atBeats), outcome.skipped)
+            is DropPlan.NewProject -> session.importAudio(plan.files, ImportTarget.NewTracks(insertionPoint()), outcome.skipped)
+            DropPlan.Nothing -> local.trySend(TimelineMessage.NoAudioFound(outcome.skipped))
+        }
+    }
 
     // --- Clips -------------------------------------------------------------------------------------------------------
 
@@ -542,11 +573,19 @@ class TimelineViewModel(
 
     // --- Mapping -----------------------------------------------------------------------------------------------------
 
-    private fun mapState(state: SessionState, view: TimelineViewState, overviewStripShown: Boolean, metronomeSettings: MetronomeSettings, barWidth: Dp): TimelineUiState {
+    private fun mapState(
+        state: SessionState,
+        view: TimelineViewState,
+        overviewStripShown: Boolean,
+        metronomeSettings: MetronomeSettings,
+        barWidth: Dp,
+        fullScreenItem: FullScreenItem,
+    ): TimelineUiState {
         val project = state.project ?: return TimelineUiState(
             loaded = state.unavailable != null,
             playback = state.playback,
             overviewStripShown = overviewStripShown,
+            fullScreenItem = fullScreenItem,
             metronomeSettings = metronomeSettings,
             barWidth = barWidth,
         )
@@ -623,6 +662,7 @@ class TimelineViewModel(
             viewport = viewport,
             grid = grid,
             overviewStripShown = overviewStripShown,
+            fullScreenItem = fullScreenItem,
             following = view.following,
             playback = state.playback,
             positionBeats = positionBeats,
@@ -686,13 +726,27 @@ class TimelineViewModel(
         is SessionMessage.MicrophoneDenied -> TimelineMessage.MicrophoneDenied(message.openSettings)
         SessionMessage.MonitorNeedsHeadphones -> TimelineMessage.MonitorNeedsHeadphones
         SessionMessage.RecordRefused -> TimelineMessage.RecordRefused
+        SessionMessage.NoMicrophone -> TimelineMessage.NoMicrophone
         is SessionMessage.TakeEnded -> TimelineMessage.TakeEnded(message.reason)
     }
 
     // --- Helpers -----------------------------------------------------------------------------------------------------
 
     /** The state an intent acts on, mapped now from the sources of truth: [uiState] is derived asynchronously. */
-    private fun currentUi(): TimelineUiState = mapState(session.state.value, view.value, overviewStripShown.value, metronomeSettings.value, barWidth.value)
+    private fun currentUi(): TimelineUiState = mapState(
+        session.state.value,
+        view.value,
+        overviewStripShown.value,
+        metronomeSettings.value,
+        barWidth.value,
+        fullScreenItemOf(windowControls.fullScreenAvailable.value, windowControls.isFullScreen.value),
+    )
+
+    private fun fullScreenItemOf(available: Boolean, fullScreen: Boolean): FullScreenItem = when {
+        !available -> FullScreenItem.Hidden
+        fullScreen -> FullScreenItem.Exit
+        else -> FullScreenItem.Enter
+    }
 
     /** Applies [edit] through the session; a refusal with a reason the user can act on becomes a message. True when applied. */
     private fun edit(edit: ProjectEdit): Boolean {

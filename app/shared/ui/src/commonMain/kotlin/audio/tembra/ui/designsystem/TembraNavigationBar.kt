@@ -18,6 +18,8 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.platform.testTag
 import audio.tembra.ui.theme.TembraTheme
 
@@ -57,7 +59,7 @@ fun TembraNavigationBar(
                     onClick = { onSelect(item.id) },
                     icon = { NavigationItemIcon(item, source, TooltipAnchorPosition.Above) },
                     label = null,
-                    modifier = Modifier.testTag("nav.item.${item.id}"),
+                    modifier = Modifier.testTag("nav.item.${item.id}").pointerHoverIcon(PointerIcon.Hand),
                     colors = itemColors,
                     interactionSource = source,
                 )

@@ -1,6 +1,6 @@
 package audio.tembra.ui.navigation
 
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.v2.runComposeUiTest
 import audio.tembra.ui.theme.TembraTheme
@@ -19,7 +19,7 @@ class RememberLayoutModeTest {
         setContent {
             TembraTheme {
                 actual = rememberLayoutMode()
-                expected = LayoutMode.from(currentWindowAdaptiveInfo(supportLargeAndXLargeWidth = false).windowSizeClass)
+                expected = LayoutMode.from(currentWindowAdaptiveInfoV2().windowSizeClass)
             }
         }
         assertEquals(expected, actual)

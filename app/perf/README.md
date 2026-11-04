@@ -68,7 +68,9 @@ uv run tracepulse run --device pixel6 --label <feature> [--rounds 5] [--journeys
 uv run tracepulse run --device pixel6 --label <feature> --no-build --apk <app.apk> --test-apk <benchmarks.apk>
                                                         # reuse artifacts built elsewhere (an agent builds through the gradle-run wrapper)
 uv run tracepulse run --device iphone14 --label <feature> [--size] [--no-build --xctestrun <path>]
-                                                        # --journeys on iOS runs only those journeys' XCTest classes
+                                                        # `--journeys` on iOS runs only those journeys' test classes; the windowing
+                                                        # journey's menu and chord steps need a synthesized pointer (iPad) and ⌘ keys
+                                                        # (iPad, any simulator), so a physical iPhone records the relayout section only
                                                         # badge short-iterations: XCTest dropped iterations whose signpost set differed from the first
 uv run tracepulse run --simulators --label <feature>    # every booted simulator, sequentially
 uv run tracepulse run --device pixel6 --label release-baseline --build-type release      # SC-007 comparison (Android)
@@ -353,10 +355,10 @@ forced optimisation pass, whether the app is *optimised* from it (`speed-profile
 
 ```
 adb install -r -t androidApp/build/outputs/apk/perf/androidApp-perf.apk
-adb shell am start -W -n audio.tembra.app/audio.tembra.android.MainActivity ; sleep 5
-adb shell am broadcast -a androidx.profileinstaller.action.INSTALL_PROFILE -n audio.tembra.app/androidx.profileinstaller.ProfileInstallReceiver
-adb shell cmd package compile -r bg-dexopt audio.tembra.app
-adb shell dumpsys package dexopt | grep -A2 audio.tembra.app        # expect status=speed-profile
+adb shell am start -W -n com.tembraaudio/audio.tembra.android.MainActivity ; sleep 5
+adb shell am broadcast -a androidx.profileinstaller.action.INSTALL_PROFILE -n com.tembraaudio/androidx.profileinstaller.ProfileInstallReceiver
+adb shell cmd package compile -r bg-dexopt com.tembraaudio
+adb shell dumpsys package dexopt | grep -A2 com.tembraaudio        # expect status=speed-profile
 ```
 
 `--build-type release` inspects the unsigned release APK only (no signing config, so nothing is installed).

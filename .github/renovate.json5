@@ -1,0 +1,112 @@
+// Renovate keeps the version catalog (app/gradle/libs.versions.toml), the Gradle wrapper and the CI workflows current.
+// It runs self-hosted from .github/workflows/renovate.yml; .github/workflows/ci.yml checks every pull request, and
+// Renovate merges its own pull request once every check on it is green. Setup: app/README.md § CI and dependency
+// updates.
+{
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  extends: [
+    'config:recommended',
+    'helpers:pinGitHubActionDigests',
+    // `# renovate:` comments above `*_VERSION:` keys in the workflows (the pinned Renovate version).
+    'customManagers:githubActionsVersions',
+  ],
+  // The app's dependencies only; the perf pipeline's Python packages (app/perf) stay pinned by hand because a
+  // trace-processor update can shift the measured baselines.
+  enabledManagers: ['gradle', 'gradle-wrapper', 'github-actions', 'custom.regex'],
+  timezone: 'Europe/Kyiv',
+  // One batch a week: every pull request runs the paid macOS lane.
+  schedule: ['before 7am on monday'],
+  minimumReleaseAge: '3 days',
+  prHourlyLimit: 0,
+  prConcurrentLimit: 10,
+  labels: ['dependencies'],
+  semanticCommits: 'enabled',
+  semanticCommitType: 'build',
+  semanticCommitScope: 'deps',
+  // Renovate merges a pull request itself once it has seen every check pass. That needs neither GitHub's auto-merge
+  // nor branch protection, which a private repository gets only on GitHub Pro or above.
+  automerge: true,
+  automergeType: 'pr',
+  platformAutomerge: false,
+  automergeStrategy: 'squash',
+  // A pull request that is only behind main is merged as it is; rebasing it would re-run the macOS lane. A conflicted
+  // one is rebased.
+  rebaseWhen: 'conflicted',
+  prBodyNotes: [
+    'CI covered the JVM host tests, the release build (R8), the iOS simulator tests and the C++ engine tests. The Android device lanes, the baseline profile and a performance round are not part of CI.',
+  ],
+  packageRules: [
+    {
+      description: 'config:recommended sets fix/chore per dependency type in its own package rules, which outrank the top-level semanticCommitType; this restores build(deps) (the CI workflows rule below sets ci).',
+      matchPackageNames: ['*'],
+      semanticCommitType: 'build',
+    },
+    {
+      description: 'Kotlin, its compiler plugins (Compose, serialization, Metro) and the Compose stack are released against each other: one pull request, so CI tests the combination that ships.',
+      matchPackageNames: [
+        '/^org\\.jetbrains\\.kotlin([.:]|$)/',
+        '/^org\\.jetbrains\\.compose([.:]|$)/',
+        '/^org\\.jetbrains\\.androidx\\./',
+        '/^androidx\\.compose\\./',
+        '/^dev\\.zacsweers\\.metro([.:]|$)/',
+      ],
+      groupName: 'Kotlin and Compose',
+    },
+    {
+      description: 'The androidx Compose artifacts follow the Jetpack release Compose Multiplatform is built on (1.12.x, Material 3 1.5.x for CMP 1.12); a newer line would replace the Android runtime under CMP unseen by CI. Move both patterns on together with a Compose Multiplatform minor update.',
+      matchPackageNames: ['androidx.compose.ui:**'],
+      allowedVersions: '/^1\\.12\\./',
+    },
+    {
+      description: 'See the rule above.',
+      matchPackageNames: ['androidx.compose.material3:**'],
+      allowedVersions: '/^1\\.5\\./',
+    },
+    {
+      matchPackageNames: ['/^org\\.jetbrains\\.kotlinx:/'],
+      groupName: 'kotlinx',
+    },
+    {
+      description: 'Each kotlinx-datetime release has a *-0.6.x-compat twin that still carries the removed kotlinx.datetime.Instant; Maven ordering ranks it above the plain release.',
+      matchPackageNames: ['org.jetbrains.kotlinx:kotlinx-datetime'],
+      allowedVersions: '!/-compat$/',
+    },
+    {
+      description: 'AGP and Gradle move together: a newer Gradle reports deprecations from an older AGP, and CI fails on deprecations.',
+      matchPackageNames: ['/^com\\.android([.:]|$)/'],
+      groupName: 'Android Gradle Plugin and Gradle',
+    },
+    {
+      matchManagers: ['gradle-wrapper'],
+      groupName: 'Android Gradle Plugin and Gradle',
+    },
+    {
+      description: 'DataStore pulls Okio, which :shared:data also uses directly.',
+      matchPackageNames: [
+        'androidx.activity:**',
+        'androidx.datastore:**',
+        'androidx.profileinstaller:**',
+        'com.squareup.okio:**',
+      ],
+      groupName: 'AndroidX runtime and Okio',
+    },
+    {
+      matchPackageNames: [
+        '/^androidx\\.test([.:]|$)/',
+        'androidx.benchmark:**',
+        'androidx.tracing:**',
+      ],
+      groupName: 'Android test and benchmark',
+    },
+    {
+      matchManagers: ['github-actions', 'custom.regex'],
+      groupName: 'CI workflows',
+      semanticCommitType: 'ci',
+    },
+    {
+      description: 'The JDK is the project toolchain (jvmToolchain(21)) and the runner image is the CI environment; both change by hand.',
+      matchDatasources: ['java-version', 'github-runners'],
+      enabled: false,
+    },
+  ],
+}

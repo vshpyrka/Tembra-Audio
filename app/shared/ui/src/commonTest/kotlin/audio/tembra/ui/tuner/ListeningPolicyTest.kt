@@ -57,4 +57,14 @@ class ListeningPolicyTest {
         assertEquals(DesiredAudio.Idle, ListeningPolicy.desired(inputs(testSignal = signal, foreground = false)))
         assertEquals(DesiredAudio.Idle, ListeningPolicy.desired(inputs(mode = TunerMode.ByEar, testSignal = signal)))
     }
+
+    @Test
+    fun noMicrophoneNeverListensWhileByEarStillSounds() {
+        // Feature 011 (spec FR-002): a desktop without a microphone reports Unavailable; Auto Listen stays idle.
+        assertEquals(DesiredAudio.Idle, ListeningPolicy.desired(inputs(permission = MicrophonePermissionStatus.Unavailable)))
+        assertEquals(
+            DesiredAudio.Tone(audition.sound, audition.loop),
+            ListeningPolicy.desired(inputs(mode = TunerMode.ByEar, permission = MicrophonePermissionStatus.Unavailable, audition = audition)),
+        )
+    }
 }

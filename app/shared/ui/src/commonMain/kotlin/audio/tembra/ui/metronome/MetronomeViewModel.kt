@@ -42,6 +42,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -521,6 +522,8 @@ class MetronomeViewModel(
      * only if nothing stopped the click meanwhile (a pause that landed during the start has its own stop queued behind
      * the start on the same dispatcher). Non-cancellable, so a cleared screen still settles the engine.
      */
+    // ATOMIC start (a delicate API since kotlinx.coroutines 1.11): the engine call runs even when the screen is cleared at once.
+    @OptIn(DelicateCoroutinesApi::class)
     private fun startPlayback() {
         _uiState.update { it.copy(playback = PlaybackState.Starting) }
         val notification = PlaybackNotification(MetronomeCopy.notificationTitle, MetronomeCopy.notificationSubtitle(_uiState.value.settings.tempo))
@@ -562,6 +565,7 @@ class MetronomeViewModel(
      * `stopMetronome` → `release` (data-model.md §7). Idempotent on both sides, so it also undoes a start that failed
      * halfway: the engine was not started, and the host gives back whatever it had acquired.
      */
+    @OptIn(DelicateCoroutinesApi::class)
     private fun stopPlayback(message: MetronomeMessage?) {
         _uiState.update { it.copy(playback = PlaybackState.Stopped, currentBeat = NO_BEAT) }
         if (message != null) _messages.trySend(message)

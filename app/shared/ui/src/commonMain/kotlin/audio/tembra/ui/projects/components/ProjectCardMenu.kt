@@ -2,6 +2,7 @@ package audio.tembra.ui.projects.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.DpOffset
 import audio.tembra.ui.designsystem.MenuItemSpec
 import audio.tembra.ui.designsystem.TembraMenu
 import audio.tembra.ui.projects.ProjectsCopy
@@ -21,6 +22,7 @@ internal fun ProjectCardMenu(
     onRestoreDemo: () -> Unit,
     modifier: Modifier = Modifier,
     testTag: String? = null,
+    offset: DpOffset = DpOffset.Zero,
     anchor: @Composable () -> Unit,
 ) {
     TembraMenu(
@@ -46,6 +48,7 @@ internal fun ProjectCardMenu(
         },
         modifier = modifier,
         testTag = testTag,
+        offset = offset,
         anchor = anchor,
     )
 }

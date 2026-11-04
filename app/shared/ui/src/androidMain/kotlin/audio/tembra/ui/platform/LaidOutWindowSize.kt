@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.toSize
 
 /**
- * Gives [content] the size of the activity's window as laid out, so `currentWindowAdaptiveInfo()` follows a rotation
+ * Gives [content] the size of the activity's window as laid out, so `currentWindowAdaptiveInfoV2()` follows a rotation
  * that MainActivity handles in place (`configChanges`). Compose reads the window metrics while the configuration change
  * is dispatched, and on some devices the window is not resized yet and the value is never read again: a Redmi Note 5
  * (API 28) reported 1080 x 2030 in a 2160 x 1080 window and an OPPO CPH2239 (API 30) 720 x 1600 in 1528 x 720, so every

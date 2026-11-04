@@ -23,20 +23,20 @@ data class EditHistory(
 
     /** Records [next] as the present; the oldest past snapshot is dropped beyond [capacity] and the redo branch is cleared. */
     fun push(next: Project): EditHistory {
-        val kept = if (past.size >= capacity) past.removeAt(0) else past
-        return copy(present = next, past = kept.add(present), future = persistentListOf())
+        val kept = if (past.size >= capacity) past.removingAt(0) else past
+        return copy(present = next, past = kept.adding(present), future = persistentListOf())
     }
 
     /** One step back; unchanged when there is nothing to undo. */
     fun undo(): EditHistory {
         if (!canUndo) return this
-        return copy(present = past.last(), past = past.removeAt(past.size - 1), future = future.add(0, present))
+        return copy(present = past.last(), past = past.removingAt(past.size - 1), future = future.addingAt(0, present))
     }
 
     /** One step forward; unchanged when there is nothing to redo. */
     fun redo(): EditHistory {
         if (!canRedo) return this
-        return copy(present = future.first(), past = past.add(present), future = future.removeAt(0))
+        return copy(present = future.first(), past = past.adding(present), future = future.removingAt(0))
     }
 
     companion object {

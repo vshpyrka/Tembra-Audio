@@ -10,6 +10,7 @@ import audio.tembra.data.projects.FakeProjectRepository
 import audio.tembra.data.timeline.FakeTimelinePreferences
 import audio.tembra.engine.FakeAudioEngine
 import audio.tembra.ui.platform.FakeAudioFilePicker
+import audio.tembra.ui.platform.FakeWindowControls
 import audio.tembra.ui.platform.FakeBackgroundPlaybackHost
 import audio.tembra.ui.projects.LibraryViewStateHolder
 import audio.tembra.ui.projects.ProjectsViewModel
@@ -62,7 +63,7 @@ class TestViewModelFactory : MetroViewModelFactory() {
 
     override val viewModelProviders: Map<KClass<out ViewModel>, () -> ViewModel>
         get() = mapOf(
-            TimelineViewModel::class to { TimelineViewModel(session, FakeAudioFilePicker(), preferences, timelinePreferences) },
+            TimelineViewModel::class to { TimelineViewModel(session, FakeAudioFilePicker(), preferences, timelinePreferences, FakeWindowControls()) },
             TrackSettingsViewModel::class to { TrackSettingsViewModel(session) },
             ProjectsViewModel::class to { ProjectsViewModel(repository, session, holder) },
         )

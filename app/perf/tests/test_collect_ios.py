@@ -31,6 +31,7 @@ def test_journey_of_test_identifier():
     assert journey_of_test("TembraPerfTests/TimelinePerfTests/testTimelineJourney()") == ("timeline", None)
     assert journey_of_test("TembraPerfTests/RecordingPerfTests/testRecordingJourney()") == ("recording", None)
     assert journey_of_test("TembraPerfTests/StressPerfTests/testStressJourney()") == ("stress", None)
+    assert journey_of_test("TembraPerfTests/WindowingPerfTests/testWindowingJourney()") == ("windowing", None)
     assert journey_of_test("TembraPerfTests/FacadeSelfCheckTests/testModeSwitchSectionIsMeasuredByName()") is None
 
 
@@ -154,7 +155,7 @@ def test_engine_health_json_yields_the_thirteen_audio_series():
 
 def test_phone_identifier_forms_and_a_frameless_animation_interval(cfg, caplog):
     """The first iPhone 14 round (iOS 27.0.1, Xcode 27.1): memory and CPU carry the bundle id
-    (`XCTMetric_Memory-audio.tembra.appP5QJJ5Y5V7.physical_peak`), `physical_absolute` and
+    (`XCTMetric_Memory-com.tembraaudioP5QJJ5Y5V7.physical_peak`), `physical_absolute` and
     `cycles` are skipped, and the tempo change's animation interval held no frame in any
     iteration, so the hitch columns are dropped instead of publishing a 60 fps deficit."""
     with caplog.at_level("WARNING", logger="tracepulse.collect_ios"):
@@ -168,3 +169,48 @@ def test_phone_identifier_forms_and_a_frameless_animation_interval(cfg, caplog):
     assert "frames._count" not in metronome
     assert 0.1 < metronome["section.metronome.tempoChange.sum_ms"].summary["median"] < 0.2
     assert any("contained no frames" in r.message for r in caplog.records)
+
+
+def _windowing_entry(sections):
+    metrics = [{"displayName": f"Duration ({name})", "identifier": f"com.apple.dt.XCTMetric_OSSignpost-{name}.duration",
+                "unitOfMeasurement": "s", "measurements": [0.01] * 20} for name in sections]
+    metrics.append({"displayName": "Clock Monotonic Time", "identifier": "com.apple.dt.XCTMetric_Clock.time.monotonic",
+                    "unitOfMeasurement": "s", "measurements": [40.0] * 20})
+    return {"testIdentifier": "TembraPerfTests/WindowingPerfTests/testWindowingJourney()", "testRuns": [{"device": {}, "metrics": metrics}]}
+
+
+def test_a_windowing_round_without_its_three_sections_is_refused(cfg, tmp_path):
+    # As on Android (feature 011, T129): a window change, the right-click menu or a destination chord that left no
+    # section fails the round; the iPhone 14 trial's journey once tapped navigation items and recorded no chord.
+    path = tmp_path / "w.json"
+    path.write_text(json.dumps([_windowing_entry(["shell.windowRelayout", "timeline.contextMenu"])]))
+    with pytest.raises(CollectError, match="shortcutNavigate"):
+        collect_round(str(path), cfg, simulator=False)
+    path.write_text(json.dumps([_windowing_entry(["shell.windowRelayout", "shell.shortcutNavigate", "timeline.contextMenu"])]))
+    windowing = collect_round(str(path), cfg, simulator=False).journeys[0]
+    assert {"section.shell.windowRelayout.sum_ms", "section.shell.shortcutNavigate.sum_ms",
+            "section.timeline.contextMenu.sum_ms"} <= set(windowing.metrics)
+
+
+def test_an_iphone_windowing_round_needs_no_menu_section(cfg, tmp_path):
+    # An iPhone has no pointer to right-click with (XCUITest: "Pointer events are not supported for this device"), so its
+    # windowing round records the window change and the chords only.
+    path = tmp_path / "w.json"
+    path.write_text(json.dumps([_windowing_entry(["shell.windowRelayout", "shell.shortcutNavigate"])]))
+    windowing = collect_round(str(path), cfg, simulator=False, pointer=False).journeys[0]
+    assert "section.shell.shortcutNavigate.sum_ms" in windowing.metrics
+    path.write_text(json.dumps([_windowing_entry(["shell.windowRelayout"])]))
+    with pytest.raises(CollectError, match="shortcutNavigate"):
+        collect_round(str(path), cfg, simulator=False, pointer=False)
+
+
+def test_a_physical_iphone_windowing_round_needs_the_relayout_section_only(cfg, tmp_path):
+    # A physical iPhone takes neither a synthesized pointer nor synthesized ⌘ keys (the iPhone 14 trial, 2026-11-04: ⌘2
+    # was typed and nothing opened; the iPhone simulator opens the Tuner): its round records the window change only.
+    path = tmp_path / "w.json"
+    path.write_text(json.dumps([_windowing_entry(["shell.windowRelayout"])]))
+    windowing = collect_round(str(path), cfg, simulator=False, pointer=False, keyboard=False).journeys[0]
+    assert "section.shell.windowRelayout.sum_ms" in windowing.metrics
+    path.write_text(json.dumps([_windowing_entry(["timeline.contextMenu"])]))
+    with pytest.raises(CollectError, match="windowRelayout"):
+        collect_round(str(path), cfg, simulator=False, pointer=False, keyboard=False)

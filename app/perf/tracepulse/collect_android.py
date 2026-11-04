@@ -182,6 +182,7 @@ _JOURNEY_OF_CLASS = {
     "TimelineJourneyBenchmark": "timeline",
     "RecordingJourneyBenchmark": "recording",
     "StressJourneyBenchmark": "stress",
+    "WindowingJourneyBenchmark": "windowing",
 }
 # Families every journey class must deliver (per the catalogue's journey column).
 _REQUIRED = {
@@ -196,6 +197,11 @@ _REQUIRED = {
                   "memory.peak_kb", "memory.end_kb", "journey.duration_ms"),
     "stress": ("frames.p50_ms", "frames.p90_ms", "frames.p99_ms", "frames.overrun_p90_ms",
                "memory.peak_kb", "memory.end_kb", "journey.duration_ms"),
+    # Feature 011: the round fails when a window change, the right-click menu or a destination chord left no section.
+    "windowing": ("frames.p50_ms", "frames.p90_ms", "frames.p99_ms", "frames.overrun_p90_ms",
+                  "memory.peak_kb", "memory.end_kb", "journey.duration_ms",
+                  "section.shell.windowRelayout.sum_ms", "section.shell.shortcutNavigate.sum_ms",
+                  "section.timeline.contextMenu.sum_ms"),
 }
 _RSS_ANON_MAX_RE = re.compile(r"^memoryRssAnonMaxKb$", re.IGNORECASE)
 _RSS_ANON_LAST_RE = re.compile(r"^memoryRssAnonLastKb$", re.IGNORECASE)
@@ -226,7 +232,7 @@ def journey_of(class_name: str) -> str:
 
 # The comparison class of `tracepulse profile compare` (feature 008) holds one test per journey, named after it.
 COMPARISON_CLASS = "ProfileComparisonBenchmark"
-_COMPARISON_METHODS = ("startup", "tuner", "metronome", "timeline", "recording", "stress")
+COMPARISON_METHODS = ("startup", "tuner", "metronome", "timeline", "recording", "stress")
 
 
 def journey_of_method(class_name: str, method: str) -> str:
@@ -234,8 +240,8 @@ def journey_of_method(class_name: str, method: str) -> str:
     simple = class_name.rsplit(".", 1)[-1]
     if simple != COMPARISON_CLASS:
         raise CollectError(f"benchmark class {class_name!r} is not {COMPARISON_CLASS}; rounds map by class")
-    if method not in _COMPARISON_METHODS:
-        raise CollectError(f"{COMPARISON_CLASS} method {method!r} is not one of {list(_COMPARISON_METHODS)}")
+    if method not in COMPARISON_METHODS:
+        raise CollectError(f"{COMPARISON_CLASS} method {method!r} is not one of {list(COMPARISON_METHODS)}")
     return method
 
 

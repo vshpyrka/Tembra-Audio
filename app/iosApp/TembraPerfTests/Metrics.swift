@@ -25,6 +25,10 @@ enum Metrics {
                                    "transport.masterPopup"]
     static let timelineEngineSections = ["engine.prime", "engine.loadClip"]
     static let stressTimelineSections = ["timeline.scroll", "timeline.playheadFrame", "transport.play"]
+    /// Feature 011 (contracts/perf-instrumentation.md): the window changes, the right-click menu and the destination chords,
+    /// with the metronome and the timeline they run over. An iPhone has no keys to press: its chords' section stays empty.
+    static let windowingSections = ["shell.windowRelayout", "timeline.contextMenu", "shell.shortcutNavigate", "metronome.load",
+                                    "timeline.projectOpen", "transport.play"]
 
     /// Feature 010 (contracts/perf-instrumentation.md): the recording journey's sections; `engine.takeAlignment` is the C++ one.
     static let recordingSections = ["timeline.arm", "transport.recordStart", "transport.countIn", "timeline.takeFrame",
@@ -55,6 +59,7 @@ enum Metrics {
         case "timeline": return timelineSections
         case "recording": return recordingSections
         case "stress": return tunerSections + metronomeSections + stressTimelineSections
+        case "windowing": return windowingSections
         default: return []
         }
     }

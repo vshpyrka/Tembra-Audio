@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import audio.tembra.ui.designsystem.stepBasedFitFirst
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -31,6 +30,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -41,6 +42,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import audio.tembra.core.metronome.BeatLevel
 import audio.tembra.ui.designsystem.drawFocusRing
+import audio.tembra.ui.designsystem.stepBasedFitFirst
 import audio.tembra.ui.designsystem.testTagIfSet
 import audio.tembra.ui.metronome.MetronomeCopy
 import audio.tembra.ui.theme.TembraShapes
@@ -101,7 +103,7 @@ internal fun AccentCell(
             .testTagIfSet(testTag)
             .clip(cellShape)
             .background(cardColor)
-            .clickable(interactionSource = source, indication = null, role = Role.Button, onClick = onClick)
+            .pointerHoverIcon(PointerIcon.Hand).clickable(interactionSource = source, indication = null, role = Role.Button, onClick = onClick)
             .semantics {
                 contentDescription = MetronomeCopy.beat(index)
                 stateDescription = if (playing) "${level.label}, ${MetronomeCopy.playing}" else level.label

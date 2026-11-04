@@ -7,6 +7,7 @@ plugins {
     // Baseline profile consumer (feature 008, D1): applied here because the plugin compiles against AGP and
     // must load in the same classloader; the module's build script holds the `baselineProfile { }` configuration.
     id("androidx.baselineprofile")
+    id("tembra.kotlin.warnings")
 }
 
 val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")

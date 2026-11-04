@@ -11,7 +11,7 @@ from tracepulse.traces_android import (
 
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
 FIXTURE = os.path.join(FIXTURES_DIR, "fixture.perfetto-trace")
-PROCESS_GLOB = "audio.tembra.app*"
+PROCESS_GLOB = "com.tembraaudio*"
 COUNTERS_FIXTURE = os.path.join(FIXTURES_DIR, "perfetto-audio-counters.perfetto-trace")
 
 

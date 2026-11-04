@@ -40,6 +40,8 @@ TEST_CASE("concurrent loads are always self-consistent", "[seqlock][threads]") {
     std::atomic<uint64_t> loads{0};
 
     std::thread writer([&] {
+        // Start once the reader is loading: on a busy machine the writer could otherwise finish before the reader runs.
+        while (loads.load(std::memory_order_relaxed) == 0) std::this_thread::yield();
         for (uint64_t sequence = 1; sequence <= kWrites; ++sequence) {
             tembra_pitch_reading reading{};
             reading.sequence = sequence;

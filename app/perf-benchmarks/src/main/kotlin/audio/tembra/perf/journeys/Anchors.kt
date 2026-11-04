@@ -72,6 +72,9 @@ object Anchors {
     fun trackArm(index: Int): String = "timeline.track.arm.$index"
     fun trackMeter(index: Int): String = "timeline.track.meter.$index"
     fun trackRecord(index: Int): String = "timeline.track.record.$index"
+    // Feature 011 (contracts/perf-instrumentation.md, journey `windowing`): the first clip's menu and the shortcut sheet.
+    const val TIMELINE_CLIP_MENU_FIRST = "timeline.clip.first.menu"
+    const val SHORTCUT_SHEET = "shortcuts.sheet"
 
     /**
      * A 1 dp marker node the Timeline shows once every visible overview is built (the `stateDescription` "ready" the

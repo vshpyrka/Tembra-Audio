@@ -30,6 +30,15 @@ class AppStartup(
         job = scope.launch(CoroutineName("startup")) { run() }
     }
 
+    /**
+     * Starts the startup if the UI has not yet, and returns once it has opened its project, so a project opened for
+     * the user at launch (files opened with the app, feature 011) is not replaced by it.
+     */
+    suspend fun awaitStarted() {
+        start()
+        job?.join()
+    }
+
     private suspend fun run() {
         session.start()
         val index = repository.library().first()

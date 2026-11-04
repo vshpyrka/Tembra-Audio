@@ -32,6 +32,10 @@ TIMELINE_TAKE_FRAME timeline timeline.takeFrame
 TRANSPORT_RECORD_STOP transport transport.recordStop
 TIMELINE_MONITOR_TOGGLE timeline timeline.monitorToggle
 ENGINE_TAKE_ALIGNMENT engine engine.takeAlignment
+# Feature 011 (large screens and desktop, contracts/perf-instrumentation.md): window changes, shortcut navigation, menus.
+SHELL_WINDOW_RELAYOUT shell shell.windowRelayout
+SHELL_SHORTCUT_NAVIGATE shell shell.shortcutNavigate
+TIMELINE_CONTEXT_MENU timeline timeline.contextMenu
 AUDIO_CALLBACKS counter audio.callbacks
 AUDIO_LAST_US counter audio.lastUs
 AUDIO_MAX_US counter audio.maxUs

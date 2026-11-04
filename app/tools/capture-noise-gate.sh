@@ -29,7 +29,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 OUT_DIR="$REPO_ROOT/specs/006-tuner-noise-gate/screenshots"
-PACKAGE="audio.tembra.app"
+PACKAGE="com.tembraaudio"
 ACTIVITY="$PACKAGE/audio.tembra.android.MainActivity"
 PLATFORM=""
 SERIAL=""

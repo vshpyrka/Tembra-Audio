@@ -51,12 +51,14 @@ JOURNEY_TEST_CLASSES = {
     "timeline": "TimelinePerfTests",
     "recording": "RecordingPerfTests",
     "stress": "StressPerfTests",
+    "windowing": "WindowingPerfTests",
 }
 
 
 def journey_test_classes(cfg: Config, journeys: Sequence[str]) -> Optional[List[str]]:
     """The classes to run for a strict subset of the configured journeys; None for the whole target (every
-    configured journey, or a journey without a known class)."""
+    configured journey, or a journey without a known class). Feature 011 met the same need on the iPhone 14: a
+    one-journey trial ran the whole target for an hour."""
     if set(journeys) >= set(cfg.journeys):
         return None
     classes = [JOURNEY_TEST_CLASSES.get(j) for j in journeys]
@@ -250,6 +252,14 @@ def warm_up(cfg: Config, device: Device, runner: Runner, clock: Clock) -> None:
         clock.sleep(8)
         if pid is not None:  # devicectl terminates by pid only
             _devicectl(cfg, device, runner, "process", "terminate", "--pid", str(pid))
+
+
+def synthesized_inputs(device: Device) -> Tuple[bool, bool]:
+    """Whether XCUITest synthesizes a pointer and ⌘ keys on [device]: both on an iPad; ⌘ keys on any simulator; neither on
+    a physical iPhone ("Pointer events are not supported for this device"; typed ⌘2 opened nothing on the iPhone 14,
+    where the iPhone simulator opens the Tuner, 2026-11-04)."""
+    pad = "iPad" in device.model
+    return pad, pad or device.kind == "simulator"
 
 
 def test_without_building(cfg: Config, device: Device, runner: Runner, xctestrun: str, result_bundle: str,
@@ -452,7 +462,9 @@ def run_round(cfg: Config, device: Device, runner: Runner, clock: Clock, round_d
     artifacts.append({"kind": "metrics_json", "path": metrics_json})
     simulator = device.kind == "simulator"
     try:
-        collected = collect_round(metrics_json, cfg, simulator=simulator, iterations=options.iterations)
+        pointer, keyboard = synthesized_inputs(device)
+        collected = collect_round(metrics_json, cfg, simulator=simulator, iterations=options.iterations,
+                                  pointer=pointer, keyboard=keyboard)
     except CollectError as exc:
         outcome = RoundOutcome(status="failed", checks=check_records, fingerprint=fingerprint, journeys=[],
                                badges=[], artifacts=artifacts, failure_reason=f"collection: {exc}",

@@ -66,6 +66,9 @@ enum Anchors {
     static func trackMeter(_ index: Int) -> String { "timeline.track.meter.\(index)" }
     static func trackClip(_ index: Int) -> String { "timeline.track.clip.\(index)" }
     static func trackRecord(_ index: Int) -> String { "timeline.track.record.\(index)" }
+    // Feature 011 (contracts/perf-instrumentation.md, journey `windowing`): the first clip's menu and the shortcut sheet.
+    static let timelineClipMenuFirst = "timeline.clip.first.menu"
+    static let shortcutSheet = "shortcuts.sheet"
 
     /// The `screen.timeline` value once every visible overview is built; "loading" before (not an anchor of its own).
     static let timelineReadyState = "ready"

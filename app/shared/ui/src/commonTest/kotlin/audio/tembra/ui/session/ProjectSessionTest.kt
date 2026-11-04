@@ -24,6 +24,9 @@ import audio.tembra.data.projects.ImportRefusal
 import audio.tembra.data.projects.ImportResult
 import audio.tembra.data.projects.OverviewStatus
 import audio.tembra.data.projects.PickedFile
+import audio.tembra.ui.drop.SkipReason
+import audio.tembra.ui.drop.SkippedItem
+import audio.tembra.ui.drop.SessionProjectFromAudio
 import audio.tembra.data.projects.WaveformOverview
 import audio.tembra.data.projects.TakeManifest
 import audio.tembra.data.timeline.FakeTimelinePreferences
@@ -540,6 +543,24 @@ class ProjectSessionTest {
     }
 
     @Test
+    fun itemsADropLeftOutJoinTheRefusalsInOneMessage() = runTest(dispatcher) {
+        // Feature 011 (spec FR-026): the drop's skipped items first, in drop order, then the importer's refusals.
+        openDemo()
+        val received = collectMessages()
+        repository.importResults += ImportResult.Refused("a.ogg", ImportRefusal.UnsupportedFormat)
+        val skipped = listOf(SkippedItem("notes.txt", SkipReason.NotAudio), SkippedItem("Stems", SkipReason.UnreadableFolder), SkippedItem("Old", SkipReason.NestedFolder))
+        session.importAudio(listOf(PickedFile("a.ogg") { Buffer() }), ImportTarget.NewTracks(Beats.Zero), skipped)
+        runCurrent()
+        val expected = listOf(
+            "notes.txt" to "not an audio file",
+            "Stems" to "a folder this device does not let the app open",
+            "Old" to "a folder inside the dropped folder",
+            "a.ogg" to "not a WAV, FLAC or MP3 file",
+        )
+        assertEquals(listOf(SessionMessage.ImportRefused(expected)), received)
+    }
+
+    @Test
     fun anAssetNoSnapshotReferencesIsClosedAndRetiredWithTheNextSave() = runTest(dispatcher) {
         openDemo()
         session.edit(DeleteTrack(drumsTrack))
@@ -749,6 +770,23 @@ class ProjectSessionTest {
         advanceUntilIdle()
         assertEquals(other, session.state.value.project)
         assertTrue(repository.calls.none { it == "installDemo" })
+    }
+
+    @Test
+    fun filesOpenedAtLaunchMakeTheProjectThatStaysOpenAfterTheStartup() = runTest(dispatcher) {
+        // Feature 011 (spec FR-026a): an "open with" request can arrive before the startup reopens the last project; the
+        // new project waits for it, so the startup's own open never replaces it (seen on the desktop emulator).
+        val other = repository.create("Other")
+        repository.setOpen(other.id)
+        val startup = AppStartup(session, repository, scope)
+        val projects = SessionProjectFromAudio(repository, session, beforeStart = startup::awaitStarted)
+        var started = false
+        scope.launch { started = projects.start(emptyList(), emptyList()) }
+        runCurrent()
+        startup.start()
+        advanceUntilIdle()
+        assertTrue(started)
+        assertEquals("Project 1", session.state.value.project?.name)
     }
 
     private fun saves(): Int = repository.calls.count { it.startsWith("save(") }

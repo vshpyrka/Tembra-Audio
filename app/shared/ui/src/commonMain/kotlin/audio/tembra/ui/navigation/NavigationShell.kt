@@ -31,6 +31,7 @@ fun NavigationShell(
     }
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val dialog by viewModel.dialog.collectAsStateWithLifecycle()
+    val busy by viewModel.busy.collectAsStateWithLifecycle()
     NavigationShellContent(
         state = state,
         layoutMode = layoutMode,
@@ -38,6 +39,7 @@ fun NavigationShell(
         onBack = { viewModel.back() },
         modifier = modifier,
         dialog = dialog,
+        busy = busy,
         onOpenTrackSettings = viewModel::openTrackSettings,
         onCloseTrackSettings = viewModel::closeTrackSettings,
     )

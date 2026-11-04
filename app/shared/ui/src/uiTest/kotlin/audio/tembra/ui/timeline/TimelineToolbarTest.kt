@@ -27,7 +27,7 @@ class TimelineToolbarTest {
                     state = state, layout = layout,
                     onAddTrack = {}, onAddAudio = {}, onAddAudioAsNewTrack = {}, onSplit = {}, onUndo = {}, onRedo = {}, onTempo = {},
                     onGrid = {}, onSnapSheet = {}, onOverviewStripShown = {}, onMetronomeSettings = {},
-                    onMonitorToggle = { calls += "monitor" },
+                    onMonitorToggle = { calls += "monitor" }, onFullScreen = {},
                 )
             }
         }

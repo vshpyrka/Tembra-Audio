@@ -7,6 +7,8 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import audio.tembra.ui.theme.TembraTheme
@@ -23,7 +25,7 @@ internal fun KeyRow(label: String, selected: Boolean, onClick: () -> Unit, testT
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = spacing.touchTargetMin)
-            .selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
+            .pointerHoverIcon(PointerIcon.Hand).selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
             .padding(horizontal = spacing.sm, vertical = spacing.sm)
             .testTag(testTag),
     )

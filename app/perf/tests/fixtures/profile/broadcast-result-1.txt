@@ -1,2 +1,2 @@
-Broadcasting: Intent { act=androidx.profileinstaller.action.INSTALL_PROFILE flg=0x400000 cmp=audio.tembra.app/androidx.profileinstaller.ProfileInstallReceiver }
+Broadcasting: Intent { act=androidx.profileinstaller.action.INSTALL_PROFILE flg=0x400000 cmp=com.tembraaudio/androidx.profileinstaller.ProfileInstallReceiver }
 Broadcast completed: result=1

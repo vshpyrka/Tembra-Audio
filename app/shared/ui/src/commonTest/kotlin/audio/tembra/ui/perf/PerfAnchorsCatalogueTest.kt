@@ -17,6 +17,15 @@ class PerfAnchorsCatalogueTest {
 
     @Test
     fun everyJourneyControlHasAnAnchor() {
-        assertEquals(47, PerfAnchors.all.size)
+        // 36 shared, 11 from feature 010 (recording) and 2 from feature 011 (windowing).
+        assertEquals(49, PerfAnchors.all.size)
+    }
+
+    @Test
+    fun theWindowingJourneysControlsAreAnchors() {
+        // Feature 011 (contracts/perf-instrumentation.md): the right-clicked clip's menu and the shortcut sheet.
+        assertEquals("timeline.clip.first.menu", PerfAnchors.TIMELINE_CLIP_MENU_FIRST)
+        assertEquals("shortcuts.sheet", PerfAnchors.SHORTCUT_SHEET)
+        assertTrue(PerfAnchors.TIMELINE_CLIP_MENU_FIRST in PerfAnchors.all && PerfAnchors.SHORTCUT_SHEET in PerfAnchors.all)
     }
 }

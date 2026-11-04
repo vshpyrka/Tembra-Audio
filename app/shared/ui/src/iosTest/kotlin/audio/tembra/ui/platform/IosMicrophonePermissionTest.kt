@@ -10,7 +10,25 @@ import kotlin.test.assertTrue
 class IosMicrophonePermissionTest {
 
     @Test
-    fun refreshYieldsOneOfTheFourStatuses() {
+    fun noAudioInputIsUnavailableAndNeverPrompts() = runBlocking {
+        // Feature 011 (spec FR-002, research R2): an iPad with no microphone route reports Unavailable before any prompt.
+        val permission = IosMicrophonePermission(inputAvailable = { false })
+        assertEquals(MicrophonePermissionStatus.Unavailable, permission.status.value)
+        assertEquals(MicrophonePermissionStatus.Unavailable, permission.request())
+    }
+
+    @Test
+    fun anInputArrivingIsNoticedOnTheNextRefresh() {
+        var available = false
+        val permission = IosMicrophonePermission(inputAvailable = { available })
+        assertEquals(MicrophonePermissionStatus.Unavailable, permission.status.value)
+        available = true
+        permission.refresh()
+        assertTrue(permission.status.value != MicrophonePermissionStatus.Unavailable)
+    }
+
+    @Test
+    fun refreshYieldsOneOfTheStatuses() {
         val permission = IosMicrophonePermission()
         permission.refresh()
         assertTrue(permission.status.value in MicrophonePermissionStatus.entries)
