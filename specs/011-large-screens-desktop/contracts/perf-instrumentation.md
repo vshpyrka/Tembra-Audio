@@ -28,10 +28,17 @@ Desktop (Preview) emulator: `am task resize`;
 phones: rotation); stop; open the demo project, play, change the window again, right-click the first clip (mouse
 injection) and dismiss the menu, press Ctrl+2 then Ctrl+1, pause.
 iOS (`iosApp/TembraPerfTests/Journeys/WindowingJourney.swift`): the same steps with rotation as the window change,
-`rightClick()` and `typeKey(_:modifierFlags: .command)` on an iPad simulator, iPhone falling back to rotation and keys.
+`rightClick()` and `typeKey(_:modifierFlags: .command)` where XCUITest synthesizes them: a pointer on an iPad only ("Pointer
+events are not supported for this device" on an iPhone, which has no touch path to the clip menu either: a long press
+lifts the clip) and ⌘ keys on an iPad and on any simulator (the physical iPhone 14 drops them: a typed ⌘2 opened
+nothing, the iPhone simulator opens the Tuner; 2026-11-04). Without them the menu step is left out and the
+destinations are tapped.
 
-Gates: zero xruns and zero starvation during the journey on the reference devices; the trial round fails if any of
-the three sections is absent from the trace. This is the sections' test: `PerfTrace` records only in measurement builds,
+Gates: zero xruns and zero starvation during the journey on the reference devices; the trial round fails if a section
+the device can make is absent from the trace: `shell.windowRelayout` everywhere, `shell.shortcutNavigate` where ⌘ keys
+are synthesized, `timeline.contextMenu` where a pointer is (Android's collector requires all three; iOS's
+`synthesized_inputs` decides per device). A round of some journeys runs only their test classes on iOS (it used to run
+the whole target and filter afterwards). This is the sections' test: `PerfTrace` records only in measurement builds,
 through a sink internal to `:shared:engine`, so emission is proven by the measured round rather than a unit test.
 `tracepulse.yml`: `journeys: [startup, tuner, metronome, timeline, stress, windowing]`.
 

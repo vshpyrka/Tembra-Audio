@@ -23,6 +23,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from .collect_android import CollectError
+from .collect_ios import JOURNEY_TEST_CLASSES as _JOURNEY_TESTS
 from .collect_ios import collect_round, engine_health, parse_preflight, refusal_from_failures
 from .config import Config
 from .devices import Device
@@ -229,17 +230,35 @@ def warm_up(cfg: Config, device: Device, runner: Runner, clock: Clock) -> None:
             _devicectl(cfg, device, runner, "process", "terminate", "--pid", str(pid))
 
 
+def synthesized_inputs(device: Device) -> Tuple[bool, bool]:
+    """Whether XCUITest synthesizes a pointer and ⌘ keys on [device]: both on an iPad; ⌘ keys on any simulator; neither on
+    a physical iPhone ("Pointer events are not supported for this device"; typed ⌘2 opened nothing on the iPhone 14,
+    where the iPhone simulator opens the Tuner, 2026-11-04)."""
+    pad = "iPad" in device.model
+    return pad, pad or device.kind == "simulator"
+
+
+def journey_test_classes(journeys: Sequence[str], all_journeys: Optional[Sequence[str]]) -> Optional[List[str]]:
+    """The test classes a round of [journeys] runs, in that order; None (the whole target) when it asks for every one
+    of [all_journeys]. A subset runs alone: the target took an hour on the iPhone 14 for a one-journey trial (2026-11-04)."""
+    if all_journeys is not None and set(all_journeys) <= set(journeys):
+        return None
+    return [_JOURNEY_TESTS[journey] for journey in journeys]
+
+
 def test_without_building(cfg: Config, device: Device, runner: Runner, xctestrun: str, result_bundle: str,
-                          log_path: str, only: Optional[str] = None) -> Completed:
-    """The measured run (`only=None`: the whole target minus the audio-trace pass and the cold-launch hitch driver)
-    or one named test."""
+                          log_path: str, only: Optional[str] = None, classes: Optional[Sequence[str]] = None) -> Completed:
+    """The measured run (`only=None`: the whole target minus the audio-trace pass and the cold-launch hitch driver, or
+    just the journeys' [classes]) or one named test."""
     cmd = ["xcodebuild", "test-without-building", "-xctestrun", xctestrun, "-destination", _destination(device),
            "-resultBundlePath", result_bundle]
-    if only is None:
+    if only is not None:
+        cmd += [f"-only-testing:{only}"]
+    elif classes is not None:
+        cmd += [f"-only-testing:{cfg.ios.test_target}/{test_class}" for test_class in classes]
+    else:
         cmd += [f"-only-testing:{cfg.ios.test_target}", f"-skip-testing:{cfg.ios.test_target}/{AUDIO_TRACE_TEST}",
                 f"-skip-testing:{cfg.ios.test_target}/{COLD_LAUNCH_HITCH_TEST}"]
-    else:
-        cmd += [f"-only-testing:{only}"]
     res = runner.run(cmd, cwd=_ios_dir(cfg), timeout=TEST_TIMEOUT_S)
     with open(log_path, "w") as fh:
         fh.write(f"# {' '.join(cmd)}\n# rc={res.returncode}\n\n{res.stdout}\n--- stderr ---\n{res.stderr}")
@@ -370,7 +389,8 @@ def run_round(cfg: Config, device: Device, runner: Runner, clock: Clock, round_d
 
     result_bundle = os.path.join(round_dir, "perf.xcresult")
     log = os.path.join(round_dir, "xcodebuild-test.log")
-    res = test_without_building(cfg, device, runner, xctestrun, result_bundle, log)
+    classes = journey_test_classes(options.journeys, cfg.journeys)
+    res = test_without_building(cfg, device, runner, xctestrun, result_bundle, log, classes=classes)
     # SpringBoard denies a runner launch as "not trusted" in two shapes: for good, until the developer profile is
     # trusted in Settings, and for a few minutes at a time on an otherwise trusted phone (2026-10-12: the same runner
     # products were denied at 11:37 and launched at 11:41, denied at 12:14 and 12:15 and launched at 12:21). A round
@@ -383,7 +403,7 @@ def run_round(cfg: Config, device: Device, runner: Runner, clock: Clock, round_d
         os.replace(log, os.path.join(round_dir, f"xcodebuild-test-attempt{attempt}.log"))
         shutil.rmtree(result_bundle, ignore_errors=True)
         clock.sleep(TRUST_RETRY_WAIT_S)
-        res = test_without_building(cfg, device, runner, xctestrun, result_bundle, log)
+        res = test_without_building(cfg, device, runner, xctestrun, result_bundle, log, classes=classes)
     artifacts.append({"kind": "xcresult", "path": result_bundle})
     artifacts.append({"kind": "xcodebuild_log", "path": log})
 
@@ -425,7 +445,9 @@ def run_round(cfg: Config, device: Device, runner: Runner, clock: Clock, round_d
     artifacts.append({"kind": "metrics_json", "path": metrics_json})
     simulator = device.kind == "simulator"
     try:
-        collected = collect_round(metrics_json, cfg, simulator=simulator, iterations=options.iterations)
+        pointer, keyboard = synthesized_inputs(device)
+        collected = collect_round(metrics_json, cfg, simulator=simulator, iterations=options.iterations,
+                                  pointer=pointer, keyboard=keyboard)
     except CollectError as exc:
         outcome = RoundOutcome(status="failed", checks=check_records, fingerprint=fingerprint, journeys=[],
                                badges=[], artifacts=artifacts, failure_reason=f"collection: {exc}",

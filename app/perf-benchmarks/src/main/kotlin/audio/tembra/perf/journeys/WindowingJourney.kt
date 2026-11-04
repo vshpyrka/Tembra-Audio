@@ -37,6 +37,9 @@ class WindowingJourney {
             device.anchor(Anchors.PROJECTS_ROOT)
             device.tap(Anchors.PROJECTS_CARD_DEMO)
             device.anchor(Anchors.TIMELINE_ROOT)
+            // From the start: the playhead stays where the last iteration paused, and a start in the demo's last seconds is
+            // refused (as in the timeline journey).
+            device.tap(Anchors.TRANSPORT_SKIP_START)
             device.tap(Anchors.TRANSPORT_PLAY)
             window.change(device, WidthClass.Medium)
             window.change(device, WidthClass.Expanded)
