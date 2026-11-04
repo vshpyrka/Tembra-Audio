@@ -16,6 +16,7 @@
 #include <oboe/Oboe.h>
 
 #include "platform/audio_device.h"
+#include "capture/input_reservoir.h"
 
 namespace tembra {
 
@@ -60,6 +61,7 @@ private:
     static constexpr uint32_t kMaxInputFrames = 4096;
     static constexpr uint32_t kMaxInputChannels = 2;
     static constexpr uint32_t kWarmUpBursts = 2;
+    static constexpr uint32_t kDefaultCushionFrames = 96;  // the reservoir's cushion when the stream reports no burst
 
     oboe::Result openInputWithPreset(uint32_t preferredRate, oboe::InputPreset preset);
     oboe::Result openOutputStream(uint32_t preferredRate);
@@ -101,6 +103,7 @@ private:
     std::atomic<uint32_t> outputGeneration_{0};
     uint32_t warmUpLeft_ = 0;  // callback-owned
     std::vector<float> inputScratch_;
+    InputReservoir inputReservoir_{kMaxInputFrames * 2, kMaxInputChannels};  // configured with the stream closed to the callback
 };
 
 }  // namespace tembra

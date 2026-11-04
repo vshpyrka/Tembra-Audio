@@ -40,6 +40,7 @@ add_executable(tembra_engine_tests
     wav_writer_test.cpp
     peak_ring_test.cpp
     capture_source_test.cpp
+    input_reservoir_test.cpp
     take_recorder_test.cpp
     monitor_strip_test.cpp
 )
