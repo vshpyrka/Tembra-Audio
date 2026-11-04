@@ -20,7 +20,8 @@ restartable composable that cannot skip, so there is nothing to explain.
   `…-fullscreen.png` (Desktop Preview window, expanded), `t133-fold-compact-timeline.png` (fold emulator closed, outer
   display, compact: bottom bar, headers above lanes), `t133-fold-medium-timeline.png` (opened, medium: rail),
   `t133-iphone18pro-compact-timeline.png`, `t133-ipad-window-timeline.png` (an iPadOS window: title in the status bar,
-  resize grabber, expanded with pinned headers).
+  resize grabber, expanded with pinned headers), `t133-pixel-tablet-desktop-window.png` (the Pixel Tablet in desktop
+  mode on Android 17: the app in a free-form window, compact at that width).
 
 ## Desktop quality guideline self-check (T125, SC-010, 2026-11-04)
 
