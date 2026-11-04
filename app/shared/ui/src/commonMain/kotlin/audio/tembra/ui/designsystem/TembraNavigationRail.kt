@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LocalRippleThemeConfiguration
 import androidx.compose.material3.TooltipAnchorPosition
@@ -24,6 +23,8 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.platform.testTag
 import audio.tembra.ui.theme.TembraTheme
 
@@ -58,7 +59,7 @@ fun TembraNavigationRail(
             // The rail places its content at its start edge: the column takes the rail's width and centres the items,
             // which on iOS (the JetBrains port) are only as wide as their indicator.
             Column(
-                modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+                modifier = Modifier.fillMaxWidth().verticalScrollWithScrollbar(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(TembraTheme.spacing.xs),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
@@ -70,7 +71,7 @@ fun TembraNavigationRail(
                         icon = { NavigationItemIcon(item, source, TooltipAnchorPosition.End) },
                         label = null,
                         railExpanded = false,
-                        modifier = Modifier.testTag("nav.item.${item.id}"),
+                        modifier = Modifier.testTag("nav.item.${item.id}").pointerHoverIcon(PointerIcon.Hand),
                         interactionSource = source,
                     )
                 }

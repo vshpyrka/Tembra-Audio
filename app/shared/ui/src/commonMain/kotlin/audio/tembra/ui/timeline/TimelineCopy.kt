@@ -22,6 +22,9 @@ object TimelineCopy {
     fun snapEntry(gridLabel: String): String = "$snap: $gridLabel"
 
     /** The overflow menu's show/hide entry for the overview strip, checked while it shows (spec FR-015, FR-055; T151). */
+    // Feature 011 (spec FR-010a): the Timeline menu in a desktop window.
+    const val fullScreen = "Full screen"
+    const val exitFullScreen = "Exit full screen"
     const val overviewStrip = "Overview strip"
 
     /** The tempo pill: "124 BPM", read as "Tempo 124 beats per minute" (spec FR-036). */

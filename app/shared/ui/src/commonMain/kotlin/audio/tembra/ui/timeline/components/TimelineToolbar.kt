@@ -21,6 +21,7 @@ import audio.tembra.ui.designsystem.MenuItemSpec
 import audio.tembra.ui.designsystem.TembraMenu
 import audio.tembra.ui.theme.TembraIcon
 import audio.tembra.ui.theme.TembraTheme
+import audio.tembra.ui.timeline.FullScreenItem
 import audio.tembra.ui.timeline.TimelineCopy
 import audio.tembra.ui.timeline.TimelineLayout
 import audio.tembra.ui.timeline.TimelineTestTags
@@ -55,21 +56,29 @@ internal fun TimelineToolbar(
     onSnapSheet: () -> Unit,
     onOverviewStripShown: (shown: Boolean) -> Unit,
     onMetronomeSettings: () -> Unit,
+    onFullScreen: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val spacing = TembraTheme.spacing
     val full = layout == TimelineLayout.Expanded || layout == TimelineLayout.Medium
     var overflowOpen by remember { mutableStateOf(false) }
     val overviewStrip = MenuItemSpec(OVERVIEW_STRIP, TimelineCopy.overviewStrip, TembraIcon.SwapHoriz, selected = state.overviewStripShown)
+    // Feature 011 (spec FR-010a): last in the menu, only where the platform offers app-requested full screen.
+    val fullScreen = when (state.fullScreenItem) {
+        FullScreenItem.Hidden -> null
+        FullScreenItem.Enter -> MenuItemSpec(FULL_SCREEN, TimelineCopy.fullScreen, TembraIcon.Fullscreen)
+        FullScreenItem.Exit -> MenuItemSpec(FULL_SCREEN, TimelineCopy.exitFullScreen, TembraIcon.FullscreenExit)
+    }
     val overflowItems = if (full) {
-        listOf(overviewStrip)
+        listOfNotNull(overviewStrip, fullScreen)
     } else {
-        listOf(
+        listOfNotNull(
             MenuItemSpec(ADD_AUDIO, TimelineCopy.addAudio, TembraIcon.AudioFile, enabled = state.loaded),
             MenuItemSpec(ADD_AUDIO_NEW, TimelineCopy.addAudioAsNewTrack, TembraIcon.PlaylistAdd, enabled = state.loaded),
             MenuItemSpec(SNAP, TimelineCopy.snapEntry(state.grid.label), TembraIcon.GridOn, enabled = state.loaded),
             overviewStrip,
             MenuItemSpec(METRONOME, TimelineCopy.metronomeSettings, TembraIcon.Metronome, enabled = state.loaded),
+            fullScreen,
         )
     }
     Row(
@@ -108,6 +117,7 @@ internal fun TimelineToolbar(
                     SNAP -> onSnapSheet()
                     OVERVIEW_STRIP -> onOverviewStripShown(!state.overviewStripShown)
                     METRONOME -> onMetronomeSettings()
+                    FULL_SCREEN -> onFullScreen(state.fullScreenItem == FullScreenItem.Enter)
                 }
             },
             testTag = TimelineTestTags.OVERFLOW,
@@ -124,3 +134,5 @@ private const val SNAP = "snap"
 private const val METRONOME = "metronomeSettings"
 /** The row id: tagged [TimelineTestTags.OVERFLOW_OVERVIEW_STRIP]. */
 private const val OVERVIEW_STRIP = "overviewStrip"
+/** The row id: tagged [TimelineTestTags.OVERFLOW_FULL_SCREEN]. */
+private const val FULL_SCREEN = "fullScreen"

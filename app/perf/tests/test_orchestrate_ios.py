@@ -280,6 +280,27 @@ def test_simulator_round_uses_simctl_and_the_simulator_destination(cfg, tmp_path
     assert runner.index_of("xctrace", "record") == -1, "a simulator has no HAL to trace"
 
 
+def test_a_round_of_some_journeys_runs_only_their_test_classes(cfg, tmp_path):
+    # `--journeys windowing` on the iPhone 14 used to run the whole target and filter afterwards (feature 011 trial,
+    # 2026-11-04: an hour on the other journeys, one of which hung): a subset now runs its own classes alone.
+    round_dir = str(tmp_path / "r-subset")
+    runner = TableRunner(_xcode_rules(cfg, round_dir))
+    xctestrun = build_for_testing(cfg, IPHONE, runner, os.path.join(round_dir, "DerivedData"), "Perf")
+    run_round(cfg, IPHONE, runner, FakeClock(), round_dir, IosRoundOptions(journeys=["windowing", "startup"], xctestrun=xctestrun))
+    twb = runner.commands()[runner.index_of("xcodebuild", "test-without-building")]
+    assert "-only-testing:TembraPerfTests/WindowingPerfTests" in twb
+    assert "-only-testing:TembraPerfTests/StartupPerfTests" in twb
+    assert "-only-testing:TembraPerfTests" not in twb
+
+
+def test_journey_test_classes_cover_every_journey(cfg):
+    from tracepulse.orchestrate_ios import journey_test_classes
+    assert journey_test_classes(["startup", "tuner", "metronome", "timeline", "stress", "windowing"], all_journeys=None) == [
+        "StartupPerfTests", "TunerPerfTests", "MetronomePerfTests", "TimelinePerfTests", "StressPerfTests", "WindowingPerfTests"]
+    assert journey_test_classes(["windowing"], all_journeys=["startup", "windowing"]) == ["WindowingPerfTests"]
+    assert journey_test_classes(["startup", "windowing"], all_journeys=["windowing", "startup"]) is None, "every journey: the whole target"
+
+
 def test_doctor_checks_pairing_xcode_support_and_lock_state_only(cfg, tmp_path):
     runner = TableRunner(_xcode_rules(cfg, str(tmp_path / "r")))
     checks = doctor(cfg, IPHONE, runner)
@@ -316,3 +337,11 @@ def test_doctor_refuses_an_xcode_older_than_the_phones_ios(cfg, tmp_path):
     with pytest.raises(Refused):
         run_round(cfg, IPHONE, TableRunner(_xcode_rules(cfg, str(tmp_path / "r3"), sdk="26.5")), FakeClock(),
                   str(tmp_path / "r3"), IosRoundOptions(journeys=cfg.journeys, xctestrun="x.xctestrun"))
+
+
+def test_the_inputs_a_device_can_synthesize():
+    from tracepulse.orchestrate_ios import synthesized_inputs
+    from tracepulse.devices import Device
+    assert synthesized_inputs(Device("u1", "ios", "physical", "iPhone 14")) == (False, False)
+    assert synthesized_inputs(Device("u2", "ios", "simulator", "iPhone 18 Pro")) == (False, True)
+    assert synthesized_inputs(Device("u3", "ios", "simulator", "iPad Pro 13-inch (M5)")) == (True, True)

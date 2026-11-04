@@ -102,4 +102,16 @@ class TunerUiStateTest {
         assertTrue(reading.cents in 19.5..20.5, "cents ${reading.cents}")
         assertNull(MeterReading.from(PitchSnapshot()))
     }
+
+    @Test
+    fun noMicrophoneReplacesTheMeterInAutoListenOnly() {
+        val none = TunerUiState(microphone = MicrophonePermissionStatus.Unavailable)
+        assertEquals(MicrophoneNotice.Unavailable, none.microphoneNotice)
+        assertFalse(none.showDeniedState)
+        assertFalse(none.showNoiseGate)
+        assertEquals(MicrophoneNotice.Denied, TunerUiState(microphone = MicrophonePermissionStatus.DeniedCanAsk).microphoneNotice)
+        assertNull(TunerUiState(microphone = MicrophonePermissionStatus.Granted).microphoneNotice)
+        assertNull(TunerUiState(microphone = MicrophonePermissionStatus.Unavailable, mode = TunerMode.ByEar).microphoneNotice)
+        assertNull(TunerUiState(microphone = MicrophonePermissionStatus.Unavailable, testSignal = TestSignals.byId("e2-in-tune")!!.signal).microphoneNotice)
+    }
 }

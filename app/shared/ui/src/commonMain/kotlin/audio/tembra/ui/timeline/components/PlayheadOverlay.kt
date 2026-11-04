@@ -7,9 +7,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.ClipOp
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -46,14 +53,17 @@ internal fun PlayheadOverlay(
     positionBeats: Beats,
     telemetry: TransportTelemetry,
     modifier: Modifier = Modifier,
+    mask: PlayheadMask? = null,
 ) {
     val color = TembraTheme.daw.playhead
+    // The overlay's own place in the root, for the mask's root-coordinate hole; read in draw only.
+    var origin by remember { mutableStateOf(Offset.Zero) }
     val tick = rememberFrameTick(active = playing)
     val snapshot = remember { TransportSnapshot() }
     val described = TimeFormat.barBeat(positionBeats, signature)
     val describedX = viewport.xOf(positionBeats).toFloat()
     Box(modifier) {
-        Canvas(Modifier.fillMaxSize()) {
+        Canvas(Modifier.fillMaxSize().onGloballyPositioned { origin = it.positionInRoot() }) {
             val beats = if (playing) {
                 PerfTrace.section(PerfSection.TIMELINE_PLAYHEAD_FRAME) {
                     telemetry.read(tick.longValue, snapshot)
@@ -64,7 +74,15 @@ internal fun PlayheadOverlay(
             }
             val x = viewport.xOf(beats).toFloat()
             if (x >= 0f && x <= size.width) {
-                drawLine(color, Offset(x, 0f), Offset(x, size.height), strokeWidth = PLAYHEAD_WIDTH_DP.dp.toPx())
+                val hole = mask?.hole?.translate(-origin)
+                if (hole == null) {
+                    drawLine(color, Offset(x, 0f), Offset(x, size.height), strokeWidth = PLAYHEAD_WIDTH_DP.dp.toPx())
+                } else {
+                    // Not through the expanded track's inline settings (feature 011).
+                    clipRect(hole.left, hole.top, hole.right, hole.bottom, ClipOp.Difference) {
+                        drawLine(color, Offset(x, 0f), Offset(x, size.height), strokeWidth = PLAYHEAD_WIDTH_DP.dp.toPx())
+                    }
+                }
             }
         }
         // Placed from the 10 Hz position (the line itself follows the telemetry per frame); off the viewport it is out of reach.

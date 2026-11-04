@@ -23,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
@@ -30,7 +31,7 @@ import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.changedToDown
-import androidx.compose.ui.input.pointer.isSecondaryPressed
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.platform.LocalDensity
@@ -42,6 +43,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import audio.tembra.core.metronome.TimeSignature
@@ -51,6 +53,11 @@ import audio.tembra.core.project.ClipId
 import audio.tembra.core.project.GridSize
 import audio.tembra.core.timeline.TimelineViewport
 import audio.tembra.data.projects.OverviewStatus
+import audio.tembra.engine.perf.PerfSection
+import audio.tembra.engine.perf.PerfTrace
+import audio.tembra.ui.designsystem.PointerShapes
+import audio.tembra.ui.designsystem.menuOffsetAt
+import audio.tembra.ui.designsystem.onSecondaryClick
 import audio.tembra.ui.theme.TembraShapes
 import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.ui.timeline.ClipDragUi
@@ -100,6 +107,8 @@ internal fun TrackLane(
     onClipDragCancel: () -> Unit = {},
     onSplit: () -> Unit = {},
     onDeleteClip: (ClipId) -> Unit = {},
+    menuClip: ClipId? = null,
+    onMenuClip: (ClipId?) -> Unit = {},
 ) {
     val daw = TembraTheme.daw
     val colors = TembraTheme.colors
@@ -130,12 +139,16 @@ internal fun TrackLane(
     val edgePx = with(density) { EDGE_DP.dp.toPx() }
     val currentViewport by rememberUpdatedState(viewport)
     val currentOnScrollBy by rememberUpdatedState(onScrollBy)
-    var menuClip by remember { mutableStateOf<ClipId?>(null) }
     var hoveredClip by remember { mutableStateOf<ClipId?>(null) }
+    // Where a secondary click opened the menu (feature 011, FR-012); the overflow-less clip has no other anchor.
+    var menuOffset by remember { mutableStateOf(DpOffset.Zero) }
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(height)
+            // A clip that starts left of the view is drawn from a negative x: the lane keeps it to itself, so it never
+            // paints over the header pinned beside it in the expanded layout (feature 011, large windows).
+            .clipToBounds()
             .testTag(TimelineTestTags.lane(index))
             // On the lane itself, the clips' ancestor: a drag that starts on a clip still scrolls (clarification 3).
             .pointerInput(onClearSelection) { detectTapGestures(onTap = { onClearSelection() }) }
@@ -193,17 +206,18 @@ internal fun TrackLane(
             ClipMenu(
                 expanded = menuClip == clip.id,
                 canSplit = canSplit && selectedClipId == clip.id,
-                onDismiss = { menuClip = null },
+                onDismiss = { onMenuClip(null) },
                 onSplit = {
-                    menuClip = null
+                    onMenuClip(null)
                     onSplit()
                 },
                 onDelete = {
-                    menuClip = null
+                    onMenuClip(null)
                     onDeleteClip(clip.id)
                 },
                 testTag = "${TimelineTestTags.clip(firstClipIndex + clipIndex)}.menu",
                 modifier = Modifier.offset { IntOffset(left.roundToInt(), 0) },
+                offset = menuOffset,
             ) {
                 Box(
                     modifier = Modifier
@@ -215,18 +229,22 @@ internal fun TrackLane(
                             selected = clip.id == selectedClipId
                             if (state != null) stateDescription = state
                         }
+                        // Before the click: a right-click opens the menu at the pointer and never selects twice (feature 011).
+                        .onSecondaryClick(clip.id) { position ->
+                            PerfTrace.section(PerfSection.TIMELINE_CONTEXT_MENU) {
+                                onSelectClip(clip.id)
+                                menuOffset = density.menuOffsetAt(position, heightPx.roundToInt())
+                                onMenuClip(clip.id)
+                            }
+                        }
+                        // An open hand over a clip, a closed one while it is lifted (feature 011, spec FR-015).
+                        .pointerHoverIcon(if (drag?.clipId == clip.id) PointerShapes.grabbing else PointerShapes.grab)
                         .clickable(interactionSource = interaction, indication = null, role = Role.Button) { onSelectClip(clip.id) }
                         .pointerInput(clip.id, rowPitchPx) {
                             awaitEachGesture {
                                 var event = awaitPointerEvent()
                                 while (event.changes.none { it.changedToDown() }) event = awaitPointerEvent()
                                 val down = event.changes.first { it.changedToDown() }
-                                if (event.buttons.isSecondaryPressed) {
-                                    down.consume()
-                                    onSelectClip(clip.id)
-                                    menuClip = clip.id
-                                    return@awaitEachGesture
-                                }
                                 // Pointer: past the slop; touch: after the long press (a plain drag is the lane's scroll).
                                 val start = if (down.type == PointerType.Mouse) {
                                     awaitTouchSlopOrCancellation(down.id) { change, _ -> change.consume() }
@@ -235,16 +253,24 @@ internal fun TrackLane(
                                 } ?: return@awaitEachGesture
                                 onClipDragStart(clip.id)
                                 var total = Offset.Zero
-                                val completed = drag(start.id) { change ->
-                                    total += change.positionChange()
-                                    change.consume()
-                                    val port = currentViewport
-                                    onClipDrag(clip.id, total.x / port.devicePixelsPerBeat, (total.y / rowPitchPx).roundToInt())
-                                    // Auto-scroll when the finger nears the lane's edges.
-                                    val laneX = left.toFloat() + change.position.x
-                                    if (laneX < edgePx) currentOnScrollBy(-EDGE_SCROLL_PX) else if (laneX > port.widthPx - edgePx) currentOnScrollBy(EDGE_SCROLL_PX)
+                                var settled = false
+                                try {
+                                    val completed = drag(start.id) { change ->
+                                        total += change.positionChange()
+                                        change.consume()
+                                        val port = currentViewport
+                                        onClipDrag(clip.id, total.x / port.devicePixelsPerBeat, (total.y / rowPitchPx).roundToInt())
+                                        // Auto-scroll when the finger nears the lane's edges.
+                                        val laneX = left.toFloat() + change.position.x
+                                        if (laneX < edgePx) currentOnScrollBy(-EDGE_SCROLL_PX) else if (laneX > port.widthPx - edgePx) currentOnScrollBy(EDGE_SCROLL_PX)
+                                    }
+                                    settled = true
+                                    if (completed) onClipDragEnd() else onClipDragCancel()
+                                } finally {
+                                    // The gesture ended without a release: the lane left composition or changed form (a window
+                                    // crossed a layout class, feature 011 FR-007), so the clip returns rather than staying half-moved.
+                                    if (!settled) onClipDragCancel()
                                 }
-                                if (completed) onClipDragEnd() else onClipDragCancel()
                             }
                         },
                 )

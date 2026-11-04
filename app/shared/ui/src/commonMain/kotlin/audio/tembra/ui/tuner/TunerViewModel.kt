@@ -297,7 +297,8 @@ class TunerViewModel(
             MicrophonePermissionStatus.DeniedCanAsk,
             -> viewModelScope.launch { permission.request() }
             MicrophonePermissionStatus.DeniedOpenSettings -> permission.openSystemSettings()
-            MicrophonePermissionStatus.Granted -> Unit
+            // Nothing to ask for without a microphone (feature 011, spec FR-002).
+            MicrophonePermissionStatus.Granted, MicrophonePermissionStatus.Unavailable -> Unit
         }
     }
 

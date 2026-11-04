@@ -57,6 +57,8 @@ import audio.tembra.engine.TransportOpenResult
 import audio.tembra.engine.TransportSnapshot
 import audio.tembra.engine.perf.PerfSection
 import audio.tembra.engine.perf.PerfTrace
+import audio.tembra.ui.drop.DropCopy
+import audio.tembra.ui.drop.SkippedItem
 import audio.tembra.ui.platform.BackgroundPlaybackHost
 import audio.tembra.ui.platform.PlaybackNotification
 import audio.tembra.ui.tracksettings.TrackSettingsDraft
@@ -86,6 +88,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -113,10 +116,15 @@ class ProjectSession(
     /** Optional bindings: the graph provides neither, tests pass a scripted reader and the test dispatcher. */
     overviewReader: OverviewReader = SystemOverviewReader,
     ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
-) : PlaybackGuard {
+) : PlaybackGuard, SessionActivity {
 
     private val _state = MutableStateFlow(SessionState())
     val state: StateFlow<SessionState> = _state.asStateFlow()
+
+    /** Imports in flight (feature 011, FR-015a): counted, so overlapping imports keep the pointer busy until the last ends. */
+    private val importsInFlight = MutableStateFlow(0)
+    private val _busy = MutableStateFlow(false)
+    override val busy: StateFlow<Boolean> = _busy.asStateFlow()
 
     private val _messages = Channel<SessionMessage>(Channel.BUFFERED)
     val messages: Flow<SessionMessage> = _messages.receiveAsFlow()
@@ -254,10 +262,29 @@ class ProjectSession(
         scope.launch(CoroutineName("saveViewState")) { repository.saveViewState(id, viewState) }
     }
 
-    /** Copies [files] into the project and places them per [target]; refusals arrive as one message (spec FR-043, FR-044). */
-    fun importAudio(files: List<PickedFile>, target: ImportTarget) {
+    /**
+     * Copies [files] into the project and places them per [target]; refusals arrive as one message (spec FR-043, FR-044),
+     * after the items a drop left out ([skipped], feature 011 spec FR-026), so one message names everything not added.
+     */
+    fun importAudio(files: List<PickedFile>, target: ImportTarget, skipped: List<SkippedItem> = emptyList()) {
         val projectId = history?.present?.id ?: return
-        scope.launch(CoroutineName("importJob")) { importNow(projectId, files, target) }
+        scope.launch(CoroutineName("importJob")) {
+            // Counted inside the job: a job cancelled before it starts never counts, so the busy count never sticks.
+            importStarted()
+            try {
+                importNow(projectId, files, target, skipped)
+            } finally {
+                importEnded()
+            }
+        }
+    }
+
+    private fun importStarted() {
+        _busy.value = importsInFlight.updateAndGet { it + 1 } > 0
+    }
+
+    private fun importEnded() {
+        _busy.value = importsInFlight.updateAndGet { it - 1 } > 0
     }
 
     // --- Playback ----------------------------------------------------------------------------------------------------
@@ -666,9 +693,9 @@ class ProjectSession(
         }
     }
 
-    private suspend fun importNow(projectId: ProjectId, files: List<PickedFile>, target: ImportTarget) = importMutex.withLock {
+    private suspend fun importNow(projectId: ProjectId, files: List<PickedFile>, target: ImportTarget, skipped: List<SkippedItem>) = importMutex.withLock {
         val accepted = ArrayList<ImportResult.Accepted>()
-        val refused = ArrayList<Pair<String, String>>()
+        val refused = skipped.mapTo(ArrayList()) { it.name to DropCopy.skipText(it.reason) }
         for (file in files) {
             when (val result = repository.importAudio(projectId, file)) {
                 is ImportResult.Accepted -> accepted += result

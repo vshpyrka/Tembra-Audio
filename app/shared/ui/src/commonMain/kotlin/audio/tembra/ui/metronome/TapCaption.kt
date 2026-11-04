@@ -2,7 +2,7 @@ package audio.tembra.ui.metronome
 
 /** What the tap-tempo button says under its title (research R9); the copy lives in `MetronomeCopy`. */
 sealed interface TapCaption {
-    /** No tap in the last two seconds: "Sync finger rhythm". */
+    /** No tap in the last two seconds: "Tap along to the beat" (a finger, a click or the T key; feature 011 dropped "Sync finger rhythm"). */
     data object Rest : TapCaption
 
     /** One tap so far: "Tap again". */

@@ -1,6 +1,7 @@
 package audio.tembra.ui.transport
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
@@ -15,6 +16,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -22,6 +25,7 @@ import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.semantics
 import audio.tembra.ui.designsystem.TembraTooltip
 import audio.tembra.ui.designsystem.drawFocusRing
+import audio.tembra.ui.designsystem.focusIdentity
 import audio.tembra.ui.theme.TembraIcon
 import audio.tembra.ui.theme.TembraIcons
 import audio.tembra.ui.theme.TembraTheme
@@ -71,6 +75,10 @@ internal fun TransportButton(
                     if (fill != null) drawCircle(color = fill, radius = radius)
                     if (focused) drawFocusRing(ringColor, ring.toPx(), CornerRadius(radius))
                 }
+                .focusIdentity(testTag)
+                // A disabled clickable reports no hover: a disabled button tracks it itself, so it still names itself (FR-011).
+                .then(if (enabled) Modifier else Modifier.hoverable(source))
+                .pointerHoverIcon(PointerIcon.Hand)
                 .clickable(interactionSource = source, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
                 .semantics {
                     contentDescription = description

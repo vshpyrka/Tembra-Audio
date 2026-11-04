@@ -389,7 +389,7 @@ class MetronomeScreenTest {
         setScreen()
         onNodeWithTag("metronome.tap")
             .assertContentDescriptionEquals("Tap tempo")
-            .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Sync finger rhythm"))
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Tap along to the beat"))
         // The drawn title and caption are there, but only the description and the state are read.
         onNodeWithTag("metronome.tap.title", useUnmergedTree = true).assertExists()
         onNodeWithTag("metronome.tap.caption", useUnmergedTree = true).assertExists()

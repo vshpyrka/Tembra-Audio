@@ -6,17 +6,18 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-/** The four permission states and the fake that scripts them (data-model.md §5). */
+/** The permission states and the fake that scripts them (data-model.md §5; Unavailable is feature 011's). */
 class MicrophonePermissionStatusTest {
 
     @Test
-    fun fourStatesInOrder() {
+    fun fiveStatesInOrder() {
         assertEquals(
             listOf(
                 MicrophonePermissionStatus.NotDetermined,
                 MicrophonePermissionStatus.Granted,
                 MicrophonePermissionStatus.DeniedCanAsk,
                 MicrophonePermissionStatus.DeniedOpenSettings,
+                MicrophonePermissionStatus.Unavailable,
             ),
             MicrophonePermissionStatus.entries,
         )
@@ -28,6 +29,8 @@ class MicrophonePermissionStatusTest {
         assertFalse(MicrophonePermissionStatus.Granted.isDenied)
         assertTrue(MicrophonePermissionStatus.DeniedCanAsk.isDenied)
         assertTrue(MicrophonePermissionStatus.DeniedOpenSettings.isDenied)
+        // No microphone is not a refusal: nothing can be allowed (feature 011, spec FR-002).
+        assertFalse(MicrophonePermissionStatus.Unavailable.isDenied)
     }
 
     @Test

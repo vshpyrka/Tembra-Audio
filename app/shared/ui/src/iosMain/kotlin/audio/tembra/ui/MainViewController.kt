@@ -9,6 +9,7 @@ import audio.tembra.ui.projects.ProjectsSeedRequest
 import audio.tembra.ui.tuner.TunerNoiseGateRequest
 import audio.tembra.ui.tuner.TunerTestSignalRequest
 import dev.zacsweers.metro.createGraph
+import platform.Foundation.NSURL
 import platform.UIKit.UIViewController
 
 private val appGraph: IosAppGraph = createGraph<IosAppGraph>()
@@ -43,3 +44,13 @@ fun MainViewController(
             projectsSeed = ProjectsSeedRequest.parse(projectsSeed),
         )
     }
+
+/**
+ * Called by the shell's `TrackpadPinchBridge` on the main thread for each change of a trackpad pinch (feature 011,
+ * research R9): [scale] relative to the previous call, ([x], [y]) the pinch's centre in the Compose view's pixels.
+ */
+@Suppress("unused")
+fun reportTrackpadPinch(scale: Double, x: Double, y: Double) = appGraph.iosTrackpadPinchSource.report(scale, x, y)
+
+/** The shell's `.onOpenURL`: a file opened with the app from the Files app becomes a new project (feature 011, FR-026a). */
+fun openFile(url: NSURL) = appGraph.iosOpenedFiles.open(url)

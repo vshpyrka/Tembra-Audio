@@ -1,6 +1,7 @@
 package audio.tembra.ui.timeline
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -13,26 +14,45 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.foundation.focusable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
+import audio.tembra.core.project.Beats
 import audio.tembra.core.project.TempoMap
+import audio.tembra.engine.perf.PerfSection
+import audio.tembra.engine.perf.PerfTrace
+import audio.tembra.ui.designsystem.FocusMemory
+import audio.tembra.ui.designsystem.focusRestoringRoot
+import audio.tembra.ui.drop.AudioDropState
+import audio.tembra.ui.drop.DropCopy
+import audio.tembra.ui.drop.DropHoverBanner
+import audio.tembra.ui.drop.DropZone
+import audio.tembra.ui.drop.audioDropTarget
+import audio.tembra.ui.platform.LocalTrackpadPinchSource
 import audio.tembra.ui.session.TransportTelemetry
+import audio.tembra.ui.shortcuts.RegisterShortcuts
+import audio.tembra.ui.shortcuts.ShortcutTargets
 import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.ui.timeline.components.DeleteTrackDialog
 import audio.tembra.ui.timeline.components.EmptyTimeline
 import audio.tembra.ui.timeline.components.MetronomeSettingsSheet
 import audio.tembra.ui.timeline.components.OverviewStrip
 import audio.tembra.ui.timeline.components.OverviewStripDefaults
+import audio.tembra.ui.timeline.components.PlayheadMask
 import audio.tembra.ui.timeline.components.PlayheadOverlay
 import audio.tembra.ui.timeline.components.SnapSheet
 import audio.tembra.ui.timeline.components.TempoDialog
@@ -65,6 +85,7 @@ internal fun TimelineScreenContent(
 ) {
     val spacing = TembraTheme.spacing
     val daw = TembraTheme.daw
+    val density = LocalDensity.current
     val tempoMap = TempoMap(state.tempo, state.timeSignature)
     val ready = state.isFirstContentReady
     val transportHeight = if (layout == TimelineLayout.Expanded) spacing.transportHeightExpanded else spacing.transportHeightCompact
@@ -78,6 +99,25 @@ internal fun TimelineScreenContent(
     val rootFocus = remember { FocusRequester() }
     LaunchedEffect(state.loaded) {
         if (state.loaded) rootFocus.requestFocus()
+    }
+    // Focus returns to the same track or control after a window change rebuilds the rows (feature 011, FR-007).
+    val focusMemory = remember { FocusMemory() }
+    // The iPad's trackpad pinch arrives from the shell's bridge in root pixels (feature 011, research R9): it zooms
+    // around its focus, measured from the lanes' left edge (written at layout, read only by the collector).
+    val lanesLeft = remember { mutableFloatStateOf(0f) }
+    val playheadMask = remember { PlayheadMask() }
+    val pinchSource = LocalTrackpadPinchSource.current
+    val onZoomAround by rememberUpdatedState(callbacks.onZoomAround)
+    // The ⌘ chords' menu commands on iPad (feature 011, spec FR-018a) act on the state showing now.
+    val currentState by rememberUpdatedState(state)
+    val currentCallbacks by rememberUpdatedState(callbacks)
+    val menuTargets = remember { TimelineKeyTargets({ currentState }, { currentCallbacks }) }
+    RegisterShortcuts(ShortcutTargets(timeline = menuTargets))
+    LaunchedEffect(pinchSource) {
+        pinchSource.pinches.collect { pinch ->
+            val x = pinch.focus.x - lanesLeft.floatValue
+            if (x >= 0f) PerfTrace.animation(PerfSection.TIMELINE_ZOOM) { onZoomAround(x.toDouble(), pinch.scale.toDouble()) }
+        }
     }
     val transportCallbacks = TransportCallbacks(
         onPlayPause = callbacks.onPlayPause,
@@ -93,6 +133,7 @@ internal fun TimelineScreenContent(
             .background(daw.canvasLevel0)
             .testTag(TimelineTestTags.ROOT)
             .semantics { stateDescription = if (ready) READY else LOADING }
+            .focusRestoringRoot(focusMemory)
             .focusRequester(rootFocus)
             .focusable()
             .timelineKeyHandling({ state }, callbacks),
@@ -111,6 +152,7 @@ internal fun TimelineScreenContent(
                 onGrid = callbacks.onGrid,
                 onSnapSheet = { callbacks.onOpenSheet(TimelineSheet.GridMenu) },
                 onOverviewStripShown = callbacks.onOverviewStripShown,
+                onFullScreen = callbacks.onFullScreen,
                 onMetronomeSettings = callbacks.onMetronomeSettings,
             )
             TimelineRuler(
@@ -131,11 +173,21 @@ internal fun TimelineScreenContent(
                     null
                 },
             )
-            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .onGloballyPositioned { coordinates -> lanesLeft.floatValue = coordinates.positionInRoot().x + headerColumn.toPx(density) },
+            ) {
                 if (state.isEmpty) {
-                    EmptyTimeline(onAddTrack = callbacks.onAddTrack, onAddAudio = callbacks.onAddAudioAsNewTrack)
+                    // An empty project takes dropped files as its first tracks, from the start (feature 011, FR-026).
+                    val drops = remember { AudioDropState(zoneAt = { DropZone.TimelineSpace }, beatsAt = { Beats.Zero }) }
+                    Box(modifier = Modifier.fillMaxSize().audioDropTarget(drops, callbacks.onDrop)) {
+                        EmptyTimeline(onAddTrack = callbacks.onAddTrack, onAddAudio = callbacks.onAddAudioAsNewTrack)
+                        if (drops.hover != null) DropHoverBanner(DropCopy.newTrack, Modifier.align(Alignment.TopCenter))
+                    }
                 } else {
-                    TrackList(state = state, layout = layout, callbacks = callbacks)
+                    TrackList(state = state, layout = layout, callbacks = callbacks, playheadMask = playheadMask)
                 }
                 PlayheadOverlay(
                     viewport = state.viewport,
@@ -144,6 +196,7 @@ internal fun TimelineScreenContent(
                     positionBeats = state.positionBeats,
                     telemetry = telemetry,
                     modifier = Modifier.fillMaxSize().padding(start = headerColumn),
+                    mask = playheadMask,
                 )
             }
             if (state.overviewStripShown) {
@@ -204,3 +257,5 @@ internal fun TimelineScreenContent(
 
 internal const val READY = "ready"
 internal const val LOADING = "loading"
+
+private fun androidx.compose.ui.unit.Dp.toPx(density: androidx.compose.ui.unit.Density): Float = with(density) { toPx() }

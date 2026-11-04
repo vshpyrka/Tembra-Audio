@@ -1,7 +1,11 @@
 package audio.tembra.android
 
+import android.content.Intent
+import android.content.res.Configuration
 import android.os.Bundle
 import android.view.KeyEvent
+import android.view.KeyboardShortcutGroup
+import android.view.Menu
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -9,6 +13,7 @@ import audio.tembra.ui.App
 import audio.tembra.ui.devtools.DeveloperViewRequest
 import audio.tembra.ui.metronome.MetronomeDebugRequest
 import audio.tembra.ui.projects.ProjectsSeedRequest
+import audio.tembra.ui.shortcuts.systemShortcutGroups
 import audio.tembra.ui.platform.ProvideLaidOutWindowSize
 import audio.tembra.ui.platform.dispatchEscapeAsBack
 import audio.tembra.ui.platform.enableEdgeToEdgeOverDarkContent
@@ -36,6 +41,12 @@ class MainActivity : ComponentActivity() {
         // The notifications prompt for the metronome's "Running" notification (Android 13+, contracts/background-playback.md).
         val notificationHost = appGraph.notificationPermissionHost
         notificationHost.attach(this, registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted -> notificationHost.onResult(granted) })
+        // Full screen from the Timeline's menu in a desktop window (feature 011, research R21).
+        appGraph.androidWindowControls.attach(this)
+        // Drops request their permissions through this activity; "open with" intents arrive here (feature 011, R12, R22).
+        // A recreated activity carries the intent it was started with: it was delivered then.
+        appGraph.androidDroppedFilesReader.attach(this)
+        if (savedInstanceState == null) appGraph.androidOpenedFiles.deliver(intent)
         // Debug builds accept the "tembra.developer.view" extra (feature 002, spec FR-022), the "tembra.tuner.testSignal"
         // extra (feature 003, spec FR-032), the "tembra.tuner.noiseGate" extra (feature 006, spec FR-023) and the
         // "tembra.metronome.syncopation" extra (feature 004, spec FR-037); the shrinker removes these branches from
@@ -63,13 +74,39 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    // One task, one activity (singleTask): files opened while the app runs arrive here (feature 011, research R22).
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        appGraph.androidOpenedFiles.deliver(intent)
+    }
+
+    // Window changes reach the activity without recreating it (configChanges): the full-screen item follows the mode.
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        appGraph.androidWindowControls.refresh()
+    }
+
+    override fun onMultiWindowModeChanged(isInMultiWindowMode: Boolean, newConfig: Configuration) {
+        super.onMultiWindowModeChanged(isInMultiWindowMode, newConfig)
+        appGraph.androidWindowControls.onMultiWindowModeChanged()
+    }
+
     // A hardware keyboard's Escape goes back like the back key (desktop windowing), before Compose can consume it.
     override fun dispatchKeyEvent(event: KeyEvent): Boolean = dispatchEscapeAsBack(event) || super.dispatchKeyEvent(event)
+
+    // Meta+/ lists the app's shortcuts, from the same catalogue as the in-app sheet (feature 011, spec FR-022).
+    override fun onProvideKeyboardShortcuts(data: MutableList<KeyboardShortcutGroup>, menu: Menu?, deviceId: Int) {
+        super.onProvideKeyboardShortcuts(data, menu, deviceId)
+        data.addAll(systemShortcutGroups())
+    }
 
     override fun onDestroy() {
         appGraph.microphonePermissionHost.detach()
         appGraph.audioFilePickerHost.detach()
         appGraph.notificationPermissionHost.detach()
+        appGraph.androidWindowControls.detach(this)
+        appGraph.androidDroppedFilesReader.detach(this)
         super.onDestroy()
     }
 }
