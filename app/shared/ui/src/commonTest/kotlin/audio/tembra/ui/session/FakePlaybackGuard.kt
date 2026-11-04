@@ -15,6 +15,9 @@ class FakePlaybackGuard(override var isPlaying: Boolean = false) : PlaybackGuard
 
     private var pending: CompletableDeferred<Boolean>? = null
 
+    /** True while a take runs (feature 010, FR-022): the question then carries the recording variant. */
+    var recording: Boolean = false
+
     /** Every [transportHostVisible] call, in order. */
     val hostVisibility = mutableListOf<Boolean>()
 
@@ -26,7 +29,7 @@ class FakePlaybackGuard(override var isPlaying: Boolean = false) : PlaybackGuard
         asked++
         val answer = CompletableDeferred<Boolean>()
         pending = answer
-        _dialog.value = DialogRequest.StopAndLeave { result -> answerLeave(result) }
+        _dialog.value = DialogRequest.StopAndLeave(recording = recording) { result -> answerLeave(result) }
         return answer.await()
     }
 

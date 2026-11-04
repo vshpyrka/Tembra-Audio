@@ -19,6 +19,7 @@ import audio.tembra.ui.shortcuts.ShortcutDispatcher
 import audio.tembra.ui.shortcuts.ShortcutScope
 import audio.tembra.ui.shortcuts.ShortcutTargets
 import audio.tembra.ui.shortcuts.TimelineShortcuts
+import audio.tembra.ui.transport.RecordButtonState
 
 /**
  * The keyboard map of spec FR-057 on the screen root, read from the shortcut catalogue (feature 011, spec FR-017;
@@ -26,8 +27,10 @@ import audio.tembra.ui.shortcuts.TimelineShortcuts
  * Events bubble up from the focused control, so a text field keeps its characters and a focused button its Space; what
  * reaches the root: Space play/pause, Home skip to start, ←/→ one grid step (a bar when the grid is off), Shift+←/→ one
  * bar, S split, Delete/Backspace delete the selected clip, Ctrl/⌘+Z undo, Ctrl/⌘+Shift+Z and Ctrl/⌘+Y redo, +/− zoom, M
- * and O mute and solo the selected track. On iPad the menu bar serves the ⌘ chords. Escape cancels a clip drag in
- * progress, which returns the clip (feature 011, spec FR-013), and is otherwise left to the shell.
+ * and O mute and solo the selected track. Feature 010 (FR-028): A arms the selected track, R records, I toggles
+ * monitoring; space during a take pauses (the take ends); the keys of actions FR-018 makes unavailable do nothing while a
+ * take runs. On iPad the menu bar serves the ⌘ chords. Escape cancels a clip drag in progress, which returns the clip
+ * (feature 011, spec FR-013), or a count-in (feature 010), and is otherwise left to the shell.
  */
 internal fun Modifier.timelineKeyHandling(state: () -> TimelineUiState, callbacks: TimelineCallbacks): Modifier =
     this then TimelineKeysElement(state, callbacks)
@@ -52,9 +55,16 @@ private class TimelineKeysNode(var state: () -> TimelineUiState, var callbacks: 
     CompositionLocalConsumerModifierNode {
 
     override fun onKeyEvent(event: KeyEvent): Boolean {
-        if (event.type == KeyEventType.KeyDown && event.key == Key.Escape && state().drag != null) {
-            callbacks.onClipDragCancel()
-            return true
+        if (event.type == KeyEventType.KeyDown && event.key == Key.Escape) {
+            if (state().drag != null) {
+                callbacks.onClipDragCancel()
+                return true
+            }
+            // Only during a count-in, so dialogs and menus keep their Escape (feature 010, FR-028).
+            if (state().recordPhase == RecordButtonState.CountIn) {
+                callbacks.onRecord()
+                return true
+            }
         }
         val action = ShortcutCatalogue.match(KeyInput.of(event), ShortcutScope.Timeline, currentValueOf(LocalShortcutPlatform)) ?: return false
         return ShortcutDispatcher.dispatch(action, ShortcutTargets(timeline = TimelineKeyTargets(state, { callbacks })))
@@ -74,10 +84,11 @@ internal class TimelineKeyTargets(
 ) : TimelineShortcuts {
     override fun playPause() = true.also { callbacks().onPlayPause() }
 
-    override fun skipToStart() = true.also { callbacks().onSkipToStart() }
+    override fun skipToStart() = true.also { if (state().transport.seekEnabled) callbacks().onSkipToStart() }
 
     override fun step(direction: Int, bar: Boolean): Boolean {
         val now = state()
+        if (!now.transport.seekEnabled) return true
         val barLength = Beats(now.timeSignature.beats.toDouble())
         val step = if (bar) barLength else now.grid.beatsOf(now.timeSignature) ?: barLength
         callbacks().onSeek(if (direction < 0) (now.positionBeats - step).coerceAtLeastZero() else now.positionBeats + step)
@@ -86,15 +97,22 @@ internal class TimelineKeyTargets(
 
     override fun split() = true.also { if (state().canSplit) callbacks().onSplit() }
 
-    override fun deleteClip() = true.also { state().selectedClip?.let { callbacks().onDeleteClip(it.id) } }
+    // While a take runs these are unavailable (feature 010, FR-018): the keys stay consumed and do nothing.
+    override fun deleteClip() = true.also { if (!state().takeRunning) state().selectedClip?.let { callbacks().onDeleteClip(it.id) } }
 
-    override fun undo() = true.also { callbacks().onUndo() }
+    override fun undo() = true.also { if (state().canUndo) callbacks().onUndo() }
 
-    override fun redo() = true.also { callbacks().onRedo() }
+    override fun redo() = true.also { if (state().canRedo) callbacks().onRedo() }
 
     override fun zoom(steps: Int) = true.also { callbacks().onZoomStep(steps) }
 
     override fun toggleMute() = true.also { state().selection.trackIdOrNull?.let(callbacks().onToggleMute) }
 
     override fun toggleSolo() = true.also { state().selection.trackIdOrNull?.let(callbacks().onToggleSolo) }
+
+    override fun arm() = true.also { if (state().canArm) state().selection.trackIdOrNull?.let(callbacks().onArm) }
+
+    override fun record() = true.also { callbacks().onRecord() }
+
+    override fun toggleMonitor() = true.also { callbacks().onMonitorToggle() }
 }

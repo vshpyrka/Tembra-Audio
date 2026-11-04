@@ -28,12 +28,21 @@ import audio.tembra.ui.drop.SkipReason
 import audio.tembra.ui.drop.SkippedItem
 import audio.tembra.ui.drop.SessionProjectFromAudio
 import audio.tembra.data.projects.WaveformOverview
+import audio.tembra.data.projects.TakeManifest
+import audio.tembra.data.timeline.FakeTimelinePreferences
+import audio.tembra.core.project.CountIn
+import audio.tembra.core.project.RecordTake
+import audio.tembra.core.recording.RecordingState
+import audio.tembra.core.recording.TakeStopReason
 import audio.tembra.engine.AudioEvent
 import audio.tembra.engine.FakeAudioEngine
 import audio.tembra.engine.AudioState
 import audio.tembra.engine.PlayResult
 import audio.tembra.engine.TransportSnapshot
+import audio.tembra.ui.platform.FakeAudioRouteMonitor
 import audio.tembra.ui.platform.FakeBackgroundPlaybackHost
+import audio.tembra.ui.platform.FakeMicrophonePermission
+import audio.tembra.ui.platform.MicrophonePermissionStatus
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -72,6 +81,9 @@ class ProjectSessionTest {
     private val host = FakeBackgroundPlaybackHost()
     private val preferences = FakeMetronomePreferences()
     private val repository = FakeProjectRepository(initial = listOf(demo))
+    private val permission = FakeMicrophonePermission(MicrophonePermissionStatus.Granted)
+    private val routes = FakeAudioRouteMonitor()
+    private val timelinePreferences = FakeTimelinePreferences()
     private val session = newSession(repository)
 
     private fun newSession(repository: FakeProjectRepository) = ProjectSession(
@@ -80,6 +92,18 @@ class ProjectSessionTest {
         metronome = engine,
         preferences = preferences,
         host = host,
+        recording = RecordingController(
+            audio = engine,
+            permission = permission,
+            routes = routes,
+            host = host,
+            preferences = timelinePreferences,
+            repository = repository,
+            scope = scope,
+            clock = { 1_000L },
+            tokens = { "take-1" },
+            mirrorIntervalMs = 100,
+        ),
         scope = scope,
         overviewReader = { overview },
         ioDispatcher = dispatcher,
@@ -116,7 +140,8 @@ class ProjectSessionTest {
         advanceUntilIdle()
         val before = engine.calls.size
         session.transportHostVisible(false)
-        assertEquals(listOf("closeTransport"), callNames().drop(before), "the hand-over is synchronous")
+        runCurrent() // the close runs on the engine's serial dispatcher (T102), before anything launched after it
+        assertEquals(listOf("closeTransport"), callNames().drop(before), "the hand-over is ordered first")
         session.transportHostVisible(true)
         advanceUntilIdle()
         assertEquals(
@@ -152,6 +177,7 @@ class ProjectSessionTest {
     fun aSeekWhileDetachedStaysAwayFromTheEngine() = runTest(dispatcher) {
         openDemo()
         session.transportHostVisible(false)
+        runCurrent() // the hand-over close lands
         val before = engine.calls.size
         session.seek(Beats(12.0))
         advanceUntilIdle()
@@ -257,6 +283,7 @@ class ProjectSessionTest {
         assertEquals("seek(8.0)", engine.calls.last())
         assertEquals(AudioState.Transport, engine.audioState)
         session.transportHostVisible(false)
+        runCurrent()
         assertEquals("closeTransport", engine.calls.last(), "the next leave hands the device over")
         assertEquals(AudioState.Idle, engine.audioState)
     }
@@ -330,6 +357,7 @@ class ProjectSessionTest {
         assertEquals(listOf("closeTransport", "openTransport"), transport, "closed with the old project, opened once for the new: $transport")
         assertEquals(AudioState.Transport, engine.audioState)
         session.transportHostVisible(false)
+        runCurrent()
         assertEquals("closeTransport", engine.calls.last(), "the session still knows it holds the device")
         assertEquals(AudioState.Idle, engine.audioState)
     }
@@ -339,6 +367,7 @@ class ProjectSessionTest {
     fun metronomeSettingsChangedWhileDetachedStayAwayFromTheEngine() = runTest(dispatcher) {
         openDemo()
         session.transportHostVisible(false)
+        runCurrent() // the hand-over close lands
         val before = engine.calls.size
         preferences.update { it.copy(settings = it.settings.copy(subdivision = Subdivision.Two)) }
         advanceUntilIdle()
@@ -766,5 +795,203 @@ class ProjectSessionTest {
         val received = mutableListOf<SessionMessage>()
         backgroundScope.launch { session.messages.collect { received += it } }
         return received
+    }
+
+    // --- Recording (feature 010, contracts/recording-session.md; T021) --------------------------------------------------
+    /** The recording tests arm a track: the controller's mirror timer never idles, so the scope is cancelled before `runTest` drains. */
+    private fun recordingTest(block: suspend TestScope.() -> Unit) = runTest(dispatcher) {
+        try {
+            block()
+        } finally {
+            scope.cancel()
+        }
+    }
+
+
+    private suspend fun TestScope.armDrums() {
+        openDemo()
+        session.arm(drumsTrack)
+        runCurrent()
+        assertEquals(RecordingState.Armed(drumsTrack), session.state.value.recording.phase)
+    }
+
+    /** The count-in is a project setting beside the metronome toggle, saved but never an undo step (FR-015). */
+    @Test
+    fun setCountInIsNotAnUndoStepAndSurvivesUndoAndRedo() = recordingTest {
+        openDemo()
+        session.edit(RenameTrack(drumsTrack, "Kit"))
+        session.setCountIn(CountIn.TWO_BARS)
+        assertEquals(CountIn.TWO_BARS, session.state.value.project?.countIn)
+        assertTrue(session.state.value.canUndo)
+        session.undo()
+        assertEquals("Drums", session.state.value.project?.tracks?.get(0)?.name)
+        assertEquals(CountIn.TWO_BARS, session.state.value.project?.countIn, "undo leaves the count-in alone")
+        session.redo()
+        assertEquals("Kit", session.state.value.project?.tracks?.get(0)?.name)
+        assertEquals(CountIn.TWO_BARS, session.state.value.project?.countIn)
+        session.undo()
+        assertFalse(session.state.value.canUndo)
+        assertEquals(CountIn.TWO_BARS, session.state.value.project?.countIn)
+    }
+
+    /** Record from stopped with the project's count-in: one bar of 4/4 is four beats; the take then starts playback. */
+    @Test
+    fun recordFromStoppedUsesTheProjectCountInAndATakeStartsPlayback() = recordingTest {
+        armDrums()
+        session.record()
+        runCurrent()
+        assertEquals(4, engine.lastRecordConfig?.countInBeats)
+        assertIs<RecordingState.PreRoll>(session.state.value.recording.phase)
+        assertEquals(PlaybackState.Stopped(Beats.Zero), session.state.value.playback, "stopped during the count-in: leaving needs no dialog")
+        engine.endPreRoll()
+        advanceTimeBy(101)
+        runCurrent()
+        assertIs<RecordingState.Recording>(session.state.value.recording.phase)
+        assertEquals(PlaybackState.Playing, session.state.value.playback)
+        assertTrue(session.isPlaying)
+    }
+
+    /** The finished take is one undo step that pushes the arrangement with the new source (FR-011, FR-013). */
+    @Test
+    fun aFinishedTakePushesTheArrangementAsOneUndoStep() = recordingTest {
+        armDrums()
+        session.record()
+        runCurrent()
+        engine.endPreRoll()
+        advanceTimeBy(101)
+        runCurrent()
+        val before = engine.calls.size
+        val clipsBefore = session.state.value.project!!.tracks[0].clips.size
+        session.stopRecording()
+        runCurrent()
+        assertEquals(RecordingState.Armed(drumsTrack), session.state.value.recording.phase)
+        val project = session.state.value.project!!
+        assertEquals(clipsBefore + 1, project.tracks[0].clips.size)
+        assertTrue(project.tracks[0].clips.any { it.name == "Take 1" })
+        val pushed = callNames().drop(before)
+        assertTrue("openClipSource" in pushed, "the take's source is opened first: $pushed")
+        assertTrue(pushed.indexOf("openClipSource") < pushed.indexOf("setArrangement"))
+        assertTrue(session.state.value.canUndo)
+        session.undo()
+        assertEquals(clipsBefore, session.state.value.project!!.tracks[0].clips.size)
+        assertEquals(PlaybackState.Playing, session.state.value.playback, "playback continues after the stop")
+    }
+
+    /** Leaving while a take runs asks with the recording copy; confirming ends the take (kept) and pauses (FR-022). */
+    @Test
+    fun confirmLeaveWhileRecordingAsksWithTheRecordingVariantAndKeepsTheTake() = recordingTest {
+        armDrums()
+        session.record()
+        runCurrent()
+        engine.endPreRoll()
+        advanceTimeBy(101)
+        runCurrent()
+        val leave = async { session.confirmLeave() }
+        runCurrent()
+        val dialog = assertIs<DialogRequest.StopAndLeave>(session.dialog.value)
+        assertTrue(dialog.recording)
+        dialog.answer(true)
+        runCurrent()
+        assertTrue(leave.await())
+        assertEquals(RecordingState.Disarmed, session.state.value.recording.phase)
+        assertTrue(session.state.value.project!!.tracks[0].clips.any { it.name == "Take 1" })
+        assertIs<PlaybackState.Stopped>(session.state.value.playback)
+    }
+
+    @Test
+    fun confirmLeaveWhileRecordingKeepsRecordingOnKeepRecording() = recordingTest {
+        armDrums()
+        session.record()
+        runCurrent()
+        engine.endPreRoll()
+        advanceTimeBy(101)
+        runCurrent()
+        val leave = async { session.confirmLeave() }
+        runCurrent()
+        assertIs<DialogRequest.StopAndLeave>(session.dialog.value).answer(false)
+        runCurrent()
+        assertFalse(leave.await())
+        assertIs<RecordingState.Recording>(session.state.value.recording.phase)
+        assertEquals(PlaybackState.Playing, session.state.value.playback)
+    }
+
+    /** A count-in cancels without a question when the host goes (FR-022). */
+    @Test
+    fun leavingDuringTheCountInCancelsWithoutADialogAndDisarms() = recordingTest {
+        armDrums()
+        session.record()
+        runCurrent()
+        assertIs<RecordingState.PreRoll>(session.state.value.recording.phase)
+        assertFalse(session.isPlaying)
+        session.transportHostVisible(false)
+        runCurrent()
+        assertEquals(RecordingState.Disarmed, session.state.value.recording.phase)
+        assertNull(session.dialog.value)
+        assertTrue("recordCancel" in callNames())
+        assertTrue(session.state.value.project!!.tracks[0].clips.none { it.name == "Take 1" })
+    }
+
+    /** Deleting the armed track disarms it first; closing the project ends a take kept. */
+    @Test
+    fun trackDeletedAndProjectClosingReachTheController() = recordingTest {
+        armDrums()
+        session.edit(DeleteTrack(drumsTrack))
+        runCurrent()
+        assertEquals(RecordingState.Disarmed, session.state.value.recording.phase)
+        session.arm(bassTrack)
+        runCurrent()
+        session.record()
+        runCurrent()
+        engine.endPreRoll()
+        advanceTimeBy(101)
+        runCurrent()
+        session.open(demo.id)  // reopening: the take is adopted into the closing document first
+        runCurrent()
+        assertEquals(RecordingState.Disarmed, session.state.value.recording.phase)
+        assertEquals(1, repository.adoptedTakes.size)
+    }
+
+    /** A take the last run never adopted joins the document on open with no undo step (FR-023). */
+    @Test
+    fun aPendingTakeIsAdoptedOnOpenWithNoUndoStep() = recordingTest {
+        repository.pending[demo.id] = listOf(
+            TakeManifest(token = "crashed", trackId = bassTrack, startBeats = Beats(4.0), takeName = "Take 3", startedAt = 5L, alignmentFrames = 48, sampleRate = 48000, channels = 1),
+        )
+        openDemo()
+        val project = session.state.value.project!!
+        val take = project.tracks[1].clips.single { it.name == "Take 3" }
+        assertEquals(Beats(4.0), take.startBeats)
+        assertFalse(session.state.value.canUndo)
+        assertTrue("openClipSource(/fake/${demo.id.value}/audio/" in engine.calls.joinToString { it } || callNames().count { it == "openClipSource" } >= demo.assets.size + 1)
+        assertTrue(repository.pending[demo.id].isNullOrEmpty())
+    }
+
+    /** An interruption ends the take (kept) before the playback policy pauses (FR-021). */
+    @Test
+    fun anInterruptionEndsTheTakeKeptAndPausesPlayback() = recordingTest {
+        armDrums()
+        session.record()
+        runCurrent()
+        engine.endPreRoll()
+        advanceTimeBy(101)
+        runCurrent()
+        engine.emit(AudioEvent.Interrupted)
+        runCurrent()
+        assertIs<PlaybackState.Stopped>(session.state.value.playback)
+        assertEquals(RecordingState.Armed(drumsTrack), session.state.value.recording.phase)
+        assertTrue(session.state.value.project!!.tracks[0].clips.any { it.name == "Take 1" })
+        assertEquals(SessionMessage.TakeEnded(TakeStopReason.Interrupted), session.messages.first())
+    }
+
+    /** `RecordTake` applied directly through edit() also reaches the engine as an arrangement push. */
+    @Test
+    fun recordTakeEditPushesTheArrangement() = recordingTest {
+        openDemo()
+        val asset = AudioAsset("ab".repeat(32) + ".wav", AudioFormat.Wav, channels = 1, sampleRate = 48000, frames = 96_000, byteSize = 288_044)
+        val assetId = AudioAssetId("ab".repeat(32))
+        val before = engine.calls.size
+        val rejection = session.edit(RecordTake(bassTrack, assetId, asset, audio.tembra.core.project.ClipId("take-clip"), ClipTemplate.forAsset(assetId, asset), Beats(2.0)))
+        assertNull(rejection)
+        assertEquals(listOf("setArrangement"), callNames().drop(before))
     }
 }

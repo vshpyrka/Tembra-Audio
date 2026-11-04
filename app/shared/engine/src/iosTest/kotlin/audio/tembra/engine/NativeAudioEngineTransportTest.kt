@@ -42,7 +42,7 @@ class NativeAudioEngineTransportTest {
 
     @AfterTest
     fun tearDown() {
-        engine.closeTransport()
+        runBlocking { engine.closeTransport() }
         engine.stopListening()
         NSFileManager.defaultManager.removeItemAtPath(root, error = null)
     }

@@ -5,6 +5,7 @@ package audio.tembra.engine.perf
  * [PerfFamily]; the signpost names live in `perf-catalogue.txt` and reach the code through the generated
  * `signpostName()` (real strings in measurement builds, `""` otherwise). The TIMELINE, TRANSPORT and ENGINE_PRIME
  * entries are feature 009's (contracts/perf-instrumentation.md); TRANSPORT_MASTER_POPUP came with its design iteration D1.
+ * The arm, record, count-in, take-frame, monitor and alignment entries are feature 010's (timeline recording).
  * SHELL_WINDOW_RELAYOUT, SHELL_SHORTCUT_NAVIGATE and TIMELINE_CONTEXT_MENU are feature 011's (large screens and desktop).
  */
 enum class PerfSection(val family: PerfFamily) {
@@ -28,6 +29,15 @@ enum class PerfSection(val family: PerfFamily) {
     TRANSPORT_SEEK(PerfFamily.TRANSPORT),
     ENGINE_PRIME(PerfFamily.ENGINE),
     TRANSPORT_MASTER_POPUP(PerfFamily.TRANSPORT),
+    // Feature 010 (timeline recording, contracts/perf-instrumentation.md).
+    TIMELINE_ARM(PerfFamily.TIMELINE),
+    TRANSPORT_RECORD_START(PerfFamily.TRANSPORT),
+    TRANSPORT_COUNT_IN(PerfFamily.TRANSPORT),
+    TIMELINE_TAKE_FRAME(PerfFamily.TIMELINE),
+    TRANSPORT_RECORD_STOP(PerfFamily.TRANSPORT),
+    TIMELINE_MONITOR_TOGGLE(PerfFamily.TIMELINE),
+    ENGINE_TAKE_ALIGNMENT(PerfFamily.ENGINE),
+    // Feature 011 (large screens and desktop, contracts/perf-instrumentation.md).
     SHELL_WINDOW_RELAYOUT(PerfFamily.SHELL),
     SHELL_SHORTCUT_NAVIGATE(PerfFamily.SHELL),
     TIMELINE_CONTEXT_MENU(PerfFamily.TIMELINE),

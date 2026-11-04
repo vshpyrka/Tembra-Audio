@@ -1,5 +1,10 @@
 package audio.tembra.ui.timeline
 
+import audio.tembra.core.project.CountIn
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertHasClickAction
@@ -20,6 +25,7 @@ import audio.tembra.ui.timeline.components.METRONOME_SHEET_SUBDIVISION_TAG
 import audio.tembra.ui.timeline.components.METRONOME_SHEET_TAG
 import audio.tembra.ui.timeline.components.METRONOME_SHEET_TEMPO_TAG
 import audio.tembra.ui.timeline.components.MetronomeSettingsSheet
+import kotlin.test.assertTrue
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -52,6 +58,32 @@ class MetronomeSettingsSheetTest {
         onNodeWithTag("$METRONOME_SHEET_SUBDIVISION_TAG.${Subdivision.Two.id}").performClick()
         onNodeWithTag("${METRONOME_SHEET_CELLS_TAG.removeSuffix("s")}.3").performClick()
         assertEquals(listOf("subdivision(Two)", "cycle(2)"), calls)
+    }
+
+    /** The count-in sits under the signature (feature 010, spec FR-015): the project's value, a choice reported, read-only during a take (FR-018). */
+    @Test
+    fun theCountInRowSitsUnderTheSignatureAndReportsAChoice() = runComposeUiTest {
+        val calls = mutableListOf<String>()
+        val enabled = mutableStateOf(true)
+        setContent {
+            TembraTheme {
+                MetronomeSettingsSheet(
+                    settings = MetronomeSettings(), tempo = Tempo(124), signature = TimeSignature.FourFour,
+                    onTimeSignature = {}, onClickSound = {}, onImportCustomSound = {}, onSubdivision = {}, onCycleBeat = {}, onStyle = {}, onDismiss = {},
+                    countIn = CountIn.ONE_BAR, countInEnabled = enabled.value, onCountIn = { calls += "countIn(${it.name})" },
+                )
+            }
+        }
+        waitForIdle()
+        val signature = onNodeWithTag(TimelineTestTags.METRONOME_SHEET_SIGNATURE).getUnclippedBoundsInRoot()
+        val countIn = onNodeWithTag(TimelineTestTags.COUNT_IN).assertContentDescriptionEquals("Count-in, 1 bar").assertIsEnabled().getUnclippedBoundsInRoot()
+        assertTrue(countIn.top >= signature.bottom, "the count-in $countIn is not under the signature $signature")
+        onNodeWithTag(TimelineTestTags.COUNT_IN).performClick()
+        onNodeWithTag("${TimelineTestTags.COUNT_IN}.${CountIn.OFF.name}").performClick()
+        assertEquals(listOf("countIn(OFF)"), calls)
+        enabled.value = false
+        waitForIdle()
+        onNodeWithTag(TimelineTestTags.COUNT_IN).assertIsNotEnabled()
     }
 
     /** The signature moved here from the ruler (spec FR-037, D1): the metronome's menu reads the project's and reports a change. */

@@ -13,6 +13,14 @@ using InputCallback = void (*)(void* context, const float* mono, uint32_t frames
 /** Interleaved stereo float frames the output stream needs; the callee fills all 2 × [frames] samples. */
 using RenderCallback = void (*)(void* context, float* interleavedStereo, uint32_t frames);
 
+/**
+ * One input block of the duplex transport (feature 010, research R2, R3): [interleaved] holds [channels] × [frames]
+ * floats read in the same device callback that is about to pull the output (zero-padded when the read was short by
+ * [shortFrames]; 0 during the device's warm-up bursts). Delivered immediately before the render callback, on the
+ * same thread, so the renderer mixes and captures the block its output corresponds to.
+ */
+using CaptureCallback = void (*)(void* context, const float* interleaved, uint32_t channels, uint32_t frames, uint32_t shortFrames);
+
 class AudioDevice {
 public:
     virtual ~AudioDevice() = default;
@@ -55,6 +63,36 @@ public:
      * getXRunCount() is not for the callback; the health getter samples it off the audio thread.
      */
     virtual uint32_t xrunCount() const { return 0; }
+
+    // --- The duplex input beside an open output (feature 010, contracts/engine-c-abi-v7.md "Arming") ---------------
+
+    /**
+     * Opens the input at the output's [rate] with the device's channel count clamped to [maxChannels] (1 or 2), without
+     * voice processing, while the output stays open and uninterrupted where the platform allows it (Android; iOS restarts
+     * the unit). The block reaches [callback] before each render callback. Returns a tembra_error; control thread.
+     */
+    virtual int32_t openInputBeside(uint32_t /*rate*/, uint32_t /*maxChannels*/, CaptureCallback /*callback*/, void* /*context*/) { return -2; }
+
+    /** Closes the duplex input, leaving the output open; idempotent. Control thread. */
+    virtual void closeInput() {}
+
+    /** The open duplex input's channel count; 0 while none is open. */
+    virtual uint32_t inputChannels() const { return 0; }
+
+    /** The input latency (capture → the callback) in nanoseconds, 0 when unknown; a cached atomic, never blocks. */
+    virtual int64_t inputLatencyNanos() const { return 0; }
+
+    /** The host-measured input latency (iOS); ignored where the device measures it. */
+    virtual void setReportedInputLatencyNanos(int64_t /*nanos*/) {}
+
+    /** The input stream's own xrun count since it opened (Android); host threads only. */
+    virtual uint32_t inputXruns() const { return 0; }
+
+    /** +1 every time the platform closed and reopened the input on its own; lock-free, read on the callback. */
+    virtual uint32_t inputGeneration() const { return 0; }
+
+    /** +1 every time the platform closed and reopened the output on its own; lock-free, read on the callback. */
+    virtual uint32_t outputGeneration() const { return 0; }
 };
 
 }  // namespace tembra

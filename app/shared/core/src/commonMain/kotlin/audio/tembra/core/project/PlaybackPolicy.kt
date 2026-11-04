@@ -39,6 +39,10 @@ object PlaybackPolicy {
             is PlaybackState.Stopped, is PlaybackState.Starting, PlaybackState.Playing -> stay(state)
         }
         PlaybackEvent.InterruptionEnded -> stay(state)
+        PlaybackEvent.RecordStarted -> when (state) {
+            is PlaybackState.Stopped, is PlaybackState.Starting -> PlaybackOutcome(PlaybackState.Playing, PlaybackTransition.BecomePlaying)
+            PlaybackState.Playing, PlaybackState.Pausing -> stay(state)
+        }
         is PlaybackEvent.Seek -> seekTo(state, event.beats.coerceAtLeastZero())
         PlaybackEvent.SkipToStart -> seekTo(state, Beats.Zero)
         is PlaybackEvent.StepBar -> seekTo(state, barLineFrom(event))

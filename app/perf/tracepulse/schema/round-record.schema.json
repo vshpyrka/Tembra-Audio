@@ -64,14 +64,14 @@
     },
     "status": { "enum": ["succeeded", "failed"] },
     "failure_reason": { "type": "string" },
-    "badges": { "type": "array", "items": { "enum": ["noisy", "thermal", "simulator", "fingerprint_changed"] } },
+    "badges": { "type": "array", "items": { "enum": ["noisy", "thermal", "simulator", "fingerprint_changed", "short-iterations"] } },
     "journeys": {
       "type": "array",
       "items": {
         "type": "object",
         "required": ["journey", "iterations", "metrics"],
         "properties": {
-          "journey": { "enum": ["startup", "tuner", "metronome", "timeline", "stress"] },
+          "journey": { "enum": ["startup", "tuner", "metronome", "timeline", "recording", "stress"] },
           "iterations": { "type": "integer", "minimum": 1 },
           "metrics": {
             "type": "object",

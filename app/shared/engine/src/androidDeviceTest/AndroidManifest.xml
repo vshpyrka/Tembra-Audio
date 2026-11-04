@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The engine's device tests: the foreground activity the real-time tests show (TransportTimingEndToEndTest). -->
+<!-- The engine's device tests: the foreground activity the real-time tests show (TransportTimingEndToEndTest) and
+     the microphone the recording tests capture from (feature 010: the runner's grant needs the test package to ask). -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <application>
         <activity
             android:name="audio.tembra.engine.ForegroundActivity"

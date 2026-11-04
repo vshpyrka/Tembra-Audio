@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
@@ -28,6 +29,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import audio.tembra.ui.session.InputTelemetry
 import audio.tembra.engine.perf.PerfSection
 import audio.tembra.engine.perf.PerfTrace
 import audio.tembra.ui.designsystem.focusIdentity
@@ -39,6 +41,8 @@ import audio.tembra.ui.theme.TembraIcon
 import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.ui.timeline.TimelineTestTags
 import audio.tembra.ui.timeline.TrackUi
+import audio.tembra.ui.transport.RecordButton
+import audio.tembra.ui.transport.RecordButtonState
 import audio.tembra.ui.transport.TransportButton
 
 /**
@@ -62,6 +66,14 @@ internal fun TrackHeaderCompact(
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
     onDelete: () -> Unit,
+    onArm: (Boolean) -> Unit = {},
+    onRecord: () -> Unit = {},
+    recordState: RecordButtonState = RecordButtonState.Idle,
+    /** False while a take runs: Move up, Move down and Delete track are unavailable (feature 010, spec FR-018). */
+    canReorder: Boolean = true,
+    /** The armed track's input, read per frame by the meter (feature 010, spec FR-005); null leaves the meter out. */
+    inputTelemetry: InputTelemetry? = null,
+    onResetClip: () -> Unit = {},
     menuOpen: Boolean,
     onMenuOpen: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
@@ -74,7 +86,7 @@ internal fun TrackHeaderCompact(
     val density = LocalDensity.current
     val menuAnchor = rememberPointerMenuAnchor()
     var menuOffset by remember { mutableStateOf(DpOffset.Zero) }
-    Row(
+    Box(
         modifier = modifier
             .fillMaxWidth()
             .height(HeaderHeight)
@@ -90,9 +102,26 @@ internal fun TrackHeaderCompact(
                 }
             }
             .pointerHoverIcon(PointerIcon.Hand).selectable(selected = selected, role = Role.Button, onClick = onSelect)
-            .semantics { contentDescription = track.description }
+            .semantics { contentDescription = track.description },
+    ) {
+    // The input meter lies along the bottom edge, over the row, so the header keeps its 56 dp (spec FR-005).
+    if (track.armed && inputTelemetry != null) {
+        InputMeter(
+            telemetry = inputTelemetry,
+            armed = true,
+            onResetClip = onResetClip,
+            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
+            testTag = TimelineTestTags.meter(index),
+            clipTestTag = TimelineTestTags.clipIndicator(index),
+        )
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(HeaderHeight)
             .padding(start = spacing.md, end = spacing.xs),
-        horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+        // xs gaps: with Record shown the 44 dp controls (Record, M, S, arm, menu) plus a 72 dp name must fit 360 dp.
+        horizontalArrangement = Arrangement.spacedBy(spacing.xs),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(Modifier.size(DotSize).background(if (track.audible) tint else tint.copy(alpha = DimmedAlpha), CircleShape))
@@ -102,12 +131,18 @@ internal fun TrackHeaderCompact(
             color = if (track.audible) colors.onSurface else colors.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f, fill = false),
+            modifier = Modifier.weight(1f, fill = false).widthIn(min = NameMinWidth).padding(start = spacing.xs),
         )
-        track.label?.let { InstrumentChip(it) }
+        // While armed with Record available here the chip makes room for the Record control (contract, "Layout rules").
+        if (track.armed && track.recordHere) {
+            RecordButton(state = recordState, onRecord = onRecord, testTag = TimelineTestTags.record(index))
+        } else {
+            track.label?.let { InstrumentChip(it) }
+        }
         Box(Modifier.weight(1f))
         MuteSoloButton(letter = "M", description = MUTE_DESCRIPTION, checked = track.muted, tint = tint, onCheckedChange = onMute, testTag = TimelineTestTags.mute(index))
         MuteSoloButton(letter = "S", description = SOLO_DESCRIPTION, checked = track.soloed, tint = tint, onCheckedChange = onSolo, testTag = TimelineTestTags.solo(index))
+        ArmButton(armed = track.armed, trackTint = tint, onToggle = onArm, testTag = TimelineTestTags.arm(index))
         TrackMenu(
             expanded = menuOpen,
             isFirst = isFirst,
@@ -119,6 +154,7 @@ internal fun TrackHeaderCompact(
             onMoveDown = onMoveDown,
             onDelete = onDelete,
             testTag = TimelineTestTags.TRACK_MENU,
+            canReorder = canReorder,
             offset = menuOffset,
         ) {
             TransportButton(
@@ -133,11 +169,13 @@ internal fun TrackHeaderCompact(
             )
         }
     }
+    }
 }
 
 internal const val MUTE_DESCRIPTION = "Mute"
 internal const val SOLO_DESCRIPTION = "Solo"
 internal const val TRACK_MENU_DESCRIPTION = "Track menu"
 internal val HeaderHeight = 56.dp
+internal val NameMinWidth = 72.dp
 internal val DotSize = 10.dp
 internal const val DimmedAlpha = 0.4f

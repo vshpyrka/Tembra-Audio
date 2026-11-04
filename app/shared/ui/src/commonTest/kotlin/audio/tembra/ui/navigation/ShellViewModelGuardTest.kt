@@ -54,6 +54,19 @@ class ShellViewModelGuardTest {
         assertNull(viewModel.dialog.value)
     }
 
+    /** A running take asks with the recording variant (feature 010, FR-022; T071); the guard itself cancels a pre-roll without a question. */
+    @Test
+    fun aRunningTakeAsksWithTheRecordingVariant() = runTest(dispatcher) {
+        guard.recording = true
+        viewModel.select(Destination.Tuner)
+        runCurrent()
+        val dialog = assertIs<DialogRequest.StopAndLeave>(viewModel.dialog.value)
+        assertTrue(dialog.recording)
+        guard.answerLeave(true)
+        runCurrent()
+        assertEquals(Destination.Tuner, viewModel.uiState.value.selected)
+    }
+
     @Test
     fun aNewShellTellsTheSessionTheTimelineShows() = runTest(dispatcher) {
         // A new activity's shell starts on the Timeline: the session takes the device back from the standalone

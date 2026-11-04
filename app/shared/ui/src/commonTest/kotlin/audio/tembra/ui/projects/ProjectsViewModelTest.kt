@@ -1,5 +1,10 @@
 package audio.tembra.ui.projects
 
+import audio.tembra.ui.session.RecordingController
+import audio.tembra.ui.platform.MicrophonePermissionStatus
+import audio.tembra.ui.platform.FakeMicrophonePermission
+import audio.tembra.ui.platform.FakeAudioRouteMonitor
+import audio.tembra.data.timeline.FakeTimelinePreferences
 import audio.tembra.core.project.LibraryFilter
 import audio.tembra.core.project.LibrarySort
 import audio.tembra.core.project.MusicalKey
@@ -60,6 +65,18 @@ class ProjectsViewModelTest {
         metronome = engine,
         preferences = FakeMetronomePreferences(),
         host = FakeBackgroundPlaybackHost(),
+        recording = RecordingController(
+            audio = engine,
+            permission = FakeMicrophonePermission(MicrophonePermissionStatus.Granted),
+            routes = FakeAudioRouteMonitor(),
+            host = FakeBackgroundPlaybackHost(),
+            preferences = FakeTimelinePreferences(),
+            repository = repository,
+            scope = scope,
+            clock = { 0L },
+            tokens = { "take-1" },
+            mirrorIntervalMs = 100,
+        ),
         scope = scope,
         overviewReader = { WaveformOverview(1, 512, 2, emptyList()) },
         ioDispatcher = dispatcher,

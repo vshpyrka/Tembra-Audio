@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import audio.tembra.core.project.GridSize
+import audio.tembra.core.recording.MonitorState
 import audio.tembra.ui.designsystem.MenuItemSpec
 import audio.tembra.ui.designsystem.TembraMenu
 import audio.tembra.ui.theme.TembraIcon
@@ -37,7 +38,8 @@ import audio.tembra.ui.transport.TransportButton
  * so it stays whole and the overflow button keeps its 44 dp at twice the font size on a 360 dp phone (FR-055). Medium
  * and expanded windows show the full row: "Add audio…" and "Add audio as new track" after "+ Track" and, at the right
  * end, the "Snap" pill, the tempo pill and the metronome settings button, with only "Overview strip" in the overflow
- * (the device preference lives nowhere else). "Overview strip" is checked while the strip shows and a tap flips it
+ * (the device preference lives nowhere else). Since feature 010 the input monitoring toggle follows the scissors in the
+ * full row and is a checked "Monitor input" row in the compact overflow (spec FR-016). "Overview strip" is checked while the strip shows and a tap flips it
  * through [onOverviewStripShown] (FR-015; T151). The scissors are enabled only while a split is possible (spec
  * FR-032), undo and redo while the history allows (FR-035).
  */
@@ -58,6 +60,8 @@ internal fun TimelineToolbar(
     onMetronomeSettings: () -> Unit,
     onFullScreen: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    /** Input monitoring (feature 010, spec FR-016): the toggle after the scissors from 600 dp, a checked overflow row below. */
+    onMonitorToggle: () -> Unit = {},
 ) {
     val spacing = TembraTheme.spacing
     val full = layout == TimelineLayout.Expanded || layout == TimelineLayout.Medium
@@ -73,9 +77,10 @@ internal fun TimelineToolbar(
         listOfNotNull(overviewStrip, fullScreen)
     } else {
         listOfNotNull(
-            MenuItemSpec(ADD_AUDIO, TimelineCopy.addAudio, TembraIcon.AudioFile, enabled = state.loaded),
-            MenuItemSpec(ADD_AUDIO_NEW, TimelineCopy.addAudioAsNewTrack, TembraIcon.PlaylistAdd, enabled = state.loaded),
+            MenuItemSpec(ADD_AUDIO, TimelineCopy.addAudio, TembraIcon.AudioFile, enabled = state.canImport),
+            MenuItemSpec(ADD_AUDIO_NEW, TimelineCopy.addAudioAsNewTrack, TembraIcon.PlaylistAdd, enabled = state.canImport),
             MenuItemSpec(SNAP, TimelineCopy.snapEntry(state.grid.label), TembraIcon.GridOn, enabled = state.loaded),
+            MenuItemSpec(MONITOR, TimelineCopy.monitorInput, TembraIcon.Headphones, enabled = state.loaded, selected = state.monitor != MonitorState.Off),
             overviewStrip,
             MenuItemSpec(METRONOME, TimelineCopy.metronomeSettings, TembraIcon.Metronome, enabled = state.loaded),
             fullScreen,
@@ -88,22 +93,23 @@ internal fun TimelineToolbar(
         horizontalArrangement = Arrangement.spacedBy(if (full) spacing.xs else 0.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        TransportButton(icon = TembraIcon.Add, description = TimelineCopy.addTrack, onClick = onAddTrack, enabled = state.loaded, testTag = TimelineTestTags.ADD_TRACK)
+        TransportButton(icon = TembraIcon.Add, description = TimelineCopy.addTrack, onClick = onAddTrack, enabled = state.canAddTrack, testTag = TimelineTestTags.ADD_TRACK)
         if (full) {
-            TransportButton(icon = TembraIcon.AudioFile, description = TimelineCopy.addAudio, onClick = onAddAudio, enabled = state.loaded, testTag = TimelineTestTags.ADD_AUDIO)
-            TransportButton(icon = TembraIcon.PlaylistAdd, description = TimelineCopy.addAudioAsNewTrack, onClick = onAddAudioAsNewTrack, enabled = state.loaded, testTag = TimelineTestTags.ADD_AUDIO_NEW_TRACK)
+            TransportButton(icon = TembraIcon.AudioFile, description = TimelineCopy.addAudio, onClick = onAddAudio, enabled = state.canImport, testTag = TimelineTestTags.ADD_AUDIO)
+            TransportButton(icon = TembraIcon.PlaylistAdd, description = TimelineCopy.addAudioAsNewTrack, onClick = onAddAudioAsNewTrack, enabled = state.canImport, testTag = TimelineTestTags.ADD_AUDIO_NEW_TRACK)
         }
         TransportButton(icon = TembraIcon.ContentCut, description = TimelineCopy.split, onClick = onSplit, enabled = state.canSplit, testTag = TimelineTestTags.SPLIT)
+        if (full) MonitorToggle(state = state.monitor, onToggle = onMonitorToggle, enabled = state.loaded)
         TransportButton(icon = TembraIcon.Undo, description = TimelineCopy.undo, onClick = onUndo, enabled = state.canUndo, testTag = TimelineTestTags.UNDO)
         TransportButton(icon = TembraIcon.Redo, description = TimelineCopy.redo, onClick = onRedo, enabled = state.canRedo, testTag = TimelineTestTags.REDO)
         if (full) {
             Spacer(Modifier.weight(1f))
             GridPicker(grid = state.grid, onGrid = onGrid)
-            TempoPill(tempo = state.tempo, onClick = onTempo, enabled = state.loaded)
+            TempoPill(tempo = state.tempo, onClick = onTempo, enabled = state.canEditTempo)
             TransportButton(icon = TembraIcon.Metronome, description = TimelineCopy.metronomeSettings, onClick = onMetronomeSettings, enabled = state.loaded, testTag = TimelineTestTags.METRONOME_SETTINGS)
         } else {
             Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
-                TempoPill(tempo = state.tempo, onClick = onTempo, enabled = state.loaded)
+                TempoPill(tempo = state.tempo, onClick = onTempo, enabled = state.canEditTempo)
             }
         }
         TembraMenu(
@@ -115,6 +121,7 @@ internal fun TimelineToolbar(
                     ADD_AUDIO -> onAddAudio()
                     ADD_AUDIO_NEW -> onAddAudioAsNewTrack()
                     SNAP -> onSnapSheet()
+                    MONITOR -> onMonitorToggle()
                     OVERVIEW_STRIP -> onOverviewStripShown(!state.overviewStripShown)
                     METRONOME -> onMetronomeSettings()
                     FULL_SCREEN -> onFullScreen(state.fullScreenItem == FullScreenItem.Enter)
@@ -131,6 +138,8 @@ private const val MORE = "More"
 private const val ADD_AUDIO = "addAudio"
 private const val ADD_AUDIO_NEW = "addAudioNewTrack"
 private const val SNAP = "snap"
+/** The row id: tagged [TimelineTestTags.OVERFLOW_MONITOR]. */
+private const val MONITOR = "monitor"
 private const val METRONOME = "metronomeSettings"
 /** The row id: tagged [TimelineTestTags.OVERFLOW_OVERVIEW_STRIP]. */
 private const val OVERVIEW_STRIP = "overviewStrip"

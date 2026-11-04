@@ -30,6 +30,8 @@ data class SessionState(
     val saving: Boolean = false,
     val metronomeOn: Boolean = false,
     val unavailable: String? = null,
+    /** The recording session (feature 010): the armed track, the phase, the monitor and the growing take. */
+    val recording: RecordingUi = RecordingUi(),
 ) {
     val isPlaying: Boolean get() = playback is PlaybackState.Playing || playback is PlaybackState.Starting
 }

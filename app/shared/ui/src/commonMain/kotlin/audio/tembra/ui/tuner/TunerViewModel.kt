@@ -9,6 +9,7 @@ import audio.tembra.core.tuner.TunerMode
 import audio.tembra.core.tuner.TuningPresets
 import audio.tembra.data.tuner.TunerPreferences
 import audio.tembra.data.tuner.TunerPreferencesSnapshot
+import audio.tembra.engine.EngineDispatchers
 import audio.tembra.engine.AudioEvent
 import audio.tembra.engine.AudioResult
 import audio.tembra.engine.AudioState
@@ -65,7 +66,7 @@ class TunerViewModel(
      * up (about 70 ms on a Pixel 6 Pro, 130 ms on an iPhone 14), which on the main thread dropped the first frames of
      * the screen that asked for it. One thread, so stops and starts keep their order; an optional binding.
      */
-    private val audioDispatcher: CoroutineDispatcher = Dispatchers.Default.limitedParallelism(1),
+    private val audioDispatcher: CoroutineDispatcher = EngineDispatchers.blocking,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TunerUiState())
@@ -453,6 +454,8 @@ class TunerViewModel(
                 _uiState.update { it.copy(audition = null) }
                 applyAudio()
             }
+            // Feature 010: the recording session's route changes; the tuner's own stream is untouched by them.
+            AudioEvent.InputRouteChanged, is AudioEvent.OutputRouteChanged -> Unit
         }
     }
 

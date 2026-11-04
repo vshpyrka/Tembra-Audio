@@ -20,11 +20,31 @@ data class TransportUiState(
     val metronomeOn: Boolean = false,
     /** False while no project is open: every control but the master volume is disabled. */
     val hasProject: Boolean = false,
+    // Feature 010 (contracts/timeline-recording-ui.md): Record, the count-in and the seeking controls.
+    /** The Record control's state; [RecordButtonState.Hidden] where the bar is too narrow for it (the content decides). */
+    val record: RecordButtonState = RecordButtonState.Hidden,
+    /** Beats of a running count-in still to sound, down to 1; -1 when none runs (the readout shows "Count-in N"). */
+    val countInBeatsLeft: Int = -1,
+    /** False while a take runs: skip-to-start and the step buttons are unavailable (spec FR-009). */
+    val seekEnabled: Boolean = true,
 ) {
     val isPlaying: Boolean get() = playback is PlaybackState.Playing || playback is PlaybackState.Starting
 
-    /** "00:00.00 / 00:30.96". */
-    val readoutText: String get() = "${TimeFormat.clock(positionSeconds)} / ${TimeFormat.clock(lengthSeconds)}"
+    val isCountingIn: Boolean get() = countInBeatsLeft >= 0
+
+    /** "00:00.00 / 00:30.96", or "Count-in 4 / 00:30.96" during the count-in. */
+    val readoutText: String get() = "${positionText} / ${TimeFormat.clock(lengthSeconds)}"
+
+    /** The position half of the readout: the clock, or "Count-in N" while the count-in runs (spec FR-015). */
+    val positionText: String get() = if (isCountingIn) TransportCopy.countIn(countInBeatsLeft) else TimeFormat.clock(positionSeconds)
+
+    /** "Record", "Recording" or "Count-in, N beats left" (spec FR-029). */
+    val recordLabel: String
+        get() = when (record) {
+            RecordButtonState.Hidden, RecordButtonState.Idle -> TransportCopy.record
+            RecordButtonState.CountIn -> TransportCopy.countInBeatsLeft(countInBeatsLeft)
+            RecordButtonState.Recording -> TransportCopy.recording
+        }
 
     val playLabel: String get() = if (isPlaying) TransportCopy.pause else TransportCopy.play
 

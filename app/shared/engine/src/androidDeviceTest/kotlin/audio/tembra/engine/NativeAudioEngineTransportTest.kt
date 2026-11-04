@@ -25,7 +25,7 @@ class NativeAudioEngineTransportTest {
 
     @AfterTest
     fun tearDown() {
-        engine.closeTransport()
+        runBlocking { engine.closeTransport() }
         engine.stopListening()
         root.deleteRecursively()
     }

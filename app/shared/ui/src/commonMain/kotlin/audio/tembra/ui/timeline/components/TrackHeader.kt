@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -30,6 +31,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 import audio.tembra.core.project.GainDb
+import audio.tembra.ui.session.InputTelemetry
 import audio.tembra.engine.perf.PerfSection
 import audio.tembra.engine.perf.PerfTrace
 import audio.tembra.ui.designsystem.focusIdentity
@@ -67,6 +69,12 @@ internal fun TrackHeader(
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
     onDelete: () -> Unit,
+    onArm: (Boolean) -> Unit = {},
+    /** False while a take runs: Move up, Move down and Delete track are unavailable (feature 010, spec FR-018). */
+    canReorder: Boolean = true,
+    /** The armed track's input, read per frame by the meter beneath row 2 (feature 010, spec FR-005); null leaves it out. */
+    inputTelemetry: InputTelemetry? = null,
+    onResetClip: () -> Unit = {},
     menuOpen: Boolean,
     onMenuOpen: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
@@ -79,7 +87,7 @@ internal fun TrackHeader(
     val density = LocalDensity.current
     val menuAnchor = rememberPointerMenuAnchor()
     var menuOffset by remember { mutableStateOf(DpOffset.Zero) }
-    Column(
+    Box(
         modifier = modifier
             .width(spacing.headerColumnWidth)
             .fillMaxHeight()
@@ -95,8 +103,24 @@ internal fun TrackHeader(
                 }
             }
             .pointerHoverIcon(PointerIcon.Hand).selectable(selected = selected, role = Role.Button, onClick = onSelect)
-            .semantics { contentDescription = track.description }
-            .padding(horizontal = spacing.sm, vertical = spacing.xs),
+            .semantics { contentDescription = track.description },
+    ) {
+    // The input meter lies along the bottom edge, in the column's bottom padding, so the header keeps its height (spec
+    // FR-005; T099: the 96 dp lane holds the two 44 dp rows and the padding with nothing to spare, so a bar placed in
+    // the column's flow beneath the gain row was measured at 0 dp and never drawn).
+    if (track.armed && inputTelemetry != null) {
+        InputMeter(
+            telemetry = inputTelemetry,
+            armed = true,
+            onResetClip = onResetClip,
+            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = spacing.sm),
+            height = spacing.meterHeightExpanded,
+            testTag = TimelineTestTags.meter(index),
+            clipTestTag = TimelineTestTags.clipIndicator(index),
+        )
+    }
+    Column(
+        modifier = Modifier.fillMaxSize().padding(horizontal = spacing.sm, vertical = spacing.xs),
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(spacing.sm), verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
@@ -121,6 +145,7 @@ internal fun TrackHeader(
                 onMoveDown = onMoveDown,
                 onDelete = onDelete,
                 testTag = TimelineTestTags.TRACK_MENU,
+                canReorder = canReorder,
                 offset = menuOffset,
             ) {
                 TransportButton(
@@ -139,6 +164,7 @@ internal fun TrackHeader(
             GainReadout(gain = track.gainDb, onGain = onGain, modifier = Modifier.weight(1f), testTag = TimelineTestTags.gain(index))
             MuteSoloButton(letter = "M", description = MUTE_DESCRIPTION, checked = track.muted, tint = tint, onCheckedChange = onMute, size = SmallToggle, testTag = TimelineTestTags.mute(index))
             MuteSoloButton(letter = "S", description = SOLO_DESCRIPTION, checked = track.soloed, tint = tint, onCheckedChange = onSolo, size = SmallToggle, testTag = TimelineTestTags.solo(index))
+            ArmButton(armed = track.armed, trackTint = tint, onToggle = onArm, size = SmallToggle, testTag = TimelineTestTags.arm(index))
             TransportButton(
                 icon = if (expanded) TembraIcon.ExpandLess else TembraIcon.ExpandMore,
                 description = if (expanded) COLLAPSE_SETTINGS else TimelineCopy.trackSettings,
@@ -146,6 +172,7 @@ internal fun TrackHeader(
                 testTag = TimelineTestTags.chevron(index),
             )
         }
+    }
     }
 }
 

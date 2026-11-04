@@ -2,7 +2,9 @@ package audio.tembra.ui.timeline
 
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -41,11 +43,22 @@ fun TimelineScreen(
     ReportFirstContentDrawn(state.isFirstContentReady)
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(viewModel, snackbarHostState) {
-        viewModel.messages.collect { snackbarHostState.showSnackbar(it.text) }
+        viewModel.messages.collect { message ->
+            val action = message.action
+            // A message with an action stays longer, never indefinitely: the queue behind it must move (feature 010, FR-020).
+            val result = if (action == null) {
+                snackbarHostState.showSnackbar(message.text)
+            } else {
+                snackbarHostState.showSnackbar(message.text, actionLabel = action, duration = SnackbarDuration.Long)
+            }
+            if (result == SnackbarResult.ActionPerformed && message is TimelineMessage.MicrophoneDenied) viewModel.requestMicrophone()
+        }
     }
     val layoutMode = rememberLayoutMode()
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val layout = TimelineLayout.from(maxWidth, maxHeight, layoutMode)
+        // The transport bar spans the screen: its width places Record and the monitor toggle (feature 010, spec FR-007).
+        LaunchedEffect(maxWidth) { viewModel.barWidthMeasured(maxWidth) }
         // The hand-off across 840 dp (spec FR-042): the open form moves between the nested entry and the inline row;
         // the typed draft travels through the session, so nothing is lost either way.
         LaunchedEffect(layout.inlineSettings, nestedTrackSettings, state.expandedTrack) {
@@ -114,12 +127,19 @@ fun TimelineScreen(
                 onSubdivision = viewModel::selectSubdivision,
                 onCycleBeat = viewModel::cycleBeat,
                 onStyle = viewModel::selectStyle,
+                onArm = viewModel::arm,
+                onRecord = viewModel::record,
+                onResetClip = { viewModel.resetClip() },
+                onMonitorToggle = viewModel::toggleMonitor,
+                onCountIn = viewModel::setCountIn,
+                onRequestMicrophone = viewModel::requestMicrophone,
             )
         }
         TimelineScreenContent(
             state = state,
             callbacks = callbacks,
             telemetry = viewModel.telemetry,
+            inputTelemetry = viewModel.inputTelemetry,
             layout = layout,
             snackbarHostState = snackbarHostState,
             modifier = Modifier.fillMaxSize(),

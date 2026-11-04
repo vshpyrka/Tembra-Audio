@@ -39,7 +39,13 @@ class AndroidBackgroundPlaybackHost(
             // Already running: the notification follows the new payload (the metronome's tempo, a renamed project).
             ForegroundState.Foreground -> {
                 rememberNotification(notification.title, notification.subtitle)
-                repostRunningNotification(context)
+                if (notification.title == PlaybackNotification.RECORDING_TITLE && !microphoneTyped && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                    // A take began while playback already held the service: a second start command re-enters the
+                    // foreground with the microphone type (feature 010, FR-021); the state stays Foreground throughout.
+                    upgradeRunningService(notification)
+                } else {
+                    repostRunningNotification(context)
+                }
                 true
             }
             ForegroundState.Starting -> true
@@ -65,6 +71,21 @@ class AndroidBackgroundPlaybackHost(
     } catch (e: IllegalStateException) {
         // API 31+ refuses a foreground-service start while the app is not visible.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && e is ForegroundServiceStartNotAllowedException) false else throw e
+    }
+
+    /** The running service's start command again, with the recording payload; refused starts leave the media type in place. */
+    private fun upgradeRunningService(notification: PlaybackNotification) {
+        try {
+            context.startForegroundService(
+                serviceIntent()
+                    .setAction(PlaybackForegroundService.ACTION_START)
+                    .putExtra(PlaybackForegroundService.EXTRA_TITLE, notification.title)
+                    .putExtra(PlaybackForegroundService.EXTRA_SUBTITLE, notification.subtitle),
+            )
+        } catch (e: IllegalStateException) {
+            if (!(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && e is ForegroundServiceStartNotAllowedException)) throw e
+            repostRunningNotification(context)
+        }
     }
 
     override fun release() {
@@ -104,6 +125,10 @@ class AndroidBackgroundPlaybackHost(
         internal var notificationSubtitle: String = ""
             private set
 
+        /** True while the running service holds the microphone foreground type (feature 010, FR-021); set by the service. */
+        @Volatile
+        internal var microphoneTyped: Boolean = false
+
         internal fun rememberNotification(title: String, subtitle: String) {
             notificationTitle = title
             notificationSubtitle = subtitle
@@ -133,7 +158,10 @@ class AndroidBackgroundPlaybackHost(
 
         /** Called by the service when it stops on its own (the Stop action, task removal, a refused foreground start). */
         internal fun stopped() {
-            synchronized(lock) { state = ForegroundState.Idle }
+            synchronized(lock) {
+                state = ForegroundState.Idle
+                microphoneTyped = false
+            }
         }
 
         /**
@@ -145,6 +173,7 @@ class AndroidBackgroundPlaybackHost(
         internal fun serviceDestroyed() {
             synchronized(lock) {
                 if (state == ForegroundState.Foreground) state = ForegroundState.Idle
+                microphoneTyped = false
             }
         }
     }

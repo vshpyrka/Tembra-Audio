@@ -13,4 +13,11 @@ sealed interface AudioEvent {
 
     /** The output route (headphones) disappeared while a tone played. */
     data object OutputRouteLost : AudioEvent
+
+    // Feature 010 (research R12): the actuals report route changes from the platform's device callbacks.
+    /** The input device changed (a wired headset microphone or an interface plugged in or removed): a take ends. */
+    data object InputRouteChanged : AudioEvent
+
+    /** The output route changed; [isSpeaker] when it is now the built-in speaker (monitoring must stop). */
+    data class OutputRouteChanged(val isSpeaker: Boolean) : AudioEvent
 }

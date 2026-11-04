@@ -29,6 +29,8 @@ class IconAssetsTest {
         "ic_expand_less_24.xml", "ic_more_vert_24.xml", "ic_audio_file_24.xml", "ic_playlist_add_24.xml", "ic_mic_24.xml", "ic_piano_24.xml",
     )
 
+    /** Feature 010 (timeline recording): the monitoring toggle's headphones. */
+    private val recordingGlyphs = listOf("ic_headphones_24.xml")
     /** Feature 011 (large screens and desktop): the Timeline menu's "Full screen" and "Exit full screen". */
     private val desktopGlyphs = listOf("ic_fullscreen_24.xml", "ic_fullscreen_exit_24.xml", "ic_close_24.xml")
 
@@ -40,7 +42,7 @@ class IconAssetsTest {
             "ic_folder_24.xml", "ic_person_24.xml",
             "ic_mic_24.xml", "ic_mic_off_24.xml", "ic_hearing_24.xml", "ic_play_arrow_24.xml", "ic_pause_24.xml",
             "ic_volume_up_24.xml", "ic_expand_more_24.xml", "ic_arrow_left_24.xml", "ic_arrow_right_24.xml", "ic_settings_24.xml",
-        ) + metronomeGlyphs + timelineGlyphs + desktopGlyphs
+        ) + metronomeGlyphs + timelineGlyphs + recordingGlyphs + desktopGlyphs
         ).distinct()
 
     /** Feature 004 D1: the subdivision note figures, hand-authored by `tools/make-note-glyphs.py`. */

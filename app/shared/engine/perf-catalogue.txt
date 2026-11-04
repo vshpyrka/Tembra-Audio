@@ -24,6 +24,14 @@ TRANSPORT_SEEK transport transport.seek
 ENGINE_PRIME engine engine.prime
 # Feature 009, design iteration D1 (T146): the phone's master volume pop-up opening (its card's first measure).
 TRANSPORT_MASTER_POPUP transport transport.masterPopup
+# Feature 010 (timeline recording, contracts/perf-instrumentation.md): arming, the take, the count-in, monitoring, alignment.
+TIMELINE_ARM timeline timeline.arm
+TRANSPORT_RECORD_START transport transport.recordStart
+TRANSPORT_COUNT_IN transport transport.countIn
+TIMELINE_TAKE_FRAME timeline timeline.takeFrame
+TRANSPORT_RECORD_STOP transport transport.recordStop
+TIMELINE_MONITOR_TOGGLE timeline timeline.monitorToggle
+ENGINE_TAKE_ALIGNMENT engine engine.takeAlignment
 # Feature 011 (large screens and desktop, contracts/perf-instrumentation.md): window changes, shortcut navigation, menus.
 SHELL_WINDOW_RELAYOUT shell shell.windowRelayout
 SHELL_SHORTCUT_NAVIGATE shell shell.shortcutNavigate
@@ -38,3 +46,8 @@ AUDIO_REALTIME counter audio.realtime
 AUDIO_AVG_US counter audio.avgUs
 AUDIO_STARVATION counter audio.starvation
 AUDIO_CLIPS_ACTIVE counter audio.clipsActive
+# Feature 010: the capture counters (ABI revision 7).
+AUDIO_INPUT_OVERRUNS counter audio.inputOverruns
+AUDIO_RECORD_BACKLOG counter audio.recordBacklog
+AUDIO_TAKE_ALIGNMENT_MS counter audio.takeAlignmentMs
+AUDIO_MONITOR_DELAY_MS counter audio.monitorDelayMs

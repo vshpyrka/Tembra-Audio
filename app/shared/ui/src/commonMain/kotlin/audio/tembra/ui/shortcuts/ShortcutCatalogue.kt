@@ -38,6 +38,10 @@ object ShortcutCatalogue {
         entry(ShortcutScope.Timeline, ShortcutAction.TimelineZoomOut, ShortcutCopy.zoomOut, char('-')),
         entry(ShortcutScope.Timeline, ShortcutAction.TimelineMute, ShortcutCopy.mute, char('m')),
         entry(ShortcutScope.Timeline, ShortcutAction.TimelineSolo, ShortcutCopy.solo, char('o')),
+        // Feature 010 (FR-028): Escape during a count-in is the timeline's own, beside the clip drag's (TimelineKeyHandling).
+        entry(ShortcutScope.Timeline, ShortcutAction.TimelineArm, ShortcutCopy.arm, char('a')),
+        entry(ShortcutScope.Timeline, ShortcutAction.TimelineRecord, ShortcutCopy.record, char('r')),
+        entry(ShortcutScope.Timeline, ShortcutAction.TimelineMonitor, ShortcutCopy.monitor, char('i')),
 
         entry(ShortcutScope.Tuner, ShortcutAction.TunerAutoListen, ShortcutCopy.autoListen, char('a')),
         entry(ShortcutScope.Tuner, ShortcutAction.TunerByEar, ShortcutCopy.byEar, char('e')),

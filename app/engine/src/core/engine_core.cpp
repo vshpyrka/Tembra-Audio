@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <cstdio>
 #include <cstring>
 
 #include "metronome/click_synth.h"
@@ -336,6 +337,15 @@ void EngineCore::stopToneLocked() {
     if (state() == TEMBRA_AUDIO_TONE) state_.store(TEMBRA_AUDIO_IDLE, std::memory_order_release);
 }
 
+void EngineCore::onCapture(void* context, const float* interleaved, uint32_t channels, uint32_t frames, uint32_t shortFrames) {
+    // Audio thread, immediately before onRender of the same device callback (research R2, R3): remember the block.
+    auto* engine = static_cast<EngineCore*>(context);
+    engine->inputBlock_ = interleaved;
+    engine->inputBlockChannels_ = channels;
+    engine->inputBlockFrames_ = frames;
+    engine->inputBlockShort_ = shortFrames;
+}
+
 void EngineCore::onRender(void* context, float* interleavedStereo, uint32_t frames) {
     auto* engine = static_cast<EngineCore*>(context);
     const uint64_t started = AudioHealth::nowMicros();
@@ -353,14 +363,36 @@ bool EngineCore::readAudioHealth(tembra_audio_health& out) {
     } else {
         health_.setTransportCounters(0, 0);
     }
+    // Feature 010: the capture counters, off the callback; the source outlives the arm so a stopped take still reports.
+    {
+        std::lock_guard<std::mutex> lock(commands_);
+        if (capture_ && state() == TEMBRA_AUDIO_TRANSPORT) {
+            health_.setCaptureCounters(capture_->inputOverruns(), capture_->recordBacklogMax(), device != nullptr ? device->inputXruns() : 0u);
+        } else {
+            health_.setCaptureCounters(0, 0, 0);
+        }
+    }
     return health_.read(out);
 }
 
 void EngineCore::render(float* out, uint32_t frames) {
-    // Audio thread (Constitution I). The transport, when open, is the whole mix (it renders the click itself).
+    // Audio thread (Constitution I). The transport, when open, is the whole mix (it renders the click itself) and,
+    // since feature 010, receives the input block the device read for this callback with the streams' generations.
     TransportRenderer* transport = callbackTransport_.load(std::memory_order_acquire);
     if (transport != nullptr) {
-        transport->render(out, frames);
+        InputBlock input;
+        input.interleaved = inputBlock_;
+        input.channels = inputBlockChannels_;
+        input.frames = inputBlockFrames_;
+        input.shortFrames = inputBlockShort_;
+        const AudioDevice* device = telemetryDevice_.load(std::memory_order_acquire);
+        if (device != nullptr) {
+            input.inputGeneration = device->inputGeneration();
+            input.outputGeneration = device->outputGeneration();
+        }
+        inputBlock_ = nullptr;
+        inputBlockFrames_ = 0;
+        transport->render(out, frames, input);
         return;
     }
     // Otherwise render the active sources, sum them, and report idle when all have finished.
@@ -635,6 +667,11 @@ void EngineCore::closeTransport() {
 
 void EngineCore::closeTransportLocked() {
     if (state() != TEMBRA_AUDIO_TRANSPORT) return;
+    if (armed_) {
+        // A running take is ended and finalised before the stream closes (contracts/engine-c-abi-v7.md "State").
+        if (takeRunning_) endTakeLocked(TEMBRA_TAKE_STOP_TRANSPORT_CLOSED);
+        disarmLocked();
+    }
     transport_->pause();  // the 5 ms release, rendered by the callback
     hostPlaying_ = false;
     waitForRelease();
@@ -768,6 +805,8 @@ void EngineCore::readTransport(tembra_transport_snapshot& out) {
     out.block_time_ns = record.blockTimeNs;
     out.latency_ns = latency;
     out.sample_rate = record.rate;
+    out.count_in_beats_left = record.countInBeatsLeft;
+    out.recording = record.recording;
     double seconds = record.rate > 0 ? static_cast<double>(record.frame) / static_cast<double>(record.rate) : 0.0;
     if (record.playing != 0) {
         // The block's first frame reaches the listener latency after it was rendered; the rest follows wall time.
@@ -844,6 +883,243 @@ void EngineCore::sweepRetiredSourcesLocked(bool outputClosed) {
                           retiredSources_.end());
 }
 
+// --- Capture, takes and monitoring (feature 010, contracts/engine-c-abi-v7.md; research R1-R12) ------------------
+
+void EngineCore::waitForCallback() {
+    // The callback reads the command words at its prologue; one that entered before the command was set may still be
+    // pushing. Bounded by one block (a few milliseconds); a stalled stream gives up after 100 ms.
+    if (!transport_) return;
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(100);
+    while (transport_->rendering() && std::chrono::steady_clock::now() < deadline) std::this_thread::sleep_for(std::chrono::microseconds(200));
+}
+
+int64_t EngineCore::inputLatencyNanosLocked() const {
+    const int64_t reported = reportedInputLatencyNs_.load(std::memory_order_acquire);
+    if (reported > 0) return reported;
+    return platformDevice_->inputLatencyNanos();
+}
+
+void EngineCore::determineAlignmentLocked() {
+    // input + output latency at the stream rate (research R9); the host traces the arm around this call.
+    platformDevice_->refreshOutputLatency();
+    const int64_t inputNs = inputLatencyNanosLocked();
+    const int64_t outputNs = outputLatencyNanos();
+    inputLatencyNs_.store(inputNs, std::memory_order_release);
+    alignmentOutputLatencyNs_.store(outputNs, std::memory_order_release);
+    const int64_t frames = std::llround(static_cast<double>(inputNs + outputNs) * static_cast<double>(transportRate_) / 1e9);
+    if (capture_) capture_->setAlignmentFrames(frames < 0 ? 0 : frames);
+}
+
+int32_t EngineCore::arm(const tembra_capture_config& config) {
+    if (config.max_channels < 1 || config.max_channels > CaptureSource::kMaxChannels || config.reserved != 0) return TEMBRA_ERR_ARGUMENT;
+    std::lock_guard<std::mutex> lock(commands_);
+    if (state() != TEMBRA_AUDIO_TRANSPORT) return TEMBRA_ERR_STATE;
+    if (armed_) return TEMBRA_OK;
+    const int32_t opened = platformDevice_->openInputBeside(transportRate_, config.max_channels, &EngineCore::onCapture, this);
+    if (opened != TEMBRA_OK) {
+        platformDevice_->closeInput();
+        return TEMBRA_ERR_DEVICE;
+    }
+    uint32_t channels = platformDevice_->inputChannels();
+    if (channels == 0) channels = 1;
+    if (channels > config.max_channels) channels = config.max_channels;
+    if (!capture_ || capture_->rate() != transportRate_) capture_ = std::make_unique<CaptureSource>(transportRate_);
+    capture_->prepare(channels, 0);
+    determineAlignmentLocked();
+    peakRing_.reset();
+    takeRunning_ = false;
+    armed_ = true;
+    transport_->setCapture(capture_.get());
+    return TEMBRA_OK;
+}
+
+void EngineCore::endTakeLocked(uint32_t stopReason) {
+    // Ends the running take on the host's behalf: the callback stops pushing at its next block, the recorder drains.
+    if (!takeRunning_) return;
+    const TransportRecord before = transport_->record();
+    const bool wasPreRoll = before.preRoll != 0 && before.recording == 0;
+    if (stopReason != TEMBRA_TAKE_STOP_USER && !capture_->engineStopRequested()) capture_->endTake(stopReason);
+    transport_->requestRecordStop();
+    waitForCallback();
+    if (recorder_) recorder_->stop();
+    tembra_take_info info{};
+    const TransportRecord record = transport_->record();
+    info.start_frames = record.takeStartFrame;
+    info.start_beats = hostTempo_.frameToBeats(record.takeStartFrame);
+    info.frames = recorder_ ? recorder_->framesWritten() : 0;
+    info.channels = capture_->channels();
+    info.sample_rate = transportRate_;
+    info.alignment_frames = capture_->alignmentFrames();
+    info.stop_reason = capture_->engineStopRequested() ? capture_->stopReason() : stopReason;
+    if (recorder_ && recorder_->writeFailed() && info.stop_reason == TEMBRA_TAKE_STOP_USER) info.stop_reason = TEMBRA_TAKE_STOP_WRITE_FAILED;
+    const int64_t minimum = static_cast<int64_t>(std::llround(0.01 * transportRate_));
+    if (wasPreRoll || info.frames < minimum) {
+        std::remove(takePath_.c_str());
+        info.frames = 0;
+    }
+    recorder_.reset();
+    takeRunning_ = false;
+    pendingTakeInfo_ = info;
+    takeInfoPending_ = true;
+}
+
+void EngineCore::disarmLocked() {
+    if (!armed_) return;
+    if (takeRunning_) endTakeLocked(TEMBRA_TAKE_STOP_USER);
+    transport_->setMonitor(false);
+    transport_->setCapture(nullptr);
+    waitForCallback();
+    platformDevice_->closeInput();
+    armed_ = false;
+}
+
+void EngineCore::disarm() {
+    std::lock_guard<std::mutex> lock(commands_);
+    if (state() != TEMBRA_AUDIO_TRANSPORT) return;
+    disarmLocked();
+}
+
+int32_t EngineCore::setMonitor(bool enabled, uint32_t trackIndex) {
+    std::lock_guard<std::mutex> lock(commands_);
+    if (state() != TEMBRA_AUDIO_TRANSPORT || !armed_) return TEMBRA_ERR_STATE;
+    if (trackIndex >= hostTracks_.count) return TEMBRA_ERR_ARGUMENT;
+    transport_->setArmedTrack(static_cast<int32_t>(trackIndex));
+    hostTracks_.version = ++arrangementVersion_;  // re-publish so the monitor strip picks the track's targets
+    transport_->setTracks(hostTracks_);
+    transport_->setMonitor(enabled);
+    return TEMBRA_OK;
+}
+
+void EngineCore::setInputLatencyNs(int64_t nanos) {
+    std::lock_guard<std::mutex> lock(commands_);
+    reportedInputLatencyNs_.store(nanos < 0 ? 0 : nanos, std::memory_order_release);
+    platformDevice_->setReportedInputLatencyNanos(nanos < 0 ? 0 : nanos);
+    if (armed_ && state() == TEMBRA_AUDIO_TRANSPORT) determineAlignmentLocked();
+}
+
+int32_t EngineCore::recordStart(const tembra_record_config& config) {
+    if (config.wav_path == nullptr || config.max_frames < 0) return TEMBRA_ERR_ARGUMENT;
+    std::lock_guard<std::mutex> lock(commands_);
+    if (state() != TEMBRA_AUDIO_TRANSPORT || !armed_) return TEMBRA_ERR_STATE;
+    if (takeRunning_) return TEMBRA_ERR_STATE;
+    if (config.track_index >= hostTracks_.count && hostTracks_.count > 0) return TEMBRA_ERR_ARGUMENT;
+    // A route change since the arm re-measures the discard (research R9).
+    determineAlignmentLocked();
+    TakeRecorder::Config recorderConfig;
+    recorderConfig.path = config.wav_path;
+    recorderConfig.channels = capture_->channels();
+    recorderConfig.rate = transportRate_;
+    recorderConfig.maxFrames = config.max_frames;
+    recorderConfig.minFreeBytes = config.min_free_bytes;
+    capture_->beginTake();
+    auto recorder = std::make_unique<TakeRecorder>(*capture_, peakRing_, recorderConfig);
+    if (!recorder->start()) return TEMBRA_ERR_IO;
+    recorder_ = std::move(recorder);
+    takePath_ = config.wav_path;
+    takeTrack_ = config.track_index;
+    takeInfoPending_ = false;
+    transport_->setArmedTrack(static_cast<int32_t>(config.track_index));
+    sweepRetiredSourcesLocked(false);
+    int64_t start = transportPositionLocked();
+    int64_t preRoll = 0;
+    if (!hostPlaying_) {
+        preRoll = config.count_in_beats > 0 ? hostTempo_.beatsToFrame(static_cast<double>(config.count_in_beats)) : 0;
+        if (!transport_->readersActive() && !transport_->commandPending() && streamer_->primedPosition() != start) {
+            streamer_->prime(start, planPrime(*hostArrangement_, hostTempo_, start));
+        }
+        hostPlaying_ = true;
+        platformDevice_->refreshOutputLatency();
+    }
+    transport_->requestRecordStart(start, preRoll);
+    takeRunning_ = true;
+    return TEMBRA_OK;
+}
+
+int32_t EngineCore::recordCancel() {
+    std::lock_guard<std::mutex> lock(commands_);
+    if (state() != TEMBRA_AUDIO_TRANSPORT || !takeRunning_) return TEMBRA_ERR_STATE;
+    const TransportRecord record = transport_->record();
+    // Only a take that has not begun capturing (the count-in, or a start the callback has not applied yet) can be cancelled.
+    const bool capturing = record.recording != 0 || capture_->framesCaptured() > 0 || capture_->engineStopRequested();
+    if (capturing) return TEMBRA_ERR_STATE;
+    transport_->requestRecordCancel();
+    waitForCallback();
+    if (recorder_) recorder_->stop();
+    recorder_.reset();
+    std::remove(takePath_.c_str());
+    takeRunning_ = false;
+    takeInfoPending_ = false;
+    hostPlaying_ = false;
+    return TEMBRA_OK;
+}
+
+int32_t EngineCore::recordStop(tembra_take_info& out) {
+    std::lock_guard<std::mutex> lock(commands_);
+    if (takeRunning_ && state() == TEMBRA_AUDIO_TRANSPORT) {
+        const TransportRecord record = transport_->record();
+        if (record.preRoll != 0 && record.recording == 0) {
+            // A stop during the count-in cancels it (nothing was captured); the position is restored.
+            transport_->requestRecordCancel();
+            waitForCallback();
+            if (recorder_) recorder_->stop();
+            recorder_.reset();
+            std::remove(takePath_.c_str());
+            takeRunning_ = false;
+            hostPlaying_ = false;
+            std::memset(&out, 0, sizeof(out));
+            out.channels = capture_ ? capture_->channels() : 0;
+            out.sample_rate = transportRate_;
+            out.alignment_frames = capture_ ? capture_->alignmentFrames() : 0;
+            takeInfoPending_ = false;
+            return TEMBRA_OK;
+        }
+        endTakeLocked(TEMBRA_TAKE_STOP_USER);
+    }
+    if (!takeInfoPending_) return TEMBRA_ERR_STATE;
+    out = pendingTakeInfo_;
+    takeInfoPending_ = false;
+    return TEMBRA_OK;
+}
+
+void EngineCore::readCapture(tembra_capture_snapshot& out) {
+    // Lock-free: the seqlock record plus the latency atomics; zeros when nothing is armed.
+    std::memset(&out, 0, sizeof(out));
+    TransportRenderer* transport = telemetryTransport_.load(std::memory_order_acquire);
+    if (transport == nullptr || state() != TEMBRA_AUDIO_TRANSPORT) return;
+    // capture_ is replaced only under the command mutex while the transport is closed; readers see one source per session.
+    CaptureSource* source = capture_.get();
+    if (source == nullptr || !armed_.load(std::memory_order_acquire)) return;
+    const CaptureRecord record = source->record();
+    if (record.armed == 0) return;
+    out.armed = record.armed;
+    out.recording = record.recording;
+    out.pre_roll = record.preRoll;
+    out.monitoring = record.monitoring;
+    out.input_channels = record.channels;
+    out.sample_rate = record.rate;
+    out.peak[0] = record.peak[0];
+    out.peak[1] = record.peak[1];
+    out.clipped = record.clipped;
+    out.frames_captured = record.framesCaptured;
+    out.take_start_frames = record.takeStartFrames;
+    out.alignment_frames = record.alignmentFrames;
+    out.input_latency_ns = inputLatencyNs_.load(std::memory_order_acquire);
+    out.output_latency_ns = alignmentOutputLatencyNs_.load(std::memory_order_acquire);
+    out.stop_reason = record.stopReason;
+    out.input_overruns = record.inputOverruns;
+    out.backlog_frames = record.backlogFrames;
+}
+
+void EngineCore::resetClip() {
+    std::lock_guard<std::mutex> lock(commands_);
+    if (capture_) capture_->requestClipReset();
+}
+
+uint32_t EngineCore::readPeaks(uint64_t fromIndex, tembra_peak_bucket* out, uint32_t maxCount, uint64_t* nextIndex) {
+    static_assert(sizeof(PeakBucket) == sizeof(tembra_peak_bucket), "the peak bucket mirrors the ABI struct");
+    return peakRing_.read(fromIndex, reinterpret_cast<PeakBucket*>(out), maxCount, nextIndex);
+}
+
 #ifdef TEMBRA_BUILD_TESTS
 void EngineCore::setDevice(std::unique_ptr<AudioDevice> device) {
     std::lock_guard<std::mutex> lock(commands_);
@@ -874,6 +1150,14 @@ void EngineCore::setDevice(std::unique_ptr<AudioDevice> device) {
     retiredSources_.clear();
     hostArrangement_.reset();
     hostPlaying_ = false;
+    recorder_.reset();
+    capture_.reset();
+    armed_ = false;
+    takeRunning_ = false;
+    takeInfoPending_ = false;
+    reportedInputLatencyNs_.store(0);
+    inputLatencyNs_.store(0);
+    alignmentOutputLatencyNs_.store(0);
 }
 #endif
 

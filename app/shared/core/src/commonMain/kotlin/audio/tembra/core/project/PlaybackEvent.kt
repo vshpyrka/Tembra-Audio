@@ -29,6 +29,9 @@ sealed interface PlaybackEvent {
 
     data object InterruptionEnded : PlaybackEvent
 
+    /** A take began capturing and the engine is playing from its start (feature 010): Stopped becomes Playing without a start. */
+    data object RecordStarted : PlaybackEvent
+
     data class Seek(val beats: Beats) : PlaybackEvent
 
     data object SkipToStart : PlaybackEvent

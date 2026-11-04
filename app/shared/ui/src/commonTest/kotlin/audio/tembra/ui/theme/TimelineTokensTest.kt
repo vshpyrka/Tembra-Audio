@@ -43,6 +43,18 @@ class TimelineTokensTest {
         assertTrue(spacing.laneHeightCompact * 3 + spacing.rulerHeight + spacing.toolbarHeight + spacing.transportHeightCompact <= 640.dp)
     }
 
+    /** Feature 010 (contracts/timeline-recording-ui.md "Design conformance"): the record and meter tokens and the meter heights. */
+    @Test
+    fun recordingTokensResolveAndAreDistinct() {
+        val daw = DawColors.Default
+        assertEquals(4, setOf(daw.record, daw.meterBody, daw.meterWarning, daw.meterClip).size, "the four recording tokens are distinct")
+        assertEquals(daw.rose, daw.meterClip)
+        for (color in listOf(daw.record, daw.meterBody, daw.meterWarning, daw.meterClip)) assertEquals(1f, color.alpha, "recording tokens are opaque")
+        val spacing = TembraSpacing()
+        assertEquals(4.dp, spacing.meterHeightCompact)
+        assertEquals(4.dp, spacing.meterHeightExpanded) // T099: the only room beneath the expanded header's rows
+    }
+
     @Test
     fun clipShapeIsTheMediumRadius() {
         assertEquals(TembraShapes.medium, TembraShapes.clip)
@@ -55,6 +67,8 @@ class TimelineTokensTest {
         for (expected in listOf(
             "ContentCut", "Undo", "Redo", "SkipPrevious", "SkipNext", "FastRewind", "FastForward", "GridOn", "ZoomIn", "ZoomOut",
             "Search", "Sort", "ContentCopy", "LibraryMusic", "ExpandMore", "ExpandLess", "MoreVert", "AudioFile", "PlaylistAdd", "Mic", "Piano",
+            // Feature 010: the monitoring toggle.
+            "Headphones",
         )) {
             assertTrue(expected in names, "TembraIcon.$expected is missing")
         }

@@ -16,6 +16,7 @@ from tracepulse.devices import Device
 from tracepulse.orchestrate_android import JourneyFailed, Refused
 from tracepulse.orchestrate_ios import (
     IosRoundOptions, bundle_id_with_team, build_for_testing, doctor, find_attachment, run_round, xctestrun_path,
+    journey_test_classes,
 )
 
 FIXTURES = os.path.join(os.path.dirname(__file__), "fixtures")
@@ -164,6 +165,22 @@ def test_build_for_testing_once_per_session_and_the_xctestrun_is_found(cfg, tmp_
     assert path.endswith(".xctestrun") and xctestrun_path(os.path.join(round_dir, "DerivedData")) == path
 
 
+def test_a_subset_round_runs_only_the_journeys_test_classes(cfg, tmp_path):
+    """`--journeys tuner` runs TunerPerfTests alone: the classes left out cannot refuse the round (the thermal gate is
+    per test, and the 20-minute recording journey leaves the phone hot for whatever follows it)."""
+    assert journey_test_classes(cfg, cfg.journeys) is None
+    assert journey_test_classes(cfg, ["recording", "stress"]) == ["RecordingPerfTests", "StressPerfTests"]
+    assert journey_test_classes(cfg, ["tuner", "not-a-journey"]) is None
+    round_dir = str(tmp_path / "r1")
+    runner = TableRunner(_xcode_rules(cfg, round_dir))
+    xctestrun = build_for_testing(cfg, IPHONE, runner, os.path.join(round_dir, "DerivedData"), "Perf")
+    outcome = run_round(cfg, IPHONE, runner, FakeClock(), round_dir, IosRoundOptions(journeys=["tuner"], xctestrun=xctestrun))
+    twb = runner.commands()[runner.index_of("xcodebuild", "test-without-building")]
+    assert "-only-testing:TembraPerfTests/TunerPerfTests" in twb
+    assert "-only-testing:TembraPerfTests" not in twb and not any(a.startswith("-skip-testing") for a in twb)
+    assert [j.journey for j in outcome.journeys] == ["tuner"]
+
+
 def test_round_runs_install_warm_up_test_and_collects(cfg, tmp_path):
     round_dir = str(tmp_path / "r1")
     runner = TableRunner(_xcode_rules(cfg, round_dir))
@@ -198,6 +215,8 @@ def test_round_runs_install_warm_up_test_and_collects(cfg, tmp_path):
     assert outcome.app_size_bytes is None, "size is opt-in on iOS"
     # the audio-trace pass: the measured run skips AudioTracePass, the pass runs it alone while xctrace records
     assert any("-skip-testing:TembraPerfTests/AudioTracePass" in c for c in cmds if c[:2] == ["xcodebuild", "test-without-building"])
+    # The 30-minute recording soak (feature 010, T096) runs by hand only, never in a measured round.
+    assert any("-skip-testing:TembraPerfTests/RecordingSoakTests" in c for c in cmds if c[:2] == ["xcodebuild", "test-without-building"])
     assert any("-skip-testing:TembraPerfTests/ColdLaunchHitchTests" in c for c in cmds if c[:2] == ["xcodebuild", "test-without-building"])
     audio_pass = runner.index_of("xcodebuild", "test-without-building", "-only-testing:TembraPerfTests/AudioTracePass")
     record = runner.index_of("xctrace", "record", "--all-processes", f"--device {UDID}")
@@ -293,12 +312,10 @@ def test_a_round_of_some_journeys_runs_only_their_test_classes(cfg, tmp_path):
     assert "-only-testing:TembraPerfTests" not in twb
 
 
-def test_journey_test_classes_cover_every_journey(cfg):
+def test_journey_test_classes_cover_the_windowing_journey(cfg):
     from tracepulse.orchestrate_ios import journey_test_classes
-    assert journey_test_classes(["startup", "tuner", "metronome", "timeline", "stress", "windowing"], all_journeys=None) == [
-        "StartupPerfTests", "TunerPerfTests", "MetronomePerfTests", "TimelinePerfTests", "StressPerfTests", "WindowingPerfTests"]
-    assert journey_test_classes(["windowing"], all_journeys=["startup", "windowing"]) == ["WindowingPerfTests"]
-    assert journey_test_classes(["startup", "windowing"], all_journeys=["windowing", "startup"]) is None, "every journey: the whole target"
+    assert journey_test_classes(cfg, ["windowing"]) == ["WindowingPerfTests"]
+    assert journey_test_classes(cfg, ["windowing", "startup"]) == ["WindowingPerfTests", "StartupPerfTests"]
 
 
 def test_doctor_checks_pairing_xcode_support_and_lock_state_only(cfg, tmp_path):

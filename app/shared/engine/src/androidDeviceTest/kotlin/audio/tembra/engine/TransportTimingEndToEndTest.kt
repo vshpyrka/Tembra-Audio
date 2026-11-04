@@ -37,7 +37,7 @@ class TransportTimingEndToEndTest {
 
     @AfterTest
     fun tearDown() {
-        engine.closeTransport()
+        runBlocking { engine.closeTransport() }
         root.deleteRecursively()
         foreground?.finish()
     }

@@ -21,6 +21,7 @@ import audio.tembra.core.metronome.MetronomeStyle
 import audio.tembra.core.metronome.Subdivision
 import audio.tembra.core.metronome.Tempo
 import audio.tembra.core.metronome.TimeSignature
+import audio.tembra.core.project.CountIn
 import audio.tembra.ui.metronome.BeatTelemetry
 import audio.tembra.ui.metronome.CustomSoundState
 import audio.tembra.ui.metronome.components.AccentCells
@@ -58,6 +59,10 @@ internal fun MetronomeSettingsSheet(
     onStyle: (MetronomeStyle) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
+    /** The project's count-in (feature 010, spec FR-015), read-only while a take runs ([countInEnabled], FR-018). */
+    countIn: CountIn = CountIn.ONE_BAR,
+    countInEnabled: Boolean = true,
+    onCountIn: (CountIn) -> Unit = {},
 ) {
     val spacing = TembraTheme.spacing
     val colors = TembraTheme.colors
@@ -93,6 +98,8 @@ internal fun MetronomeSettingsSheet(
                 }
                 TimeSignatureMenu(selected = signature, onSelect = onTimeSignature, testTag = TimelineTestTags.METRONOME_SHEET_SIGNATURE)
             }
+            // The count-in under the signature (feature 010, spec FR-015): a project setting, not an undo step.
+            CountInMenu(value = countIn, enabled = countInEnabled, onSelect = onCountIn)
             ClickSoundPicker(
                 sound = settings.sound,
                 customSound = customSound,

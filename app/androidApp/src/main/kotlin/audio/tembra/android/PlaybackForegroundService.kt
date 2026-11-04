@@ -1,5 +1,6 @@
 package audio.tembra.android
 
+import android.Manifest
 import android.app.ForegroundServiceStartNotAllowedException
 import android.app.Notification
 import android.app.NotificationChannel
@@ -8,18 +9,20 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.graphics.drawable.Icon
 import android.os.Build
 import android.os.IBinder
+import audio.tembra.ui.platform.PlaybackNotification
 
 /**
  * The media-playback foreground service that keeps the process alive while audio plays with the screen off: the
  * metronome's click (feature 004, contracts/background-playback.md, research R6) and the project transport
  * (feature 009, contracts/timeline-audio-kotlin.md). It is an OS entry point only: it holds no engine state and never
  * touches the engine. [ACTION_START] posts the ongoing notification (its title and subtitle from the
- * [EXTRA_TITLE] and [EXTRA_SUBTITLE] extras: "Metronome" / the tempo, "Playing" / the project name) and enters the
- * foreground; [ACTION_STOP] (the notification's Stop action) tells the owner through
+ * [EXTRA_TITLE] and [EXTRA_SUBTITLE] extras: "Metronome" / the tempo, "Playing" / the project name, "Recording" / the
+ * project name while a take runs, feature 010) and enters the foreground; [ACTION_STOP] (the notification's Stop action) tells the owner through
  * [AndroidBackgroundPlaybackHost.stopRequests] and stops. No broadcast receiver is involved: the Stop action is a
  * service intent, and the stop request reaches the owner through the host's process-wide flow.
  */
@@ -64,8 +67,25 @@ class PlaybackForegroundService : Service() {
      */
     private fun enterForeground() {
         val notification = buildNotification(this)
+        // Feature 010 (FR-021): the microphone type keeps a take recording with the screen off. Only the "Recording"
+        // notification asks for it, and only with the microphone granted: Android 14 refuses the type otherwise, and it
+        // is always requested from the visible Timeline, as the while-in-use rule requires. A running media-playback
+        // service takes the type through a second start command (the host's keepAlive while a take begins).
+        val microphone = Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
+            AndroidBackgroundPlaybackHost.notificationTitle == PlaybackNotification.RECORDING_TITLE &&
+            checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                val type = ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK or (if (microphone) ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE else 0)
+                try {
+                    startForeground(NOTIFICATION_ID, notification, type)
+                } catch (refused: SecurityException) {
+                    // The system found the app ineligible for the microphone type (it left the screen first): playback
+                    // keeps running without it; the take ends when the input is lost, as FR-021 allows.
+                    if (!microphone) throw refused
+                    startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
+                }
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
             } else {
                 startForeground(NOTIFICATION_ID, notification)
@@ -79,8 +99,12 @@ class PlaybackForegroundService : Service() {
             }
             throw e
         }
+        AndroidBackgroundPlaybackHost.microphoneTyped = microphone && foregroundServiceTypeHasMicrophone()
         if (AndroidBackgroundPlaybackHost.enteredForeground()) stop()
     }
+
+    private fun foregroundServiceTypeHasMicrophone(): Boolean =
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && foregroundServiceType and ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE != 0
 
     private fun stop() {
         stopForeground(STOP_FOREGROUND_REMOVE)

@@ -48,4 +48,24 @@ class StopAndLeaveDialogTest {
         onNodeWithTag(CANCEL_TAG).performClick()
         assertEquals(false, answer)
     }
+
+    /** The recording variant (feature 010, FR-022; T071): its copy and its own tags, the answers unchanged. */
+    @Test
+    fun theRecordingVariantReadsStopRecordingAndAnswersThroughItsOwnTags() = runComposeUiTest {
+        setContent {
+            TembraTheme {
+                StopAndLeaveDialog(onConfirm = { answer = true }, onCancel = { answer = false }, recording = true)
+            }
+        }
+        onNodeWithTag(RECORDING_DIALOG_TAG).assertExists()
+        onNodeWithText(TimelineCopy.stopRecordingTitle).assertExists()
+        onNodeWithText(TimelineCopy.stopRecordingText).assertExists()
+        onNodeWithText(TimelineCopy.stopRecordingAndLeave).assertExists()
+        onNodeWithText(TimelineCopy.keepRecording).assertExists()
+        onNodeWithTag(DIALOG_TAG).assertDoesNotExist()
+        onNodeWithTag(RECORDING_CANCEL_TAG).performClick()
+        assertEquals(false, answer)
+        onNodeWithTag(PerfAnchors.DIALOG_STOP_RECORDING_CONFIRM).performClick()
+        assertEquals(true, answer)
+    }
 }

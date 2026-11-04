@@ -1,10 +1,13 @@
 #include "platform/android/oboe_audio_device.h"
 
+#include <chrono>
+#include <thread>
+
 #include "tembra_engine.h"
 
 namespace tembra {
 
-OboeAudioDevice::OboeAudioDevice() : bridge_(std::make_shared<Bridge>(this)) {}
+OboeAudioDevice::OboeAudioDevice() : bridge_(std::make_shared<Bridge>(this)), inputScratch_(kMaxInputFrames * kMaxInputChannels, 0.0f) {}
 
 OboeAudioDevice::~OboeAudioDevice() { close(); }
 
@@ -19,7 +22,21 @@ void OboeAudioDevice::Bridge::onErrorAfterClose(oboe::AudioStream* stream, oboe:
 void OboeAudioDevice::onStreamClosedByPlatform(oboe::AudioStream* stream) {
     // Oboe's error thread, after it closed [stream] (a device was disconnected or the route changed).
     std::lock_guard<std::mutex> lock(streamLock_);
-    if (closing_ || !stream_ || stream_.get() != stream) return;  // the host is closing it, or it is an old stream
+    if (closing_) return;
+    if (inputStream_ && inputStream_.get() == stream) {
+        // The duplex input (feature 010, research R2): reopen it with the stored settings; the engine sees the new
+        // generation and ends a running take with INPUT_LOST, the arm stays.
+        inputForCallback_.store(nullptr, std::memory_order_release);
+        waitForCallbackLocked();
+        retiredInputStream_ = std::move(inputStream_);
+        if (openDuplexInputLocked() != oboe::Result::OK) {
+            inputStream_.reset();
+            inputChannels_.store(0, std::memory_order_release);
+        }
+        inputGeneration_.fetch_add(1, std::memory_order_acq_rel);
+        return;
+    }
+    if (!stream_ || stream_.get() != stream) return;  // the host is closing it, or it is an old stream
     if (stream->getDirection() == oboe::Direction::Input) {
         lost_.store(true);  // the tuner's capture path stops and the host decides (feature 003)
         return;
@@ -36,6 +53,119 @@ void OboeAudioDevice::onStreamClosedByPlatform(oboe::AudioStream* stream) {
     }
     sampleRate_.store(static_cast<uint32_t>(stream_->getSampleRate()));
     measureLatencyLocked();  // the new route (e.g. Bluetooth) has its own latency (research R7)
+    outputGeneration_.fetch_add(1, std::memory_order_acq_rel);  // the engine clears monitoring (research R12); the input stays
+}
+
+// --- The duplex input (feature 010, research R2) ----------------------------------------------------------------
+
+oboe::Result OboeAudioDevice::openDuplexInputLocked() {
+    const auto build = [&](oboe::InputPreset preset, oboe::SharingMode sharing, int32_t channels) {
+        oboe::AudioStreamBuilder builder;
+        builder.setDirection(oboe::Direction::Input)
+            ->setFormat(oboe::AudioFormat::Float)
+            ->setChannelCount(channels)
+            ->setSampleRate(static_cast<int32_t>(inputRate_))
+            ->setSampleRateConversionQuality(oboe::SampleRateConversionQuality::Medium)
+            ->setPerformanceMode(oboe::PerformanceMode::LowLatency)
+            ->setSharingMode(sharing)
+            ->setInputPreset(preset)
+            ->setErrorCallback(bridge_);  // no data callback: the output callback reads it non-blocking
+        if (stream_) builder.setBufferCapacityInFrames(stream_->getBufferCapacityInFrames() * 2);
+        return builder.openStream(inputStream_);
+    };
+    // Unprocessed keeps gain control, echo cancellation and noise suppression off the signal (FR-002); the device's own
+    // channel count up to the maximum; Exclusive where granted.
+    const int32_t wanted = oboe::ChannelCount::Unspecified;
+    oboe::Result result = build(oboe::InputPreset::Unprocessed, oboe::SharingMode::Exclusive, wanted);
+    if (result != oboe::Result::OK) result = build(oboe::InputPreset::Unprocessed, oboe::SharingMode::Shared, wanted);
+    if (result != oboe::Result::OK) result = build(oboe::InputPreset::VoiceRecognition, oboe::SharingMode::Shared, wanted);
+    if (result != oboe::Result::OK || !inputStream_) return result == oboe::Result::OK ? oboe::Result::ErrorInternal : result;
+    if (static_cast<uint32_t>(inputStream_->getChannelCount()) > inputMaxChannels_) {
+        inputStream_->close();
+        inputStream_.reset();
+        result = build(oboe::InputPreset::Unprocessed, oboe::SharingMode::Shared, static_cast<int32_t>(inputMaxChannels_));
+        if (result != oboe::Result::OK) result = build(oboe::InputPreset::VoiceRecognition, oboe::SharingMode::Shared, static_cast<int32_t>(inputMaxChannels_));
+        if (result != oboe::Result::OK || !inputStream_) return result == oboe::Result::OK ? oboe::Result::ErrorInternal : result;
+    }
+    if (inputStream_->requestStart() != oboe::Result::OK) {
+        inputStream_->close();
+        inputStream_.reset();
+        return oboe::Result::ErrorInternal;
+    }
+    inputChannels_.store(static_cast<uint32_t>(inputStream_->getChannelCount()), std::memory_order_release);
+    measureInputLatencyLocked();
+    warmUpLeft_ = kWarmUpBursts;
+    inputForCallback_.store(inputStream_.get(), std::memory_order_release);
+    return oboe::Result::OK;
+}
+
+int32_t OboeAudioDevice::openInputBeside(uint32_t rate, uint32_t maxChannels, CaptureCallback callback, void* context) {
+    std::lock_guard<std::mutex> lock(streamLock_);
+    if (!stream_ || stream_->getDirection() != oboe::Direction::Output) return TEMBRA_ERR_STATE;
+    if (inputStream_) return TEMBRA_OK;  // idempotent
+    capture_ = callback;
+    captureContext_ = context;
+    inputRate_ = rate == 0 ? sampleRate_.load() : rate;
+    inputMaxChannels_ = maxChannels < 1 ? 1 : (maxChannels > kMaxInputChannels ? kMaxInputChannels : maxChannels);
+    if (openDuplexInputLocked() != oboe::Result::OK) {
+        inputStream_.reset();
+        capture_ = nullptr;
+        return TEMBRA_ERR_DEVICE;
+    }
+    return TEMBRA_OK;
+}
+
+void OboeAudioDevice::waitForCallbackLocked() {
+    // The output callback reads the input pointer at its start; one that holds the old pointer finishes within a burst.
+    for (int spins = 0; spins < 1000 && inCallback_.load(std::memory_order_acquire); ++spins) {
+        std::this_thread::sleep_for(std::chrono::microseconds(100));
+    }
+}
+
+void OboeAudioDevice::closeInput() {
+    std::shared_ptr<oboe::AudioStream> input;
+    std::shared_ptr<oboe::AudioStream> retired;
+    {
+        std::lock_guard<std::mutex> lock(streamLock_);
+        inputForCallback_.store(nullptr, std::memory_order_release);
+        waitForCallbackLocked();
+        input = std::move(inputStream_);
+        retired = std::move(retiredInputStream_);
+        capture_ = nullptr;
+        inputChannels_.store(0, std::memory_order_release);
+        inputLatencyNanos_.store(0, std::memory_order_release);
+    }
+    if (input) {
+        input->stop();
+        input->close();
+    }
+}
+
+uint32_t OboeAudioDevice::inputChannels() const { return inputChannels_.load(std::memory_order_acquire); }
+
+int64_t OboeAudioDevice::inputLatencyNanos() const { return inputLatencyNanos_.load(std::memory_order_acquire); }
+
+uint32_t OboeAudioDevice::inputXruns() const {
+    std::lock_guard<std::mutex> lock(streamLock_);
+    if (!inputStream_) return 0;
+    const auto count = inputStream_->getXRunCount();
+    return count ? static_cast<uint32_t>(count.value()) : 0u;
+}
+
+void OboeAudioDevice::measureInputLatencyLocked() {
+    // Oboe derives the input value from the stream's hardware timestamp ("hardware is earlier", research R9).
+    if (!inputStream_) {
+        inputLatencyNanos_.store(0, std::memory_order_release);
+        return;
+    }
+    const auto latency = inputStream_->calculateLatencyMillis();
+    int64_t nanos = latency ? static_cast<int64_t>(latency.value() * 1'000'000.0) : 0;
+    if (nanos <= 0) {
+        // No timestamp yet (the stream just started): the buffer size at the rate is the next best estimate.
+        const int32_t rate = inputStream_->getSampleRate();
+        nanos = rate > 0 ? static_cast<int64_t>(inputStream_->getBufferSizeInFrames()) * 1'000'000'000LL / rate : 0;
+    }
+    inputLatencyNanos_.store(nanos, std::memory_order_release);
 }
 
 oboe::Result OboeAudioDevice::openInputWithPreset(uint32_t preferredRate, oboe::InputPreset preset) {
@@ -114,6 +244,7 @@ int32_t OboeAudioDevice::openOutput(uint32_t preferredRate, RenderCallback callb
 }
 
 void OboeAudioDevice::close() {
+    closeInput();
     std::shared_ptr<oboe::AudioStream> stream;
     std::shared_ptr<oboe::AudioStream> retired;
     {
@@ -137,6 +268,7 @@ int64_t OboeAudioDevice::outputLatencyNanos() const { return latencyNanos_.load(
 void OboeAudioDevice::refreshOutputLatency() {
     std::lock_guard<std::mutex> lock(streamLock_);
     measureLatencyLocked();
+    if (inputStream_) measureInputLatencyLocked();
 }
 
 void OboeAudioDevice::measureLatencyLocked() {
@@ -170,7 +302,28 @@ oboe::DataCallbackResult OboeAudioDevice::onAudioReady(oboe::AudioStream* stream
     if (stream->getDirection() == oboe::Direction::Input) {
         if (input_ != nullptr) input_(context_, static_cast<const float*>(audioData), static_cast<uint32_t>(numFrames));
     } else if (render_ != nullptr) {
+        // Feature 010 (research R2): the duplex input is read non-blocking here, zero-padded when short, and handed to
+        // the capture callback before the render of the same block; the first bursts after an open are a warm-up.
+        inCallback_.store(true, std::memory_order_seq_cst);
+        oboe::AudioStream* input = inputForCallback_.load(std::memory_order_seq_cst);
+        if (input != nullptr && capture_ != nullptr) {
+            const uint32_t channels = static_cast<uint32_t>(input->getChannelCount());
+            const uint32_t frames = static_cast<uint32_t>(numFrames) > kMaxInputFrames ? kMaxInputFrames : static_cast<uint32_t>(numFrames);
+            const auto result = input->read(inputScratch_.data(), static_cast<int32_t>(frames), 0);
+            const uint32_t got = result ? static_cast<uint32_t>(result.value() < 0 ? 0 : result.value()) : 0u;
+            if (got < frames) {
+                float* pad = inputScratch_.data() + static_cast<size_t>(got) * channels;
+                for (size_t i = 0; i < static_cast<size_t>(frames - got) * channels; ++i) pad[i] = 0.0f;
+            }
+            uint32_t shortFrames = frames - got;
+            if (warmUpLeft_ > 0) {
+                --warmUpLeft_;
+                shortFrames = 0;
+            }
+            capture_(captureContext_, inputScratch_.data(), channels, frames, shortFrames);
+        }
         render_(context_, static_cast<float*>(audioData), static_cast<uint32_t>(numFrames));
+        inCallback_.store(false, std::memory_order_seq_cst);
     } else {
         float* out = static_cast<float*>(audioData);
         for (int32_t i = 0; i < numFrames * 2; ++i) out[i] = 0.0f;

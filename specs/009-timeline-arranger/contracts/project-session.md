@@ -72,6 +72,10 @@ project while playing: `pause()` first, then open (FR edge case).
   `setTempo` then `setArrangement`; everything else → `setArrangement`. Import opens the new
   sources before the arrangement is pushed.
 - Undo/redo re-push the arrangement (and `setTempo` if the tempo differs).
+- Leaving the transport host (feature 010, T102): `transportOpen` clears at once and `closeTransport` is launched on the
+  session scope under `transportMutex`; the engine runs it on `EngineDispatchers.blocking`, the one serial dispatcher the
+  tuner's and the metronome's starts also use, so the hand-over of the device to the next screen keeps its order without
+  the close blocking the main thread (before T102 the close was synchronous). A re-attach waits on the mutex.
 - Asset retirement: when an asset is referenced by no snapshot in `past`, `present` or
   `future`, `closeClipSource` and `save(project, retiredAssets)`.
 - `transportTelemetry.read(into)` forwards to `TimelineAudio.readTransport` once per distinct

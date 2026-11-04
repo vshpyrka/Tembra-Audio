@@ -85,6 +85,35 @@ tembra_transport_read (UI thread, every frame) ◀─Seqlock<TransportRecord>─
 - Health (`tembra_audio_health`, 40 bytes since revision 6) adds `avg_us`, `starvation` and `clips_active`; the
   perf pipeline publishes them as `audio.avg_us`, `audio.starvation` and `audio.clips_active`.
 
+## Recording (feature 010)
+
+```
+output callback (one device callback): read the input block ─▶ CaptureSource::measure / capture ─SPSC fifo (4 s)─▶ "tembra-recorder" thread ─▶ WavWriter (24-bit WAV)
+                                                       │                                                                └─▶ PeakRing (256-frame buckets) ─▶ host polls
+                                                       └─▶ MonitorStrip ─▶ MasterBus (when monitoring)
+```
+
+- The duplex rule: the input block is read inside the output callback, immediately before the output is rendered.
+  There is no second callback. On Android `OboeAudioDevice` opens an input stream beside the output and the output
+  callback calls a non-blocking `read` on it (`inputForCallback_`); on iOS `RemoteIoAudioDevice` enables the input bus
+  of the same RemoteIO unit and `renderProc` calls `AudioUnitRender` on bus 1. Capture, playback, monitoring and the
+  meter therefore share one callback and one clock.
+- On the callback (`src/capture/capture_source.*`, `src/mixer/monitor_strip.*`, both in `TEMBRA_RT_SOURCES`):
+  the per-block peak and the sticky clip latch, the discard of the first frames of a take for latency alignment,
+  the push into the ordered `SpscFifo` (about four seconds), overrun counters, and the monitor strip's sum into the
+  master bus. No allocation, lock, I/O or tracing.
+- On the recorder thread (`src/capture/take_recorder.*`, named `tembra-recorder`, not real-time: nice 0 on Android,
+  user-initiated QoS on Apple, a 10 ms idle wait): pops the fifo, converts to 24-bit PCM, appends to the file through
+  `WavWriter`, rewrites the header sizes and flushes every second so an abrupt end leaves a readable file, and
+  publishes 256-frame peak buckets that the host polls. Once a second it checks the frame cap and the free space on the
+  file's volume and ends the take itself with `MAX_LENGTH` (the host passes 30 minutes in `max_frames`),
+  `DISK_FULL` (below `min_free_bytes`, 50 MB in the contract) or `WRITE_FAILED`.
+- A reopen of the input stream (`OboeAudioDevice` reopens it after a disconnect and bumps its generation) ends a running
+  take with `INPUT_LOST`; the arm stays. A reopen of the output clears monitoring; the input stays.
+- `WavWriter` is the engine's own writer (a 44-byte header, 24-bit samples). dr_wav's writer is not used in the engine.
+- Tests: `capture_source_test`, `take_recorder_test`, `wav_writer_test`, `peak_ring_test`, `monitor_strip_test`.
+  Contract: `specs/010-timeline-recording/contracts/engine-c-abi-v7.md`.
+
 ## Host build and tests
 
 ```bash

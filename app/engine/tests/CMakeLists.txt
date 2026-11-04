@@ -37,6 +37,11 @@ add_executable(tembra_engine_tests
     master_bus_test.cpp
     transport_renderer_test.cpp
     overview_builder_test.cpp
+    wav_writer_test.cpp
+    peak_ring_test.cpp
+    capture_source_test.cpp
+    take_recorder_test.cpp
+    monitor_strip_test.cpp
 )
 target_include_directories(tembra_engine_tests PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../src
@@ -74,6 +79,9 @@ set(TEMBRA_RT_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/mixer/track_strip.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/mixer/master_bus.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/transport/transport_renderer.cpp
+    # Feature 010: the capture source (and the peak ring and capture record it includes) and the monitor strip.
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/capture/capture_source.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/mixer/monitor_strip.cpp
 )
 add_library(tembra_rt_poison OBJECT ${TEMBRA_RT_SOURCES})
 target_include_directories(tembra_rt_poison PRIVATE
