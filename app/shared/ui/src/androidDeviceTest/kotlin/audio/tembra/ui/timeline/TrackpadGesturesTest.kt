@@ -1,5 +1,6 @@
 package audio.tembra.ui.timeline
 
+import android.os.Build
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onNodeWithTag
@@ -16,12 +17,15 @@ import audio.tembra.ui.timeline.components.TrackLane
 import kotlinx.collections.immutable.persistentListOf
 import kotlin.test.Test
 import kotlin.test.assertTrue
+import org.junit.Assume.assumeTrue
 
 /**
  * Android trackpads (feature 011, spec FR-014, research R9): a two-finger pinch arrives as `Scale` pointer events and a
  * two-finger swipe as `Pan` events, which the touch gesture detectors ignore; the timeline zooms around the pointer on
  * the first and scrolls on the second. Android only: Compose Multiplatform's iOS test API injects no trackpad gestures
- * (the iPad's pinch arrives through the shell's bridge, `TrackpadPinchTest`).
+ * (the iPad's pinch arrives through the shell's bridge, `TrackpadPinchTest`). Android 14 (API 34) introduced the
+ * trackpad pinch and swipe gestures; before it a trackpad scrolls as a mouse wheel does (the wheel tests), so these skip
+ * there (the OPPO on Android 11 and the Redmi on Android 9 deliver one pinch step and no pan, 2026-11-04).
  */
 @OptIn(ExperimentalTestApi::class)
 class TrackpadGesturesTest {
@@ -30,6 +34,7 @@ class TrackpadGesturesTest {
     private val scrolls = mutableListOf<Double>()
 
     private fun androidx.compose.ui.test.ComposeUiTest.setLane() {
+        assumeTrue("trackpad pinch and swipe gestures arrived in Android 14 (API 34); this is API ${Build.VERSION.SDK_INT}", Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
         setContent {
             TembraTheme {
                 TrackLane(

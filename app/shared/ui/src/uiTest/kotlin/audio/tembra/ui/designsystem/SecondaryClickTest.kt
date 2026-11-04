@@ -3,9 +3,11 @@ package audio.tembra.ui.designsystem
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.ComposeUiTest
@@ -104,7 +106,8 @@ class SecondaryClickTest {
         setContent {
             TembraTheme {
                 density = androidx.compose.ui.platform.LocalDensity.current.density
-                Box(Modifier.requiredSize(800.dp, 400.dp).padding(top = 160.dp)) {
+                // Pinned top-left so an 800 dp host that overflows a phone's window still starts on screen (T135).
+                Box(Modifier.wrapContentSize(Alignment.TopStart, unbounded = true).requiredSize(800.dp, 400.dp).padding(top = 160.dp)) {
                     if (expanded) {
                         TrackHeader(
                             track = track, index = 0, selected = false, expanded = false, isFirst = true, isLast = true,

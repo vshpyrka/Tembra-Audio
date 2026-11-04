@@ -5,6 +5,7 @@ import androidx.compose.foundation.interaction.HoverInteraction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.material3.Text
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -105,15 +106,20 @@ class TembraMenuTest {
         val hover = MutableInteractionSource()
         val focus = MutableInteractionSource()
         setMenu(listOf(MenuItemSpec("a", "Hovered", interactionSource = hover), MenuItemSpec("b", "Focused", interactionSource = focus)))
-        val resting = onNodeWithTag("menu.a").captureToImage().averageColor()
+        // The fill where the row draws no text: the label brightens on hover too, which moved a whole-row average to
+        // halfway on the Redmi's 3x screen (2026-11-04).
+        val resting = onNodeWithTag("menu.a").captureToImage().fillColor()
         assertTrue(hover.tryEmit(HoverInteraction.Enter()))
         mainClock.advanceTimeBy(FRAMES_MS)
-        val hovered = onNodeWithTag("menu.a").captureToImage().averageColor()
+        val hovered = onNodeWithTag("menu.a").captureToImage().fillColor()
         assertTrue(hovered.isCloserTo(surfaceContainerHigh, resting), "the hovered row $hovered did not move toward surfaceContainerHigh $surfaceContainerHigh from $resting")
         assertTrue(focus.tryEmit(FocusInteraction.Focus()))
         mainClock.advanceTimeBy(FRAMES_MS)
         assertTrue(onNodeWithTag("menu.b").captureToImage().containsColor(primary), "the focused row draws no primary ring")
     }
+
+    /** The row's fill near its trailing edge, clear of the label and of a check mark (an unselected row has none). */
+    private fun ImageBitmap.fillColor(): Color = averageColorAt(width - 8, height / 2, radius = 2)
 
     private companion object {
         const val FRAMES_MS = 100L
