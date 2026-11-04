@@ -573,6 +573,10 @@ guideline self-check (quickstart §6) records a pass for every test listed in SC
   `androidApp/src/test/…/FullScreenRequestTest.kt`; enter and exit verified from the menu on Tembra_Desktop_API37
 - [X] T142 [US2] A clip that starts left of the view no longer paints over the track headers pinned beside the lanes:
   the lane clips to its bounds (`TrackLane`), `TrackLaneTest.aClipScrolledPastTheLeftEdgeDrawsNothingOverWhatSitsBesideTheLane`
+- [ ] T143 [US6] Physical-iPhone perf rounds while audio animates: XCUITest waits 60 s for quiescence after each step
+  while the metronome runs or the project plays (iPhone 14, 2026-11-04: the windowing journey's first rotation; feature
+  009's timeline journey hung 30 min), so a round cannot finish. Find what keeps the app from idling for XCUITest on the
+  device (the simulators idle between steps), fix it in the app or the journeys, then run T129's iPhone 14 round
 
 ---
 
@@ -601,6 +605,19 @@ guideline self-check (quickstart §6) records a pass for every test listed in SC
     windowing round without the three sections. The pipeline collects audio counters for the stress journey only, so
     xruns during this journey are asserted by `WindowResizeAudioTest` (zero xruns through fifty window changes). iOS:
     the journey ran its 20 measured iterations on the iPad simulator (871 s); the iPhone 14 round remains.
+  - 2026-11-04, iPhone 14 (owner's phone, volume down, five attempts): the round never reached a measured iteration.
+    Fixed on the way: the worktree's `Config.xcconfig` lacked the team id (copied, skip-worktree); `--journeys` on iOS ran
+    the whole target and filtered afterwards, so the hour went to other journeys (one, feature 009's timeline, hung 30 min)
+    and now a subset runs its own test classes (`journey_test_classes`); the iPhone branch of `WindowingJourney.swift`
+    tapped the status bar to close a menu that a long press never opens (a touch has no clip menu); XCUITest synthesizes
+    no pointer on an iPhone ("Pointer events are not supported for this device") and a physical iPhone drops its ⌘ keys
+    (the iPhone simulator takes them: ⌘2 opened the Tuner), so the journey right-clicks on an iPad only, types chords on
+    an iPad or a simulator and taps elsewhere, and the iOS collector requires the sections the device can make
+    (`synthesized_inputs`; windowRelayout everywhere) as Android's does; both journeys skip to the start before playing
+    (a start in the demo's last seconds is refused, after which the app never idles). Open, follow-up T143: on the
+    physical iPhone XCUITest waits 60 s for quiescence after every step while the metronome or playback animates (the
+    first rotation of iteration one), so a 20-iteration round cannot finish within the 30-minute test allowance; the
+    same stall hung feature 009's timeline journey here today.
 - [X] T130 Compare the startup family with `tracepulse profile compare`; regenerate and commit the baseline profile
   (`app/androidApp/src/main/generated/baselineProfiles/`) only if it regresses beyond its gate
   - Done 2026-11-03, Pixel 6 Pro (comparison 20261103T190645Z, `--journeys startup`, 20 iterations per state): the
@@ -626,11 +643,15 @@ guideline self-check (quickstart §6) records a pass for every test listed in SC
   `specs/011-large-screens-desktop/screenshots/NOTES.md`
   - Done 2026-11-03: every restartable composable of `:shared:ui` (204) is skippable; nothing new to explain
     (`screenshots/NOTES.md`).
-- [ ] T135 Run every lane on every attached target: `checkAndroidHost`, `checkIos` (iPhone and iPad simulators),
+- [X] T135 Run every lane on every attached target: `checkAndroidHost`, `checkIos` (iPhone and iPad simulators),
   `checkAndroidDevice` and `:androidApp:connectedDebugAndroidTest` on `emulator-5582` (Desktop (Preview)),
   `:androidApp:connectedDebugAndroidTest` on `emulator-5580` (Android 14 desktop), the tablet and the phones,
   `TembraDesktopTests` on the iPad simulator; zero warnings (`--warning-mode all`); record each target's result in
   `specs/011-large-screens-desktop/quickstart.md` §2
+  - 2026-11-03/04: every target green (quickstart §2 table): host; iPhone 18 Pro, iPad and iPhone Duo simulators
+    (`checkIos`) and `TembraDesktopTests` on the iPad; Tembra_Desktop_API37 (`checkAndroidDevice` and the app's 45);
+    Tembra_Desktop_API34 (the app's 45); the Pixel 9 Pro Fold emulator; the Pixel 6 Pro, Pixel 7 Pro, Pixel Tablet, OPPO
+    and Redmi. Zero Gradle warnings; Xcode's one project warning (two perf test files share object IDs) is main's
 - [ ] T136 Owner checks (FR-029): quickstart §3–§5 on both desktop emulators, the tablet in desktop mode and an iPad
   window, by ear for FR-006, including the relaunch-size check (§4 step 6), which instrumentation cannot make; record
   results in `specs/011-large-screens-desktop/quickstart.md`
