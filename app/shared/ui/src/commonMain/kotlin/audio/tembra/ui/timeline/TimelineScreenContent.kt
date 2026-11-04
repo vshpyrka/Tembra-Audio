@@ -52,6 +52,7 @@ import audio.tembra.ui.timeline.components.EmptyTimeline
 import audio.tembra.ui.timeline.components.MetronomeSettingsSheet
 import audio.tembra.ui.timeline.components.OverviewStrip
 import audio.tembra.ui.timeline.components.OverviewStripDefaults
+import audio.tembra.ui.timeline.components.PlayheadMask
 import audio.tembra.ui.timeline.components.PlayheadOverlay
 import audio.tembra.ui.timeline.components.SnapSheet
 import audio.tembra.ui.timeline.components.TempoDialog
@@ -104,6 +105,7 @@ internal fun TimelineScreenContent(
     // The iPad's trackpad pinch arrives from the shell's bridge in root pixels (feature 011, research R9): it zooms
     // around its focus, measured from the lanes' left edge (written at layout, read only by the collector).
     val lanesLeft = remember { mutableFloatStateOf(0f) }
+    val playheadMask = remember { PlayheadMask() }
     val pinchSource = LocalTrackpadPinchSource.current
     val onZoomAround by rememberUpdatedState(callbacks.onZoomAround)
     // The ⌘ chords' menu commands on iPad (feature 011, spec FR-018a) act on the state showing now.
@@ -185,7 +187,7 @@ internal fun TimelineScreenContent(
                         if (drops.hover != null) DropHoverBanner(DropCopy.newTrack, Modifier.align(Alignment.TopCenter))
                     }
                 } else {
-                    TrackList(state = state, layout = layout, callbacks = callbacks)
+                    TrackList(state = state, layout = layout, callbacks = callbacks, playheadMask = playheadMask)
                 }
                 PlayheadOverlay(
                     viewport = state.viewport,
@@ -194,6 +196,7 @@ internal fun TimelineScreenContent(
                     positionBeats = state.positionBeats,
                     telemetry = telemetry,
                     modifier = Modifier.fillMaxSize().padding(start = headerColumn),
+                    mask = playheadMask,
                 )
             }
             if (state.overviewStripShown) {

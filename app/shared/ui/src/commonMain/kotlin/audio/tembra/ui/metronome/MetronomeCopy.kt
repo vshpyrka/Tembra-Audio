@@ -27,7 +27,7 @@ internal object MetronomeCopy {
 
     // Tap tempo and play.
     const val tapTempo = "Tap tempo"
-    const val tapRest = "Sync finger rhythm"
+    const val tapRest = "Tap along to the beat"
     const val tapAgain = "Tap again"
     const val startMetronome = "Start metronome"
     const val stopMetronome = "Stop metronome"
