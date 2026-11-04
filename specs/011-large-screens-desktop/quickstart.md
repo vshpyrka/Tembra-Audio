@@ -69,6 +69,10 @@ output muted for the emulators and simulators):
 | Pixel_9_Pro_Fold emulator, 2026-11-04 | `checkAndroidDevice --continue` | core 198, data 121, ui 980 (4 skipped) green; engine 94/95: `theStreamProbeSeesAnOpenOutput` counted streams and lost to a previous test's stream closing as the tone's opened (feature 009 test race, also seen once on API37); it now tells streams apart by player, and the engine module passed 95/95 twice |
 | Pixel_9_Pro_Fold emulator, 2026-11-04 | `:androidApp:connectedDebugAndroidTest` | 45 tests, 0 failed, 12 skipped (the desktop tests skip outside free-form windows) |
 | Tembra_Desktop_API34, 2026-11-04 | `:androidApp:connectedDebugAndroidTest` | 45/45 green, zero warnings; a first run right after the emulator's snapshot boot found the morning's app window restored beside the test's ("expected one task, found 2") and passed after `am force-stop com.tembraaudio` |
+| iPad Pro 13-inch (M5) simulator, 2026-11-04 | `checkIos` | core 198, engine 91, data 121, ui 984, green |
+| iPad Pro 13-inch (M5) simulator, 2026-11-04 | `TembraDesktopTests` (xcodebuild) | 3/3: ⌘ chords run once, ⌘1–5 and ⌘/, the 360 × 480 scene minimum. Xcode also warns that `TimelinePerfTests.swift` and `ColdLaunchHitchTests.swift` share the object IDs `…71`/`…D5` in `project.pbxproj` (on main since the cold-launch work, not this feature): one of the two perf files is dropped from the perf target |
+| iPhone 18 Pro simulator, 2026-11-04 | the four `iosSimulatorArm64Test` tasks (`--rerun`) | core 198, engine 91, data 121, ui 984, green |
+| iPhone Duo simulator, 2026-11-04 | the four `iosSimulatorArm64Test` tasks (`--rerun`) | core 198, engine 91, data 121, ui 984, green |
 
 One desktop emulator at a time: with both running (one windowed), one crashed twice on this Mac (2026-11-04).
 

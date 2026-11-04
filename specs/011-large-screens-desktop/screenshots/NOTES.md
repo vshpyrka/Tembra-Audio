@@ -16,6 +16,12 @@ restartable composable that cannot skip, so there is nothing to explain.
 - `us5-picker-roots-api34.png`: the same picker on Tembra_Desktop_API34 (release build, maximised): Recent, Audio,
   Downloads, the device and a removable "Virtual SD card" with its eject control (FR-025, T121, 2026-11-04).
 
+- T133, the timeline at each width class (2026-11-03/04): `t133-api37-timeline-windowed.png` and
+  `…-fullscreen.png` (Desktop Preview window, expanded), `t133-fold-compact-timeline.png` (fold emulator closed, outer
+  display, compact: bottom bar, headers above lanes), `t133-fold-medium-timeline.png` (opened, medium: rail),
+  `t133-iphone18pro-compact-timeline.png`, `t133-ipad-window-timeline.png` (an iPadOS window: title in the status bar,
+  resize grabber, expanded with pinned headers).
+
 ## Desktop quality guideline self-check (T125, SC-010, 2026-11-04)
 
 Tembra_Desktop_API37 (Desktop Preview, Android 17), the release build (`tools/release-android.sh --serial
