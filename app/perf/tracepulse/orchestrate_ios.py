@@ -40,6 +40,8 @@ AUDIO_TRACE_SECONDS = 75
 AUDIO_TRACE_TEST = "AudioTracePass"
 # The cold-launch hitch driver runs only by hand under a system-wide Hitches recording; a round never runs it.
 COLD_LAUNCH_HITCH_TEST = "ColdLaunchHitchTests"
+# The 30-minute recording soak (feature 010, T096) runs only by hand; a round never runs it.
+RECORDING_SOAK_TEST = "RecordingSoakTests"
 
 # The XCTest class that drives each journey: a round for a subset of the journeys (`--journeys recording`) runs only
 # these classes, so the classes left out cannot refuse the round (the thermal gate is per test, and a 20-minute
@@ -275,7 +277,8 @@ def test_without_building(cfg: Config, device: Device, runner: Runner, xctestrun
         cmd += [f"-only-testing:{cfg.ios.test_target}/{cls}" for cls in classes]
     else:
         cmd += [f"-only-testing:{cfg.ios.test_target}", f"-skip-testing:{cfg.ios.test_target}/{AUDIO_TRACE_TEST}",
-                f"-skip-testing:{cfg.ios.test_target}/{COLD_LAUNCH_HITCH_TEST}"]
+                f"-skip-testing:{cfg.ios.test_target}/{COLD_LAUNCH_HITCH_TEST}",
+                f"-skip-testing:{cfg.ios.test_target}/{RECORDING_SOAK_TEST}"]
     res = runner.run(cmd, cwd=_ios_dir(cfg), timeout=TEST_TIMEOUT_S)
     with open(log_path, "w") as fh:
         fh.write(f"# {' '.join(cmd)}\n# rc={res.returncode}\n\n{res.stdout}\n--- stderr ---\n{res.stderr}")
