@@ -1,6 +1,7 @@
 package audio.tembra.android.desktop
 
 import android.os.SystemClock
+import androidx.test.platform.app.InstrumentationRegistry
 import audio.tembra.ui.perf.PerfAnchors
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -28,7 +29,15 @@ class FullScreenTest {
         DesktopWindow.assumeFreeform()
         DesktopApp.grantNotifications()
         DesktopWindow.launchFreeform()
-        DesktopWindow.resizeTaskDp(1000, 700)
+        // A window that fits the display from where it opened: a tablet held upright is 800 dp wide, and a window past the
+        // display's edge comes back from full screen moved inside it (Pixel Tablet, 2026-11-04).
+        val (displayWidth, displayHeight) = DesktopWindow.displaySizePx()
+        val density = InstrumentationRegistry.getInstrumentation().targetContext.resources.displayMetrics.density
+        val opened = DesktopWindow.windowBoundsPx()
+        DesktopWindow.resizeTaskDp(
+            minOf(1000, ((displayWidth - opened.left) / density).toInt() - EDGE_DP),
+            minOf(700, ((displayHeight - opened.top) / density).toInt() - EDGE_DP),
+        )
         val windowed = DesktopWindow.windowBoundsPx()
         DesktopApp.tap(PerfAnchors.NAV_TIMELINE)
         DesktopApp.find(PerfAnchors.TIMELINE_CLIP_FIRST)
@@ -43,7 +52,6 @@ class FullScreenTest {
 
         DesktopApp.tap("timeline.toolbar.overflow.button")
         DesktopApp.findText("Full screen").click()
-        val (displayWidth, displayHeight) = DesktopWindow.displaySizePx()
         DesktopApp.waitUntil("the window to fill the display") {
             DesktopWindow.windowBoundsPx().let { it.width() == displayWidth && it.height() == displayHeight }
         }
@@ -51,8 +59,9 @@ class FullScreenTest {
 
         DesktopApp.tap("timeline.toolbar.overflow.button")
         DesktopApp.findText("Exit full screen").click()
-        DesktopApp.waitUntil("the window to return") { DesktopWindow.windowBoundsPx() == windowed }
-        assertEquals(windowed, DesktopWindow.windowBoundsPx())
+        var returned = DesktopWindow.windowBoundsPx()
+        runCatching { DesktopApp.waitUntil("the window to return") { DesktopWindow.windowBoundsPx().also { returned = it } == windowed } }
+        assertEquals("the window after full screen (was $windowed, display ${displayWidth}x$displayHeight)", windowed, returned)
 
         val elapsed = (SystemClock.elapsedRealtimeNanos() - started) / 1e9
         val advanced = DesktopApp.transport().audiblePositionSeconds - startSeconds
@@ -60,3 +69,6 @@ class FullScreenTest {
         assertTrue("the playhead advanced $advanced s in $elapsed s", abs(advanced - elapsed) < 0.25)
     }
 }
+
+/** Room left between the test's window and the display's right and bottom edges. */
+private const val EDGE_DP = 16
