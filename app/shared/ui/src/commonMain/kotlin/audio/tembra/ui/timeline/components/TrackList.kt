@@ -7,11 +7,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
@@ -43,6 +46,7 @@ internal fun TrackList(
     layout: TimelineLayout,
     callbacks: TimelineCallbacks,
     modifier: Modifier = Modifier,
+    playheadMask: PlayheadMask? = null,
 ) {
     val density = LocalDensity.current
     val headerWidthPx = if (layout.pinnedHeaders) with(density) { TembraTheme.spacing.headerColumnWidth.toPx() } else 0f
@@ -91,9 +95,15 @@ internal fun TrackList(
                     layout = layout,
                     callbacks = callbacks,
                 )
-                // The expanded layout's inline settings under the open track (spec FR-041); the chevron collapses it.
+                // The expanded layout's inline settings under the open track (spec FR-041); the chevron collapses it. The
+                // playhead leaves the row out (feature 011): the row reports where it is, and clears it when it goes.
                 if (layout.inlineSettings && state.expandedTrack == track.id) {
-                    TrackSettingsInlineRow(trackId = track.id, onCollapse = { callbacks.onExpandTrack(null) })
+                    if (playheadMask != null) DisposableEffect(playheadMask) { onDispose { playheadMask.hole = null } }
+                    TrackSettingsInlineRow(
+                        trackId = track.id,
+                        onCollapse = { callbacks.onExpandTrack(null) },
+                        modifier = if (playheadMask != null) Modifier.onGloballyPositioned { playheadMask.hole = it.boundsInRoot() } else Modifier,
+                    )
                 }
             }
         }

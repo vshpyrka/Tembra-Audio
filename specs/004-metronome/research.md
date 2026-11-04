@@ -416,6 +416,11 @@ timer keyed on the last tap).
 **Rationale**: spec clarifications; the mean of a short window follows a change of mind within a
 bar while filtering finger jitter (SC-003: eight taps with ±20 ms jitter land within 1 BPM).
 
+
+**Amendment (feature 011, 2026-11-04)**: the resting caption reads "Tap along to the beat" instead of "Sync finger
+rhythm": in a desktop window the tap is a click or the T key, not a finger. The Stitch metronome screens still show the
+old words until the next design sync.
+
 ## R10. Design metrics from the Stitch HTML and the colour audit
 
 The three screens' colours were checked against `design/stitch/theme.json` (54 named colours):
