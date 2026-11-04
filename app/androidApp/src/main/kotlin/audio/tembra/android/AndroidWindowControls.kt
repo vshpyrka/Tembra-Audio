@@ -2,6 +2,8 @@ package audio.tembra.android
 
 import android.app.Activity
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.os.OutcomeReceiver
 import android.util.Log
 import audio.tembra.ui.platform.WindowControls
@@ -68,29 +70,47 @@ class AndroidWindowControls : WindowControls {
 
     override fun exitFullScreen() = request(enter = false)
 
-    private fun request(enter: Boolean) {
-        val current = activity ?: return
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return
-        val mode = if (enter) Activity.FULLSCREEN_MODE_REQUEST_ENTER else Activity.FULLSCREEN_MODE_REQUEST_EXIT
-        current.requestFullscreenMode(
-            mode,
-            object : OutcomeReceiver<Void, Throwable> {
-                override fun onResult(result: Void?) {
-                    requested = enter
-                    awaitingModeChange = true
-                    refresh()
-                }
+    private val mainHandler = Handler(Looper.getMainLooper())
 
-                override fun onError(error: Throwable) {
-                    // The system refused (the window is not free-form, or another request is pending), or says so for a
-                    // request it carries out anyway: the window's mode decides, now or at the next change.
-                    Log.w(TAG, "full-screen request refused", error)
-                    if (enter) {
-                        val current = activity
-                        if (current != null && !current.isInMultiWindowMode) requested = true else enterUndecided = true
-                    }
-                    refresh()
+    private val requests = FullScreenRequest(
+        send = { enter, onApproved, onRefused ->
+            val current = activity
+            if (current == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                onRefused(IllegalStateException("no activity able to go full screen"))
+            } else {
+                val mode = if (enter) Activity.FULLSCREEN_MODE_REQUEST_ENTER else Activity.FULLSCREEN_MODE_REQUEST_EXIT
+                current.requestFullscreenMode(
+                    mode,
+                    object : OutcomeReceiver<Void, Throwable> {
+                        override fun onResult(result: Void?) = onApproved()
+
+                        override fun onError(error: Throwable) = onRefused(error)
+                    },
+                )
+            }
+        },
+        later = { delayMs, action -> mainHandler.postDelayed(action, delayMs) },
+        windowed = { activity?.isInMultiWindowMode ?: false },
+    )
+
+    private fun request(enter: Boolean) {
+        if (activity == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return
+        requests.request(
+            enter,
+            onApproved = {
+                requested = enter
+                awaitingModeChange = true
+                refresh()
+            },
+            onRefused = { error ->
+                // The system refused twice (the window is not free-form, or another request is pending), or says so for a
+                // request it carries out anyway: the window's mode decides, now or at the next change.
+                Log.w(TAG, "full-screen request refused", error)
+                if (enter) {
+                    val current = activity
+                    if (current != null && !current.isInMultiWindowMode) requested = true else enterUndecided = true
                 }
+                refresh()
             },
         )
     }

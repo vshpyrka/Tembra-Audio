@@ -26,7 +26,7 @@ object DesktopInput {
         val now = SystemClock.uptimeMillis()
         inject(mouseEvent(now, now, MotionEvent.ACTION_HOVER_MOVE, x - 1f, y - 1f, buttons = 0))
         inject(mouseEvent(now, SystemClock.uptimeMillis(), MotionEvent.ACTION_HOVER_MOVE, x, y, buttons = 0))
-        instrumentation.waitForIdleSync()
+        DesktopApp.settle()
     }
 
     /** Presses and releases the secondary (right) button at ([x], [y]). */
@@ -57,7 +57,7 @@ object DesktopInput {
         }
         dragDownTime = down
         if (release) releasePrimary(toX, toY)
-        instrumentation.waitForIdleSync()
+        DesktopApp.settle()
     }
 
     private var dragDownTime = 0L
@@ -67,7 +67,7 @@ object DesktopInput {
         val now = SystemClock.uptimeMillis()
         inject(mouseEvent(dragDownTime, now, MotionEvent.ACTION_BUTTON_RELEASE, x, y, buttons = 0, actionButton = MotionEvent.BUTTON_PRIMARY))
         inject(mouseEvent(dragDownTime, now, MotionEvent.ACTION_UP, x, y, buttons = 0))
-        instrumentation.waitForIdleSync()
+        DesktopApp.settle()
     }
 
     /**
@@ -78,19 +78,19 @@ object DesktopInput {
         val now = SystemClock.uptimeMillis()
         val event = mouseEvent(now, now, MotionEvent.ACTION_SCROLL, x, y, buttons = 0, vscroll = vertical, hscroll = horizontal)
         inject(event)
-        instrumentation.waitForIdleSync()
+        DesktopApp.settle()
     }
 
     /** Presses a key combination, e.g. `keyCombination("KEYCODE_CTRL_LEFT", "KEYCODE_2")`. */
     fun keyCombination(vararg keyCodes: String) {
         DesktopWindow.shell("input keycombination ${keyCodes.joinToString(" ")}")
-        instrumentation.waitForIdleSync()
+        DesktopApp.settle()
     }
 
     /** Presses one key, e.g. `key("KEYCODE_ESCAPE")`. */
     fun key(keyCode: String) {
         DesktopWindow.shell("input keyevent $keyCode")
-        instrumentation.waitForIdleSync()
+        DesktopApp.settle()
     }
 
     /**
@@ -129,7 +129,7 @@ object DesktopInput {
         val up = SystemClock.uptimeMillis()
         inject(mouseEvent(down, up, MotionEvent.ACTION_BUTTON_RELEASE, x, y, buttons = 0, actionButton = button))
         inject(mouseEvent(down, up, MotionEvent.ACTION_UP, x, y, buttons = 0))
-        instrumentation.waitForIdleSync()
+        DesktopApp.settle()
     }
 
     private fun inject(event: MotionEvent) {

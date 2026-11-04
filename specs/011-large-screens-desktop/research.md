@@ -409,6 +409,12 @@ carries out the transition, yet the app's callback receives `onError("Fullscreen
 `AndroidWindowControls` therefore lets the window's mode decide a refused enter request: full screen if the activity has
 left multi-window mode when the error arrives or at the next multi-window change.
 
+**Finding (guideline self-check T125, 2026-11-04), the release build with animations on**: the request sent from the
+Timeline menu's item is refused ("Fullscreen request denied by system policy") and nothing happens, with the activity
+top-resumed and focused; the same request sent 300 ms later is carried out, enter and exit alike. A request sent while
+the menu that asked for it is still closing is refused, so `FullScreenRequest` sends a refused request once more after
+300 ms while the window is still in the mode it is leaving (T141).
+
 ## R22. Opening audio files from the Files app (FR-026a)
 
 **Decision**: Android: an `<intent-filter>` on `MainActivity` for `android.intent.action.VIEW` (category DEFAULT) with

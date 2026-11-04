@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
@@ -28,6 +27,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import audio.tembra.core.project.GridSize
+import audio.tembra.ui.designsystem.verticalScrollWithScrollbar
 import audio.tembra.ui.perf.anchorRoot
 import audio.tembra.ui.theme.TembraIcon
 import audio.tembra.ui.theme.TembraIcons
@@ -60,7 +60,7 @@ internal fun SnapSheet(grid: GridSize, onGrid: (GridSize) -> Unit, onDismiss: ()
         containerColor = colors.surfaceContainerHigh,
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(bottom = spacing.lg).navigationBarsPadding(),
+            modifier = Modifier.fillMaxWidth().verticalScrollWithScrollbar(rememberScrollState()).padding(bottom = spacing.lg).navigationBarsPadding(),
             verticalArrangement = Arrangement.spacedBy(spacing.xs),
         ) {
             Text(

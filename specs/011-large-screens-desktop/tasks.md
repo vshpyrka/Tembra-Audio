@@ -516,7 +516,10 @@ clarified rules; audio opened with Tembra Audio from the Files app starts a new 
   - 2026-11-03, Tembra_Desktop_API37: the picker, opened from the empty timeline's "Add audio…" inside the app's
     free-form window, offers Recent, Audio, Downloads, Android Desktop and a removable "Virtual SD card"
     (`sm set-virtual-disk true`, `sm partition disk:7,88 public`); `screenshots/us5-picker-roots-api37.png`.
-    Tembra_Desktop_API34 and the tablet in desktop mode remain.
+  - 2026-11-04, Tembra_Desktop_API34 (release build, maximised window): Recent, Audio, Downloads, the device
+    (sdk_gpc_arm64) and a removable "Virtual SD card" with its eject control (`sm partition disk:7,304 public`);
+    several files selected with Ctrl+A, one with the arrow keys and Enter; `screenshots/us5-picker-roots-api34.png`.
+    The tablet in desktop mode remains for the owner (it needs a USB drive for the removable root).
 
 **Checkpoint**: US1–US5 complete.
 
@@ -531,21 +534,45 @@ desktop" review; the label itself is Google's to assign.
 **Independent Test**: the screenshots meet FR-027 (count, 16:9, ≥ 1920×1080, real content, no debug UI, no text); the
 guideline self-check (quickstart §6) records a pass for every test listed in SC-010.
 
-- [ ] T122 [US6] Prepare realistic content on `Tembra_Desktop_API34` (its 3840×2160 display is 16:9; the Desktop
+- [X] T122 [US6] Prepare realistic content on `Tembra_Desktop_API34` (its 3840×2160 display is 16:9; the Desktop
   (Preview) display is 16:10) with the release build (`tools/release-android.sh --serial emulator-5580`): the demo
   project and four projects with real names and imported audio (no seed or test data)
-- [ ] T123 [US6] Capture the demo project playing, the tuner in By Ear, the metronome running and the library with the
+- [X] T123 [US6] Capture the demo project playing, the tuner in By Ear, the metronome running and the library with the
   window maximised (`adb -s emulator-5580 exec-out screencap -p`), scale to 2560×1440 and save as JPEG without alpha in
   the local, git-excluded `play-store-listing/chromebook/c1-…c4-*.jpg` (quickstart §8); check each for debug chips,
   test data and added text
-- [ ] T124 [US6] Hand the four files to the owner for Play Console's Chromebook slot and note them in
+- [X] T124 [US6] Hand the four files to the owner for Play Console's Chromebook slot and note them in
   `play-store-listing/store-listing.md` (local)
-- [ ] T125 [US6] Guideline self-check (SC-010) on `Tembra_Desktop_API37` with the release build (quickstart §6): walk
+  - 2026-11-04: `play-store-listing/chromebook/c1-timeline.jpg`, `c2-tuner.jpg`, `c3-metronome.jpg`, `c4-library.jpg`
+    (2560×1440 JPEG, no alpha) from the release build on Tembra_Desktop_API34, maximised, sound muted; the library holds
+    the demo and four projects built from imported audio through the picker (Saturday Rehearsal, Rhodes Ideas, Groove
+    Practice, Late Night Loop). The shelf's notification badge was cleared by dismissing the notifications (System UI
+    demo mode does not reach the desktop shelf). Noted in `store-listing.md` with a proposed description line.
+- [X] T125 [US6] Guideline self-check (SC-010) on `Tembra_Desktop_API37` with the release build (quickstart §6): walk
   T-Scrollbar_Display, T-Hover_Parity, T-Desktop_Menus, T-Request_Fullscreen_Mode, T-Keyboard_Navigation,
   T-Keyboard_Parity, T-Custom_Cursors, T-Cursor_Target_Size, T-Drag_Drop_Batch (into the app), T-File_Picker,
   T-File_Handlers and T-Offline_Support (airplane mode); record pass or fail with a screenshot each in
   `specs/011-large-screens-desktop/screenshots/guidelines/` and `specs/011-large-screens-desktop/screenshots/NOTES.md`;
   any failure becomes a task in this file before the merge
+  - 2026-11-04: nine pass as found, three pass after fixes found on the way (T138–T141); results, method and files in
+    `screenshots/NOTES.md` § Desktop quality guideline self-check
+- [X] T138 [US6] Scrollbars on the scrolling surfaces the self-check found without one (T-Scrollbar_Display): the project
+  key picker, the snap sheet, the compact track settings and the navigation rail in a short window
+  (`verticalScrollWithScrollbar`), test-first in `UITEST/designsystem/ScrollbarCoverageTest.kt`
+- [X] T139 [US6] Tooltips of the controls right under a desktop window's caption bar were placed under it, invisible
+  (T-Hover_Parity): `TembraTooltip` drops a tooltip below its control when above would start over the window's
+  covered top (the content's offset in its window, below the caption the decor keeps, plus the safe-drawing inset),
+  read when the popup is placed; `CTEST/designsystem/TooltipPositionTest.kt`. `TooltipCoverageTest` now skips in
+  windows smaller than its 1200 × 780 dp surface (phones), where it could never pass
+- [X] T140 [US6] The timeline's horizontal scrollbar thumb runs along the lanes, past the pinned track headers
+  (`ScrollbarAdapter.leadingPx`, `scrollbarThumb` extracted pure), `CTEST/designsystem/ScrollbarThumbTest.kt`
+- [X] T141 [US6] Full screen on the Desktop (Preview) image: the release build's request was refused ("denied by system
+  policy") with the activity top-resumed and focused; the same request 300 ms later went through (a request sent while
+  the menu that asked for it is still closing is refused). `androidApp/…/FullScreenRequest.kt` sends a refused request
+  once more after 300 ms while the window is still in the mode it is leaving, test-first in
+  `androidApp/src/test/…/FullScreenRequestTest.kt`; enter and exit verified from the menu on Tembra_Desktop_API37
+- [X] T142 [US2] A clip that starts left of the view no longer paints over the track headers pinned beside the lanes:
+  the lane clips to its bounds (`TrackLane`), `TrackLaneTest.aClipScrolledPastTheLeftEdgeDrawsNothingOverWhatSitsBesideTheLane`
 
 ---
 

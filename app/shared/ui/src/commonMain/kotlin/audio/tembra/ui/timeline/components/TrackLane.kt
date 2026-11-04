@@ -23,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
@@ -145,6 +146,9 @@ internal fun TrackLane(
         modifier = modifier
             .fillMaxWidth()
             .height(height)
+            // A clip that starts left of the view is drawn from a negative x: the lane keeps it to itself, so it never
+            // paints over the header pinned beside it in the expanded layout (feature 011, large windows).
+            .clipToBounds()
             .testTag(TimelineTestTags.lane(index))
             // On the lane itself, the clips' ancestor: a drag that starts on a clip still scrolls (clarification 3).
             .pointerInput(onClearSelection) { detectTapGestures(onTap = { onClearSelection() }) }

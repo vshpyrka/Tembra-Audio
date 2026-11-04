@@ -17,6 +17,12 @@ internal interface ScrollbarAdapter {
     val contentSize: Float
     val viewportSize: Float
 
+    /**
+     * Pixels of the scrolling element before its scrolled viewport begins, along the scrollbar's axis: the timeline's
+     * pinned track headers for its time axis. The thumb's track starts past them. Zero for an element that scrolls whole.
+     */
+    val leadingPx: Float get() = 0f
+
     /** Scrolls the content by [delta] pixels (positive moves later in the content). */
     fun scrollBy(delta: Float)
 }
