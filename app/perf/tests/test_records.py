@@ -131,3 +131,13 @@ def test_optional_blocks_round_trip():
     data = rec.to_dict()
     RoundRecord.validate(data)
     assert RoundRecord.from_dict(data) == rec
+
+
+def test_every_measured_journey_is_a_valid_record_journey():
+    # A round of every default journey must publish: a journey the pipeline runs but the schema does not list fails the
+    # publish after the measurement (feature 011's windowing journey stopped a 010 session after its first round).
+    from tracepulse.config import DEFAULT_JOURNEYS
+    journeys = [JourneyResult(journey=name, iterations=20, metrics={
+        "frames.p90_ms": MetricResult(unit="ms", samples=[8.0] * 20, source="macrobenchmark")})
+        for name in DEFAULT_JOURNEYS]
+    RoundRecord.validate(_record(journeys=journeys).to_dict())
