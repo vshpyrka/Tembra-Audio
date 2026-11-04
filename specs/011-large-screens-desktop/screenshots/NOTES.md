@@ -50,6 +50,7 @@ Also found and fixed on the way (T142): a clip that starts left of the view was 
 beside the lanes (feature 009 code, visible only where the headers are pinned: tablets in landscape and desktop
 windows), `TrackLaneTest.aClipScrolledPastTheLeftEdgeDrawsNothingOverWhatSitsBesideTheLane`.
 
-Left for the owner, not 011 defects: the playhead line crosses the expanded track's inline settings panel (feature
-009 overlay design); "Tap tempo — Sync finger rhythm" reads touch-first in a desktop window; the rename dialog does
-not put the caret in its field when it opens.
+The three items first left for the owner were fixed afterwards (commit 528b1ea, 2026-11-04): the playhead line now
+stops at the expanded track's inline settings (`playhead-clear-of-inline-settings-pixel-tablet.png`, the release build
+on the Pixel Tablet in landscape), the tap-tempo caption reads "Tap along to the beat", and the rename and description
+dialogs open with the caret in their field.
