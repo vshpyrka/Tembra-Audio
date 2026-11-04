@@ -61,7 +61,8 @@ private:
     static constexpr uint32_t kMaxInputFrames = 4096;
     static constexpr uint32_t kMaxInputChannels = 2;
     static constexpr uint32_t kWarmUpBursts = 2;
-    static constexpr uint32_t kDefaultCushionFrames = 96;  // the reservoir's cushion when the stream reports no burst
+    static constexpr uint32_t kDefaultBurstFrames = 96;  // the input burst assumed when the stream reports none
+    static constexpr uint32_t kCushionBursts = 2;         // input bursts the reservoir keeps read ahead
 
     oboe::Result openInputWithPreset(uint32_t preferredRate, oboe::InputPreset preset);
     oboe::Result openOutputStream(uint32_t preferredRate);

@@ -93,9 +93,11 @@ oboe::Result OboeAudioDevice::openDuplexInputLocked() {
         return oboe::Result::ErrorInternal;
     }
     inputChannels_.store(static_cast<uint32_t>(inputStream_->getChannelCount()), std::memory_order_release);
-    // One input burst read ahead absorbs a burst that lands just after the output callback (the reservoir's header).
+    // Two input bursts read ahead absorb a burst that lands just after the output callback (the reservoir's header);
+    // one burst left an occasional short read on the Pixel 6 Pro (one in a 29-minute take, 33 s into a 2-minute one).
     const int32_t burst = inputStream_->getFramesPerBurst();
-    inputReservoir_.configure(static_cast<uint32_t>(inputStream_->getChannelCount()), burst > 0 ? static_cast<uint32_t>(burst) : kDefaultCushionFrames);
+    const uint32_t cushion = (burst > 0 ? static_cast<uint32_t>(burst) : kDefaultBurstFrames) * kCushionBursts;
+    inputReservoir_.configure(static_cast<uint32_t>(inputStream_->getChannelCount()), cushion);
     measureInputLatencyLocked();
     warmUpLeft_ = kWarmUpBursts;
     inputForCallback_.store(inputStream_.get(), std::memory_order_release);
@@ -308,8 +310,8 @@ oboe::DataCallbackResult OboeAudioDevice::onAudioReady(oboe::AudioStream* stream
     if (stream->getDirection() == oboe::Direction::Input) {
         if (input_ != nullptr) input_(context_, static_cast<const float*>(audioData), static_cast<uint32_t>(numFrames));
     } else if (render_ != nullptr) {
-        // Feature 010 (research R2): the duplex input is read non-blocking here through the reservoir, which keeps one
-        // burst read ahead and zero-pads only when even that runs out, and handed to the capture callback before the
+        // Feature 010 (research R2): the duplex input is read non-blocking here through the reservoir, which keeps two
+        // bursts read ahead and zero-pads only when even those run out, and handed to the capture callback before the
         // render of the same block; the first bursts after an open are a warm-up.
         inCallback_.store(true, std::memory_order_seq_cst);
         oboe::AudioStream* input = inputForCallback_.load(std::memory_order_seq_cst);

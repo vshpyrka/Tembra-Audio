@@ -1,12 +1,12 @@
-// The duplex input's reservoir (feature 010 follow-up; research R2). The Android output callback reads the input
-// stream non-blocking right before it renders the same block. An input burst that lands a little after that callback
-// left the read short; the shortfall was zero-padded into the take and counted as an input overrun (the Pixel 6 Pro's
-// 30-minute soaks counted 5 or 6, the other devices none). The reservoir reads a cushion of input ahead of the block
-// it hands on, so a burst that is late by up to the cushion is absorbed: the block comes from frames already held and
-// the late burst refills the cushion on the next callback. Frames stay in order and none is dropped or repeated; it
-// never reads more than one block plus the cushion ahead, so a backlog stays in the stream's own buffer as before. The
-// added latency is the cushion, which the device reports as part of the input latency the take alignment uses.
-// Audio thread only after configure(): no allocation, no lock, no I/O, no tracing.
+// The duplex input's reservoir (feature 010 follow-up; research R2). The Android output callback reads the input stream
+// non-blocking right before it renders the same block. An input burst that lands a little after that callback left the
+// read short; the shortfall was zero-padded into the take and counted as an input overrun (the Pixel 6 Pro's 30-minute
+// soaks counted 5 or 6, the other devices none). The reservoir reads a cushion of input ahead of the block it hands on
+// (two bursts on Android), so a burst that is late by up to the cushion is absorbed: the block comes from frames
+// already held and the late burst refills the cushion on the next callback. Frames stay in order and none is dropped or
+// repeated; it never reads more than one block plus the cushion ahead, so a backlog stays in the stream's own buffer as
+// before. The added latency is the cushion, which the device reports as part of the input latency the take alignment
+// uses. Audio thread only after configure(): no allocation, no lock, no I/O, no tracing.
 #ifndef TEMBRA_CAPTURE_INPUT_RESERVOIR_H
 #define TEMBRA_CAPTURE_INPUT_RESERVOIR_H
 
