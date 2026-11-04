@@ -5,11 +5,14 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.testTag
 import audio.tembra.ui.designsystem.TembraTextField
 import audio.tembra.ui.perf.anchorRoot
@@ -17,6 +20,7 @@ import audio.tembra.ui.projects.ProjectsCopy
 import audio.tembra.ui.projects.ProjectsTestTags
 import audio.tembra.ui.theme.TembraShapes
 import audio.tembra.ui.theme.TembraTheme
+import audio.tembra.ui.shortcuts.RegisterOverlay
 
 /**
  * A dialog with one text field (spec FR-052): the rename and the description. The field keeps the draft; Save hands
@@ -37,6 +41,11 @@ internal fun ProjectTextDialog(
 ) {
     val colors = TembraTheme.colors
     var draft by remember(initial) { mutableStateOf(initial) }
+    // The field takes the keyboard as the dialog opens, so a name or a description is typed straight away (feature 011,
+    // found in the desktop walk: a keyboard user had to click into the field first).
+    val field = remember { FocusRequester() }
+    LaunchedEffect(field) { field.requestFocus() }
+    RegisterOverlay(onDismiss)
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
@@ -58,6 +67,7 @@ internal fun ProjectTextDialog(
                 maxLength = maxLength,
                 error = error,
                 testTag = ProjectsTestTags.DIALOG_FIELD,
+                modifier = Modifier.focusRequester(field),
             )
         },
         modifier = modifier.anchorRoot().testTag(testTag),

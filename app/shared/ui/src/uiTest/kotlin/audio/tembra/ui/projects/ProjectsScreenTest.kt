@@ -9,6 +9,7 @@ import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
@@ -136,6 +137,22 @@ class ProjectsScreenTest {
         onNodeWithTag(ProjectsTestTags.DIALOG_FIELD).performTextInput("!")
         onNodeWithTag(ProjectsTestTags.DIALOG_CONFIRM).performClick()
         assertEquals(listOf("renameConfirm(!Demo project)"), calls)
+    }
+
+    @Test
+    fun theTextDialogsOpenWithTheirFieldFocused() = runComposeUiTest {
+        // A keyboard user types the name or the description straight away (feature 011, the T125 desktop walk found the
+        // rename dialog waiting for a click in its field).
+        setScreen(state(dialog = ProjectsDialog.Rename(demoId, "Demo project")))
+        waitForIdle()
+        onNodeWithTag(ProjectsTestTags.DIALOG_FIELD).assertIsFocused()
+    }
+
+    @Test
+    fun theDescriptionDialogOpensWithItsFieldFocused() = runComposeUiTest {
+        setScreen(state(dialog = ProjectsDialog.Describe(demoId, "")))
+        waitForIdle()
+        onNodeWithTag(ProjectsTestTags.DIALOG_FIELD).assertIsFocused()
     }
 
     @Test

@@ -120,11 +120,13 @@ def _pull(cmd):
     if not matching and wanted in ("TimelineJourneyBenchmark", "RecordingJourneyBenchmark"):
         # The 1.5 fixture predates feature 009's journey: stand in with the metronome's shape under the new class name.
         stem = wanted[:-len("JourneyBenchmark")].lower()
+        # Sections carry a catalogue family (feature 011 checks it): the recording journey's are timeline and transport ones.
+        family = "timeline" if stem == "recording" else stem
         for b in raw["benchmarks"]:
             if b["className"].endswith(".MetronomeJourneyBenchmark"):
                 clone = json.loads(
                     json.dumps(b).replace("MetronomeJourneyBenchmark", wanted).replace("metronomeJourney", stem + "Journey")
-                        .replace("journey.metronome", "journey." + stem).replace("metronome.", stem + "."),
+                        .replace("journey.metronome", "journey." + stem).replace("metronome.", family + "."),
                 )
                 matching.append(clone)
     raw["benchmarks"] = matching
@@ -206,24 +208,26 @@ def test_round_runs_every_step_in_order(cfg, tmp_path):
     assert gradle >= 0 and runner.calls[gradle]["cwd"] == cfg.root
     assert runner.index_of("dumpsys", "battery") < gradle, "doctor runs before the build"
     assert os.path.isfile(os.path.join(round_dir, "gradle.log")) and os.path.getsize(os.path.join(round_dir, "gradle.log")) > 5000
-    uninstall = runner.index_of("pm", "uninstall", "audio.tembra.app")
+    uninstall = runner.index_of("pm", "uninstall", "com.tembraaudio")
     install_app = runner.index_of("install", app_apk)
     install_test = runner.index_of("install", test_apk)
-    warm = runner.index_of("am", "start", "-W", "audio.tembra.app/audio.tembra.android.MainActivity")
-    stop = runner.index_of("am", "force-stop", "audio.tembra.app")
+    warm = runner.index_of("am", "start", "-W", "com.tembraaudio/audio.tembra.android.MainActivity")
+    stop = runner.index_of("am", "force-stop", "com.tembraaudio")
     assert gradle < uninstall < install_app < install_test < warm < stop
     instruments = [c for c in runner.commands() if any("am instrument" in part for part in c)]
-    assert len(instruments) == 6
-    for journey_class in ("StartupBenchmark", "TunerJourneyBenchmark", "MetronomeJourneyBenchmark", "TimelineJourneyBenchmark", "RecordingJourneyBenchmark", "StressJourneyBenchmark"):
+    assert len(instruments) == 7
+    for journey_class in ("StartupBenchmark", "TunerJourneyBenchmark", "MetronomeJourneyBenchmark", "TimelineJourneyBenchmark", "RecordingJourneyBenchmark",
+                          "StressJourneyBenchmark", "WindowingJourneyBenchmark"):
         assert any(journey_class in " ".join(c) and "additionalTestOutputDir" in " ".join(c) for c in instruments), journey_class
     assert warm < runner.index_of("am instrument")
-    assert runner.count("adb", "-s", SERIAL, "pull") == 6
+    assert runner.count("adb", "-s", SERIAL, "pull") == 7
+    # The fixture's benchmark output predates feature 011's windowing journey: seven classes run, six report.
     assert [j.journey for j in outcome.journeys] == ["startup", "tuner", "metronome", "timeline", "recording", "stress"]
     assert outcome.app_size_bytes == 1234
     assert outcome.badges == [] and outcome.checks and all(c["passed"] for c in outcome.checks)
     assert outcome.fingerprint["os_version"] == "17"
     assert {a["kind"] for a in outcome.artifacts} >= {"benchmark_json", "trace", "gradle_log"}
-    assert clock.sleeps.count(120) == 5, "a cooldown between classes, never after the last one"
+    assert clock.sleeps.count(120) == 6, "a cooldown between classes, never after the last one"
 
 
 def test_a_fresh_install_is_granted_the_microphone_and_notifications_before_the_warm_up(cfg, tmp_path):
@@ -234,9 +238,9 @@ def test_a_fresh_install_is_granted_the_microphone_and_notifications_before_the_
     runner = TableRunner([_gradle_rule(cfg, app_apk, test_apk)] + rules)
     run_round(cfg, PIXEL, runner, FakeClock(), str(tmp_path / "r"), RoundOptions(journeys=["startup"]))
     install_test = runner.index_of("install", test_apk)
-    warm = runner.index_of("am", "start", "-W", "audio.tembra.app/audio.tembra.android.MainActivity")
+    warm = runner.index_of("am", "start", "-W", "com.tembraaudio/audio.tembra.android.MainActivity")
     for permission in ("android.permission.RECORD_AUDIO", "android.permission.POST_NOTIFICATIONS"):
-        grant = runner.index_of("pm", "grant", "audio.tembra.app", permission)
+        grant = runner.index_of("pm", "grant", "com.tembraaudio", permission)
         assert install_test < grant < warm, permission
 
 

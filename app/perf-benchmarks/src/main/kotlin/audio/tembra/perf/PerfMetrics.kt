@@ -15,7 +15,7 @@ import androidx.benchmark.macro.TraceSectionMetric
  * Section names are the signpost names of `app/shared/engine/perf-catalogue.txt`.
  */
 object PerfMetrics {
-    const val PACKAGE = "audio.tembra.app"
+    const val PACKAGE = "com.tembraaudio"
     const val ITERATIONS = 20
 
     private val tunerSections = listOf("tuner.load", "tuner.modeSwitch", "tuner.frame")
@@ -32,6 +32,11 @@ object PerfMetrics {
         "timeline.monitorToggle", "engine.takeAlignment", "timeline.waveform", "transport.play", "timeline.playheadFrame",
         "timeline.projectSave",
     )
+    // Feature 011 (contracts/perf-instrumentation.md): the window changes, the right-click menu and the destination chords,
+    // with the metronome and the timeline they run over.
+    private val windowingSections = listOf(
+        "shell.windowRelayout", "timeline.contextMenu", "shell.shortcutNavigate", "metronome.load", "timeline.projectOpen", "transport.play",
+    )
     private val stressSections = tunerSections + metronomeSections + listOf("timeline.scroll", "timeline.playheadFrame", "transport.play")
 
     fun journey(name: String): List<Metric> = listOf(
@@ -47,6 +52,7 @@ object PerfMetrics {
         "timeline" -> timelineSections
         "recording" -> recordingSections
         "stress" -> stressSections
+        "windowing" -> windowingSections
         else -> emptyList()
     }
 }

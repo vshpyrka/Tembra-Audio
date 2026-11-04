@@ -4,6 +4,14 @@
     <!-- Auto Listen hears the instrument through the microphone (feature 003, spec FR-014) and the timeline records it (feature 010, FR-019). -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
+    <!--
+        Reach (feature 011, spec FR-001/FR-002, research R1): without these, Google Play implies a touchscreen for every
+        app and a microphone from RECORD_AUDIO, and filters out Chromebooks and desktops that lack them. Auto Listen
+        says so when there is no microphone; everything else works by mouse and keyboard.
+    -->
+    <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
+
     <!-- The metronome (feature 004) and the project transport (feature 009) keep playing with the screen off through a media-playback foreground service;
          a running take (feature 010, FR-021) keeps the microphone open through the same service's microphone type. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -27,11 +35,34 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|uiMode|density"
+            android:launchMode="singleTask"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|uiMode|density|keyboard|keyboardHidden|navigation|touchscreen"
             android:resizeableActivity="true">
+            <!--
+                Feature 011 (spec FR-004, research R3): no window smaller than 360 x 480 dp, in free-form and split windows.
+                No default size: a declared one would override the size the system remembers for the window (FR-004a).
+                Keyboard, navigation and touchscreen changes (a keyboard or mouse attached, a convertible folded) no longer
+                recreate the activity (FR-006/FR-007).
+            -->
+            <layout android:minWidth="360dp" android:minHeight="480dp" />
+            <!-- ChromeOS opens the first window at its landscape tablet size (feature 011, research R3, FR-004a). -->
+            <meta-data android:name="WindowManagerPreference:FreeformWindowSize" android:value="tablet" />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!--
+                "Open with" Tembra Audio from a file manager or ChromeOS Files (feature 011, spec FR-026a, research R22): the
+                files become a new project. singleTask: a file opened while the app runs reaches the running activity.
+            -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" />
+                <data android:mimeType="audio/wav" />
+                <data android:mimeType="audio/x-wav" />
+                <data android:mimeType="audio/flac" />
+                <data android:mimeType="audio/mpeg" />
             </intent-filter>
         </activity>
 

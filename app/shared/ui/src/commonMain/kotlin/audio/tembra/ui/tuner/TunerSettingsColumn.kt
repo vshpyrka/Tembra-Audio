@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -25,6 +24,7 @@ import audio.tembra.core.tuner.TunerMode
 import audio.tembra.core.tuner.TuningPreset
 import audio.tembra.ui.designsystem.SegmentWidths
 import audio.tembra.ui.designsystem.TembraGradientCard
+import audio.tembra.ui.designsystem.verticalScrollWithScrollbar
 import audio.tembra.ui.theme.TembraTheme
 import kotlin.math.roundToInt
 
@@ -63,7 +63,7 @@ internal fun TunerSettingsColumn(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+                .verticalScrollWithScrollbar(rememberScrollState())
                 .padding(horizontal = spacing.md, vertical = spacing.sm),
             verticalArrangement = Arrangement.spacedBy(spacing.xs),
         ) {

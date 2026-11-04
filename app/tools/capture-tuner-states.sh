@@ -56,9 +56,9 @@ mkdir -p "$OUT_DIR"
 
 capture_android() {
   local id="$1" file="$2"
-  adb shell am force-stop audio.tembra.app
+  adb shell am force-stop com.tembraaudio
   adb shell input keyevent KEYCODE_WAKEUP >/dev/null
-  adb shell am start -n audio.tembra.app/audio.tembra.android.MainActivity --es tembra.tuner.testSignal "$id" >/dev/null
+  adb shell am start -n com.tembraaudio/audio.tembra.android.MainActivity --es tembra.tuner.testSignal "$id" >/dev/null
   sleep "$SETTLE_SECONDS"
   adb exec-out screencap -p > "$file"   # honours ANDROID_SERIAL when several devices are attached
 }

@@ -2,6 +2,8 @@ package audio.tembra.ui.timeline
 
 import audio.tembra.core.project.EditRejection
 import audio.tembra.core.recording.TakeStopReason
+import audio.tembra.ui.drop.DropCopy
+import audio.tembra.ui.drop.SkippedItem
 
 /** One-shot messages the timeline shows in its snackbar (contracts/project-session.md "Messages", spec FR-044, FR-005). */
 sealed interface TimelineMessage {
@@ -17,6 +19,8 @@ sealed interface TimelineMessage {
     data class EditRejected(val reason: EditRejection) : TimelineMessage
     /** The platform picker could not hand over the chosen file. */
     data object PickFailed : TimelineMessage
+    /** A drop held no audio file (feature 011, spec FR-026); [skipped] names what it held. */
+    data class NoAudioFound(val skipped: List<SkippedItem>) : TimelineMessage
     /** The sheet offers the sounds the Metronome holds; importing a new one is the Metronome's job. */
     data object CustomSoundFromMetronome : TimelineMessage
 
@@ -29,6 +33,8 @@ sealed interface TimelineMessage {
     data object RecordRefused : TimelineMessage
     /** "Take ended: …" (FR-021, FR-025). */
     data class TakeEnded(val reason: TakeStopReason) : TimelineMessage
+    /** "No microphone is available on this device…" (feature 011, FR-002: desktops without a microphone). */
+    data object NoMicrophone : TimelineMessage
 
     val text: String
         get() = when (this) {
@@ -40,11 +46,13 @@ sealed interface TimelineMessage {
             ProjectTooLarge -> "The project has more tracks or clips than can play at once"
             is EditRejected -> TimelineCopy.rejected(reason)
             PickFailed -> TimelineCopy.pickFailed
+            is NoAudioFound -> DropCopy.noAudio(skipped)
             CustomSoundFromMetronome -> TimelineCopy.customSoundFromMetronome
             is MicrophoneDenied -> TimelineCopy.microphoneNeeded
             MonitorNeedsHeadphones -> TimelineCopy.monitorNeedsHeadphones
             RecordRefused -> TimelineCopy.recordRefused
             is TakeEnded -> TimelineCopy.takeEnded(reason)
+            NoMicrophone -> TimelineCopy.noMicrophone
         }
 
     /** The snackbar's action label, or null for messages without one. */
@@ -52,6 +60,6 @@ sealed interface TimelineMessage {
         get() = when (this) {
             is MicrophoneDenied -> if (openSettings) TimelineCopy.openSettings else TimelineCopy.allowMicrophone
             is ImportRefused, StartFailed, is DocumentUnavailable, is AssetsMissing, SaveFailed, ProjectTooLarge, is EditRejected, PickFailed,
-            CustomSoundFromMetronome, MonitorNeedsHeadphones, RecordRefused, is TakeEnded -> null
+            is NoAudioFound, CustomSoundFromMetronome, MonitorNeedsHeadphones, RecordRefused, is TakeEnded, NoMicrophone -> null
         }
 }

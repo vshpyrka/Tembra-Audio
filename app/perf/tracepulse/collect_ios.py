@@ -24,14 +24,25 @@ _TEST_JOURNEYS = {
     "TimelinePerfTests": "timeline",
     "RecordingPerfTests": "recording",
     "StressPerfTests": "stress",
+    "WindowingPerfTests": "windowing",
 }
 _STARTUP_TESTS = {"testColdLaunchToFirstFrame": "ttid", "testColdLaunchToResponsive": "ttfd"}
+# Feature 011, as on Android: a windowing round fails when a window change, the right-click menu or a destination chord
+# left no section.
+_REQUIRED_SECTIONS = {
+    "windowing": ("section.shell.windowRelayout.sum_ms", "section.shell.shortcutNavigate.sum_ms",
+                  "section.timeline.contextMenu.sum_ms"),
+}
+# Sections only a pointer reaches: an iPhone has none (XCUITest: "Pointer events are not supported for this device").
+_POINTER_SECTIONS = {"section.timeline.contextMenu.sum_ms"}
+# Sections only ⌘ keys reach: a physical iPhone drops XCUITest's synthesized keys (the simulator takes them).
+_KEYBOARD_SECTIONS = {"section.shell.shortcutNavigate.sum_ms"}
 # `XCTMetric_OSSignpost-<family>.<camelCase>.<suffix>` is how xcresulttool names a signpost metric
 # (verified on the iPhone 17 simulator, FacadeSelfCheckTests, 2026-10-08); the display name is
 # "<Column> (<name>)". An animation interval adds `.animation.frame.rate`, `.animation.frame.count`,
 # `.animation.hitch.number`, `.animation.hitch.time.ratio` and `.animation.hitches.total.duration`
 # (iPhone 14, iOS 27.0.1, Xcode 27.1, 2026-10-11). Memory and CPU carry the bundle id on a phone
-# (`XCTMetric_Memory-audio.tembra.appP5QJJ5Y5V7.physical_peak`) and not on the simulator
+# (`XCTMetric_Memory-com.tembraaudioP5QJJ5Y5V7.physical_peak`) and not on the simulator
 # (`XCTMetric_Memory.physical_peak`), so they are told by their last component.
 _SECTION_RE = re.compile(r"XCTMetric_OSSignpost-(?P<name>[a-z]+\.[A-Za-z0-9]+)(?P<rest>(?:\.[A-Za-z0-9_]+)*)$")
 _ANIMATION_COLUMNS = {
@@ -144,9 +155,11 @@ def _measurements(metric: Dict[str, Any], iterations: Optional[int], test_id: st
 
 
 def collect_round(metrics_json_path: str, cfg: Config, simulator: bool,
-                  iterations: Optional[int] = None) -> CollectedRound:
+                  iterations: Optional[int] = None, pointer: bool = True, keyboard: bool = True) -> CollectedRound:
     """The journeys of one round from the metrics JSON. `iterations` (default from
-    tracepulse.yml) must match every metric's measurement count."""
+    tracepulse.yml) must match every metric's measurement count. `pointer` and `keyboard` say
+    whether XCUITest synthesizes a pointer (an iPad) and ⌘ keys (an iPad, any simulator) on the
+    device: the windowing journey's menu and chord sections need them."""
     with open(metrics_json_path) as fh:
         data = json.load(fh)
     if isinstance(data, dict):
@@ -188,11 +201,16 @@ def collect_round(metrics_json_path: str, cfg: Config, simulator: bool,
                 metrics[key] = MetricResult(unit=entry_meta.unit, samples=values, source="xcresult")
     for journey, metrics in journeys.items():
         _drop_frames_without_frames(journey, metrics)
+        required = [key for key in _REQUIRED_SECTIONS.get(journey, ())
+                    if (pointer or key not in _POINTER_SECTIONS) and (keyboard or key not in _KEYBOARD_SECTIONS)]
+        missing = [key for key in required if key not in metrics]
+        if missing:
+            raise CollectError(f"journey {journey} is missing its sections: {missing}")
     if not journeys:
         raise CollectError(f"no journey test with metrics in {metrics_json_path}")
     results = [JourneyResult(journey=j, iterations=max(len(m.samples) for m in ms.values()), metrics=ms)
                for j, ms in journeys.items()]
-    order = {"startup": 0, "tuner": 1, "metronome": 2, "timeline": 3, "recording": 4, "stress": 5}
+    order = {"startup": 0, "tuner": 1, "metronome": 2, "timeline": 3, "recording": 4, "stress": 5, "windowing": 6}
     results.sort(key=lambda r: order.get(r.journey, 9))
     badges = (["simulator"] if simulator else []) + (["short-iterations"] if short else [])
     return CollectedRound(journeys=results, badges=badges, thermal_seconds=0.0)

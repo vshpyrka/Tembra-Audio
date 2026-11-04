@@ -28,4 +28,7 @@ sealed interface SessionMessage {
 
     /** "Not enough space to record" (FR-025: below 200 MB free). */
     data object RecordRefused : SessionMessage
+
+    /** "No microphone is available on this device": arming on a device with no input at all (feature 011, FR-002). */
+    data object NoMicrophone : SessionMessage
 }

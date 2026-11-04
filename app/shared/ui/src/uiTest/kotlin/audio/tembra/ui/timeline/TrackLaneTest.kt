@@ -1,5 +1,9 @@
 package audio.tembra.ui.timeline
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -10,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
@@ -182,6 +187,38 @@ class TrackLaneTest {
         assertGapsAtLeastFourDp(bars)
     }
 
+    @Test
+    fun aClipScrolledPastTheLeftEdgeDrawsNothingOverWhatSitsBesideTheLane() = runComposeUiTest {
+        // The expanded layout pins the headers beside the lanes (feature 011 large screens): scrolled two beats in, the
+        // four-beat clip starts 20 dp left of the lane, where only the header may draw.
+        val beside = Color(0xFF00FFFF)
+        setContent {
+            TembraTheme {
+                val density = LocalDensity.current.density
+                val port = TimelineViewport(
+                    pixelsPerBeat = 10.0, scrollBeats = Beats(2.0), widthPx = 240.0 * density,
+                    densityScale = density.toDouble(), projectLengthBeats = Beats(16.0),
+                )
+                Row {
+                    Box(Modifier.width(80.dp).height(88.dp).background(beside).testTag(BESIDE_TAG))
+                    TrackLane(
+                        track = track(drums), index = 0, firstClipIndex = 0, viewport = port, selection = Selection.None,
+                        signature = TimeSignature.FourFour, height = 88.dp,
+                        onSelectClip = {}, onClearSelection = {}, modifier = Modifier.width(240.dp),
+                    )
+                }
+            }
+        }
+        val pixels = onNodeWithTag(BESIDE_TAG).captureToImage().toPixelMap()
+        val painted = (0 until pixels.width).filter { x ->
+            (0 until pixels.height).any { y ->
+                val pixel = pixels[x, y]
+                abs(pixel.red - beside.red) > 0.04f || abs(pixel.green - beside.green) > 0.04f || abs(pixel.blue - beside.blue) > 0.04f
+            }
+        }
+        assertEquals(emptyList(), painted, "columns of the header painted over by the lane, of ${pixels.width}")
+    }
+
     /** An empty 323 dp lane at [grid] and [dpPerBeat] from beat 0, its viewport in the device's own pixels. */
     private fun ComposeUiTest.setGridLane() {
         setContent {
@@ -271,3 +308,4 @@ class TrackLaneTest {
 }
 
 private const val GRID_LANE_DP = 323.0
+private const val BESIDE_TAG = "lane.beside"

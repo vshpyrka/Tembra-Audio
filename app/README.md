@@ -31,7 +31,7 @@ Android (connected device or emulator):
 ```bash
 cd app
 ./gradlew :androidApp:installDebug
-adb shell am start -n audio.tembra.app/audio.tembra.android.MainActivity
+adb shell am start -n com.tembraaudio/audio.tembra.android.MainActivity
 ```
 
 iOS (simulator; Xcode runs `./gradlew :shared:ui:embedAndSignAppleFrameworkForXcode` in a build phase):
@@ -42,11 +42,47 @@ xcodebuild -project iosApp.xcodeproj -scheme iosApp -configuration Debug \
   -destination 'platform=iOS Simulator,name=iPhone 18 Pro' -derivedDataPath build build
 xcrun simctl boot "iPhone 18 Pro"
 xcrun simctl install "iPhone 18 Pro" "build/Build/Products/Debug-iphonesimulator/Tembra Audio.app"
-xcrun simctl launch "iPhone 18 Pro" audio.tembra.app
+xcrun simctl launch "iPhone 18 Pro" com.tembraaudio
 ```
 
 Or open `app/iosApp/iosApp.xcodeproj` in Xcode and press Run. Signing: `Configuration/Config.xcconfig`
 (`TEAM_ID` empty is fine for the simulator).
+
+Android desktop windows (feature 011, `specs/011-large-screens-desktop/quickstart.md` §1): two desktop emulators, run
+one at a time next to the other targets. The primary is the Android 17 "Desktop (Preview)" image (a Googlebook-like
+1920×1200 dp desktop with a touchscreen; it is on the SDK's preview channel only); the secondary is the Android 14
+desktop image (1920×1080 dp, no touchscreen: the device Google Play filtered the app away from before 011, and the
+16:9 display the Chromebook store screenshots come from).
+
+```bash
+SDK=~/Library/Android/sdk
+# Primary: Tembra_Desktop_API37
+yes | $SDK/cmdline-tools/latest/bin/sdkmanager --channel=3 --install "system-images;android-37.1;android-desktop;arm64-v8a"
+echo no | $SDK/cmdline-tools/latest/bin/avdmanager create avd -n Tembra_Desktop_API37 \
+  -k "system-images;android-37.1;android-desktop;arm64-v8a" -d desktop_api37
+CFG=~/.android/avd/Tembra_Desktop_API37.avd/config.ini
+sed -i '' 's/^hw.keyboard=no/hw.keyboard=yes/' $CFG
+# The emulator wants about twice the data partition free on the host ("Not enough space to create userdata
+# partition"): 4G boots with 10–12 GB free, 6G does not.
+grep -q '^disk.dataPartition.size' $CFG && sed -i '' 's/^disk.dataPartition.size=.*/disk.dataPartition.size=4G/' $CFG \
+  || echo 'disk.dataPartition.size=4G' >> $CFG
+$SDK/emulator/emulator -avd Tembra_Desktop_API37 -port 5582 &            # add -no-window for headless runs
+# The image runs a headless system user: the desktop session is user 10. After every cold boot:
+adb -s emulator-5582 wait-for-device shell am switch-user 10
+adb -s emulator-5582 install -r androidApp/build/outputs/apk/debug/androidApp-debug.apk
+adb -s emulator-5582 shell am start --user current -n com.tembraaudio/audio.tembra.android.MainActivity
+
+# Secondary: Tembra_Desktop_API34 (no touchscreen)
+yes | $SDK/cmdline-tools/latest/bin/sdkmanager --install "system-images;android-34;android-desktop;arm64-v8a"
+echo no | $SDK/cmdline-tools/latest/bin/avdmanager create avd -n Tembra_Desktop_API34 \
+  -k "system-images;android-34;android-desktop;arm64-v8a" -d desktop_medium
+sed -i '' 's/^hw.keyboard=no/hw.keyboard=yes/' ~/.android/avd/Tembra_Desktop_API34.avd/config.ini
+$SDK/emulator/emulator -avd Tembra_Desktop_API34 -port 5580 &
+```
+
+Apps open in free-form windows on both. `adb shell am task resize <task> <l> <t> <r> <b>` resizes a window without
+recreating the activity (it is not clamped to the app's minimum and the system does not remember it); a mouse drag of
+the window's corner (`adb shell input mouse swipe …`) is clamped and remembered. The images take about 9 GB.
 
 Release builds, the way users get the app. Debug builds are debuggable on Android and link an unoptimised Kotlin
 framework on iOS, so Compose runs far slower there; judge smoothness on these only:
@@ -86,7 +122,19 @@ cd app
 # pillarboxed on the inner display (docs/research/iphone-duo.md)
 ./gradlew checkAndroidDevice   # connected Android device: Compose UI tests + native engine link + AppDirectories
 ./gradlew engineHostTest       # C++ engine Catch2 tests on the macOS host (no audio device)
+
+# One Android target while others stay attached (ANDROID_SERIAL): the desktop emulators (feature 011)
+tools/gradlew-device.sh emulator-5582 checkAndroidDevice                      # Desktop (Preview), primary
+tools/gradlew-device.sh emulator-5582 :androidApp:connectedDebugAndroidTest   # freeform window, mouse and key tests
+tools/gradlew-device.sh emulator-5580 :androidApp:connectedDebugAndroidTest   # Android 14 desktop, no touchscreen
+# iPad desktop behaviour (menu commands, keys, pointer, window minimum): the TembraDesktopTests XCUITest target
+cd iosApp && xcodebuild test -project iosApp.xcodeproj -scheme TembraDesktopTests \
+  -destination 'platform=iOS Simulator,name=iPad Pro 13-inch (M5)'
 ```
+
+The `:androidApp` desktop tests (`androidTest/.../desktop/`) skip with a visible reason on a device without free-form
+window management. On `Tembra_Desktop_API37`, run `adb -s emulator-5582 shell am switch-user 10` after a cold boot
+before any lane: instrumentation runs as the current user.
 
 Prove the lanes can fail: change an expected value in
 `shared/core/src/commonTest/kotlin/audio/tembra/core/version/SemanticVersionTest.kt`, run
@@ -107,6 +155,88 @@ Where tests live:
 | `iosTest`, `androidDeviceTest` (feature 009) | one platform | `NativeAudioEngineTransportTest` and `TransportTimingEndToEndTest` (the real transport: sources, arrangement, play, seek, pause, the inspector and the overview builder; the bare simulator test process has no output unit and skips the playback checks), `IosAudioFilePickerTest`, `AudioFilePickerHostTest` and `AndroidBackgroundPlaybackHostTest` (`:androidApp`) |
 | `engine/tests` | macOS host | Catch2, offline, no audio device: `engine_info_test`, `seqlock_test`, `ring_buffer_test`, `band_pass_test`, `mpm_test` (accuracy and octave), `tuner_analyzer_test`, `tone_generator_test`, `sample_player_test`, `recordings_on_pitch_test`, `engine_core_state_test` (with `fake_audio_device.h`); metronome: `metronome_renderer_test` (ten-minute timing), `click_synth_test`, `click_sample_builder_test`, `custom_sound_loader_test` (with `wav_fixtures.h`), `triple_buffer_test` |
 
+## CI and dependency updates
+
+GitHub Actions runs the lanes that need no device, and Renovate keeps the version catalog current: it opens a weekly
+batch of update pull requests and merges each one whose checks all pass.
+
+| Job (`.github/workflows/ci.yml`) | Runner | Runs on | Command (from `app/`) |
+|---|---|---|---|
+| Android host tests and release build | `ubuntu-24.04` | every push, every pull request to `main` | `checkAndroidHost :androidApp:assembleRelease` |
+| iOS simulator and C++ engine tests | `macos-26` (or `vars.CI_MACOS_RUNNER`) | every pull request to `main` | `checkIos engineHostTest` on the newest iPhone simulator |
+| Renovate config | `ubuntu-24.04` | every push, every pull request to `main` | `renovate-config-validator --strict` |
+| Google Play testing (`.github/workflows/play-closed-testing.yml`) | `ubuntu-24.04` | every push to `main` that changes the Android app, or by hand | `checkAndroidHost :androidApp:bundleRelease`, then signs with the upload key, releases on Google Play's internal testing track and deletes the run's bundle |
+
+The Play workflow, its keyless Google Cloud trust, the upload key in Secret Manager and the one-time setup
+(`tools/play/setup-wizard.sh`) are described in [`docs/google-play-publishing.md`](../docs/google-play-publishing.md).
+Until its repository variables exist, the workflow only builds and tests.
+
+Both Gradle jobs pass `-Ptembra.warningsAsErrors=true --warning-mode fail`, so a Kotlin compiler warning or a Gradle
+deprecation fails CI; without the property a local build still only reports warnings. A Sunday evening run on `main`
+checks `main` as merged and refreshes the caches that pull requests read. The Android device lanes, Compose UI tests
+on Android, baseline-profile generation and performance rounds stay on the Mac with its devices.
+
+### What Renovate does
+
+The config is `.github/renovate.json5`; Renovate runs from `.github/workflows/renovate.yml`.
+
+- **When.** New pull requests open on Mondays before 07:00 Kyiv time, for releases at least three days old. Renovate
+  runs daily, after each CI run on one of its branches, and after each push to `main`.
+- **What.** The version catalog, the Gradle wrapper (the wrapper jar and scripts are not regenerated, only
+  `distributionUrl`), and the actions in the workflows. Not the perf pipeline's Python packages, the JDK version or
+  the runner images: those change by hand.
+- **Groups.** One pull request per group: *Kotlin and Compose* (Kotlin and its compiler plugins, Compose Multiplatform,
+  the JetBrains androidx ports, androidx Compose, Metro), *kotlinx*, *Android Gradle Plugin and Gradle*, *AndroidX
+  runtime and Okio*, *Android test and benchmark*, *CI workflows*. A major update gets its own pull request. Oboe has
+  no group.
+- **Merging.** Renovate squash-merges a pull request once every check on it has passed, and never merges while a check
+  is pending or has failed; a failed pull request stays open for you. A pull request that is only behind `main` is
+  merged without a rebase (a rebase would re-run the macOS job), so two groups can meet for the first time on `main`;
+  the push to `main` runs the Android job on the combination. Renovate merges one pull request per run, and each merge
+  triggers the next run.
+- **Pinned lines.** Versions that are already pre-releases (JetBrains Material 3 `1.12.0-alpha03`, androidx Material 3
+  `1.5.0-beta01`) only move along their own `x.y.z`. The androidx Compose artifacts stay on the Jetpack line that
+  Compose Multiplatform is built on (`1.12.x`, Material 3 `1.5.x`); move both patterns in `renovate.json5` forward when
+  a Compose Multiplatform minor update lands. kotlinx-datetime never takes the `-0.6.x-compat` artifacts.
+
+After an automerged update that changes code on the startup path or a journey, regenerate the baseline profile and run
+a performance round as usual (`perf/README.md`).
+
+### One-time GitHub setup
+
+1. **Token.** Create a classic personal access token (Settings → Developer settings → Personal access tokens →
+   Tokens (classic)) with the `repo` and `workflow` scopes, and give it an expiry you will notice. Renovate decides
+   whether to merge by reading the pull request's checks, and Renovate's GitHub documentation lists no Checks access
+   for fine-grained tokens, so use a classic one. Renovate acts as you: its pull requests and merges appear under your
+   account, with commits authored by `Renovate Bot`.
+2. **Secret.** Repository → Settings → Secrets and variables → Actions → New repository secret: `RENOVATE_TOKEN`.
+   Until it exists the Renovate workflow only prints a notice.
+3. **Actions.** Settings → Actions → General: if you restrict which actions may run, allow `actions/checkout`,
+   `actions/setup-java`, `actions/cache`, `gradle/actions` and `renovatebot/github-action`, and for the Play
+   workflow `actions/upload-artifact`, `actions/download-artifact` and `google-github-actions/auth`. The workflows declare
+   their own `contents: read` permission, so the default workflow permission does not matter.
+4. **Merging.** Settings → General → Pull Requests: keep **Allow squash merging** on, and turn on **Automatically
+   delete head branches**. Leave **Allow auto-merge** as it is; Renovate does not use it.
+5. **Branch protection (optional).** Nothing here depends on it; a private repository gets protected branches only
+   on GitHub Pro or above. If you protect `main`, require the three checks above and do not require an approving
+   review: Renovate opens pull requests with your token, you cannot approve your own pull request, and Renovate
+   could never merge. Administrators bypass branch protection by default, which keeps your direct pushes to `main`
+   working; Renovate merges as you, so its merges bypass the rule too, and its own reading of the checks stays the
+   gate.
+6. **First run.** Actions → Renovate → Run workflow. It opens the *Dependency Dashboard* issue. Outside the Monday
+   window, updates wait there; tick one to have the next run open it now.
+
+### Cost
+
+On a private repository GitHub bills macOS minutes at about ten times the Linux rate ($0.062 against $0.006 per
+minute; GitHub Free includes $12 a month, Pro $18). The iOS job is nearly all of CI's cost: it runs on every pull
+request, again whenever Renovate updates one, and on Sunday; the Actions usage page shows the real figure after the
+first week. To run
+it on your own Mac for free, register a self-hosted runner (Settings → Actions → Runners → New self-hosted runner,
+macOS ARM64) with Xcode, the Android SDK and `ANDROID_HOME` set in the runner's `.env`, then set the repository
+variable `CI_MACOS_RUNNER` to `self-hosted`. The Mac must be awake for the job to run, and it builds the pull request's
+dependencies on that machine, as a local build would.
+
 ## Screenshots
 
 ```bash
@@ -120,7 +250,7 @@ Wide Android capture: rotate to landscape (`adb shell settings put system user_r
 turns a 1440 px Pixel into a 606 dp window (`wm density reset` afterwards). Name captures
 `<platform>-<compact|medium|expanded|short>-<destination>.png` and record devices, OS versions and outcomes of manual
 checks in `specs/<feature>/screenshots/NOTES.md`. The iOS simulator bundle identifier carries the local `TEAM_ID`
-(`audio.tembra.app<TEAM_ID>`); read it from the built `Info.plist` before `simctl launch`. Large fonts: `adb shell settings put system font_scale 2.0`
+(`com.tembraaudio<TEAM_ID>`); read it from the built `Info.plist` before `simctl launch`. Large fonts: `adb shell settings put system font_scale 2.0`
 and `xcrun simctl ui "iPhone 18 Pro" content_size accessibility-extra-extra-extra-large`; restore to `1.0` /
 `medium`. Compare against `design/stitch/theme.json` and `design/stitch/screens/*/screenshot.jpg`.
 
@@ -153,6 +283,8 @@ app/
 │       ├── session/        feature 009: ProjectSession (the open project, its history, autosave, engine binding and playback policy; the shell's PlaybackGuard), TransportTelemetry, DialogRequest, AppStartup; feature 010: RecordingController (the recording session beside ProjectSession: armed track, monitor state, phase, permission flow, route observation, take staging and adoption, the growing take's overview; every transition is a row of `RecordingPolicy` in `:shared:core`)
 │       ├── transport/      feature 009: TransportBar and its parts (TimeReadout reads the telemetry in draw, MasterVolumeSlider, MasterVolumePopup (the phone bar's speaker button and pop-up slider, D1), MetronomeToggle, TransportButton)
 │       ├── tracksettings/  feature 009: TrackSettingsViewModel (one track's fields as session edits, the name draft carried through ProjectSession.settingsDraft across 840 dp), TrackSettingsForm (+ GainSlider, EffectsPlaceholder), the nested TrackSettingsScreen (TrackSettingsKey) and the expanded layout's TrackSettingsInlineRow
+│       ├── shortcuts/      feature 011: ShortcutCatalogue (every key, one source), KeyChord (the one matching rule), ShortcutDispatcher, the shell's and destinations' key handlers, ShortcutSheet, OverlayStack (close-overlay), ShortcutRegistry (the iPad menu's targets); iosMain IosShortcutBridge, androidMain systemShortcutGroups
+│       ├── drop/           feature 011: DropPlanner, AudioDropState + Modifier.audioDropTarget, DroppedFilesReader (Android adapter, IosDroppedFilesReader), OpenedFiles (IosOpenedFiles), ProjectFromAudio
 │       ├── navigation/     the shell: Destination registry, ShellViewModel, LayoutMode, NavigationShell, Navigation 3 wiring (TembraNavDisplay), SupportingPaneSceneStrategy
 │       ├── metronome/      MetronomeScreen + MetronomeViewModel, PlaybackPolicy, MetronomeSettingsPanel; components/ (TempoDial, TempoSlider, AccentCells, StyleRow, ClickSoundPicker, TapTempoButton, PlayPauseButton, MetronomeDefaults)
 │       ├── timeline/ projects/ profile/   one package per destination; feature 009 fills timeline/ (TimelineScreen + TimelineViewModel over ProjectSession, TimelineKeyHandling; components/ with the Canvas ruler, TrackLane + ClipPainter, PlayheadOverlay, ViewportGestures, the toolbar with its TempoPill, headers, menus, TempoDialog, MetronomeSettingsSheet (the signature since D1), SnapSheet, and the OverviewStrip, the always-visible zoom control, inset from the window's sides and hidden or shown from the toolbar's overflow menu) and projects/ (ProjectsViewModel over the repository's index and the app-scoped LibraryViewStateHolder, ProjectsScreen; components/ with ProjectCard, ProjectOverviewChart, LibrarySearchField, LibraryFilterChips, SortMenu, RelativeTime and the four dialogs); each independent of the shell; home/ keeps only LibraryPane, which no destination declares since Home was removed (2026-10-17)
@@ -204,6 +336,10 @@ A dependency in the wrong direction fails configuration (`tembra.kmp.library`).
 | a metronome engine call from Kotlin | `:shared:engine` `MetronomeAudio` (with `ClickLevel`, `ClickSoundId`, `MetronomeGrid`, `TickSnapshot`, `CustomSoundResult`); `AudioEngine` implements it, `FakeAudioEngine` for tests | the ViewModel depends on `MetronomeAudio`, never on `AudioEngine`; events and status come from `AudioStatus` |
 | metronome preferences or the custom click file | `:shared:data` package `metronome` (`MetronomePreferences` over the one DataStore, `CustomClickSoundStore` on Okio) | fakes live beside them; the picker writes to `stagingPath`, `commit()` moves it to `path` |
 | a background-playback host or a file picker | interface in `:shared:ui` `audio.tembra.ui.platform` (`BackgroundPlaybackHost`, `SoundFilePicker`); Android in `:androidApp` (`MetronomeForegroundService`, `AndroidBackgroundPlaybackHost`, `SoundFilePickerHost` + `AndroidSoundFilePicker` attached by `MainActivity`); iOS in `:shared:ui` `iosMain` (`IosBackgroundPlaybackHost`, `IosSoundFilePicker`) | bound in `AndroidAppGraph` / `IosAppGraph`; host tests in `androidTest` of `:androidApp` and `iosTest` of `:shared:ui`; the OS picker and the lock-screen run are manual checks |
+| a keyboard shortcut (feature 011) | one entry in `audio.tembra.ui.shortcuts.ShortcutCatalogue` (chord, scope, `ShortcutAction`, label in `ShortcutCopy`) + its branch in `ShortcutDispatcher` + the scope's target interface | the exhaustive `when` fails to compile until routed; the sheet, Android's Meta+/ list and the iPad menu bar read the catalogue; a primary chord is ⌘ on iPad and served by the menu (its first one per entry), so Compose leaves it alone there; overlays register with `RegisterOverlay` so close-overlay (Escape, Ctrl/⌘+.) reaches them |
+| a drop zone or an "open with" type (feature 011) | `audio.tembra.ui.drop`: a `DropZone` and its rule in `DropPlanner`, an `AudioDropState` + `Modifier.audioDropTarget` on the layout; Android types in `AndroidDroppedFilesReader` / the manifest's `VIEW` filter, iOS in `IosDroppedFilesReader` / `Info.plist`'s document types | plans are common code (`DropPlannerTest`); the readers stay thin; iOS gives no drop position with Compose Multiplatform 1.12 (research R12) |
+| pointer behaviour on a control (feature 011) | `audio.tembra.ui.designsystem`: `onSecondaryClick` + `PointerMenuAnchor` for a menu at the pointer, `PointerShapes` (grab, grabbing, busy) or `PointerIcon.Hand` before `clickable`, `hoverArea` for the hover tint, `tembraScrollbar` with a `ScrollbarAdapter` on a scrolling container | the hover tint covers the whole clickable area (`PointerAreaTest`); wheel rules live in `ViewportGestures` |
+| a window behaviour (full screen, minimum size, relayout) (feature 011) | `audio.tembra.ui.platform.WindowControls` (`AndroidWindowControls` attached by `MainActivity`, `IosWindowControls`); the minimum in the manifest's `<layout>` and `WindowMinimum.swift`; focus and place across layouts with `focusRestoringRoot` / `focusIdentity` | desktop tests in `androidApp/src/androidTest/.../desktop/` run on `Tembra_Desktop_API37` (they skip without free-form windows); `TembraDesktopTests` on an iPad simulator |
 | a reusable metronome control (dial, chip row, accent cells, sound picker) | generic pieces in `audio.tembra.ui.designsystem` (`TembraChipRow`, `TembraPill`, `TembraGradientCard` discs); metronome-specific ones in `audio.tembra.ui.metronome.components` (`internal`) | stateless, `modifier` first optional parameter, primitives in, callbacks out; every value from `TembraTheme` (metronome tokens included) |
 
 ## Conventions

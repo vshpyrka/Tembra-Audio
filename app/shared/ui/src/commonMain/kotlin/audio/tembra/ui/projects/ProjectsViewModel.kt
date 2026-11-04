@@ -17,12 +17,17 @@ import audio.tembra.data.projects.OpenResult
 import audio.tembra.data.projects.ProjectRepository
 import audio.tembra.engine.perf.PerfSection
 import audio.tembra.engine.perf.PerfTrace
+import audio.tembra.ui.drop.DropOutcome
+import audio.tembra.ui.drop.DropPlan
+import audio.tembra.ui.drop.ProjectFromAudio
+import audio.tembra.ui.drop.SessionProjectFromAudio
 import audio.tembra.ui.projects.components.RelativeTime
 import audio.tembra.ui.session.ProjectSession
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metrox.viewmodel.ViewModelKey
+import kotlin.time.Clock
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.channels.Channel
@@ -38,7 +43,6 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlin.time.Clock
 
 /**
  * The library's state holder (contracts/projects-library-screen.md; spec FR-050 to FR-054): the repository's index,
@@ -59,6 +63,7 @@ class ProjectsViewModel(
 ) : ViewModel() {
 
     private val dialog = MutableStateFlow<ProjectsDialog?>(null)
+    private val projectFromAudio: ProjectFromAudio = SessionProjectFromAudio(repository, session)
     private var firstMapping = true
 
     val uiState: StateFlow<ProjectsUiState> = combine(
@@ -94,6 +99,26 @@ class ProjectsViewModel(
         viewModelScope.launch(CoroutineName("newProject")) {
             val project = repository.create(repository.library().first().nextProjectName())
             openInTimeline(project.id)
+        }
+    }
+
+    /**
+     * Files dropped on the library (feature 011, spec FR-026): "Project N" with one track per audio file, opened on the
+     * Timeline; the items the drop left out share the import's message. With no audio file, a message says so.
+     */
+    fun drop(outcome: DropOutcome) {
+        val files = when (val plan = outcome.plan) {
+            is DropPlan.NewProject -> plan.files
+            // Projects' zone plans a new project; any other plan's files make one too.
+            is DropPlan.NewTracks -> plan.files
+            is DropPlan.AddToTrack -> listOf(plan.file)
+            DropPlan.Nothing -> {
+                _messages.trySend(ProjectsMessage.NoAudioFound(outcome.skipped))
+                return
+            }
+        }
+        viewModelScope.launch(CoroutineName("dropProject")) {
+            if (projectFromAudio.start(files, outcome.skipped)) _events.trySend(ProjectsEvent.OpenedInTimeline) else _messages.trySend(ProjectsMessage.CouldNotOpen)
         }
     }
 
