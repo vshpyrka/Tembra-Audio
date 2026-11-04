@@ -63,6 +63,12 @@ output muted for the emulators and simulators):
 | Tembra_Desktop_API37 | `:androidApp:connectedDebugAndroidTest` | 45/45 green, zero warnings |
 | Tembra_Desktop_API34 | `:androidApp:connectedDebugAndroidTest` | 45/45 green, zero warnings (after bounded idle waits: an unbounded `waitForIdleSync` hung a playing run for hours on this image) |
 | Tembra_Desktop_API34 | `checkAndroidDevice` (beyond §2's list) | not a lane for this image: its test activity opens in a 412 dp phone-sized window, and the wide layouts' mouse tests start outside it |
+| Tembra_Desktop_API37, 2026-11-04 (after T138–T142) | `checkAndroidDevice --continue` | core 198, engine 95, data 121, ui 980 (2 skipped), green; one earlier run lost `NativeAudioEngineTest.theStreamProbeSeesAnOpenOutput` right after an emulator cold boot (the first output stream opened after the probe's wait) and the class passed 17/17 on its own |
+| Tembra_Desktop_API37, 2026-11-04 | `:androidApp:connectedDebugAndroidTest` | 45/45 green, zero warnings (full-screen retry included) |
+| Host, 2026-11-04 | `checkAndroidHost` | green, zero warnings (with `FullScreenRequestTest`, `TooltipPositionTest`, `ScrollbarThumbTest`) |
+| Pixel_9_Pro_Fold emulator, 2026-11-04 | `checkAndroidDevice --continue` | core 198, data 121, ui 980 (4 skipped) green; engine 94/95: `theStreamProbeSeesAnOpenOutput` counted streams and lost to a previous test's stream closing as the tone's opened (feature 009 test race, also seen once on API37); it now tells streams apart by player, and the engine module passed 95/95 twice |
+| Pixel_9_Pro_Fold emulator, 2026-11-04 | `:androidApp:connectedDebugAndroidTest` | 45 tests, 0 failed, 12 skipped (the desktop tests skip outside free-form windows) |
+| Tembra_Desktop_API34, 2026-11-04 | `:androidApp:connectedDebugAndroidTest` | 45/45 green, zero warnings; a first run right after the emulator's snapshot boot found the morning's app window restored beside the test's ("expected one task, found 2") and passed after `am force-stop com.tembraaudio` |
 
 One desktop emulator at a time: with both running (one windowed), one crashed twice on this Mac (2026-11-04).
 
