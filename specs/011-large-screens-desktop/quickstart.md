@@ -51,6 +51,21 @@ cd iosApp && xcodebuild test -project iosApp.xcodeproj -scheme TembraDesktopTest
 
 All green, zero warnings (`--warning-mode all`).
 
+Results on branch `011-large-screens-desktop` (T135; sounds muted on every target: media stream silent, the Mac's
+output muted for the emulators and simulators):
+
+| Target | Lane | Result |
+|---|---|---|
+| macOS host | `checkAndroidHost`, `engineHostTest` | green, zero warnings (engine 204 tests) |
+| iPhone 18 Pro simulator | `checkIos` | green (core 198, engine 91, data 121, ui 971) |
+| iPhone Duo simulator | `checkIos` | green |
+| Tembra_Desktop_API37 | `checkAndroidDevice` | 2 762 tests, green after the tooltip test's window fit |
+| Tembra_Desktop_API37 | `:androidApp:connectedDebugAndroidTest` | 45/45 green, zero warnings |
+| Tembra_Desktop_API34 | `:androidApp:connectedDebugAndroidTest` | 45/45 green, zero warnings (after bounded idle waits: an unbounded `waitForIdleSync` hung a playing run for hours on this image) |
+| Tembra_Desktop_API34 | `checkAndroidDevice` (beyond §2's list) | not a lane for this image: its test activity opens in a 412 dp phone-sized window, and the wide layouts' mouse tests start outside it |
+
+One desktop emulator at a time: with both running (one windowed), one crashed twice on this Mac (2026-11-04).
+
 ## 3. Reach (User Story 1)
 
 - `aapt2 dump badging androidApp/build/outputs/apk/release/*.apk | grep -i feature`: touchscreen and microphone listed as

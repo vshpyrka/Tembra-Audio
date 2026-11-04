@@ -21,6 +21,7 @@ import audio.tembra.engine.perf.AudioHealth
  */
 object DesktopApp {
     private const val TIMEOUT_MS = 10_000L
+    private const val SETTLE_TIMEOUT_MS = 2_000L
 
     private val instrumentation get() = InstrumentationRegistry.getInstrumentation()
     val device: UiDevice get() = UiDevice.getInstance(instrumentation)
@@ -39,7 +40,16 @@ object DesktopApp {
 
     fun tap(anchor: String) {
         find(anchor).click()
-        instrumentation.waitForIdleSync()
+        settle()
+    }
+
+    /**
+     * Waits for the UI to settle, for at most [SETTLE_TIMEOUT_MS]: `Instrumentation.waitForIdleSync` has no timeout, and
+     * a playing transport redraws every frame, so on the Android 14 desktop image the main thread never went idle and a
+     * run hung for hours (2026-11-04).
+     */
+    fun settle() {
+        device.waitForIdle(SETTLE_TIMEOUT_MS)
     }
 
     /** The control showing [text] exactly, waiting up to ten seconds for it. */

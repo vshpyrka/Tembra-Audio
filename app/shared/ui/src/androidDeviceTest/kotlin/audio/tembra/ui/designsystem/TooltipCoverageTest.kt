@@ -8,6 +8,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -18,6 +20,7 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.v2.runComposeUiTest
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import audio.tembra.core.metronome.TimeSignature
 import audio.tembra.core.project.GainDb
@@ -46,6 +49,7 @@ import audio.tembra.ui.tuner.TunerUiState
 import kotlinx.collections.immutable.persistentListOf
 import kotlin.test.Test
 import kotlin.test.assertTrue
+import org.junit.Assume.assumeTrue
 
 /**
  * Tooltips on every icon-only control (feature 011, spec FR-011; contracts/pointer-input.md "Coverage"): a semantics
@@ -80,8 +84,21 @@ class TooltipCoverageTest {
     private fun ComposeUiTest.assertEveryIconOnlyControlHasATooltip(screen: String, content: @Composable () -> Unit) {
         // Inside a default desktop window (1382 × 864 dp less its caption on Tembra_Desktop_API37), so the transport bar at
         // the foot can be hovered; clear of the window's top so a tooltip has room above a toolbar.
-        setContent { TembraTheme { Box(Modifier.requiredSize(1200.dp, 780.dp).padding(top = 60.dp)) { content() } } }
+        var window = IntSize.Zero
+        var density = 1f
+        setContent {
+            window = LocalWindowInfo.current.containerSize
+            density = LocalDensity.current.density
+            TembraTheme { Box(Modifier.requiredSize(DESKTOP_WIDTH_DP.dp, DESKTOP_HEIGHT_DP.dp).padding(top = 60.dp)) { content() } }
+        }
         waitForIdle()
+        // A phone's window cannot hold the desktop-sized surface: its controls fall outside and cannot be hovered.
+        val widthDp = window.width / density
+        val heightDp = window.height / density
+        assumeTrue(
+            "needs a window of $DESKTOP_WIDTH_DP × $DESKTOP_HEIGHT_DP dp (a desktop window or a landscape tablet), not $widthDp × $heightDp",
+            widthDp >= DESKTOP_WIDTH_DP && heightDp >= DESKTOP_HEIGHT_DP,
+        )
         val controls = onAllNodes(iconOnly, useUnmergedTree = true).fetchSemanticsNodes().map { it.config[SemanticsProperties.ContentDescription].first() }
         val missing = mutableListOf<String>()
         controls.forEachIndexed { index, description ->
@@ -139,3 +156,6 @@ class TooltipCoverageTest {
         }
     }
 }
+
+private const val DESKTOP_WIDTH_DP = 1200
+private const val DESKTOP_HEIGHT_DP = 780

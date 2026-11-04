@@ -73,7 +73,7 @@ object DesktopWindow {
     /** Sets the task's bounds in pixels with `am task resize`; not clamped to any minimum, not remembered. */
     fun resizeTask(left: Int, top: Int, right: Int, bottom: Int) {
         shell("am task resize ${taskId()} $left $top $right $bottom")
-        instrumentation.waitForIdleSync()
+        DesktopApp.settle()
     }
 
     /** Resizes the task to [widthDp] × [heightDp] keeping its top-left corner. */
@@ -93,7 +93,7 @@ object DesktopWindow {
         for (offset in intArrayOf(-2, 4)) {
             shell("input mouse swipe ${before.right + offset} ${before.bottom + offset} $toX $toY 1500")
             SystemClock.sleep(1_000)
-            instrumentation.waitForIdleSync()
+            DesktopApp.settle()
             if (windowBoundsPx() != before) return
         }
     }

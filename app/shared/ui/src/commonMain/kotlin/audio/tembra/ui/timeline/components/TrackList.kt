@@ -80,7 +80,7 @@ internal fun TrackList(
                 .testTag(TimelineTestTags.TRACK_LIST)
                 // Scrollbars while a mouse or trackpad scrolls (feature 011, spec FR-014a): the tracks, and time along the foot.
                 .tembraScrollbar(ScrollbarAdapter(listState), Orientation.Vertical)
-                .tembraScrollbar(TimelineScrollbarAdapter(state.viewport, state.lengthBeats) { onScrollBy(it.toDouble()) }, Orientation.Horizontal),
+                .tembraScrollbar(TimelineScrollbarAdapter(state.viewport, state.lengthBeats, headerWidthPx) { onScrollBy(it.toDouble()) }, Orientation.Horizontal),
         ) {
             itemsIndexed(state.tracks, key = { _, track -> track.id.value }) { index, track ->
                 TrackRow(

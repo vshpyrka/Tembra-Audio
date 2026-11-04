@@ -91,18 +91,10 @@ private class ScrollbarNode(var adapter: ScrollbarAdapter, var orientation: Orie
     /** The thumb along the trailing edge, or null when everything fits. */
     private fun thumbRect(): Rect? {
         val spacing = currentValueOf(LocalTembraSpacing)
-        val content = adapter.contentSize
-        val viewport = adapter.viewportSize
-        if (content <= viewport || viewport <= 0f) return null
-        val thickness = spacing.scrollbarThickness.toPx()
-        val inset = spacing.scrollbarInset.toPx()
-        val track = viewport - 2 * inset
-        val length = (track * viewport / content).coerceAtLeast(spacing.scrollbarMinThumb.toPx()).coerceAtMost(track)
-        val start = inset + (track - length) * (adapter.scrollOffset / (content - viewport)).coerceIn(0f, 1f)
-        return when (orientation) {
-            Orientation.Vertical -> Rect(Offset(boundsSize.width - inset - thickness, start), Size(thickness, length))
-            Orientation.Horizontal -> Rect(Offset(start, boundsSize.height - inset - thickness), Size(length, thickness))
-        }
+        return scrollbarThumb(
+            adapter, orientation, boundsSize,
+            thickness = spacing.scrollbarThickness.toPx(), inset = spacing.scrollbarInset.toPx(), minThumb = spacing.scrollbarMinThumb.toPx(),
+        )
     }
 
     private fun androidx.compose.ui.unit.Dp.toPx(): Float = value * currentValueOf(androidx.compose.ui.platform.LocalDensity).density
@@ -182,5 +174,24 @@ private class ScrollbarNode(var adapter: ScrollbarAdapter, var orientation: Orie
     private companion object {
         const val HIDE_AFTER_MS = 1_000L
         const val FADE_MS = 250
+    }
+}
+
+/**
+ * The thumb of a scrollbar over an element of [bounds] (pixels): along the trailing edge ([Orientation.Vertical]) or the
+ * bottom edge ([Orientation.Horizontal]), [thickness] thick and [inset] in from the edges, as long along its track as the
+ * viewport is of the content (at least [minThumb]), placed by how far the content is scrolled. The track starts past the
+ * adapter's [ScrollbarAdapter.leadingPx] and is as long as its viewport. Null when everything fits.
+ */
+internal fun scrollbarThumb(adapter: ScrollbarAdapter, orientation: Orientation, bounds: IntSize, thickness: Float, inset: Float, minThumb: Float): Rect? {
+    val content = adapter.contentSize
+    val viewport = adapter.viewportSize
+    if (content <= viewport || viewport <= 0f) return null
+    val track = viewport - 2 * inset
+    val length = (track * viewport / content).coerceAtLeast(minThumb).coerceAtMost(track)
+    val start = adapter.leadingPx + inset + (track - length) * (adapter.scrollOffset / (content - viewport)).coerceIn(0f, 1f)
+    return when (orientation) {
+        Orientation.Vertical -> Rect(Offset(bounds.width - inset - thickness, start), Size(thickness, length))
+        Orientation.Horizontal -> Rect(Offset(start, bounds.height - inset - thickness), Size(length, thickness))
     }
 }

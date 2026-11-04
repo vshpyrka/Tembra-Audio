@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LocalRippleThemeConfiguration
 import androidx.compose.material3.TooltipAnchorPosition
@@ -60,7 +59,7 @@ fun TembraNavigationRail(
             // The rail places its content at its start edge: the column takes the rail's width and centres the items,
             // which on iOS (the JetBrains port) are only as wide as their indicator.
             Column(
-                modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+                modifier = Modifier.fillMaxWidth().verticalScrollWithScrollbar(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(TembraTheme.spacing.xs),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {

@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -14,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import audio.tembra.core.project.MusicalKey
+import audio.tembra.ui.designsystem.verticalScrollWithScrollbar
 import audio.tembra.ui.perf.anchorRoot
 import audio.tembra.ui.projects.ProjectsCopy
 import audio.tembra.ui.projects.ProjectsTestTags
@@ -36,7 +36,7 @@ internal fun KeyPickerDialog(selected: MusicalKey?, onConfirm: (MusicalKey?) -> 
         },
         title = { Text(ProjectsCopy.key, style = TembraTheme.typography.headlineSmall, color = colors.onSurface) },
         text = {
-            Column(modifier = Modifier.fillMaxWidth().heightIn(max = LIST_MAX_HEIGHT).verticalScroll(rememberScrollState())) {
+            Column(modifier = Modifier.fillMaxWidth().heightIn(max = LIST_MAX_HEIGHT).verticalScrollWithScrollbar(rememberScrollState())) {
                 KeyRow(label = ProjectsCopy.keyNone, selected = selected == null, onClick = { onConfirm(null) }, testTag = ProjectsTestTags.keyOption("none"))
                 for (key in MusicalKey.entries) {
                     KeyRow(label = key.displayName, selected = key == selected, onClick = { onConfirm(key) }, testTag = ProjectsTestTags.keyOption(key.name))
