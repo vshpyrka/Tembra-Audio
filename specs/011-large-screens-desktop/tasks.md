@@ -616,11 +616,12 @@ guideline self-check (quickstart §6) records a pass for every test listed in SC
 - [X] T132 [P] Add the desktop emulator commands (`Tembra_Desktop_API37` primary, `Tembra_Desktop_API34`) to `CLAUDE.md`'s
   command list and correct its build-order note (the mixer is now feature 012)
   - Done 2026-11-03: the constitution still names the mixer 011; its amendment goes through `/speckit-constitution`.
-- [ ] T133 Screenshots for UI verification (constitution): compact and expanded widths on Android and the iOS
+- [X] T133 Screenshots for UI verification (constitution): compact and expanded widths on Android and the iOS
   simulator, plus desktop-window captures on `Tembra_Desktop_API37` (windowed and full screen) and an iPad window, into
   `specs/011-large-screens-desktop/screenshots/` with `NOTES.md`
-  - 2026-11-03, in progress: Tembra_Desktop_API37 windowed and full screen (`t133-api37-timeline-*.png`); the phone,
-    tablet and iPad captures follow the lanes.
+  - 2026-11-03/04: Tembra_Desktop_API37 windowed and full screen, the fold emulator closed (compact) and opened
+    (medium), iPhone 18 Pro (compact), an iPad window (expanded); the Pixel Tablet's capture can join when it is
+    reconnected (`screenshots/NOTES.md`)
 - [X] T134 Produce the Compose compiler report (`-PcomposeReports=true`) and explain any new non-skippable composable in
   `specs/011-large-screens-desktop/screenshots/NOTES.md`
   - Done 2026-11-03: every restartable composable of `:shared:ui` (204) is skippable; nothing new to explain
