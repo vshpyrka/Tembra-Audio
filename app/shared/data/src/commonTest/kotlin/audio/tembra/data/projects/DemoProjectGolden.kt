@@ -137,7 +137,8 @@ internal object DemoProjectGolden {
                   }
                 ]
               }
-            ]
+            ],
+            "countIn": "ONE_BAR"
           }
         }
     """.trimIndent() + "\n"

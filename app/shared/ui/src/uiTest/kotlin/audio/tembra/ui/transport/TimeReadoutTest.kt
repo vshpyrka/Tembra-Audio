@@ -6,6 +6,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.v2.runComposeUiTest
@@ -57,6 +58,25 @@ class TimeReadoutTest {
         assertTrue(fitted <= 70.dp + PIXEL_ROUNDING, "the stacked readout given 70 dp: $fitted")
         assertTrue(fitted >= 35.dp, "the digits never shrink below half: $fitted")
     }
+
+    private fun countInReadout(stacked: Boolean) = runComposeUiTest {
+        setContent {
+            TembraTheme {
+                Box(Modifier.width(400.dp)) {
+                    TimeReadout(positionSeconds = 0.0, lengthSeconds = 30.9677, playing = false, telemetry = ScriptedTransportTelemetry.stopped(0.0), stacked = stacked, countInBeatsLeft = 4)
+                }
+            }
+        }
+        onNodeWithTag(READOUT_TAG).assertContentDescriptionEquals("Count-in 4 of 00:30.00")
+        val bounds = onNodeWithTag(READOUT_TAG).getUnclippedBoundsInRoot()
+        assertTrue(bounds.right - bounds.left > 40.dp, "the count-in readout has no width: $bounds")
+    }
+
+    @Test
+    fun theCountInReplacesTheClockInTheOneLineForm() = countInReadout(stacked = false)
+
+    @Test
+    fun theCountInReplacesTheClockInTheStackedForm() = countInReadout(stacked = true)
 
     private companion object {
         /** The room is laid out in whole pixels: 70 dp is 171 px at density 2.4375 (the fold emulator), 70.15 dp back. */

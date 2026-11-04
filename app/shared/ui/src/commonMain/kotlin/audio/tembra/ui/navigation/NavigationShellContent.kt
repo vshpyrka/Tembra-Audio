@@ -92,7 +92,7 @@ fun NavigationShellContent(
     RegisterTextInput(textInput)
     CompositionLocalProvider(LocalTextInputFocus provides textInput, LocalOverlayStack provides overlays) {
         when (dialog) {
-            is DialogRequest.StopAndLeave -> StopAndLeaveDialog(onConfirm = { dialog.answer(true) }, onCancel = { dialog.answer(false) })
+            is DialogRequest.StopAndLeave -> StopAndLeaveDialog(onConfirm = { dialog.answer(true) }, onCancel = { dialog.answer(false) }, recording = dialog.recording)
             null -> Unit
         }
         if (shortcutSheetOpen) ShortcutSheet(onDismiss = { shortcutSheetOpen = false })

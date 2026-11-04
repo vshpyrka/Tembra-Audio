@@ -5,6 +5,7 @@ import audio.tembra.core.project.AddTrack
 import audio.tembra.core.project.AudioAssetId
 import audio.tembra.core.project.Beats
 import audio.tembra.core.project.ClipTemplate
+import audio.tembra.core.project.CountIn
 import audio.tembra.core.project.DeleteClip
 import audio.tembra.core.project.DeleteTrack
 import audio.tembra.core.project.EditHistory
@@ -25,8 +26,10 @@ import audio.tembra.core.project.Project
 import audio.tembra.core.project.ProjectEdit
 import audio.tembra.core.project.ProjectEditor
 import audio.tembra.core.project.ProjectId
+import audio.tembra.core.project.RecordTake
 import audio.tembra.core.project.RenameProject
 import audio.tembra.core.project.RenameTrack
+import audio.tembra.core.project.SetCountIn
 import audio.tembra.core.project.SetDescription
 import audio.tembra.core.project.SetGain
 import audio.tembra.core.project.SetKey
@@ -38,7 +41,10 @@ import audio.tembra.core.project.SetTempo
 import audio.tembra.core.project.SetTimeSignature
 import audio.tembra.core.project.SplitClip
 import audio.tembra.core.project.TrackId
+import audio.tembra.core.project.tempoMap
+import audio.tembra.core.recording.RecordingState
 import audio.tembra.data.metronome.MetronomePreferences
+import audio.tembra.data.projects.AdoptedTake
 import audio.tembra.data.projects.AutosaveScheduler
 import audio.tembra.data.projects.ImportRefusal
 import audio.tembra.data.projects.ImportResult
@@ -102,7 +108,11 @@ import kotlinx.coroutines.sync.withLock
  * channel to the one screen that shows them (a message must not be lost while the Timeline is not composed and must
  * show once); [dialog] is a `StateFlow` because the question stays visible until answered. Launch sites, each named:
  * `observeEngineEvents`, `observeMetronomePreferences`, `observeHostStopRequests`, `observeSeekRequests`, `autosave`
- * (the scheduler's own), `overviewPolling` (the tracker's), `startPlayback`, `importJob`, `saveViewState`, `flushSave`.
+ * (the scheduler's own), `overviewPolling` (the tracker's), `startPlayback`, `importJob`, `saveViewState`, `flushSave`,
+ * `observeRecording` (the controller's state into [state]). Recording (feature 010, contracts/recording-session.md)
+ * lives in the [RecordingController] beside this class: the session forwards the intents, feeds it the signals only
+ * the session sees (a deleted track, the project closing, the host hidden, the transport closed, an interruption,
+ * the routes) and applies the take it hands back as one undo step ([RecordingHost]).
  */
 @Inject
 @SingleIn(AppScope::class)
@@ -112,11 +122,12 @@ class ProjectSession(
     metronome: MetronomeAudio,
     private val preferences: MetronomePreferences,
     private val host: BackgroundPlaybackHost,
+    private val recording: RecordingController,
     @Named("session") private val scope: CoroutineScope,
     /** Optional bindings: the graph provides neither, tests pass a scripted reader and the test dispatcher. */
     overviewReader: OverviewReader = SystemOverviewReader,
     ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
-) : PlaybackGuard, SessionActivity {
+) : PlaybackGuard, RecordingHost, SessionActivity {
 
     private val _state = MutableStateFlow(SessionState())
     val state: StateFlow<SessionState> = _state.asStateFlow()
@@ -138,6 +149,9 @@ class ProjectSession(
 
     /** Draw-phase handle: at most one engine read per frame, memoised on the frame time (research R7). */
     val transportTelemetry: TransportTelemetry = TransportTelemetry(::readFrame)
+
+    /** Draw-phase handle for the meter and the growing take (feature 010, research R8). */
+    val inputTelemetry: InputTelemetry get() = recording.inputTelemetry
 
     private val sources = ClipSourceRegistry(audio)
     private val bridge = MetronomeBridge(metronome, audio)
@@ -177,6 +191,8 @@ class ProjectSession(
         scope.launch(CoroutineName("observeMetronomePreferences")) { observeMetronomePreferences() }
         scope.launch(CoroutineName("observeHostStopRequests")) { observeHostStopRequests() }
         scope.launch(CoroutineName("observeSeekRequests")) { observeSeekRequests() }
+        scope.launch(CoroutineName("observeRecording")) { recording.state.collect { ui -> _state.update { it.copy(recording = ui) } } }
+        recording.start(this)
         autosave.start()
     }
 
@@ -214,6 +230,7 @@ class ProjectSession(
      */
     fun edit(edit: ProjectEdit): EditRejection? {
         val current = history ?: return null
+        if (edit is DeleteTrack) recording.trackDeleted(edit.id)
         return when (val result = ProjectEditor.apply(current.present, edit)) {
             is EditResult.Rejected -> result.reason
             is EditResult.Applied -> {
@@ -255,6 +272,76 @@ class ProjectSession(
         _state.update { it.copy(project = project, metronomeOn = on) }
     }
 
+    /** The count-in is stored with the project beside the metronome toggle and is not an undo step (feature 010, FR-015). */
+    fun setCountIn(countIn: CountIn) {
+        val current = history ?: return
+        if (current.present.countIn == countIn) return
+        val project = current.present.copy(countIn = countIn)
+        history = current.copy(present = project)
+        autosave.onEdit()
+        _state.update { it.copy(project = project) }
+    }
+
+    // --- Recording (feature 010): the intents go to the controller, which hands the take back through RecordingHost -----
+
+    fun arm(trackId: TrackId) = recording.arm(trackId)
+
+    fun disarm() = recording.disarm()
+
+    /** Record on the armed track with the project's count-in (ignored while playing); [armFirst] is armed first when nothing is (FR-008). */
+    fun record(armFirst: TrackId? = null) {
+        val project = history?.present ?: return
+        recording.record(project.countIn.bars * project.timeSignature.beats, armFirst)
+    }
+
+    fun stopRecording() = recording.stop()
+
+    fun cancelRecording() = recording.cancel()
+
+    fun toggleMonitor() = recording.toggleMonitor()
+
+    fun resetClip() = recording.resetClip()
+
+    fun requestMicrophone() = recording.requestMicrophone()
+
+    /** `ON_RESUME`: a grant made in the settings is noticed before the next arm (FR-020). */
+    fun refreshPermission() = recording.refreshPermission()
+
+    override val project: Project? get() = history?.present
+
+    override fun positionBeats(): Beats = currentPosition()
+
+    override fun framesToBeats(frames: Long, sampleRate: Int): Beats = history?.present?.tempoMap?.framesToBeats(frames, sampleRate) ?: Beats.Zero
+
+    override suspend fun applyTake(edit: RecordTake, audioPath: String, overviewPath: String) {
+        val projectId = history?.present?.id ?: return
+        val playable = sources.open(edit.assetId, audioPath)
+        closeEditGroup()
+        val rejection = edit(edit)
+        if (rejection != null) {
+            sources.close(edit.assetId)
+            pendingRetired += edit.assetId
+            autosave.onEdit()
+            _messages.trySend(SessionMessage.EditRejected(rejection))
+            return
+        }
+        if (!playable) {
+            _state.update { it.copy(missingAssets = it.missingAssets.adding(edit.assetId)) }
+            _messages.trySend(SessionMessage.AssetsMissing(1))
+        }
+        overviews.track(projectId, edit.assetId, overviewPath)
+    }
+
+    override fun playbackStartedByTake() = dispatch(PlaybackEvent.RecordStarted)
+
+    override fun playbackStoppedByCancel() {
+        if (isPlaying) dispatch(PlaybackEvent.Pause)
+    }
+
+    override fun notify(message: SessionMessage) {
+        _messages.trySend(message)
+    }
+
     /** Remembers the zoom and grid of the open project (`view.json`, never the document). */
     fun saveViewState(viewState: ProjectViewState) {
         val id = history?.present?.id ?: return
@@ -289,9 +376,27 @@ class ProjectSession(
 
     // --- Playback ----------------------------------------------------------------------------------------------------
 
-    fun play() = dispatch(PlaybackEvent.Play)
+    /** Play; during a count-in (the session is stopped while it runs) it cancels the count-in instead (FR-009). */
+    fun play() {
+        if (recording.state.value.phase is RecordingState.PreRoll) {
+            recording.cancel()
+            return
+        }
+        dispatch(PlaybackEvent.Play)
+    }
 
-    fun pause() = dispatch(PlaybackEvent.Pause)
+    /** Pause; a running take ends first and is kept, a count-in is cancelled and nothing else happens (FR-009). */
+    fun pause() {
+        when (recording.state.value.phase) {
+            is RecordingState.PreRoll -> {
+                recording.cancel()
+                return
+            }
+            is RecordingState.Recording -> recording.stop()
+            RecordingState.Disarmed, is RecordingState.Arming, is RecordingState.Armed, is RecordingState.Finalising -> Unit
+        }
+        dispatch(PlaybackEvent.Pause)
+    }
 
     fun seek(beats: Beats) = dispatch(PlaybackEvent.Seek(beats))
 
@@ -313,13 +418,26 @@ class ProjectSession(
     fun readTransport(into: TransportSnapshot) = audio.readTransport(into)
 
     override suspend fun confirmLeave(): Boolean {
-        if (!isPlaying) return true
+        val phase = recording.state.value.phase
+        if (!isPlaying) {
+            // A count-in cancels without a question (FR-022); the hand-over disarms as the host goes.
+            if (phase is RecordingState.PreRoll) {
+                recording.hostHidden()
+                recording.awaitTakeEnded()
+            }
+            return true
+        }
+        val takeRuns = phase is RecordingState.Recording || phase is RecordingState.Finalising
         val answer = CompletableDeferred<Boolean>()
-        _dialog.value = DialogRequest.StopAndLeave { result ->
+        _dialog.value = DialogRequest.StopAndLeave(recording = takeRuns) { result ->
             _dialog.value = null
             answer.complete(result)
         }
         if (!answer.await()) return false
+        if (takeRuns) {
+            recording.hostHidden()  // StopTake(Leaving): the take is kept
+            recording.awaitTakeEnded()
+        }
         dispatch(PlaybackEvent.LeaveConfirmed)
         _state.first { it.playback is PlaybackState.Stopped }
         return true
@@ -330,6 +448,8 @@ class ProjectSession(
         if (visible) {
             launchAttach()
         } else {
+            // The recording session goes first (a count-in cancels, a take ends kept, the input closes), then the device.
+            recording.hostHidden()
             // A running attach is left alone: its loop ends on [hostVisible], and an open in flight closes itself.
             detachTransport()
         }
@@ -346,8 +466,11 @@ class ProjectSession(
      */
     private fun detachTransport() {
         if (transportOpen) {
-            audio.closeTransport()
             transportOpen = false
+            // The close runs on the engine's serial dispatcher (T102), under the mutex so a re-attach waits for it; the
+            // next screen's start queues behind it on the same dispatcher, which keeps the hand-over ordered.
+            scope.launch(CoroutineName("closeTransport")) { transportMutex.withLock { audio.closeTransport() } }
+            recording.transportClosed()
         }
         if (opened != null) detached = true
     }
@@ -421,37 +544,70 @@ class ProjectSession(
         // A tap on Tuner or Metronome during the start-up open leaves the device to that screen; the attach takes it back.
         transportMutex.withLock { withContext(NonCancellable) { openTransportLocked() } }
         val missing = LinkedHashSet(opened.missingAssets)
+        pendingRetired.clear()
         for (assetId in project.assets.keys) {
             if (assetId in missing) continue
             val path = opened.audioPath(assetId)
             if (path == null || !sources.open(assetId, path)) missing += assetId
         }
-        if (transportOpen) pushEngine(project, project.metronomeOn)
-        val started = EditHistory.start(project)
+        // A take the last run never adopted (a crash, a force quit: FR-023) joins the document as a settled edit.
+        val recovered = ArrayList<Pair<AudioAssetId, String>>()
+        var document = project
+        for (manifest in repository.pendingTakes(id)) {
+            when (val adopted = repository.adoptPendingTake(id, manifest)) {
+                is AdoptedTake.Adopted -> {
+                    val edit = RecordTake(manifest.trackId, adopted.assetId, adopted.asset, IdGenerator.clipId(), adopted.clip, manifest.startBeats)
+                    when (val result = ProjectEditor.apply(document, edit)) {
+                        is EditResult.Applied -> {
+                            document = result.project
+                            if (!sources.open(adopted.assetId, adopted.audioPath)) missing += adopted.assetId
+                            recovered += adopted.assetId to adopted.overviewPath
+                        }
+                        is EditResult.Rejected -> pendingRetired += adopted.assetId
+                    }
+                }
+                AdoptedTake.Discarded, is AdoptedTake.Failed -> Unit
+            }
+        }
+        if (transportOpen) pushEngine(document, document.metronomeOn)
+        val started = EditHistory.start(document)
         history = started
         this.opened = opened
         detached = !transportOpen
         lastEdit = null
-        referencedAssets = project.assets.keys
-        pendingRetired.clear()
+        referencedAssets = document.assets.keys
         val viewState = repository.viewState(id)
         _state.value = SessionState(
-            project = project,
+            project = document,
             viewState = viewState,
             missingAssets = missing.toPersistentSet(),
-            metronomeOn = project.metronomeOn,
+            metronomeOn = document.metronomeOn,
+            recording = recording.state.value,
         )
         for (assetId in project.assets.keys) {
             if (assetId in missing) continue
             opened.overviewPath(assetId)?.let { overviews.track(id, assetId, it) }
         }
+        for ((assetId, overviewPath) in recovered) overviews.track(id, assetId, overviewPath)
         repository.setOpen(id)
         if (missing.isNotEmpty()) _messages.trySend(SessionMessage.AssetsMissing(missing.size))
+        if (recovered.isNotEmpty() || pendingRetired.isNotEmpty()) {
+            autosave.onEdit()
+            autosave.flush()
+        }
         // The host may have gone and come back while the sources opened: take the device back now.
         if (hostVisible) launchAttach()
     }
 
     private suspend fun closeCurrent() {
+        // A running take ends kept and is adopted into the closing document before it is saved (FR-001, FR-022).
+        if (recording.state.value.takeRunning) {
+            recording.projectClosing()
+            recording.awaitTakeEnded()
+            autosave.flush()
+        } else {
+            recording.projectClosing()
+        }
         overviews.clear()
         attachJob?.cancel()
         attachJob = null
@@ -485,8 +641,8 @@ class ProjectSession(
             is SetSoloed -> project.tracks.indices.forEach { pushTrack(project, it) }
             is SetTempo, is SetTimeSignature -> pushTempo(project)
             is SetMasterVolume -> audio.setMaster(project.masterVolume.toLinear())
-            is RenameProject, is SetDescription, is SetKey, is RenameTrack, is SetLabel -> Unit
-            is AddTrack, is MoveTrack, is DeleteTrack, is ImportClips, is SplitClip, is MoveClip, is DeleteClip -> pushArrangement(project)
+            is RenameProject, is SetDescription, is SetKey, is RenameTrack, is SetLabel, is SetCountIn -> Unit
+            is AddTrack, is MoveTrack, is DeleteTrack, is ImportClips, is SplitClip, is MoveClip, is DeleteClip, is RecordTake -> pushArrangement(project)
         }
     }
 
@@ -513,9 +669,9 @@ class ProjectSession(
         }
     }
 
-    /** Undo and redo re-push what differs from [before] (the metronome toggle stays as it is: it is not history). */
+    /** Undo and redo re-push what differs from [before] (the metronome toggle and the count-in stay as they are: not history). */
     private fun restore(next: EditHistory, before: Project) {
-        val project = next.present.copy(metronomeOn = before.metronomeOn)
+        val project = next.present.copy(metronomeOn = before.metronomeOn, countIn = before.countIn)
         val restored = next.copy(present = project)
         lastEdit = null
         history = restored
@@ -635,9 +791,14 @@ class ProjectSession(
     private suspend fun observeEngineEvents() {
         audio.events.collect { event ->
             when (event) {
-                AudioEvent.Interrupted -> dispatch(PlaybackEvent.Interrupted)
+                AudioEvent.Interrupted -> {
+                    recording.interrupted()  // the take ends kept before the playback policy pauses (FR-021)
+                    dispatch(PlaybackEvent.Interrupted)
+                }
                 AudioEvent.InterruptionEnded -> dispatch(PlaybackEvent.InterruptionEnded)
                 AudioEvent.DeviceLost, AudioEvent.OutputRouteLost -> dispatch(PlaybackEvent.RouteLost)
+                AudioEvent.InputRouteChanged -> recording.inputRouteChanged()
+                is AudioEvent.OutputRouteChanged -> recording.outputRouteChanged(event.isSpeaker)
             }
         }
     }

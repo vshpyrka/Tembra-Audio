@@ -70,6 +70,9 @@ import kotlin.test.assertTrue
 class MetronomeViewModelTest {
 
     private val dispatcher = StandardTestDispatcher()
+
+    /** Where the view model runs the engine's starts and stops (T103); counts the hops, delegates to the test scheduler. */
+    private val audioDispatcher = CountingDispatcher(dispatcher)
     private lateinit var audio: FakeAudioEngine
     private lateinit var fakeHost: FakeBackgroundPlaybackHost
     private lateinit var host: RecordingHost
@@ -118,7 +121,7 @@ class MetronomeViewModelTest {
     fun tearDown() = Dispatchers.resetMain()
 
     private fun TestScope.viewModel(): MetronomeViewModel {
-        val viewModel = MetronomeViewModel(audio, host, preferences, store, picker, dispatcher)
+        val viewModel = MetronomeViewModel(audio, host, preferences, store, picker, dispatcher, audioDispatcher)
         created = viewModel
         runCurrent()
         return viewModel
@@ -193,6 +196,7 @@ class MetronomeViewModelTest {
         assertEquals(Tempo(90), preferences.snapshot.first().settings.tempo)
         audio.nextTick.running = true
         viewModel.togglePlayback()
+        runCurrent()
         viewModel.setTempo(Tempo(200))
         runCurrent()
         assertEquals("setGrid(bpm=200, ticks=1, levels=ACCC)", audio.calls.last())
@@ -222,12 +226,14 @@ class MetronomeViewModelTest {
         show(viewModel)
         audio.nextTick.running = true
         viewModel.togglePlayback()
+        runCurrent()
         assertEquals(PlaybackState.Running, viewModel.uiState.value.playback)
         val (keepAlive, callsBeforeKeepAlive) = host.log.single()
         assertEquals("keepAlive", keepAlive)
         assertEquals("startMetronome", audio.calls[callsBeforeKeepAlive], "the engine started before the host kept the process alive")
 
         viewModel.togglePlayback()
+        runCurrent()
         assertEquals(PlaybackState.Stopped, viewModel.uiState.value.playback)
         val (release, callsBeforeRelease) = host.log.last()
         assertEquals("release", release)
@@ -284,6 +290,7 @@ class MetronomeViewModelTest {
         audio.previewClick()
         audio.nextTick.running = true
         viewModel.togglePlayback()
+        runCurrent()
         assertEquals(PlaybackState.Running, viewModel.uiState.value.playback)
         assertEquals(listOf("previewClick(Click)", "stopTone", "startMetronome"), audio.calls.takeLast(3))
     }
@@ -419,12 +426,57 @@ class MetronomeViewModelTest {
 
     // --- User Story 2: bar shape and styles ------------------------------------------------------------------------------
 
+    /**
+     * Starting the click activates the session and opens the stream (about 100 ms on an iPhone 14, the same shape as
+     * the tuner's start), so the engine start and stop run on the audio dispatcher, never on the caller's thread; the
+     * screen moves to Starting and to Stopped at once (T103).
+     */
+    @Test
+    fun playStartsAndPauseStopsTheEngineOnTheAudioDispatcherNotTheCallersThread() = viewModelTest {
+        val viewModel = viewModel()
+        show(viewModel)
+        audio.nextTick.running = true
+        val beforeStart = audioDispatcher.dispatches
+        viewModel.togglePlayback()
+        assertEquals(PlaybackState.Starting, viewModel.uiState.value.playback, "the screen shows Starting at once")
+        assertTrue("startMetronome" !in audio.calls, "the engine started on the caller's thread")
+        runCurrent()
+        assertTrue(audioDispatcher.dispatches > beforeStart, "the start never reached the audio dispatcher")
+        assertTrue("startMetronome" in audio.calls)
+        assertEquals(PlaybackState.Running, viewModel.uiState.value.playback)
+        val beforeStop = audioDispatcher.dispatches
+        viewModel.togglePlayback()
+        assertEquals(PlaybackState.Stopped, viewModel.uiState.value.playback, "the screen shows Stopped at once")
+        assertTrue("stopMetronome" !in audio.calls, "the engine stopped on the caller's thread")
+        runCurrent()
+        assertTrue(audioDispatcher.dispatches > beforeStop, "the stop never reached the audio dispatcher")
+        assertEquals("stopMetronome", audio.calls.last { it.endsWith("Metronome") })
+        assertEquals(AudioState.Idle, audio.audioState)
+    }
+
+    /** A pause that lands while the start is still on the audio dispatcher: the engine starts then stops, the screen stays Stopped. */
+    @Test
+    fun aPauseDuringTheStartLeavesTheEngineIdleAndTheScreenStopped() = viewModelTest {
+        val viewModel = viewModel()
+        show(viewModel)
+        audio.nextTick.running = true
+        viewModel.togglePlayback()
+        viewModel.togglePlayback()
+        assertEquals(PlaybackState.Stopped, viewModel.uiState.value.playback)
+        runCurrent()
+        assertEquals(listOf("startMetronome", "stopMetronome"), audio.calls.filter { it.endsWith("Metronome") })
+        assertEquals(PlaybackState.Stopped, viewModel.uiState.value.playback, "the finished start must not revive the click")
+        assertEquals(AudioState.Idle, audio.audioState)
+        assertEquals(listOf("keepAlive", "release"), host.log.map { it.first })
+    }
+
     private fun TestScope.running(settings: MetronomeSettings = MetronomeSettings()): MetronomeViewModel {
         preferences = CountingPreferences(FakeMetronomePreferences(MetronomePreferencesSnapshot(settings)))
         val viewModel = viewModel()
         show(viewModel)
         audio.nextTick.running = true
         viewModel.togglePlayback()
+        runCurrent() // the start reaches the engine on the audio dispatcher (T103)
         return viewModel
     }
 
@@ -725,6 +777,7 @@ class MetronomeViewModelTest {
         val messages = collectMessages(viewModel)
         show(viewModel)
         viewModel.selectSound(rim)
+        runCurrent() // the first preview reaches the engine on the audio dispatcher
         // The first preview still sounds: the engine refuses the second.
         audio.failNextStart = AudioResult.Error(-1)
         viewModel.selectSound(ClickSound.BuiltIn(BuiltInClickSound.DigitalBeep))
@@ -781,7 +834,7 @@ class MetronomeViewModelTest {
             ),
         )
         val prepare = HeldDispatcher()
-        val viewModel = MetronomeViewModel(audio, host, preferences, store, picker, prepare)
+        val viewModel = MetronomeViewModel(audio, host, preferences, store, picker, prepare, audioDispatcher)
         created = viewModel
         show(viewModel)
         // Loaded, with Classic Wood standing in while the custom sound is prepared.
@@ -809,7 +862,7 @@ class MetronomeViewModelTest {
     )
 
     private fun TestScope.viewModelPreparingOn(prepare: CoroutineDispatcher, filePicker: AudioFilePicker = picker): MetronomeViewModel {
-        val viewModel = MetronomeViewModel(audio, host, preferences, store, filePicker, prepare)
+        val viewModel = MetronomeViewModel(audio, host, preferences, store, filePicker, prepare, audioDispatcher)
         created = viewModel
         runCurrent()
         return viewModel
@@ -1233,5 +1286,16 @@ class MetronomeViewModelTest {
         assertEquals(0, fakeHost.releaseCount)
         assertEquals(PlaybackState.Stopped, viewModel.uiState.value.playback)
         assertEquals(emptyList(), messages, "an ignored event produced a message")
+    }
+}
+
+/** Counts the blocks handed to [delegate]; a `withContext` onto it from the test dispatcher counts at least once. */
+private class CountingDispatcher(private val delegate: CoroutineDispatcher) : CoroutineDispatcher() {
+    var dispatches: Int = 0
+        private set
+
+    override fun dispatch(context: CoroutineContext, block: Runnable) {
+        dispatches += 1
+        delegate.dispatch(context, block)
     }
 }

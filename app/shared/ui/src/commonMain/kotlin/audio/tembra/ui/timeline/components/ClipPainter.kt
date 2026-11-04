@@ -31,6 +31,7 @@ internal fun DrawScope.drawClip(
     style: ClipStyle,
     measurer: TextMeasurer,
     hovered: Boolean = false,
+    lengthFrames: Long = clip.lengthFrames,
 ) {
     val width = right - left
     if (width <= 0f) return
@@ -67,7 +68,7 @@ internal fun DrawScope.drawClip(
         val halfBody = (bodyBottom - bodyTop) / 2 - WAVE_INSET
         val overview = clip.overview
         if (overview != null && halfBody > 0f) {
-            val framesPerPixel = clip.lengthFrames.toDouble() / width
+            val framesPerPixel = lengthFrames.toDouble() / width
             val level = overview.levelFor(framesPerPixel)
             var x = visibleLeft + COLUMN_STRIDE / 2
             while (x < visibleRight) {
@@ -95,7 +96,26 @@ internal fun DrawScope.drawClip(
     }
 }
 
+/**
+ * Draws the growing clip of a running take (feature 010): the block, caption band, caption and waveform of [drawClip],
+ * never selected. [take] is built from the 10 Hz mirror; the per-frame values are the [right] edge and the kept
+ * [lengthFrames], so the columns follow the telemetry's length and do not stretch. At least [MIN_TAKE_WIDTH] wide so a
+ * just-started take is visible.
+ */
+internal fun DrawScope.drawLiveTake(
+    take: ClipUi,
+    left: Float,
+    right: Float,
+    lengthFrames: Long,
+    tint: androidx.compose.ui.graphics.Color,
+    style: ClipStyle,
+    measurer: TextMeasurer,
+) {
+    drawClip(take, left, max(right, left + MIN_TAKE_WIDTH), tint, selected = false, style = style, measurer = measurer, lengthFrames = lengthFrames)
+}
+
 internal const val CLIP_INSET = 4f
+private const val MIN_TAKE_WIDTH = 4f
 private const val BLOCK_ALPHA = 0.35f
 /** A pointer over the clip lifts the block's tint (Constitution IV hover states). */
 private const val HOVER_ALPHA = 0.5f

@@ -2,8 +2,12 @@ package audio.tembra.ui.timeline
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.requiredWidth
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
@@ -22,6 +26,8 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.assertWidthIsEqualTo
@@ -44,6 +50,8 @@ import audio.tembra.core.project.GridSize
 import audio.tembra.core.project.InstrumentLabel
 import audio.tembra.core.project.PlaybackState
 import audio.tembra.core.project.TrackId
+import audio.tembra.ui.session.LiveTakeUi
+import audio.tembra.ui.transport.RecordButtonState
 import audio.tembra.core.timeline.TimelineViewport
 import audio.tembra.data.projects.OverviewStatus
 import audio.tembra.ui.perf.PerfAnchors
@@ -55,6 +63,7 @@ import audio.tembra.ui.timeline.components.DELETE_DIALOG_TAG
 import audio.tembra.ui.timeline.components.METRONOME_SHEET_TAG
 import audio.tembra.ui.timeline.components.TEMPO_DIALOG_TAG
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toPersistentList
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -75,6 +84,10 @@ class TimelineScreenTest {
     private val padId = TrackId("t2")
     private val calls = mutableListOf<String>()
     private val screen = mutableStateOf(TimelineUiState())
+    private val snackbarHostState = SnackbarHostState()
+    /** A message the content shows through the host, as the stateful screen does; the result of the last one shown. */
+    private val shown = mutableStateOf<TimelineMessage?>(null)
+    private val results = mutableListOf<SnackbarResult>()
 
     private val callbacks = TimelineCallbacks.None.copy(
         onPlayPause = { calls += "play" },
@@ -98,6 +111,12 @@ class TimelineScreenTest {
             screen.value = screen.value.copy(overviewStripShown = it)
         },
         onScrollTo = { calls += "scrollTo" },
+        onArm = { id ->
+            calls += "arm(${id.value})"
+            screen.value = screen.value.copy(tracks = screen.value.tracks.map { it.copy(armed = it.id == id && !it.armed, recordHere = it.id == id && !it.armed && !screen.value.recordInBar) }.toPersistentList())
+        },
+        onRecord = { calls += "record" },
+        onSeek = { calls += "seek" },
     )
 
     private fun demoState(ready: Boolean = true): TimelineUiState {
@@ -134,12 +153,16 @@ class TimelineScreenTest {
             TembraTheme {
                 CompositionLocalProvider(LocalDawColors provides (daw ?: LocalDawColors.current)) {
                     Box(if (width != null) Modifier.requiredWidth(width).fillMaxHeight() else Modifier) {
+                        LaunchedEffect(shown.value) {
+                            val message = shown.value ?: return@LaunchedEffect
+                            results += snackbarHostState.showSnackbar(message.text, actionLabel = message.action, duration = SnackbarDuration.Long)
+                        }
                         TimelineScreenContent(
                             state = screen.value,
                             callbacks = callbacks,
                             telemetry = ScriptedTransportTelemetry.stopped(0.0),
                             layout = layout,
-                            snackbarHostState = SnackbarHostState(),
+                            snackbarHostState = snackbarHostState,
                         )
                     }
                 }
@@ -406,6 +429,120 @@ class TimelineScreenTest {
         setScreen(demoState().copy(playback = PlaybackState.Playing, positionBeats = Beats(8.0), positionSeconds = 8.0 * 60.0 / 124.0), TimelineLayout.Compact)
         onNodeWithTag(PerfAnchors.TRANSPORT_PLAY).assertContentDescriptionEquals("Pause")
         onNodeWithTag(TimelineTestTags.PLAYHEAD).assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "3.1"))
+    }
+
+    // --- Recording (feature 010, User Story 1; T048) ------------------------------------------------------------------
+
+    /** The armed state with the bar too narrow for Record: the header holds it (spec FR-007, FR-026). */
+    private fun armedState(barWidth: Dp = 360.dp): TimelineUiState {
+        val base = demoState().copy(barWidth = barWidth)
+        return base.copy(tracks = base.tracks.map { it.copy(armed = it.id == drumsId, recordHere = it.id == drumsId && !base.recordInBar) }.toPersistentList())
+    }
+
+    /** A take of 4.1 s running on the drums from bar 3 (spec FR-010). */
+    private fun recordingState(barWidth: Dp = 360.dp): TimelineUiState = armedState(barWidth).copy(
+        playback = PlaybackState.Playing,
+        positionBeats = Beats(12.0),
+        positionSeconds = 12.0 * 60.0 / 124.0,
+        takeRunning = true,
+        recordPhase = RecordButtonState.Recording,
+        liveTake = LiveTakeUi(trackId = drumsId, clipName = "Take 1", startBeats = Beats(8.0), overview = null, framesCaptured = 196_800, sampleRate = 48_000),
+    )
+
+    @Test
+    fun theArmToggleArmsTheTrackAndRecordAppearsInTheCompactHeaderAt360dp() = runComposeUiTest {
+        setScreen(demoState().copy(barWidth = 360.dp), TimelineLayout.Compact, width = 360.dp)
+        onNodeWithTag(PerfAnchors.TRANSPORT_RECORD).assertDoesNotExist()
+        onNodeWithTag(TimelineTestTags.record(0)).assertDoesNotExist()
+        onNodeWithTag(TimelineTestTags.arm(0)).assertIsOff().performClick()
+        assertEquals(listOf("arm(t1)"), calls)
+        mainClock.advanceTimeByFrame()  // the held state changed under a frozen clock: one frame recomposes the header
+        onNodeWithTag(TimelineTestTags.arm(0)).assertIsOn()
+        onNodeWithTag(TimelineTestTags.header(0)).assertContentDescriptionEquals("Drums, Drums, +0.0dB, armed")
+        onNodeWithTag(TimelineTestTags.record(0)).assertContentDescriptionEquals("Record").performClick()
+        assertEquals(listOf("arm(t1)", "record"), calls)
+        onNodeWithTag(TimelineTestTags.record(1)).assertDoesNotExist()
+    }
+
+    @Test
+    fun recordSitsInTheBarFrom432dpAndTheHeaderKeepsItsChip() = runComposeUiTest {
+        setScreen(armedState(barWidth = 900.dp), TimelineLayout.Expanded, width = 900.dp)
+        onNodeWithTag(TimelineTestTags.record(0)).assertDoesNotExist()
+        onNodeWithTag(PerfAnchors.TRANSPORT_RECORD).assertContentDescriptionEquals("Record").performClick()
+        assertEquals(listOf("record"), calls)
+        onNodeWithTag(TimelineTestTags.arm(0)).assertIsOn()
+    }
+
+    @Test
+    fun aRunningTakeDrawsTheGrowingClipAboveTheArmedTrack() = runComposeUiTest {
+        setScreen(recordingState(), TimelineLayout.Compact, width = 360.dp)
+        onNodeWithTag(TimelineTestTags.TAKE_CLIP).assertContentDescriptionEquals("Recording, Take 1, 00:04.10")
+        onNodeWithTag(TimelineTestTags.record(0)).assertContentDescriptionEquals("Recording")
+        onNodeWithTag(TimelineTestTags.clip(0)).assertExists()
+        onNodeWithTag(PerfAnchors.TRANSPORT_PLAY).assertContentDescriptionEquals("Pause")
+    }
+
+    @Test
+    fun aFinishedTakeIsAClipNamedTake1() = runComposeUiTest {
+        val base = armedState()
+        val drums = base.tracks[0]
+        val take = FakeOverviews.clip("take-1", "Take 1", 8.0, 8.4)
+        setScreen(base.copy(tracks = persistentListOf(drums.copy(clips = (drums.clips + take).toPersistentList()), base.tracks[1])), TimelineLayout.Compact, width = 360.dp)
+        onNodeWithTag(TimelineTestTags.TAKE_CLIP).assertDoesNotExist()
+        onNodeWithTag(TimelineTestTags.clip(1)).assertContentDescriptionEquals("Take 1, track 1, bar 3 beat 1, 4 seconds")
+    }
+
+    @Test
+    fun whileATakeRunsTheToolbarAndTheSeekingControlsAreDisabled() = runComposeUiTest {
+        setScreen(recordingState(barWidth = 900.dp), TimelineLayout.Expanded, width = 900.dp)
+        onNodeWithTag(PerfAnchors.TIMELINE_ADD_TRACK).assertIsNotEnabled()
+        onNodeWithTag(TimelineTestTags.ADD_AUDIO).assertIsNotEnabled()
+        onNodeWithTag(TimelineTestTags.ADD_AUDIO_NEW_TRACK).assertIsNotEnabled()
+        onNodeWithTag(TimelineTestTags.TOOLBAR_TEMPO).assertIsNotEnabled()
+        onNodeWithTag(TimelineTestTags.UNDO).assertIsNotEnabled()
+        onNodeWithTag(TimelineTestTags.REDO).assertIsNotEnabled()
+        onNodeWithTag(PerfAnchors.TRANSPORT_SKIP_START).assertIsNotEnabled()
+        onNodeWithTag(PerfAnchors.TRANSPORT_RECORD).assertContentDescriptionEquals("Recording").assertIsEnabled()
+        // Mute, solo and the arm toggle keep working; the arm toggle is only refused by the ViewModel (spec FR-018).
+        onNodeWithTag(TimelineTestTags.mute(0)).assertIsEnabled()
+    }
+
+    /** The denied message (feature 010, FR-020; T071): the snackbar carries "Open settings" as a tagged action and reports the tap. */
+    @Test
+    fun theDeniedSnackbarOffersOpenSettingsAsATaggedAction() = runComposeUiTest {
+        setScreen(demoState(), TimelineLayout.Compact)
+        shown.value = TimelineMessage.MicrophoneDenied(openSettings = true)
+        mainClock.advanceTimeByFrame()
+        mainClock.advanceTimeByFrame()
+        onNodeWithText("Microphone access is needed to record").assertExists()
+        onNodeWithTag(TimelineTestTags.DENIED_ACTION).assertTextEquals("Open settings").performClick()
+        mainClock.advanceTimeByFrame()
+        assertEquals(listOf(SnackbarResult.ActionPerformed), results)
+    }
+
+    /** "+ Track" on a phone lands the new row below the visible lanes: the list scrolls it into view (feature 010, FR-008). */
+    @Test
+    fun aNewlyAddedTrackIsScrolledIntoViewOnAPhone() = runComposeUiTest {
+        val base = demoState()
+        val tall = TrackUi(id = TrackId("t3"), name = "Keys", label = null, colorIndex = 2, gainDb = GainDb.Unity, muted = false, soloed = false, audible = true, clips = persistentListOf())
+        val taller = tall.copy(id = TrackId("t4"), name = "Pad 2")
+        screen.value = base.copy(tracks = persistentListOf(base.tracks[0], base.tracks[1], tall, taller))
+        mainClock.autoAdvance = false
+        setContent {
+            TembraTheme {
+                Box(Modifier.requiredWidth(360.dp).requiredHeight(640.dp)) {
+                    TimelineScreenContent(state = screen.value, callbacks = callbacks, telemetry = ScriptedTransportTelemetry.stopped(0.0), layout = TimelineLayout.Compact, snackbarHostState = snackbarHostState)
+                }
+            }
+        }
+        mainClock.advanceTimeByFrame()
+        val added = tall.copy(id = TrackId("t5"), name = "Track 1")
+        screen.value = screen.value.copy(tracks = (screen.value.tracks + added).toPersistentList(), selection = Selection.TrackSelected(added.id))
+        mainClock.advanceTimeBy(1_500)
+        val list = onNodeWithTag(TimelineTestTags.TRACK_LIST).getUnclippedBoundsInRoot()
+        val header = onNodeWithTag(TimelineTestTags.header(4)).assertIsDisplayed().getUnclippedBoundsInRoot()
+        assertTrue(header.bottom <= list.bottom + 1.dp && header.top >= list.top - 1.dp, "the new header $header is not inside the list $list")
+        onNodeWithTag(TimelineTestTags.arm(4)).assertIsDisplayed()
     }
 
     /** Opaque stand-ins for the lane's tokens, so a drawn snap column reads unambiguously as [snapColor]. */

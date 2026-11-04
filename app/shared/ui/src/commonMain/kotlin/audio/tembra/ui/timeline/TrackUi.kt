@@ -19,8 +19,13 @@ data class TrackUi(
     /** From the solo/mute truth table (spec FR-024): drawn dimmed when false. */
     val audible: Boolean,
     val clips: ImmutableList<ClipUi>,
+    // Feature 010 (contracts/timeline-recording-ui.md).
+    /** The record-arm toggle is lit: the input meter shows in the header (spec FR-001, FR-005). */
+    val armed: Boolean = false,
+    /** Record sits in this compact header in the label chip's place (bars narrower than 432 dp while armed; research R17). */
+    val recordHere: Boolean = false,
 ) {
-    /** "Track 2, Guitar, −2.4dB, muted" (contracts/timeline-screen.md "Semantics"). */
+    /** "Track 2, Guitar, −2.4dB, muted, armed" (contracts/timeline-screen.md "Semantics"; FR-029 adds "armed"). */
     val description: String
         get() = buildList {
             add(name)
@@ -28,5 +33,6 @@ data class TrackUi(
             add(gainDb.readout)
             if (muted) add("muted")
             if (soloed) add("solo")
+            if (armed) add("armed")
         }.joinToString(", ")
 }

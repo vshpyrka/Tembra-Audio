@@ -300,7 +300,7 @@ PROFILE_FIXTURES = os.path.join(FIXTURES_DIR, "profile")
 COMPARISON_CLASS = "audio.tembra.perf.ProfileComparisonBenchmark"
 
 
-@pytest.mark.parametrize("method", ["startup", "tuner", "metronome", "timeline", "stress"])
+@pytest.mark.parametrize("method", ["startup", "tuner", "metronome", "timeline", "recording", "stress"])
 def test_journey_of_method_maps_the_comparison_class_by_method(method):
     from tracepulse.collect_android import journey_of_method
     assert journey_of_method(COMPARISON_CLASS, method) == method
@@ -323,10 +323,10 @@ def test_a_comparison_fixture_parses_into_per_journey_results_with_the_round_cat
     from tracepulse.collect_android import collect_round
     collected = collect_round([os.path.join(PROFILE_FIXTURES, "benchmarkData-none.json")], cfg)
     by_name = {j.journey: j for j in collected.journeys}
-    assert sorted(by_name) == ["metronome", "startup", "stress", "timeline", "tuner"]
+    assert sorted(by_name) == ["metronome", "recording", "startup", "stress", "timeline", "tuner"]
     assert set(by_name["startup"].metrics) == {"startup.ttid_ms", "startup.ttfd_ms"}
     assert by_name["startup"].iterations == 20
-    for journey in ("tuner", "metronome", "timeline", "stress"):
+    for journey in ("tuner", "metronome", "timeline", "recording", "stress"):
         keys = set(by_name[journey].metrics)
         assert {"frames.p50_ms", "frames.p90_ms", "frames.p99_ms", "frames.overrun_p90_ms",
                 "memory.peak_kb", "memory.end_kb", "journey.duration_ms"} <= keys, journey

@@ -839,3 +839,340 @@ TEST_CASE("clip sources open in idle and in transport, and a referenced source i
     tembra_clip_source_close(another);
 }
 
+
+// --- Capture, takes and monitoring (feature 010, specs/010-timeline-recording/contracts/engine-c-abi-v7.md) ---
+
+#include <cstdio>
+#include <fstream>
+
+namespace {
+
+tembra_capture_config monoCapture() {
+    tembra_capture_config config{};
+    config.max_channels = 1;
+    return config;
+}
+
+tembra_record_config recordInto(const std::string& path, uint32_t track = 0, uint32_t countIn = 0) {
+    tembra_record_config config{};
+    config.wav_path = path.c_str();
+    config.track_index = track;
+    config.count_in_beats = countIn;
+    config.max_frames = 30LL * 60 * 48000;
+    config.min_free_bytes = 50ULL * 1024 * 1024;
+    return config;
+}
+
+/** Pulls one block of [frames] with an input block of the same length at [level] fed first (the duplex callback). */
+void pullDuplex(tembra::FakeAudioDevice* fake, uint32_t frames, float level) {
+    std::vector<float> input(frames, level);
+    fake->feedInputWhileRendering(input.data(), 1, frames);
+    pullMono(fake, frames);
+}
+
+bool fileExists(const std::string& path) { return std::ifstream(path).good(); }
+
+std::string takePath(const char* name) {
+    const std::string path = tembra::fixtures::tempPath(name);
+    std::remove(path.c_str());
+    return path;
+}
+
+}  // namespace
+
+TEST_CASE("arming needs the transport, is idempotent and fails cleanly when the input cannot open", "[engine][capture]") {
+    tembra::FakeAudioDevice* fake = installFake();
+    const tembra_capture_config config = monoCapture();
+    REQUIRE(tembra_transport_arm(nullptr) == TEMBRA_ERR_ARGUMENT);
+    REQUIRE(tembra_transport_arm(&config) == TEMBRA_ERR_STATE);  // IDLE
+    tembra_transport_config transport{};
+    REQUIRE(tembra_transport_open(&transport) == TEMBRA_OK);
+    fake->failInputOpen = true;
+    REQUIRE(tembra_transport_arm(&config) == TEMBRA_ERR_DEVICE);
+    REQUIRE(tembra_audio_state() == TEMBRA_AUDIO_TRANSPORT);
+    REQUIRE(fake->outputOpen);
+    tembra_capture_snapshot snapshot{};
+    snapshot.armed = 7;
+    tembra_capture_read(&snapshot);
+    REQUIRE(snapshot.armed == 0);
+    fake->failInputOpen = false;
+    fake->inputChannelsAvailable = 2;
+    REQUIRE(tembra_transport_arm(&config) == TEMBRA_OK);
+    REQUIRE(fake->duplexInputOpen);
+    REQUIRE(fake->inputOpenCount == 1);
+    REQUIRE(fake->inputRequestedMaxChannels == 1);
+    REQUIRE(fake->inputRequestedRate == 48000);
+    REQUIRE(tembra_transport_arm(&config) == TEMBRA_OK);  // idempotent
+    REQUIRE(fake->inputOpenCount == 1);
+    pullMono(fake, 256);
+    tembra_capture_read(&snapshot);
+    REQUIRE(snapshot.armed == 1);
+    REQUIRE(snapshot.input_channels == 1);
+    REQUIRE(snapshot.sample_rate == 48000);
+    REQUIRE(snapshot.recording == 0);
+    // The tuner and the other sources are still refused while armed.
+    tembra_tuner_config tuner{};
+    tembra_tuner_default_config(&tuner);
+    REQUIRE(tembra_tuner_start(&tuner) == TEMBRA_ERR_STATE);
+    REQUIRE(tembra_metronome_start() == TEMBRA_ERR_STATE);
+    tembra_transport_disarm();
+    REQUIRE_FALSE(fake->duplexInputOpen);
+    REQUIRE(fake->inputCloseCount == 1);
+    REQUIRE(tembra_audio_state() == TEMBRA_AUDIO_TRANSPORT);
+    REQUIRE(fake->outputOpen);
+    tembra_transport_disarm();  // idempotent
+    REQUIRE(fake->inputCloseCount == 1);
+    tembra_capture_read(&snapshot);
+    REQUIRE(snapshot.armed == 0);
+    tembra_capture_read(nullptr);  // tolerated
+    tembra_transport_close();
+    REQUIRE(tembra_audio_state() == TEMBRA_AUDIO_IDLE);
+}
+
+TEST_CASE("the alignment is the input plus the output latency at the stream rate", "[engine][capture]") {
+    tembra::FakeAudioDevice* fake = installFake();
+    fake->inputLatencyNs = 7'000'000;
+    fake->latencyNanos = 13'000'000;
+    tembra_transport_config transport{};
+    REQUIRE(tembra_transport_open(&transport) == TEMBRA_OK);
+    const tembra_capture_config config = monoCapture();
+    REQUIRE(tembra_transport_arm(&config) == TEMBRA_OK);
+    pullMono(fake, 256);
+    tembra_capture_snapshot snapshot{};
+    tembra_capture_read(&snapshot);
+    REQUIRE(snapshot.alignment_frames == 960);
+    REQUIRE(snapshot.input_latency_ns == 7'000'000);
+    REQUIRE(snapshot.output_latency_ns == 13'000'000);
+    // A reported input latency (iOS) replaces the device's.
+    tembra_capture_set_input_latency_ns(11'000'000);
+    pullMono(fake, 256);
+    tembra_capture_read(&snapshot);
+    REQUIRE(snapshot.alignment_frames == 1152);
+    REQUIRE(snapshot.input_latency_ns == 11'000'000);
+    tembra_capture_set_input_latency_ns(0);
+    tembra_transport_disarm();
+    tembra_transport_close();
+}
+
+TEST_CASE("a take is recorded from the next block, stopped by the host and described by the take info", "[engine][capture]") {
+    tembra::FakeAudioDevice* fake = installFake();
+    fake->inputLatencyNs = 1'000'000;  // 48 frames of alignment
+    fake->latencyNanos = 0;
+    tembra_transport_config transport{};
+    REQUIRE(tembra_transport_open(&transport) == TEMBRA_OK);
+    REQUIRE(tembra_transport_set_tempo(120, 4, 4) == TEMBRA_OK);
+    const std::string path = takePath("tembra-engine-take.wav");
+    tembra_record_config record = recordInto(path);
+    tembra_take_info info{};
+    REQUIRE(tembra_transport_record_start(nullptr) == TEMBRA_ERR_ARGUMENT);
+    REQUIRE(tembra_transport_record_start(&record) == TEMBRA_ERR_STATE);  // not armed
+    REQUIRE(tembra_transport_record_stop(&info) == TEMBRA_ERR_STATE);     // no take
+    REQUIRE(tembra_transport_record_cancel() == TEMBRA_ERR_STATE);
+    const tembra_capture_config config = monoCapture();
+    REQUIRE(tembra_transport_arm(&config) == TEMBRA_OK);
+    REQUIRE(tembra_transport_seek_beats(2.0) == TEMBRA_OK);  // frame 48000
+    pullDuplex(fake, 512, 0.0f);
+    REQUIRE(tembra_transport_record_start(&record) == TEMBRA_OK);
+    REQUIRE(tembra_transport_record_start(&record) == TEMBRA_ERR_STATE);  // a take already runs
+    for (int block = 0; block < 10; ++block) pullDuplex(fake, 480, 0.25f);  // 4800 frames of input
+    tembra_capture_snapshot snapshot{};
+    tembra_capture_read(&snapshot);
+    REQUIRE(snapshot.recording == 1);
+    REQUIRE(snapshot.pre_roll == 0);
+    REQUIRE(snapshot.frames_captured == 4800 - 48);
+    REQUIRE(snapshot.take_start_frames == 48000);
+    REQUIRE(snapshot.peak[0] == 0.25f);
+    tembra_transport_snapshot transportSnapshot{};
+    tembra_transport_read(&transportSnapshot);
+    REQUIRE(transportSnapshot.playing == 1);
+    REQUIRE(transportSnapshot.recording == 1);
+    REQUIRE(transportSnapshot.count_in_beats_left == -1);
+    REQUIRE(tembra_transport_record_stop(nullptr) == TEMBRA_ERR_ARGUMENT);
+    REQUIRE(tembra_transport_record_stop(&info) == TEMBRA_OK);
+    REQUIRE(info.frames == 4800 - 48);
+    REQUIRE(info.start_frames == 48000);
+    REQUIRE(std::abs(info.start_beats - 2.0) < 1e-9);
+    REQUIRE(info.channels == 1);
+    REQUIRE(info.sample_rate == 48000);
+    REQUIRE(info.alignment_frames == 48);
+    REQUIRE(info.stop_reason == TEMBRA_TAKE_STOP_USER);
+    tembra_audio_info audio{};
+    REQUIRE(tembra_audio_inspect(path.c_str(), &audio) == TEMBRA_OK);
+    REQUIRE(audio.frames == 4800 - 48);
+    REQUIRE(audio.channels == 1);
+    REQUIRE(tembra_transport_record_stop(&info) == TEMBRA_ERR_STATE);  // collected once
+    tembra_transport_read(&transportSnapshot);
+    REQUIRE(transportSnapshot.playing == 1);  // playback continues after the stop
+    tembra_capture_read(&snapshot);
+    REQUIRE(snapshot.armed == 1);
+    // The live peak buckets are served from the ring: 4752 frames = 18 buckets of 256.
+    tembra_peak_bucket buckets[32];
+    uint64_t next = 0;
+    REQUIRE(tembra_capture_read_peaks(0, buckets, 32, &next) == 18);
+    REQUIRE(next == 18);
+    REQUIRE(buckets[0].max[0] == 32);  // 0.25 × 127
+    REQUIRE(tembra_capture_read_peaks(0, nullptr, 32, &next) == 0);
+    tembra_transport_disarm();
+    tembra_transport_close();
+    std::remove(path.c_str());
+}
+
+TEST_CASE("a take under a hundredth of a second is discarded with its file", "[engine][capture]") {
+    tembra::FakeAudioDevice* fake = installFake();
+    tembra_transport_config transport{};
+    REQUIRE(tembra_transport_open(&transport) == TEMBRA_OK);
+    const tembra_capture_config config = monoCapture();
+    REQUIRE(tembra_transport_arm(&config) == TEMBRA_OK);
+    const std::string path = takePath("tembra-engine-short-take.wav");
+    tembra_record_config record = recordInto(path);
+    REQUIRE(tembra_transport_record_start(&record) == TEMBRA_OK);
+    REQUIRE(fileExists(path));
+    pullDuplex(fake, 256, 0.1f);  // 256 frames: 5 ms
+    tembra_take_info info{};
+    REQUIRE(tembra_transport_record_stop(&info) == TEMBRA_OK);
+    REQUIRE(info.frames == 0);
+    REQUIRE_FALSE(fileExists(path));
+    REQUIRE(tembra_transport_pause() == TEMBRA_OK);
+    tembra_transport_disarm();
+    tembra_transport_close();
+}
+
+TEST_CASE("an unwritable take path is refused with ERR_IO and the arm stays", "[engine][capture]") {
+    tembra::FakeAudioDevice* fake = installFake();
+    tembra_transport_config transport{};
+    REQUIRE(tembra_transport_open(&transport) == TEMBRA_OK);
+    const tembra_capture_config config = monoCapture();
+    REQUIRE(tembra_transport_arm(&config) == TEMBRA_OK);
+    const std::string bad = "/nonexistent-tembra-dir/take.wav";
+    tembra_record_config record = recordInto(bad);
+    REQUIRE(tembra_transport_record_start(&record) == TEMBRA_ERR_IO);
+    pullMono(fake, 256);
+    tembra_capture_snapshot snapshot{};
+    tembra_capture_read(&snapshot);
+    REQUIRE(snapshot.armed == 1);
+    REQUIRE(snapshot.recording == 0);
+    tembra_transport_snapshot transportSnapshot{};
+    tembra_transport_read(&transportSnapshot);
+    REQUIRE(transportSnapshot.playing == 0);
+    tembra_transport_disarm();
+    tembra_transport_close();
+}
+
+TEST_CASE("closing the transport while recording ends the take with TRANSPORT_CLOSED and finalises the file first", "[engine][capture]") {
+    tembra::FakeAudioDevice* fake = installFake();
+    tembra_transport_config transport{};
+    REQUIRE(tembra_transport_open(&transport) == TEMBRA_OK);
+    const tembra_capture_config config = monoCapture();
+    REQUIRE(tembra_transport_arm(&config) == TEMBRA_OK);
+    const std::string path = takePath("tembra-engine-closed-take.wav");
+    tembra_record_config record = recordInto(path);
+    REQUIRE(tembra_transport_record_start(&record) == TEMBRA_OK);
+    for (int block = 0; block < 20; ++block) pullDuplex(fake, 480, 0.3f);
+    tembra_transport_close();
+    REQUIRE(tembra_audio_state() == TEMBRA_AUDIO_IDLE);
+    REQUIRE_FALSE(fake->duplexInputOpen);
+    tembra_audio_info audio{};
+    REQUIRE(tembra_audio_inspect(path.c_str(), &audio) == TEMBRA_OK);
+    REQUIRE(audio.frames == 9600);
+    // The host collects the take once, from IDLE.
+    tembra_take_info info{};
+    REQUIRE(tembra_transport_record_stop(&info) == TEMBRA_OK);
+    REQUIRE(info.stop_reason == TEMBRA_TAKE_STOP_TRANSPORT_CLOSED);
+    REQUIRE(info.frames == 9600);
+    REQUIRE(tembra_transport_record_stop(&info) == TEMBRA_ERR_STATE);
+    std::remove(path.c_str());
+}
+
+TEST_CASE("an input reopen ends the take with INPUT_LOST and keeps the arm; an output reopen clears monitoring", "[engine][capture]") {
+    tembra::FakeAudioDevice* fake = installFake();
+    tembra_transport_config transport{};
+    REQUIRE(tembra_transport_open(&transport) == TEMBRA_OK);
+    REQUIRE(tembra_transport_set_monitor(1, 0) == TEMBRA_ERR_STATE);  // not armed
+    const tembra_capture_config config = monoCapture();
+    REQUIRE(tembra_transport_arm(&config) == TEMBRA_OK);
+    REQUIRE(tembra_transport_set_monitor(1, 5) == TEMBRA_ERR_ARGUMENT);  // no such track
+    tembra_arrangement arrangement{};
+    arrangement.track_count = 1;
+    arrangement.tracks[0].gain_linear = 1.0f;
+    arrangement.tracks[0].audible = 1;
+    REQUIRE(tembra_transport_set_arrangement(&arrangement) == TEMBRA_OK);
+    REQUIRE(tembra_transport_set_monitor(1, 0) == TEMBRA_OK);
+    pullDuplex(fake, 480, 0.4f);
+    pullDuplex(fake, 480, 0.4f);
+    tembra_capture_snapshot snapshot{};
+    tembra_capture_read(&snapshot);
+    REQUIRE(snapshot.monitoring == 1);
+    std::vector<float> input(480, 0.4f);
+    fake->feedInputWhileRendering(input.data(), 1, 480);
+    const auto heard = pullMono(fake, 480);
+    REQUIRE(std::abs(heard.back() - 0.4f) < 2e-3f);  // the input through the unity strip, while stopped
+    REQUIRE(fake->reopenOutput());
+    pullDuplex(fake, 480, 0.4f);
+    tembra_capture_read(&snapshot);
+    REQUIRE(snapshot.monitoring == 0);
+    REQUIRE(snapshot.armed == 1);
+    // A take, then the input is reopened by the platform.
+    const std::string path = takePath("tembra-engine-input-lost.wav");
+    tembra_record_config record = recordInto(path);
+    REQUIRE(tembra_transport_record_start(&record) == TEMBRA_OK);
+    for (int block = 0; block < 10; ++block) pullDuplex(fake, 480, 0.3f);
+    fake->reopenInput();
+    pullDuplex(fake, 480, 0.3f);
+    tembra_capture_read(&snapshot);
+    REQUIRE(snapshot.recording == 0);
+    REQUIRE(snapshot.armed == 1);
+    REQUIRE(snapshot.stop_reason == TEMBRA_TAKE_STOP_INPUT_LOST);
+    tembra_take_info info{};
+    REQUIRE(tembra_transport_record_stop(&info) == TEMBRA_OK);
+    REQUIRE(info.stop_reason == TEMBRA_TAKE_STOP_INPUT_LOST);
+    REQUIRE(info.frames == 4800);
+    tembra_audio_health health{};
+    REQUIRE(tembra_engine_audio_health(&health) == 0);
+    REQUIRE(health.input_overruns == 0);
+    REQUIRE(health.record_backlog > 0);
+    tembra_transport_disarm();
+    tembra_transport_close();
+    std::remove(path.c_str());
+}
+
+TEST_CASE("a count-in pre-rolls from stopped, cancel restores the position, and the snapshot counts the beats", "[engine][capture]") {
+    tembra::FakeAudioDevice* fake = installFake();
+    tembra_transport_config transport{};
+    REQUIRE(tembra_transport_open(&transport) == TEMBRA_OK);
+    REQUIRE(tembra_transport_set_tempo(120, 4, 4) == TEMBRA_OK);
+    const tembra_capture_config config = monoCapture();
+    REQUIRE(tembra_transport_arm(&config) == TEMBRA_OK);
+    REQUIRE(tembra_transport_seek_beats(8.0) == TEMBRA_OK);  // frame 192000
+    pullDuplex(fake, 480, 0.0f);
+    const std::string path = takePath("tembra-engine-count-in.wav");
+    tembra_record_config record = recordInto(path, 0, 4);
+    REQUIRE(tembra_transport_record_start(&record) == TEMBRA_OK);
+    pullDuplex(fake, 480, 0.0f);
+    tembra_transport_snapshot snapshot{};
+    tembra_transport_read(&snapshot);
+    REQUIRE(snapshot.playing == 1);
+    REQUIRE(snapshot.recording == 0);
+    REQUIRE(snapshot.count_in_beats_left == 4);
+    REQUIRE(snapshot.position_frames == 96000);  // one bar before the start
+    for (int block = 0; block < 100; ++block) pullDuplex(fake, 480, 0.0f);  // one second: beat 3 of the count-in
+    tembra_transport_read(&snapshot);
+    REQUIRE(snapshot.count_in_beats_left == 2);
+    REQUIRE(tembra_transport_record_cancel() == TEMBRA_OK);
+    pullDuplex(fake, 480, 0.0f);
+    tembra_transport_read(&snapshot);
+    REQUIRE(snapshot.playing == 0);
+    REQUIRE(snapshot.position_frames == 192000);
+    REQUIRE(snapshot.count_in_beats_left == -1);
+    REQUIRE_FALSE(fileExists(path));
+    REQUIRE(tembra_transport_record_cancel() == TEMBRA_ERR_STATE);
+    tembra_take_info info{};
+    REQUIRE(tembra_transport_record_stop(&info) == TEMBRA_ERR_STATE);
+    tembra_transport_disarm();
+    tembra_transport_close();
+}
+
+TEST_CASE("the free-space probe answers for a real directory and refuses a bad path", "[engine][capture]") {
+    REQUIRE(tembra_storage_free_bytes(tembra::fixtures::tempPath("").c_str()) > 0);
+    REQUIRE(tembra_storage_free_bytes("/nonexistent-tembra-dir/x") == -1);
+    REQUIRE(tembra_storage_free_bytes(nullptr) == -1);
+}

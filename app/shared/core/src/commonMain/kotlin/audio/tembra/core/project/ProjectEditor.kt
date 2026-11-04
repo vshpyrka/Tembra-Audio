@@ -13,7 +13,8 @@ import kotlin.math.max
  * handled here. Rules: names per [ProjectNames]; colours cycle the six tints; clips on a track never overlap in beats
  * at the current tempo; a split stays strictly inside its clip and more than 0.01 s from both edges; a move stops
  * against its neighbours and never before zero; a cross-track move needs a free span; an import lands at the
- * requested start or the first free span after it; tempo and signature changes leave beats alone.
+ * requested start or the first free span after it; tempo and signature changes leave beats alone; a take replaces
+ * what it covers on its track and keeps the parts outside its span (feature 010).
  */
 object ProjectEditor {
 
@@ -37,6 +38,8 @@ object ProjectEditor {
         is RenameProject -> renameProject(project, edit)
         is SetDescription -> setDescription(project, edit)
         is SetKey -> EditResult.Applied(project.copy(key = edit.key))
+        is RecordTake -> recordTake(project, edit)
+        is SetCountIn -> EditResult.Applied(project.copy(countIn = edit.countIn))
     }
 
     // --- Tracks ------------------------------------------------------------------------------------------------------
@@ -221,6 +224,71 @@ object ProjectEditor {
         return copy(assets = assets.filterKeys { it !in unused }.toPersistentMap())
     }
 
+    // --- Recording ---------------------------------------------------------------------------------------------------
+
+    /**
+     * A take and its replacement as one edit (feature 010, spec FR-011 to FR-013): the asset merged, every clip on the
+     * track overlapping `[start, start + length)` reduced to its parts outside the span by [splitClip]'s frame
+     * arithmetic (a straddling clip keeps its outside part or parts, an inside clip goes), the take's clip inserted,
+     * orphaned assets dropped. A clip straddling both ends keeps its id on its left part; the right part gets
+     * `<take clip id>-after-<clip id>`, fixed by the edit so it replays and never collides with an earlier take's.
+     */
+    private fun recordTake(project: Project, edit: RecordTake): EditResult {
+        val track = project.findTrack(edit.trackId) ?: return EditResult.Rejected(EditRejection.UnknownTrack(edit.trackId))
+        if (edit.clip.lengthFrames.toDouble() / edit.asset.sampleRate < MIN_TAKE_SECONDS) return EditResult.Rejected(EditRejection.TakeTooShort)
+        val withAsset = project.copy(assets = project.assets.putting(edit.assetId, edit.asset))
+        val map = withAsset.tempoMap
+        val take = edit.clip.toClip(edit.clipId, edit.startBeats)
+        val spanStart = take.startBeats
+        val spanEnd = spanStart + map.framesToBeats(take.lengthFrames, edit.asset.sampleRate)
+        var clips = track.clips
+        for (clip in withAsset.clipsOverlapping(track.id, spanStart, spanEnd)) {
+            clips = clips.removing(clip)
+            val asset = withAsset.assets.getValue(clip.assetId)
+            val before = partBefore(map, clip, asset, spanStart)
+            val after = partAfter(map, clip, asset, spanEnd)
+            if (before != null) clips = clips.insertSorted(before)
+            if (after != null) clips = clips.insertSorted(if (before == null) after else after.copy(id = ClipId("${edit.clipId.value}-after-${clip.id.value}")))
+        }
+        clips = clips.insertSorted(take)
+        if (withAsset.clipCount - track.clips.size + clips.size > ProjectLimits.MAX_CLIPS) return EditResult.Rejected(EditRejection.ClipLimitReached)
+        return when (val result = updateTrack(withAsset, track.id) { it.copy(clips = clips) }) {
+            is EditResult.Applied -> EditResult.Applied(result.project.withoutUnusedAssets())
+            is EditResult.Rejected -> result
+        }
+    }
+
+    /**
+     * The part of [clip] before [spanStart], its id kept, or null when there is none. Frames are rounded as a split
+     * is; a rounding that would carry the part past the span start is pulled back one frame so the track never
+     * overlaps at the current tempo.
+     */
+    private fun partBefore(map: TempoMap, clip: Clip, asset: AudioAsset, spanStart: Beats): Clip? {
+        if (clip.startBeats.value >= spanStart.value - EPSILON) return null
+        var frames = map.beatsToFrames(spanStart - clip.startBeats, asset.sampleRate)
+        if ((clip.startBeats + map.framesToBeats(frames, asset.sampleRate)).value > spanStart.value + EPSILON) frames -= 1
+        if (frames <= 0) return null
+        return clip.copy(lengthFrames = frames)
+    }
+
+    /**
+     * The part of [clip] after [spanEnd], its id kept for the caller to replace, or null when there is none. The
+     * offset advances by the frames up to the span end and the start follows them, so the audio stays where it was;
+     * a rounding that would leave the part inside the span is pushed on one frame.
+     */
+    private fun partAfter(map: TempoMap, clip: Clip, asset: AudioAsset, spanEnd: Beats): Clip? {
+        val clipEnd = clip.startBeats + map.framesToBeats(clip.lengthFrames, asset.sampleRate)
+        if (clipEnd.value <= spanEnd.value + EPSILON) return null
+        var frames = map.beatsToFrames(spanEnd - clip.startBeats, asset.sampleRate)
+        if ((clip.startBeats + map.framesToBeats(frames, asset.sampleRate)).value < spanEnd.value - EPSILON) frames += 1
+        if (frames >= clip.lengthFrames) return null
+        return clip.copy(
+            startBeats = clip.startBeats + map.framesToBeats(frames, asset.sampleRate),
+            offsetFrames = clip.offsetFrames + frames,
+            lengthFrames = clip.lengthFrames - frames,
+        )
+    }
+
     // --- Project settings --------------------------------------------------------------------------------------------
 
     private fun renameProject(project: Project, edit: RenameProject): EditResult {
@@ -235,4 +303,7 @@ object ProjectEditor {
 
     /** Absorbs the last-bit error of beat arithmetic so touching clips never count as overlapping. */
     private const val EPSILON = 1e-9
+
+    /** A take shorter than this is discarded rather than placed (feature 010, spec FR-011). */
+    private const val MIN_TAKE_SECONDS = 0.01
 }

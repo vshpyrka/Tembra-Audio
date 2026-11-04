@@ -10,6 +10,8 @@
 #include <memory>
 #include <vector>
 
+#include "capture/capture_record.h"
+#include "capture/capture_source.h"
 #include "fake_decoder.h"
 #include "metronome/click_set.h"
 #include "metronome/metronome_grid.h"
@@ -145,7 +147,60 @@ public:
     tembra::TransportRenderer& renderer() { return *renderer_; }
     tembra::DiskStreamer& streamer() { return streamer_; }
 
+    // --- Feature 010: the duplex path (the fake device feeds one input block per rendered block) ---------------------
+
+    /** Arms with a capture source of [channels] and [alignment] frames (the host's tembra_transport_arm). */
+    tembra::CaptureSource& arm(uint32_t channels = 1, int64_t alignment = 0) {
+        capture_ = std::make_unique<tembra::CaptureSource>(kRate);
+        capture_->prepare(channels, alignment);
+        renderer_->setCapture(capture_.get());
+        return *capture_;
+    }
+
+    /**
+     * Renders [frames] in [block]-frame blocks with an input block per render whose samples encode the input stream's
+     * frame index (0.2 + (frame mod 500000) / 1e6, both channels), servicing the streamer after each; left channel.
+     */
+    std::vector<float> renderDuplex(uint32_t frames, uint32_t block, uint32_t channels = 1, float inputBase = 0.2f, uint32_t inputGeneration = 0, uint32_t outputGeneration = 0) {
+        std::vector<float> left;
+        left.reserve(frames);
+        std::vector<float> stereo(static_cast<size_t>(block) * 2);
+        std::vector<float> input(static_cast<size_t>(block) * channels);
+        for (uint32_t done = 0; done < frames;) {
+            const uint32_t n = std::min(block, frames - done);
+            for (uint32_t i = 0; i < n; ++i) {
+                const float value = inputBase + static_cast<float>((inputFrames_ + i) % kRampPeriod) * 1e-6f;
+                for (uint32_t c = 0; c < channels; ++c) input[i * channels + c] = value;
+            }
+            tembra::InputBlock in;
+            in.interleaved = input.data();
+            in.channels = channels;
+            in.frames = n;
+            in.shortFrames = 0;
+            in.inputGeneration = inputGeneration;
+            in.outputGeneration = outputGeneration;
+            renderer_->render(stereo.data(), n, in);
+            inputFrames_ += n;
+            for (uint32_t i = 0; i < n; ++i) left.push_back(stereo[2 * i]);
+            streamer_.serviceOnce();
+            done += n;
+        }
+        return left;
+    }
+
+    /** Everything the callback pushed into the capture fifo so far (mono). */
+    std::vector<float> drainCapture() {
+        std::vector<float> out(capture_->fifo().available());
+        const size_t n = capture_->fifo().read(out.data(), out.size());
+        out.resize(n);
+        return out;
+    }
+
+    int64_t inputFramesFed() const { return inputFrames_; }
+
 private:
+    std::unique_ptr<tembra::CaptureSource> capture_;
+    int64_t inputFrames_ = 0;
     std::unique_ptr<tembra::TransportRenderer> renderer_;
     tembra::DiskStreamer streamer_;
     std::vector<std::unique_ptr<tembra::ClipSource>> sources_;
@@ -168,6 +223,16 @@ tembra::ClickSet impulseSet() {
     set.click = tembra::ClickSample{{0.3f}, kRate};
     set.accent = tembra::ClickSample{{0.9f}, kRate};
     return set;
+}
+
+tembra::MetronomeGrid sevenEight(double bpm) {
+    tembra::MetronomeGrid grid;
+    grid.bpm = bpm;
+    grid.ticksPerBeat = 1;
+    grid.ticksPerBar = 7;
+    grid.levels[0] = TEMBRA_CLICK_ACCENT;
+    for (uint32_t i = 1; i < 7; ++i) grid.levels[i] = TEMBRA_CLICK_CLICK;
+    return grid;
 }
 
 tembra::MetronomeGrid fourFour(double bpm) {
@@ -499,4 +564,291 @@ TEST_CASE("the transport record is published every block", "[transport][renderer
     h.render(10000, 10000);
     REQUIRE(h.renderer().record().frame == 96 + 1024 + 10000 - 1808);
     REQUIRE(h.renderer().blocksRendered() == 6);
+}
+
+// --- Feature 010: the duplex path, the pre-roll, capture start, muting, monitoring, cancel and stop ----------------
+// (contracts/engine-c-abi-v7.md "Renderer rules"; research R2, R9, R10, R11, R12).
+
+namespace {
+
+/** Frames of [left] above the click threshold. */
+std::vector<int64_t> onsetsOf(const std::vector<float>& left, float threshold = 0.25f) {
+    std::vector<int64_t> onsets;
+    for (size_t i = 0; i < left.size(); ++i) {
+        if (left[i] > threshold) onsets.push_back(static_cast<int64_t>(i));
+    }
+    return onsets;
+}
+
+}  // namespace
+
+TEST_CASE("a pre-roll of one bar in 4/4 and two bars in 7/8 renders the count-in clicks, no clip and the beats left", "[transport][renderer][capture]") {
+    struct Case { tembra::MetronomeGrid grid; uint32_t beatsPerBar; uint32_t bars; };
+    const Case cases[] = {{fourFour(124.0), 4, 1}, {sevenEight(124.0), 7, 2}};
+    for (const Case& c : cases) {
+        INFO("beats per bar " << c.beatsPerBar << ", bars " << c.bars);
+        Harness h;
+        tembra::MetronomeRenderer metronome(kRate);
+        const tembra::ClickSet set = impulseSet();
+        metronome.setGrid(c.grid);
+        metronome.setSet(&set);
+        h.renderer().setMetronome(&metronome);
+        h.renderer().setMetronomeEnabled(false);  // the toggle is off: the count-in clicks anyway
+        const tembra::TempoMap tempo = tempoOf(124.0, c.beatsPerBar);
+        h.renderer().setTempo(tempo);
+        tembra::ClipSource* source = h.addSource(kLongSource, constant(0.5f));
+        h.arrange({{0, source, 0.0, 0, kLongSource}});
+        h.arm(1, 0);
+        h.renderer().setArmedTrack(1);  // another track is armed: track 0's clip is audible after the start
+        const uint32_t beats = c.beatsPerBar * c.bars;
+        const int64_t preRoll = tempo.beatsToFrame(static_cast<double>(beats));
+        h.renderer().requestRecordStart(0, preRoll);
+        std::vector<int32_t> beatsLeft;
+        std::vector<float> left;
+        for (int64_t done = 0; done < preRoll;) {
+            const uint32_t n = static_cast<uint32_t>(std::min<int64_t>(256, preRoll - done));
+            const auto part = h.renderDuplex(n, n);
+            left.insert(left.end(), part.begin(), part.end());
+            const tembra::TransportRecord record = h.renderer().record();
+            REQUIRE(record.preRoll == 1);
+            REQUIRE(record.recording == 0);
+            REQUIRE(record.playing == 1);
+            REQUIRE(record.frame == -preRoll + done);
+            beatsLeft.push_back(record.countInBeatsLeft);
+            done += n;
+        }
+        // The clicks: one per beat with the accent first; no clip output (the clip at beat 0 waits for the start).
+        const std::vector<int64_t> onsets = onsetsOf(left);
+        REQUIRE(onsets.size() == beats);
+        for (uint32_t k = 0; k < beats; ++k) {
+            INFO("count-in beat " << k);
+            REQUIRE(std::abs(onsets[k] - tempo.beatsToFrame(static_cast<double>(k))) <= 1);
+            REQUIRE(left[static_cast<size_t>(onsets[k])] > (k % c.beatsPerBar == 0 ? 0.85f : 0.25f));
+            REQUIRE(left[static_cast<size_t>(onsets[k])] < (k % c.beatsPerBar == 0 ? 0.95f : 0.35f));
+        }
+        for (size_t i = 0; i < left.size(); ++i) {
+            if (std::find(onsets.begin(), onsets.end(), static_cast<int64_t>(i)) == onsets.end()) REQUIRE(left[i] == 0.0f);
+        }
+        REQUIRE(beatsLeft.front() == static_cast<int32_t>(beats));
+        REQUIRE(beatsLeft.back() == 1);
+        for (size_t i = 1; i < beatsLeft.size(); ++i) REQUIRE(beatsLeft[i] <= beatsLeft[i - 1]);
+        // At the start the clip plays, the take runs and the click is silent because the toggle is off.
+        const auto after = h.renderDuplex(4096, 256);
+        REQUIRE(std::abs(after[0] - 0.5f) < 1e-5f);
+        REQUIRE(after[1] == 0.5f);
+        REQUIRE(onsetsOf(after, 0.55f).empty());
+        const tembra::TransportRecord record = h.renderer().record();
+        REQUIRE(record.preRoll == 0);
+        REQUIRE(record.recording == 1);
+        REQUIRE(record.countInBeatsLeft == -1);
+        REQUIRE(record.takeStartFrame == 0);
+    }
+}
+
+TEST_CASE("the metronome follows the toggle after the pre-roll", "[transport][renderer][capture][metronome]") {
+    Harness h;
+    tembra::MetronomeRenderer metronome(kRate);
+    const tembra::ClickSet set = impulseSet();
+    metronome.setGrid(fourFour(124.0));
+    metronome.setSet(&set);
+    h.renderer().setMetronome(&metronome);
+    h.renderer().setMetronomeEnabled(true);
+    tembra::ClipSource* source = h.addSource(kLongSource, constant(0.0f));
+    h.arrange({{0, source, 0.0, 0, kLongSource}});
+    h.arm(1, 0);
+    h.renderer().setArmedTrack(0);
+    const tembra::TempoMap tempo = tempoOf(124.0);
+    const int64_t preRoll = tempo.beatsToFrame(4.0);
+    h.renderer().requestRecordStart(0, preRoll);
+    const auto countIn = h.renderDuplex(static_cast<uint32_t>(preRoll), 1024);
+    REQUIRE(onsetsOf(countIn).size() == 4);
+    const auto after = h.renderDuplex(static_cast<uint32_t>(tempo.beatsToFrame(4.0)), 1024);
+    const auto onsets = onsetsOf(after);
+    REQUIRE(onsets.size() == 4);  // beats 0..3 of the take: the click continues with the toggle on
+    REQUIRE(onsets[0] == 0);
+    REQUIRE(after[0] > 0.85f);    // the downbeat is an accent: the bar restarts exactly at the start
+}
+
+TEST_CASE("capture begins exactly at the start: the first kept frame is the input frame alignment after it, at every block size", "[transport][renderer][capture]") {
+    for (uint32_t block : kBlocks) {
+        INFO("block " << block);
+        Harness h;
+        tembra::ClipSource* source = h.addSource(kLongSource, constant(0.0f));
+        h.arrange({{0, source, 0.0, 0, kLongSource}});
+        tembra::CaptureSource& capture = h.arm(1, 960);
+        h.renderer().setArmedTrack(0);
+        const tembra::TempoMap tempo = tempoOf(124.0);
+        const int64_t start = tempo.beatsToFrame(8.0);
+        h.seek(start);
+        h.renderDuplex(block, block);  // the seek applies
+        REQUIRE(h.renderer().record().frame == start);
+        const int64_t inputAtPreRoll = h.inputFramesFed();
+        const int64_t preRoll = tempo.beatsToFrame(4.0);  // 92903 frames: the split falls inside a block at every size
+        capture.beginTake();
+        h.renderer().requestRecordStart(start, preRoll);
+        h.renderDuplex(static_cast<uint32_t>(preRoll + 20 * block), block);
+        const tembra::TransportRecord record = h.renderer().record();
+        REQUIRE(record.recording == 1);
+        REQUIRE(record.takeStartFrame == start);
+        const std::vector<float> kept = h.drainCapture();
+        // The input frame delivered in the same callback as transport frame [start] is inputAtPreRoll + preRoll.
+        REQUIRE(frameOf(kept.front(), 0.2f) == wrapped(inputAtPreRoll + preRoll + 960));
+        REQUIRE(static_cast<int64_t>(kept.size()) == 20 * block - 960);
+        for (size_t i = 1; i < kept.size(); ++i) REQUIRE(frameOf(kept[i], 0.2f) == wrapped(inputAtPreRoll + preRoll + 960 + static_cast<int64_t>(i)));
+        REQUIRE(capture.framesCaptured() == static_cast<int64_t>(kept.size()));
+        REQUIRE(capture.inputOverruns() == 0);
+    }
+}
+
+TEST_CASE("Record while playing begins at the next block and the armed track's clips fall silent from the take start", "[transport][renderer][capture]") {
+    Harness h;
+    tembra::ClipSource* a = h.addSource(kLongSource, constant(0.5f));
+    tembra::ClipSource* b = h.addSource(kLongSource, constant(0.25f));
+    h.arrange({{0, a, 0.0, 0, kLongSource}, {1, b, 0.0, 0, kLongSource}});
+    tembra::CaptureSource& capture = h.arm(1, 100);
+    h.renderer().setArmedTrack(0);
+    h.play();
+    const auto before = h.renderDuplex(2048, 256);
+    REQUIRE(std::abs(before.back() - 0.75f) < 1e-5f);  // both clips
+    const int64_t inputAtRequest = h.inputFramesFed();
+    capture.beginTake();
+    h.renderer().requestRecordStart(0, 0);
+    const auto after = h.renderDuplex(2048, 256);
+    const tembra::TransportRecord record = h.renderer().record();
+    REQUIRE(record.recording == 1);
+    REQUIRE(record.preRoll == 0);
+    REQUIRE(record.takeStartFrame == 2048);
+    // The armed track's clip is silent at and after the take start; the other track plays on.
+    for (float sample : after) REQUIRE(std::abs(sample - 0.25f) < 1e-5f);
+    const std::vector<float> kept = h.drainCapture();
+    REQUIRE(kept.size() == 2048 - 100);
+    REQUIRE(frameOf(kept.front(), 0.2f) == wrapped(inputAtRequest + 100));
+    // Stopping ends the capture at the block boundary; playback continues with the armed track still silent.
+    h.renderer().requestRecordStop();
+    const auto afterStop = h.renderDuplex(512, 256);
+    REQUIRE(h.renderer().record().recording == 0);
+    REQUIRE(h.renderer().record().playing == 1);
+    REQUIRE(h.drainCapture().empty());
+    REQUIRE(std::abs(afterStop.back() - 0.75f) < 1e-5f);  // the clip under the take plays again once the take ended
+}
+
+TEST_CASE("the monitor mix follows the armed track's gain, audibility and the master, and fades out in 5 ms", "[transport][renderer][capture]") {
+    Harness h;
+    tembra::ClipSource* source = h.addSource(kLongSource, constant(0.0f));
+    h.arrange({{1, source, 0.0, 0, kLongSource}});
+    h.arm(1, 0);
+    h.renderer().setArmedTrack(1);
+    h.setTrack(1, 0.5f, true);
+    h.renderer().setMonitor(true);
+    // The input samples encode their frame index (0.8 + frame / 1e6): the level heard follows the last frame fed.
+    const auto lastInput = [&] { return 0.8f + static_cast<float>((h.inputFramesFed() - 1) % kRampPeriod) * 1e-6f; };
+    // Stopped: the input is heard through the strip while nothing plays.
+    auto left = h.renderDuplex(2048, 256, 1, 0.8f);
+    REQUIRE(std::abs(left.back() - lastInput() * 0.5f) < 1e-4f);
+    REQUIRE(h.renderer().record().playing == 0);
+    REQUIRE(h.renderer().monitoring());
+    h.setTrack(1, 0.5f, false);
+    left = h.renderDuplex(2048, 256, 1, 0.8f);
+    REQUIRE(left.back() == 0.0f);
+    h.setTrack(1, 1.0f, true);
+    h.renderer().setMaster(0.5f);
+    left = h.renderDuplex(2048, 256, 1, 0.8f);
+    REQUIRE(std::abs(left.back() - lastInput() * 0.5f) < 1e-4f);
+    // Playing: the monitor adds to the clips (the clip on the armed track is silent only while a take runs).
+    h.play();
+    left = h.renderDuplex(2048, 256, 1, 0.8f);
+    REQUIRE(std::abs(left.back() - lastInput() * 0.5f) < 1e-4f);
+    // Off: a 5 ms fade, no step larger than 0.01.
+    h.renderer().setMonitor(false);
+    left = h.renderDuplex(512, 512, 1, 0.8f);
+    REQUIRE(left[0] > 0.35f);
+    REQUIRE(left[300] == 0.0f);
+    for (size_t i = 1; i < left.size(); ++i) REQUIRE(std::abs(left[i] - left[i - 1]) <= 0.01f);
+    REQUIRE_FALSE(h.renderer().monitoring());
+}
+
+TEST_CASE("an output reopen clears monitoring and an input reopen ends the take with INPUT_LOST", "[transport][renderer][capture]") {
+    Harness h;
+    tembra::ClipSource* source = h.addSource(kLongSource, constant(0.0f));
+    h.arrange({{0, source, 0.0, 0, kLongSource}});
+    tembra::CaptureSource& capture = h.arm(1, 0);
+    h.renderer().setArmedTrack(0);
+    h.renderer().setMonitor(true);
+    h.renderDuplex(512, 256, 1, 0.8f);
+    REQUIRE(h.renderer().monitoring());
+    h.renderDuplex(512, 256, 1, 0.8f, 0, 1);  // the platform reopened the output
+    REQUIRE_FALSE(h.renderer().monitoring());
+    h.renderer().setMonitor(true);  // the host may enable it again
+    h.renderDuplex(512, 256, 1, 0.8f, 0, 1);
+    REQUIRE(h.renderer().monitoring());
+    h.play();
+    capture.beginTake();
+    h.renderer().requestRecordStart(0, 0);
+    h.renderDuplex(512, 256, 1, 0.8f, 0, 1);
+    REQUIRE(h.renderer().record().recording == 1);
+    h.renderDuplex(512, 256, 1, 0.8f, 1, 1);  // the platform reopened the input
+    REQUIRE(h.renderer().record().recording == 0);
+    REQUIRE(capture.stopReason() == TEMBRA_TAKE_STOP_INPUT_LOST);
+    REQUIRE(h.renderer().record().playing == 1);
+    REQUIRE(h.renderer().monitoring());  // the arm and the monitoring stay
+}
+
+TEST_CASE("cancel during the pre-roll pauses and restores the position", "[transport][renderer][capture]") {
+    Harness h;
+    tembra::ClipSource* source = h.addSource(kLongSource, constant(0.5f));
+    h.arrange({{0, source, 0.0, 0, kLongSource}});
+    tembra::CaptureSource& capture = h.arm(1, 0);
+    h.renderer().setArmedTrack(1);
+    const tembra::TempoMap tempo = tempoOf(124.0);
+    const int64_t start = tempo.beatsToFrame(8.0);
+    h.seek(start);
+    h.renderDuplex(256, 256);
+    capture.beginTake();
+    h.renderer().requestRecordStart(start, tempo.beatsToFrame(4.0));
+    h.renderDuplex(2048, 256);
+    REQUIRE(h.renderer().record().preRoll == 1);
+    h.renderer().requestRecordCancel();
+    const auto left = h.renderDuplex(512, 256);
+    const tembra::TransportRecord record = h.renderer().record();
+    REQUIRE(record.playing == 0);
+    REQUIRE(record.preRoll == 0);
+    REQUIRE(record.recording == 0);
+    REQUIRE(record.frame == start);
+    REQUIRE(record.countInBeatsLeft == -1);
+    for (float sample : left) REQUIRE(sample == 0.0f);
+    REQUIRE(h.drainCapture().empty());
+    REQUIRE(capture.framesCaptured() == 0);
+}
+
+TEST_CASE("the capture record is published every block while armed and zeroed when disarmed", "[transport][renderer][capture]") {
+    Harness h;
+    tembra::ClipSource* source = h.addSource(kLongSource, constant(0.0f));
+    h.arrange({{0, source, 0.0, 0, kLongSource}});
+    tembra::CaptureSource& capture = h.arm(2, 48);
+    h.renderer().setArmedTrack(0);
+    h.renderDuplex(256, 256, 2, 0.3f);
+    tembra::CaptureRecord record = capture.record();
+    REQUIRE(record.armed == 1);
+    REQUIRE(record.recording == 0);
+    REQUIRE(record.channels == 2);
+    REQUIRE(record.rate == kRate);
+    REQUIRE(record.peak[0] > 0.29f);
+    REQUIRE(record.peak[1] > 0.29f);
+    REQUIRE(record.alignmentFrames == 48);
+    REQUIRE(record.blocks == 1);
+    h.play();
+    capture.beginTake();
+    h.renderer().requestRecordStart(0, 0);
+    h.renderDuplex(512, 256, 2, 0.3f);
+    record = capture.record();
+    REQUIRE(record.recording == 1);
+    REQUIRE(record.framesCaptured == 512 - 48);
+    REQUIRE(record.backlogFrames == 512 - 48);
+    REQUIRE(record.takeStartFrames == 0);  // play and Record arrived in the same block: the take starts where playback did
+    REQUIRE(record.blocks == 3);
+    h.renderer().requestRecordStop();
+    h.renderer().setCapture(nullptr);  // disarmed: the next blocks publish nothing new
+    h.renderDuplex(256, 256, 2, 0.3f);
+    REQUIRE(capture.record().blocks == 3);
+    REQUIRE(h.renderer().record().recording == 0);
 }

@@ -12,6 +12,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
@@ -33,6 +38,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import audio.tembra.core.project.Beats
 import audio.tembra.core.project.TempoMap
+import audio.tembra.ui.session.InputTelemetry
 import audio.tembra.engine.perf.PerfSection
 import audio.tembra.engine.perf.PerfTrace
 import audio.tembra.ui.designsystem.FocusMemory
@@ -82,6 +88,7 @@ internal fun TimelineScreenContent(
     layout: TimelineLayout,
     snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
+    inputTelemetry: InputTelemetry = InputTelemetry { _, _ -> },
 ) {
     val spacing = TembraTheme.spacing
     val daw = TembraTheme.daw
@@ -126,6 +133,7 @@ internal fun TimelineScreenContent(
         onMasterVolume = callbacks.onMasterVolume,
         onMetronomeToggle = callbacks.onMetronomeToggle,
         onMetronomeSettings = callbacks.onMetronomeSettings,
+        onRecord = callbacks.onRecord,
     )
     Box(
         modifier = modifier
@@ -154,6 +162,7 @@ internal fun TimelineScreenContent(
                 onOverviewStripShown = callbacks.onOverviewStripShown,
                 onFullScreen = callbacks.onFullScreen,
                 onMetronomeSettings = callbacks.onMetronomeSettings,
+                onMonitorToggle = callbacks.onMonitorToggle,
             )
             TimelineRuler(
                 viewport = state.viewport,
@@ -187,7 +196,7 @@ internal fun TimelineScreenContent(
                         if (drops.hover != null) DropHoverBanner(DropCopy.newTrack, Modifier.align(Alignment.TopCenter))
                     }
                 } else {
-                    TrackList(state = state, layout = layout, callbacks = callbacks, playheadMask = playheadMask)
+                    TrackList(state = state, layout = layout, callbacks = callbacks, inputTelemetry = inputTelemetry, playheadMask = playheadMask)
                 }
                 PlayheadOverlay(
                     viewport = state.viewport,
@@ -227,7 +236,21 @@ internal fun TimelineScreenContent(
         if (deleting != null) {
             DeleteTrackDialog(trackName = deleting.name, onConfirm = callbacks.onConfirmDeleteTrack, onCancel = callbacks.onDismissDeleteTrack)
         }
-        SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = transportHeight + stripHeight))
+        SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = transportHeight + stripHeight)) { data ->
+            // The action as a tagged button: the denied message's "Open settings" / "Allow" (feature 010, FR-020) is a journey anchor.
+            val label = data.visuals.actionLabel
+            Snackbar(
+                action = label?.let {
+                    {
+                        TextButton(
+                            onClick = data::performAction,
+                            colors = ButtonDefaults.textButtonColors(contentColor = SnackbarDefaults.actionColor),
+                            modifier = Modifier.testTag(TimelineTestTags.DENIED_ACTION),
+                        ) { Text(it) }
+                    }
+                },
+            ) { Text(data.visuals.message) }
+        }
         when (state.sheet) {
             TimelineSheet.TempoDialog -> TempoDialog(
                 tempo = state.tempo,
@@ -248,6 +271,9 @@ internal fun TimelineScreenContent(
                 onCycleBeat = callbacks.onCycleBeat,
                 onStyle = callbacks.onStyle,
                 onDismiss = { callbacks.onOpenSheet(null) },
+                countIn = state.countIn,
+                countInEnabled = state.canEditCountIn,
+                onCountIn = callbacks.onCountIn,
             )
             TimelineSheet.GridMenu -> SnapSheet(grid = state.grid, onGrid = callbacks.onGrid, onDismiss = { callbacks.onOpenSheet(null) })
             null -> Unit

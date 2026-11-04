@@ -29,6 +29,7 @@ def test_journey_of_test_identifier():
     assert journey_of_test("TembraPerfTests/TunerPerfTests/testTunerJourney()") == ("tuner", None)
     assert journey_of_test("TembraPerfTests/MetronomePerfTests/testMetronomeJourney()") == ("metronome", None)
     assert journey_of_test("TembraPerfTests/TimelinePerfTests/testTimelineJourney()") == ("timeline", None)
+    assert journey_of_test("TembraPerfTests/RecordingPerfTests/testRecordingJourney()") == ("recording", None)
     assert journey_of_test("TembraPerfTests/StressPerfTests/testStressJourney()") == ("stress", None)
     assert journey_of_test("TembraPerfTests/WindowingPerfTests/testWindowingJourney()") == ("windowing", None)
     assert journey_of_test("TembraPerfTests/FacadeSelfCheckTests/testModeSwitchSectionIsMeasuredByName()") is None
@@ -37,7 +38,7 @@ def test_journey_of_test_identifier():
 def test_metrics_map_to_catalogue_keys_with_twenty_samples(cfg):
     result = collect_round(METRICS, cfg, simulator=False)
     journeys = {j.journey: j for j in result.journeys}
-    assert set(journeys) == {"startup", "tuner", "metronome", "timeline", "stress"}
+    assert set(journeys) == {"startup", "tuner", "metronome", "timeline", "stress"}  # the fixtures predate feature 010
     startup = journeys["startup"].metrics
     assert set(startup) == {"startup.ttid_ms", "startup.ttfd_ms"}
     assert len(startup["startup.ttid_ms"].samples) == 20
@@ -98,6 +99,27 @@ def test_cpu_cycles_and_unknown_metrics_are_skipped_not_fatal(cfg, caplog):
     assert "cpu.cycles" not in tuner
 
 
+def test_iterations_xctest_dropped_are_recorded_as_kept(cfg, tmp_path, caplog):
+    """XCTest drops a whole iteration whose signpost set differs from the first iteration's; a test whose metrics
+    all carry 13 of 20 is recorded with 13 iterations and the round carries the badge, a lone short metric stays
+    an error (the test below)."""
+    raw = json.load(open(METRICS))
+    for metric in raw[2]["testRuns"][0]["metrics"]:
+        metric["measurements"] = metric["measurements"][:13]
+    path = tmp_path / "metrics.json"
+    path.write_text(json.dumps(raw))
+    with caplog.at_level("WARNING"):
+        result = collect_round(str(path), cfg, simulator=False)
+    journeys = {j.journey: j for j in result.journeys}
+    short = next(j for j in journeys.values() if j.iterations == 13)
+    assert all(len(m.samples) == 13 for m in short.metrics.values())
+    assert all(j.iterations == 20 for j in journeys.values() if j is not short)
+    assert "short-iterations" in result.badges
+    schema = json.load(open(os.path.join(os.path.dirname(__file__), "..", "tracepulse", "schema", "round-record.schema.json")))
+    assert "short-iterations" in schema["properties"]["badges"]["items"]["enum"]
+    assert "kept 13 of 20 iterations" in caplog.text
+
+
 def test_missing_measurement_count_is_an_error(cfg, tmp_path):
     with open(METRICS) as fh:
         raw = json.load(fh)
@@ -123,11 +145,13 @@ def test_perf_refused_failure_maps_to_a_refusal():
     assert refusal_from_failures([{"testIdentifier": "x", "message": "XCTAssertTrue failed - perf anchor 'tuner.meter' not found"}]) is None
 
 
-def test_engine_health_json_yields_the_nine_audio_series():
+def test_engine_health_json_yields_the_thirteen_audio_series():
     series = engine_health(os.path.join(FIXTURES, "engine-health.json"))
     assert series == {"audio.callbacks": 1200.0, "audio.last_callback_us": 850.0, "audio.max_callback_us": 1900.0,
                       "audio.over_budget": 0.0, "audio.xruns": 0.0, "audio.realtime": 1.0,
-                      "audio.avg_us": 410.0, "audio.starvation": 0.0, "audio.clips_active": 5.0}
+                      "audio.avg_us": 410.0, "audio.starvation": 0.0, "audio.clips_active": 5.0,
+                      "audio.input_overruns": 0.0, "audio.record_backlog": 512.0,
+                      "audio.take_alignment_ms": 14.0, "audio.monitor_delay_ms": 9.0}
 
 def test_phone_identifier_forms_and_a_frameless_animation_interval(cfg, caplog):
     """The first iPhone 14 round (iOS 27.0.1, Xcode 27.1): memory and CPU carry the bundle id

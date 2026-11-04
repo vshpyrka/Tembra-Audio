@@ -13,8 +13,12 @@ import audio.tembra.data.projects.ImportRefusal
 import audio.tembra.data.projects.ImportResult
 import audio.tembra.data.projects.PickedFile
 import audio.tembra.data.projects.WaveformOverview
+import audio.tembra.data.timeline.FakeTimelinePreferences
 import audio.tembra.engine.FakeAudioEngine
+import audio.tembra.ui.platform.FakeAudioRouteMonitor
 import audio.tembra.ui.platform.FakeBackgroundPlaybackHost
+import audio.tembra.ui.platform.FakeMicrophonePermission
+import audio.tembra.ui.platform.MicrophonePermissionStatus
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -47,6 +51,18 @@ class ProjectSessionBusyTest {
         metronome = engine,
         preferences = FakeMetronomePreferences(),
         host = FakeBackgroundPlaybackHost(),
+        recording = RecordingController(
+            audio = engine,
+            permission = FakeMicrophonePermission(MicrophonePermissionStatus.Granted),
+            routes = FakeAudioRouteMonitor(),
+            host = FakeBackgroundPlaybackHost(),
+            preferences = FakeTimelinePreferences(),
+            repository = repository,
+            scope = scope,
+            clock = { 0L },
+            tokens = { "take-1" },
+            mirrorIntervalMs = 100,
+        ),
         scope = scope,
         overviewReader = { WaveformOverview(channels = 1, frames = 512, completedBaseBuckets = 2, levels = emptyList()) },
         ioDispatcher = dispatcher,

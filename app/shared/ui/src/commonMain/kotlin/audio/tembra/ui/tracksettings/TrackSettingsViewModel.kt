@@ -23,6 +23,8 @@ import audio.tembra.engine.TransportSnapshot
 import audio.tembra.ui.session.ProjectSession
 import audio.tembra.ui.session.SessionState
 import audio.tembra.ui.session.TransportTelemetry
+import audio.tembra.core.recording.RecordingState
+import audio.tembra.ui.transport.RecordButtonState
 import audio.tembra.ui.transport.TransportUiState
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
@@ -115,6 +117,12 @@ class TrackSettingsViewModel(private val session: ProjectSession) : ViewModel() 
 
     /** Deletes the track; the state then reads [TrackSettingsUiState.closed] and the nested screen pops (spec FR-021). */
     fun confirmDelete() {
+        // A take recording into this track prevents the deletion (feature 010, spec FR-018): the dialog just closes.
+        val recording = session.state.value.recording
+        if (recording.takeRunning && recording.armedTrack == view.value.trackId) {
+            view.update { it.copy(confirmDelete = false) }
+            return
+        }
         view.update { it.copy(confirmDelete = false, nameDraft = null) }
         session.settingsDraft.value = null
         track { session.edit(DeleteTrack(it)) }
@@ -125,6 +133,8 @@ class TrackSettingsViewModel(private val session: ProjectSession) : ViewModel() 
     fun playPause() = if (session.isPlaying) session.pause() else session.play()
 
     fun skipToStart() = session.skipToStart()
+
+    fun record() = session.record()
 
     fun stepBar(delta: Int) = session.stepBar(delta)
 
@@ -152,6 +162,13 @@ class TrackSettingsViewModel(private val session: ProjectSession) : ViewModel() 
             masterVolume = project?.masterVolume?.value ?: TransportUiState().masterVolume,
             metronomeOn = state.metronomeOn,
             hasProject = project != null,
+            record = when (state.recording.phase) {
+                is RecordingState.PreRoll -> RecordButtonState.CountIn
+                is RecordingState.Recording, is RecordingState.Finalising -> RecordButtonState.Recording
+                else -> RecordButtonState.Idle
+            },
+            countInBeatsLeft = (state.recording.phase as? RecordingState.PreRoll)?.beatsLeft ?: -1,
+            seekEnabled = !state.recording.takeRunning,
         )
         if (track == null) return TrackSettingsUiState(trackId = view.trackId, closed = view.trackId != null && project != null, transport = transport)
         return TrackSettingsUiState(

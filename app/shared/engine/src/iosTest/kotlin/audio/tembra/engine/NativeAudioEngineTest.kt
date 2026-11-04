@@ -33,8 +33,8 @@ class NativeAudioEngineTest {
     fun reportsNameAndVersion() {
         val descriptor = engine.describe()
         assertEquals("Tembra Engine", descriptor.name)
-        assertEquals(SemanticVersion(0, 5, 0), descriptor.version)
-        assertEquals(6, engine.abiVersion())
+        assertEquals(SemanticVersion(0, 6, 0), descriptor.version)
+        assertEquals(7, engine.abiVersion())
     }
 
     @Test
@@ -188,7 +188,7 @@ class NativeAudioEngineTest {
     @Test
     fun aZeroLatencyReportForwardsTheSessionsLatency() {
         val forwarded = mutableListOf<Long>()
-        val recording = NativeAudioEngine { forwarded += it }
+        val recording = NativeAudioEngine(engineLatencySink = { forwarded += it })
         assertTrue(IosAudioSession.activateForPlayback(), "activateForPlayback")
         try {
             recording.reportOutputLatencyNanos(0)

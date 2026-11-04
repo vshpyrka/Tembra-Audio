@@ -27,6 +27,7 @@ internal fun TrackMenu(
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
     testTag: String? = null,
+    canReorder: Boolean = true,
     offset: DpOffset = DpOffset.Zero,
     anchor: @Composable () -> Unit,
 ) {
@@ -36,9 +37,9 @@ internal fun TrackMenu(
         items = listOf(
             MenuItemSpec(MENU_SETTINGS, TimelineCopy.trackSettings, TembraIcon.Settings),
             MenuItemSpec(MENU_ADD_AUDIO, TimelineCopy.addAudio, TembraIcon.AudioFile),
-            MenuItemSpec(MENU_MOVE_UP, TimelineCopy.moveUp, TembraIcon.ExpandLess, enabled = !isFirst),
-            MenuItemSpec(MENU_MOVE_DOWN, TimelineCopy.moveDown, TembraIcon.ExpandMore, enabled = !isLast),
-            MenuItemSpec(MENU_DELETE, TimelineCopy.deleteTrack, TembraIcon.Remove),
+            MenuItemSpec(MENU_MOVE_UP, TimelineCopy.moveUp, TembraIcon.ExpandLess, enabled = canReorder && !isFirst),
+            MenuItemSpec(MENU_MOVE_DOWN, TimelineCopy.moveDown, TembraIcon.ExpandMore, enabled = canReorder && !isLast),
+            MenuItemSpec(MENU_DELETE, TimelineCopy.deleteTrack, TembraIcon.Remove, enabled = canReorder),
         ),
         onSelect = { id ->
             when (id) {

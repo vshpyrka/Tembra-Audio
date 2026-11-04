@@ -6,6 +6,7 @@ import audio.tembra.core.metronome.TickGrid
 import audio.tembra.core.metronome.TimeSignature
 import audio.tembra.core.project.AudioFormat
 import audio.tembra.core.project.Beats
+import audio.tembra.core.recording.TakeStopReason
 import audio.tembra.core.version.SemanticVersion
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -410,6 +411,150 @@ class FakeAudioEngineTest {
         assertEquals(1.75, into.audiblePositionSeconds)
         assertEquals(48000, into.sampleRate)
         assertEquals(2, engine.readTransportCount)
+    }
+
+    // --- Capture (feature 010, contracts/engine-c-abi-v7.md "Kotlin seam") -------------------------------------------
+
+    @Test
+    fun armNeedsTheTransportAndReportsTheScriptedResult() = runTest {
+        val engine = FakeAudioEngine()
+        assertEquals(ArmResult.NotTransport, engine.arm(1))
+        engine.openTransport()
+        engine.armResult = ArmResult.InputUnavailable
+        assertEquals(ArmResult.InputUnavailable, engine.arm(1))
+        assertTrue(!engine.armed)
+        engine.armResult = ArmResult.Armed(channels = 2, sampleRate = 44100)
+        assertEquals(ArmResult.Armed(2, 44100), engine.arm(2))
+        assertTrue(engine.armed)
+        val capture = CaptureSnapshot()
+        engine.readCapture(capture)
+        assertTrue(capture.armed)
+        assertEquals(2, capture.inputChannels)
+        assertEquals(44100, capture.sampleRate)
+        engine.disarm()
+        assertTrue(!engine.armed)
+        engine.readCapture(capture)
+        assertTrue(!capture.armed)
+        assertEquals(listOf("arm(1)", "openTransport", "arm(1)", "arm(2)", "disarm"), engine.calls)
+    }
+
+    @Test
+    fun recordStartWritesTheTakeThroughTheWriterAndStopReturnsTheScriptedInfo() = runTest {
+        val engine = FakeAudioEngine()
+        engine.openTransport()
+        engine.arm(1)
+        val written = mutableListOf<String>()
+        engine.takeWriter = { path -> written += path }
+        val config = RecordConfig.of("/p/audio/.take-1.wav", trackIndex = 0, countInBeats = 4, sampleRate = 48000)
+        assertEquals(RecordStartResult.Started, engine.recordStart(config))
+        assertEquals(listOf("/p/audio/.take-1.wav"), written)
+        assertTrue(engine.takeRunning)
+        assertEquals(RecordStartResult.TakeRunning, engine.recordStart(config))
+        val capture = CaptureSnapshot()
+        engine.readCapture(capture)
+        assertTrue(capture.preRoll)
+        assertTrue(!capture.recording)
+        val transport = TransportSnapshot()
+        engine.readTransport(transport)
+        assertEquals(4, transport.countInBeatsLeft)
+        assertTrue(transport.playing)
+        engine.endPreRoll()
+        engine.readCapture(capture)
+        assertTrue(capture.recording)
+        engine.readTransport(transport)
+        assertEquals(-1, transport.countInBeatsLeft)
+        assertTrue(transport.recording)
+        val info = engine.recordStop()
+        assertEquals(2L * 48000, info.frames)
+        assertEquals(1, info.channels)
+        assertEquals(TakeStopReason.User, info.stopReason)
+        assertTrue(!engine.takeRunning)
+        engine.recordStopResult = TakeInfo(0, 0.0, 0, 1, 48000, 0, TakeStopReason.User)
+        engine.recordStart(config)
+        assertTrue(engine.recordStop().discarded)
+        assertEquals(30L * 60 * 48000, config.maxFrames)
+        assertEquals(50L * 1024 * 1024, config.minFreeBytes)
+    }
+
+    @Test
+    fun recordStartIsRefusedWithoutAnArmAndCancelEndsThePreRoll() = runTest {
+        val engine = FakeAudioEngine()
+        engine.openTransport()
+        val config = RecordConfig.of("/p/audio/.take-2.wav", 0, 0, 48000)
+        assertEquals(RecordStartResult.NotArmed, engine.recordStart(config))
+        engine.arm(1)
+        assertEquals(RecordStartResult.Started, engine.recordStart(config))
+        engine.recordCancel()
+        assertTrue(!engine.takeRunning)
+        assertTrue(!engine.transportPlaying)
+        assertTrue(engine.calls.last() == "recordCancel")
+    }
+
+    @Test
+    fun anEngineEndedTakeCarriesItsReasonIntoTheInfo() = runTest {
+        val engine = FakeAudioEngine()
+        engine.openTransport()
+        engine.arm(1)
+        engine.recordStart(RecordConfig.of("/p/audio/.take-3.wav", 0, 0, 48000))
+        engine.endTake(TakeStopReason.DiskFull)
+        val capture = CaptureSnapshot()
+        engine.readCapture(capture)
+        assertTrue(!capture.recording)
+        assertEquals(TakeStopReason.DiskFull, capture.stopReason)
+        assertEquals(TakeStopReason.DiskFull, engine.recordStop().stopReason)
+        engine.readCapture(capture)
+        assertEquals(TakeStopReason.User, capture.stopReason)
+    }
+
+    @Test
+    fun readCaptureCopiesTheScriptedSnapshotAndReadPeaksServesTheScript() = runTest {
+        val engine = FakeAudioEngine()
+        engine.nextCapture.peak[0] = 0.5f
+        engine.nextCapture.clipped = true
+        engine.nextCapture.framesCaptured = 4800
+        val into = CaptureSnapshot()
+        engine.readCapture(into)
+        engine.readCapture(into)
+        assertEquals(0.5f, into.peak[0])
+        assertTrue(into.clipped)
+        assertEquals(4800L, into.framesCaptured)
+        assertEquals(0.1, into.framesCapturedSeconds.takeIf { into.sampleRate > 0 } ?: 0.1)
+        assertEquals(2, engine.readCaptureCount)
+        engine.resetClip()
+        engine.readCapture(into)
+        assertTrue(!into.clipped)
+        val buckets = PeakBuckets(capacity = 8)
+        assertEquals(5L, engine.readPeaks(5, buckets))
+        assertEquals(0, buckets.count)
+        engine.scriptedPeaks = { from, out ->
+            out.count = 2
+            out.min[0] = -10; out.max[0] = 10; out.min[2] = -20; out.max[2] = 20
+            out.firstIndex = from
+            out.nextIndex = from + 2
+            from + 2
+        }
+        assertEquals(7L, engine.readPeaks(5, buckets))
+        assertEquals(2, buckets.count)
+        assertEquals(20.toByte(), buckets.max[2])
+        assertEquals(5L, buckets.firstIndex)
+        assertTrue(engine.calls.contains("resetClip"))
+    }
+
+    @Test
+    fun monitorAndFreeBytesFollowTheScript() = runTest {
+        val engine = FakeAudioEngine()
+        engine.openTransport()
+        engine.setMonitor(true, 0)
+        val capture = CaptureSnapshot()
+        engine.readCapture(capture)
+        assertTrue(!capture.monitoring)  // nothing armed
+        engine.arm(1)
+        engine.setMonitor(true, 0)
+        engine.readCapture(capture)
+        assertTrue(capture.monitoring)
+        engine.freeBytesResult = 123L
+        assertEquals(123L, engine.freeBytes("/any"))
+        assertEquals(listOf("openTransport", "setMonitor(true,0)", "arm(1)", "setMonitor(true,0)"), engine.calls)
     }
 
     @Test

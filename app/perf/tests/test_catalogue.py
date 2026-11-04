@@ -23,6 +23,7 @@ ANDROID_KEYS = {
     "audio.callbacks", "audio.last_callback_us", "audio.max_callback_us",
     "audio.over_budget", "audio.xruns", "audio.realtime",
     "audio.avg_us", "audio.starvation", "audio.clips_active",
+    "audio.input_overruns", "audio.record_backlog", "audio.take_alignment_ms", "audio.monitor_delay_ms",
 }
 
 IOS_KEYS = {
@@ -35,6 +36,7 @@ IOS_KEYS = {
     "audio.callbacks", "audio.last_callback_us", "audio.max_callback_us",
     "audio.over_budget", "audio.xruns", "audio.realtime",
     "audio.avg_us", "audio.starvation", "audio.clips_active",
+    "audio.input_overruns", "audio.record_backlog", "audio.take_alignment_ms", "audio.monitor_delay_ms",
     "audio.ioproc_p99_us",
 }
 
@@ -140,3 +142,22 @@ def test_metrics_for_platform_respects_disabled():
     table = apply_overrides(disabled=["cpu.instructions_k"])
     keys = {m.key for m in metrics_for("ios", table)}
     assert "cpu.instructions_k" not in keys and "cpu.time_ms" in keys
+
+
+def test_recording_counters_gates_and_journeys():
+    """Feature 010: input overruns flag any increase, the backlog has a 2048-frame floor, the rest a 2 ms floor."""
+    for platform in ("android", "ios"):
+        overruns = CATALOGUE[(platform, "audio.input_overruns")]
+        assert overruns.gate_limit_abs == 1.0 and overruns.screening_abs == 1.0 and overruns.journeys == ("stress",)
+        backlog = CATALOGUE[(platform, "audio.record_backlog")]
+        assert backlog.gate_limit_pct == 50 and backlog.floor_abs == 2048.0 and backlog.unit == "frames"
+        for key in ("audio.take_alignment_ms", "audio.monitor_delay_ms"):
+            metric = CATALOGUE[(platform, key)]
+            assert metric.gate_limit_pct == 20 and metric.floor_abs == 2.0 and metric.unit == "ms"
+    assert "recording" in CATALOGUE[("android", "frames.p50_ms")].journeys
+    assert "recording" in CATALOGUE[("ios", "journey.duration_ms")].journeys
+
+
+def test_report_orders_the_recording_journey_between_timeline_and_stress():
+    from tracepulse.report import _JOURNEY_ORDER
+    assert sorted(_JOURNEY_ORDER, key=_JOURNEY_ORDER.get) == ["startup", "tuner", "metronome", "timeline", "recording", "stress"]

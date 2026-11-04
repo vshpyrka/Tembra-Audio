@@ -26,11 +26,19 @@ data class Track(
         require(colorIndex in 0 until PALETTE_SIZE) { "colorIndex must be 0..${PALETTE_SIZE - 1}, was $colorIndex" }
     }
 
+    /** "Take N" with N one more than the highest "Take N" among this track's clip names, starting at 1 (feature 010, spec FR-012). */
+    fun nextTakeName(): String {
+        val highest = clips.mapNotNull { takeNumbered.matchEntire(it.name)?.groupValues?.get(1)?.toIntOrNull() }.maxOrNull() ?: 0
+        return "Take ${highest + 1}"
+    }
+
     companion object {
         /** The design's track palette has six tints (spec FR-022). */
         const val PALETTE_SIZE = 6
 
         private val numbered = Regex("Track (\\d+)")
+
+        private val takeNumbered = Regex("Take (\\d+)")
 
         /** A track at the defaults of spec FR-019: no label, 0 dB, not muted, not soloed, no clips. */
         fun new(id: TrackId, name: String, colorIndex: Int): Track = Track(id = id, name = name, colorIndex = colorIndex)

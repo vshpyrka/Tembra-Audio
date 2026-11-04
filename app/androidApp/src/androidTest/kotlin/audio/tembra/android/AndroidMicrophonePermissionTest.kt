@@ -114,4 +114,15 @@ class AndroidMicrophonePermissionTest {
         assertEquals(MicrophonePermissionStatus.Granted, withTimeout(2_000) { second.await() })
         assertEquals("the prompt was launched again for the pending request", 1, launches)
     }
+
+    /** Feature 010 (FR-019, FR-021): recording reuses the tuner's RECORD_AUDIO and the manifest declares the microphone service type. */
+    @Test
+    fun theRecordingPurposeReusesTheSamePermissionAndTheServiceTypeIsDeclared() {
+        val permission = AndroidMicrophonePermission(context, MicrophonePermissionHost())
+        assertEquals(MicrophonePermissionStatus.Granted, permission.status.value)
+        val info = context.packageManager.getPackageInfo(context.packageName, PackageManager.GET_PERMISSIONS)
+        val requested = info.requestedPermissions?.toList().orEmpty()
+        assertTrue("RECORD_AUDIO declared", Manifest.permission.RECORD_AUDIO in requested)
+        assertTrue("FOREGROUND_SERVICE_MICROPHONE declared", "android.permission.FOREGROUND_SERVICE_MICROPHONE" in requested)
+    }
 }

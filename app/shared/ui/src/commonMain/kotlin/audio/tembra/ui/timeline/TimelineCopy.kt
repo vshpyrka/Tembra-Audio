@@ -1,6 +1,7 @@
 package audio.tembra.ui.timeline
 
 import audio.tembra.core.project.EditRejection
+import audio.tembra.core.recording.TakeStopReason
 
 /** The timeline's user-facing strings (contracts/timeline-screen.md "Copy"), kept as data so tests assert the exact text. */
 object TimelineCopy {
@@ -65,6 +66,45 @@ object TimelineCopy {
     const val splitOutside = "Move the playhead inside the clip to split it"
     const val splitTooClose = "The playhead is too close to the clip's edge"
     const val nameTooLong = "The name is too long"
+    const val takeTooShort = "The take was too short to keep"
+
+    // Feature 010 (contracts/timeline-recording-ui.md "Copy").
+    const val arm = "Arm for recording"
+    const val inputLevel = "Input level"
+    const val clipped = "Clipped, tap to reset"
+    const val monitorInput = "Monitor input"
+    const val monitorNeedsHeadphones = "Connect headphones to monitor the input"
+    const val microphoneNeeded = "Microphone access is needed to record"
+    const val openSettings = "Open settings"
+    const val allowMicrophone = "Allow"
+    const val countIn = "Count-in"
+    const val countInOff = "Off"
+    const val countInOneBar = "1 bar"
+    const val countInTwoBars = "2 bars"
+    const val recordRefused = "Not enough space to record (200 MB needed)"
+    const val noMicrophone = "No microphone is available on this device. Connect one to record."
+    const val takeEndedCall = "Take ended: the call took the audio"
+    const val takeEndedInput = "Take ended: the microphone changed"
+    const val takeEndedLength = "Take ended: 30 minutes reached"
+    const val takeEndedSpace = "Take ended: the device is out of space"
+    const val takeEndedFailed = "Take ended: recording failed"
+    const val takeEndedPermission = "Take ended: microphone access was revoked"
+    const val takeEndedLeft = "Take kept"
+    const val stopRecordingTitle = "Stop recording?"
+    const val stopRecordingText = "The take is kept up to now."
+    const val stopRecordingAndLeave = "Stop recording and leave"
+    const val keepRecording = "Keep recording"
+
+    /** The one-line notice for a take the engine or the platform ended (spec FR-021, FR-025). */
+    fun takeEnded(reason: TakeStopReason): String = when (reason) {
+        TakeStopReason.Interrupted -> takeEndedCall
+        TakeStopReason.InputLost -> takeEndedInput
+        TakeStopReason.MaxLength -> takeEndedLength
+        TakeStopReason.DiskFull -> takeEndedSpace
+        TakeStopReason.WriteFailed -> takeEndedFailed
+        TakeStopReason.PermissionRevoked -> takeEndedPermission
+        TakeStopReason.User, TakeStopReason.TransportClosed, TakeStopReason.Leaving -> takeEndedLeft
+    }
 
     /** The one-line reason for a refused edit, or null for refusals that need no message (spec FR-033, FR-043). */
     fun rejected(reason: EditRejection): String = when (reason) {
@@ -75,6 +115,7 @@ object TimelineCopy {
         EditRejection.SplitTooCloseToEdge -> splitTooClose
         EditRejection.ProjectNameOutOfRange, EditRejection.DescriptionTooLong, EditRejection.TrackNameTooLong -> nameTooLong
         EditRejection.TrackAtEnd -> ""
+        EditRejection.TakeTooShort -> takeTooShort
         is EditRejection.UnknownTrack, is EditRejection.UnknownClip, is EditRejection.UnknownAsset -> ""
     }
 

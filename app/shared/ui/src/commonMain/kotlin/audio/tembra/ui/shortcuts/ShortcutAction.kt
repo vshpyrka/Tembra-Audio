@@ -26,6 +26,10 @@ enum class ShortcutAction {
     TimelineZoomOut,
     TimelineMute,
     TimelineSolo,
+    // Feature 010 (FR-028): arm, record, monitor.
+    TimelineArm,
+    TimelineRecord,
+    TimelineMonitor,
     MetronomeStartStop,
     MetronomeTempoUp,
     MetronomeTempoDown,

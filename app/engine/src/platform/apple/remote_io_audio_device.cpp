@@ -140,6 +140,60 @@ void RemoteIoAudioDevice::close() {
     }
     input_ = nullptr;
     render_ = nullptr;
+    capture_ = nullptr;
+    duplexChannels_.store(0);
+}
+
+// --- The duplex input on bus 1 (feature 010, research R3) --------------------------------------------------------
+
+bool RemoteIoAudioDevice::configureDuplexLocked(bool enableInput) {
+    // EnableIO changes only on an uninitialised unit: stop, reconfigure, initialise, start (the measured output gap).
+    AudioOutputUnitStop(unit_);
+    AudioUnitUninitialize(unit_);
+    UInt32 enable = enableInput ? 1 : 0;
+    if (AudioUnitSetProperty(unit_, kAudioOutputUnitProperty_EnableIO, kAudioUnitScope_Input, kInputBus, &enable, sizeof(enable)) != noErr) return false;
+    if (enableInput) {
+        // The client format on bus 1's output scope: non-interleaved float at the hardware rate, the input's own
+        // channels up to the maximum (RemoteIO shares one rate across its buses).
+        AudioStreamBasicDescription hardware{};
+        UInt32 size = sizeof(hardware);
+        uint32_t channels = duplexMaxChannels_;
+        if (AudioUnitGetProperty(unit_, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, kInputBus, &hardware, &size) == noErr && hardware.mChannelsPerFrame > 0) {
+            if (hardware.mChannelsPerFrame < channels) channels = hardware.mChannelsPerFrame;
+        }
+        const double rate = static_cast<double>(sampleRate_.load());
+        AudioStreamBasicDescription format = floatFormat(rate, channels, false);
+        if (AudioUnitSetProperty(unit_, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Output, kInputBus, &format, sizeof(format)) != noErr) return false;
+        duplexPlanar_.assign(channels, std::vector<float>(kMaxFramesPerSlice, 0.0f));
+        duplexListStorage_.assign(sizeof(AudioBufferList) + sizeof(AudioBuffer) * channels, 0);
+        duplexScratch_.assign(static_cast<size_t>(kMaxFramesPerSlice) * channels, 0.0f);
+        duplexChannels_.store(channels);
+    } else {
+        duplexChannels_.store(0);
+    }
+    if (AudioUnitInitialize(unit_) != noErr) return false;
+    return AudioOutputUnitStart(unit_) == noErr;
+}
+
+int32_t RemoteIoAudioDevice::openInputBeside(uint32_t, uint32_t maxChannels, CaptureCallback callback, void* context) {
+    if (unit_ == nullptr || render_ == nullptr) return TEMBRA_ERR_STATE;
+    if (duplexChannels_.load() > 0) return TEMBRA_OK;  // idempotent
+    duplexMaxChannels_ = maxChannels < 1 ? 1 : (maxChannels > 2 ? 2 : maxChannels);
+    capture_ = callback;
+    captureContext_ = context;
+    if (!configureDuplexLocked(true)) {
+        capture_ = nullptr;
+        duplexChannels_.store(0);
+        static_cast<void>(configureDuplexLocked(false));  // back to output-only, whatever happened
+        return TEMBRA_ERR_DEVICE;
+    }
+    return TEMBRA_OK;
+}
+
+void RemoteIoAudioDevice::closeInput() {
+    if (unit_ == nullptr || duplexChannels_.load() == 0) return;
+    capture_ = nullptr;
+    static_cast<void>(configureDuplexLocked(false));
 }
 
 uint32_t RemoteIoAudioDevice::sampleRate() const { return sampleRate_.load(); }
@@ -162,13 +216,35 @@ OSStatus RemoteIoAudioDevice::inputProc(void* refCon, AudioUnitRenderActionFlags
     return status;
 }
 
-OSStatus RemoteIoAudioDevice::renderProc(void* refCon, AudioUnitRenderActionFlags*, const AudioTimeStamp*, UInt32, UInt32 frames,
+OSStatus RemoteIoAudioDevice::renderProc(void* refCon, AudioUnitRenderActionFlags* flags, const AudioTimeStamp* timestamp, UInt32, UInt32 frames,
                                          AudioBufferList* ioData) {
     // Audio thread: the engine renders interleaved stereo into the pre-allocated scratch, split here into the unit's
     // planar buffers (or copied when the unit hands over one interleaved buffer). No allocation (Constitution I).
     auto* self = static_cast<RemoteIoAudioDevice*>(refCon);
     if (ioData == nullptr || ioData->mNumberBuffers == 0) return noErr;
     if (frames * 2 > self->outputScratch_.size()) frames = static_cast<UInt32>(self->outputScratch_.size() / 2);
+    // Feature 010: pull the duplex input for the same frames first, interleave it and hand it to the capture callback.
+    const uint32_t duplex = self->duplexChannels_.load(std::memory_order_acquire);
+    if (duplex > 0 && self->capture_ != nullptr && !self->duplexListStorage_.empty()) {
+        auto* list = reinterpret_cast<AudioBufferList*>(self->duplexListStorage_.data());
+        list->mNumberBuffers = duplex;
+        for (uint32_t c = 0; c < duplex; ++c) {
+            list->mBuffers[c].mNumberChannels = 1;
+            list->mBuffers[c].mDataByteSize = frames * sizeof(float);
+            list->mBuffers[c].mData = self->duplexPlanar_[c].data();
+        }
+        const OSStatus status = AudioUnitRender(self->unit_, flags, timestamp, kInputBus, frames, list);
+        float* interleaved = self->duplexScratch_.data();
+        if (status == noErr) {
+            for (UInt32 i = 0; i < frames; ++i) {
+                for (uint32_t c = 0; c < duplex; ++c) interleaved[i * duplex + c] = self->duplexPlanar_[c][i];
+            }
+            self->capture_(self->captureContext_, interleaved, duplex, frames, 0);
+        } else {
+            for (size_t i = 0; i < static_cast<size_t>(frames) * duplex; ++i) interleaved[i] = 0.0f;
+            self->capture_(self->captureContext_, interleaved, duplex, frames, frames);
+        }
+    }
     float* scratch = self->outputScratch_.data();
     if (self->render_ != nullptr) {
         self->render_(self->context_, scratch, frames);

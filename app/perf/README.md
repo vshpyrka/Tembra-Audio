@@ -71,6 +71,7 @@ uv run tracepulse run --device iphone14 --label <feature> [--size] [--no-build -
                                                         # `--journeys` on iOS runs only those journeys' test classes; the windowing
                                                         # journey's menu and chord steps need a synthesized pointer (iPad) and ⌘ keys
                                                         # (iPad, any simulator), so a physical iPhone records the relayout section only
+                                                        # badge short-iterations: XCTest dropped iterations whose signpost set differed from the first
 uv run tracepulse run --simulators --label <feature>    # every booted simulator, sequentially
 uv run tracepulse run --device pixel6 --label release-baseline --build-type release      # SC-007 comparison (Android)
 uv run tracepulse run --device iphone14 --label release-baseline --configuration Release # SC-007 comparison (iOS)
@@ -120,20 +121,30 @@ control.
 | Rendered report | `app/perf/reports/report.html` | no |
 | Per-device lock | `app/perf/data/locks/<device_id>` | no |
 
+The heavy folders under `app/perf/data/` (`rounds/`, `sessions/`, `comparisons/`, `profile-generate/`) may live
+on another volume behind symlinks; the cache, the locks, `devicectl.json` and `injections.json` stay in `data/`
+itself. On the owner's MacBook they sit on the SD card since 2026-11-02
+(`/Volumes/External/Dev/tembra-audio/perf/data/<folder>`): `sync`, `analyze`, `report`, `status`, `devices`,
+`doctor` and `size` work with the card out; `run`, `profile generate` and `profile compare` write a round, a session
+or a comparison and need it mounted (with the card out `os.makedirs` fails on the dangling link with "No such file
+or directory" before any device is touched).
+
 The Android measurement build is `./gradlew --console=plain -Ptembra.perf=true :androidApp:assemblePerf
 :perf-benchmarks:assemblePerf` (log kept under the round or session, never printed in full); the iOS one is
 `xcodebuild build-for-testing -scheme TembraPerf -configuration Perf`.
 
 ## What a round measures
 
-Five journeys on both platforms, same names: `startup` (cold), `tuner` (open, note readout, By Ear and
+Six journeys on both platforms, same names: `startup` (cold), `tuner` (open, note readout, By Ear and
 back), `metronome` (start, tempo up ×5, down ×5, stop), `timeline` (feature 009: Projects → the demo
 card, wait for the waveforms, play eight bars, seek, pinch in and out, split the first clip, open and
 close a track's settings, toggle the metronome twice; since design iteration D1, on a phone open the master
 volume pop-up (`transport.masterPopup`), drag its slider a little, close it with a tap outside and undo the
 change, and with the overview strip as the device's zoom control drag its window a quarter of its width and
 back (inside `timeline.scroll`); then pause, skip to start; both D1 steps are skipped where their control is
-absent) and `stress` (the demo
+absent), `recording` (feature 010: Projects → the demo card, add a track, arm it, switch monitoring on and
+off, record one bar of count-in plus four bars, stop the take while playback continues, pause, undo twice,
+skip to start; the runner grants the microphone first) and `stress` (the demo
 project plays with the click on while the lane scrolls for five seconds, the tuner cycle then takes the
 audio through the stop-and-leave dialog, the metronome runs while the tuner listens; the engine's audio-health
 counters are written right after the playback phase, while the transport still owns the device (on Android the
@@ -268,7 +279,7 @@ got 50 % slower (first hint)" for a 2 → 3 µs step.
    `collect_android._JOURNEY_OF_CLASS` / `_REQUIRED`, `collect_ios._TEST_JOURNEYS` and its `order`,
    `report._JOURNEY_ORDER`, the two JSON schemas' journey enums, `PerfMetrics.sectionsOf` and
    `Metrics.sections(of:)`, and the pytest fixtures that enumerate journeys (feature 009 did this for
-   `timeline`; the list above is complete). One journey definition, several
+   `timeline` and feature 010 for `recording`; the list above is complete). One journey definition, several
    registrations (feature 008, spec FR-002): the same journey class is also run by
    `BaselineProfileGenerator.journeys()` and gets its own test in `ProfileComparisonBenchmark` (named after
    the journey; add the method to `collect_android._COMPARISON_METHODS`). When the journey visits a new
@@ -373,7 +384,7 @@ part of the warning gate.
 
 ## Audio-thread health
 
-`tembra_engine_audio_health` (C ABI revision 6 since feature 009) copies the counters the callback writes
+`tembra_engine_audio_health` (C ABI revision 7 since feature 010, 6 since feature 009) copies the counters the callback writes
 with relaxed atomics: callbacks, last/max/mean callback duration, over-budget count, xruns (Oboe's
 counter, sampled off the callback), real-time status, fifo starvation (clips the transport found dry) and
 the clips active in the last block. `AudioHealthTicker` publishes the nine once per second through
@@ -382,6 +393,15 @@ iteration's trace (`audio.*` series, one sample per iteration), on iOS the stres
 writes `engine-health.json`, which the collector pulls from the app container (a file from a revision-5
 build reads zeros for the three new fields). `audio.starvation` is expected to read 0 on the reference
 devices and flags on any increase.
+
+Feature 010 appended four recording counters (ABI revision 7): `audio.input_overruns` (capture blocks the
+record FIFO could not take; expected 0, flagged on any increase like starvation), `audio.record_backlog`
+(frames waiting in the record FIFO; 50 % gate with a 2048-frame floor), `audio.take_alignment_ms` and
+`audio.monitor_delay_ms` (20 % gate with a 2 ms floor, informational). They travel the same way: Android
+counter tracks `audio.inputOverruns`, `audio.recordBacklog`, `audio.takeAlignmentMs`, `audio.monitorDelayMs`
+(peak over the trace), iOS `input_overruns`, `record_backlog`, `take_alignment_ms`, `monitor_delay_ms` in
+`engine-health.json` (a revision-6 file reads zeros). The `stress` journey records a short take so they are
+non-trivial there.
 
 ## Lane times (SC-008)
 

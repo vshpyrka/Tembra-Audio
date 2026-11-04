@@ -17,7 +17,8 @@ class PerfAnchorsCatalogueTest {
 
     @Test
     fun everyJourneyControlHasAnAnchor() {
-        assertEquals(38, PerfAnchors.all.size)
+        // 36 shared, 11 from feature 010 (recording) and 2 from feature 011 (windowing).
+        assertEquals(49, PerfAnchors.all.size)
     }
 
     @Test

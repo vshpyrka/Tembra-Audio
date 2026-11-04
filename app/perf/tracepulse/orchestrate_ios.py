@@ -23,7 +23,6 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from .collect_android import CollectError
-from .collect_ios import JOURNEY_TEST_CLASSES as _JOURNEY_TESTS
 from .collect_ios import collect_round, engine_health, parse_preflight, refusal_from_failures
 from .config import Config
 from .devices import Device
@@ -41,6 +40,33 @@ AUDIO_TRACE_SECONDS = 75
 AUDIO_TRACE_TEST = "AudioTracePass"
 # The cold-launch hitch driver runs only by hand under a system-wide Hitches recording; a round never runs it.
 COLD_LAUNCH_HITCH_TEST = "ColdLaunchHitchTests"
+# The 30-minute recording soak (feature 010, T096) runs only by hand; a round never runs it.
+RECORDING_SOAK_TEST = "RecordingSoakTests"
+
+# The XCTest class that drives each journey: a round for a subset of the journeys (`--journeys recording`) runs only
+# these classes, so the classes left out cannot refuse the round (the thermal gate is per test, and a 20-minute
+# recording journey leaves the phone at "serious" for the classes that would follow it).
+JOURNEY_TEST_CLASSES = {
+    "startup": "StartupPerfTests",
+    "tuner": "TunerPerfTests",
+    "metronome": "MetronomePerfTests",
+    "timeline": "TimelinePerfTests",
+    "recording": "RecordingPerfTests",
+    "stress": "StressPerfTests",
+    "windowing": "WindowingPerfTests",
+}
+
+
+def journey_test_classes(cfg: Config, journeys: Sequence[str]) -> Optional[List[str]]:
+    """The classes to run for a strict subset of the configured journeys; None for the whole target (every
+    configured journey, or a journey without a known class). Feature 011 met the same need on the iPhone 14: a
+    one-journey trial ran the whole target for an hour."""
+    if set(journeys) >= set(cfg.journeys):
+        return None
+    classes = [JOURNEY_TEST_CLASSES.get(j) for j in journeys]
+    if any(c is None for c in classes):
+        return None
+    return [c for c in classes if c is not None]
 # A "not trusted" runner launch is retried this many times, this far apart, before the round refuses.
 TRUST_RETRIES = 2
 TRUST_RETRY_WAIT_S = 120
@@ -238,27 +264,21 @@ def synthesized_inputs(device: Device) -> Tuple[bool, bool]:
     return pad, pad or device.kind == "simulator"
 
 
-def journey_test_classes(journeys: Sequence[str], all_journeys: Optional[Sequence[str]]) -> Optional[List[str]]:
-    """The test classes a round of [journeys] runs, in that order; None (the whole target) when it asks for every one
-    of [all_journeys]. A subset runs alone: the target took an hour on the iPhone 14 for a one-journey trial (2026-11-04)."""
-    if all_journeys is not None and set(all_journeys) <= set(journeys):
-        return None
-    return [_JOURNEY_TESTS[journey] for journey in journeys]
-
-
 def test_without_building(cfg: Config, device: Device, runner: Runner, xctestrun: str, result_bundle: str,
-                          log_path: str, only: Optional[str] = None, classes: Optional[Sequence[str]] = None) -> Completed:
-    """The measured run (`only=None`: the whole target minus the audio-trace pass and the cold-launch hitch driver, or
-    just the journeys' [classes]) or one named test."""
+                          log_path: str, only: Optional[str] = None,
+                          classes: Optional[Sequence[str]] = None) -> Completed:
+    """The measured run (`only=None`: the whole target minus the audio-trace pass and the cold-launch hitch driver,
+    or just `classes`, the journeys' test classes of a subset round) or one named test."""
     cmd = ["xcodebuild", "test-without-building", "-xctestrun", xctestrun, "-destination", _destination(device),
            "-resultBundlePath", result_bundle]
     if only is not None:
         cmd += [f"-only-testing:{only}"]
-    elif classes is not None:
-        cmd += [f"-only-testing:{cfg.ios.test_target}/{test_class}" for test_class in classes]
+    elif classes:
+        cmd += [f"-only-testing:{cfg.ios.test_target}/{cls}" for cls in classes]
     else:
         cmd += [f"-only-testing:{cfg.ios.test_target}", f"-skip-testing:{cfg.ios.test_target}/{AUDIO_TRACE_TEST}",
-                f"-skip-testing:{cfg.ios.test_target}/{COLD_LAUNCH_HITCH_TEST}"]
+                f"-skip-testing:{cfg.ios.test_target}/{COLD_LAUNCH_HITCH_TEST}",
+                f"-skip-testing:{cfg.ios.test_target}/{RECORDING_SOAK_TEST}"]
     res = runner.run(cmd, cwd=_ios_dir(cfg), timeout=TEST_TIMEOUT_S)
     with open(log_path, "w") as fh:
         fh.write(f"# {' '.join(cmd)}\n# rc={res.returncode}\n\n{res.stdout}\n--- stderr ---\n{res.stderr}")
@@ -389,7 +409,7 @@ def run_round(cfg: Config, device: Device, runner: Runner, clock: Clock, round_d
 
     result_bundle = os.path.join(round_dir, "perf.xcresult")
     log = os.path.join(round_dir, "xcodebuild-test.log")
-    classes = journey_test_classes(options.journeys, cfg.journeys)
+    classes = journey_test_classes(cfg, options.journeys)
     res = test_without_building(cfg, device, runner, xctestrun, result_bundle, log, classes=classes)
     # SpringBoard denies a runner launch as "not trusted" in two shapes: for good, until the developer profile is
     # trusted in Settings, and for a few minutes at a time on an otherwise trusted phone (2026-10-12: the same runner

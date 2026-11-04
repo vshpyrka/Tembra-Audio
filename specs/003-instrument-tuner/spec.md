@@ -421,7 +421,9 @@ cards with the platform screen reader.
 - **FR-014**: Entering Auto Listen for the first time MUST request microphone access with the
   platform's standard prompt. Both platforms MUST declare why the microphone is used in the
   platform's usual place, with the wording "Tembra Audio listens to your instrument to show its
-  tuning."
+  tuning." *Wording superseded by feature 010 FR-019 (2026-10-27): the one sentence now covers the
+  tuner and recording, "Tembra Audio listens to your instrument to show its tuning and records it
+  into your projects."*
 - **FR-015**: When access is denied, Auto Listen MUST show, in place of the meter, one short
   explanation that the microphone is needed to hear the instrument and a control that opens the
   app's system settings page; the selectors and By Ear MUST remain fully usable. When access is

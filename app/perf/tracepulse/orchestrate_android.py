@@ -395,6 +395,7 @@ BENCHMARK_CLASS_OF = {
     "tuner": "TunerJourneyBenchmark",
     "metronome": "MetronomeJourneyBenchmark",
     "timeline": "TimelineJourneyBenchmark",
+    "recording": "RecordingJourneyBenchmark",
     "stress": "StressJourneyBenchmark",
     "windowing": "WindowingJourneyBenchmark",
 }

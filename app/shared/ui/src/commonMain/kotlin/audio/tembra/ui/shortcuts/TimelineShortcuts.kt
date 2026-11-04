@@ -22,4 +22,11 @@ interface TimelineShortcuts {
     fun toggleMute(): Boolean
 
     fun toggleSolo(): Boolean
+
+    /** Feature 010 (FR-028): arm the selected track, record (or end the take, or cancel a count-in), toggle monitoring. */
+    fun arm(): Boolean
+
+    fun record(): Boolean
+
+    fun toggleMonitor(): Boolean
 }

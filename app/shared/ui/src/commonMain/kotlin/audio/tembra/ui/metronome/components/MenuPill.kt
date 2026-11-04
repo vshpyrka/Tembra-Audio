@@ -36,6 +36,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -66,6 +67,8 @@ internal fun MenuPill(
     onSelect: (String) -> Unit,
     testTag: String,
     modifier: Modifier = Modifier,
+    /** False draws the pill dimmed and read-only (the count-in while a take runs, feature 010 FR-018). */
+    enabled: Boolean = true,
 ) {
     val colors = TembraTheme.colors
     val spacing = TembraTheme.spacing
@@ -74,9 +77,9 @@ internal fun MenuPill(
     val hovered by source.collectIsHoveredAsState()
     val pressed by source.collectIsPressedAsState()
     val focused by source.collectIsFocusedAsState()
-    val raised = hovered || pressed
-    val fill = if (raised) colors.secondary else colors.secondaryContainer
-    val content = if (raised) colors.onSecondary else colors.onSecondaryContainer
+    val raised = enabled && (hovered || pressed)
+    val fill = if (raised) colors.secondary else colors.secondaryContainer.copy(alpha = if (enabled) 1f else DISABLED_ALPHA)
+    val content = if (raised) colors.onSecondary else colors.onSecondaryContainer.copy(alpha = if (enabled) 1f else DISABLED_ALPHA)
     val ring = spacing.focusRingWidth
     val ringColor = colors.primary
 
@@ -85,10 +88,11 @@ internal fun MenuPill(
             Box(
                 modifier = Modifier
                     .testTag(testTag)
-                    .pointerHoverIcon(PointerIcon.Hand).clickable(interactionSource = source, indication = null, role = Role.Button) { open = true }
+                    .pointerHoverIcon(PointerIcon.Hand).clickable(interactionSource = source, indication = null, enabled = enabled, role = Role.Button) { open = true }
                     .semantics {
                         contentDescription = description
                         stateDescription = if (open) MetronomeCopy.expanded else MetronomeCopy.collapsed
+                        if (!enabled) disabled()
                     }
                     .minimumInteractiveComponentSize(),
                 contentAlignment = Alignment.Center,
@@ -168,3 +172,5 @@ internal fun MenuPill(
         }
     }
 }
+
+private const val DISABLED_ALPHA = 0.38f

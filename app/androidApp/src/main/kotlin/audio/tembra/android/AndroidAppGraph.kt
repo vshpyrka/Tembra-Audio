@@ -10,6 +10,7 @@ import audio.tembra.ui.drop.DroppedFilesReader
 import audio.tembra.ui.drop.OpenedFiles
 import audio.tembra.ui.drop.androidDroppedFilesReader
 import audio.tembra.ui.platform.AudioFilePicker
+import audio.tembra.ui.platform.AudioRouteMonitor
 import audio.tembra.ui.platform.BackgroundPlaybackHost
 import audio.tembra.ui.platform.MicrophonePermission
 import audio.tembra.ui.platform.NoTrackpadPinches
@@ -81,6 +82,10 @@ interface AndroidAppGraph : AppGraph {
     @SingleIn(AppScope::class)
     fun provideAudioFilePicker(host: AudioFilePickerHost, context: Context): AudioFilePicker = AndroidAudioFilePicker(host, context)
 
+    /** The device routes for the recording controller (feature 010, research R12). */
+    @Provides
+    @SingleIn(AppScope::class)
+    fun provideAudioRouteMonitor(context: Context): AudioRouteMonitor = AndroidAudioRouteMonitor(context)
     @Provides
     @SingleIn(AppScope::class)
     fun provideAndroidWindowControls(): AndroidWindowControls = AndroidWindowControls()

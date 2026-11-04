@@ -28,7 +28,8 @@ TEST_CASE("intervals, animation intervals and counters do not crash", "[trace][s
 }
 
 TEST_CASE("the generated name table matches the catalogue count", "[trace][shim]") {
-    // 16 from feature 007 + 10 sections (D1 added transport.masterPopup) and 3 counters from feature 009 + 3 sections from
-    // feature 011 (shell.windowRelayout, shell.shortcutNavigate, timeline.contextMenu).
-    REQUIRE(TEMBRA_TRACE_NAME_COUNT == 32);
+    // 16 from feature 007 + 13 from feature 009 (10 sections incl. D1's transport.masterPopup, 3 counters) + 11 from
+    // feature 010 (7 sections, 4 counters) + 3 sections from feature 011 (shell.windowRelayout, shell.shortcutNavigate,
+    // timeline.contextMenu).
+    REQUIRE(TEMBRA_TRACE_NAME_COUNT == 43);
 }

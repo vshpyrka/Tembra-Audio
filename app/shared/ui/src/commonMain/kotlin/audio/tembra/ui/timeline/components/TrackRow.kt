@@ -12,6 +12,8 @@ import androidx.compose.runtime.setValue
 import audio.tembra.core.project.ClipId
 import androidx.compose.ui.Modifier
 import audio.tembra.ui.theme.TembraTheme
+import audio.tembra.core.project.TempoMap
+import audio.tembra.ui.session.InputTelemetry
 import audio.tembra.ui.timeline.TimelineCallbacks
 import audio.tembra.ui.timeline.TimelineLayout
 import audio.tembra.ui.timeline.TimelineUiState
@@ -31,8 +33,11 @@ internal fun TrackRow(
     layout: TimelineLayout,
     callbacks: TimelineCallbacks,
     modifier: Modifier = Modifier,
+    inputTelemetry: InputTelemetry = InputTelemetry { _, _ -> },
 ) {
     val spacing = TembraTheme.spacing
+    val tempoMap = TempoMap(state.tempo, state.timeSignature)
+    val liveTake = state.liveTake?.takeIf { it.trackId == track.id }
     val selected = state.selection.trackIdOrNull == track.id
     val isFirst = index == 0
     val isLast = index == state.tracks.lastIndex
@@ -63,6 +68,10 @@ internal fun TrackRow(
                 onMoveUp = { callbacks.onMoveTrack(track.id, -1) },
                 onMoveDown = { callbacks.onMoveTrack(track.id, 1) },
                 onDelete = { callbacks.onDeleteTrack(track.id) },
+                onArm = { callbacks.onArm(track.id) },
+                canReorder = state.canMoveOrDeleteTrack,
+                inputTelemetry = inputTelemetry,
+                onResetClip = { callbacks.onResetClip(track.id) },
                 menuOpen = trackMenuOpen,
                 onMenuOpen = { trackMenuOpen = it },
             )
@@ -91,6 +100,9 @@ internal fun TrackRow(
                 menuClip = menuClip,
                 onMenuClip = onMenuClip,
                 modifier = Modifier.weight(1f),
+                tempoMap = tempoMap,
+                liveTake = liveTake,
+                inputTelemetry = inputTelemetry,
             )
         }
     } else {
@@ -109,6 +121,12 @@ internal fun TrackRow(
                 onMoveUp = { callbacks.onMoveTrack(track.id, -1) },
                 onMoveDown = { callbacks.onMoveTrack(track.id, 1) },
                 onDelete = { callbacks.onDeleteTrack(track.id) },
+                onArm = { callbacks.onArm(track.id) },
+                onRecord = callbacks.onRecord,
+                recordState = state.recordPhase,
+                canReorder = state.canMoveOrDeleteTrack,
+                inputTelemetry = inputTelemetry,
+                onResetClip = { callbacks.onResetClip(track.id) },
                 menuOpen = trackMenuOpen,
                 onMenuOpen = { trackMenuOpen = it },
             )
@@ -134,6 +152,9 @@ internal fun TrackRow(
                 onClipDragCancel = callbacks.onClipDragCancel,
                 onSplit = callbacks.onSplit,
                 onDeleteClip = callbacks.onDeleteClip,
+                tempoMap = tempoMap,
+                liveTake = liveTake,
+                inputTelemetry = inputTelemetry,
                 menuClip = menuClip,
                 onMenuClip = onMenuClip,
             )

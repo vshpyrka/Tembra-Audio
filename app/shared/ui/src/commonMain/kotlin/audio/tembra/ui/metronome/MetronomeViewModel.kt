@@ -21,6 +21,7 @@ import audio.tembra.engine.AudioState
 import audio.tembra.engine.ClickLevel
 import audio.tembra.engine.ClickSoundId
 import audio.tembra.engine.CustomSoundResult
+import audio.tembra.engine.EngineDispatchers
 import audio.tembra.engine.MetronomeAudio
 import audio.tembra.engine.MetronomeGrid
 import audio.tembra.engine.TickSnapshot
@@ -39,6 +40,10 @@ import dev.zacsweers.metrox.viewmodel.ViewModelKey
 import kotlin.math.min
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -86,6 +91,13 @@ class MetronomeViewModel(
     private val picker: AudioFilePicker,
     /** Where a custom sound is decoded; an optional binding, so the graph provides nothing for it. */
     private val prepareDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    /**
+     * Where the click starts, stops and previews (feature 010, T103): the session activates and the stream opens
+     * there, about 100 ms on an iPhone 14, which on the main thread dropped frames on the Play tap. The engine's one
+     * serial dispatcher, shared with the tuner and the transport, so the hand-over between screens keeps its order;
+     * an optional binding.
+     */
+    private val audioDispatcher: CoroutineDispatcher = EngineDispatchers.blocking,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MetronomeUiState())
@@ -197,6 +209,8 @@ class MetronomeViewModel(
                 AudioEvent.DeviceLost -> onPlaybackEvent(PlaybackEvent.DeviceLost)
                 // The metronome never restarts by itself (spec FR-027): the end of an interruption changes nothing.
                 AudioEvent.InterruptionEnded -> Unit
+                // Feature 010: the recording session's route changes concern the timeline only.
+                AudioEvent.InputRouteChanged, is AudioEvent.OutputRouteChanged -> Unit
             }
         }
     }
@@ -362,7 +376,7 @@ class MetronomeViewModel(
         }
         _uiState.update { it.copy(settings = it.settings.copy(sound = sound)) }
         audio.selectSound(soundIdOf(sound))
-        if (state.playback == PlaybackState.Stopped) audio.previewClick(ClickLevel.Click)
+        if (state.playback == PlaybackState.Stopped) previewClick()
         persist { it.copy(sound = sound) }
     }
 
@@ -481,7 +495,7 @@ class MetronomeViewModel(
             it.copy(customSound = CustomSoundState.Available(name), settings = it.settings.copy(sound = sound, customSound = ref))
         }
         audio.selectSound(ClickSoundId.Custom)
-        if (_uiState.value.playback == PlaybackState.Stopped) audio.previewClick(ClickLevel.Click)
+        if (_uiState.value.playback == PlaybackState.Stopped) previewClick()
         persist { it.copy(sound = sound, customSound = ref) }
     }
 
@@ -502,19 +516,42 @@ class MetronomeViewModel(
         }
     }
 
-    /** `keepAlive` → `startMetronome` (data-model.md §7); a refusal on either side ends in a stop with its message. */
+    /**
+     * `keepAlive` → `startMetronome` (data-model.md §7); a refusal on either side ends in a stop with its message. The
+     * screen shows Starting at once; the engine start runs on [audioDispatcher] (T103) and, once back, becomes Running
+     * only if nothing stopped the click meanwhile (a pause that landed during the start has its own stop queued behind
+     * the start on the same dispatcher). Non-cancellable, so a cleared screen still settles the engine.
+     */
+    // ATOMIC start (a delicate API since kotlinx.coroutines 1.11): the engine call runs even when the screen is cleared at once.
+    @OptIn(DelicateCoroutinesApi::class)
     private fun startPlayback() {
-        // A preview click still sounding would make the engine refuse the start.
-        if (audio.audioState == AudioState.Tone) audio.stopTone()
         _uiState.update { it.copy(playback = PlaybackState.Starting) }
         val notification = PlaybackNotification(MetronomeCopy.notificationTitle, MetronomeCopy.notificationSubtitle(_uiState.value.settings.tempo))
-        val failure = if (host.keepAlive(notification)) startFailureOf(audio.startMetronome()) else StartFailure.HostRefused
-        if (failure != null) {
-            onPlaybackEvent(PlaybackEvent.StartFailed(failure))
+        if (!host.keepAlive(notification)) {
+            onPlaybackEvent(PlaybackEvent.StartFailed(StartFailure.HostRefused))
             return
         }
-        pollsSinceStart = 0
-        _uiState.update { it.copy(playback = PlaybackState.Running) }
+        viewModelScope.launch(CoroutineName("startMetronome"), start = CoroutineStart.ATOMIC) {
+            withContext(NonCancellable) {
+                val failure = withContext(audioDispatcher) {
+                    // A preview click still sounding would make the engine refuse the start.
+                    if (audio.audioState == AudioState.Tone) audio.stopTone()
+                    startFailureOf(audio.startMetronome())
+                }
+                if (_uiState.value.playback != PlaybackState.Starting) return@withContext
+                if (failure != null) {
+                    onPlaybackEvent(PlaybackEvent.StartFailed(failure))
+                    return@withContext
+                }
+                pollsSinceStart = 0
+                _uiState.update { it.copy(playback = PlaybackState.Running) }
+            }
+        }
+    }
+
+    /** The preview click on [audioDispatcher] (T103); the engine's own refusal (a tone still sounding) is the result. */
+    private fun previewClick() {
+        viewModelScope.launch(CoroutineName("previewClick")) { withContext(audioDispatcher) { audio.previewClick(ClickLevel.Click) } }
     }
 
     /** Android requests audio focus inside the engine start, so a denial arrives as [AudioResult.FOCUS_DENIED]. */
@@ -528,11 +565,18 @@ class MetronomeViewModel(
      * `stopMetronome` → `release` (data-model.md §7). Idempotent on both sides, so it also undoes a start that failed
      * halfway: the engine was not started, and the host gives back whatever it had acquired.
      */
+    @OptIn(DelicateCoroutinesApi::class)
     private fun stopPlayback(message: MetronomeMessage?) {
-        audio.stopMetronome()
-        host.release()
         _uiState.update { it.copy(playback = PlaybackState.Stopped, currentBeat = NO_BEAT) }
         if (message != null) _messages.trySend(message)
+        // The engine stop on the audio dispatcher (T103), then the host's release; atomic and non-cancellable, so the
+        // stop a cleared screen asks for still reaches the engine after its scope is gone.
+        viewModelScope.launch(CoroutineName("stopMetronome"), start = CoroutineStart.ATOMIC) {
+            withContext(NonCancellable) {
+                withContext(audioDispatcher) { audio.stopMetronome() }
+                host.release()
+            }
+        }
     }
 
     // --- Telemetry ----------------------------------------------------------------------------------------------------

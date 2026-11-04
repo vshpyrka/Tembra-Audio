@@ -8,6 +8,7 @@ import audio.tembra.data.tuner.TunerPreferences
 import audio.tembra.engine.AudioEngine
 import audio.tembra.ui.drop.DroppedFilesReader
 import audio.tembra.ui.platform.AudioFilePicker
+import audio.tembra.ui.platform.AudioRouteMonitor
 import audio.tembra.ui.platform.BackgroundPlaybackHost
 import audio.tembra.ui.platform.MicrophonePermission
 import audio.tembra.ui.platform.TrackpadPinchSource
@@ -30,6 +31,7 @@ interface AppGraph : ViewModelGraph {
     val microphonePermission: MicrophonePermission
     val backgroundPlaybackHost: BackgroundPlaybackHost
     val audioFilePicker: AudioFilePicker
+    val audioRouteMonitor: AudioRouteMonitor
     val windowControls: WindowControls
     val trackpadPinchSource: TrackpadPinchSource
     val droppedFilesReader: DroppedFilesReader

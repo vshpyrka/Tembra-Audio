@@ -26,6 +26,12 @@ object PerfMetrics {
         "timeline.projectOpen", "timeline.waveform", "transport.play", "transport.seek", "timeline.zoom", "timeline.scroll",
         "timeline.clipSplit", "timeline.playheadFrame", "engine.prime", "engine.loadClip", "transport.masterPopup",
     )
+    // Feature 010 (contracts/perf-instrumentation.md): the recording sections and the timeline ones the journey shares.
+    private val recordingSections = listOf(
+        "timeline.arm", "transport.recordStart", "transport.countIn", "timeline.takeFrame", "transport.recordStop",
+        "timeline.monitorToggle", "engine.takeAlignment", "timeline.waveform", "transport.play", "timeline.playheadFrame",
+        "timeline.projectSave",
+    )
     // Feature 011 (contracts/perf-instrumentation.md): the window changes, the right-click menu and the destination chords,
     // with the metronome and the timeline they run over.
     private val windowingSections = listOf(
@@ -44,6 +50,7 @@ object PerfMetrics {
         "tuner" -> tunerSections
         "metronome" -> metronomeSections
         "timeline" -> timelineSections
+        "recording" -> recordingSections
         "stress" -> stressSections
         "windowing" -> windowingSections
         else -> emptyList()

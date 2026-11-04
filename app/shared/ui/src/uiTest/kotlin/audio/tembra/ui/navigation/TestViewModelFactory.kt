@@ -1,5 +1,9 @@
 package audio.tembra.ui.navigation
 
+import audio.tembra.ui.session.RecordingController
+import audio.tembra.ui.platform.MicrophonePermissionStatus
+import audio.tembra.ui.platform.FakeMicrophonePermission
+import audio.tembra.ui.platform.FakeAudioRouteMonitor
 import androidx.lifecycle.ViewModel
 import audio.tembra.data.metronome.FakeMetronomePreferences
 import audio.tembra.data.projects.FakeProjectRepository
@@ -32,13 +36,23 @@ class TestViewModelFactory : MetroViewModelFactory() {
     private val timelinePreferences = FakeTimelinePreferences()
     private val repository = FakeProjectRepository()
     private val holder = LibraryViewStateHolder()
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val session = ProjectSession(
         repository = repository,
         audio = engine,
         metronome = engine,
         preferences = preferences,
         host = FakeBackgroundPlaybackHost(),
-        scope = CoroutineScope(SupervisorJob() + Dispatchers.Main),
+        recording = RecordingController(
+            audio = engine,
+            permission = FakeMicrophonePermission(MicrophonePermissionStatus.Granted),
+            routes = FakeAudioRouteMonitor(),
+            host = FakeBackgroundPlaybackHost(),
+            preferences = timelinePreferences,
+            repository = repository,
+            scope = scope,
+        ),
+        scope = scope,
     )
 
     /** Starts the session and opens the fake repository's demo project, so the Timeline composes with its clips. */

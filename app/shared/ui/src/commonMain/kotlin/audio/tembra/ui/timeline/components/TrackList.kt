@@ -8,6 +8,9 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -29,6 +32,7 @@ import audio.tembra.ui.drop.DropPreview
 import audio.tembra.ui.drop.DropZone
 import audio.tembra.ui.drop.audioDropTarget
 import audio.tembra.ui.theme.TembraTheme
+import audio.tembra.ui.session.InputTelemetry
 import audio.tembra.ui.timeline.TimelineCallbacks
 import audio.tembra.ui.timeline.TimelineLayout
 import audio.tembra.ui.timeline.TimelineTestTags
@@ -38,7 +42,9 @@ import audio.tembra.ui.tracksettings.TrackSettingsInlineRow
 /**
  * The vertically scrolling list of [TrackRow]s (spec FR-016; contracts/timeline-screen.md): keyed by track id so a
  * reorder moves rows instead of rebuilding them. Its lane width (the list minus the pinned header column) is reported
- * through [TimelineCallbacks.onViewportMeasured] whenever it changes, which is what the viewport maps beats to.
+ * through [TimelineCallbacks.onViewportMeasured] whenever it changes, which is what the viewport maps beats to. A
+ * track just added is selected (009 FR-019) and lands below the visible rows on a phone: the list scrolls it into
+ * view, so its arm toggle is at hand (feature 010, FR-008; the recording journey arms it right after "+ Track").
  */
 @Composable
 internal fun TrackList(
@@ -46,6 +52,7 @@ internal fun TrackList(
     layout: TimelineLayout,
     callbacks: TimelineCallbacks,
     modifier: Modifier = Modifier,
+    inputTelemetry: InputTelemetry = InputTelemetry { _, _ -> },
     playheadMask: PlayheadMask? = null,
 ) {
     val density = LocalDensity.current
@@ -56,6 +63,15 @@ internal fun TrackList(
         state.tracks.map { track -> running.also { running += track.clips.size } }
     }
     val listState = rememberLazyListState()
+    val selectedTrack = state.selection.trackIdOrNull
+    var knownTracks by remember { mutableIntStateOf(state.tracks.size) }
+    LaunchedEffect(state.tracks.size) {
+        val grew = state.tracks.size > knownTracks
+        knownTracks = state.tracks.size
+        // An instant scroll, not an animated one: a tap on the new track's header during the animation is cancelled
+        // when the row slides out from under the finger (the recording journey lost its arm tap once in 49 runs).
+        if (grew && selectedTrack != null && state.tracks.lastOrNull()?.id == selectedTrack) listState.scrollToItem(state.tracks.lastIndex)
+    }
     val onScrollBy by rememberUpdatedState(callbacks.onScrollBy)
     // Files dropped on a track's row join that track, below the rows they become new tracks (feature 011, FR-026): the
     // zone is the row under the pointer, the beat the snapped one under it. Where the platform does not say where the
@@ -94,6 +110,7 @@ internal fun TrackList(
                     state = state,
                     layout = layout,
                     callbacks = callbacks,
+                    inputTelemetry = inputTelemetry,
                 )
                 // The expanded layout's inline settings under the open track (spec FR-041); the chevron collapses it. The
                 // playhead leaves the row out (feature 011): the row reports where it is, and clears it when it goes.

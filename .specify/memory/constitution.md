@@ -212,14 +212,28 @@ specifications technology-free and the test-first loop of Principle III intact.
   `/speckit-plan` (how, technology), `/speckit-tasks`, `/speckit-implement`. Specifications
   MUST NOT contain technology choices; plans MUST cite this constitution's principles in their
   Constitution Check and justify any deviation.
-- Build order is fixed: project scaffold, navigation shell, tuner, metronome, audio spine,
-  transport and timeline, mixer, effects and automation, recording and loops and speed,
-  collaboration. A plan MUST NOT pull later work forward without amending this order here. The
-  tuner precedes the audio spine (amended 2026-09-26): it is the first feature to capture audio
-  and produce sound, and its input and output paths MUST obey Principle I so the audio spine can
-  grow from them. The metronome follows the tuner (amended 2026-09-29): it is the second feature
-  to produce sound and the first to schedule it sample-accurately, and its click path MUST obey
-  Principle I so the audio spine and the transport can grow from it.
+- Build order is fixed: project scaffold, navigation shell, tuner, metronome, audio spine with
+  transport and timeline (one feature), recording, mixer, effects and automation, loops and
+  speed, collaboration. A plan MUST NOT pull later work forward without amending this order
+  here. The tuner precedes the audio spine (amended 2026-09-26): it is the first feature to
+  capture audio and produce sound, and its input and output paths MUST obey Principle I so the
+  audio spine can grow from them. The metronome follows the tuner (amended 2026-09-29): it is
+  the second feature to produce sound and the first to schedule it sample-accurately, and its
+  click path MUST obey Principle I so the audio spine and the transport can grow from it. The
+  audio spine and the transport and timeline are one feature, and recording precedes effects
+  (amended 2026-10-13, feature 009): the spine's only user-facing proof is a project that plays,
+  so the engine's first multi-clip playback, the transport bar and the timeline ship together;
+  recording moves ahead of effects and automation because the owner wants the microphone as a
+  track source before effects; loops and speed stay after effects. Recording precedes the mixer
+  (amended 2026-10-27, feature 010): the owner chose recording as the feature after the
+  timeline, with the input level meter on the armed track's header, so recording no longer
+  waits for the mixer's meters and the mixer reuses that meter; recording is feature 010 and
+  the mixer feature 011. The amendment of 2026-10-13 had been lost from this file when `main`
+  was merged into the 009 branch on 2026-10-17 (merge 18460a5) and is restored here. These
+  amendments invalidate no spec or plan: `specs/010-timeline-recording/spec.md` is written to
+  this order; `specs/009-timeline-arranger/spec.md` names the mixer "feature 010" and
+  recording "feature 011" and is read with the two swapped; the order quoted in earlier specs
+  is historical.
 - Every feature instruments itself (amended 2026-10-08): every feature after the performance
   pipeline (feature 007) that adds a user-facing interaction or an engine path MUST add, in the
   same feature, its performance instrumentation: catalogue sections for its main interactions,
@@ -259,4 +273,4 @@ specifications technology-free and the test-first loop of Principle III intact.
 - `CLAUDE.md` is the runtime guidance file for agents working in this repository; it MUST point
   at this constitution and MUST NOT restate rules in a way that drifts from it.
 
-**Version**: 1.3.3 | **Ratified**: 2026-09-19 | **Last Amended**: 2026-10-17
+**Version**: 1.3.4 | **Ratified**: 2026-09-19 | **Last Amended**: 2026-10-27

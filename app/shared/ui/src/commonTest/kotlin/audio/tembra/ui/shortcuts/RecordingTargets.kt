@@ -42,6 +42,9 @@ class RecordingTargets(private val record: (ShortcutAction) -> Unit) {
         override fun zoom(steps: Int) = true.also { record(if (steps > 0) ShortcutAction.TimelineZoomIn else ShortcutAction.TimelineZoomOut) }
         override fun toggleMute() = true.also { record(ShortcutAction.TimelineMute) }
         override fun toggleSolo() = true.also { record(ShortcutAction.TimelineSolo) }
+        override fun arm() = true.also { record(ShortcutAction.TimelineArm) }
+        override fun record() = true.also { this@RecordingTargets.record(ShortcutAction.TimelineRecord) }
+        override fun toggleMonitor() = true.also { record(ShortcutAction.TimelineMonitor) }
     }
     private val metronome = object : MetronomeShortcuts {
         override fun startStop() = true.also { record(ShortcutAction.MetronomeStartStop) }

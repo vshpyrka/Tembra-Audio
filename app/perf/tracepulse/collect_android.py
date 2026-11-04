@@ -180,6 +180,7 @@ _JOURNEY_OF_CLASS = {
     "TunerJourneyBenchmark": "tuner",
     "MetronomeJourneyBenchmark": "metronome",
     "TimelineJourneyBenchmark": "timeline",
+    "RecordingJourneyBenchmark": "recording",
     "StressJourneyBenchmark": "stress",
     "WindowingJourneyBenchmark": "windowing",
 }
@@ -192,6 +193,8 @@ _REQUIRED = {
                   "memory.peak_kb", "memory.end_kb", "journey.duration_ms"),
     "timeline": ("frames.p50_ms", "frames.p90_ms", "frames.p99_ms", "frames.overrun_p90_ms",
                  "memory.peak_kb", "memory.end_kb", "journey.duration_ms"),
+    "recording": ("frames.p50_ms", "frames.p90_ms", "frames.p99_ms", "frames.overrun_p90_ms",
+                  "memory.peak_kb", "memory.end_kb", "journey.duration_ms"),
     "stress": ("frames.p50_ms", "frames.p90_ms", "frames.p99_ms", "frames.overrun_p90_ms",
                "memory.peak_kb", "memory.end_kb", "journey.duration_ms"),
     # Feature 011: the round fails when a window change, the right-click menu or a destination chord left no section.
@@ -229,7 +232,7 @@ def journey_of(class_name: str) -> str:
 
 # The comparison class of `tracepulse profile compare` (feature 008) holds one test per journey, named after it.
 COMPARISON_CLASS = "ProfileComparisonBenchmark"
-COMPARISON_METHODS = ("startup", "tuner", "metronome", "timeline", "stress")
+COMPARISON_METHODS = ("startup", "tuner", "metronome", "timeline", "recording", "stress")
 
 
 def journey_of_method(class_name: str, method: str) -> str:

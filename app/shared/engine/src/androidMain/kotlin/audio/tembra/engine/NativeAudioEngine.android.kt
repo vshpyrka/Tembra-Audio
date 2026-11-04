@@ -8,11 +8,14 @@ import audio.tembra.core.metronome.Tempo
 import audio.tembra.core.metronome.TimeSignature
 import audio.tembra.core.project.AudioFormat
 import audio.tembra.core.project.Beats
+import audio.tembra.core.recording.TakeStopReason
 import audio.tembra.engine.perf.AudioHealth
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
 /**
@@ -27,7 +30,11 @@ import kotlinx.coroutines.withContext
  * stream holds, and a stop leaves alone what another running stream holds. A preview click ends on its own, so the
  * actual closes its output stream and releases its focus itself once the engine is back to Idle.
  */
-actual class NativeAudioEngine(context: Context) : AudioEngine {
+actual class NativeAudioEngine(
+    context: Context,
+    /** Where the transport's stream opens and closes (T102): serial, never the caller's thread; tests inject a counting one. */
+    private val blocking: CoroutineDispatcher = EngineDispatchers.blocking,
+) : AudioEngine {
 
     /** Internal so device tests can observe what is held. */
     internal val focus = AndroidAudioFocus(context)
@@ -36,6 +43,9 @@ actual class NativeAudioEngine(context: Context) : AudioEngine {
 
     /** Internal so device tests can observe the registration. */
     internal val becomingNoisy = BecomingNoisyReceiver(context) { routeEvents.tryEmit(AudioEvent.OutputRouteLost) }
+
+    /** The device-change watcher registered while the transport is open (feature 010); internal for device tests. */
+    internal val routeWatcher = AndroidAudioRouteWatcher(context) { routeEvents.tryEmit(it) }
 
     private val mainHandler = Handler(Looper.getMainLooper())
 
@@ -247,7 +257,7 @@ actual class NativeAudioEngine(context: Context) : AudioEngine {
     override val audioState: AudioState
         get() = AudioState.fromNative(nativeAudioState())
 
-    /** Reused by every [audioHealth]: [callbacks, lastUs, maxUs, overBudget, xruns, realtime, avgUs, starvation, clipsActive]. */
+    /** Reused by every [audioHealth]: [callbacks, lastUs, maxUs, overBudget, xruns, realtime, avgUs, starvation, clipsActive, inputOverruns, recordBacklog, inputXruns]. */
     private val healthFields = LongArray(HEALTH_FIELDS)
 
     override fun audioHealth(): AudioHealth? {
@@ -262,6 +272,9 @@ actual class NativeAudioEngine(context: Context) : AudioEngine {
             avgMicros = healthFields[6].toInt(),
             starvation = healthFields[7].toInt(),
             clipsActive = healthFields[8].toInt(),
+            inputOverruns = healthFields[9].toInt(),
+            recordBacklog = healthFields[10].toInt(),
+            inputXruns = healthFields[11].toInt(),
         )
     }
 
@@ -271,7 +284,7 @@ actual class NativeAudioEngine(context: Context) : AudioEngine {
 
     private val arrangement = ArrangementBuffer()
 
-    /** Reused by every [readTransport]: [playing, positionFrames, blockTimeNs, latencyNs, sampleRate] and [positionBeats, audibleSeconds]. */
+    /** Reused by every [readTransport]: [playing, positionFrames, blockTimeNs, latencyNs, sampleRate, countInBeatsLeft, recording] and [positionBeats, audibleSeconds]. */
     private val transportLongs = LongArray(TRANSPORT_LONGS)
     private val transportDoubles = DoubleArray(TRANSPORT_DOUBLES)
 
@@ -285,17 +298,19 @@ actual class NativeAudioEngine(context: Context) : AudioEngine {
         synchronized(previewLock) { cancelPreviewReleaseLocked() }
         if (!focus.request(FocusType.Gain)) return TransportOpenResult.DeviceFailed
         becomingNoisy.register()
-        val code = withContext(Dispatchers.IO) { nativeTransportOpen() }
+        val code = withContext(blocking) { nativeTransportOpen() }
         if (code != 0) {
             becomingNoisy.unregister()
             focus.abandon()
             return if (code == STATE_REFUSED.code) TransportOpenResult.Busy(audioState) else TransportOpenResult.DeviceFailed
         }
+        routeWatcher.register()
         return TransportOpenResult.Opened
     }
 
-    override fun closeTransport() {
-        nativeTransportClose()
+    override suspend fun closeTransport() {
+        withContext(blocking) { nativeTransportClose() }
+        routeWatcher.unregister()
         becomingNoisy.unregister()
         // A tone or preview still sounding owns the focus (its own stop or the preview check releases it).
         if (audioState == AudioState.Tone) return
@@ -362,9 +377,120 @@ actual class NativeAudioEngine(context: Context) : AudioEngine {
         into.blockTimeNanos = transportLongs[2]
         into.latencyNanos = transportLongs[3]
         into.sampleRate = transportLongs[4].toInt()
+        into.countInBeatsLeft = transportLongs[5].toInt()
+        into.recording = transportLongs[6] != 0L
         into.positionBeats = transportDoubles[0]
         into.audiblePositionSeconds = transportDoubles[1]
     }
+
+    // --- Capture, takes and monitoring (feature 010, contracts/engine-c-abi-v7.md "Kotlin seam") ---------------------
+
+    /** Reused by every [readCapture]: the ints, floats and longs of `tembra_capture_snapshot`. */
+    private val captureInts = IntArray(CAPTURE_INTS)
+    private val captureFloats = FloatArray(CAPTURE_FLOATS)
+    private val captureLongs = LongArray(CAPTURE_LONGS)
+    private val peakBuffer = PeakBucketBuffer(PeakBuckets.DEFAULT_CAPACITY)
+    private val peakNext = LongArray(1)
+
+    /**
+     * Opening the second Oboe stream is a platform call (research R2): off the main thread. The callback publishes the
+     * armed snapshot (channels, rate) on its next block, so the result waits for it, up to [ARM_SETTLE_MILLIS]; an
+     * input that never reaches the callback (no microphone path, a stream the policy silenced) is closed again and
+     * reported unavailable rather than armed at a rate of 0.
+     */
+    override suspend fun arm(maxChannels: Int): ArmResult {
+        val code = withContext(Dispatchers.IO) { nativeTransportArm(maxChannels) }
+        if (code == STATE_REFUSED.code) return ArmResult.NotTransport
+        if (code != 0) return ArmResult.InputUnavailable
+        repeat(ARM_SETTLE_MILLIS / ARM_POLL_MILLIS) {
+            nativeCaptureRead(captureLongs, captureFloats, captureInts)
+            if (captureInts[0] != 0 && captureInts[5] > 0) return ArmResult.Armed(channels = captureInts[4].coerceAtLeast(1), sampleRate = captureInts[5])
+            delay(ARM_POLL_MILLIS.toLong())
+        }
+        nativeTransportDisarm()
+        return ArmResult.InputUnavailable
+    }
+
+    override suspend fun disarm() {
+        nativeTransportDisarm()
+    }
+
+    override fun setMonitor(enabled: Boolean, trackIndex: Int) {
+        nativeTransportSetMonitor(enabled, trackIndex)
+    }
+
+    /** The staging file is created and the position primed (file I/O): off the main thread. */
+    override suspend fun recordStart(config: RecordConfig): RecordStartResult {
+        val code = withContext(Dispatchers.IO) {
+            nativeTransportRecordStart(config.wavPath, config.trackIndex, config.countInBeats, config.maxFrames, config.minFreeBytes)
+        }
+        return when (code) {
+            0 -> RecordStartResult.Started
+            IO_ERROR -> RecordStartResult.FileFailed
+            else -> if (nativeCaptureArmed()) RecordStartResult.TakeRunning else RecordStartResult.NotArmed
+        }
+    }
+
+    private fun nativeCaptureArmed(): Boolean {
+        nativeCaptureRead(captureLongs, captureFloats, captureInts)
+        return captureInts[0] != 0
+    }
+
+    override fun recordCancel() {
+        nativeTransportRecordCancel()
+    }
+
+    /** The drain and the header finalisation block for up to a second: off the main thread. */
+    override suspend fun recordStop(): TakeInfo = withContext(Dispatchers.IO) {
+        // Allocated per call: a take stops rarely and never from two threads at once.
+        val longs = LongArray(TAKE_LONGS)
+        val doubles = DoubleArray(TAKE_DOUBLES)
+        val ints = IntArray(TAKE_INTS)
+        val code = nativeTransportRecordStop(longs, doubles, ints)
+        if (code != 0) {
+            TakeInfo(startFrames = 0, startBeats = 0.0, frames = 0, channels = 0, sampleRate = 0, alignmentFrames = 0, stopReason = TakeStopReason.User)
+        } else {
+            TakeInfo(
+                startFrames = longs[0], startBeats = doubles[0], frames = longs[1], channels = ints[0], sampleRate = ints[1],
+                alignmentFrames = longs[2], stopReason = TakeStopReasonCodes.fromNative(ints[2]),
+            )
+        }
+    }
+
+    override fun readCapture(into: CaptureSnapshot) {
+        nativeCaptureRead(captureLongs, captureFloats, captureInts)
+        into.armed = captureInts[0] != 0
+        into.recording = captureInts[1] != 0
+        into.preRoll = captureInts[2] != 0
+        into.monitoring = captureInts[3] != 0
+        into.inputChannels = captureInts[4]
+        into.sampleRate = captureInts[5]
+        into.clipped = captureInts[6] != 0
+        into.stopReason = TakeStopReasonCodes.fromNative(captureInts[7])
+        into.inputOverruns = captureInts[8]
+        into.backlogFrames = captureInts[9]
+        into.peak[0] = captureFloats[0]
+        into.peak[1] = captureFloats[1]
+        into.framesCaptured = captureLongs[0]
+        into.takeStartFrames = captureLongs[1]
+        into.alignmentFrames = captureLongs[2]
+        into.inputLatencyNanos = captureLongs[3]
+        into.outputLatencyNanos = captureLongs[4]
+    }
+
+    override fun readPeaks(fromIndex: Long, into: PeakBuckets): Long {
+        val count = nativeCaptureReadPeaks(fromIndex, peakBuffer.buffer, minOf(into.capacity, peakBuffer.capacity), peakNext)
+        peakBuffer.copyInto(into, count)
+        into.nextIndex = peakNext[0]
+        into.firstIndex = peakNext[0] - count
+        return peakNext[0]
+    }
+
+    override fun resetClip() {
+        nativeCaptureResetClip()
+    }
+
+    override fun freeBytes(path: String): Long = nativeStorageFreeBytes(path)
 
     override suspend fun inspect(path: String): AudioInfo? = withContext(Dispatchers.IO) {
         val ints = IntArray(CLIP_INFO_INTS)
@@ -428,15 +554,37 @@ actual class NativeAudioEngine(context: Context) : AudioEngine {
     private external fun nativeClipSourceClose(handle: Int)
     private external fun nativeAudioInspect(path: String, ints: IntArray, longs: LongArray): Int
     private external fun nativeAudioOverviewBuild(path: String, outPath: String): Int
+    private external fun nativeTransportArm(maxChannels: Int): Int
+    private external fun nativeTransportDisarm()
+    private external fun nativeTransportSetMonitor(enabled: Boolean, trackIndex: Int): Int
+    private external fun nativeCaptureSetInputLatencyNs(nanos: Long)
+    private external fun nativeTransportRecordStart(path: String, trackIndex: Int, countInBeats: Int, maxFrames: Long, minFreeBytes: Long): Int
+    private external fun nativeTransportRecordCancel(): Int
+    private external fun nativeTransportRecordStop(longs: LongArray, doubles: DoubleArray, ints: IntArray): Int
+    private external fun nativeCaptureRead(longs: LongArray, floats: FloatArray, ints: IntArray)
+    private external fun nativeCaptureResetClip()
+    private external fun nativeCaptureReadPeaks(fromIndex: Long, buffer: java.nio.ByteBuffer, maxCount: Int, next: LongArray): Int
+    private external fun nativeStorageFreeBytes(path: String): Long
 
     private companion object {
         const val READING_FIELDS = 9
         const val TICK_FIELDS = 7
         const val CUSTOM_INFO_FIELDS = 4
         const val CUSTOM_MS_FIELDS = 2
-        const val HEALTH_FIELDS = 9
-        const val TRANSPORT_LONGS = 5
+        const val HEALTH_FIELDS = 12
+        const val TRANSPORT_LONGS = 7
         const val TRANSPORT_DOUBLES = 2
+        const val CAPTURE_INTS = 10
+        const val CAPTURE_FLOATS = 2
+        const val CAPTURE_LONGS = 5
+        const val TAKE_LONGS = 3
+        const val TAKE_DOUBLES = 1
+        const val TAKE_INTS = 3
+        const val ARM_SETTLE_MILLIS = 2_000
+        const val ARM_POLL_MILLIS = 10
+
+        /** `TEMBRA_ERR_IO`: the staging file could not be created. */
+        const val IO_ERROR = -6
         const val CLIP_INFO_INTS = 3
         const val CLIP_INFO_LONGS = 1
         const val PREVIEW_CHECK_INTERVAL_MS = 100L
