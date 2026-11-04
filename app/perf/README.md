@@ -119,6 +119,14 @@ control.
 | Rendered report | `app/perf/reports/report.html` | no |
 | Per-device lock | `app/perf/data/locks/<device_id>` | no |
 
+The heavy folders under `app/perf/data/` (`rounds/`, `sessions/`, `comparisons/`, `profile-generate/`) may live
+on another volume behind symlinks; the cache, the locks, `devicectl.json` and `injections.json` stay in `data/`
+itself. On the owner's MacBook they sit on the SD card since 2026-11-02
+(`/Volumes/External/Dev/tembra-audio/perf/data/<folder>`): `sync`, `analyze`, `report`, `status`, `devices`,
+`doctor` and `size` work with the card out; `run`, `profile generate` and `profile compare` write a round, a session
+or a comparison and need it mounted (with the card out `os.makedirs` fails on the dangling link with "No such file
+or directory" before any device is touched).
+
 The Android measurement build is `./gradlew --console=plain -Ptembra.perf=true :androidApp:assemblePerf
 :perf-benchmarks:assemblePerf` (log kept under the round or session, never printed in full); the iOS one is
 `xcodebuild build-for-testing -scheme TembraPerf -configuration Perf`.
