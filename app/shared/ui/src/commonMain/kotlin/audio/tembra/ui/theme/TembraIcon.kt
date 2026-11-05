@@ -20,6 +20,7 @@ import audio.tembra.ui.resources.ic_graphic_eq_24
 import audio.tembra.ui.resources.ic_headphones_24
 import audio.tembra.ui.resources.ic_grid_on_24
 import audio.tembra.ui.resources.ic_hearing_24
+import audio.tembra.ui.resources.ic_instant_mix_24
 import audio.tembra.ui.resources.ic_library_music_24
 import audio.tembra.ui.resources.ic_metronome_24
 import audio.tembra.ui.resources.ic_mic_24
@@ -138,4 +139,6 @@ enum class TembraIcon(internal val resource: DrawableResource) {
     Piano(Res.drawable.ic_piano_24),
     // Feature 010 (timeline recording): the input monitoring toggle.
     Headphones(Res.drawable.ic_headphones_24),
+    // Feature 012 (the mixer): the toolbar's Mixer button, the design's sliders glyph (spec FR-017).
+    InstantMix(Res.drawable.ic_instant_mix_24),
 }
