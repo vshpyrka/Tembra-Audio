@@ -78,3 +78,61 @@ nine-track project: the demo's four tracks plus a new track (five), count-in 1 b
   `-maximum-test-execution-time-allowance 2700`; the measured rounds keep the plan's cap.
 - Not checked here: the playback of the take at its start, middle and end by ear (a sounding step, the owner's), and the
   nine-track project.
+
+## Soak (T096), the nine-track project, 2026-11-05
+
+**iPhone 14** (iOS build 24A94232, the `Perf` configuration at the merge `ea78b2a`, by hand through
+`RecordingSoakTests.testNineTrackTake`, phone volume down): the demo restored, four new tracks each given a 10-second
+take (iOS has no folder the Files picker could hand the app the fixture stems from, so recorded takes stand in for the
+imported ones; same load: eight tracks with audio), then a ninth track records 29 minutes with the room as the input.
+The take stopped at 29:05.00 (the readout 29:09 of 29:05 right after the stop, the transport playing on). With the
+track still armed, the take played back silently for about 9 s at its start (00:01 → 00:10), middle (14:32 → 14:42) and
+end (28:13 → 28:22); the demo was restored at the end, which deleted the soak's audio. `engine-health.json` (written
+after the playback, 363,418 callbacks, about 32 minutes of one stream session): `input_overruns` 0, `starvation` 0,
+`xruns` 0, `over_budget` 0, `max_us` 77, `avg_us` 12, `record_backlog` 0, `take_alignment_ms` 20. SC-003 holds on the
+iPhone 14 for a nine-track project; starvation and xruns 0 through the playback mean no dropout at the start, middle
+and end.
+
+**Pixel 6 Pro** (`19021FDEE001AH`, the perf build of the merge `ea78b2a`, run conditions applied): a copy of the demo
+("Demo project copy"), the four fixture stems `tone-44k1-mono-16.wav`, `tone-48k-stereo.wav`, `tone.flac`, `tone.mp3`
+imported through "Add audio as new track" in the system picker (four tracks, 1 s clips), a ninth track armed and one
+take of 28:51 (Record at 23:48:56, stopped at 00:17:49 through the armed header). Counters from a 100 s trace spanning
+the stop: `audio.inputOverruns` **6**, `audio.starvation` 0, `audio.xruns` 0, `audio.overBudget` 0, `audio.maxUs` 746,
+`audio.recordBacklog` 960 frames, `audio.takeAlignmentMs` 17. A 5 s probe two minutes into the take already read 5:
+the overruns are short non-blocking reads of the input inside the output callback (the fifo never filled: the
+backlog peaked at 960 frames of a 4 s fifo), zero-padded into the take. Playback of the take with the track armed, a
+75 s trace: start (00:01 → 00:11), middle (14:25 → 14:36), end (27:59 → 28:09), `audio.starvation` 0, `audio.xruns` 0,
+`audio.overBudget` 0 with up to five clips streaming. SC-003 fails on the Pixel 6 Pro at `ea78b2a` on the overrun
+count, as in the two earlier Pixel 6 Pro runs (6 and 6); the Pixel 7 Pro (24:40) and the iPhone 14 (two takes) show 0.
+The fix is the one-burst input reservoir (`app/engine/src/capture/input_reservoir.h`, 874a404); its soak follows.
+
+## Device rows run silently by the agent (quickstart §7, T070 and T075), 2026-11-05
+
+Pixel Tablet (`3621105H803UFX`, Android 17, the release build of the merge `ea78b2a`, desktop windowing with the
+window maximised, run conditions applied, no headphones), driven by `uiautomator` and `input`:
+
+| Row | What was done | Result |
+|---|---|---|
+| Speaker guard | armed the Pad track, tapped the toolbar's monitoring toggle | the toggle stays off; snackbar "Connect headphones to monitor the input" — as expected |
+| Leaving | recorded, tapped Tuner; "Keep recording"; Tuner again, confirm | dialog "Stop recording?" / "The take is kept up to now." / "Stop recording and leave" / "Keep recording"; Keep: the take ran on (00:06 → 00:19) on the Timeline; confirm: the Tuner opened listening ("MIC ACTIVE"); back on the Timeline "Take 1 … 29 seconds" kept, transport paused — as expected |
+| Tuner hand-over | the same run: the Pad track was armed when the Tuner took the microphone | the track was disarmed (no meter) and the Tuner listened as before — as expected |
+| Screen lock | recorded, `KEYCODE_SLEEP` for two minutes | the take kept recording (00:04 before the lock, 02:11 after it); the notification "Recording" was posted while the screen was off; Record still read "Recording" — as expected |
+| Force quit | recorded 22 s, `am force-stop` | the relaunch showed "Take 1 … 23 seconds" (at least the first 18 s) — as expected |
+| Permission denied | revoked and cleared the user flags, armed, answered "Don't allow" | the track stayed unarmed; snackbar "Microphone access is needed to record" with its settings action; after a grant (`pm grant`, standing in for Settings) arming worked without a prompt — as expected |
+| Call during a take (the Pixel 9 Pro Fold emulator, release build, ring and media volume 0) | recorded 8 s, `adb emu gsm call`, answered after 4 s of ringing, ended after 10 s | on answering, the take ended and was kept ("Take 1 … 14 seconds"), playback stopped (00:13), Record idle, the track still armed with its meter; after the call nothing resumed (00:13.70 three seconds later) and the meter was there — as expected |
+| Permission revoked while armed | `pm revoke` 7 s into a take | Android kills the process the moment a runtime permission is revoked, so no in-app message can show; the relaunch kept the take ("Take 2 … 8 seconds", recovered like a force quit) and the track was disarmed. The spec's "the message shown" cannot happen on Android; the owner should decide whether the row reads "take kept, disarmed" on Android (T094) |
+
+Still the owner's (they need sound, hardware or a person): monitoring through wired and wireless headphones and the
+unplug (T070), the wired headset microphone mid-take and a call on a real phone (T075; the emulator's call passed), TalkBack and VoiceOver by ear
+(T081), the loopback alignment and monitoring delay (T090), Record's placement on a portrait phone (T094), and the
+30-minute cap and the free-space floor (the cap was exercised on the Pixel 6 Pro on 2026-11-01).
+
+**Pixel 6 Pro with the input reservoir** (the same nine-track project, the perf build of `010-closeout`): with a
+one-burst cushion (874a404) a 28:47 take on a tenth track counted `audio.inputOverruns` 1 (a 150 s trace of a fresh
+arm and take put it 33 s into the take, so it is jitter longer than one 2 ms burst, not the arm); with two bursts
+(8ca8d5a) a 28:32 take on an eleventh track, Record at 00:58:48: `audio.inputOverruns` **0** (also 0 at the 4-minute
+probe), `audio.starvation` 0, `audio.xruns` 0, `audio.overBudget` 0, `audio.maxUs` 617, `audio.recordBacklog` 1152 frames,
+`audio.takeAlignmentMs` 21 (17 + the 4 ms cushion, reported with the input latency, so the alignment stays exact).
+Playback of the take with the track armed, a 60 s trace (the ruler tapped at the take's start, middle and end at a
+zoom showing the whole take): 01:19 → 01:33, 14:42 → 14:56, 28:15 → 28:28 with up to three clips streaming,
+`audio.starvation` 0, `audio.xruns` 0, `audio.overBudget` 0. SC-003 holds on the Pixel 6 Pro with the reservoir.
