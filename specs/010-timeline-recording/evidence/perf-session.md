@@ -10,7 +10,7 @@ it), read against the right references, with every gate notice and onset explain
 | Pixel 7 Pro (`33241FDH3000NZ`) | `010-recording` | perf build of `ea78b2a` | 5 succeeded: `20261104T214117Z` (local), `20261104T230734Z`, `20261105T005655Z`, `20261105T022500Z`, `20261105T035209Z` (published) | the first session stopped after round 1 on a pipeline bug (the record schema lacked `windowing`, fixed in 62358ff); later sessions were refused round after round at 36-39 °C battery on the owner's charger (limit 35 °C), so the Pixel 7 Pro now has the Pixel 6 Pro's 40 °C limit (7e7252e) |
 | Pixel 6 Pro (`19021FDEE001AH`) | `010-closeout` | perf build of `8ca8d5a` (the two-burst input reservoir) | 5 succeeded, `20261104T234548Z` … `20261105T044727Z`, all published | battery 38.9-41 °C (limit 40 °C), one refusal at the start |
 | Pixel 6 Pro | `010-metronome-dispatch` | perf build of `7e7252e` (the metronome fix below) | 1 round of the metronome and stress journeys, `20261105T060818Z`, local | the verification of the fix |
-| iPhone 14 | `010-recording` | Perf configuration at `54f0f1a` | see § iPhone 14 | refused on thermal state "fair" from 04:00 to 07:30 (screen kept on, charging); ran once the owner dimmed it |
+| iPhone 14 | `010-recording` | Perf configuration at `43dd7a8` | none completed: see § iPhone 14 | refused on heat, then two full rounds cut by the round time limit |
 
 Every round of the Android sessions ran all seven journeys (startup, tuner, metronome, timeline, recording, stress,
 windowing) with 20 iterations each.
@@ -79,6 +79,24 @@ coroutine hand-off, under 0.1 ms each).
   4 → 13 ms, with the recording journey's frame times unchanged; the Pixel 7 Pro without the reservoir shows +11 % and no
   change. Small next to the 16 ms frame; worth a look in the next recording-related round.
 
-## iPhone 14
+## iPhone 14: not measured in this session
 
-Pending: the session started at 07:43 after the owner dimmed the phone; this section is filled in when it finishes.
+Three things stood in the way, the last one decisive:
+
+1. **Heat.** Charging with the screen kept on (Auto-Lock off, so a round could start unattended), the phone refused
+   rounds at thermal state "fair" from 04:00 to 07:30 and reached "serious" in the middle of one (09:26); it ran only
+   after the owner let it cool.
+2. **The 60-minute limit.** The first full round (`20261105T085714Z`) ran the tuner (5 min), the facade self-checks
+   (10 min), startup (3 min), stress (23 min, it records since 010) and metronome (10 min) and was cut in windowing by
+   `TEST_TIMEOUT_S` = 3600 s. The limit is now two hours (d068343).
+3. **Two hours were not enough either.** The second full round (`20261105T100131Z`, 12:01 to 14:01) passed the facade
+   self-checks, stress (23 min), recording (19.5 min) and the tuner (5 min), left windowing and timeline without a
+   result, and was cut inside the metronome journey. On the physical phone XCUITest waits up to 60 s per step for the app
+   to go idle while audio animations run, the open item of feature 011 (T129/T143), which stretches every journey;
+   until that is fixed a round of all seven journeys does not fit in two hours. xcodebuild was killed before it
+   finalised either result bundle, so no metrics can be read from them; both rounds were published as `failed`.
+
+The iPhone 14's figures for feature 010 stay those of the recording journey round of 2026-11-02 (`20261102T085708Z`,
+`evidence/trial-round.md`): count-in 1978 ms, arm 604 ms (since moved off the main thread, 55f6c16), record start 15
+ms, record stop 38 ms, take alignment 20 ms, project save 22 ms. Its nine-track soak (`notes.md`) ran clean on the
+merged code: every audio counter 0 over a 29-minute take. Next step: fix 011's T143, then run the iPhone session.
