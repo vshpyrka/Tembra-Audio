@@ -37,6 +37,7 @@ object ShortcutDispatcher {
         ShortcutAction.TimelineArm -> targets.timeline?.arm()
         ShortcutAction.TimelineRecord -> targets.timeline?.record()
         ShortcutAction.TimelineMonitor -> targets.timeline?.toggleMonitor()
+        ShortcutAction.TimelineMixer -> targets.timeline?.toggleMixer()
         ShortcutAction.MetronomeStartStop -> targets.metronome?.startStop()
         ShortcutAction.MetronomeTempoUp -> targets.metronome?.changeTempo(1)
         ShortcutAction.MetronomeTempoDown -> targets.metronome?.changeTempo(-1)

@@ -1,0 +1,75 @@
+package audio.tembra.ui.mixer
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.focusGroup
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.style.TextAlign
+import audio.tembra.ui.designsystem.Fader
+import audio.tembra.ui.designsystem.FaderScale
+import audio.tembra.ui.theme.TembraTheme
+import audio.tembra.ui.timeline.TimelineCallbacks
+import audio.tembra.ui.transport.TransportCopy
+import kotlin.math.roundToInt
+
+/**
+ * The master strip (feature 012, spec FR-001, FR-011; contracts/mixer-ui.md "MasterStrip"): the strip's frame with the
+ * "Master" label, the master volume as a percent fader (feature 009's 0 … 100 % in whole steps, its default 80 % as
+ * the fader's home) and the percentage under it; the summed meter and its clip latch join it in User Story 2. No
+ * knob, no toggles. Pinned at the right of the strip row by the sheet, on the raised surface.
+ */
+@Composable
+internal fun MasterStrip(
+    master: MasterUi,
+    callbacks: TimelineCallbacks,
+    modifier: Modifier = Modifier,
+) {
+    val colors = TembraTheme.colors
+    val daw = TembraTheme.daw
+    val spacing = TembraTheme.spacing
+    Column(
+        modifier = modifier
+            .width(MixerStripDefaults.Width)
+            .fillMaxHeight()
+            .testTag(MixerTestTags.MASTER)
+            .focusGroup()
+            .background(daw.surfaceLevel3)
+            .padding(vertical = spacing.xs),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(spacing.xs),
+    ) {
+        Box(Modifier.fillMaxWidth().height(MixerStripDefaults.LabelHeight), contentAlignment = Alignment.Center) {
+            Text(MixerCopy.master, style = TembraTheme.typography.labelMedium, color = colors.onSurface, maxLines = 1, textAlign = TextAlign.Center)
+        }
+        // The toggles' row of the track strips, kept empty so the master's fader lines up with theirs.
+        Spacer(Modifier.height(MixerStripDefaults.ToggleSize))
+        Row(modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.Center) {
+            Fader(
+                value = master.percent.toFloat(),
+                onValue = { callbacks.onMasterVolume(it.roundToInt()) },
+                onSettled = callbacks.onMasterSettled,
+                description = MixerCopy.masterVolume,
+                readout = TransportCopy.masterVolumeState(master.percent),
+                modifier = Modifier.fillMaxHeight(),
+                scale = FaderScale.Percent,
+                testTag = MixerTestTags.MASTER_FADER,
+            )
+        }
+        Box(Modifier.fillMaxWidth().height(MixerStripDefaults.LabelHeight), contentAlignment = Alignment.Center) {
+            Text(TransportCopy.masterVolumePercent(master.percent), style = TembraTheme.typographyExtras.tabularParam, color = colors.onSurfaceVariant, maxLines = 1)
+        }
+    }
+}

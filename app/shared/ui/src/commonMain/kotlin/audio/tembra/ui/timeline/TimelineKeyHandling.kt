@@ -115,4 +115,7 @@ internal class TimelineKeyTargets(
     override fun record() = true.also { callbacks().onRecord() }
 
     override fun toggleMonitor() = true.also { callbacks().onMonitorToggle() }
+
+    // Feature 012 (FR-017, FR-029): X opens and closes the mixer once a project is in.
+    override fun toggleMixer() = true.also { if (state().loaded) callbacks().onMixerToggle() }
 }

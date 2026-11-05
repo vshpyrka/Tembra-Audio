@@ -3,7 +3,8 @@ package audio.tembra.ui.mixer
 /**
  * The mixer's user-facing strings (feature 012, contracts/mixer-ui.md "Copy"), kept as data so tests assert the exact
  * text. The pan readouts ("C", "L 35", "R 20") are `Pan.readout`'s, owned by the core type; the gain readouts are
- * `GainDb.readout`'s; the master's percentage is `Percent.readout`'s.
+ * `GainDb.readout`'s; the master's state ("80 percent") and percentage ("80%") are `TransportCopy`'s, as feature 009's
+ * slider reads them.
  */
 object MixerCopy {
     const val mixer = "Mixer"
@@ -21,24 +22,16 @@ object MixerCopy {
     const val clippedTapToReset = "Clipped, tap to reset"
     const val openInWindow = "Open in a window"
 
-    /** A fader's accessible description: "Lead Guitar, gain, −3.5dB" (spec FR-030). */
-    fun gainDescription(track: String, readout: String): String = "$track, $gain, $readout".lowercaseMiddle()
+    /** The handle's state: which height the sheet stands at. */
+    const val halfHeight = "Half height"
+    const val fullHeight = "Full height"
 
-    /** A knob's accessible description: "Lead Guitar, pan, L 35" (spec FR-030). */
-    fun panDescription(track: String, readout: String): String = "$track, $pan, $readout".lowercaseMiddle()
+    /** A fader's accessible name, read before its readout: "Lead Guitar, gain" + "−3.5dB" (spec FR-030). */
+    fun gainDescription(track: String): String = "$track, ${gain.lowercase()}"
 
-    /** The master strip's: "Master volume, 80 percent" (spec FR-030). */
-    fun masterVolumeDescription(percent: Int): String = "$masterVolume, $percent percent"
+    /** A knob's accessible name: "Lead Guitar, pan" + "L 35" (spec FR-030). */
+    fun panDescription(track: String): String = "$track, ${pan.lowercase()}"
 
     /** A meter's level on request: "Level, −12 dB"; silence reads "Level, silent". */
     fun levelDescription(db: Int?): String = if (db == null) "$level, silent" else "$level, $db dB"
-
-    /** "<track>, Gain, x" → "<track>, gain, x": the control's name is read in lower case after the track's. */
-    private fun String.lowercaseMiddle(): String {
-        val first = indexOf(", ")
-        if (first < 0) return this
-        val second = indexOf(", ", first + 2)
-        if (second < 0) return this
-        return substring(0, first + 2) + substring(first + 2, second).lowercase() + substring(second)
-    }
 }
