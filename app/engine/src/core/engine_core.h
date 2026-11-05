@@ -105,6 +105,18 @@ public:
     void resetClip();
     uint32_t readPeaks(uint64_t fromIndex, tembra_peak_bucket* out, uint32_t maxCount, uint64_t* nextIndex);
 
+    // --- The mixer (feature 012, contracts/engine-c-abi-v8.md): lock-free, never under commands_ ---------------------
+
+    /** The setters store atomics on the renderer and return (any host thread); ERR_STATE unless TRANSPORT. */
+    int32_t setMixTrack(uint32_t index, float gain, float pan, bool audible);
+    int32_t setMixPan(uint32_t index, float pan);
+    int32_t setMixMaster(float gain);
+    int32_t setMetering(bool enabled);
+    /** Lock-free seqlock copy; zeros unless TRANSPORT. */
+    void readMix(tembra_mix_snapshot& out);
+    /** 0..63 a strip, TEMBRA_MIXER_MASTER_INDEX the master; applied at the callback's next block. */
+    int32_t resetMixClip(uint32_t index);
+
     uint32_t state() const { return state_.load(std::memory_order_acquire); }
     void read(tembra_pitch_reading& out) const;
 
@@ -116,6 +128,10 @@ public:
 #ifdef TEMBRA_BUILD_TESTS
     /** Test hook: replaces the platform device (the engine owns it). Stops any open stream and forgets the last reading, the noise gate and the clip sources. */
     void setDevice(std::unique_ptr<AudioDevice> device);
+    /** Test seam (feature 012, the main-thread audit): holds the command mutex for as long as the lock lives. */
+    std::unique_lock<std::mutex> holdCommandsForTest();
+    /** Test seam (feature 012): the renderer the telemetry reads, to inspect the seeded parameters; null before the first open. */
+    TransportRenderer* transportRendererForTest();
 #endif
 
 private:
@@ -150,6 +166,8 @@ private:
     int64_t inputLatencyNanosLocked() const;
     void waitForCallback();
     void endTakeLocked(uint32_t stopReason);
+    /** The renderer the mixer's lock-free calls target while TRANSPORT; null otherwise (feature 012). */
+    TransportRenderer* mixerTarget() const;
 
     static constexpr uint32_t kPreferredRate = 48000;
     static constexpr int kIdleSleepMillis = 4;
@@ -222,6 +240,8 @@ private:
     std::vector<RetiredSource> retiredSources_;  // sources a stale snapshot on the callback may still pop
     std::unique_ptr<ArrangementSnapshot> hostArrangement_;  // the published arrangement: reference checks, prime targets
     TrackTable hostTracks_;
+    /** The arrangement's track count for the revision-7 fast path's index check, readable without commands_ (feature 012). */
+    std::atomic<uint32_t> mixTrackCount_{0};
     TempoMap hostTempo_;
     uint64_t arrangementVersion_ = 0;
     uint32_t transportRate_ = kPreferredRate;

@@ -22,6 +22,7 @@ TransportRenderer::TransportRenderer(uint32_t rate)
       monitorScratch_(kMaxBlockFrames * 2, 0.0f) {
     tempo_.rate = rate;
     for (TrackStrip& strip : strips_) strip.setRate(rate);
+    meter_.setRate(rate);
 }
 
 void TransportRenderer::requestRecordStart(int64_t startFrame, int64_t preRollFrames) {
@@ -44,6 +45,17 @@ void TransportRenderer::silence() {
     // A renderer outlives its transport sessions (one per stream rate): the health counters start each one at zero.
     starvation_.store(0, std::memory_order_relaxed);
     clipsActive_.store(0, std::memory_order_relaxed);
+    masterClips_.store(0, std::memory_order_relaxed);
+    // Feature 012: the mixer's parameters, the meter and its record start over with the session (the arrangement seeds
+    // gain and audibility, the session pushes the pans, the sheet turns metering on).
+    mixParams_.reset();
+    appliedMix_ = UINT64_MAX;
+    appliedMixTracks_ = UINT32_MAX;
+    meter_.reset();
+    meteringOn_ = false;
+    meterPublished_ = false;
+    clampThisBlock_ = false;
+    mixRecord_.store(MixRecord{});
     command_.store(kNone, std::memory_order_release);
     playing_.store(false, std::memory_order_release);
     readersActive_.store(false, std::memory_order_release);
@@ -82,27 +94,38 @@ void TransportRenderer::render(float* out, uint32_t frames, const InputBlock& in
     rendering_.store(false, std::memory_order_seq_cst);
 }
 
-void TransportRenderer::applyTracks(const TrackTable& table) {
-    const uint32_t count = std::min<uint32_t>(table.count, TEMBRA_MAX_TRACKS);
+void TransportRenderer::applyMix(uint32_t trackCount) {
+    // Feature 012 (research R4): the strips' targets come from the lock-free parameter block, read once per changed
+    // version; the strip applies the pan law for its source kind and ramps both sides over 10 ms.
+    const uint32_t count = std::min<uint32_t>(trackCount, TEMBRA_MAX_TRACKS);
     for (uint32_t t = 0; t < count; ++t) {
-        const bool audible = table.tracks[t].audible != 0;
+        const float gain = mixParams_.gain(t);
+        const float pan = mixParams_.pan(t);
+        const bool audible = mixParams_.audible(t);
         if (stripSet_[t]) {
-            strips_[t].setTarget(table.tracks[t].gain, audible);
+            strips_[t].setTarget(gain, pan, audible);
         } else {
-            strips_[t].snap(table.tracks[t].gain, audible);
+            strips_[t].snap(gain, pan, audible);
             stripSet_[t] = true;
         }
     }
-    // The monitor follows the armed track's targets (research R12).
+    // The monitor follows the armed track's fader and audibility (feature 010, research R12); it sits at the centre.
     const int32_t armed = armedTrack_.load(std::memory_order_acquire);
     if (armed >= 0 && static_cast<uint32_t>(armed) < count) {
+        const float gain = mixParams_.gain(static_cast<uint32_t>(armed));
+        const bool audible = mixParams_.audible(static_cast<uint32_t>(armed));
         if (monitorTrack_ != armed) {
-            monitor_.snap(table.tracks[armed].gain, table.tracks[armed].audible != 0);
+            monitor_.snap(gain, audible);
             monitorTrack_ = armed;
         } else {
-            monitor_.setTarget(table.tracks[armed].gain, table.tracks[armed].audible != 0);
+            monitor_.setTarget(gain, audible);
         }
     }
+}
+
+void TransportRenderer::finishBus(float* out, uint32_t frames) {
+    bus_.finish(out, frames);
+    if (bus_.clampEngaged()) clampThisBlock_ = true;
 }
 
 void TransportRenderer::renderMonitor(uint32_t frames, const float* inputSlice, uint32_t inputChannels) {
@@ -186,11 +209,12 @@ uint32_t TransportRenderer::renderSegment(int64_t position, uint32_t frames, flo
         const int64_t sourceFrame = clip.outOffset + (position - clipStart_[i]);
         if (!clip.source->pop(sourceFrame, frames, clipScratch_.data())) starvation_.fetch_add(1, std::memory_order_relaxed);
         strips_[t].process(clipScratch_.data(), clip.source->channels(), stripScratch_.data(), frames);
+        if (meteringOn_) meter_.measureStrip(t, stripScratch_.data(), frames);  // post-fader, post-pan (feature 012)
         bus_.add(stripScratch_.data(), frames);
         ++active;
     }
     renderMonitor(frames, inputSlice, inputChannels);
-    bus_.finish(out, frames);
+    finishBus(out, frames);
     return active;
 }
 
@@ -232,11 +256,18 @@ void TransportRenderer::renderBlock(float* out, uint32_t frames, const InputBloc
         tempo_ = tempo;
         tempoChanged = true;
     }
-    const TrackTable& tracks = trackSlots_.latest();
-    if (tracks.version != appliedTracks_) {
-        applyTracks(tracks);
-        appliedTracks_ = tracks.version;
+    // Feature 012: the mixer's parameters (one version load per block) and the metering switch.
+    const uint64_t mixVersion = mixParams_.version();
+    if (mixVersion != appliedMix_ || arrangement.trackCount != appliedMixTracks_) {
+        applyMix(arrangement.trackCount);
+        appliedMix_ = mixVersion;
+        appliedMixTracks_ = arrangement.trackCount;
     }
+    const bool metering = mixParams_.metering();
+    if (metering && !meteringOn_) meter_.reset();  // turned on: the meters start from silence, not from stale history
+    meteringOn_ = metering;
+    clampThisBlock_ = false;
+    if (meteringOn_) meter_.beginBlock(frames);
     bool clipsMoved = false;
     if (framesVersion_ != arrangement.version || tempoChanged) {
         recomputeClipFrames();
@@ -417,7 +448,7 @@ void TransportRenderer::renderBlock(float* out, uint32_t frames, const InputBloc
             bus_.begin(frames - tail);
             const float* slice = (input.interleaved != nullptr && input.frames >= frames) ? input.interleaved + static_cast<size_t>(tail) * input.channels : nullptr;
             renderMonitor(frames - tail, slice, input.channels);
-            bus_.finish(out + static_cast<size_t>(tail) * 2, frames - tail);
+            finishBus(out + static_cast<size_t>(tail) * 2, frames - tail);
         }
         releaseRemaining_ -= tail;
         if (releaseRemaining_ == 0) {
@@ -427,7 +458,7 @@ void TransportRenderer::renderBlock(float* out, uint32_t frames, const InputBloc
     } else if (monitor_.active() && input.interleaved != nullptr && input.frames >= frames) {
         bus_.begin(frames);
         renderMonitor(frames, input.interleaved, input.channels);
-        bus_.finish(out, frames);
+        finishBus(out, frames);
     } else {
         monitor_.advance(frames);
         std::memset(out, 0, static_cast<size_t>(frames) * 2 * sizeof(float));
@@ -436,6 +467,10 @@ void TransportRenderer::renderBlock(float* out, uint32_t frames, const InputBloc
         preRolling_ = false;
         captureState_ = CaptureState::Recording;
     }
+    // 5a. The master after the clamp, before the click (feature 012): the clamp count for the health counters whether or
+    // not the sheet is open; the meter's master measurement and latch only while metering is on.
+    if (clampThisBlock_) masterClips_.fetch_add(1, std::memory_order_relaxed);
+    if (meteringOn_) meter_.measureMaster(out, frames, clampThisBlock_);
 
     // 6. The click after the bus: never attenuated by the master (research R4). With the toggle off the count-in's
     // click is stopped at the take's start, before the downbeat tick would sound.
@@ -484,6 +519,14 @@ void TransportRenderer::renderBlock(float* out, uint32_t frames, const InputBloc
     record_.store(record);
     if (capture != nullptr) {
         capture->publish(true, captureState_ == CaptureState::Recording, captureState_ == CaptureState::PreRoll, monitorWanted, takeStart_, blocks);
+    }
+    // Feature 012: one meter record per block while metering is on; one zeroed record when it turns off.
+    if (meteringOn_) {
+        meter_.publish(mixRecord_, blocks, arrangement.trackCount);
+        meterPublished_ = true;
+    } else if (meterPublished_) {
+        meter_.publishSilent(mixRecord_, blocks);
+        meterPublished_ = false;
     }
     clipsActive_.store(active, std::memory_order_relaxed);
     blocks_.fetch_add(1, std::memory_order_acq_rel);

@@ -11,12 +11,14 @@ import audio.tembra.core.project.CountIn
 import audio.tembra.core.project.EditResult
 import audio.tembra.core.project.GainDb
 import audio.tembra.core.project.InstrumentLabel
+import audio.tembra.core.project.Pan
 import audio.tembra.core.project.Project
 import audio.tembra.core.project.ProjectDocument
 import audio.tembra.core.project.ProjectEditor
 import audio.tembra.core.project.RecordTake
 import audio.tembra.core.project.Track
 import audio.tembra.core.project.TrackId
+import kotlinx.collections.immutable.toPersistentList
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -94,7 +96,7 @@ class ProjectDocumentCodecTest {
             listOf("id", "name", "description", "key", "tempo", "timeSignature", "masterVolume", "metronomeOn", "assets", "tracks", "countIn"),
             Project.serializer().descriptor.names(),
         )
-        assertEquals(listOf("id", "name", "label", "colorIndex", "gainDb", "muted", "soloed", "clips"), Track.serializer().descriptor.names())
+        assertEquals(listOf("id", "name", "label", "colorIndex", "gainDb", "muted", "soloed", "clips", "pan"), Track.serializer().descriptor.names())
         assertEquals(listOf("id", "assetId", "startBeats", "offsetFrames", "lengthFrames", "name"), Clip.serializer().descriptor.names())
         assertEquals(listOf("fileName", "format", "channels", "sampleRate", "frames", "byteSize"), AudioAsset.serializer().descriptor.names())
     }
@@ -121,6 +123,28 @@ class ProjectDocumentCodecTest {
         assertFalse("countIn" in text, text)
         assertEquals(demo, decoded(text).project)
         assertEquals(CountIn.ONE_BAR, decoded(text).project.countIn)
+    }
+
+    /** Feature 012 (spec FR-006): a document from before the mixer has no `pan` key and opens with every track centred. */
+    @Test
+    fun oldDocumentReadsCentred() {
+        val text = codec.encode(ProjectDocument(project = demo)).replace(",\n        \"pan\": 0", "")
+        assertFalse("pan" in text, text)
+        val project = decoded(text).project
+        assertEquals(demo, project)
+        assertTrue(project.tracks.all { it.pan == Pan.Centre })
+    }
+
+    @Test
+    fun aPannedTrackRoundTripsAsTheBareInteger() {
+        val panned = demo.copy(tracks = demo.tracks.mapIndexed { index, track -> if (index == 1) track.copy(pan = Pan(-35)) else track }.toPersistentList())
+        val text = codec.encode(ProjectDocument(project = panned))
+        assertTrue("\"pan\": -35" in text, text)
+        assertEquals(3, text.split("\"pan\": 0").size - 1)  // the other three tracks stay centred and still write the default
+        val back = decoded(text).project
+        assertEquals(Pan(-35), back.tracks[1].pan)
+        assertEquals(Pan.Centre, back.tracks[0].pan)
+        assertEquals(panned, back)
     }
 
     @Test

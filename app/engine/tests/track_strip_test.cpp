@@ -1,6 +1,10 @@
 // The track strip (feature 009, research R6): a 10 ms linear gain ramp toward gain x audibility, mono duplicated to
-// both outputs at unity, stereo passed through; driven at 96, 256 and 1024 frames like the other renderers.
+// both outputs at unity, stereo passed through; driven at 96, 256 and 1024 frames like the other renderers. Since
+// feature 012 (research R5; contracts/engine-c-abi-v8.md "Renderer rules") the strip carries one ramp per side whose
+// targets are fader gain × pan-law side gain × audibility, so pan moves are smoothed like gain moves and a centred
+// mono track renders exactly as revision 7 did.
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_floating_point.hpp>
 
 #include <algorithm>
 #include <array>
@@ -9,7 +13,10 @@
 #include <vector>
 
 #include "mixer/gain_ramp.h"
+#include "mixer/pan_law.h"
 #include "mixer/track_strip.h"
+
+using Catch::Matchers::WithinAbs;
 
 namespace {
 
@@ -141,4 +148,126 @@ TEST_CASE("advance keeps the ramp moving while no clip plays on the track", "[mi
     CHECK(strip.currentGain() == 0.0f);
     const auto left = runConstant(strip, 256, 256);
     CHECK(left[0] == 0.0f);
+}
+
+// --- Feature 012: pan through two ramps (research R5; T013) --------------------------------------------------------
+
+namespace {
+
+/** Runs a constant mono 1.0 through [strip] in [block]-frame blocks for [frames] frames; returns both channels. */
+std::pair<std::vector<float>, std::vector<float>> runConstantStereo(tembra::TrackStrip& strip, uint32_t block, uint32_t frames) {
+    std::vector<float> in(block, 1.0f);
+    std::vector<float> out(block * 2);
+    std::vector<float> left;
+    std::vector<float> right;
+    for (uint32_t done = 0; done < frames; done += block) {
+        strip.process(in.data(), 1, out.data(), block);
+        for (uint32_t i = 0; i < block; ++i) {
+            left.push_back(out[2 * i]);
+            right.push_back(out[2 * i + 1]);
+        }
+    }
+    return {left, right};
+}
+
+constexpr float kRoot2 = 1.41421356f;
+
+}  // namespace
+
+TEST_CASE("a pan step moves both sides on their own 10 ms ramps and lands on the law's gains", "[mixer][strip][pan]") {
+    for (uint32_t block : kBlocks) {
+        INFO("block " << block);
+        tembra::TrackStrip strip(kRate);
+        strip.setTarget(1.0f, 0.0f, true, false);
+        runConstantStereo(strip, block, 4096);  // settled at the centre: 1/1
+        strip.setTarget(1.0f, -1.0f, true, false);  // hard left
+        const auto [left, right] = runConstantStereo(strip, block, 4096);
+        CHECK(left[0] > 0.99f);
+        CHECK(right[0] < 1.01f);
+        const uint32_t settledBy = kRampFrames + block;
+        for (uint32_t i = settledBy; i < left.size(); ++i) {
+            REQUIRE_THAT(left[i], WithinAbs(kRoot2, 1e-6));
+            REQUIRE(right[i] == 0.0f);
+        }
+        if (block < kRampFrames) {
+            CHECK(left[kRampFrames - block] < kRoot2);
+            CHECK(right[kRampFrames - block] > 0.0f);
+        }
+    }
+}
+
+TEST_CASE("a pan step's largest per-sample step is the ramp's, never a jump", "[mixer][strip][pan]") {
+    tembra::TrackStrip strip(kRate);
+    strip.setTarget(1.0f, 0.0f, true, false);
+    runConstantStereo(strip, 256, 2048);
+    strip.setTarget(1.0f, 1.0f, true, false);  // centre to hard right in one step
+    const auto [left, right] = runConstantStereo(strip, 256, 2048);
+    // The ramp divides the change over 480 samples: (√2 − 1) / 480 on the right, 1 / 480 on the left.
+    CHECK(maxStep(right) <= (kRoot2 - 1.0f) / static_cast<float>(kRampFrames) + 1e-6f);
+    CHECK(maxStep(left) <= 1.0f / static_cast<float>(kRampFrames) + 1e-6f);
+    CHECK(maxStep(left) > 0.0f);
+}
+
+TEST_CASE("a centred mono track renders bit-exact to revision 7's single ramp", "[mixer][strip][pan]") {
+    for (float target : {0.25f, 0.8f, 1.0f, 1.5f, 2.0f}) {
+        INFO("gain " << target);
+        tembra::GainRamp reference(kRate, 1.0f);
+        tembra::TrackStrip strip(kRate);
+        strip.setTarget(target, true);  // the revision-7 call: centre, mono
+        reference.setTarget(target);
+        std::vector<float> mono(64);
+        for (uint32_t i = 0; i < 64; ++i) mono[i] = static_cast<float>(i) * 0.01f - 0.3f;
+        std::vector<float> out(128);
+        for (int block = 0; block < 12; ++block) {
+            strip.process(mono.data(), 1, out.data(), 64);
+            for (uint32_t i = 0; i < 64; ++i) {
+                const float expected = mono[i] * reference.next();
+                REQUIRE(out[2 * i] == expected);
+                REQUIRE(out[2 * i + 1] == expected);
+            }
+        }
+    }
+}
+
+TEST_CASE("a stereo source panned +50 % attenuates the left and never boosts the right", "[mixer][strip][pan]") {
+    tembra::TrackStrip strip(kRate);
+    strip.snap(1.0f, 0.5f, true, true);
+    std::vector<float> stereo(128);
+    for (uint32_t i = 0; i < 64; ++i) {
+        stereo[2 * i] = 0.5f;
+        stereo[2 * i + 1] = 0.5f;
+    }
+    std::vector<float> out(128);
+    strip.process(stereo.data(), 2, out.data(), 64);
+    float leftGain = 0.0f;
+    float rightGain = 0.0f;
+    tembra::PanLaw::gains(0.5f, true, leftGain, rightGain);
+    REQUIRE(rightGain == 1.0f);
+    for (uint32_t i = 0; i < 64; ++i) {
+        REQUIRE_THAT(out[2 * i], WithinAbs(0.5f * leftGain, 1e-6));
+        REQUIRE(out[2 * i + 1] == 0.5f);
+    }
+    // The same strip fed a mono block re-targets to the mono law (ramped), so a clip change never jumps.
+    std::vector<float> mono(64, 0.5f);
+    strip.process(mono.data(), 1, out.data(), 64);
+    CHECK(out[1] <= 0.5f * kRoot2);
+    CHECK(out[1] >= 0.5f);
+    CHECK(out[0] <= 0.5f * leftGain + 1e-6f);
+}
+
+TEST_CASE("audible = 0 silences both sides whatever the pan, and the gain scales both", "[mixer][strip][pan]") {
+    tembra::TrackStrip strip(kRate);
+    strip.snap(0.5f, -0.5f, true, false);
+    auto [left, right] = runConstantStereo(strip, 256, 256);
+    float leftGain = 0.0f;
+    float rightGain = 0.0f;
+    tembra::PanLaw::gains(-0.5f, false, leftGain, rightGain);
+    REQUIRE_THAT(left.back(), WithinAbs(0.5f * leftGain, 1e-6));
+    REQUIRE_THAT(right.back(), WithinAbs(0.5f * rightGain, 1e-6));
+    strip.setTarget(0.5f, -0.5f, false, false);
+    std::tie(left, right) = runConstantStereo(strip, 256, 2048);
+    CHECK(left.back() == 0.0f);
+    CHECK(right.back() == 0.0f);
+    CHECK(maxStep(left) < 0.01f);
+    CHECK(maxStep(right) < 0.01f);
 }

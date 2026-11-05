@@ -114,6 +114,37 @@ output callback (one device callback): read the input block ─▶ CaptureSource
 - Tests: `capture_source_test`, `take_recorder_test`, `wav_writer_test`, `peak_ring_test`, `monitor_strip_test`.
   Contract: `specs/010-timeline-recording/contracts/engine-c-abi-v7.md`.
 
+## The mixer (feature 012, ABI revision 8)
+
+```
+host (any thread, no lock): tembra_mixer_set_track / set_pan / set_master / set_metering ─atomics (MixParams, version)─▶ TransportRenderer::renderBlock
+                            tembra_transport_set_track / set_master forward to the same block                           │  applyMix once per changed version → TrackStrip (two ramps: fader × PanLaw × audible)
+                            tembra_mixer_reset_clip ─atomic request─▶ MixMeter                                          │  measureStrip after each strip, measureMaster after the clamp (metering on only)
+tembra_mixer_read (UI thread, every frame) ◀─Seqlock<MixRecord>──────────────────────────────────────────────────────────┘  publish once per block
+```
+
+- The lock-free parameter path (`src/mixer/mix_params.h`): per track `gain`, `pan` and `audible` as atomics with a
+  version word; the setters validate and store from any host thread and never take `EngineCore::commands_`, so a fader
+  step from the main thread cannot wait behind play's prime or record-stop's drain. The callback loads the version once
+  per block and re-targets the strips when it changed. The revision-6 `TrackTable` now only seeds the block (gain and
+  audibility; the pans are kept) when an arrangement is published; `tembra_transport_set_track` keeps its rule that the
+  index names a track of the arrangement (an atomic count), the revision-8 setters accept any index under 64.
+- The pan law (`src/mixer/pan_law.h`): mono sources follow the centre-compensated constant-power law (θ = (pan + 1)·π/4,
+  L = √2·cos θ, R = √2·sin θ: 1/1 at the centre so every older project plays unchanged, √2/0 at the extremes, L² + R² = 2
+  everywhere); stereo sources are balanced (the same curve capped at 1). `TrackStrip` carries one 10 ms ramp per side
+  whose targets are fader gain × side gain × audibility, re-targeted when the source kind changes between blocks.
+- The meter (`src/mixer/mix_meter.*`, `recent_peak.h`, `mix_record.h`, all in `TEMBRA_RT_SOURCES`): runs only while
+  metering is on; per strip and side a 64 ms peak history (16 per-block peaks) and a 300 ms exponential mean square,
+  the master the same after the clamp, a sticky clip latch per strip (|x| ≥ 0.9999) and for the master (the clamp
+  engaged or full scale reached), cleared by `tembra_mixer_reset_clip` at the next block; one `Seqlock<MixRecord>`
+  store per block; a zeroed record once when metering turns off. The renderer counts clamped blocks (`master_clips`,
+  revision 8's health field, 52 bytes in; `sizeof` stays 56) whether or not metering is on.
+- `mixer_abi.cpp` (not real-time) holds the forwarders and the `engine.panApply` trace scope.
+- Tests: `pan_law_test`, `mix_params_test`, `mix_meter_test`, `mixer_abi_test` (the command mutex held from another
+  thread while the setters return within a millisecond), the extended `track_strip_test`, `master_bus_test`,
+  `transport_renderer_test`, `audio_health_test`, `engine_core_state_test`. Contract:
+  `specs/012-mixer/contracts/engine-c-abi-v8.md`.
+
 ## Host build and tests
 
 ```bash

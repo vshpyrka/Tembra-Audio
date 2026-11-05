@@ -2,6 +2,7 @@ package audio.tembra.ui.timeline
 
 import androidx.compose.ui.unit.dp
 import audio.tembra.core.project.GainDb
+import audio.tembra.core.project.Pan
 import audio.tembra.core.project.TrackId
 import audio.tembra.ui.transport.RecordButtonState
 import kotlinx.collections.immutable.persistentListOf
@@ -21,6 +22,15 @@ class TimelineUiStateTest {
         id = TrackId("t1"), name = "Track 1", label = null, colorIndex = 0, gainDb = GainDb.Unity,
         muted = false, soloed = false, audible = true, clips = persistentListOf(), armed = true,
     )
+
+    /** Feature 012 (contracts/mixer-session.md): a track carries its pan and the description names it when it is off centre. */
+    @Test
+    fun theDescriptionNamesThePanWhenItIsNotCentred() {
+        assertEquals(Pan.Centre, track.pan)
+        assertEquals("Track 1, +0.0dB, armed", track.description)
+        assertEquals("Track 1, +0.0dB, L 35, armed", track.copy(pan = Pan(-35)).description)
+        assertEquals("Track 1, +0.0dB, R 100, muted, armed", track.copy(pan = Pan(100), muted = true).description)
+    }
 
     @Test
     fun theStructuralEditsAreAvailableWhileNoTakeRunsAndUnavailableDuringOne() {

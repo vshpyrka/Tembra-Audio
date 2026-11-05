@@ -100,4 +100,23 @@ interface TimelineAudio : AudioStatus {
 
     /** Free bytes on the volume holding [path]; -1 when unknown. */
     fun freeBytes(path: String): Long
+
+    // --- The mixer (feature 012, contracts/engine-c-abi-v8.md "Kotlin seam") -----------------------------------------
+    // None of these suspend: each is an atomic store or a seqlock copy on the engine, bounded on any thread, so the
+    // session calls them synchronously from the edit path and a fader step never waits behind play or record-stop.
+
+    /** One track's pan, −1 (left) … 1 (right), applied by the callback at its next block through a 10 ms ramp. */
+    fun setPan(index: Int, pan: Float)
+
+    /** Metering on while any mixer surface is open; off stops the callback's measurement and zeros the snapshot. */
+    fun setMetering(enabled: Boolean)
+
+    /**
+     * Lock-free; safe every frame from draw lambdas; fills [into] without allocating. Main thread only: the facades
+     * reuse one scratch per engine, so two threads reading at once would tear a snapshot.
+     */
+    fun readMix(into: MixSnapshot)
+
+    /** Clears strip [index]'s clip latch (0..63) or the master's ([MixSnapshot.MASTER_INDEX]) at the callback's next block. */
+    fun resetMixClip(index: Int)
 }
