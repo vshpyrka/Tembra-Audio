@@ -431,6 +431,26 @@ class MetronomeViewModelTest {
      * the tuner's start), so the engine start and stop run on the audio dispatcher, never on the caller's thread; the
      * screen moves to Starting and to Stopped at once (T103).
      */
+    /**
+     * Programming the grid and the sound takes the engine's command lock, which a transport close on the audio dispatcher
+     * holds while it stops the timeline's stream: opening the Metronome straight from the Timeline held the main thread
+     * in `setGrid` for up to 160 ms (the 010 post-merge sessions, `metronome.load` 0.03 → 116 ms on the Pixel 6 Pro). So
+     * they run on the audio dispatcher too, behind any queued open or close and in the order asked.
+     */
+    @Test
+    fun theGridAndTheSoundReachTheEngineOnTheAudioDispatcherInTheOrderAsked() = viewModelTest {
+        val viewModel = viewModel()
+        show(viewModel)
+        val before = audioDispatcher.dispatches
+        val callsBefore = audio.calls.size
+        viewModel.setTempo(Tempo(90))
+        viewModel.selectSound(ClickSound.BuiltIn(BuiltInClickSound.Rim808))
+        assertEquals(callsBefore, audio.calls.size, "the grid or the sound reached the engine on the caller's thread")
+        runCurrent()
+        assertTrue(audioDispatcher.dispatches > before, "the grid and the sound never reached the audio dispatcher")
+        assertEquals(listOf("setGrid(bpm=90, ticks=1, levels=ACCC)", "selectSound(Rim808)", "previewClick(Click)"), audio.calls.drop(callsBefore))
+    }
+
     @Test
     fun playStartsAndPauseStopsTheEngineOnTheAudioDispatcherNotTheCallersThread() = viewModelTest {
         val viewModel = viewModel()
