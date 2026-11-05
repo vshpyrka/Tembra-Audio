@@ -162,7 +162,7 @@ batch of update pull requests and merges each one whose checks all pass.
 
 | Job (`.github/workflows/ci.yml`) | Runner | Runs on | Command (from `app/`) |
 |---|---|---|---|
-| Android host tests and release build | `ubuntu-24.04` | every push, every pull request to `main` | `checkAndroidHost :androidApp:assembleRelease` |
+| Android host tests and release build | `ubuntu-24.04` | every push, every pull request to `main` | `checkAndroidHost :androidApp:assembleRelease`, then R8's Configuration Analyzer scores on the run's summary page (`tools/r8-config-summary.py`) and the full report as the run's `configanalyzer.html` artifact, kept 30 days |
 | iOS simulator and C++ engine tests | `macos-26` (or `vars.CI_MACOS_RUNNER`) | every pull request to `main` | `checkIos engineHostTest` on the newest iPhone simulator |
 | Renovate config | `ubuntu-24.04` | every push, every pull request to `main` | `renovate-config-validator --strict` |
 | Google Play testing (`.github/workflows/play-closed-testing.yml`) | `ubuntu-24.04` | every push to `main` that changes the Android app, or by hand | `checkAndroidHost :androidApp:bundleRelease`, then signs with the upload key, releases on Google Play's internal testing track and deletes the run's bundle |
@@ -212,8 +212,9 @@ a performance round as usual (`perf/README.md`).
 2. **Secret.** Repository → Settings → Secrets and variables → Actions → New repository secret: `RENOVATE_TOKEN`.
    Until it exists the Renovate workflow only prints a notice.
 3. **Actions.** Settings → Actions → General: if you restrict which actions may run, allow `actions/checkout`,
-   `actions/setup-java`, `actions/cache`, `gradle/actions` and `renovatebot/github-action`, and for the Play
-   workflow `actions/upload-artifact`, `actions/download-artifact` and `google-github-actions/auth`. The workflows declare
+   `actions/setup-java`, `actions/cache`, `actions/upload-artifact`, `gradle/actions` and
+   `renovatebot/github-action`, and for the Play workflow `actions/download-artifact` and
+   `google-github-actions/auth`. The workflows declare
    their own `contents: read` permission, so the default workflow permission does not matter.
 4. **Merging.** Settings → General → Pull Requests: keep **Allow squash merging** on, and turn on **Automatically
    delete head branches**. Leave **Allow auto-merge** as it is; Renovate does not use it.
