@@ -76,6 +76,35 @@ object Anchors {
     const val TIMELINE_CLIP_MENU_FIRST = "timeline.clip.first.menu"
     const val SHORTCUT_SHEET = "shortcuts.sheet"
 
+    // Feature 012 (contracts/perf-instrumentation.md, journey `mixer`): the Mixer button, the sheet, the first strip's
+    // controls (strip i through the functions below), the master strip, the window button and the settings' pan slider.
+    const val TIMELINE_MIXER = "timeline.toolbar.mixer"
+    const val TIMELINE_OVERFLOW_MIXER = "timeline.toolbar.overflow.mixer"
+    const val MIXER_SHEET = "mixer.sheet"
+    const val MIXER_HANDLE = "mixer.handle"
+    const val MIXER_STRIPS = "mixer.strips"
+    const val MIXER_STRIP_FADER_FIRST = "mixer.strip.fader.0"
+    const val MIXER_STRIP_PAN_FIRST = "mixer.strip.pan.0"
+    const val MIXER_STRIP_SOLO_FIRST = "mixer.strip.solo.0"
+    const val MIXER_STRIP_MUTE_FIRST = "mixer.strip.mute.0"
+    const val MIXER_STRIP_METER_FIRST = "mixer.strip.meter.0"
+    const val MIXER_STRIP_CLIP_FIRST = "mixer.strip.clip.0"
+    const val MIXER_STRIP_NAME_FIRST = "mixer.strip.name.0"
+    const val MIXER_MASTER_FADER = "mixer.master.fader"
+    const val MIXER_MASTER_METER = "mixer.master.meter"
+    const val MIXER_MASTER_CLIP = "mixer.master.clip"
+    const val MIXER_WINDOW_OPEN = "mixer.window.open"
+    const val TRACK_SETTINGS_PAN = "trackSettings.pan"
+
+    /** The fader, pan knob, Solo, Mute, meter, clip latch and name of strip [index]. */
+    fun mixerFader(index: Int): String = "mixer.strip.fader.$index"
+    fun mixerPan(index: Int): String = "mixer.strip.pan.$index"
+    fun mixerSolo(index: Int): String = "mixer.strip.solo.$index"
+    fun mixerMute(index: Int): String = "mixer.strip.mute.$index"
+    fun mixerMeter(index: Int): String = "mixer.strip.meter.$index"
+    fun mixerClip(index: Int): String = "mixer.strip.clip.$index"
+    fun mixerName(index: Int): String = "mixer.strip.name.$index"
+
     /**
      * A 1 dp marker node the Timeline shows once every visible overview is built (the `stateDescription` "ready" the
      * contract names is not reachable through UiAutomator's selectors; XCUITest reads it as the root's `value`).

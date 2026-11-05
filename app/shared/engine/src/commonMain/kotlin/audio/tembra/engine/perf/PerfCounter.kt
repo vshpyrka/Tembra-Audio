@@ -17,4 +17,7 @@ enum class PerfCounter {
     AUDIO_RECORD_BACKLOG,
     AUDIO_TAKE_ALIGNMENT_MS,
     AUDIO_MONITOR_DELAY_MS,
+    // Feature 012: the master clamp (ABI revision 8's health field) and the meter frames the sheet's frame loop missed.
+    AUDIO_MASTER_CLIPS,
+    AUDIO_METER_FRAMES_DROPPED,
 }

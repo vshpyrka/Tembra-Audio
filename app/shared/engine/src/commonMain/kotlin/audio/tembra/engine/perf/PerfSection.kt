@@ -41,4 +41,13 @@ enum class PerfSection(val family: PerfFamily) {
     SHELL_WINDOW_RELAYOUT(PerfFamily.SHELL),
     SHELL_SHORTCUT_NAVIGATE(PerfFamily.SHELL),
     TIMELINE_CONTEXT_MENU(PerfFamily.TIMELINE),
+    // Feature 012 (the mixer, contracts/perf-instrumentation.md): the sheet's open and close, its per-frame meter read,
+    // the fader, knob and master gestures (animation sections), the engine's pan apply.
+    TIMELINE_MIXER_OPEN(PerfFamily.TIMELINE),
+    TIMELINE_MIXER_CLOSE(PerfFamily.TIMELINE),
+    TIMELINE_MIXER_FRAME(PerfFamily.TIMELINE),
+    TIMELINE_FADER_DRAG(PerfFamily.TIMELINE),
+    TIMELINE_PAN_TURN(PerfFamily.TIMELINE),
+    TRANSPORT_MASTER_DRAG(PerfFamily.TRANSPORT),
+    ENGINE_PAN_APPLY(PerfFamily.ENGINE),
 }

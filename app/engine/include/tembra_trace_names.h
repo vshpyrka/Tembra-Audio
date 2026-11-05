@@ -47,6 +47,15 @@
 #define TEMBRA_TRACE_AUDIO_RECORD_BACKLOG "audio.recordBacklog"
 #define TEMBRA_TRACE_AUDIO_TAKE_ALIGNMENT_MS "audio.takeAlignmentMs"
 #define TEMBRA_TRACE_AUDIO_MONITOR_DELAY_MS "audio.monitorDelayMs"
+#define TEMBRA_TRACE_TIMELINE_MIXER_OPEN "timeline.mixerOpen"
+#define TEMBRA_TRACE_TIMELINE_MIXER_CLOSE "timeline.mixerClose"
+#define TEMBRA_TRACE_TIMELINE_MIXER_FRAME "timeline.mixerFrame"
+#define TEMBRA_TRACE_TIMELINE_FADER_DRAG "timeline.faderDrag"
+#define TEMBRA_TRACE_TIMELINE_PAN_TURN "timeline.panTurn"
+#define TEMBRA_TRACE_TRANSPORT_MASTER_DRAG "transport.masterDrag"
+#define TEMBRA_TRACE_ENGINE_PAN_APPLY "engine.panApply"
+#define TEMBRA_TRACE_AUDIO_MASTER_CLIPS "audio.masterClips"
+#define TEMBRA_TRACE_AUDIO_METER_FRAMES_DROPPED "audio.meterFramesDropped"
 
 /* X-macro over every entry: os_signpost needs its name as a literal, so the shim dispatches through this. */
 #define TEMBRA_TRACE_FOR_EACH(X) \
@@ -92,8 +101,17 @@
     X(AUDIO_INPUT_OVERRUNS, "audio.inputOverruns") \
     X(AUDIO_RECORD_BACKLOG, "audio.recordBacklog") \
     X(AUDIO_TAKE_ALIGNMENT_MS, "audio.takeAlignmentMs") \
-    X(AUDIO_MONITOR_DELAY_MS, "audio.monitorDelayMs")
+    X(AUDIO_MONITOR_DELAY_MS, "audio.monitorDelayMs") \
+    X(TIMELINE_MIXER_OPEN, "timeline.mixerOpen") \
+    X(TIMELINE_MIXER_CLOSE, "timeline.mixerClose") \
+    X(TIMELINE_MIXER_FRAME, "timeline.mixerFrame") \
+    X(TIMELINE_FADER_DRAG, "timeline.faderDrag") \
+    X(TIMELINE_PAN_TURN, "timeline.panTurn") \
+    X(TRANSPORT_MASTER_DRAG, "transport.masterDrag") \
+    X(ENGINE_PAN_APPLY, "engine.panApply") \
+    X(AUDIO_MASTER_CLIPS, "audio.masterClips") \
+    X(AUDIO_METER_FRAMES_DROPPED, "audio.meterFramesDropped")
 
-#define TEMBRA_TRACE_NAME_COUNT 43
+#define TEMBRA_TRACE_NAME_COUNT 52
 
 #endif /* TEMBRA_TRACE_NAMES_H */
