@@ -1,0 +1,74 @@
+{
+ "artifacts": [
+  {
+   "kind": "xcresult",
+   "path": "app/perf/data/rounds/20261105T100131Z_010-recording/perf.xcresult"
+  },
+  {
+   "kind": "xcodebuild_log",
+   "path": "app/perf/data/rounds/20261105T100131Z_010-recording/xcodebuild-test.log"
+  }
+ ],
+ "badges": [],
+ "build": {
+  "branch": "010-t097-ios",
+  "commit": "fbe11f15566f893015f0ae6401034ce4b5cad94e",
+  "dirty": false,
+  "type": "Perf"
+ },
+ "checks": [
+  {
+   "limit": null,
+   "name": "xcode",
+   "passed": true,
+   "value": null
+  },
+  {
+   "limit": null,
+   "name": "device_attached",
+   "passed": true,
+   "value": null
+  },
+  {
+   "limit": null,
+   "name": "xcode_supports_device",
+   "passed": true,
+   "value": null
+  },
+  {
+   "limit": null,
+   "name": "unlocked",
+   "passed": true,
+   "value": null
+  }
+ ],
+ "device": {
+  "device_id": "00008110-001049660E3A401E",
+  "kind": "device",
+  "model": "iPhone 14",
+  "platform": "ios",
+  "reference": true
+ },
+ "failure_reason": "xcodebuild test-without-building rc=124",
+ "fingerprint": {
+  "os_build": "24A446",
+  "os_version": "27.0.1"
+ },
+ "finished_at": "2026-11-05T12:01:44Z",
+ "gate": [],
+ "journeys": [],
+ "label": "010-recording",
+ "machine": {
+  "hostname": "machine-9e6d924f",
+  "os": "Darwin 27.0.0",
+  "tool_version": "0.2.0"
+ },
+ "round_id": "20261105T100131Z_010-recording",
+ "schema_version": 1,
+ "session": {
+  "index": 1,
+  "size": 1
+ },
+ "started_at": "2026-11-05T10:01:31Z",
+ "status": "failed"
+}
