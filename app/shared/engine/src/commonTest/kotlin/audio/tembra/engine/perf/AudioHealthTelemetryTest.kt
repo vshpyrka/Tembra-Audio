@@ -8,7 +8,7 @@ import kotlin.test.assertNull
 
 /**
  * The audio-health plumbing without the real engine (spec SC-010): the fake engine scripts an [AudioHealth], the
- * facade returns it, and [AudioHealthPublisher.publish] turns it into exactly thirteen counters through [PerfTrace]. The
+ * facade returns it, and [AudioHealthPublisher.publish] turns it into exactly fifteen counters through [PerfTrace]. The
  * publisher is a plain function: the launch site is the app's one-second ticker, not this module.
  */
 class AudioHealthTelemetryTest {
@@ -34,12 +34,12 @@ class AudioHealthTelemetryTest {
     }
 
     @Test
-    fun thePublisherEmitsThirteenCountersWithTheScriptedValues() {
+    fun thePublisherEmitsFifteenCountersWithTheScriptedValues() {
         val engine = FakeAudioEngine()
         engine.scriptAudioHealth(
             AudioHealth(
                 callbacks = 1200, lastMicros = 850, maxMicros = 1900, overBudget = 2, xruns = 3, realtime = true, avgMicros = 410, starvation = 1, clipsActive = 5,
-                inputOverruns = 1, recordBacklog = 4096, inputXruns = 2,
+                inputOverruns = 1, recordBacklog = 4096, inputXruns = 2, masterClips = 7,
             ),
         )
         // Armed and monitoring: the alignment (960 frames at 48 kHz = 20 ms) and the monitoring delay (7 + 13 ms) come from the snapshot.
@@ -49,7 +49,8 @@ class AudioHealthTelemetryTest {
         engine.nextCapture.alignmentFrames = 960
         engine.nextCapture.inputLatencyNanos = 7_000_000
         engine.nextCapture.outputLatencyNanos = 13_000_000
-        val published = AudioHealthPublisher.publish(engine, PerfTrace)
+        // Feature 012: the master clamp count rides in the health struct; the dropped meter frames are the UI's count.
+        val published = AudioHealthPublisher.publish(engine, PerfTrace, meterFramesDropped = 3)
         assertEquals(true, published)
         if (PerfBuild.PERF_ENABLED) {
             assertEquals(
@@ -57,6 +58,7 @@ class AudioHealthTelemetryTest {
                     "audio.callbacks=1200", "audio.lastUs=850", "audio.maxUs=1900", "audio.overBudget=2", "audio.xruns=3", "audio.realtime=1",
                     "audio.avgUs=410", "audio.starvation=1", "audio.clipsActive=5",
                     "audio.inputOverruns=1", "audio.recordBacklog=4096", "audio.takeAlignmentMs=20", "audio.monitorDelayMs=20",
+                    "audio.masterClips=7", "audio.meterFramesDropped=3",
                 ),
                 sink.counters,
             )
@@ -66,12 +68,15 @@ class AudioHealthTelemetryTest {
     }
 
     @Test
-    fun theCaptureCountersReadZeroWhileNothingIsArmed() {
+    fun theCaptureAndMixerCountersReadZeroWhileNothingIsArmedOrOpen() {
         val engine = FakeAudioEngine()
         engine.scriptAudioHealth(AudioHealth(callbacks = 1, lastMicros = 1, maxMicros = 1, overBudget = 0, xruns = 0, realtime = true))
         assertEquals(true, AudioHealthPublisher.publish(engine, PerfTrace))
         if (PerfBuild.PERF_ENABLED) {
-            assertEquals(listOf("audio.inputOverruns=0", "audio.recordBacklog=0", "audio.takeAlignmentMs=0", "audio.monitorDelayMs=0"), sink.counters.takeLast(4))
+            assertEquals(
+                listOf("audio.inputOverruns=0", "audio.recordBacklog=0", "audio.takeAlignmentMs=0", "audio.monitorDelayMs=0", "audio.masterClips=0", "audio.meterFramesDropped=0"),
+                sink.counters.takeLast(6),
+            )
         }
     }
 

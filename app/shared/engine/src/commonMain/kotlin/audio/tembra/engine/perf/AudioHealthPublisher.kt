@@ -4,17 +4,19 @@ import audio.tembra.engine.AudioEngine
 import audio.tembra.engine.CaptureSnapshot
 
 /**
- * Publishes the engine's [AudioHealth] as the thirteen `PerfCounter` values through the facade (spec FR-015 of
- * feature 007; the transport's three since feature 009, the capture's four since feature 010,
- * contracts/perf-instrumentation.md). A plain function with no coroutine of its own: the app's telemetry ticker
- * calls it once per second in measurement builds, and a round's trace (Android) or end-of-journey readout (iOS)
+ * Publishes the engine's [AudioHealth] as the fifteen `PerfCounter` values through the facade (spec FR-015 of
+ * feature 007; the transport's three since feature 009, the capture's four since feature 010, the mixer's two since
+ * feature 012, contracts/perf-instrumentation.md). A plain function with no coroutine of its own: the app's telemetry
+ * ticker calls it once per second in measurement builds, and a round's trace (Android) or end-of-journey readout (iOS)
  * turns the counters into the `audio.*` series. The alignment and the monitoring delay come from the capture
- * snapshot (the latencies in use); both read 0 while nothing is armed. Returns false when no stream is open.
+ * snapshot (the latencies in use); both read 0 while nothing is armed. The master clamp count comes from the health
+ * struct; the meter frames the UI missed ([meterFramesDropped]) are counted by the sheet's frame loop and handed in by
+ * the caller, 0 while no mixer is open. Returns false when no stream is open.
  */
 object AudioHealthPublisher {
     private const val NANOS_PER_MILLI = 1_000_000.0
 
-    fun publish(engine: AudioEngine, trace: PerfTrace): Boolean {
+    fun publish(engine: AudioEngine, trace: PerfTrace, meterFramesDropped: Long = 0L): Boolean {
         val health = engine.audioHealth() ?: return false
         val capture = CaptureSnapshot()
         engine.readCapture(capture)
@@ -33,6 +35,8 @@ object AudioHealthPublisher {
         trace.counter(PerfCounter.AUDIO_RECORD_BACKLOG, health.recordBacklog.toLong())
         trace.counter(PerfCounter.AUDIO_TAKE_ALIGNMENT_MS, alignmentMs)
         trace.counter(PerfCounter.AUDIO_MONITOR_DELAY_MS, monitorDelayMs)
+        trace.counter(PerfCounter.AUDIO_MASTER_CLIPS, health.masterClips.toLong())
+        trace.counter(PerfCounter.AUDIO_METER_FRAMES_DROPPED, meterFramesDropped)
         return true
     }
 }

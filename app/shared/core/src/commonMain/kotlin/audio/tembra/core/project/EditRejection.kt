@@ -37,4 +37,7 @@ sealed interface EditRejection {
 
     /** The take is shorter than a hundredth of a second at its asset's rate (feature 010, spec FR-011). */
     data object TakeTooShort : EditRejection
+
+    /** A pan outside −100..100 (feature 012, spec FR-006); the controls clamp before they edit, so only a bad caller sees it. */
+    data object PanOutOfRange : EditRejection
 }

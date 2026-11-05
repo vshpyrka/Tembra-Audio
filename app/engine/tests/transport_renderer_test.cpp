@@ -144,6 +144,21 @@ public:
         return left;
     }
 
+    /** Like render(), both channels interleaved (feature 012: pan and the meters are heard on both sides). */
+    std::vector<float> renderStereo(uint32_t frames, uint32_t block) {
+        std::vector<float> out;
+        out.reserve(static_cast<size_t>(frames) * 2);
+        std::vector<float> stereo(static_cast<size_t>(block) * 2);
+        for (uint32_t done = 0; done < frames;) {
+            const uint32_t n = std::min(block, frames - done);
+            renderer_->render(stereo.data(), n);
+            out.insert(out.end(), stereo.begin(), stereo.begin() + static_cast<ptrdiff_t>(n) * 2);
+            streamer_.serviceOnce();
+            done += n;
+        }
+        return out;
+    }
+
     tembra::TransportRenderer& renderer() { return *renderer_; }
     tembra::DiskStreamer& streamer() { return streamer_; }
 
@@ -851,4 +866,139 @@ TEST_CASE("the capture record is published every block while armed and zeroed wh
     h.renderDuplex(256, 256, 2, 0.3f);
     REQUIRE(capture.record().blocks == 3);
     REQUIRE(h.renderer().record().recording == 0);
+}
+
+// --- Feature 012: pan, the lock-free parameters and the meters (contracts/engine-c-abi-v8.md "Renderer rules"; T015) ---
+
+namespace {
+
+constexpr float kRoot2 = 1.41421356f;
+
+/** The largest |sample| of one side of an interleaved stereo buffer from frame [from] on. */
+float sidePeak(const std::vector<float>& stereo, size_t side, size_t from = 0) {
+    float peak = 0.0f;
+    for (size_t i = from; 2 * i + side < stereo.size(); ++i) peak = std::max(peak, std::abs(stereo[2 * i + side]));
+    return peak;
+}
+
+}  // namespace
+
+TEST_CASE("a track panned hard left renders silence on the right within −60 dB and √2 on the left", "[transport][mixer]") {
+    Harness h;
+    tembra::ClipSource* source = h.addSource(kLongSource, constant(0.5f));
+    h.arrange({{0, source, 0.0, 0, kLongSource}}, 1);
+    REQUIRE(h.renderer().mixParams().setPan(0, -1.0f));
+    h.play();
+    const auto stereo = h.renderStereo(48000, 256);
+    REQUIRE(sidePeak(stereo, 1, 2400) < 0.0005f);  // after the 10 ms ramp and a block: −66 dB
+    REQUIRE(std::abs(sidePeak(stereo, 0, 2400) - 0.5f * kRoot2) < 1e-3f);
+    // Back to the centre: both sides at 0.5 within a block of the ramp.
+    REQUIRE(h.renderer().mixParams().setPan(0, 0.0f));
+    const auto centred = h.renderStereo(4800, 256);
+    REQUIRE(std::abs(sidePeak(centred, 1, 1000) - 0.5f) < 1e-3f);
+    REQUIRE(std::abs(centred[2 * 4799] - 0.5f) < 1e-4f);
+    REQUIRE(std::abs(centred[2 * 4799 + 1] - 0.5f) < 1e-4f);
+}
+
+TEST_CASE("the meter record is published every block while metering is on and zeroed once when it turns off", "[transport][mixer][meter]") {
+    Harness h;
+    tembra::ClipSource* source = h.addSource(kLongSource, constant(0.5f));
+    h.arrange({{0, source, 0.0, 0, kLongSource}}, 1);
+    h.play();
+    h.renderStereo(2560, 256);
+    REQUIRE(h.renderer().mixRecord().metering == 0);
+    REQUIRE(h.renderer().meterMeasureCalls() == 0);  // metering off: no measurement at all
+    h.renderer().mixParams().setMetering(true);
+    h.renderStereo(256, 256);
+    const tembra::MixRecord first = h.renderer().mixRecord();
+    REQUIRE(first.metering == 1);
+    REQUIRE(first.count == 1);
+    REQUIRE(first.block == h.renderer().blocksRendered());
+    h.renderStereo(2560, 256);
+    const tembra::MixRecord later = h.renderer().mixRecord();
+    REQUIRE(later.block == first.block + 10);
+    REQUIRE(std::abs(later.peak[0][0] - 0.5f) < 1e-3f);  // post-fader, centred: 0.5 on both sides
+    REQUIRE(std::abs(later.peak[0][1] - 0.5f) < 1e-3f);
+    REQUIRE(std::abs(later.masterPeak[0] - 0.5f) < 1e-3f);
+    REQUIRE(later.clipMask == 0);
+    const uint64_t calls = h.renderer().meterMeasureCalls();
+    REQUIRE(calls >= 22);  // a strip and the master per block
+    h.renderer().mixParams().setMetering(false);
+    h.renderStereo(768, 256);
+    const tembra::MixRecord off = h.renderer().mixRecord();
+    REQUIRE(off.metering == 0);
+    REQUIRE(off.count == 0);
+    REQUIRE(off.peak[0][0] == 0.0f);
+    REQUIRE(off.block == later.block + 1);  // the zeroed record went out once, at the first block after the switch
+    REQUIRE(h.renderer().meterMeasureCalls() == calls);
+}
+
+TEST_CASE("a parameter change is applied on the next block and ramps to its target", "[transport][mixer]") {
+    Harness h;
+    tembra::ClipSource* source = h.addSource(kLongSource, constant(0.5f));
+    h.arrange({{0, source, 0.0, 0, kLongSource}}, 1);
+    h.play();
+    h.renderStereo(4800, 256);
+    REQUIRE(h.renderer().mixParams().setGainAndAudible(0, 0.5f, true));
+    const auto stereo = h.renderStereo(2048, 256);
+    REQUIRE(stereo[0] > 0.49f);  // the ramp starts from the old gain in the first block
+    REQUIRE(stereo[0] < 0.5f);
+    REQUIRE(std::abs(stereo[2 * (480 + 256)] - 0.25f) < 1e-6f);  // settled after 10 ms plus a block
+    REQUIRE(std::abs(stereo[2 * 2047 + 1] - 0.25f) < 1e-6f);
+    // The revision-7 table path seeds the same parameters (gain and audibility; the pan is kept).
+    REQUIRE(h.renderer().mixParams().setPan(0, 1.0f));
+    h.setTrack(0, 1.0f, true, 1);
+    REQUIRE(h.renderer().mixParams().gain(0) == 1.0f);
+    REQUIRE(h.renderer().mixParams().pan(0) == 1.0f);
+    const auto right = h.renderStereo(2048, 256);
+    REQUIRE(std::abs(right[2 * 2047 + 1] - 0.5f * kRoot2) < 1e-4f);
+    REQUIRE(right[2 * 2047] == 0.0f);
+}
+
+TEST_CASE("a clamped block is counted once, and the master latch follows it while metering is on", "[transport][mixer][clip]") {
+    Harness h;
+    tembra::ClipSource* a = h.addSource(kLongSource, constant(1.0f));
+    tembra::ClipSource* b = h.addSource(kLongSource, constant(1.0f));
+    h.arrange({{0, a, 0.0, 0, 256}, {1, b, 0.0, 0, 256}}, 2);  // one block of a sum at 2.0, then silence
+    h.renderer().mixParams().setMetering(true);
+    h.play();
+    const auto stereo = h.renderStereo(256 * 12, 256);
+    REQUIRE(stereo[0] == 1.0f);  // clamped
+    REQUIRE(h.renderer().masterClips() == 1);
+    REQUIRE(h.renderer().mixRecord().masterClipped == 1);
+    REQUIRE(h.renderer().mixRecord().clipMask == 3);  // both strips at full scale lit their own latches
+    h.renderer().requestClipReset(TEMBRA_MIXER_MASTER_INDEX);
+    h.renderer().requestClipReset(1);
+    h.renderStereo(256, 256);
+    REQUIRE(h.renderer().mixRecord().masterClipped == 0);
+    REQUIRE(h.renderer().mixRecord().clipMask == 1);
+    REQUIRE(h.renderer().masterClips() == 1);
+    // Metering off, the clamp is still counted for the health counters (pause, seek back, play: the clips sound again).
+    h.renderer().mixParams().setMetering(false);
+    h.renderer().pause();
+    h.renderStereo(2560, 256);
+    h.seek(0);
+    h.play();
+    h.renderStereo(256 * 4, 256);
+    REQUIRE(h.renderer().masterClips() == 2);
+    REQUIRE(h.renderer().mixRecord().metering == 0);
+}
+
+TEST_CASE("the mixer parameters and the meter start over when the renderer is silenced", "[transport][mixer]") {
+    Harness h;
+    tembra::ClipSource* source = h.addSource(kLongSource, constant(1.0f));
+    h.arrange({{0, source, 0.0, 0, kLongSource}}, 1);
+    REQUIRE(h.renderer().mixParams().setPan(0, 1.0f));
+    h.renderer().mixParams().setMetering(true);
+    h.play();
+    h.renderStereo(2560, 256);
+    REQUIRE(h.renderer().mixRecord().clipMask == 1);  // √2 on the right: full scale
+    h.renderer().pause();
+    h.renderStereo(2560, 256);
+    h.renderer().silence();
+    REQUIRE(h.renderer().mixParams().pan(0) == 0.0f);
+    REQUIRE_FALSE(h.renderer().mixParams().metering());
+    REQUIRE(h.renderer().mixRecord().clipMask == 0);
+    REQUIRE(h.renderer().mixRecord().metering == 0);
+    REQUIRE(h.renderer().masterClips() == 0);
 }

@@ -1,0 +1,36 @@
+# Feature 012 — skill review (contracts/skills-and-audit.md §B)
+
+One review per implementation phase: the phase's files routed through `using-chrisbanes-skills`, walked against the
+owning skill of each package (table A of the contract), every finding recorded with its fix or the reason it stays.
+The final review (T122) covers the whole diff against `main` and the compose compiler report.
+
+## Phase 2 — Foundational (T040)
+
+Files: `engine/src/mixer/{pan_law.h, mix_params.h, recent_peak.h, mix_record.h, mix_meter.h, mix_meter.cpp,
+mixer_abi.cpp, track_strip.*, master_bus.*}`, `engine/src/transport/transport_renderer.*`, `engine/src/core/{engine_core.*,
+audio_health.*}`, `engine/include/tembra_engine.h`; `core.project/{Pan, SetPan, FaderTaper, FaderTick, Track,
+ProjectEditor, EditRejection}`; `data.projects/{ProjectValidator, ValidationFailure}`; `engine/{TimelineAudio,
+MixSnapshot, FakeAudioEngine, perf/AudioHealth, perf/AudioHealthPublisher}`, both `NativeAudioEngine` actuals and the
+JNI shim; `ui.session/{ProjectSession, MixTelemetry}`; `ui.timeline/{TrackUi, TimelineViewModel (mapState), TimelineCopy}`.
+
+Skills loaded: `kotlin-api-design` (the core types, the seam), `kotlin-concurrency-and-flow` (the session),
+`kotlin-control-flow` (the `when`s over `ProjectEdit`, `EditRejection`, `ValidationFailure`).
+
+| Phase | File:line | Skill | Finding | Fix (commit) or why not |
+|---|---|---|---|---|
+| 2 | `core/project/Pan.kt` | kotlin-api-design | A single-field domain concept: `@JvmInline value class Pan(val percent: Int)`, serialised as the bare integer, owns its readout, clamp, snap and the engine mapping (`toLinear`). The range is not a constructor rule (the `Track.name` precedent): a document with a bad pan is reported by the validator, not thrown at decode. `inRange` exposes the rule to the editor and the validator. | by construction |
+| 2 | `core/project/FaderTaper.kt`, `FaderTick.kt` | kotlin-api-design | The taper is an `object` that owns the curve in both directions; the scale marks are a small typed value (`FaderTick`) rather than `Pair<Float, String>` (primitive obsession), one type per file (Principle VII). | by construction |
+| 2 | `core/project/ProjectEditor.kt:26,54` | kotlin-control-flow | `SetPan` joins the exhaustive `when` over `ProjectEdit` (no `else`, so a missing branch fails to compile); the out-of-range refusal is a new `EditRejection.PanOutOfRange` and `TimelineCopy.rejected` names it (the controls clamp first, so no message). | by construction |
+| 2 | `ui/session/ProjectSession.kt` `coalesces` | kotlin-control-flow | The existing `else -> false` over the sealed `ProjectEdit` hid every non-coalescing case; replaced by the full case list so a future edit type must choose. | fixed in the phase |
+| 2 | `ui/session/ProjectSession.kt` `setMetering`, `pushPan`, `resetTrackClip` | kotlin-concurrency-and-flow | No new launch site: the mixer's engine calls are synchronous and bounded (atomic stores, a seqlock copy), called from the edit path and the ViewModel's intents; the only coroutine the feature adds later is the sheet's 10 Hz mirror (`LaunchedEffect`). | by construction |
+| 2 | `ui/session/ProjectSession.kt` `pushPans` | kotlin-api-design / spec | **Deviation from contracts/mixer-session.md**: the contract says "the session pushes every track's pan once after `setArrangement`". Pushing 64 `setPan` calls after every arrangement would change the call order every existing session test asserts and send 60-odd no-op stores per edit. The session instead remembers what it pushed per index (`pushedPans`, reset when the transport opens because the engine's open resets to the centre) and pushes only the indices whose pan differs. Same observable result for the engine; `pansArePushedAfterAnArrangementWhenTheIndicesMove` proves the index shift case. | recorded; the contract text is corrected in the final docs task |
+| 2 | `ui/session/ProjectSession.kt` `setMetering` | spec | **Deviation from contracts/mixer-session.md**: the contract resets the holder count "when the transport closes or the project changes". A sheet that stays open across a Tuner detour or a project switch would then show dark meters until closed and reopened. The count stays with the UI that holds it and `pushEngine` re-pushes `setMetering(true)` on every rebind while a holder is open (`meteringIsOnWhileAnyHolderIsOpenAndIsPushedAgainWhenTheTransportRebinds`). | recorded; contract corrected in the docs task |
+| 2 | `engine/include/tembra_engine.h` `tembra_audio_health` | contract arithmetic | **Correction to contracts/engine-c-abi-v8.md and data-model.md §3**: the contract says `sizeof == 60`, `offsetof(master_clips) == 56`. Revision 7's fields end at byte 52 and the struct is padded to 56 for the `uint64_t`; `master_clips` fills that padding, so `offsetof == 52` and `sizeof` stays 56 (a 60-byte size is impossible under 8-byte alignment). The tests assert 56/52; no reader depends on the raw layout (JNI arrays, cinterop fields). | fixed in the phase |
+| 2 | `shared/engine/perf-catalogue.txt`, `trace_shim_test.cpp`, `PerfSectionCatalogueTest` | contract arithmetic | The plan's "49 names" miscounted: 43 existing + 7 sections + 2 counters = 52 (37 sections, 15 counters). | fixed in phase 1 |
+| 2 | `engine/src/mixer/mix_meter.*`, `transport_renderer.*` | Principle I | The master clamp count moved from the meter to the renderer (`masterClips_`, beside `starvation_`) so the health counter counts whether or not the sheet is open; the meter keeps only the master's latch. `mix_meter.cpp` joins `TEMBRA_RT_SOURCES`; the meter allocates nothing after construction, never traces, and does no work while metering is off (`meterMeasureCalls` stays put in the renderer test). | by construction |
+| 2 | `engine/src/core/engine_core.cpp` `setTransportTrack` | ABI compatibility | Revision 7's `tembra_transport_set_track` rejected an index past the arrangement's track count; the lock-free path keeps that rule through an atomic `mixTrackCount_` written under `commands_` by the arrangement, read without it by the setter, so `engine_core_state_test`'s "one track only" assertion holds unchanged. The revision-8 `tembra_mixer_set_*` accept any index under 64, as their contract says. | by construction |
+| 2 | `NativeAudioEngine.ios.kt` `audioHealth` | pre-existing gap | The iOS actual never mapped revision 7's `input_overruns`, `record_backlog` and `input_xruns` into `AudioHealth` (they read 0 on iOS since feature 010). Mapped together with `master_clips`. | fixed in the phase (one line each) |
+| 2 | `engine/src/mixer/track_strip.*` | Principle I / FR-031 | The strip re-targets its two ramps when the source kind changes between blocks (mono ↔ stereo), so a clip boundary never jumps; the centre of the mono law yields `1.0f` exactly, so a centred mono track renders bit-exact to revision 7 (`track_strip_test`). | by construction |
+
+Lanes at the end of the phase: `engineHostTest` 291 Catch2 cases green, zero warnings (2026-11-05); `checkAndroidHost`
+recorded in `../screenshots/NOTES.md` once green.

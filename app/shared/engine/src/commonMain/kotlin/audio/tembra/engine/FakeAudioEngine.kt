@@ -526,6 +526,51 @@ class FakeAudioEngine(
 
     override fun freeBytes(path: String): Long = freeBytesResult
 
+    // --- The mixer (feature 012, contracts/engine-c-abi-v8.md "Kotlin seam") -----------------------------------------
+
+    /** The last pan given to [setPan] per track index, −1..1; 0 (the centre) until set. */
+    val pans: FloatArray = FloatArray(MixSnapshot.TRACKS)
+
+    /** The last [setMetering] value. */
+    var metering: Boolean = false
+        private set
+
+    /**
+     * Scripts what [readMix] fills, called with the block counter it advances per read; null leaves the snapshot cleared.
+     * While [metering] is off the snapshot is cleared whatever the script says, as the engine publishes zeros.
+     */
+    var scriptedMix: ((block: Long, into: MixSnapshot) -> Unit)? = null
+
+    /** How many times [readMix] was called. */
+    var readMixCount: Int = 0
+        private set
+
+    private var mixBlock: Long = 0L
+
+    override fun setPan(index: Int, pan: Float) {
+        _calls += "setPan($index,${round(pan * 1000) / 1000})"
+        if (index in pans.indices) pans[index] = pan
+    }
+
+    override fun setMetering(enabled: Boolean) {
+        _calls += "setMetering($enabled)"
+        metering = enabled
+    }
+
+    override fun readMix(into: MixSnapshot) {
+        readMixCount++
+        into.clear()
+        val script = scriptedMix
+        if (!metering || script == null) return
+        script(++mixBlock, into)
+        into.metering = true
+        into.block = mixBlock
+    }
+
+    override fun resetMixClip(index: Int) {
+        _calls += "resetMixClip($index)"
+    }
+
     private companion object {
         /** `TEMBRA_ERR_STATE`. */
         const val STATE_ERROR = -1

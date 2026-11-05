@@ -360,8 +360,10 @@ bool EngineCore::readAudioHealth(tembra_audio_health& out) {
     TransportRenderer* transport = telemetryTransport_.load(std::memory_order_acquire);
     if (transport != nullptr && state() == TEMBRA_AUDIO_TRANSPORT) {
         health_.setTransportCounters(transport->starvation(), transport->clipsActive());
+        health_.setMixCounters(transport->masterClips());  // feature 012, revision 8
     } else {
         health_.setTransportCounters(0, 0);
+        health_.setMixCounters(0);
     }
     // Feature 010: the capture counters, off the callback; the source outlives the arm so a stopped take still reports.
     {
@@ -642,7 +644,8 @@ int32_t EngineCore::openTransport(const tembra_transport_config& config) {
     hostArrangement_->version = ++arrangementVersion_;
     hostTracks_ = TrackTable{};
     hostTracks_.version = ++arrangementVersion_;
-    transport_->silence();
+    mixTrackCount_.store(0, std::memory_order_release);
+    transport_->silence();  // also resets the mixer's parameters and meter (feature 012)
     transport_->setTempo(hostTempo_);
     transport_->setArrangement(*hostArrangement_);
     transport_->setTracks(hostTracks_);
@@ -679,6 +682,7 @@ void EngineCore::closeTransportLocked() {
     callbackTransport_.store(nullptr, std::memory_order_release);
     closeOutputLocked();  // returns after the last callback; the metronome is silenced there too
     transport_->silence();
+    mixTrackCount_.store(0, std::memory_order_release);
     streamer_.reset();
     hostArrangement_.reset();  // the arrangement went with the stream: its sources may be closed now
     sweepRetiredSourcesLocked(true);
@@ -712,29 +716,86 @@ int32_t EngineCore::setTransportArrangement(const tembra_arrangement& arrangemen
     hostTracks_.version = ++arrangementVersion_;
     hostTracks_.count = std::min<uint32_t>(arrangement.track_count, TEMBRA_MAX_TRACKS);
     for (uint32_t t = 0; t < hostTracks_.count; ++t) hostTracks_.tracks[t] = hostArrangement_->tracks[t];
-    transport_->setTracks(hostTracks_);
+    transport_->setTracks(hostTracks_);  // seeds the lock-free parameters' gain and audibility; the pans are kept (feature 012)
+    mixTrackCount_.store(hostTracks_.count, std::memory_order_release);
     streamer_->invalidate();
     sweepRetiredSourcesLocked(false);
     return TEMBRA_OK;
 }
 
+// The revision-7 fast paths and the revision-8 mixer calls (feature 012, research R4): atomic stores on the renderer,
+// never under commands_, so a fader step from the main thread cannot wait behind play's prime or record-stop's drain.
+// The renderer the telemetry pointer names is never freed outside the test hook, so a close racing a store is harmless.
+
+TransportRenderer* EngineCore::mixerTarget() const {
+    TransportRenderer* transport = telemetryTransport_.load(std::memory_order_acquire);
+    if (transport == nullptr || state() != TEMBRA_AUDIO_TRANSPORT) return nullptr;
+    return transport;
+}
+
 int32_t EngineCore::setTransportTrack(uint32_t index, float gain, bool audible) {
     if (!std::isfinite(gain) || gain < 0.0f || gain > 2.0f) return TEMBRA_ERR_ARGUMENT;
-    std::lock_guard<std::mutex> lock(commands_);
-    if (state() != TEMBRA_AUDIO_TRANSPORT) return TEMBRA_ERR_STATE;
-    if (index >= hostTracks_.count) return TEMBRA_ERR_ARGUMENT;
-    hostTracks_.tracks[index] = TrackState{gain, audible ? 1u : 0u};
-    hostTracks_.version = ++arrangementVersion_;
-    transport_->setTracks(hostTracks_);
-    return TEMBRA_OK;
+    TransportRenderer* transport = mixerTarget();
+    if (transport == nullptr) return TEMBRA_ERR_STATE;
+    if (index >= mixTrackCount_.load(std::memory_order_acquire)) return TEMBRA_ERR_ARGUMENT;  // revision 7's rule: a track of the arrangement
+    return transport->mixParams().setGainAndAudible(index, gain, audible) ? TEMBRA_OK : TEMBRA_ERR_ARGUMENT;
 }
 
 int32_t EngineCore::setTransportMaster(float gain) {
     if (!std::isfinite(gain) || gain < 0.0f || gain > 1.0f) return TEMBRA_ERR_ARGUMENT;
-    std::lock_guard<std::mutex> lock(commands_);
-    if (state() != TEMBRA_AUDIO_TRANSPORT) return TEMBRA_ERR_STATE;
-    transport_->setMaster(gain);
+    TransportRenderer* transport = mixerTarget();
+    if (transport == nullptr) return TEMBRA_ERR_STATE;
+    transport->setMaster(gain);
     return TEMBRA_OK;
+}
+
+int32_t EngineCore::setMixTrack(uint32_t index, float gain, float pan, bool audible) {
+    TransportRenderer* transport = mixerTarget();
+    if (transport == nullptr) return TEMBRA_ERR_STATE;
+    return transport->mixParams().setTrack(index, gain, pan, audible) ? TEMBRA_OK : TEMBRA_ERR_ARGUMENT;
+}
+
+int32_t EngineCore::setMixPan(uint32_t index, float pan) {
+    TransportRenderer* transport = mixerTarget();
+    if (transport == nullptr) return TEMBRA_ERR_STATE;
+    return transport->mixParams().setPan(index, pan) ? TEMBRA_OK : TEMBRA_ERR_ARGUMENT;
+}
+
+int32_t EngineCore::setMixMaster(float gain) { return setTransportMaster(gain); }
+
+int32_t EngineCore::setMetering(bool enabled) {
+    TransportRenderer* transport = mixerTarget();
+    if (transport == nullptr) return TEMBRA_ERR_STATE;
+    transport->mixParams().setMetering(enabled);
+    return TEMBRA_OK;
+}
+
+int32_t EngineCore::resetMixClip(uint32_t index) {
+    if (index > TEMBRA_MIXER_MASTER_INDEX) return TEMBRA_ERR_ARGUMENT;
+    TransportRenderer* transport = mixerTarget();
+    if (transport == nullptr) return TEMBRA_ERR_STATE;
+    transport->requestClipReset(index);
+    return TEMBRA_OK;
+}
+
+void EngineCore::readMix(tembra_mix_snapshot& out) {
+    TransportRenderer* transport = mixerTarget();
+    if (transport == nullptr) {
+        std::memset(&out, 0, sizeof(out));
+        return;
+    }
+    const MixRecord record = transport->mixRecord();
+    out.block = record.block;
+    out.track_count = record.count;
+    out.metering = record.metering;
+    std::memcpy(out.peak, record.peak, sizeof(out.peak));
+    std::memcpy(out.rms, record.rms, sizeof(out.rms));
+    out.master_peak[0] = record.masterPeak[0];
+    out.master_peak[1] = record.masterPeak[1];
+    out.master_rms[0] = record.masterRms[0];
+    out.master_rms[1] = record.masterRms[1];
+    out.clip_mask = record.clipMask;
+    out.master_clipped = record.masterClipped;
 }
 
 int32_t EngineCore::setTransportMetronome(bool enabled) {
@@ -1158,7 +1219,12 @@ void EngineCore::setDevice(std::unique_ptr<AudioDevice> device) {
     reportedInputLatencyNs_.store(0);
     inputLatencyNs_.store(0);
     alignmentOutputLatencyNs_.store(0);
+    mixTrackCount_.store(0);
 }
+
+std::unique_lock<std::mutex> EngineCore::holdCommandsForTest() { return std::unique_lock<std::mutex>(commands_); }
+
+TransportRenderer* EngineCore::transportRendererForTest() { return telemetryTransport_.load(std::memory_order_acquire); }
 #endif
 
 }  // namespace tembra

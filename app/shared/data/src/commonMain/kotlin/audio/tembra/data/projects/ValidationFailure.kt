@@ -3,6 +3,7 @@ package audio.tembra.data.projects
 import audio.tembra.core.metronome.Tempo
 import audio.tembra.core.project.AudioAssetId
 import audio.tembra.core.project.ClipId
+import audio.tembra.core.project.Pan
 import audio.tembra.core.project.ProjectLimits
 import audio.tembra.core.project.ProjectNames
 import audio.tembra.core.project.TrackId
@@ -53,5 +54,10 @@ sealed interface ValidationFailure {
 
     data class AssetFactsInvalid(val assetId: AudioAssetId) : ValidationFailure {
         override val message: String get() = "Audio copy ${assetId.sha256.take(8)} has impossible channel, rate or frame facts"
+    }
+
+    /** Feature 012 (spec FR-006): a track's pan must lie within −100..100 percent. */
+    data class PanOutOfRange(val trackId: TrackId, val percent: Int) : ValidationFailure {
+        override val message: String get() = "Track ${trackId.value} has a pan of $percent, outside −${Pan.MAX}..${Pan.MAX}"
     }
 }

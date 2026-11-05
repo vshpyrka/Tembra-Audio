@@ -607,6 +607,7 @@ class TimelineViewModel(
                 audible = track.id in audible,
                 armed = track.id == armedTrack,
                 recordHere = track.id == armedTrack && !recordInBar,
+                pan = track.pan,
                 clips = track.clips.map { clip ->
                     val asset = project.assets[clip.assetId]
                     val available = asset?.isAvailable == true && clip.assetId !in state.missingAssets

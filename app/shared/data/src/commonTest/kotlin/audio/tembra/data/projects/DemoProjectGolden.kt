@@ -70,7 +70,8 @@ internal object DemoProjectGolden {
                     "lengthFrames": 1486452,
                     "name": "drums"
                   }
-                ]
+                ],
+                "pan": 0
               },
               {
                 "id": "7d1c0a2e-0000-4000-8000-000000000002",
@@ -89,7 +90,8 @@ internal object DemoProjectGolden {
                     "lengthFrames": 1486452,
                     "name": "bass"
                   }
-                ]
+                ],
+                "pan": 0
               },
               {
                 "id": "7d1c0a2e-0000-4000-8000-000000000003",
@@ -108,7 +110,8 @@ internal object DemoProjectGolden {
                     "lengthFrames": 1486452,
                     "name": "keys"
                   }
-                ]
+                ],
+                "pan": 0
               },
               {
                 "id": "7d1c0a2e-0000-4000-8000-000000000004",
@@ -135,7 +138,8 @@ internal object DemoProjectGolden {
                     "lengthFrames": 743226,
                     "name": "pad"
                   }
-                ]
+                ],
+                "pan": 0
               }
             ],
             "countIn": "ONE_BAR"

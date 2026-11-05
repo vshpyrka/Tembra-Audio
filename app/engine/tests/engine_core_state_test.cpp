@@ -1176,3 +1176,63 @@ TEST_CASE("the free-space probe answers for a real directory and refuses a bad p
     REQUIRE(tembra_storage_free_bytes("/nonexistent-tembra-dir/x") == -1);
     REQUIRE(tembra_storage_free_bytes(nullptr) == -1);
 }
+
+// --- Feature 012: the mixer's lock-free parameters behind the state machine (contracts/engine-c-abi-v8.md; T016) ---
+
+TEST_CASE("the mixer setters need the transport, and the arrangement seeds the lock-free parameters", "[engine][mixer]") {
+    tembra::FakeAudioDevice* fake = installFake();
+    REQUIRE(tembra_mixer_set_track(0, 1.0f, 0.0f, 1) == TEMBRA_ERR_STATE);
+    REQUIRE(tembra_mixer_set_pan(0, 0.0f) == TEMBRA_ERR_STATE);
+    REQUIRE(tembra_mixer_set_master(1.0f) == TEMBRA_ERR_STATE);
+    REQUIRE(tembra_mixer_set_metering(1) == TEMBRA_ERR_STATE);
+    REQUIRE(tembra_mixer_reset_clip(0) == TEMBRA_ERR_STATE);
+    REQUIRE(tembra_transport_set_track(0, 1.0f, 1) == TEMBRA_ERR_STATE);
+    tembra_mix_snapshot snapshot{};
+    snapshot.metering = 7;
+    tembra_mixer_read(&snapshot);
+    REQUIRE(snapshot.metering == 0);
+    REQUIRE(snapshot.track_count == 0);
+
+    tembra_transport_config config{};
+    REQUIRE(tembra_transport_open(&config) == TEMBRA_OK);
+    tembra::TransportRenderer* renderer = tembra::EngineCore::instance().transportRendererForTest();
+    REQUIRE(renderer != nullptr);
+    // A new transport session starts from the defaults, whatever an earlier session left.
+    REQUIRE(renderer->mixParams().pan(1) == 0.0f);
+    REQUIRE(renderer->mixParams().gain(1) == 1.0f);
+    REQUIRE(tembra_mixer_set_pan(1, -1.0f) == TEMBRA_OK);  // before the arrangement: kept through the seed
+    tembra_arrangement arrangement{};
+    arrangement.track_count = 3;
+    arrangement.tracks[0] = tembra_track_state{0.5f, 1u};
+    arrangement.tracks[1] = tembra_track_state{1.5f, 0u};
+    arrangement.tracks[2] = tembra_track_state{1.0f, 1u};
+    REQUIRE(tembra_transport_set_arrangement(&arrangement) == TEMBRA_OK);
+    CHECK(renderer->mixParams().gain(0) == 0.5f);
+    CHECK(renderer->mixParams().audible(0));
+    CHECK(renderer->mixParams().gain(1) == 1.5f);
+    CHECK_FALSE(renderer->mixParams().audible(1));
+    CHECK(renderer->mixParams().pan(1) == -1.0f);
+    CHECK(renderer->mixParams().pan(0) == 0.0f);
+    // The revision-7 fast path and the master reach the same block.
+    REQUIRE(tembra_transport_set_track(2, 0.25f, 0) == TEMBRA_OK);
+    CHECK(renderer->mixParams().gain(2) == 0.25f);
+    CHECK_FALSE(renderer->mixParams().audible(2));
+    REQUIRE(tembra_mixer_set_master(0.5f) == TEMBRA_OK);
+    REQUIRE(tembra_mixer_set_metering(1) == TEMBRA_OK);
+    pullMono(fake, 512);
+    tembra_mixer_read(&snapshot);
+    CHECK(snapshot.metering == 1);
+    CHECK(snapshot.track_count == 3);
+    // The health struct carries the clamp count, zero so far.
+    tembra_audio_health health{};
+    REQUIRE(tembra_engine_audio_health(&health) == 0);
+    CHECK(health.master_clips == 0);
+    tembra_transport_close();
+    REQUIRE(tembra_mixer_set_pan(1, 0.0f) == TEMBRA_ERR_STATE);
+    // A reopen starts the parameters over.
+    REQUIRE(tembra_transport_open(&config) == TEMBRA_OK);
+    CHECK(renderer->mixParams().pan(1) == 0.0f);
+    CHECK(renderer->mixParams().gain(0) == 1.0f);
+    CHECK_FALSE(renderer->mixParams().metering());
+    tembra_transport_close();
+}

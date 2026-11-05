@@ -25,8 +25,10 @@ tembra::FakeAudioDevice* installFake() {
 TEST_CASE("the health struct has the documented layout", "[health][abi]") {
     // uint64 + 4 x uint32 + uint8 + 3 reserved = 28 bytes of revision-5 fields, then the three revision-6 uint32
     // (feature 009: avg_us, starvation, clips_active) = 40 bytes, then the three revision-7 uint32 (feature 010:
-    // input_overruns, record_backlog, input_xruns) = 52 bytes, padded to 56 for the uint64 alignment.
-    static_assert(sizeof(tembra_audio_health) == 56, "revision 6's 40 bytes + 3 x uint32, 8-byte aligned");
+    // input_overruns, record_backlog, input_xruns) = 52 bytes, then revision 8's master_clips (feature 012) fills the
+    // four bytes revision 7 left as padding: the struct stays 56 bytes (the contract's "60 / 56" miscounted; the readers
+    // go through JNI arrays and cinterop fields, never through the raw layout).
+    static_assert(sizeof(tembra_audio_health) == 56, "revision 7's 52 bytes of fields + master_clips, 8-byte aligned");
     static_assert(offsetof(tembra_audio_health, callbacks) == 0, "callbacks first");
     static_assert(offsetof(tembra_audio_health, last_us) == 8, "last_us after callbacks");
     static_assert(offsetof(tembra_audio_health, xruns) == 20, "xruns is the fourth uint32");
@@ -37,9 +39,24 @@ TEST_CASE("the health struct has the documented layout", "[health][abi]") {
     static_assert(offsetof(tembra_audio_health, clips_active) == 36, "clips_active is the last revision-6 field");
     static_assert(offsetof(tembra_audio_health, input_overruns) == 40, "input_overruns is the first revision-7 field");
     static_assert(offsetof(tembra_audio_health, record_backlog) == 44, "record_backlog follows input_overruns");
-    static_assert(offsetof(tembra_audio_health, input_xruns) == 48, "input_xruns is the last field");
-    REQUIRE(TEMBRA_ENGINE_ABI_VERSION == 7u);
-    REQUIRE(tembra_engine_abi_version() == 7u);
+    static_assert(offsetof(tembra_audio_health, input_xruns) == 48, "input_xruns is the last revision-7 field");
+    static_assert(offsetof(tembra_audio_health, master_clips) == 52, "master_clips is revision 8's field, in revision 7's padding");
+    REQUIRE(TEMBRA_ENGINE_ABI_VERSION == 8u);
+    REQUIRE(tembra_engine_abi_version() == 8u);
+}
+
+TEST_CASE("the revision-8 field carries the master clamp count and starts at zero with every stream", "[health]") {
+    tembra::AudioHealth health;
+    health.streamOpened(true);
+    tembra_audio_health out{};
+    REQUIRE(health.read(out));
+    CHECK(out.master_clips == 0);
+    health.setMixCounters(7);
+    REQUIRE(health.read(out));
+    CHECK(out.master_clips == 7);
+    health.streamOpened(true);
+    REQUIRE(health.read(out));
+    CHECK(out.master_clips == 0);
 }
 
 TEST_CASE("a scripted callback within its period updates the counters without an over-budget mark", "[health]") {

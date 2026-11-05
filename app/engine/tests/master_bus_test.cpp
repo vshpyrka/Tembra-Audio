@@ -1,5 +1,6 @@
 // The master bus (feature 009, research R6): float summing of the track strips, a 10 ms master gain ramp and a
-// ±1.0 clamp before the device.
+// ±1.0 clamp before the device. Since feature 012 the bus reports whether the clamp engaged in the block it finished,
+// so the renderer counts clamped blocks (master_clips) and the meter lights the master's latch.
 #include <catch2/catch_test_macros.hpp>
 
 #include <algorithm>
@@ -73,6 +74,34 @@ TEST_CASE("a +6 dB sum is clamped to ±1.0", "[mixer][bus]") {
         REQUIRE(out[2 * i] == 1.0f);
         REQUIRE(out[2 * i + 1] == -1.0f);
     }
+}
+
+TEST_CASE("the bus reports an engaged clamp for the block it finished and forgets it at the next begin", "[mixer][bus][clip]") {
+    tembra::MasterBus bus(kRate);
+    REQUIRE_FALSE(bus.clampEngaged());
+    const auto hot = constant(128, 1.0f, -1.0f);
+    const auto quiet = constant(128, 0.25f, 0.25f);
+    std::vector<float> out(256);
+    bus.begin(128);
+    bus.add(hot.data(), 128);
+    bus.add(hot.data(), 128);
+    bus.finish(out.data(), 128);
+    REQUIRE(bus.clampEngaged());
+    bus.begin(128);
+    REQUIRE_FALSE(bus.clampEngaged());
+    bus.add(quiet.data(), 128);
+    bus.finish(out.data(), 128);
+    REQUIRE_FALSE(bus.clampEngaged());
+    // Exactly ±1.0 is not a clamp; a hair above it is.
+    bus.begin(128);
+    bus.add(hot.data(), 128);
+    bus.finish(out.data(), 128);
+    REQUIRE_FALSE(bus.clampEngaged());
+    const auto hair = constant(128, 1.0001f, 0.0f);
+    bus.begin(128);
+    bus.add(hair.data(), 128);
+    bus.finish(out.data(), 128);
+    REQUIRE(bus.clampEngaged());
 }
 
 TEST_CASE("nothing active renders silence", "[mixer][bus]") {

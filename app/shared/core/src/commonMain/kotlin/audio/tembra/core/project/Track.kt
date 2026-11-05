@@ -7,9 +7,10 @@ import kotlinx.serialization.Serializable
 
 /**
  * A track (spec FR-019 to FR-024): a name, an optional instrument label, one of the six palette colours, a gain, the
- * mute and solo toggles and its clips in start order. Name length is a rule of `ProjectEditor` (rejecting) and
- * `ProjectValidator` (reporting), not of the constructor, so a document with a bad name can still be reported.
- * Field order is the contract's wire order.
+ * mute and solo toggles, its clips in start order and, since feature 012 (spec FR-006), its pan. Name length and the
+ * pan's range are rules of `ProjectEditor` (rejecting) and `ProjectValidator` (reporting), not of the constructor, so
+ * a document with a bad name or pan can still be reported. Field order is the contract's wire order: `pan` was
+ * appended after `clips` with a default, so a document from before feature 012 reads as centred.
  */
 @Serializable
 data class Track(
@@ -21,6 +22,7 @@ data class Track(
     @SerialName("muted") val muted: Boolean = false,
     @SerialName("soloed") val soloed: Boolean = false,
     @SerialName("clips") @Serializable(with = PersistentListSerializer::class) val clips: PersistentList<Clip> = persistentListOf(),
+    @SerialName("pan") val pan: Pan = Pan.Centre,
 ) {
     init {
         require(colorIndex in 0 until PALETTE_SIZE) { "colorIndex must be 0..${PALETTE_SIZE - 1}, was $colorIndex" }
