@@ -37,6 +37,10 @@ TalkBack of T093, the perf rounds) wait for the owner's go.
 
 ## Lanes
 
+Still to run for Phase 3 (T055): `checkAndroidDevice` on an emulator (the Pixel 9 Pro Fold was booting when the
+session's usage limit ended; no run yet), then the Pixel 6 Pro lane, the quickstart §5 steps 1–4 by hand and the
+`mixer-half-360.png` / `mixer-full-360.png` captures, which wait for the owner's go on the real device.
+
 | Target | Lane | Result | Counts | Notes |
 |---|---|---|---|---|
 | Host (JVM, every module) + Engine (C++) | `checkAndroidHost engineHostTest` | green, zero warnings | 251 Catch2 cases | 2026-11-05, the merged base `6ca9c2f5` before any mixer change (T001) |
