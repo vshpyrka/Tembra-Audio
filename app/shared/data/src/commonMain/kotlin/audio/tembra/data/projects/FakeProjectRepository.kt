@@ -1,6 +1,7 @@
 package audio.tembra.data.projects
 
 import audio.tembra.core.project.AudioAsset
+import kotlinx.coroutines.CompletableDeferred
 import audio.tembra.core.project.AudioAssetId
 import audio.tembra.core.project.AudioFormat
 import audio.tembra.core.project.ClipId
@@ -40,6 +41,9 @@ class FakeProjectRepository(
 
     /** What [importAudio] answers next, in order; empty answers a refusal as unreadable. */
     val importResults: ArrayDeque<ImportResult> = ArrayDeque()
+
+    /** When set, every import waits for it: a copy still in progress (feature 011's busy pointer). */
+    var importGate: CompletableDeferred<Unit>? = null
 
     /** Assets whose file is reported missing by [open]. */
     val missingAssets: MutableSet<AudioAssetId> = mutableSetOf()
@@ -145,6 +149,7 @@ class FakeProjectRepository(
 
     override suspend fun importAudio(projectId: ProjectId, file: PickedFile): ImportResult {
         calls += "importAudio(${projectId.value}, ${file.displayName})"
+        importGate?.await()
         return importResults.removeFirstOrNull() ?: ImportResult.Refused(file.displayName, ImportRefusal.Unreadable)
     }
 

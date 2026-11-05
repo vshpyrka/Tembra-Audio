@@ -11,9 +11,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.error
 import androidx.compose.ui.semantics.semantics
+import audio.tembra.ui.shortcuts.LocalTextInputFocus
 import audio.tembra.ui.theme.TembraShapes
 import audio.tembra.ui.theme.TembraTheme
 
@@ -42,6 +44,8 @@ fun TembraTextField(
     val colors = TembraTheme.colors
     val spacing = TembraTheme.spacing
     val source = interactionSource ?: remember { MutableInteractionSource() }
+    // The shell's chords wait while a text field has focus, so its characters are typed (feature 011, spec FR-023).
+    val textInput = LocalTextInputFocus.current
     Column(modifier = modifier) {
         OutlinedTextField(
             value = value,
@@ -49,6 +53,7 @@ fun TembraTextField(
             modifier = Modifier
                 .fillMaxWidth()
                 .testTagIfSet(testTag)
+                .onFocusChanged { textInput?.report(it.isFocused) }
                 .semantics { if (error != null) this.error(error) },
             label = { Text(label) },
             placeholder = placeholder?.let { { Text(it, color = colors.onSurfaceVariant) } },

@@ -18,13 +18,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.DpOffset
 import audio.tembra.ui.designsystem.TembraCard
 import audio.tembra.ui.designsystem.TembraPill
 import audio.tembra.ui.designsystem.TembraTooltip
+import audio.tembra.ui.designsystem.onSecondaryClick
+import audio.tembra.ui.designsystem.pointerMenuAnchor
+import audio.tembra.ui.designsystem.pointerMenuItem
+import audio.tembra.ui.designsystem.rememberPointerMenuAnchor
 import audio.tembra.ui.projects.ProjectCardUi
 import audio.tembra.ui.projects.ProjectsCallbacks
 import audio.tembra.ui.projects.ProjectsCopy
@@ -55,12 +63,21 @@ internal fun ProjectCard(
     val hovered by source.collectIsHoveredAsState()
     val menuSource = remember { MutableInteractionSource() }
     var menuOpen by remember { mutableStateOf(false) }
+    // A secondary click anywhere on the card opens its menu at the pointer (feature 011, spec FR-012).
+    val density = LocalDensity.current
+    val menuAnchor = rememberPointerMenuAnchor()
+    var menuOffset by remember { mutableStateOf(DpOffset.Zero) }
     val description = card.accessibilityDescription
     TembraCard(
         modifier = modifier
             .hoverable(source)
             .semantics(mergeDescendants = true) { contentDescription = description }
-            .clickable(interactionSource = source, indication = null, role = Role.Button) { callbacks.onOpen(card.id) },
+            .pointerMenuItem(menuAnchor)
+            .onSecondaryClick(card.id) { position ->
+                menuOffset = menuAnchor.offsetFor(position, density)
+                menuOpen = true
+            }
+            .pointerHoverIcon(PointerIcon.Hand).clickable(interactionSource = source, indication = null, role = Role.Button) { callbacks.onOpen(card.id) },
         elevated = hovered,
         testTag = cardTag,
     ) {
@@ -81,12 +98,17 @@ internal fun ProjectCard(
                     onDelete = { callbacks.onDelete(card.id) },
                     onRestoreDemo = callbacks.onRestoreDemo,
                     testTag = "$cardTag.menu",
+                    offset = menuOffset,
                 ) {
                     TembraTooltip(text = ProjectsCopy.menu, interactionSource = menuSource) {
                         TransportButton(
                             icon = TembraIcon.MoreVert,
                             description = ProjectsCopy.menu,
-                            onClick = { menuOpen = true },
+                            onClick = {
+                                menuOffset = DpOffset.Zero
+                                menuOpen = true
+                            },
+                            modifier = Modifier.pointerMenuAnchor(menuAnchor),
                             interactionSource = menuSource,
                             testTag = "$cardTag.menu.button",
                         )

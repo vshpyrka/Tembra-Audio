@@ -16,7 +16,7 @@ from tracepulse.config import DEFAULT_CONFIG_PATH, load_config
 from tracepulse.profile_verify import EXIT_FAILED, EXIT_OK, main
 
 FIXTURES = os.path.join(os.path.dirname(__file__), "fixtures", "profile")
-PACKAGE = "audio.tembra.app"
+PACKAGE = "com.tembraaudio"
 RECEIVER = f"{PACKAGE}/androidx.profileinstaller.ProfileInstallReceiver"
 
 

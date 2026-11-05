@@ -75,9 +75,10 @@ class PerfSectionCatalogueTest {
         for ((entry, name) in expected) {
             assertEquals(name, lines.single { it.first == entry }.third, entry)
         }
-        assertEquals(27, PerfSection.entries.size)
+        // 20 sections before feature 010, its 7, and feature 011's 3; 9 counters before feature 010 and its 4.
+        assertEquals(30, PerfSection.entries.size)
         assertEquals(13, PerfCounter.entries.size)
-        assertEquals(40, lines.size)
+        assertEquals(43, lines.size)
     }
 
     /** Exhaustive by construction: a new family must choose its catalogue keyword here. */
@@ -87,5 +88,6 @@ class PerfSectionCatalogueTest {
         PerfFamily.TIMELINE -> "timeline"
         PerfFamily.TRANSPORT -> "transport"
         PerfFamily.ENGINE -> "engine"
+        PerfFamily.SHELL -> "shell"
     }
 }

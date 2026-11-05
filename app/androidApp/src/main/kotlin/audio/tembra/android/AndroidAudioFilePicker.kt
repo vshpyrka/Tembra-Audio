@@ -39,8 +39,8 @@ class AndroidAudioFilePicker(private val host: AudioFilePickerHost, private val 
         internal fun mimeTypesOf(request: AudioPickRequest): Array<String> = (request.mimeTypes + OCTET_STREAM).toTypedArray()
 
         /** The [PickedFile] for [uri]: its display name and an opener over the resolver's stream. */
-        internal fun pickedFile(uri: Uri, resolver: ContentResolver): PickedFile =
-            PickedFile(displayName(uri, resolver)) { open(uri, resolver) }
+        internal fun pickedFile(uri: Uri, resolver: ContentResolver, name: String = displayName(uri, resolver)): PickedFile =
+            PickedFile(name) { open(uri, resolver) }
 
         private fun open(uri: Uri, resolver: ContentResolver): Source {
             val stream = try {

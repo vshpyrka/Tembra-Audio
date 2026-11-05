@@ -6,4 +6,5 @@
 plugins {
     id("com.android.test")
     id("androidx.baselineprofile")
+    id("tembra.kotlin.warnings")
 }

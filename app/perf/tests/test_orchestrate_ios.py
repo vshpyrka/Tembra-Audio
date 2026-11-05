@@ -34,7 +34,7 @@ def _ok(text=""):
 def cfg(tmp_path):
     root = tmp_path / "app"
     (root / "iosApp" / "Configuration").mkdir(parents=True)
-    (root / "iosApp" / "Configuration" / "Config.xcconfig").write_text("TEAM_ID=P5QJJ5Y5V7\nBUNDLE_ID=audio.tembra.app\nAPP_NAME=Tembra Audio\n")
+    (root / "iosApp" / "Configuration" / "Config.xcconfig").write_text("TEAM_ID=P5QJJ5Y5V7\nBUNDLE_ID=com.tembraaudio\nAPP_NAME=Tembra Audio\n")
     shutil.copy(DEFAULT_CONFIG_PATH, root / "tracepulse.yml")
     return load_config(str(root / "tracepulse.yml"))
 
@@ -148,7 +148,7 @@ def _xcode_rules(cfg, round_dir, refused=False, simulator=False, fail_journey=Fa
 
 
 def test_bundle_id_gains_the_team_suffix(cfg):
-    assert bundle_id_with_team(cfg) == "audio.tembra.appP5QJJ5Y5V7"
+    assert bundle_id_with_team(cfg) == "com.tembraaudioP5QJJ5Y5V7"
 
 
 def test_build_for_testing_once_per_session_and_the_xctestrun_is_found(cfg, tmp_path):
@@ -187,14 +187,14 @@ def test_round_runs_install_warm_up_test_and_collects(cfg, tmp_path):
     xctestrun = build_for_testing(cfg, IPHONE, runner, os.path.join(round_dir, "DerivedData"), "Perf")
     outcome = run_round(cfg, IPHONE, runner, FakeClock(), round_dir, IosRoundOptions(journeys=cfg.journeys, xctestrun=xctestrun))
     cmds = runner.commands()
-    uninstall = runner.index_of("devicectl", "device", "uninstall", "app", "audio.tembra.appP5QJJ5Y5V7")
+    uninstall = runner.index_of("devicectl", "device", "uninstall", "app", "com.tembraaudioP5QJJ5Y5V7")
     install = runner.index_of("devicectl", "device install", "app")
-    launch = runner.index_of("devicectl", "device", "process", "launch", "--terminate-existing", "audio.tembra.appP5QJJ5Y5V7")
+    launch = runner.index_of("devicectl", "device", "process", "launch", "--terminate-existing", "com.tembraaudioP5QJJ5Y5V7")
     test = runner.index_of("xcodebuild", "test-without-building")
     assert 0 <= uninstall < install < launch < test
     # `--device` goes before the bundle id: `process launch` hands everything after the bundle to the app
     assert cmds[launch][:7] == ["xcrun", "devicectl", "device", "process", "launch", "--device", UDID]
-    assert cmds[launch][-1] == "audio.tembra.appP5QJJ5Y5V7"
+    assert cmds[launch][-1] == "com.tembraaudioP5QJJ5Y5V7"
     # the warm-up ends the launched process by the pid devicectl reported (terminate takes a pid only)
     terminate = runner.index_of("devicectl", "device", "process", "terminate", "--pid", "4242")
     assert launch < terminate < test
@@ -215,6 +215,8 @@ def test_round_runs_install_warm_up_test_and_collects(cfg, tmp_path):
     assert outcome.app_size_bytes is None, "size is opt-in on iOS"
     # the audio-trace pass: the measured run skips AudioTracePass, the pass runs it alone while xctrace records
     assert any("-skip-testing:TembraPerfTests/AudioTracePass" in c for c in cmds if c[:2] == ["xcodebuild", "test-without-building"])
+    # The 30-minute recording soak (feature 010, T096) runs by hand only, never in a measured round.
+    assert any("-skip-testing:TembraPerfTests/RecordingSoakTests" in c for c in cmds if c[:2] == ["xcodebuild", "test-without-building"])
     assert any("-skip-testing:TembraPerfTests/ColdLaunchHitchTests" in c for c in cmds if c[:2] == ["xcodebuild", "test-without-building"])
     audio_pass = runner.index_of("xcodebuild", "test-without-building", "-only-testing:TembraPerfTests/AudioTracePass")
     record = runner.index_of("xctrace", "record", "--all-processes", f"--device {UDID}")
@@ -288,13 +290,32 @@ def test_simulator_round_uses_simctl_and_the_simulator_destination(cfg, tmp_path
     assert runner.calls[0]["cmd"][runner.calls[0]["cmd"].index("-destination") + 1] == f"platform=iOS Simulator,id={SIM_UDID}"
     outcome = run_round(cfg, SIM, runner, FakeClock(), round_dir, IosRoundOptions(journeys=cfg.journeys, xctestrun=xctestrun))
     assert runner.index_of("simctl", "install", SIM_UDID) >= 0 and runner.index_of("simctl", "launch", SIM_UDID) >= 0
-    assert runner.index_of("simctl", "privacy", SIM_UDID, "grant", "microphone", "audio.tembra.appP5QJJ5Y5V7") > \
+    assert runner.index_of("simctl", "privacy", SIM_UDID, "grant", "microphone", "com.tembraaudioP5QJJ5Y5V7") > \
         runner.index_of("simctl", "install", SIM_UDID), "a fresh install is granted the microphone before the run"
     assert runner.index_of("devicectl", "device", "install") == -1
-    assert runner.index_of("simctl", "get_app_container", SIM_UDID, "audio.tembra.appP5QJJ5Y5V7", "data") >= 0
+    assert runner.index_of("simctl", "get_app_container", SIM_UDID, "com.tembraaudioP5QJJ5Y5V7", "data") >= 0
     assert outcome.badges == ["simulator"]
     assert not any(k.startswith("frames.") for j in outcome.journeys for k in j.metrics)
     assert runner.index_of("xctrace", "record") == -1, "a simulator has no HAL to trace"
+
+
+def test_a_round_of_some_journeys_runs_only_their_test_classes(cfg, tmp_path):
+    # `--journeys windowing` on the iPhone 14 used to run the whole target and filter afterwards (feature 011 trial,
+    # 2026-11-04: an hour on the other journeys, one of which hung): a subset now runs its own classes alone.
+    round_dir = str(tmp_path / "r-subset")
+    runner = TableRunner(_xcode_rules(cfg, round_dir))
+    xctestrun = build_for_testing(cfg, IPHONE, runner, os.path.join(round_dir, "DerivedData"), "Perf")
+    run_round(cfg, IPHONE, runner, FakeClock(), round_dir, IosRoundOptions(journeys=["windowing", "startup"], xctestrun=xctestrun))
+    twb = runner.commands()[runner.index_of("xcodebuild", "test-without-building")]
+    assert "-only-testing:TembraPerfTests/WindowingPerfTests" in twb
+    assert "-only-testing:TembraPerfTests/StartupPerfTests" in twb
+    assert "-only-testing:TembraPerfTests" not in twb
+
+
+def test_journey_test_classes_cover_the_windowing_journey(cfg):
+    from tracepulse.orchestrate_ios import journey_test_classes
+    assert journey_test_classes(cfg, ["windowing"]) == ["WindowingPerfTests"]
+    assert journey_test_classes(cfg, ["windowing", "startup"]) == ["WindowingPerfTests", "StartupPerfTests"]
 
 
 def test_doctor_checks_pairing_xcode_support_and_lock_state_only(cfg, tmp_path):
@@ -333,3 +354,11 @@ def test_doctor_refuses_an_xcode_older_than_the_phones_ios(cfg, tmp_path):
     with pytest.raises(Refused):
         run_round(cfg, IPHONE, TableRunner(_xcode_rules(cfg, str(tmp_path / "r3"), sdk="26.5")), FakeClock(),
                   str(tmp_path / "r3"), IosRoundOptions(journeys=cfg.journeys, xctestrun="x.xctestrun"))
+
+
+def test_the_inputs_a_device_can_synthesize():
+    from tracepulse.orchestrate_ios import synthesized_inputs
+    from tracepulse.devices import Device
+    assert synthesized_inputs(Device("u1", "ios", "physical", "iPhone 14")) == (False, False)
+    assert synthesized_inputs(Device("u2", "ios", "simulator", "iPhone 18 Pro")) == (False, True)
+    assert synthesized_inputs(Device("u3", "ios", "simulator", "iPad Pro 13-inch (M5)")) == (True, True)

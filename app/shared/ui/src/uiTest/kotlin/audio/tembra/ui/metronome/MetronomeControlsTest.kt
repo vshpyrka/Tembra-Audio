@@ -60,7 +60,7 @@ class MetronomeControlsTest {
             TembraTheme {
                 pixelDensity = LocalDensity.current.density
                 Box(Modifier.width(240.dp)) {
-                    TapTempoButton(caption = "Sync finger rhythm", onTap = {}, interactionSource = source)
+                    TapTempoButton(caption = "Tap along to the beat", onTap = {}, interactionSource = source)
                 }
             }
         }

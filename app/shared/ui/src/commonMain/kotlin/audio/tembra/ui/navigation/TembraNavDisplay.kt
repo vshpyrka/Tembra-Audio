@@ -41,6 +41,7 @@ internal fun TembraNavDisplay(
     nestedTrackSettings: TrackId? = null,
     onCloseTrackSettings: () -> Unit = {},
     onSelectDestination: (Destination) -> Unit = {},
+    onShowShortcuts: () -> Unit = {},
 ) {
     val motion = TembraTheme.motion
     val instant = ContentTransform(EnterTransition.None, ExitTransition.None)
@@ -87,7 +88,7 @@ internal fun TembraNavDisplay(
                     pane + if (key.destination in PreparesItself) fadesItselfIn() else emptyMap()
                 },
             ) { key ->
-                DestinationContent(key.destination, onOpenTrackSettings, nestedTrackSettings, onCloseTrackSettings, onSelectDestination)
+                DestinationContent(key.destination, onOpenTrackSettings, nestedTrackSettings, onCloseTrackSettings, onSelectDestination, onShowShortcuts)
             }
             entry<TrackSettingsKey> { key ->
                 TrackSettingsScreen(trackId = key.trackId, onBack = onBack)

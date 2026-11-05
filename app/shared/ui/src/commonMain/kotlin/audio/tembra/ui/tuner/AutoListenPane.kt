@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
@@ -18,6 +17,7 @@ import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Constraints
 import audio.tembra.ui.designsystem.TembraGradientCard
+import audio.tembra.ui.designsystem.verticalScrollWithScrollbar
 import audio.tembra.ui.theme.TembraTheme
 
 /**
@@ -27,13 +27,14 @@ import audio.tembra.ui.theme.TembraTheme
  * above the fold of a tabletop foldable (feature 005, FR-003). It takes only the
  * fields it renders, so the 10 Hz [reading] is the one input that recomposes it. In the stacked and wide layouts an
  * optional [footer] (the noise gate control, feature 006 FR-016) keeps the foot of the card and the meter is fitted
- * to the height above it ([MeterOverFooter]); it is left out with the denied panel.
+ * to the height above it ([MeterOverFooter]); it is left out with the denied panel. A [microphoneNotice] (the
+ * permission refused, or no microphone at all: feature 011) takes the meter's place.
  */
 @Composable
 internal fun AutoListenPane(
     reading: MeterReading?,
     listening: Boolean,
-    showDeniedState: Boolean,
+    microphoneNotice: MicrophoneNotice?,
     telemetry: PitchTelemetry,
     layout: TunerLayout,
     onRequestMicrophone: () -> Unit,
@@ -46,11 +47,11 @@ internal fun AutoListenPane(
             layout == TunerLayout.Landscape || layout == TunerLayout.Tabletop -> FittedMeter(
                 reading = reading,
                 listening = listening,
-                showDeniedState = showDeniedState,
+                microphoneNotice = microphoneNotice,
                 telemetry = telemetry,
                 onRequestMicrophone = onRequestMicrophone,
             )
-            footer != null && !showDeniedState -> MeterOverFooter(
+            footer != null && microphoneNotice == null -> MeterOverFooter(
                 reading = reading,
                 listening = listening,
                 telemetry = telemetry,
@@ -60,12 +61,12 @@ internal fun AutoListenPane(
             else -> Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
+                    .verticalScrollWithScrollbar(rememberScrollState())
                     .padding(horizontal = spacing.md, vertical = spacing.lg),
                 contentAlignment = Alignment.Center,
             ) {
-                if (showDeniedState) {
-                    MicrophoneDeniedState(onRequestMicrophone = onRequestMicrophone, modifier = Modifier.fillMaxWidth())
+                if (microphoneNotice != null) {
+                    MicrophoneNoticePanel(notice = microphoneNotice, onRequestMicrophone = onRequestMicrophone, modifier = Modifier.fillMaxWidth())
                 } else {
                     TunerMeter(
                         telemetry = telemetry,
@@ -105,7 +106,7 @@ private fun MeterOverFooter(
     val currentListening by rememberUpdatedState(listening)
     val currentFooter by rememberUpdatedState(footer)
     // A layer of its own: each reading measures and places the card again, which re-records only this layer.
-    SubcomposeLayout(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).graphicsLayer()) { constraints ->
+    SubcomposeLayout(modifier = Modifier.fillMaxSize().verticalScrollWithScrollbar(rememberScrollState()).graphicsLayer()) { constraints ->
         val width = constraints.maxWidth
         // A scroll container hands its own height down as the minimum height: the viewport this content should fill.
         val viewport = constraints.minHeight
@@ -159,14 +160,14 @@ private enum class MeterSlot { Footer, Meter }
 
 /**
  * The landscape meter: its width is the one whose compact meter is exactly as tall as the card's inner height, kept
- * between `meterMinWidth` and `meterMaxWidthWide` and centred; only when even the narrowest meter (or the denied
- * panel) is too tall does the card scroll instead.
+ * between `meterMinWidth` and `meterMaxWidthWide` and centred; only when even the narrowest meter (or a microphone
+ * notice) is too tall does the card scroll instead.
  */
 @Composable
 private fun FittedMeter(
     reading: MeterReading?,
     listening: Boolean,
-    showDeniedState: Boolean,
+    microphoneNotice: MicrophoneNotice?,
     telemetry: PitchTelemetry,
     onRequestMicrophone: () -> Unit,
 ) {
@@ -177,17 +178,17 @@ private fun FittedMeter(
         val fit = with(density) { MeterLayout.widthForHeight(inner.toPx(), density.density, density.fontScale, MeterSize.Compact).toDp() }
         val fits = fit >= spacing.meterMinWidth
         val cap = fit.coerceIn(spacing.meterMinWidth, spacing.meterMaxWidthWide)
-        val scrolls = showDeniedState || !fits
+        val scrolls = microphoneNotice != null || !fits
         val scrollState = rememberScrollState()
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .then(if (scrolls) Modifier.verticalScroll(scrollState) else Modifier)
+                .then(if (scrolls) Modifier.verticalScrollWithScrollbar(scrollState) else Modifier)
                 .padding(spacing.md),
             contentAlignment = Alignment.Center,
         ) {
-            if (showDeniedState) {
-                MicrophoneDeniedState(onRequestMicrophone = onRequestMicrophone, modifier = Modifier.fillMaxWidth())
+            if (microphoneNotice != null) {
+                MicrophoneNoticePanel(notice = microphoneNotice, onRequestMicrophone = onRequestMicrophone, modifier = Modifier.fillMaxWidth())
             } else {
                 TunerMeter(
                     telemetry = telemetry,
@@ -199,5 +200,14 @@ private fun FittedMeter(
                 )
             }
         }
+    }
+}
+
+/** The panel for a [notice]: the denied state asks again; the no-microphone message has nothing to ask for. */
+@Composable
+private fun MicrophoneNoticePanel(notice: MicrophoneNotice, onRequestMicrophone: () -> Unit, modifier: Modifier) {
+    when (notice) {
+        MicrophoneNotice.Denied -> MicrophoneDeniedState(onRequestMicrophone = onRequestMicrophone, modifier = modifier)
+        MicrophoneNotice.Unavailable -> MicrophoneUnavailableState(modifier = modifier)
     }
 }

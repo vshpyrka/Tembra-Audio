@@ -46,23 +46,23 @@
     },
     {
       "slug": "timeline-arranger/phone",
-      "screenId": "7702219253829558895",
-      "title": "Tembra Audio - Timeline & Waveform Arranger v3",
+      "screenId": "5526405064297585693",
+      "title": "Tembra Audio - Timeline (Mobile) v5",
       "device": "MOBILE",
-      "width": 2560,
-      "height": 1744,
-      "html": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBKOARIhYXBwX2NvbXBhbmlvbl91c2VyX3VwbG9hZGVkX2ZpbGVzGmkKM3VzZXJfdXBsb2FkZWRfaHRtbF8wMDA2NWUwYTU0Y2E5MGNjMDQ1YWRkZTIzOTAyMmE3ORILEgcQqcbYkZETGAGSASQKCnByb2plY3RfaWQSFkIUMTIwNDAxNzE2MTE3MTI1ODk1OTk&filename=&opi=96797242",
-      "screenshot": "https://lh3.googleusercontent.com/aida/AEtjO1UZh8Qpy9RTHOq7QqlXUdqoTf_AatqVusT1l2PjwfK3YMNIvf1fktqM3-pFIXIamlVxZ621v8HtDKxyr5WViL6FJnVlrxcDzUGk5JdpVjDIh1_DwCVZpS1Sh8da1JHzuRqVsN-yUAiGo2da_KiAIXUbzftTaKNQ_tLfp0ILYRZ87YsT78-u5WkoSRGVwYySf8HdSaa73f6TOTPu2hUJ03Hw2DhrQmEdRg1qMDCTQvF2zCX2MLqgGsZQFRdh8lei-SNQ84S0rIVTb9Q"
+      "width": "2560",
+      "height": "1600",
+      "html": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/5526405064297586583:download",
+      "screenshot": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/5526405064297584090:download"
     },
     {
       "slug": "timeline-arranger/tablet",
-      "screenId": "18372942600038566129",
-      "title": "Tembra Audio - Timeline & Waveform Arranger (Tablet) v3",
+      "screenId": "5002931713168646568",
+      "title": "Tembra Audio - Timeline (Tablet) v5",
       "device": "DESKTOP",
-      "width": 2560,
-      "height": 1600,
-      "html": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBKOARIhYXBwX2NvbXBhbmlvbl91c2VyX3VwbG9hZGVkX2ZpbGVzGmkKM3VzZXJfdXBsb2FkZWRfaHRtbF8wMDA2NWUwYTU5ODZhOGRkMDVmMTNmN2Y4ODM2ZWEzNBILEgcQqcbYkZETGAGSASQKCnByb2plY3RfaWQSFkIUMTIwNDAxNzE2MTE3MTI1ODk1OTk&filename=&opi=96797242",
-      "screenshot": "https://lh3.googleusercontent.com/aida/AEtjO1VhFggyw_vdOlL_FEN9x4ZYgPV_70nMT4gWv-kD99NQ7hG2GGGX8vqBqtO6wgFeKSVRVhAFOjXKTqFQGhM15u88lhzuVrpEvF4nGA0S7bovN9nq5fB4YIx6PPpOj7G6BNw9ZQ-4nf5OBfbBLWRTvc1IA7_CtjYEg938ExmmVbleK7BonGiwxrywaaTmjnkvuT4xSX9vGf6p1NAuXJ5O6Inq44P_o2gI2WDNGmEP7_sZLs4zIqiXrlGkBBA2rJ4AGkC9S3neFiR4SoY"
+      "width": "2560",
+      "height": "1600",
+      "html": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/5002931713168650070:download",
+      "screenshot": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/5002931713168648319:download"
     },
     {
       "slug": "drum-sequencer/phone",
@@ -307,6 +307,146 @@
       "height": 1376,
       "screenshot": "https://lh3.googleusercontent.com/aida/AEtjO1V0P6wQxXSZ1YoDB2aF2DLN9XSE80mDauKoTcTyiKP0NFYuSpju8Dp7C3g6Ad4GfyWBk92m-ff1LOYqIpqS8F13544eBG0pbCVDsNR997IPFHRibTFJbcTDXArVZmI66huqMBJjArsFUSuADwjlSZ1uaVPZOqGG2LWjU_woy6q8l0L5m7nU62lB0EhnRqjNhkJXp-ftO8bcPOruOXf5MGDx5uXP4ndkHQzyoZ-spTuFCMPbxZx3fxKBeMUE",
       "note": "Image-only screen from the user's second Stitch project (Studio Sound design system); Stitch holds no HTML for it. Pulled 2026-10-13 as mixer evidence for features 009/010."
+    },
+    {
+      "slug": "timeline-recording/phone-armed",
+      "screenId": "3497588991899823109",
+      "title": "Tembra Audio - Recording Armed (Mobile)",
+      "device": "MOBILE",
+      "width": "2560",
+      "height": "1600",
+      "html": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/3497588991899822195:download",
+      "screenshot": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/3497588991899820604:download"
+    },
+    {
+      "slug": "timeline-recording/phone-count-in",
+      "screenId": "3703373943507209917",
+      "title": "Tembra Audio - Recording Count-in (Mobile)",
+      "device": "MOBILE",
+      "width": "2560",
+      "height": "1600",
+      "html": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/3703373943507208715:download",
+      "screenshot": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/3703373943507207268:download"
+    },
+    {
+      "slug": "timeline-recording/phone-monitor-on",
+      "screenId": "12050991889094449347",
+      "title": "Tembra Audio - Recording Monitor On (Mobile)",
+      "device": "MOBILE",
+      "width": "2560",
+      "height": "1600",
+      "html": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/12050991889094450489:download",
+      "screenshot": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/12050991889094449918:download"
+    },
+    {
+      "slug": "timeline-recording/phone-monitor-suspended",
+      "screenId": "2524242480276726820",
+      "title": "Tembra Audio - Recording Monitor Suspended (Mobile)",
+      "device": "MOBILE",
+      "width": "2560",
+      "height": "1600",
+      "html": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/2524242480276728146:download",
+      "screenshot": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/2524242480276729531:download"
+    },
+    {
+      "slug": "timeline-recording/phone-mic-denied",
+      "screenId": "15493549538658287868",
+      "title": "Tembra Audio - Recording Mic Denied (Mobile)",
+      "device": "MOBILE",
+      "width": "2560",
+      "height": "1600",
+      "html": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/15493549538658288054:download",
+      "screenshot": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/15493549538658290009:download"
+    },
+    {
+      "slug": "timeline-recording/phone-stop-recording-dialog",
+      "screenId": "17550547982508194612",
+      "title": "Tembra Audio - Recording Stop Recording Dialog (Mobile)",
+      "device": "MOBILE",
+      "width": "2560",
+      "height": "1600",
+      "html": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/17550547982508192250:download",
+      "screenshot": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/17550547982508195479:download"
+    },
+    {
+      "slug": "timeline-recording/phone-count-in-sheet",
+      "screenId": "4555847651133783135",
+      "title": "Tembra Audio - Recording Count-in Sheet (Mobile)",
+      "device": "MOBILE",
+      "width": "2560",
+      "height": "1600",
+      "html": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/4555847651133781549:download",
+      "screenshot": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/4555847651133782342:download"
+    },
+    {
+      "slug": "timeline-recording/tablet-armed",
+      "screenId": "8903199581785398478",
+      "title": "Tembra Audio - Recording Armed (Tablet)",
+      "device": "DESKTOP",
+      "width": "2560",
+      "height": "1600",
+      "html": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/8903199581785397220:download",
+      "screenshot": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/8903199581785395801:download"
+    },
+    {
+      "slug": "timeline-recording/tablet-count-in",
+      "screenId": "2210246863810590540",
+      "title": "Tembra Audio - Recording Count-in (Tablet)",
+      "device": "DESKTOP",
+      "width": "2560",
+      "height": "1600",
+      "html": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/2210246863810590382:download",
+      "screenshot": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/2210246863810592509:download"
+    },
+    {
+      "slug": "timeline-recording/tablet-monitor-on",
+      "screenId": "6321947454634665235",
+      "title": "Tembra Audio - Recording Monitor On (Tablet)",
+      "device": "DESKTOP",
+      "width": "2560",
+      "height": "1600",
+      "html": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/6321947454634667905:download",
+      "screenshot": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/6321947454634666570:download"
+    },
+    {
+      "slug": "timeline-recording/tablet-monitor-suspended",
+      "screenId": "7572235810362025876",
+      "title": "Tembra Audio - Recording Monitor Suspended (Tablet)",
+      "device": "DESKTOP",
+      "width": "2560",
+      "height": "1600",
+      "html": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/7572235810362024946:download",
+      "screenshot": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/7572235810362025411:download"
+    },
+    {
+      "slug": "timeline-recording/tablet-mic-denied",
+      "screenId": "14228386606871700194",
+      "title": "Tembra Audio - Recording Mic Denied (Tablet)",
+      "device": "DESKTOP",
+      "width": "2560",
+      "height": "1600",
+      "html": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/14228386606871699560:download",
+      "screenshot": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/14228386606871699877:download"
+    },
+    {
+      "slug": "timeline-recording/tablet-stop-recording-dialog",
+      "screenId": "6025567218592797991",
+      "title": "Tembra Audio - Recording Stop Recording Dialog (Tablet)",
+      "device": "DESKTOP",
+      "width": "2560",
+      "height": "1600",
+      "html": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/6025567218592797969:download",
+      "screenshot": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/6025567218592797980:download"
+    },
+    {
+      "slug": "timeline-recording/tablet-count-in-sheet",
+      "screenId": "12096855136060347776",
+      "title": "Tembra Audio - Recording Count-in Sheet (Tablet)",
+      "device": "DESKTOP",
+      "width": "2560",
+      "height": "1600",
+      "html": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/12096855136060347142:download",
+      "screenshot": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/12096855136060347459:download"
     }
   ],
   "uploadedReferenceScreens": [

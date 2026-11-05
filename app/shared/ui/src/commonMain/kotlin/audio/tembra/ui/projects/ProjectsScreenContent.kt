@@ -1,6 +1,8 @@
 package audio.tembra.ui.projects
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,18 +15,35 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
+import audio.tembra.core.project.Beats
 import audio.tembra.ui.designsystem.EmptyState
+import audio.tembra.ui.designsystem.FocusMemory
+import audio.tembra.ui.designsystem.ScrollbarAdapter
 import audio.tembra.ui.designsystem.TembraPill
+import audio.tembra.ui.designsystem.focusRestoringRoot
+import audio.tembra.ui.designsystem.tembraScrollbar
+import audio.tembra.ui.drop.AudioDropState
+import audio.tembra.ui.drop.DropCopy
+import audio.tembra.ui.drop.DropHoverBanner
+import audio.tembra.ui.drop.DropZone
+import audio.tembra.ui.drop.audioDropTarget
 import audio.tembra.ui.projects.components.DeleteProjectDialog
 import audio.tembra.ui.projects.components.DescribeProjectDialog
 import audio.tembra.ui.projects.components.KeyPickerDialog
@@ -33,6 +52,9 @@ import audio.tembra.ui.projects.components.LibrarySearchField
 import audio.tembra.ui.projects.components.ProjectCard
 import audio.tembra.ui.projects.components.RenameProjectDialog
 import audio.tembra.ui.projects.components.SortMenu
+import audio.tembra.ui.shortcuts.LocalShortcutPlatform
+import audio.tembra.ui.shortcuts.RegisterShortcuts
+import audio.tembra.ui.shortcuts.ShortcutTargets
 import audio.tembra.ui.theme.TembraTheme
 
 /**
@@ -52,12 +74,31 @@ internal fun ProjectsScreenContent(
     val spacing = TembraTheme.spacing
     val colors = TembraTheme.colors
     val ready = state.isFirstContentReady
+    // Keyboard focus starts on the content root once the index is read (feature 011, spec FR-024).
+    val rootFocus = remember { FocusRequester() }
+    LaunchedEffect(state.loaded) {
+        if (state.loaded) rootFocus.requestFocus()
+    }
+    val focusMemory = remember { FocusMemory() }
+    val gridState = rememberLazyGridState()
+    // Ctrl/⌘+F and Ctrl/⌘+N (feature 011, spec FR-021): the root's keys and, on iPad, the menu bar's commands.
+    val searchFocus = remember { FocusRequester() }
+    val onNewProject by rememberUpdatedState(callbacks.onNewProject)
+    val shortcuts = remember(searchFocus) { ProjectsKeyTargets(searchFocus, onNewProject = { onNewProject() }) }
+    RegisterShortcuts(ShortcutTargets(projects = shortcuts))
+    // Files dropped anywhere on the library become a new project (feature 011, spec FR-026).
+    val drops = remember { AudioDropState(zoneAt = { DropZone.ProjectsGrid }, beatsAt = { Beats.Zero }) }
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(TembraTheme.daw.canvasLevel0)
             .testTag(ProjectsTestTags.ROOT)
-            .semantics { stateDescription = if (ready) READY else LOADING },
+            .semantics { stateDescription = if (ready) READY else LOADING }
+            .focusRestoringRoot(focusMemory)
+            .focusRequester(rootFocus)
+            .focusable()
+            .projectsKeyHandling(shortcuts, LocalShortcutPlatform.current)
+            .audioDropTarget(drops, callbacks.onDrop),
     ) {
         Column(modifier = Modifier.fillMaxSize().padding(horizontal = spacing.pageMargin).padding(top = spacing.lg), verticalArrangement = Arrangement.spacedBy(spacing.md)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -67,7 +108,7 @@ internal fun ProjectsScreenContent(
                 }
                 TembraPill(text = ProjectsCopy.newProject, selected = true, onClick = callbacks.onNewProject, testTag = ProjectsTestTags.NEW_PROJECT)
             }
-            LibrarySearchField(text = state.query.text, onText = callbacks.onQuery, modifier = Modifier.fillMaxWidth())
+            LibrarySearchField(text = state.query.text, onText = callbacks.onQuery, modifier = Modifier.fillMaxWidth().focusRequester(searchFocus))
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
                 LibraryFilterChips(filter = state.query.filter, onFilter = callbacks.onFilter, modifier = Modifier.width(FILTER_WIDTH))
                 Spacer(Modifier.weight(1f))
@@ -85,7 +126,12 @@ internal fun ProjectsScreenContent(
                 state.noMatch -> EmptyState(ProjectsCopy.noMatch, modifier = Modifier.testTag(ProjectsTestTags.NO_MATCH))
                 else -> LazyVerticalGrid(
                     columns = GridCells.Fixed(layout.columns),
-                    modifier = Modifier.fillMaxSize().testTag(ProjectsTestTags.GRID),
+                    state = gridState,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .testTag(ProjectsTestTags.GRID)
+                        // A scrollbar while a mouse or trackpad scrolls the library (feature 011, spec FR-014a).
+                        .tembraScrollbar(ScrollbarAdapter(gridState, layout.columns), Orientation.Vertical),
                     horizontalArrangement = Arrangement.spacedBy(spacing.md),
                     verticalArrangement = Arrangement.spacedBy(spacing.md),
                 ) {
@@ -102,6 +148,7 @@ internal fun ProjectsScreenContent(
             is ProjectsDialog.Delete -> DeleteProjectDialog(name = dialog.name, onConfirm = callbacks.onDeleteConfirm, onCancel = callbacks.onDialogDismiss)
             null -> Unit
         }
+        if (drops.hover != null) DropHoverBanner(DropCopy.newProject, Modifier.align(Alignment.TopCenter))
         SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
     }
 }

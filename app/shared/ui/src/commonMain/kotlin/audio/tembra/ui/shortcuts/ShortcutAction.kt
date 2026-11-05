@@ -1,0 +1,52 @@
+package audio.tembra.ui.shortcuts
+
+/**
+ * Every action a shortcut can take (feature 011, data-model.md "Keyboard shortcuts"): the id the iPad's menu commands
+ * and Android's system shortcut list name, served by [ShortcutDispatcher].
+ */
+enum class ShortcutAction {
+    OpenTimeline,
+    OpenTuner,
+    OpenMetronome,
+    OpenProjects,
+    OpenProfile,
+    ShowShortcuts,
+    CloseOverlay,
+    TimelinePlayPause,
+    TimelineSkipToStart,
+    TimelineStepBack,
+    TimelineStepForward,
+    TimelineBarBack,
+    TimelineBarForward,
+    TimelineSplit,
+    TimelineDeleteClip,
+    TimelineUndo,
+    TimelineRedo,
+    TimelineZoomIn,
+    TimelineZoomOut,
+    TimelineMute,
+    TimelineSolo,
+    // Feature 010 (FR-028): arm, record, monitor.
+    TimelineArm,
+    TimelineRecord,
+    TimelineMonitor,
+    MetronomeStartStop,
+    MetronomeTempoUp,
+    MetronomeTempoDown,
+    MetronomeTempoUpTen,
+    MetronomeTempoDownTen,
+    MetronomeTapTempo,
+    TunerAutoListen,
+    TunerByEar,
+    TunerPlayString1,
+    TunerPlayString2,
+    TunerPlayString3,
+    TunerPlayString4,
+    TunerPlayString5,
+    TunerPlayString6,
+    TunerPlayString7,
+    TunerStopTone,
+    TunerToggleLoop,
+    ProjectsFocusSearch,
+    ProjectsNewProject,
+}

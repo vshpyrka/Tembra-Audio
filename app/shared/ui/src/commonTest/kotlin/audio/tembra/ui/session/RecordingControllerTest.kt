@@ -157,6 +157,22 @@ class RecordingControllerTest {
     }
 
     @Test
+    fun aDeviceWithoutAMicrophoneSaysSoAndAsksForNothing() = recordingTest {
+        // Feature 011 (FR-002) reaches desktops without a microphone: arming there names the cause, prompts for nothing
+        // and opens no input, as Auto Listen does.
+        permission.set(MicrophonePermissionStatus.Unavailable)
+        engine.openTransport()
+        controller.start(sessionHost)
+        runCurrent()
+        controller.arm(drums)
+        runCurrent()
+        assertEquals(RecordingState.Disarmed, phase())
+        assertEquals(listOf<SessionMessage>(SessionMessage.NoMicrophone), sessionHost.messages)
+        assertFalse(calls().contains("arm"))
+        assertEquals(0, permission.requestCount)
+    }
+
+    @Test
     fun anInputThatCannotOpenReportsItAndStaysDisarmed() = recordingTest {
         engine.openTransport()
         engine.armResult = ArmResult.InputUnavailable

@@ -11,6 +11,7 @@ import audio.tembra.core.project.CountIn
 import audio.tembra.core.project.GainDb
 import audio.tembra.core.project.GridSize
 import audio.tembra.core.project.TrackId
+import audio.tembra.ui.drop.DropOutcome
 
 /** The timeline's intents as plain functions (Constitution II); [None] for previews and tests. */
 data class TimelineCallbacks(
@@ -36,6 +37,8 @@ data class TimelineCallbacks(
     val onZoomTo: (startBeats: Beats, endBeats: Beats) -> Unit,
     /** The overflow menu's "Overview strip" entry: show or hide the strip, a device preference (spec FR-015; T151). */
     val onOverviewStripShown: (shown: Boolean) -> Unit,
+    /** Feature 011 (spec FR-010a): true asks for full screen, false for the window back. */
+    val onFullScreen: (Boolean) -> Unit,
     val onGrid: (GridSize) -> Unit,
     // Tracks (US2)
     val onAddTrack: () -> Unit,
@@ -86,13 +89,15 @@ data class TimelineCallbacks(
     val onCountIn: (CountIn) -> Unit = {},
     /** The denied snackbar's action: the system settings, or the prompt again. */
     val onRequestMicrophone: () -> Unit = {},
+    // Files dropped on the tracks or the space below (feature 011, spec FR-026)
+    val onDrop: (DropOutcome) -> Unit = {},
 ) {
     companion object {
         val None = TimelineCallbacks(
             onPlayPause = {}, onSkipToStart = {}, onStepBar = {}, onSeek = {}, onScrubStart = {}, onScrub = {}, onScrubEnd = {},
             onMasterVolume = {}, onMetronomeToggle = {}, onMetronomeSettings = {},
             onViewportMeasured = { _, _ -> }, onZoomAround = { _, _ -> }, onZoomStep = {}, onScrollBy = {},
-            onScrollTo = {}, onZoomTo = { _, _ -> }, onOverviewStripShown = {}, onGrid = {},
+            onScrollTo = {}, onZoomTo = { _, _ -> }, onOverviewStripShown = {}, onFullScreen = {}, onGrid = {},
             onAddTrack = {}, onSelectTrack = {}, onToggleMute = {}, onToggleSolo = {}, onGain = { _, _ -> }, onTrackSettings = {},
             onMoveTrack = { _, _ -> }, onDeleteTrack = {}, onConfirmDeleteTrack = {}, onDismissDeleteTrack = {}, onAddAudio = {}, onAddAudioAsNewTrack = {}, onExpandTrack = {},
             onSelectClip = { _, _ -> }, onClearSelection = {}, onSplit = {}, onMoveClip = { _, _, _ -> }, onDeleteClip = {}, onClipDragStart = {}, onClipDrag = { _, _, _ -> }, onClipDragEnd = {}, onClipDragCancel = {}, onUndo = {}, onRedo = {},

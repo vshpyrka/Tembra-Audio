@@ -17,6 +17,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -77,7 +79,7 @@ internal fun TrackSettingsForm(
                     .heightIn(min = spacing.touchTargetMin)
                     .testTag(TrackSettingsTestTags.LABEL)
                     .semantics { contentDescription = "${TrackSettingsCopy.label}, ${state.labelText}" }
-                    .selectable(selected = labelMenuOpen, role = Role.DropdownList, onClick = { labelMenuOpen = true }),
+                    .pointerHoverIcon(PointerIcon.Hand).selectable(selected = labelMenuOpen, role = Role.DropdownList, onClick = { labelMenuOpen = true }),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {

@@ -30,6 +30,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -45,6 +47,7 @@ import audio.tembra.ui.theme.TembraIcon
 import audio.tembra.ui.theme.TembraIcons
 import audio.tembra.ui.theme.TembraShapes
 import audio.tembra.ui.theme.TembraTheme
+import audio.tembra.ui.shortcuts.RegisterOverlay
 
 /**
  * The compact layouts' menu pill (design iteration D1): a fully rounded pill in the selected-chip accent
@@ -85,7 +88,7 @@ internal fun MenuPill(
             Box(
                 modifier = Modifier
                     .testTag(testTag)
-                    .clickable(interactionSource = source, indication = null, enabled = enabled, role = Role.Button) { open = true }
+                    .pointerHoverIcon(PointerIcon.Hand).clickable(interactionSource = source, indication = null, enabled = enabled, role = Role.Button) { open = true }
                     .semantics {
                         contentDescription = description
                         stateDescription = if (open) MetronomeCopy.expanded else MetronomeCopy.collapsed
@@ -123,6 +126,8 @@ internal fun MenuPill(
                 }
             }
         }
+        // Escape's close-overlay action closes it (feature 011, contracts/keyboard-shortcuts.md rule 4).
+        if (open) RegisterOverlay { open = false }
         DropdownMenu(
             expanded = open,
             onDismissRequest = { open = false },

@@ -131,7 +131,6 @@ actual class NativeAudioEngine internal constructor(
     private val reading = nativeHeap.alloc<tembra_pitch_reading>()
     private val config = nativeHeap.alloc<tembra_tuner_config>()
     private val signal = nativeHeap.alloc<tembra_test_signal>()
-    private val grid = nativeHeap.alloc<tembra_metronome_grid>()
     private val tick = nativeHeap.alloc<tembra_metronome_tick>()
     private val customInfo = nativeHeap.alloc<tembra_custom_sound_info>()
     private val transportConfig = nativeHeap.alloc<tembra_transport_config>()
@@ -263,15 +262,18 @@ actual class NativeAudioEngine internal constructor(
         releaseSessionUnlessOwnedBy(AudioState.Listening, AudioState.Metronome, AudioState.Transport)
     }
 
-    override fun setGrid(grid: MetronomeGrid): AudioResult {
-        // The engine validates the size (at most 32 levels, whole beats); the struct holds at most 32 levels.
-        this.grid.bpm = grid.tempo.bpm.toDouble()
-        this.grid.ticks_per_beat = grid.ticksPerBeat.toUInt()
-        this.grid.ticks_per_bar = grid.levels.size.toUInt()
+    override fun setGrid(grid: MetronomeGrid): AudioResult = memScoped {
+        // The engine validates the size (at most 32 levels, whole beats); the struct holds at most 32 levels. Allocated per
+        // call: the Metronome screen sends its grid from the engine dispatcher and the Timeline's bridge from the main
+        // thread, so a shared struct could be filled by both at once.
+        val native = alloc<tembra_metronome_grid>()
+        native.bpm = grid.tempo.bpm.toDouble()
+        native.ticks_per_beat = grid.ticksPerBeat.toUInt()
+        native.ticks_per_bar = grid.levels.size.toUInt()
         for (index in 0 until GRID_LEVELS) {
-            this.grid.levels[index] = grid.levels.getOrNull(index)?.native?.toUByte() ?: 0u
+            native.levels[index] = grid.levels.getOrNull(index)?.native?.toUByte() ?: 0u
         }
-        return AudioResult.fromNative(tembra_metronome_set_grid(this.grid.ptr))
+        AudioResult.fromNative(tembra_metronome_set_grid(native.ptr))
     }
 
     override fun selectSound(sound: ClickSoundId): AudioResult = AudioResult.fromNative(tembra_metronome_select_sound(sound.native.toUInt()))

@@ -31,7 +31,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.isOutOfBounds
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -124,7 +126,7 @@ internal fun TempoStepper(
                             hold.cancel()
                         }
                     }
-                    .clickable(interactionSource = source, indication = null, enabled = enabled, role = Role.Button) {
+                    .pointerHoverIcon(PointerIcon.Hand).clickable(interactionSource = source, indication = null, enabled = enabled, role = Role.Button) {
                         if (!hold.consumeRepeat()) currentOnStep()
                     }
                     .semantics { this.contentDescription = contentDescription },

@@ -31,6 +31,9 @@
 #define TEMBRA_TRACE_TRANSPORT_RECORD_STOP "transport.recordStop"
 #define TEMBRA_TRACE_TIMELINE_MONITOR_TOGGLE "timeline.monitorToggle"
 #define TEMBRA_TRACE_ENGINE_TAKE_ALIGNMENT "engine.takeAlignment"
+#define TEMBRA_TRACE_SHELL_WINDOW_RELAYOUT "shell.windowRelayout"
+#define TEMBRA_TRACE_SHELL_SHORTCUT_NAVIGATE "shell.shortcutNavigate"
+#define TEMBRA_TRACE_TIMELINE_CONTEXT_MENU "timeline.contextMenu"
 #define TEMBRA_TRACE_AUDIO_CALLBACKS "audio.callbacks"
 #define TEMBRA_TRACE_AUDIO_LAST_US "audio.lastUs"
 #define TEMBRA_TRACE_AUDIO_MAX_US "audio.maxUs"
@@ -74,6 +77,9 @@
     X(TRANSPORT_RECORD_STOP, "transport.recordStop") \
     X(TIMELINE_MONITOR_TOGGLE, "timeline.monitorToggle") \
     X(ENGINE_TAKE_ALIGNMENT, "engine.takeAlignment") \
+    X(SHELL_WINDOW_RELAYOUT, "shell.windowRelayout") \
+    X(SHELL_SHORTCUT_NAVIGATE, "shell.shortcutNavigate") \
+    X(TIMELINE_CONTEXT_MENU, "timeline.contextMenu") \
     X(AUDIO_CALLBACKS, "audio.callbacks") \
     X(AUDIO_LAST_US, "audio.lastUs") \
     X(AUDIO_MAX_US, "audio.maxUs") \
@@ -88,6 +94,6 @@
     X(AUDIO_TAKE_ALIGNMENT_MS, "audio.takeAlignmentMs") \
     X(AUDIO_MONITOR_DELAY_MS, "audio.monitorDelayMs")
 
-#define TEMBRA_TRACE_NAME_COUNT 40
+#define TEMBRA_TRACE_NAME_COUNT 43
 
 #endif /* TEMBRA_TRACE_NAMES_H */

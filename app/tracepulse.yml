@@ -33,14 +33,16 @@ gate:
 devices:
   e9446ac2: { platform: android, model: "Redmi Note 5", kind: device, reference: true }
   3621105H803UFX: { platform: android, model: "Pixel Tablet", kind: device, reference: true }
-  33241FDH3000NZ: { platform: android, model: "Pixel 7 Pro", kind: device, reference: true }
+  # The Pixel 7 Pro charges at 100 % on the owner's hub and sat at 36-39 C between rounds of the 010 session
+  # (2026-11-05), so 35 C refused round after round; 40 C as on the Pixel 6 Pro.
+  33241FDH3000NZ: { platform: android, model: "Pixel 7 Pro", kind: device, reference: true, overrides: { battery_temp_max_c: 40.0 } }
   O7PBYLZP4HMBW8S4: { platform: android, model: "CPH2239", kind: device, reference: true }
   19021FDEE001AH: { platform: android, model: Pixel 6 Pro, alias: pixel6, overrides: { battery_temp_max_c: 40.0 } }
   00008110-001049660E3A401E: { platform: ios, model: iPhone 14, alias: iphone14 }
   4CD6879C-8FBA-4CEF-B4EC-31968D0144B0: { platform: ios, model: "iPhone 17 (simulator)", kind: simulator, reference: false }
 
 android:
-  package: audio.tembra.app
+  package: com.tembraaudio
   activity: audio.tembra.android.MainActivity
   build_type: perf
   benchmarks_module: ":perf-benchmarks"
@@ -51,8 +53,8 @@ ios:
   project: iosApp/iosApp.xcodeproj
   scheme: TembraPerf
   configuration: Perf
-  bundle_id: audio.tembra.app          # team suffix appended from Config.xcconfig at run time
+  bundle_id: com.tembraaudio          # team suffix appended from Config.xcconfig at run time
   test_target: TembraPerfTests
   size_variant: iPhone14,7
 
-journeys: [startup, tuner, metronome, timeline, recording, stress]
+journeys: [startup, tuner, metronome, timeline, recording, stress, windowing]
