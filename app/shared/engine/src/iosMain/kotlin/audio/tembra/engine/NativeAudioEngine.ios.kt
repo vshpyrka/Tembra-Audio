@@ -80,6 +80,7 @@ import audio.tembra.engine.cinterop.tembra_tuner_start_test_signal
 import audio.tembra.engine.cinterop.tembra_tuner_stop
 import kotlinx.coroutines.delay
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.FloatVar
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.alloc
 import kotlinx.cinterop.allocArray
@@ -685,11 +686,13 @@ actual class NativeAudioEngine internal constructor(
         into.trackCount = mix.track_count.toInt()
         into.metering = mix.metering != 0u
         into.masterClipped = mix.master_clipped != 0u
-        for (track in 0 until MixSnapshot.TRACKS) {
-            into.peak[track * 2] = mix.peak[track][0]
-            into.peak[track * 2 + 1] = mix.peak[track][1]
-            into.rms[track * 2] = mix.rms[track][0]
-            into.rms[track * 2 + 1] = mix.rms[track][1]
+        // `float peak[64][2]` is 128 contiguous floats in the snapshot's own order (track × 2 + side): read it flat,
+        // the nested C array has no indexer through cinterop.
+        val peaks = mix.peak.reinterpret<FloatVar>()
+        val rms = mix.rms.reinterpret<FloatVar>()
+        for (i in 0 until MixSnapshot.TRACKS * 2) {
+            into.peak[i] = peaks[i]
+            into.rms[i] = rms[i]
         }
         into.masterPeak[0] = mix.master_peak[0]
         into.masterPeak[1] = mix.master_peak[1]
