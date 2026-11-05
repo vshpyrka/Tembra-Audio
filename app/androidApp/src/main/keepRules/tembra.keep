@@ -1,0 +1,18 @@
+# Keep rules for the shrunk release-like builds of the Android app (feature 008, spec FR-005a). AGP 9.3 reads every
+# `.keep` file in `src/<variant>/keepRules/`; this one, in `main`, applies to `release` and `perf`.
+#
+# Policy: a rule is added here only when a device run on the shrunk build fails (a journey of the performance
+# round, or a screenshot of a primary destination that differs from the debug build), with a comment naming
+# the code path and the symptom it fixed. Nothing speculative, no `-dontwarn` wildcards: an R8 note is answered
+# by a rule that names the class, or by a justification beside it. A new rule should keep as little as the symptom
+# needs: run `./gradlew :androidApp:analyzeReleaseR8Config` before and after and compare the three scores
+# (docs/research/r8-configuration-analysis.md has the reference values).
+#
+# What the stack already brings, so it is not repeated here: `proguard-android-optimize.txt` (AGP's default Android
+# rules, named in build.gradle.kts) keeps classes with `native` methods and their names, which covers the engine
+# bridge's JNI downcalls; the engine never calls back into Kotlin (plain C ABI,
+# tembra_engine.h), so no upcall needs a rule. R8's resource-aware shrinking keeps the manifest components
+# (TembraApplication, MainActivity, PlaybackForegroundService, the profile installer's initialisation provider).
+# Metro generates its graph at compile time, kotlinx.serialization ships its own R8 rules and the code names every
+# serializer explicitly (`X.serializer()`), the navigation keys are plain `NavKey` classes that are never serialized,
+# and Compose Multiplatform resources are static accessors over assets.
