@@ -1,7 +1,7 @@
 package audio.tembra.ui.posture
 
 import androidx.compose.material3.adaptive.Posture
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 
@@ -26,4 +26,4 @@ data class VerticalFold(val left: Float, val right: Float) {
 
 /** The current window's [VerticalFold], or null; recomposes on every fold change. */
 @Composable
-fun currentVerticalFold(): VerticalFold? = VerticalFold.from(currentWindowAdaptiveInfo().windowPosture)
+fun currentVerticalFold(): VerticalFold? = VerticalFold.from(currentWindowAdaptiveInfoV2().windowPosture)

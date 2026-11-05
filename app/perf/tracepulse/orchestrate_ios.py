@@ -33,13 +33,18 @@ from .runner import Clock, Completed, Runner
 logger = logging.getLogger("tracepulse.orchestrate_ios")
 
 BUILD_TIMEOUT_S = 3600
-TEST_TIMEOUT_S = 3600
+# A round of all seven journeys runs about 90 minutes on the iPhone 14 since features 010 and 011 (the stress journey
+# records a take: 23 minutes; tuner, the facade self-checks, startup, metronome, windowing, timeline, recording); the
+# 60-minute limit cut the first full post-merge round of 010 short in windowing (2026-11-05).
+TEST_TIMEOUT_S = 7200
 TOOL_TIMEOUT_S = 300
 # One unmeasured stress journey (~25 s of taps) plus the runner's attach and set-up; xctrace stops by itself.
 AUDIO_TRACE_SECONDS = 75
 AUDIO_TRACE_TEST = "AudioTracePass"
 # The cold-launch hitch driver runs only by hand under a system-wide Hitches recording; a round never runs it.
 COLD_LAUNCH_HITCH_TEST = "ColdLaunchHitchTests"
+# The 30-minute recording soak (feature 010, T096) runs only by hand; a round never runs it.
+RECORDING_SOAK_TEST = "RecordingSoakTests"
 
 # The XCTest class that drives each journey: a round for a subset of the journeys (`--journeys recording`) runs only
 # these classes, so the classes left out cannot refuse the round (the thermal gate is per test, and a 20-minute
@@ -51,12 +56,14 @@ JOURNEY_TEST_CLASSES = {
     "timeline": "TimelinePerfTests",
     "recording": "RecordingPerfTests",
     "stress": "StressPerfTests",
+    "windowing": "WindowingPerfTests",
 }
 
 
 def journey_test_classes(cfg: Config, journeys: Sequence[str]) -> Optional[List[str]]:
     """The classes to run for a strict subset of the configured journeys; None for the whole target (every
-    configured journey, or a journey without a known class)."""
+    configured journey, or a journey without a known class). Feature 011 met the same need on the iPhone 14: a
+    one-journey trial ran the whole target for an hour."""
     if set(journeys) >= set(cfg.journeys):
         return None
     classes = [JOURNEY_TEST_CLASSES.get(j) for j in journeys]
@@ -252,6 +259,14 @@ def warm_up(cfg: Config, device: Device, runner: Runner, clock: Clock) -> None:
             _devicectl(cfg, device, runner, "process", "terminate", "--pid", str(pid))
 
 
+def synthesized_inputs(device: Device) -> Tuple[bool, bool]:
+    """Whether XCUITest synthesizes a pointer and ⌘ keys on [device]: both on an iPad; ⌘ keys on any simulator; neither on
+    a physical iPhone ("Pointer events are not supported for this device"; typed ⌘2 opened nothing on the iPhone 14,
+    where the iPhone simulator opens the Tuner, 2026-11-04)."""
+    pad = "iPad" in device.model
+    return pad, pad or device.kind == "simulator"
+
+
 def test_without_building(cfg: Config, device: Device, runner: Runner, xctestrun: str, result_bundle: str,
                           log_path: str, only: Optional[str] = None,
                           classes: Optional[Sequence[str]] = None) -> Completed:
@@ -265,7 +280,8 @@ def test_without_building(cfg: Config, device: Device, runner: Runner, xctestrun
         cmd += [f"-only-testing:{cfg.ios.test_target}/{cls}" for cls in classes]
     else:
         cmd += [f"-only-testing:{cfg.ios.test_target}", f"-skip-testing:{cfg.ios.test_target}/{AUDIO_TRACE_TEST}",
-                f"-skip-testing:{cfg.ios.test_target}/{COLD_LAUNCH_HITCH_TEST}"]
+                f"-skip-testing:{cfg.ios.test_target}/{COLD_LAUNCH_HITCH_TEST}",
+                f"-skip-testing:{cfg.ios.test_target}/{RECORDING_SOAK_TEST}"]
     res = runner.run(cmd, cwd=_ios_dir(cfg), timeout=TEST_TIMEOUT_S)
     with open(log_path, "w") as fh:
         fh.write(f"# {' '.join(cmd)}\n# rc={res.returncode}\n\n{res.stdout}\n--- stderr ---\n{res.stderr}")
@@ -452,7 +468,9 @@ def run_round(cfg: Config, device: Device, runner: Runner, clock: Clock, round_d
     artifacts.append({"kind": "metrics_json", "path": metrics_json})
     simulator = device.kind == "simulator"
     try:
-        collected = collect_round(metrics_json, cfg, simulator=simulator, iterations=options.iterations)
+        pointer, keyboard = synthesized_inputs(device)
+        collected = collect_round(metrics_json, cfg, simulator=simulator, iterations=options.iterations,
+                                  pointer=pointer, keyboard=keyboard)
     except CollectError as exc:
         outcome = RoundOutcome(status="failed", checks=check_records, fingerprint=fingerprint, journeys=[],
                                badges=[], artifacts=artifacts, failure_reason=f"collection: {exc}",

@@ -7,6 +7,7 @@ import org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeSimulatorTes
 plugins {
     id("org.jetbrains.kotlin.multiplatform")
     id("com.android.kotlin.multiplatform.library")
+    id("tembra.kotlin.warnings")
 }
 
 val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")

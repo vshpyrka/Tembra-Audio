@@ -1,6 +1,9 @@
 package audio.tembra.ui.navigation
 
 import audio.tembra.ui.session.FakePlaybackGuard
+import audio.tembra.ui.session.FakeSessionActivity
+import audio.tembra.ui.drop.FakeProjectFromAudio
+import audio.tembra.ui.drop.NoOpenedFiles
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -24,7 +27,7 @@ class ShellViewModelTest {
     @BeforeTest
     fun setUp() {
         Dispatchers.setMain(StandardTestDispatcher())
-        viewModel = ShellViewModel(FakePlaybackGuard())
+        viewModel = ShellViewModel(FakePlaybackGuard(), FakeSessionActivity(), NoOpenedFiles, FakeProjectFromAudio())
     }
 
     @AfterTest
@@ -39,11 +42,12 @@ class ShellViewModelTest {
     @Test
     fun leavingTheTimelineHandsTheTransportOverAndReturningTakesItBack() = runTest {
         val guard = FakePlaybackGuard()
-        val shell = ShellViewModel(guard)
+        val shell = ShellViewModel(guard, FakeSessionActivity(), NoOpenedFiles, FakeProjectFromAudio())
         shell.select(Destination.Tuner)
         shell.select(Destination.Metronome)
         shell.select(Destination.Timeline)
-        assertEquals(listOf(false, false, true), guard.hostVisibility)
+        // The first `true` is the new shell's own start on the Timeline (feature 011).
+        assertEquals(listOf(true, false, false, true), guard.hostVisibility)
     }
 
     @Test

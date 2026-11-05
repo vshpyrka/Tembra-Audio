@@ -44,6 +44,12 @@ internal fun largeFonts(fontScale: Float): Density = Density(density = LocalDens
 internal expect val supportsKeyboardInputMode: Boolean
 
 /**
+ * Whether a key press from `performKeyInput` types into a focused text field on this lane: Android's text fields take
+ * key events; iOS takes text through UIKit's text input, which the test's key events do not reach (feature 011).
+ */
+internal expect val keyPressesTypeText: Boolean
+
+/**
  * Switches Compose to keyboard input mode for a key-driven test (clickables stay unfocusable in touch mode). A lane
  * declared without keyboard mode skips by that declaration and returns false; a lane that declares it must enter it,
  * or the test fails.

@@ -42,6 +42,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -153,13 +154,13 @@ class MetronomeViewModel(
     private suspend fun observePreferences() {
         if (!_uiState.value.loaded) {
             val stored = preferences.snapshot.first().settings
-            // From the stored settings to the first content and the engine's grid: the metronome.load section (feature 007).
+            // From the stored settings to the first content and the grid handed to the engine: the metronome.load section (feature 007).
             PerfTrace.section(PerfSection.METRONOME_LOAD) {
                 _uiState.update { it.copy(loaded = true, settings = stored) }
                 sendGrid()
             }
             val sound = stored.sound
-            audio.selectSound(if (sound is ClickSound.Custom) ClickSoundId.ClassicWood else soundIdOf(sound))
+            selectEngineSound(if (sound is ClickSound.Custom) ClickSoundId.ClassicWood else soundIdOf(sound))
         }
         val state = _uiState.value
         val custom = state.settings.customSound
@@ -191,7 +192,7 @@ class MetronomeViewModel(
         }
         if (_uiState.value.settings.sound !is ClickSound.Custom) return
         if (loaded) {
-            audio.selectSound(ClickSoundId.Custom)
+            selectEngineSound(ClickSoundId.Custom)
         } else {
             val fallback = ClickSound.BuiltIn(BuiltInClickSound.ClassicWood)
             _uiState.update { it.copy(settings = it.settings.copy(sound = fallback)) }
@@ -374,7 +375,7 @@ class MetronomeViewModel(
             }
         }
         _uiState.update { it.copy(settings = it.settings.copy(sound = sound)) }
-        audio.selectSound(soundIdOf(sound))
+        selectEngineSound(soundIdOf(sound))
         if (state.playback == PlaybackState.Stopped) previewClick()
         persist { it.copy(sound = sound) }
     }
@@ -476,7 +477,7 @@ class MetronomeViewModel(
 
     private suspend fun reloadPreviousCustomSound() {
         when (withContext(prepareDispatcher) { audio.loadCustomSound(store.path) }) {
-            is CustomSoundResult.Loaded -> audio.selectSound(ClickSoundId.Custom)
+            is CustomSoundResult.Loaded -> selectEngineSound(ClickSoundId.Custom)
             // The previous copy is gone too; the next launch's fallback (spec FR-025) handles it.
             CustomSoundResult.NotWav, CustomSoundResult.Silent, CustomSoundResult.Missing -> Unit
         }
@@ -493,7 +494,7 @@ class MetronomeViewModel(
         _uiState.update {
             it.copy(customSound = CustomSoundState.Available(name), settings = it.settings.copy(sound = sound, customSound = ref))
         }
-        audio.selectSound(ClickSoundId.Custom)
+        selectEngineSound(ClickSoundId.Custom)
         if (_uiState.value.playback == PlaybackState.Stopped) previewClick()
         persist { it.copy(sound = sound, customSound = ref) }
     }
@@ -521,6 +522,8 @@ class MetronomeViewModel(
      * only if nothing stopped the click meanwhile (a pause that landed during the start has its own stop queued behind
      * the start on the same dispatcher). Non-cancellable, so a cleared screen still settles the engine.
      */
+    // ATOMIC start (a delicate API since kotlinx.coroutines 1.11): the engine call runs even when the screen is cleared at once.
+    @OptIn(DelicateCoroutinesApi::class)
     private fun startPlayback() {
         _uiState.update { it.copy(playback = PlaybackState.Starting) }
         val notification = PlaybackNotification(MetronomeCopy.notificationTitle, MetronomeCopy.notificationSubtitle(_uiState.value.settings.tempo))
@@ -562,6 +565,7 @@ class MetronomeViewModel(
      * `stopMetronome` → `release` (data-model.md §7). Idempotent on both sides, so it also undoes a start that failed
      * halfway: the engine was not started, and the host gives back whatever it had acquired.
      */
+    @OptIn(DelicateCoroutinesApi::class)
     private fun stopPlayback(message: MetronomeMessage?) {
         _uiState.update { it.copy(playback = PlaybackState.Stopped, currentBeat = NO_BEAT) }
         if (message != null) _messages.trySend(message)
@@ -597,7 +601,20 @@ class MetronomeViewModel(
     /** The engine accepts a grid in every state and applies it from its next block (research R1), so it always gets the current one. */
     private fun sendGrid() {
         val state = _uiState.value
-        audio.setGrid(MetronomeGrid.from(state.grid, state.settings.tempo))
+        val grid = MetronomeGrid.from(state.grid, state.settings.tempo)
+        engineCommand("setGrid") { audio.setGrid(grid) }
+    }
+
+    private fun selectEngineSound(sound: ClickSoundId) = engineCommand("selectSound") { audio.selectSound(sound) }
+
+    /**
+     * The grid and sound commands run on [audioDispatcher] like the start and the stop: they take the engine's command
+     * lock, which a transport close queued there holds while it stops the timeline's stream, so from the main thread they
+     * waited for it (up to 160 ms when the Metronome opened straight from the Timeline, the 010 post-merge sessions). On
+     * the one serial dispatcher they keep their order with each other and with a start, stop or preview launched after them.
+     */
+    private fun engineCommand(name: String, command: () -> Unit) {
+        viewModelScope.launch(CoroutineName(name)) { withContext(audioDispatcher) { command() } }
     }
 
     private fun persist(transform: (MetronomeSettings) -> MetronomeSettings) {

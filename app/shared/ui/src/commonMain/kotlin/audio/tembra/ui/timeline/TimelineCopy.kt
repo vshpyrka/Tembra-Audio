@@ -23,6 +23,9 @@ object TimelineCopy {
     fun snapEntry(gridLabel: String): String = "$snap: $gridLabel"
 
     /** The overflow menu's show/hide entry for the overview strip, checked while it shows (spec FR-015, FR-055; T151). */
+    // Feature 011 (spec FR-010a): the Timeline menu in a desktop window.
+    const val fullScreen = "Full screen"
+    const val exitFullScreen = "Exit full screen"
     const val overviewStrip = "Overview strip"
 
     /** The tempo pill: "124 BPM", read as "Tempo 124 beats per minute" (spec FR-036). */
@@ -79,6 +82,7 @@ object TimelineCopy {
     const val countInOneBar = "1 bar"
     const val countInTwoBars = "2 bars"
     const val recordRefused = "Not enough space to record (200 MB needed)"
+    const val noMicrophone = "No microphone is available on this device. Connect one to record."
     const val takeEndedCall = "Take ended: the call took the audio"
     const val takeEndedInput = "Take ended: the microphone changed"
     const val takeEndedLength = "Take ended: 30 minutes reached"

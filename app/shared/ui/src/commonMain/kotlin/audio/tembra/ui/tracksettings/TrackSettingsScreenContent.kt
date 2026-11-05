@@ -8,13 +8,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
+import audio.tembra.ui.designsystem.verticalScrollWithScrollbar
 import audio.tembra.ui.session.TransportTelemetry
 import audio.tembra.ui.theme.TembraIcon
 import audio.tembra.ui.theme.TembraTheme
@@ -56,7 +56,7 @@ internal fun TrackSettingsScreenContent(
         TrackSettingsForm(
             state = state,
             callbacks = callbacks,
-            modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
+            modifier = Modifier.weight(1f).verticalScrollWithScrollbar(rememberScrollState()),
         )
         TransportBar(state = state.transport, callbacks = transportCallbacks, telemetry = telemetry)
     }

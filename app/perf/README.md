@@ -68,7 +68,9 @@ uv run tracepulse run --device pixel6 --label <feature> [--rounds 5] [--journeys
 uv run tracepulse run --device pixel6 --label <feature> --no-build --apk <app.apk> --test-apk <benchmarks.apk>
                                                         # reuse artifacts built elsewhere (an agent builds through the gradle-run wrapper)
 uv run tracepulse run --device iphone14 --label <feature> [--size] [--no-build --xctestrun <path>]
-                                                        # --journeys on iOS runs only those journeys' XCTest classes
+                                                        # `--journeys` on iOS runs only those journeys' test classes; the windowing
+                                                        # journey's menu and chord steps need a synthesized pointer (iPad) and ⌘ keys
+                                                        # (iPad, any simulator), so a physical iPhone records the relayout section only
                                                         # badge short-iterations: XCTest dropped iterations whose signpost set differed from the first
 uv run tracepulse run --simulators --label <feature>    # every booted simulator, sequentially
 uv run tracepulse run --device pixel6 --label release-baseline --build-type release      # SC-007 comparison (Android)
@@ -118,6 +120,14 @@ control.
 | Session builds | `app/perf/data/sessions/<id>/` | no |
 | Rendered report | `app/perf/reports/report.html` | no |
 | Per-device lock | `app/perf/data/locks/<device_id>` | no |
+
+The heavy folders under `app/perf/data/` (`rounds/`, `sessions/`, `comparisons/`, `profile-generate/`) may live
+on another volume behind symlinks; the cache, the locks, `devicectl.json` and `injections.json` stay in `data/`
+itself. On the owner's MacBook they sit on the SD card since 2026-11-02
+(`/Volumes/External/Dev/tembra-audio/perf/data/<folder>`): `sync`, `analyze`, `report`, `status`, `devices`,
+`doctor` and `size` work with the card out; `run`, `profile generate` and `profile compare` write a round, a session
+or a comparison and need it mounted (with the card out `os.makedirs` fails on the dangling link with "No such file
+or directory" before any device is touched).
 
 The Android measurement build is `./gradlew --console=plain -Ptembra.perf=true :androidApp:assemblePerf
 :perf-benchmarks:assemblePerf` (log kept under the round or session, never printed in full); the iOS one is
@@ -345,10 +355,10 @@ forced optimisation pass, whether the app is *optimised* from it (`speed-profile
 
 ```
 adb install -r -t androidApp/build/outputs/apk/perf/androidApp-perf.apk
-adb shell am start -W -n audio.tembra.app/audio.tembra.android.MainActivity ; sleep 5
-adb shell am broadcast -a androidx.profileinstaller.action.INSTALL_PROFILE -n audio.tembra.app/androidx.profileinstaller.ProfileInstallReceiver
-adb shell cmd package compile -r bg-dexopt audio.tembra.app
-adb shell dumpsys package dexopt | grep -A2 audio.tembra.app        # expect status=speed-profile
+adb shell am start -W -n com.tembraaudio/audio.tembra.android.MainActivity ; sleep 5
+adb shell am broadcast -a androidx.profileinstaller.action.INSTALL_PROFILE -n com.tembraaudio/androidx.profileinstaller.ProfileInstallReceiver
+adb shell cmd package compile -r bg-dexopt com.tembraaudio
+adb shell dumpsys package dexopt | grep -A2 com.tembraaudio        # expect status=speed-profile
 ```
 
 `--build-type release` inspects the unsigned release APK only (no signing config, so nothing is installed).

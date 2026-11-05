@@ -34,11 +34,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -152,7 +154,7 @@ private fun AuditionButton(string: TargetString, playing: Boolean, onClick: () -
             .fillMaxWidth()
             .heightIn(min = spacing.touchTargetMin)
             .testTag("tuner.card.${string.numeral}.audition")
-            .clickable(interactionSource = interactionSource, indication = null, role = Role.Button, onClick = onClick)
+            .pointerHoverIcon(PointerIcon.Hand).clickable(interactionSource = interactionSource, indication = null, role = Role.Button, onClick = onClick)
             .semantics { contentDescription = description },
         contentAlignment = Alignment.Center,
     ) {

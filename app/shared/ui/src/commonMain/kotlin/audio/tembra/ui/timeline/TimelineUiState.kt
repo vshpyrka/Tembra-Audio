@@ -41,6 +41,8 @@ data class TimelineUiState(
     val grid: GridSize = GridSize.Default,
     /** The overview strip shows above the transport bar (spec FR-015; T151): a device preference, not a project's. */
     val overviewStripShown: Boolean = true,
+    /** The menu's full-screen row (feature 011, spec FR-010a); follows the platform's window controls. */
+    val fullScreenItem: FullScreenItem = FullScreenItem.Hidden,
     /** True while the view pages after the playhead (spec FR-012); a manual scroll suspends it. */
     val following: Boolean = true,
     val playback: PlaybackState = PlaybackState.Stopped(Beats.Zero),

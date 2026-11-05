@@ -5,6 +5,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import audio.tembra.core.project.ClipId
 import androidx.compose.ui.Modifier
 import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.core.project.TempoMap
@@ -38,6 +43,12 @@ internal fun TrackRow(
     val isLast = index == state.tracks.lastIndex
     // One row's pitch: what a vertical drag divides by to count the tracks crossed.
     val rowPitch = if (layout.pinnedHeaders) spacing.laneHeightExpanded else HeaderHeight + spacing.laneHeightCompact
+    // The open menus live here, above the two row forms, so a window crossing the expanded line keeps them open on the
+    // same track or clip (feature 011, spec FR-007); saveable, so scrolling the row away and back keeps them too.
+    var trackMenuOpen by rememberSaveable { mutableStateOf(false) }
+    var clipMenu by rememberSaveable { mutableStateOf<String?>(null) }
+    val menuClip = clipMenu?.let(::ClipId)
+    val onMenuClip: (ClipId?) -> Unit = { clipMenu = it?.value }
     if (layout.pinnedHeaders) {
         Row(modifier = modifier.fillMaxWidth().height(spacing.laneHeightExpanded)) {
             TrackHeader(
@@ -61,6 +72,8 @@ internal fun TrackRow(
                 canReorder = state.canMoveOrDeleteTrack,
                 inputTelemetry = inputTelemetry,
                 onResetClip = { callbacks.onResetClip(track.id) },
+                menuOpen = trackMenuOpen,
+                onMenuOpen = { trackMenuOpen = it },
             )
             TrackLane(
                 track = track,
@@ -84,6 +97,8 @@ internal fun TrackRow(
                 onClipDragCancel = callbacks.onClipDragCancel,
                 onSplit = callbacks.onSplit,
                 onDeleteClip = callbacks.onDeleteClip,
+                menuClip = menuClip,
+                onMenuClip = onMenuClip,
                 modifier = Modifier.weight(1f),
                 tempoMap = tempoMap,
                 liveTake = liveTake,
@@ -112,6 +127,8 @@ internal fun TrackRow(
                 canReorder = state.canMoveOrDeleteTrack,
                 inputTelemetry = inputTelemetry,
                 onResetClip = { callbacks.onResetClip(track.id) },
+                menuOpen = trackMenuOpen,
+                onMenuOpen = { trackMenuOpen = it },
             )
             TrackLane(
                 track = track,
@@ -138,6 +155,8 @@ internal fun TrackRow(
                 tempoMap = tempoMap,
                 liveTake = liveTake,
                 inputTelemetry = inputTelemetry,
+                menuClip = menuClip,
+                onMenuClip = onMenuClip,
             )
         }
     }

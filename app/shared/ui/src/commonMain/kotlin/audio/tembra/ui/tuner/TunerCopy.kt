@@ -19,6 +19,9 @@ internal object TunerCopy {
     const val stop = "Stop"
     const val tunerMeter = "Tuner meter"
     const val deniedTitle = "Microphone needed"
+    // Feature 011 (spec FR-002): a desktop or tablet with no microphone at all.
+    const val unavailableTitle = "No microphone"
+    const val unavailableText = "No microphone is available on this device. Connect one to use Auto Listen; By Ear plays every string's reference tone."
     const val deniedText = "Tembra Audio listens to your instrument to show its tuning. Allow the microphone to use Auto Listen."
     const val deniedButton = "Allow microphone"
     const val hertz = "Hz"

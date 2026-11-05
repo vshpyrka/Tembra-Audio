@@ -135,6 +135,12 @@ class RecordingController(
     // --- Intents -----------------------------------------------------------------------------------------------------
 
     fun arm(trackId: TrackId) {
+        // A device with no input at all (feature 011, FR-002): say so, ask for nothing, open nothing.
+        if (permission.status.value == MicrophonePermissionStatus.Unavailable) {
+            pendingRecord = null
+            sessionHost?.notify(SessionMessage.NoMicrophone)
+            return
+        }
         pendingArm = trackId
         dispatch(RecordingEvent.Arm(trackId, permissionStatus()))
     }
@@ -181,6 +187,8 @@ class RecordingController(
             MicrophonePermissionStatus.DeniedOpenSettings -> permission.openSystemSettings()
             MicrophonePermissionStatus.NotDetermined, MicrophonePermissionStatus.DeniedCanAsk, MicrophonePermissionStatus.Granted ->
                 scope.launch(CoroutineName("requestPermission")) { permission.request() }
+            // Nothing to allow until a microphone is connected.
+            MicrophonePermissionStatus.Unavailable -> Unit
         }
     }
 
@@ -269,6 +277,8 @@ class RecordingController(
         MicrophonePermissionStatus.NotDetermined -> RecordingEvent.PermissionStatus.NotDetermined
         MicrophonePermissionStatus.DeniedCanAsk -> RecordingEvent.PermissionStatus.DeniedCanAsk
         MicrophonePermissionStatus.DeniedOpenSettings -> RecordingEvent.PermissionStatus.DeniedOpenSettings
+        // Never reached: [arm] stops first on a device without a microphone; the policy then treats it as refused.
+        MicrophonePermissionStatus.Unavailable -> RecordingEvent.PermissionStatus.DeniedCanAsk
     }
 
     /**
@@ -308,6 +318,10 @@ class RecordingController(
                 MicrophonePermissionStatus.DeniedOpenSettings -> {
                     pendingRecord = null
                     sessionHost?.notify(SessionMessage.MicrophoneDenied(openSettings = true))
+                }
+                MicrophonePermissionStatus.Unavailable -> {
+                    pendingRecord = null
+                    sessionHost?.notify(SessionMessage.NoMicrophone)
                 }
             }
             publish()

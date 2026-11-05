@@ -227,6 +227,23 @@ class TunerViewModelTest {
     }
 
     @Test
+    fun noMicrophoneNeverPromptsNorListens() = viewModelTest {
+        // Feature 011 (spec FR-002): a device without a microphone is told so instead of being asked.
+        permission = FakeMicrophonePermission(MicrophonePermissionStatus.Unavailable)
+        val viewModel = viewModel()
+        show(viewModel)
+        viewModel.foreground(true)
+        runCurrent()
+        assertTrue(audio.calls.isEmpty())
+        assertEquals(0, permission.requestCount)
+        assertEquals(MicrophoneNotice.Unavailable, viewModel.uiState.value.microphoneNotice)
+        viewModel.requestMicrophone()
+        runCurrent()
+        assertEquals(0, permission.requestCount)
+        assertEquals(0, permission.openSettingsCount)
+    }
+
+    @Test
     fun aFailedStartLeavesIdleAndRetriesOnTheNextChange() = viewModelTest {
         audio.failNextStart = AudioResult.Error(-2)
         val viewModel = viewModel()

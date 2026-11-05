@@ -34,6 +34,26 @@ Editable `.excalidraw` source plus rendered `.png` for each:
 3. `03-tuner-pipeline` — mic to pitch readout
 4. `04-metronome` — drift-free scheduling model
 
+## Screenshots (`screenshots/`)
+
+The app screenshots shown in the root [README](../README.md), captured from a debug build of `main` at `cb8fad4` on
+2026-11-03. The feature folders in `specs/` hold the full screenshot matrices; these are only the README's picks.
+
+| File | Device | State |
+|------|--------|-------|
+| `timeline-android-pixel6pro-playing.png` | Pixel 6 Pro | The demo project playing, playhead at bar 4 |
+| `timeline-android-pixel6pro-track-menu.png` | Pixel 6 Pro | The Bass track's menu, playback paused at bar 4 |
+| `projects-android-pixel6pro-library.png` | Pixel 6 Pro | The Projects library: the demo project and a duplicate of it |
+| `timeline-ios-ipadpro13-landscape.png` | iPad Pro 13-inch (M5) simulator, iOS 27.0, landscape | The demo project stopped at the start |
+
+Android captures use the status-bar demo mode; the iPad capture comes from `TembraPerfTests/ScreenshotMatrix` (state
+`landscape`), rotated upright.
+
+## Release
+
+- **[privacy-policy.md](privacy-policy.md)** — the app's privacy policy, linked from Google Play: https://github.com/vshpyrka/Tembra-Audio/blob/main/docs/privacy-policy.md. Keep it true whenever a feature changes what the app does with data.
+- **[google-play-publishing.md](google-play-publishing.md)** — how a merge to `main` reaches Google Play's internal testing track, and builds are promoted to closed testing: keys and credentials, one-time setup, troubleshooting.
+
 ## Reports (`reports/`)
 
 - `competitor-native-audio-analysis.md` — the competitor binary analysis (source of truth).

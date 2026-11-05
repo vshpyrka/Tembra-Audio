@@ -29,6 +29,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -153,7 +155,9 @@ private fun RowScope.Segment(
         modifier = Modifier
             .then(if (equalWidth) Modifier.weight(1f) else Modifier)
             .testTagIfSet(testTag)
-            .selectable(
+            .focusIdentity(testTag)
+            .hoverArea(hovered, shapeRadius)
+            .pointerHoverIcon(PointerIcon.Hand).selectable(
                 selected = selected,
                 interactionSource = interactionSource,
                 indication = null,

@@ -157,6 +157,7 @@ The palette is tuned specifically for low-light studio environments, minimizing 
 - **Secondary Rose / Mauve (`#F472B6`, `#FDA4AF`, `#E879F9`):** Reserved for recorded vocal/instrument waveform clips, alert markers, and loop regions.
 - **Muted Wine / Plum (`#5B2A3D`, `#78354E`, `#9D4B68`):** Form the background matrices for drum/sampler matrix pads, providing tactile warmth against the deep slate canvas.
 - **Grid & Measurement Overlays:** Semi-transparent violet tints (`#A855F71F`, `#C084FC33`) draw bar divisions, beat subdivisions, and automation decibel horizontal rules.
+- **Recording (feature 010):** `record` (`#E36F7E`, a softened coral red) fills the arm toggle of an armed track and every state of the Record control, and never appears anywhere else. The input meter uses `meter_body` (`#94D39A`, green) up to −6 dB, `meter_warning` (`#F5E786`, pale yellow) above it, and `meter_clip` (`#F472B6`, the palette's rose) for the clip latch. These four sit beside the palette rather than inside it, so a recording state reads at a glance against the lavender and rose of playback.
 
 ## Typography
 
@@ -218,6 +219,14 @@ The geometric architecture balances soft tactile radii with clean, rectilinear w
 
 ### Scrubber & Playhead
 - **Global Playhead:** Full-height vertical line (`#C084FC`) anchored by a circular indicator node, cutting cleanly through all track lanes and automation zones to indicate live time position.
+
+### Recording: arm, Record and the input meter
+- **Arm toggle:** a 44px target in every track header after M and S: a hollow circle in `outline` at rest, a filled `record` disc when the track is armed. Only one track is armed at a time.
+- **Record control:** a 44px target drawing the record circle in `record`. Idle is the hollow circle; count-in is the filled disc with a ring that pulses out once per beat (still under reduce motion); recording is the filled disc with a soft glow. It sits in the transport bar from 432px wide, between Forward and the readout; below that it moves into the armed track's compact header, in the place of the instrument chip. While a take runs, the readout counts the take, and during the count-in it reads `Count-in N`.
+- **Input meter:** a 4px bar along the armed header's bottom edge, from −60 dB to 0 dB: `meter_body` up to −6 dB, `meter_warning` above, a 2px peak-hold mark, and a small `meter_clip` square at the right end that lights while the input has clipped and clears on a tap. Nothing is drawn while no track is armed.
+- **Growing take:** the take is drawn as an ordinary clip in the track's tint, named `Take N`, growing from its start to the playhead, with its waveform filling in as it records.
+- **Monitoring:** a headphones toggle in the toolbar on tablets ("Monitor input" in the overflow menu on phones). It is refused on the built-in speaker, with the snackbar "Connect headphones to monitor the input".
+- **Messages:** a denied microphone shows the snackbar "Microphone access is needed to record" with "Open settings"; leaving during a take asks "Stop recording?" with "Stop recording and leave" and "Keep recording"; the count-in length (Off, 1 bar, 2 bars) lives in the metronome settings sheet.
 
 ### Sliders
 - **Shared anatomy (tempo slider, noise gate slider):** a 6px track with full radius in `surface-container-highest` (`#353438`), a 16px `primary` (`#CEBDFF`) disc as the handle, and small end labels in `tabular-param` with the `outline` tone (`#948E9D`): `40` / `240` on the tempo slider, `Off` / `High` on the noise gate. A press anywhere on the track moves the handle to the finger; the arrow keys move it one step. The handle's touch box is at least 44px tall; the noise gate's is 44×44px, so the track starts and ends 22px inside the row (Material adds 10px of its own).

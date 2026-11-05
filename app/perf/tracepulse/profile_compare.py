@@ -23,7 +23,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import jsonschema
 
-from .collect_android import COMPARISON_CLASS, CollectError, collect_round
+from .collect_android import COMPARISON_CLASS, COMPARISON_METHODS, CollectError, collect_round
 from .config import Config
 from .detect import mw_two_sided_p
 from .device_state import measurement_state
@@ -63,11 +63,17 @@ class StateFailed(Exception):
 # the states on the device
 # ============================================================
 
+def comparable_journeys(cfg: Config) -> List[str]:
+    """The configured journeys the comparison class has a test for (feature 008); later journeys (feature 011's
+    windowing) are measured by rounds, not compared across profile states."""
+    return [j for j in cfg.journeys if j in COMPARISON_METHODS]
+
+
 def instrument_cmd(cfg: Config, device: Device, state: str, iterations: int, journeys: Sequence[str]) -> List[str]:
     """The round's `am instrument` command for the comparison class, with the state argument; a journey subset
     names the class's test methods (`Class#method,Class#method`) so only those run."""
     fqcn = f"{cfg.android.test_package}.{COMPARISON_CLASS}"
-    target = fqcn if list(journeys) == list(cfg.journeys) else ",".join(f"{fqcn}#{j}" for j in journeys)
+    target = fqcn if list(journeys) == comparable_journeys(cfg) else ",".join(f"{fqcn}#{j}" for j in journeys)
     cmd = _instrument_cmd(cfg, device, target, iterations)
     cmd[-1:-1] = ["-e", STATE_ARGUMENT, state, "-e", ITERATIONS_ARGUMENT, str(iterations)]
     return cmd
@@ -243,10 +249,11 @@ def _select_device(args, cfg: Config, runner: Runner, devicectl_output: str) -> 
 def main(args, cfg: Config, paths, runner: Runner, clock: Clock) -> Tuple[int, Payload]:
     device = _select_device(args, cfg, runner, os.path.join(paths.data_dir, "devicectl.json"))
     print(f"profile compare on {device.model} ({device.device_id})")
-    journeys = [j.strip() for j in args.journeys.split(",")] if args.journeys else list(cfg.journeys)
-    unknown = [j for j in journeys if j not in cfg.journeys]
+    comparable = comparable_journeys(cfg)
+    journeys = [j.strip() for j in args.journeys.split(",")] if args.journeys else comparable
+    unknown = [j for j in journeys if j not in comparable]
     if unknown:
-        raise DeviceError(f"unknown journey {unknown[0]!r} (configured: {', '.join(cfg.journeys)})")
+        raise DeviceError(f"unknown journey {unknown[0]!r} (comparable: {', '.join(comparable)})")
     iterations = args.iterations or cfg.collection.iterations
     states = list(DEFAULT_STATES) + ([FULL_STATE] if args.with_full else [])
     with measurement_state(cfg, device, runner, clock):

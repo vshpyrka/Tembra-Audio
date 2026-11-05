@@ -1,0 +1,55 @@
+# Self-hosted Renovate (config: .github/renovate.json5). It opens the week's update pull requests and merges each one
+# whose CI checks all passed. Setup and GitHub settings: app/README.md § CI and dependency updates.
+name: Renovate
+
+on:
+  schedule:
+    # Daily; new pull requests open only inside the config's schedule (Monday before 07:00, Kyiv time).
+    - cron: '30 2 * * *'
+  push:
+    # Renovate merges at most one pull request per run; the push of each merge starts the run that merges the next.
+    branches: [main]
+  workflow_run:
+    # A Renovate pull request's checks finished: merge it if they passed.
+    workflows: [CI]
+    types: [completed]
+    branches: ['renovate/**']
+  workflow_dispatch:
+    inputs:
+      log-level:
+        description: Renovate log level
+        type: choice
+        options: [info, debug]
+        default: info
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renovate
+  cancel-in-progress: false
+
+jobs:
+  renovate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      # renovate: datasource=npm depName=renovate
+      RENOVATEBOT_VERSION: 44.192.2
+      HAS_RENOVATE_TOKEN: ${{ secrets.RENOVATE_TOKEN != '' }}
+    steps:
+      - name: Missing RENOVATE_TOKEN secret
+        if: env.HAS_RENOVATE_TOKEN != 'true'
+        run: echo "::notice::Renovate is not set up yet; add the RENOVATE_TOKEN repository secret (app/README.md, CI and dependency updates)."
+      - uses: renovatebot/github-action@2804199d260ad00c1fae0e9e842888369391c776 # v46.3.10
+        if: env.HAS_RENOVATE_TOKEN == 'true'
+        with:
+          token: ${{ secrets.RENOVATE_TOKEN }}
+          renovate-version: ${{ env.RENOVATEBOT_VERSION }}
+        env:
+          RENOVATE_REPOSITORIES: ${{ github.repository }}
+          # The repository config already exists, so no onboarding pull request.
+          RENOVATE_ONBOARDING: 'false'
+          RENOVATE_REQUIRE_CONFIG: required
+          RENOVATE_GIT_AUTHOR: Renovate Bot <bot@renovateapp.com>
+          LOG_LEVEL: ${{ inputs.log-level || 'info' }}

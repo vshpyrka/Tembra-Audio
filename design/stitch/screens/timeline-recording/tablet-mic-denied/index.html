@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Tembra Audio - Recording Mic Denied (Tablet)</title>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<style>
+    @layer base {
+      html, body { margin: 0; padding: 0; }
+      body { overscroll-behavior: none; }
+    }
+    ::-webkit-scrollbar { display: none; }
+    .tnum { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+  </style>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "on-tertiary": "#3c0091",
+            "surface-container-high": "#2a2a2d",
+            "tertiary-container": "#ab88ff",
+            "surface-dim": "#131316",
+            "secondary": "#ffafd3",
+            "on-background": "#e4e1e6",
+            "surface-container-highest": "#353438",
+            "on-primary-fixed": "#21005e",
+            "tertiary": "#d0bcff",
+            "surface-tint": "#cebdff",
+            "secondary-fixed-dim": "#ffafd3",
+            "on-secondary": "#620040",
+            "primary": "#cebdff",
+            "background": "#131316",
+            "surface-container-low": "#1b1b1e",
+            "outline-variant": "#494552",
+            "on-secondary-fixed": "#3d0026",
+            "on-surface": "#e4e1e6",
+            "surface-variant": "#353438",
+            "on-error": "#690005",
+            "error": "#ffb4ab",
+            "on-tertiary-fixed-variant": "#5516be",
+            "on-tertiary-fixed": "#23005c",
+            "primary-container": "#a78bfa",
+            "secondary-fixed": "#ffd8e7",
+            "inverse-primary": "#674bb5",
+            "inverse-on-surface": "#303033",
+            "on-tertiary-container": "#40009b",
+            "on-secondary-container": "#ff93c8",
+            "on-error-container": "#ffdad6",
+            "secondary-container": "#85145a",
+            "surface": "#131316",
+            "on-primary-fixed-variant": "#4f319c",
+            "on-primary-container": "#3c1989",
+            "tertiary-fixed": "#e9ddff",
+            "surface-container": "#1f1f22",
+            "on-primary": "#381385",
+            "tertiary-fixed-dim": "#d0bcff",
+            "surface-bright": "#39393c",
+            "outline": "#948e9d",
+            "primary-fixed": "#e8ddff",
+            "on-surface-variant": "#cac4d4",
+            "surface-container-lowest": "#0e0e11",
+            "error-container": "#93000a",
+            "primary-fixed-dim": "#cebdff",
+            "inverse-surface": "#e4e1e6",
+            "on-secondary-fixed-variant": "#85145a",
+            "canvas-level0": "#0f0f12",
+            "surface-level1": "#18171c",
+            "surface-level2": "#212026",
+            "surface-level2-border": "#2b2a34",
+            "playhead": "#c084fc",
+            "playhead-chip": "#c4b5fd",
+            "selection-outline": "#cebdff",
+            "track-lavender": "#c4b5fd",
+            "track-rose": "#fda4af",
+            "track-dusty-rose": "#e0a0c0",
+            "track-peach": "#f5be9e",
+            "track-mint": "#a4d4bc",
+            "track-violet": "#c4a2dc",
+            "record": "#e36f7e",
+            "meter-body": "#94d39a",
+            "meter-warning": "#f5e786",
+            "meter-clip": "#f472b6"
+          },
+          borderRadius: {
+            DEFAULT: "0.25rem",
+            lg: "0.5rem",
+            xl: "0.75rem",
+            full: "9999px"
+          },
+          spacing: {
+            "space-md": "0.75rem",
+            "space-lg": "1.25rem",
+            "gutter": "0.75rem",
+            "space-xs": "0.25rem",
+            "space-sm": "0.5rem",
+            "margin": "1rem",
+            "space-xl": "1.75rem"
+          },
+          fontFamily: {
+            "body-lg": ["Inter"],
+            "headline-sm": ["Space Grotesk"],
+            "headline-lg": ["Space Grotesk"],
+            "headline-lg-mobile": ["Space Grotesk"],
+            "tabular-param": ["Inter"],
+            "body-md": ["Inter"],
+            "headline-md": ["Space Grotesk"],
+            "label-lg": ["Space Grotesk"],
+            "label-md": ["Space Grotesk"],
+            "tabular-timecode": ["Space Grotesk"],
+            "body-sm": ["Inter"],
+            "label-sm": ["Space Grotesk"]
+          },
+          fontSize: {
+            "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+            "headline-sm": ["18px", { lineHeight: "24px", fontWeight: "600" }],
+            "headline-lg": ["32px", { lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "600" }],
+            "headline-lg-mobile": ["24px", { lineHeight: "32px", letterSpacing: "-0.01em", fontWeight: "600" }],
+            "tabular-param": ["11px", { lineHeight: "14px", letterSpacing: "0.02em", fontWeight: "500" }],
+            "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+            "headline-md": ["22px", { lineHeight: "28px", letterSpacing: "-0.01em", fontWeight: "600" }],
+            "label-lg": ["14px", { lineHeight: "18px", letterSpacing: "0.01em", fontWeight: "500" }],
+            "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "500" }],
+            "tabular-timecode": ["15px", { lineHeight: "20px", letterSpacing: "0.05em", fontWeight: "500" }],
+            "body-sm": ["12px", { lineHeight: "16px", fontWeight: "400" }],
+            "label-sm": ["10px", { lineHeight: "14px", letterSpacing: "0.04em", fontWeight: "600" }]
+          }
+        }
+      }
+    };
+  </script>
+<meta content="web_dashboard" name="shell-type">
+</head>
+<body class="bg-canvas-level0 font-body-md text-on-surface select-none overflow-hidden h-screen flex">
+
+<!-- NAVIGATION RAIL (M3 Expressive WideNavigationRail, collapsed): icon-only, Timeline selected -->
+<aside class="w-24 flex-shrink-0 bg-surface-container-lowest flex flex-col items-center pt-11">
+  <nav class="w-full flex flex-col items-center gap-1" aria-label="Primary" data-purpose="wide-navigation-rail" data-active-classes="rounded-full bg-secondary-container text-on-secondary-container">
+    <a class="w-14 h-14 flex-shrink-0 flex items-center justify-center rounded-full bg-secondary-container text-on-secondary-container" href="#" aria-label="Timeline" aria-current="page"><span class="material-symbols-outlined !text-[24px] leading-none">graphic_eq</span></a>
+    <a class="w-14 h-14 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" href="#" aria-label="Tuner"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true" style="display:block;flex:none" data-glyph="tuning_fork"><path d="M9.5 3V10.5A2.5 2.5 0 0 0 14.5 10.5V3"></path><path d="M12 13V21.5"></path><path d="M5.6 4.5A6 6 0 0 0 5.6 10.5"></path><path d="M18.4 4.5A6 6 0 0 1 18.4 10.5"></path></svg></a>
+    <a class="w-14 h-14 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" href="#" aria-label="Metronome"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true" style="display:block;flex:none" data-glyph="metronome"><path d="M15.45 6.05L14.6 3H9.4L4.4 21H19.6L16.56 10.05"></path><path d="M7.34 14H16.66"></path><path d="M12 14L18.6 4.2"></path></svg></a>
+    <a class="w-14 h-14 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" href="#" aria-label="Projects"><span class="material-symbols-outlined !text-[24px] leading-none">folder</span></a>
+    <a class="w-14 h-14 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" href="#" aria-label="Profile"><span class="material-symbols-outlined !text-[24px] leading-none">person</span></a>
+  </nav>
+</aside>
+
+<!-- EXPANDED TIMELINE, MICROPHONE DENIED (feature 010): the arm toggle tapped with microphone access denied, so no track is armed and the snackbar offers the system settings; transport stopped at the start -->
+<main class="flex-1 min-w-0 flex flex-col bg-canvas-level0">
+
+  <!-- TOOLBAR (48 px): + Track, Add audio, Add audio as new track (enabled), Split (disabled, no clip selected), Monitor input (headphones, off), Undo (enabled) / Redo (disabled) ... Snap pill, tempo pill, metronome settings, overflow -->
+  <header class="h-12 flex-shrink-0 flex items-center gap-1 px-1" data-purpose="timeline-toolbar">
+      <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Add track"><span class="material-symbols-outlined !text-[24px] leading-none">add</span></button>
+      <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Add audio…"><span class="material-symbols-outlined !text-[24px] leading-none">audio_file</span></button>
+      <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Add audio as new track"><span class="material-symbols-outlined !text-[24px] leading-none">playlist_add</span></button>
+      <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant opacity-[0.38]" aria-label="Split" disabled><span class="material-symbols-outlined !text-[24px] leading-none">content_cut</span></button>
+      <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Monitor input" role="switch" aria-checked="false" data-purpose="monitor-toggle"><span class="material-symbols-outlined !text-[24px] leading-none">headphones</span></button>
+      <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Undo"><span class="material-symbols-outlined !text-[24px] leading-none">undo</span></button>
+      <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant opacity-[0.38]" aria-label="Redo" disabled><span class="material-symbols-outlined !text-[24px] leading-none">redo</span></button>
+      <div class="flex-1"></div>
+      <div class="h-11 flex items-center"><button class="h-8 pl-3 pr-2 rounded-full bg-secondary-container text-on-secondary-container flex items-center gap-1" aria-label="Snap 1/16"><span class="font-label-md text-label-md font-medium whitespace-nowrap">Snap 1/16</span><span class="material-symbols-outlined !text-[16px] leading-none">expand_more</span></button></div>
+      <div class="h-11 flex items-center"><button class="h-8 px-3 rounded-full bg-secondary-container text-on-secondary-container font-tabular-param text-tabular-param font-medium tnum whitespace-nowrap" aria-label="Tempo 124 beats per minute">124 BPM</button></div>
+      <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Metronome settings"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true" style="display:block;flex:none" data-glyph="metronome"><path d="M15.45 6.05L14.6 3H9.4L4.4 21H19.6L16.56 10.05"></path><path d="M7.34 14H16.66"></path><path d="M12 14L18.6 4.2"></path></svg></button>
+      <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="More"><span class="material-symbols-outlined !text-[24px] leading-none">more_vert</span></button>
+  </header>
+
+  <!-- RULER (44 px): an empty 200 px slot over the header column, then bars (every 2nd labelled) above time (every 5 s), the playhead chip "1.1" at 00:00.00 (half of it over the empty slot) -->
+  <div class="h-11 flex-shrink-0 flex" data-purpose="timeline-ruler">
+    <div class="w-[200px] flex-shrink-0"></div>
+    <div class="relative flex-1 min-w-0 font-tabular-param text-tabular-param font-medium tnum text-on-surface-variant whitespace-nowrap">
+        <svg class="absolute inset-0 pointer-events-none" width="984" height="44" viewBox="0 0 984 44" aria-hidden="true"><path d="M0 0V44M61.5 0V44M123 0V44M184.5 0V44M246 0V44M307.5 0V44M369 0V44M430.5 0V44M492 0V44M553.5 0V44M615 0V44M676.5 0V44M738 0V44M799.5 0V44M861 0V44M922.5 0V44M984 0V44" stroke="#C084FC" stroke-opacity="0.2" stroke-width="0.5" fill="none"/><path d="M0 15.4V22M30.75 15.4V22M61.5 15.4V22M92.25 15.4V22M123 15.4V22M153.75 15.4V22M184.5 15.4V22M215.25 15.4V22M246 15.4V22M276.75 15.4V22M307.5 15.4V22M338.25 15.4V22M369 15.4V22M399.75 15.4V22M430.5 15.4V22M461.25 15.4V22M492 15.4V22M522.75 15.4V22M553.5 15.4V22M584.25 15.4V22M615 15.4V22M645.75 15.4V22M676.5 15.4V22M707.25 15.4V22M738 15.4V22M768.75 15.4V22M799.5 15.4V22M830.25 15.4V22M861 15.4V22M891.75 15.4V22M922.5 15.4V22M953.25 15.4V22M984 15.4V22M0 37.4V44M31.77 37.4V44M63.55 37.4V44M95.32 37.4V44M127.1 37.4V44M158.88 37.4V44M190.65 37.4V44M222.42 37.4V44M254.2 37.4V44M285.97 37.4V44M317.75 37.4V44M349.52 37.4V44M381.3 37.4V44M413.07 37.4V44M444.85 37.4V44M476.62 37.4V44M508.4 37.4V44M540.17 37.4V44M571.95 37.4V44M603.73 37.4V44M635.5 37.4V44M667.27 37.4V44M699.05 37.4V44M730.82 37.4V44M762.6 37.4V44M794.38 37.4V44M826.15 37.4V44M857.92 37.4V44M889.7 37.4V44M921.47 37.4V44M953.25 37.4V44M0 22V44M79.44 22V44M158.88 22V44M238.31 22V44M317.75 22V44M397.19 22V44M476.62 22V44M556.06 22V44M635.5 22V44M714.94 22V44M794.38 22V44M873.81 22V44M953.25 22V44" stroke="#494552" stroke-width="0.5" fill="none"/></svg>
+        <span class="absolute top-[4px] left-[4px]">1</span>
+        <span class="absolute top-[4px] left-[65.5px]">3</span>
+        <span class="absolute top-[4px] left-[127px]">5</span>
+        <span class="absolute top-[4px] left-[188.5px]">7</span>
+        <span class="absolute top-[4px] left-[250px]">9</span>
+        <span class="absolute top-[4px] left-[311.5px]">11</span>
+        <span class="absolute top-[4px] left-[373px]">13</span>
+        <span class="absolute top-[4px] left-[434.5px]">15</span>
+        <span class="absolute top-[4px] left-[496px]">17</span>
+        <span class="absolute top-[4px] left-[557.5px]">19</span>
+        <span class="absolute top-[4px] left-[619px]">21</span>
+        <span class="absolute top-[4px] left-[680.5px]">23</span>
+        <span class="absolute top-[4px] left-[742px]">25</span>
+        <span class="absolute top-[4px] left-[803.5px]">27</span>
+        <span class="absolute top-[4px] left-[865px]">29</span>
+        <span class="absolute top-[4px] left-[926.5px]">31</span>
+        <span class="absolute top-[26px] left-[4px]">00:00</span>
+        <span class="absolute top-[26px] left-[83.44px]">00:05</span>
+        <span class="absolute top-[26px] left-[162.88px]">00:10</span>
+        <span class="absolute top-[26px] left-[242.31px]">00:15</span>
+        <span class="absolute top-[26px] left-[321.75px]">00:20</span>
+        <span class="absolute top-[26px] left-[401.19px]">00:25</span>
+        <span class="absolute top-[26px] left-[480.62px]">00:30</span>
+        <span class="absolute top-[26px] left-[560.06px]">00:35</span>
+        <span class="absolute top-[26px] left-[639.5px]">00:40</span>
+        <span class="absolute top-[26px] left-[718.94px]">00:45</span>
+        <span class="absolute top-[26px] left-[798.38px]">00:50</span>
+        <span class="absolute top-[26px] left-[877.81px]">00:55</span>
+        <span class="absolute top-[26px] left-[957.25px]">01:00</span>
+        <div class="absolute top-[22px] left-[-1px] w-[2px] h-[22px] bg-playhead"></div>
+        <div class="absolute top-[3px] left-[0px] -translate-x-1/2 h-4 px-2 rounded-full bg-playhead-chip border border-playhead flex items-center text-on-primary-container leading-none">1.1</div>
+    </div>
+  </div>
+
+  <!-- TRACK LIST: five 96 px rows (pinned 200 px header + lane); faint bar lines and beat snap lines behind the clips; the playhead line over them -->
+  <section class="relative flex-1 min-h-0 overflow-hidden" data-purpose="track-list">
+    <svg class="absolute top-0 left-[200px] pointer-events-none" width="984" height="480" viewBox="0 0 984 480" aria-hidden="true"><path d="M0 0V480M30.75 0V480M61.5 0V480M92.25 0V480M123 0V480M153.75 0V480M184.5 0V480M215.25 0V480M246 0V480M276.75 0V480M307.5 0V480M338.25 0V480M369 0V480M399.75 0V480M430.5 0V480M461.25 0V480M492 0V480M522.75 0V480M553.5 0V480M584.25 0V480M615 0V480M645.75 0V480M676.5 0V480M707.25 0V480M738 0V480M768.75 0V480M799.5 0V480M830.25 0V480M861 0V480M891.75 0V480M922.5 0V480M953.25 0V480M984 0V480" stroke="#A855F7" stroke-opacity="0.12" stroke-width="0.5" fill="none"/><path d="M0.25 0V480M7.75 0V480M15.25 0V480M23.25 0V480M30.75 0V480M38.25 0V480M46.25 0V480M53.75 0V480M61.75 0V480M69.25 0V480M76.75 0V480M84.75 0V480M92.25 0V480M99.75 0V480M107.75 0V480M115.25 0V480M123.25 0V480M130.75 0V480M138.25 0V480M146.25 0V480M153.75 0V480M161.25 0V480M169.25 0V480M176.75 0V480M184.75 0V480M192.25 0V480M199.75 0V480M207.75 0V480M215.25 0V480M222.75 0V480M230.75 0V480M238.25 0V480M246.25 0V480M253.75 0V480M261.25 0V480M269.25 0V480M276.75 0V480M284.25 0V480M292.25 0V480M299.75 0V480M307.75 0V480M315.25 0V480M322.75 0V480M330.75 0V480M338.25 0V480M345.75 0V480M353.75 0V480M361.25 0V480M369.25 0V480M376.75 0V480M384.25 0V480M392.25 0V480M399.75 0V480M407.25 0V480M415.25 0V480M422.75 0V480M430.75 0V480M438.25 0V480M445.75 0V480M453.75 0V480M461.25 0V480M468.75 0V480M476.75 0V480M484.25 0V480M492.25 0V480M499.75 0V480M507.25 0V480M515.25 0V480M522.75 0V480M530.25 0V480M538.25 0V480M545.75 0V480M553.75 0V480M561.25 0V480M568.75 0V480M576.75 0V480M584.25 0V480M591.75 0V480M599.75 0V480M607.25 0V480M615.25 0V480M622.75 0V480M630.25 0V480M638.25 0V480M645.75 0V480M653.25 0V480M661.25 0V480M668.75 0V480M676.75 0V480M684.25 0V480M691.75 0V480M699.75 0V480M707.25 0V480M714.75 0V480M722.75 0V480M730.25 0V480M738.25 0V480M745.75 0V480M753.25 0V480M761.25 0V480M768.75 0V480M776.25 0V480M784.25 0V480M791.75 0V480M799.75 0V480M807.25 0V480M814.75 0V480M822.75 0V480M830.25 0V480M837.75 0V480M845.75 0V480M853.25 0V480M861.25 0V480M868.75 0V480M876.25 0V480M884.25 0V480M891.75 0V480M899.25 0V480M907.25 0V480M914.75 0V480M922.75 0V480M930.25 0V480M937.75 0V480M945.75 0V480M953.25 0V480M960.75 0V480M968.75 0V480M976.25 0V480" stroke="#C084FC" stroke-opacity="0.2" stroke-width="0.5" fill="none"/></svg>
+    <div class="relative">
+    <!-- TRACK: Drums -->
+    <div class="flex h-24">
+      <div class="relative w-[200px] flex-shrink-0 bg-surface-level1" data-purpose="track-header">
+        <div class="h-full px-2 py-1 flex flex-col justify-between">
+          <div class="h-11 flex items-center gap-2">
+            <span class="w-2.5 h-2.5 flex-shrink-0 rounded-full bg-track-lavender"></span>
+            <span class="flex-1 min-w-0 truncate font-label-lg text-label-lg font-medium text-on-surface">Drums</span>
+            <span class="h-5 px-2 flex-shrink-0 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center gap-1"><span class="font-label-sm text-label-sm font-semibold tracking-[0.04em]">Drums</span></span>
+            <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Track menu"><span class="material-symbols-outlined !text-[24px] leading-none">more_vert</span></button>
+          </div>
+          <div class="h-11 flex items-center gap-1">
+            <div class="flex-1 min-w-0 h-11 rounded bg-surface-container-high overflow-hidden flex items-center justify-center font-tabular-param text-tabular-param tnum text-on-surface whitespace-nowrap" aria-label="Gain +0.0dB">+0</div>
+            <button class="w-9 h-9 flex-shrink-0 rounded bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg font-medium" aria-label="Mute">M</button>
+            <button class="w-9 h-9 flex-shrink-0 rounded bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg font-medium" aria-label="Solo">S</button>
+            <button class="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Arm for recording" role="switch" aria-checked="false"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+            <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Track settings"><span class="material-symbols-outlined !text-[24px] leading-none">expand_more</span></button>
+          </div>
+        </div>
+      </div>
+      <div class="relative flex-1 min-w-0" data-purpose="lane">
+        <div class="absolute top-[2px] h-[92px] left-[0px] w-[492px] rounded-xl overflow-hidden bg-track-lavender/35" data-purpose="clip">
+          <div class="h-[17px] bg-surface-level2/70 pl-[3px] pt-[1.5px] font-label-sm text-[11px] leading-[14px] font-semibold tracking-[0.04em] text-on-surface whitespace-nowrap">drums</div>
+          <svg class="block" width="492" height="75" viewBox="0 0 492 75" aria-hidden="true"><path d="M0.75 35.5V39.5M2.25 36.5V38.5M3.75 37V38M5.25 37V38M6.75 21.5V53.5M8.25 34V41M9.75 36.5V38.5M11.25 29V46M12.75 37V38M14.25 37V38M15.75 26.5V48.5M17.25 36.5V38.5M18.75 36.5V38.5M20.25 37V38M21.75 37V38M23.25 32.5V42.5M24.75 36V39M26.25 37V38M27.75 37V38M29.25 37V38M30.75 17.5V57.5M32.25 36V39M33.75 27V48M35.25 37V38M36.75 37V38M38.25 28.5V46.5M39.75 35.5V39.5M41.25 37V38M42.75 37V38M44.25 37V38M45.75 33V42M47.25 36V39M48.75 27V48M50.25 37V38M51.75 37V38M53.25 24.5V50.5M54.75 35.5V39.5M56.25 37V38M57.75 27.5V47.5M59.25 35.5V39.5M60.75 37V38M62.25 31V44M63.75 36.5V38.5M65.25 37V38M66.75 37V38M68.25 37V38M69.75 34V41M71.25 36.5V38.5M72.75 26V49M74.25 37V38M75.75 37V38M77.25 22V53M78.75 36.5V38.5M80.25 35.5V39.5M81.75 37V38M83.25 37V38M84.75 34V41M86.25 36.5V38.5M87.75 29.5V45.5M89.25 37V38M90.75 37V38M92.25 17.5V57.5M93.75 36.5V38.5M95.25 32.5V42.5M96.75 37V38M98.25 37V38M99.75 30.5V44.5M101.25 35V40M102.75 37V38M104.25 37V38M105.75 37V38M107.25 33V42M108.75 36V39M110.25 26.5V48.5M111.75 37V38M113.25 37V38M114.75 22V53M116.25 35V40M117.75 37V38M119.25 24.5V50.5M120.75 33V42M122.25 36.5V38.5M123.75 30V45M125.25 36.5V38.5M126.75 37V38M128.25 37V38M129.75 23.5V51.5M131.25 34.5V40.5M132.75 36.5V38.5M134.25 28V47M135.75 37V38M137.25 37V38M138.75 26V49M140.25 36.5V38.5M141.75 36.5V38.5M143.25 37V38M144.75 37V38M146.25 32.5V42.5M147.75 36V39M149.25 37V38M150.75 37V38M152.25 37V38M153.75 20.5V54.5M155.25 36V39M156.75 27V48M158.25 37V38M159.75 37V38M161.25 29.5V45.5M162.75 35.5V39.5M164.25 37V38M165.75 36.5V38.5M167.25 37V38M168.75 33.5V41.5M170.25 36V39M171.75 28.5V46.5M173.25 37V38M174.75 37V38M176.25 24.5V50.5M177.75 34.5V40.5M179.25 37V38M180.75 28V47M182.25 36V39M183.75 32V43M185.25 35.5V39.5M186.75 36.5V38.5M188.25 37V38M189.75 37V38M191.25 37V38M192.75 34V41M194.25 36.5V38.5M195.75 29V46M197.25 37V38M198.75 37V38M200.25 24V51M201.75 36.5V38.5M203.25 35V40M204.75 37V38M206.25 37V38M207.75 32V43M209.25 36V39M210.75 37V38M212.25 37V38M213.75 37V38M215.25 20V55M216.75 36.5V38.5M218.25 34.5V40.5M219.75 37V38M221.25 37V38M222.75 31V44M224.25 36V39M225.75 37V38M227.25 37V38M228.75 37V38M230.25 33V42M231.75 36V39M233.25 28.5V46.5M234.75 37V38M236.25 37V38M237.75 18.5V56.5M239.25 34.5V40.5M240.75 37V38M242.25 23V52M243.75 33.5V41.5M245.25 36.5V38.5M246.75 30V45M248.25 36.5V38.5M249.75 37V38M251.25 37V38M252.75 37V38M254.25 34.5V40.5M255.75 37V38M257.25 31V44M258.75 37V38M260.25 37V38M261.75 28.5V46.5M263.25 36.5V38.5M264.75 37V38M266.25 37V38M267.75 37V38M269.25 33V42M270.75 36.5V38.5M272.25 37V38M273.75 37V38M275.25 37V38M276.75 19.5V55.5M278.25 36V39M279.75 26V49M281.25 37V38M282.75 37V38M284.25 29.5V45.5M285.75 35.5V39.5M287.25 37V38M288.75 36.5V38.5M290.25 37V38M291.75 32.5V42.5M293.25 35.5V39.5M294.75 36.5V38.5M296.25 37V38M297.75 37V38M299.25 26V49M300.75 36V39M302.25 37V38M303.75 26.5V48.5M305.25 35.5V39.5M306.75 37V38M308.25 32V43M309.75 36.5V38.5M311.25 37V38M312.75 37V38M314.25 23V52M315.75 34.5V40.5M317.25 36.5V38.5M318.75 29V46M320.25 37V38M321.75 37V38M323.25 23.5V51.5M324.75 36.5V38.5M326.25 36V39M327.75 37V38M329.25 37V38M330.75 32V43M332.25 36V39M333.75 37V38M335.25 37V38M336.75 37V38M338.25 33V42M339.75 36.5V38.5M341.25 34.5V40.5M342.75 37V38M344.25 37V38M345.75 30.5V44.5M347.25 36V39M348.75 37V38M350.25 37V38M351.75 37V38M353.25 33V42M354.75 36V39M356.25 23V52M357.75 37V38M359.25 37V38M360.75 19.5V55.5M362.25 34.5V40.5M363.75 37V38M365.25 23.5V51.5M366.75 34V41M368.25 30.5V44.5M369.75 35V40M371.25 36.5V38.5M372.75 37V38M374.25 37V38M375.75 37V38M377.25 33V42M378.75 36.5V38.5M380.25 26.5V48.5M381.75 37V38M383.25 37V38M384.75 29.5V45.5M386.25 36.5V38.5M387.75 37V38M389.25 37V38M390.75 37V38M392.25 34V41M393.75 36.5V38.5M395.25 37V38M396.75 37V38M398.25 37V38M399.75 12V63M401.25 36V39M402.75 30.5V44.5M404.25 37V38M405.75 37V38M407.25 30V45M408.75 35.5V39.5M410.25 37V38M411.75 37V38M413.25 37V38M414.75 32.5V42.5M416.25 35.5V39.5M417.75 37V38M419.25 37V38M420.75 37V38M422.25 22V53M423.75 35V40M425.25 37V38M426.75 29.5V45.5M428.25 36V39M429.75 32V43M431.25 35.5V39.5M432.75 36.5V38.5M434.25 37V38M435.75 37V38M437.25 23.5V51.5M438.75 34V41M440.25 36.5V38.5M441.75 27V48M443.25 37V38M444.75 37V38M446.25 27V48M447.75 36.5V38.5M449.25 36V39M450.75 37V38M452.25 37V38M453.75 32V43M455.25 36V39M456.75 37V38M458.25 37V38M459.75 37V38M461.25 17.5V57.5M462.75 36V39M464.25 26V49M465.75 37V38M467.25 37V38M468.75 32V43M470.25 36V39M471.75 37V38M473.25 37V38M474.75 37V38M476.25 33V42M477.75 36V39M479.25 25V50M480.75 37V38M482.25 37V38M483.75 22V53M485.25 35V40M486.75 37V38M488.25 25.5V49.5M489.75 33.5V41.5M491.25 36.5V38.5" stroke="#C4B5FD" stroke-width="1" fill="none"/></svg>
+        </div>
+      </div>
+    </div>
+    <!-- TRACK: Bass -->
+    <div class="flex h-24">
+      <div class="relative w-[200px] flex-shrink-0 bg-surface-level1" data-purpose="track-header">
+        <div class="h-full px-2 py-1 flex flex-col justify-between">
+          <div class="h-11 flex items-center gap-2">
+            <span class="w-2.5 h-2.5 flex-shrink-0 rounded-full bg-track-rose"></span>
+            <span class="flex-1 min-w-0 truncate font-label-lg text-label-lg font-medium text-on-surface">Bass</span>
+            <span class="h-5 px-2 flex-shrink-0 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center gap-1"><span class="font-label-sm text-label-sm font-semibold tracking-[0.04em]">Bass</span></span>
+            <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Track menu"><span class="material-symbols-outlined !text-[24px] leading-none">more_vert</span></button>
+          </div>
+          <div class="h-11 flex items-center gap-1">
+            <div class="flex-1 min-w-0 h-11 rounded bg-surface-container-high overflow-hidden flex items-center justify-center font-tabular-param text-tabular-param tnum text-on-surface whitespace-nowrap" aria-label="Gain +0.0dB">+0</div>
+            <button class="w-9 h-9 flex-shrink-0 rounded bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg font-medium" aria-label="Mute">M</button>
+            <button class="w-9 h-9 flex-shrink-0 rounded bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg font-medium" aria-label="Solo">S</button>
+            <button class="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Arm for recording" role="switch" aria-checked="false"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+            <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Track settings"><span class="material-symbols-outlined !text-[24px] leading-none">expand_more</span></button>
+          </div>
+        </div>
+      </div>
+      <div class="relative flex-1 min-w-0" data-purpose="lane">
+        <div class="absolute top-[2px] h-[92px] left-[0px] w-[492px] rounded-xl overflow-hidden bg-track-rose/35" data-purpose="clip">
+          <div class="h-[17px] bg-surface-level2/70 pl-[3px] pt-[1.5px] font-label-sm text-[11px] leading-[14px] font-semibold tracking-[0.04em] text-on-surface whitespace-nowrap">bass</div>
+          <svg class="block" width="492" height="75" viewBox="0 0 492 75" aria-hidden="true"><path d="M0.75 24.5V50.5M2.25 24.5V50.5M3.75 30.5V44.5M5.25 22V53M6.75 24.5V50.5M8.25 22.5V52.5M9.75 25.5V49.5M11.25 19.5V55.5M12.75 23V52M14.25 25.5V49.5M15.75 20V55M17.25 23.5V51.5M18.75 26V49M20.25 21V54M21.75 24V51M23.25 21.5V53.5M24.75 24.5V50.5M26.25 30.5V44.5M27.75 22V53M29.25 24.5V50.5M30.75 31V44M32.25 23V52M33.75 25.5V49.5M35.25 19.5V55.5M36.75 23V52M38.25 25.5V49.5M39.75 23.5V51.5M41.25 26V49M42.75 21.5V53.5M44.25 24.5V50.5M45.75 32V43M47.25 22.5V52.5M48.75 25.5V49.5M50.25 19.5V55.5M51.75 23V52M53.25 25.5V49.5M54.75 23.5V51.5M56.25 26V49M57.75 20V55M59.25 23.5V51.5M60.75 26V49M62.25 21V54M63.75 24.5V50.5M65.25 26.5V48.5M66.75 22V53M68.25 24.5V50.5M69.75 22V53M71.25 25V50M72.75 19.5V55.5M74.25 23V52M75.75 25.5V49.5M77.25 20V55M78.75 23V52M80.25 26V49M81.75 20.5V54.5M83.25 23.5V51.5M84.75 22V53M86.25 25V50M87.75 34V41M89.25 22.5V52.5M90.75 25.5V49.5M92.25 19.5V55.5M93.75 23V52M95.25 25.5V49.5M96.75 20V55M98.25 23.5V51.5M99.75 26V49M101.25 24V51M102.75 26V49M104.25 21V54M105.75 24.5V50.5M107.25 26.5V48.5M108.75 21.5V53.5M110.25 24.5V50.5M111.75 32.5V42.5M113.25 22.5V52.5M114.75 25V50M116.25 23V52M117.75 25.5V49.5M119.25 20V55M120.75 23.5V51.5M122.25 26V49M123.75 20.5V54.5M125.25 24V51M126.75 26V49M128.25 22V53M129.75 25V50M131.25 22.5V52.5M132.75 25.5V49.5M134.25 19.5V55.5M135.75 23V52M137.25 25.5V49.5M138.75 20V55M140.25 23.5V51.5M141.75 26V49M143.25 21V54M144.75 24V51M146.25 21.5V53.5M147.75 24.5V50.5M149.25 30.5V44.5M150.75 22V53M152.25 24.5V50.5M153.75 19.5V55.5M155.25 23V52M156.75 25.5V49.5M158.25 19.5V55.5M159.75 23V52M161.25 25.5V49.5M162.75 23.5V51.5M164.25 26V49M165.75 21V54M167.25 24V51M168.75 26.5V48.5M170.25 22.5V52.5M171.75 25.5V49.5M173.25 19.5V55.5M174.75 23V52M176.25 25.5V49.5M177.75 23.5V51.5M179.25 26V49M180.75 20V55M182.25 23.5V51.5M183.75 26V49M185.25 21V54M186.75 24.5V50.5M188.25 26.5V48.5M189.75 22V53M191.25 24.5V50.5M192.75 22V53M194.25 25V50M195.75 19.5V55.5M197.25 23V52M198.75 25.5V49.5M200.25 20V55M201.75 23.5V51.5M203.25 26V49M204.75 20.5V54.5M206.25 24V51M207.75 21V54M209.25 24.5V50.5M210.75 26.5V48.5M212.25 22.5V52.5M213.75 25.5V49.5M215.25 19.5V55.5M216.75 23V52M218.25 26V49M219.75 20V55M221.25 23.5V51.5M222.75 26V49M224.25 24V51M225.75 26V49M227.25 21.5V53.5M228.75 24.5V50.5M230.25 28.5V46.5M231.75 22V53M233.25 25V50M234.75 32.5V42.5M236.25 22.5V52.5M237.75 25.5V49.5M239.25 23V52M240.75 25.5V49.5M242.25 20V55M243.75 23.5V51.5M245.25 26V49M246.75 20.5V54.5M248.25 24V51M249.75 26V49M251.25 21V54M252.75 24.5V50.5M254.25 23V52M255.75 25.5V49.5M257.25 19.5V55.5M258.75 23.5V51.5M260.25 26V49M261.75 20V55M263.25 24V51M264.75 26V49M266.25 21V54M267.75 24V51M269.25 21.5V53.5M270.75 24.5V50.5M272.25 30.5V44.5M273.75 22V53M275.25 25V50M276.75 19.5V55.5M278.25 23V52M279.75 25.5V49.5M281.25 19.5V55.5M282.75 23.5V51.5M284.25 26V49M285.75 23.5V51.5M287.25 26V49M288.75 21V54M290.25 24V51M291.75 26.5V48.5M293.25 21.5V53.5M294.75 24.5V50.5M296.25 31V44M297.75 23V52M299.25 25.5V49.5M300.75 23.5V51.5M302.25 26V49M303.75 20.5V54.5M305.25 24V51M306.75 26V49M308.25 21.5V53.5M309.75 24.5V50.5M311.25 30V45M312.75 22V53M314.25 24.5V50.5M315.75 22V53M317.25 25.5V49.5M318.75 19.5V55.5M320.25 23V52M321.75 25.5V49.5M323.25 20V55M324.75 23.5V51.5M326.25 26V49M327.75 20.5V54.5M329.25 24V51M330.75 21.5V53.5M332.25 24.5V50.5M333.75 26.5V48.5M335.25 21.5V53.5M336.75 24.5V50.5M338.25 33.5V41.5M339.75 23.5V51.5M341.25 26V49M342.75 20V55M344.25 23.5V51.5M345.75 26V49M347.25 24V51M348.75 26.5V48.5M350.25 21.5V53.5M351.75 24.5V50.5M353.25 28.5V46.5M354.75 22V53M356.25 25V50M357.75 23.5V51.5M359.25 23V52M360.75 25.5V49.5M362.25 23V52M363.75 26V49M365.25 20V55M366.75 23.5V51.5M368.25 26V49M369.75 21V54M371.25 24V51M372.75 26.5V48.5M374.25 21.5V53.5M375.75 24.5V50.5M377.25 22V53M378.75 24.5V50.5M380.25 20.5V54.5M381.75 23.5V51.5M383.25 26V49M384.75 20V55M386.25 24V51M387.75 26V49M389.25 21V54M390.75 24V51M392.25 21.5V53.5M393.75 24.5V50.5M395.25 31.5V43.5M396.75 22V53M398.25 25V50M399.75 19.5V55.5M401.25 23V52M402.75 25.5V49.5M404.25 19.5V55.5M405.75 23.5V51.5M407.25 26V49M408.75 24V51M410.25 26V49M411.75 21V54M413.25 24V51M414.75 26.5V48.5M416.25 21.5V53.5M417.75 24.5V50.5M419.25 33.5V41.5M420.75 22.5V52.5M422.25 25V50M423.75 23.5V51.5M425.25 26V49M426.75 20.5V54.5M428.25 24V51M429.75 26V49M431.25 21.5V53.5M432.75 24.5V50.5M434.25 30.5V44.5M435.75 22V53M437.25 25V50M438.75 22V53M440.25 25.5V49.5M441.75 19.5V55.5M443.25 23V52M444.75 25.5V49.5M446.25 20V55M447.75 23.5V51.5M449.25 26V49M450.75 21V54M452.25 24V51M453.75 21.5V53.5M455.25 24.5V50.5M456.75 30.5V44.5M458.25 22V53M459.75 24.5V50.5M461.25 32.5V42.5M462.75 22.5V52.5M464.25 25V50M465.75 19.5V55.5M467.25 23.5V51.5M468.75 26V49M470.25 24V51M471.75 26.5V48.5M473.25 21.5V53.5M474.75 24.5V50.5M476.25 31V44M477.75 22V53M479.25 25V50M480.75 19.5V55.5M482.25 23V52M483.75 25.5V49.5M485.25 23.5V51.5M486.75 26V49M488.25 20V55M489.75 23.5V51.5M491.25 26V49" stroke="#FDA4AF" stroke-width="1" fill="none"/></svg>
+        </div>
+      </div>
+    </div>
+    <!-- TRACK: Keys -->
+    <div class="flex h-24">
+      <div class="relative w-[200px] flex-shrink-0 bg-surface-level1" data-purpose="track-header">
+        <div class="h-full px-2 py-1 flex flex-col justify-between">
+          <div class="h-11 flex items-center gap-2">
+            <span class="w-2.5 h-2.5 flex-shrink-0 rounded-full bg-track-dusty-rose"></span>
+            <span class="flex-1 min-w-0 truncate font-label-lg text-label-lg font-medium text-on-surface">Keys</span>
+            <span class="h-5 px-2 flex-shrink-0 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center gap-1"><span class="material-symbols-outlined !text-[14px] leading-none">piano</span><span class="font-label-sm text-label-sm font-semibold tracking-[0.04em]">Keys</span></span>
+            <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Track menu"><span class="material-symbols-outlined !text-[24px] leading-none">more_vert</span></button>
+          </div>
+          <div class="h-11 flex items-center gap-1">
+            <div class="flex-1 min-w-0 h-11 rounded bg-surface-container-high overflow-hidden flex items-center justify-center font-tabular-param text-tabular-param tnum text-on-surface whitespace-nowrap" aria-label="Gain +0.0dB">+0</div>
+            <button class="w-9 h-9 flex-shrink-0 rounded bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg font-medium" aria-label="Mute">M</button>
+            <button class="w-9 h-9 flex-shrink-0 rounded bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg font-medium" aria-label="Solo">S</button>
+            <button class="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Arm for recording" role="switch" aria-checked="false"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+            <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Track settings"><span class="material-symbols-outlined !text-[24px] leading-none">expand_more</span></button>
+          </div>
+        </div>
+      </div>
+      <div class="relative flex-1 min-w-0" data-purpose="lane">
+        <div class="absolute top-[2px] h-[92px] left-[0px] w-[492px] rounded-xl overflow-hidden bg-track-dusty-rose/35" data-purpose="clip">
+          <div class="h-[17px] bg-surface-level2/70 pl-[3px] pt-[1.5px] font-label-sm text-[11px] leading-[14px] font-semibold tracking-[0.04em] text-on-surface whitespace-nowrap">keys</div>
+          <svg class="block" width="492" height="75" viewBox="0 0 492 75" aria-hidden="true"><path d="M0.75 25.5V49.5M2.25 25.5V49.5M3.75 28V47M5.25 28.5V46.5M6.75 29.5V45.5M8.25 31.5V43.5M9.75 31.5V43.5M11.25 27.5V47.5M12.75 27.5V47.5M14.25 30.5V44.5M15.75 32V43M17.25 32V43M18.75 32.5V42.5M20.25 26V49M21.75 29V46M23.25 28V47M24.75 29V46M26.25 31V44M27.75 32V43M29.25 32.5V42.5M30.75 27V48M32.25 27V48M33.75 25.5V49.5M35.25 28.5V46.5M36.75 28.5V46.5M38.25 30.5V44.5M39.75 32V43M41.25 33.5V41.5M42.75 28V47M44.25 30V45M45.75 30.5V44.5M47.25 32.5V42.5M48.75 32V43M50.25 33.5V41.5M51.75 33.5V41.5M53.25 34V41M54.75 34.5V40.5M56.25 37.25V37.75M57.75 29V46M59.25 31.5V43.5M60.75 30.5V44.5M62.25 23V52M63.75 24V51M65.25 26V49M66.75 28V47M68.25 30.5V44.5M69.75 31.5V43.5M71.25 31.5V43.5M72.75 28.5V46.5M74.25 27V48M75.75 30V45M77.25 30.5V44.5M78.75 32.5V42.5M80.25 32.5V42.5M81.75 28.5V46.5M83.25 30V45M84.75 29.5V45.5M86.25 30V45M87.75 32V43M89.25 32.5V42.5M90.75 32.5V42.5M92.25 22V53M93.75 27V48M95.25 27.5V47.5M96.75 29.5V45.5M98.25 28.5V46.5M99.75 32V43M101.25 33V42M102.75 32.5V42.5M104.25 27V48M105.75 28.5V46.5M107.25 31V44M108.75 32V43M110.25 32V43M111.75 33V42M113.25 33V42M114.75 34V41M116.25 34.5V40.5M117.75 37V38M119.25 28.5V46.5M120.75 31V44M122.25 30.5V44.5M123.75 21.5V53.5M125.25 26.5V48.5M126.75 23.5V51.5M128.25 28V47M129.75 27.5V47.5M131.25 29.5V45.5M132.75 31.5V43.5M134.25 27V48M135.75 27.5V47.5M137.25 30.5V44.5M138.75 32V43M140.25 32V43M141.75 32.5V42.5M143.25 26V49M144.75 29V46M146.25 28V47M147.75 29V46M149.25 31V44M150.75 32V43M152.25 32.5V42.5M153.75 27V48M155.25 27.5V47.5M156.75 25.5V49.5M158.25 28.5V46.5M159.75 28.5V46.5M161.25 30.5V44.5M162.75 32V43M164.25 33.5V41.5M165.75 27.5V47.5M167.25 29.5V45.5M168.75 30.5V44.5M170.25 32.5V42.5M171.75 32V43M173.25 33.5V41.5M174.75 33.5V41.5M176.25 34V41M177.75 34.5V40.5M179.25 37.25V37.75M180.75 29V46M182.25 31.5V43.5M183.75 30.5V44.5M185.25 23.5V51.5M186.75 24V51M188.25 26V49M189.75 28V47M191.25 31V44M192.75 31.5V43.5M194.25 31.5V43.5M195.75 28.5V46.5M197.25 27V48M198.75 30V45M200.25 30.5V44.5M201.75 32.5V42.5M203.25 32.5V42.5M204.75 28.5V46.5M206.25 30V45M207.75 30V45M209.25 31.5V43.5M210.75 32.5V42.5M212.25 32.5V42.5M213.75 32.5V42.5M215.25 22V53M216.75 27V48M218.25 27V48M219.75 29.5V45.5M221.25 28.5V46.5M222.75 32V43M224.25 33V42M225.75 32.5V42.5M227.25 27V48M228.75 28.5V46.5M230.25 31V44M231.75 32V43M233.25 32V43M234.75 33V42M236.25 33V42M237.75 34V41M239.25 34.5V40.5M240.75 37V38M242.25 28.5V46.5M243.75 31V44M245.25 30.5V44.5M246.75 21.5V53.5M248.25 26.5V48.5M249.75 23.5V51.5M251.25 25.5V49.5M252.75 28.5V46.5M254.25 29.5V45.5M255.75 31.5V43.5M257.25 27V48M258.75 28.5V46.5M260.25 30.5V44.5M261.75 32V43M263.25 32V43M264.75 32.5V42.5M266.25 26V49M267.75 29V46M269.25 28V47M270.75 29V46M272.25 31V44M273.75 32V43M275.25 32.5V42.5M276.75 27V48M278.25 26.5V48.5M279.75 25.5V49.5M281.25 28.5V46.5M282.75 28.5V46.5M284.25 30.5V44.5M285.75 32V43M287.25 33.5V41.5M288.75 27.5V47.5M290.25 29.5V45.5M291.75 30.5V44.5M293.25 32.5V42.5M294.75 32V43M296.25 33V42M297.75 33.5V41.5M299.25 34V41M300.75 34.5V40.5M302.25 37.25V37.75M303.75 29V46M305.25 31.5V43.5M306.75 30.5V44.5M308.25 23.5V51.5M309.75 24V51M311.25 26V49M312.75 28V47M314.25 31V44M315.75 32V43M317.25 31.5V43.5M318.75 28.5V46.5M320.25 27V48M321.75 30V45M323.25 30.5V44.5M324.75 32.5V42.5M326.25 32.5V42.5M327.75 28.5V46.5M329.25 30V45M330.75 30V45M332.25 30V45M333.75 32.5V42.5M335.25 32.5V42.5M336.75 32.5V42.5M338.25 33.5V41.5M339.75 27V48M341.25 26V49M342.75 29.5V45.5M344.25 28.5V46.5M345.75 32V43M347.25 33V42M348.75 32.5V42.5M350.25 27V48M351.75 29V46M353.25 31V44M354.75 32V43M356.25 32V43M357.75 33V42M359.25 33V42M360.75 34V41M362.25 34.5V40.5M363.75 37V38M365.25 28.5V46.5M366.75 31V44M368.25 30.5V44.5M369.75 21.5V53.5M371.25 26.5V48.5M372.75 24.5V50.5M374.25 25.5V49.5M375.75 28.5V46.5M377.25 28.5V46.5M378.75 31.5V43.5M380.25 31.5V43.5M381.75 28.5V46.5M383.25 30V45M384.75 32V43M386.25 32V43M387.75 32.5V42.5M389.25 25.5V49.5M390.75 29V46M392.25 28V47M393.75 29.5V45.5M395.25 31V44M396.75 32V43M398.25 32.5V42.5M399.75 27V48M401.25 26.5V48.5M402.75 25.5V49.5M404.25 28V47M405.75 28.5V46.5M407.25 30.5V44.5M408.75 32V43M410.25 33.5V41.5M411.75 27.5V47.5M413.25 30V45M414.75 30.5V44.5M416.25 32.5V42.5M417.75 32V43M419.25 33V42M420.75 33.5V41.5M422.25 34V41M423.75 34.5V40.5M425.25 37.25V37.75M426.75 29V46M428.25 31.5V43.5M429.75 30.5V44.5M431.25 23.5V51.5M432.75 26V49M434.25 26V49M435.75 28V47M437.25 30.5V44.5M438.75 31.5V43.5M440.25 31.5V43.5M441.75 28.5V46.5M443.25 27V48M444.75 30V45M446.25 30.5V44.5M447.75 32.5V42.5M449.25 32.5V42.5M450.75 29V46M452.25 30V45M453.75 30V45M455.25 30V45M456.75 32.5V42.5M458.25 32.5V42.5M459.75 32.5V42.5M461.25 30.5V44.5M462.75 27.5V47.5M464.25 26V49M465.75 28.5V46.5M467.25 28.5V46.5M468.75 32V43M470.25 33V42M471.75 32.5V42.5M473.25 27V48M474.75 29.5V45.5M476.25 31V44M477.75 32V43M479.25 32.5V42.5M480.75 33V42M482.25 33V42M483.75 34V41M485.25 34.5V40.5M486.75 37.25V37.75M488.25 29V46M489.75 31V44M491.25 30.5V44.5" stroke="#E0A0C0" stroke-width="1" fill="none"/></svg>
+        </div>
+      </div>
+    </div>
+    <!-- TRACK: Pad -->
+    <div class="flex h-24">
+      <div class="relative w-[200px] flex-shrink-0 bg-surface-level1" data-purpose="track-header">
+        <div class="h-full px-2 py-1 flex flex-col justify-between">
+          <div class="h-11 flex items-center gap-2">
+            <span class="w-2.5 h-2.5 flex-shrink-0 rounded-full bg-track-peach"></span>
+            <span class="flex-1 min-w-0 truncate font-label-lg text-label-lg font-medium text-on-surface">Pad</span>
+            <span class="h-5 px-2 flex-shrink-0 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center gap-1"><span class="font-label-sm text-label-sm font-semibold tracking-[0.04em]">Synth</span></span>
+            <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Track menu"><span class="material-symbols-outlined !text-[24px] leading-none">more_vert</span></button>
+          </div>
+          <div class="h-11 flex items-center gap-1">
+            <div class="flex-1 min-w-0 h-11 rounded bg-surface-container-high overflow-hidden flex items-center justify-center font-tabular-param text-tabular-param tnum text-on-surface whitespace-nowrap" aria-label="Gain +0.0dB">+0</div>
+            <button class="w-9 h-9 flex-shrink-0 rounded bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg font-medium" aria-label="Mute">M</button>
+            <button class="w-9 h-9 flex-shrink-0 rounded bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg font-medium" aria-label="Solo">S</button>
+            <button class="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Arm for recording" role="switch" aria-checked="false"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+            <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Track settings"><span class="material-symbols-outlined !text-[24px] leading-none">expand_more</span></button>
+          </div>
+        </div>
+      </div>
+      <div class="relative flex-1 min-w-0" data-purpose="lane">
+        <div class="absolute top-[2px] h-[92px] left-[0px] w-[246px] rounded-xl overflow-hidden bg-track-peach/35" data-purpose="clip">
+          <div class="h-[17px] bg-surface-level2/70 pl-[3px] pt-[1.5px] font-label-sm text-[11px] leading-[14px] font-semibold tracking-[0.04em] text-on-surface whitespace-nowrap">pad</div>
+          <svg class="block" width="246" height="75" viewBox="0 0 246 75" aria-hidden="true"><path d="M0.75 32.5V42.5M2.25 32.5V42.5M3.75 30V45M5.25 28V47M6.75 27V48M8.25 28V47M9.75 26V49M11.25 28.5V46.5M12.75 28V47M14.25 26V49M15.75 29V46M17.25 28.5V46.5M18.75 27.5V47.5M20.25 28V47M21.75 27V48M23.25 25.5V49.5M24.75 28.5V46.5M26.25 28.5V46.5M27.75 26V49M29.25 28V47M30.75 26V49M32.25 30.5V44.5M33.75 29.5V45.5M35.25 30V45M36.75 27V48M38.25 27V48M39.75 29.5V45.5M41.25 26.5V48.5M42.75 28V47M44.25 29.5V45.5M45.75 28.5V46.5M47.25 28V47M48.75 28V47M50.25 27.5V47.5M51.75 28V47M53.25 27.5V47.5M54.75 29V46M56.25 25.5V49.5M57.75 28.5V46.5M59.25 27V48M60.75 26V49M62.25 30.5V44.5M63.75 29.5V45.5M65.25 28.5V46.5M66.75 27V48M68.25 26.5V48.5M69.75 28.5V46.5M71.25 28.5V46.5M72.75 28.5V46.5M74.25 26.5V48.5M75.75 29.5V45.5M77.25 28.5V46.5M78.75 26.5V48.5M80.25 28.5V46.5M81.75 28V47M83.25 26.5V48.5M84.75 26.5V48.5M86.25 28.5V46.5M87.75 29.5V45.5M89.25 27V48M90.75 28V47M92.25 28V47M93.75 28.5V46.5M95.25 30V45M96.75 28.5V46.5M98.25 26.5V48.5M99.75 27.5V47.5M101.25 26.5V48.5M102.75 27.5V47.5M104.25 29V46M105.75 28V47M107.25 26V49M108.75 27.5V47.5M110.25 28.5V46.5M111.75 27V48M113.25 26V49M114.75 26.5V48.5M116.25 28.5V46.5M117.75 26.5V48.5M119.25 28.5V46.5M120.75 28.5V46.5M122.25 28.5V46.5M123.75 28V47M125.25 30.5V44.5M126.75 30.5V44.5M128.25 26.5V48.5M129.75 27V48M131.25 28V47M132.75 26V49M134.25 28V47M135.75 28V47M137.25 26.5V48.5M138.75 29V46M140.25 28.5V46.5M141.75 27.5V47.5M143.25 28V47M144.75 27V48M146.25 25.5V49.5M147.75 28.5V46.5M149.25 28.5V46.5M150.75 26V49M152.25 28V47M153.75 26V49M155.25 30.5V44.5M156.75 29.5V45.5M158.25 30V45M159.75 27V48M161.25 27V48M162.75 28.5V46.5M164.25 26V49M165.75 27.5V47.5M167.25 28.5V46.5M168.75 29.5V45.5M170.25 28V47M171.75 28V47M173.25 27.5V47.5M174.75 28V47M176.25 27.5V47.5M177.75 29V46M179.25 25.5V49.5M180.75 28.5V46.5M182.25 27V48M183.75 26V49M185.25 31V44M186.75 29.5V45.5M188.25 28.5V46.5M189.75 27V48M191.25 26.5V48.5M192.75 28.5V46.5M194.25 28.5V46.5M195.75 28.5V46.5M197.25 26.5V48.5M198.75 29.5V45.5M200.25 28.5V46.5M201.75 25V50M203.25 28.5V46.5M204.75 28V47M206.25 26.5V48.5M207.75 27V48M209.25 27.5V47.5M210.75 29.5V45.5M212.25 27V48M213.75 28V47M215.25 28V47M216.75 28.5V46.5M218.25 30V45M219.75 28.5V46.5M221.25 26.5V48.5M222.75 27.5V47.5M224.25 26.5V48.5M225.75 27.5V47.5M227.25 29V46M228.75 28V47M230.25 26V49M231.75 27.5V47.5M233.25 28.5V46.5M234.75 27V48M236.25 26V49M237.75 26.5V48.5M239.25 28.5V46.5M240.75 26.5V48.5M242.25 28.5V46.5M243.75 28.5V46.5M245.25 28.5V46.5" stroke="#F5BE9E" stroke-width="1" fill="none"/></svg>
+        </div>
+        <div class="absolute top-[2px] h-[92px] left-[246px] w-[246px] rounded-xl overflow-hidden bg-track-peach/35" data-purpose="clip">
+          <div class="h-[17px] bg-surface-level2/70 pl-[3px] pt-[1.5px] font-label-sm text-[11px] leading-[14px] font-semibold tracking-[0.04em] text-on-surface whitespace-nowrap">pad</div>
+          <svg class="block" width="246" height="75" viewBox="0 0 246 75" aria-hidden="true"><path d="M0.75 28V47M2.25 30.5V44.5M3.75 30.5V44.5M5.25 29V46M6.75 26.5V48.5M8.25 28V47M9.75 27.5V47.5M11.25 28V47M12.75 28V47M14.25 26.5V48.5M15.75 29V46M17.25 28V47M18.75 27.5V47.5M20.25 28V47M21.75 27V48M23.25 28V47M24.75 28.5V46.5M26.25 28.5V46.5M27.75 26V49M29.25 28V47M30.75 26V49M32.25 30.5V44.5M33.75 29.5V45.5M35.25 30V45M36.75 27V48M38.25 28.5V46.5M39.75 28.5V46.5M41.25 26V49M42.75 27.5V47.5M44.25 28.5V46.5M45.75 29.5V45.5M47.25 28V47M48.75 28V47M50.25 28V47M51.75 28V47M53.25 27.5V47.5M54.75 29V46M56.25 25.5V49.5M57.75 28V47M59.25 27V48M60.75 26V49M62.25 31V44M63.75 30V45M65.25 28.5V46.5M66.75 27V48M68.25 28V47M69.75 28.5V46.5M71.25 28.5V46.5M72.75 28.5V46.5M74.25 26.5V48.5M75.75 29.5V45.5M77.25 28.5V46.5M78.75 25V50M80.25 28.5V46.5M81.75 28V47M83.25 26.5V48.5M84.75 27V48M86.25 27.5V47.5M87.75 29.5V45.5M89.25 25.5V49.5M90.75 28.5V46.5M92.25 28V47M93.75 28.5V46.5M95.25 30V45M96.75 28.5V46.5M98.25 26.5V48.5M99.75 27.5V47.5M101.25 26.5V48.5M102.75 27.5V47.5M104.25 29V46M105.75 28V47M107.25 27.5V47.5M108.75 27.5V47.5M110.25 28.5V46.5M111.75 27V48M113.25 26.5V48.5M114.75 26.5V48.5M116.25 28.5V46.5M117.75 26.5V48.5M119.25 28.5V46.5M120.75 28.5V46.5M122.25 28.5V46.5M123.75 28V47M125.25 30.5V44.5M126.75 31V44M128.25 29V46M129.75 26.5V48.5M131.25 27.5V47.5M132.75 26V49M134.25 28V47M135.75 27.5V47.5M137.25 26.5V48.5M138.75 29V46M140.25 28V47M141.75 27.5V47.5M143.25 28V47M144.75 27V48M146.25 28V47M147.75 28V47M149.25 28.5V46.5M150.75 26V49M152.25 28V47M153.75 26V49M155.25 31V44M156.75 29.5V45.5M158.25 30.5V44.5M159.75 27V48M161.25 28.5V46.5M162.75 28.5V46.5M164.25 26V49M165.75 28V47M167.25 28.5V46.5M168.75 28.5V46.5M170.25 28V47M171.75 28V47M173.25 28V47M174.75 28V47M176.25 28V47M177.75 29V46M179.25 25.5V49.5M180.75 28V47M182.25 27V48M183.75 26V49M185.25 30.5V44.5M186.75 27.5V47.5M188.25 28V47M189.75 27.5V47.5M191.25 27.5V47.5M192.75 28V47M194.25 28.5V46.5M195.75 28.5V46.5M197.25 27.5V47.5M198.75 29.5V45.5M200.25 28.5V46.5M201.75 25V50M203.25 28.5V46.5M204.75 28V47M206.25 26.5V48.5M207.75 27V48M209.25 27.5V47.5M210.75 29.5V45.5M212.25 25.5V49.5M213.75 28.5V46.5M215.25 28V47M216.75 29.5V45.5M218.25 28.5V46.5M219.75 29.5V45.5M221.25 26.5V48.5M222.75 27.5V47.5M224.25 26.5V48.5M225.75 27.5V47.5M227.25 29V46M228.75 28V47M230.25 27.5V47.5M231.75 27.5V47.5M233.25 28.5V46.5M234.75 26.5V48.5M236.25 26.5V48.5M237.75 26.5V48.5M239.25 28.5V46.5M240.75 29V46M242.25 33V42M243.75 34.5V40.5M245.25 36.5V38.5" stroke="#F5BE9E" stroke-width="1" fill="none"/></svg>
+        </div>
+      </div>
+    </div>
+    <!-- TRACK: Track 1 (not armed: microphone access denied; no input meter) -->
+    <div class="flex h-24">
+      <div class="relative w-[200px] flex-shrink-0 bg-surface-level1" data-purpose="track-header">
+        <div class="h-full px-2 py-1 flex flex-col justify-between">
+          <div class="h-11 flex items-center gap-2">
+            <span class="w-2.5 h-2.5 flex-shrink-0 rounded-full bg-track-mint"></span>
+            <span class="flex-1 min-w-0 truncate font-label-lg text-label-lg font-medium text-on-surface">Track 1</span>
+            
+            <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Track menu"><span class="material-symbols-outlined !text-[24px] leading-none">more_vert</span></button>
+          </div>
+          <div class="h-11 flex items-center gap-1">
+            <div class="flex-1 min-w-0 h-11 rounded bg-surface-container-high overflow-hidden flex items-center justify-center font-tabular-param text-tabular-param tnum text-on-surface whitespace-nowrap" aria-label="Gain +0.0dB">+0</div>
+            <button class="w-9 h-9 flex-shrink-0 rounded bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg font-medium" aria-label="Mute">M</button>
+            <button class="w-9 h-9 flex-shrink-0 rounded bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg font-medium" aria-label="Solo">S</button>
+            <button class="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Arm for recording" role="switch" aria-checked="false"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+            <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Track settings"><span class="material-symbols-outlined !text-[24px] leading-none">expand_more</span></button>
+          </div>
+        </div>
+      </div>
+      <div class="relative flex-1 min-w-0" data-purpose="lane">
+      </div>
+    </div>
+    </div>
+    <div class="absolute top-0 bottom-0 left-[199.25px] w-[1.5px] bg-playhead" data-purpose="playhead"></div>
+  </section>
+
+  <!-- OVERVIEW STRIP (28 px): the whole project at fit scale, one row of blocks per track, the view window with its two handles, the playhead at the start -->
+  <div class="h-7 flex-shrink-0 ml-[216px] mr-[20px]" data-purpose="overview-strip">
+    <svg class="block overflow-visible" width="948" height="28" viewBox="0 0 948 28" aria-label="Overview" role="img"><rect width="948" height="28" fill="#18171C"/><rect x="0" y="3" width="474" height="3.4" fill="#C4B5FD"/><rect x="0" y="7.4" width="474" height="3.4" fill="#FDA4AF"/><rect x="0" y="11.8" width="474" height="3.4" fill="#E0A0C0"/><rect x="0" y="16.2" width="474" height="3.4" fill="#F5BE9E"/><rect width="948" height="28" rx="4" fill="#C084FC" fill-opacity="0.24"/><rect x="0.5" y="0.5" width="947" height="27" rx="4" fill="none" stroke="#CEBDFF" stroke-width="1"/><rect x="0" y="0" width="8" height="28" rx="4" fill="#CEBDFF"/><rect x="940" y="0" width="8" height="28" rx="4" fill="#CEBDFF"/><path d="M4 8.4V19.6M944 8.4V19.6" stroke="#381385" stroke-width="1"/><rect x="0" y="0" width="1" height="28" fill="#C084FC"/></svg>
+  </div>
+
+  <!-- TRANSPORT BAR (72 px): master volume inline, skip to start / bar back, play, bar forward (all enabled, stopped), Record (idle: the hollow record circle, 2 px stroke), time readout at the start, metronome toggle -->
+  <footer class="h-[72px] flex-shrink-0 bg-surface-level1 px-2 flex items-center gap-1" data-purpose="transport-bar">
+    <div class="flex items-center flex-shrink-0">
+      <div class="relative w-[160px] h-11" aria-label="Master volume">
+        <div class="absolute left-2 right-2 top-1/2 -translate-y-1/2 h-1.5 rounded-full bg-surface-container-highest"></div>
+        <div class="absolute left-[115.2px] top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-primary"></div>
+      </div>
+      <span class="ml-[19.5px] font-tabular-param text-tabular-param font-medium tnum text-on-surface-variant">80%</span>
+    </div>
+    <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Skip to start"><span class="material-symbols-outlined !text-[24px] leading-none">skip_previous</span></button>
+    <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="One bar back"><span class="material-symbols-outlined !text-[24px] leading-none">fast_rewind</span></button>
+    <div class="relative w-12 h-12 flex-shrink-0">
+      <div class="absolute -inset-2 rounded-full pointer-events-none" style="background: radial-gradient(circle closest-side, rgba(255,175,211,0.35) 75%, rgba(255,175,211,0) 100%);"></div>
+      <button class="relative w-12 h-12 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center" aria-label="Play"><span class="material-symbols-outlined !text-[25.5px] leading-none" style="font-variation-settings:'FILL' 1">play_arrow</span></button>
+    </div>
+    <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="One bar forward"><span class="material-symbols-outlined !text-[24px] leading-none">fast_forward</span></button>
+    <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full" aria-label="Record" data-purpose="record">
+      <span class="w-5 h-5 rounded-full border-2 border-record"></span>
+    </button>
+    <span class="px-px font-tabular-timecode text-tabular-timecode font-medium tnum text-on-surface whitespace-nowrap">00:00.00 / 00:30.96</span>
+    <button class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-on-surface-variant" aria-label="Metronome"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true" style="display:block;flex:none" data-glyph="metronome"><path d="M15.45 6.05L14.6 3H9.4L4.4 21H19.6L16.56 10.05"></path><path d="M7.34 14H16.66"></path><path d="M12 14L18.6 4.2"></path></svg></button>
+  </footer>
+</main>
+
+<!-- SNACKBAR (M3, 624 x 48 px, centred over the timeline, its bottom edge on the overview strip): inverse-surface, body-md message in inverse-on-surface, the "Open settings" text button in inverse-primary -->
+<div class="fixed left-[376px] bottom-[100px] w-[624px] min-h-12 rounded bg-inverse-surface flex items-center gap-2 pl-4 pr-2" role="status" data-purpose="snackbar">
+  <span class="flex-1 min-w-0 py-[14px] font-body-md text-body-md text-inverse-on-surface">Microphone access is needed to record</span>
+  <button class="h-10 px-3 flex-shrink-0 rounded-full font-label-lg text-label-lg font-medium text-inverse-primary whitespace-nowrap" data-purpose="snackbar-action">Open settings</button>
+</div>
+</body>
+</html>

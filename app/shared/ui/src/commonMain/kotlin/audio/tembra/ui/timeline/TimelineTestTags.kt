@@ -30,6 +30,8 @@ object TimelineTestTags {
     const val OVERFLOW_METRONOME_SETTINGS = "$OVERFLOW.metronomeSettings"
     /** "Overview strip" at every width, checked while the strip shows; a tap shows or hides it (spec FR-015, FR-055; T151). */
     const val OVERFLOW_OVERVIEW_STRIP = "$OVERFLOW.overviewStrip"
+    /** "Full screen" / "Exit full screen" in a desktop window (feature 011, spec FR-010a). */
+    const val OVERFLOW_FULL_SCREEN = "$OVERFLOW.fullScreen"
 
     /** The full toolbar's "Snap 1/16" pill (spec FR-018). */
     const val GRID = "timeline.toolbar.grid"

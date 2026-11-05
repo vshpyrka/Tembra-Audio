@@ -5,9 +5,13 @@ a screening gate; tracepulse.yml may override limits and disable keys, never add
 
 import pytest
 
+from pathlib import Path
+
 from tracepulse.catalogue import (
-    CATALOGUE, CatalogueError, Metric, apply_overrides, keys_for, lookup, metrics_for,
+    CATALOGUE, SECTION_FAMILIES, CatalogueError, Metric, apply_overrides, keys_for, lookup, metrics_for,
 )
+
+ENGINE_CATALOGUE = Path(__file__).resolve().parents[2] / "shared" / "engine" / "perf-catalogue.txt"
 
 
 ANDROID_KEYS = {
@@ -89,6 +93,29 @@ def test_section_keys_resolve_by_pattern_on_both_platforms():
         assert c.unit == "count" and c.screening_pct == 10 and c.comparable is True
     with pytest.raises(CatalogueError):
         lookup("android", "section.tuner.modeSwitch.p99_ms")
+
+
+def test_shell_family_sections_resolve_and_unknown_families_raise():
+    # Feature 011 (contracts/perf-instrumentation.md): window changes and shortcut navigation are the shell family.
+    assert "shell" in SECTION_FAMILIES
+    for platform in ("android", "ios"):
+        for name in ("shell.windowRelayout", "shell.shortcutNavigate", "timeline.contextMenu"):
+            s = lookup(platform, f"section.{name}.sum_ms")
+            assert s.family == "section" and s.unit == "ms" and s.comparable is True, name
+    with pytest.raises(CatalogueError, match="section family"):
+        lookup("android", "section.madeUp.windowRelayout.sum_ms")
+
+
+def test_section_families_match_the_engine_catalogue():
+    families = set()
+    for line in ENGINE_CATALOGUE.read_text().splitlines():
+        if not line.strip() or line.startswith("#"):
+            continue
+        _, family, signpost = line.split()
+        if family != "counter":
+            families.add(family)
+            assert signpost.split(".")[0] == family, signpost
+    assert families == set(SECTION_FAMILIES)
 
 
 def test_unknown_key_or_platform_raises():
