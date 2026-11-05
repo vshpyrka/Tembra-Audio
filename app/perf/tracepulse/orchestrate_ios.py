@@ -33,7 +33,10 @@ from .runner import Clock, Completed, Runner
 logger = logging.getLogger("tracepulse.orchestrate_ios")
 
 BUILD_TIMEOUT_S = 3600
-TEST_TIMEOUT_S = 3600
+# A round of all seven journeys runs about 90 minutes on the iPhone 14 since features 010 and 011 (the stress journey
+# records a take: 23 minutes; tuner, the facade self-checks, startup, metronome, windowing, timeline, recording); the
+# 60-minute limit cut the first full post-merge round of 010 short in windowing (2026-11-05).
+TEST_TIMEOUT_S = 7200
 TOOL_TIMEOUT_S = 300
 # One unmeasured stress journey (~25 s of taps) plus the runner's attach and set-up; xctrace stops by itself.
 AUDIO_TRACE_SECONDS = 75
