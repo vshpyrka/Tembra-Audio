@@ -4,8 +4,8 @@ A free, open-source mobile DAW for Android and iOS. One shared C++ real-time aud
 audio work; a Kotlin Multiplatform control plane and a Compose Multiplatform UI run on top of it, so
 both platforms share the same DSP and the same screens.
 
-The project is at an early stage. You can use the timeline, the metronome and the tuner today.
-Recording, the mixer and effects come next. The app opens on Timeline with the project you had
+The project is at an early stage. You can record and arrange on the timeline and use the metronome
+and the tuner today. The mixer and effects come next. The app opens on Timeline with the project you had
 open last. Profile already appears in the navigation, but for now it only shows a placeholder.
 
 ## What works now
@@ -25,6 +25,22 @@ with four tracks.
   <img src="docs/screenshots/timeline-android-pixel6pro-track-menu.png" width="240" alt="A track's menu on the timeline with Track settings, Add audio, Move up, Move down and Delete track">
 </p>
 <img src="docs/screenshots/timeline-ios-ipadpro13-landscape.png" width="736" alt="The same demo project on an iPad Pro in landscape: a navigation rail, track headers with gain, mute and solo, the snap and tempo pills, and the overview strip above the transport bar">
+
+### Recording
+
+Arm a track from its header and press Record: after an optional count-in of one or two bars, the
+take grows on the timeline with its waveform while the other tracks play. The armed track shows an
+input meter with a peak hold and a clip warning. With headphones connected you can hear yourself
+through the track's level, mute and solo; on the built-in speaker monitoring stays off. Every take
+is lined up with the beat using the latencies the device reports. A take keeps recording with the
+screen off and is kept if the app is closed in the middle of it. On a phone held upright, Record
+sits in the armed track's header; on wider screens it is in the transport bar. On a keyboard, A
+arms the selected track, R records and I turns monitoring on or off.
+
+<p>
+  <img src="docs/screenshots/recording-android-pixel6pro.png" width="240" alt="Recording on a phone: the armed track's header with the red Record button and the input meter, and the take growing to the playhead">
+</p>
+<img src="docs/screenshots/recording-android-pixeltablet-landscape.png" width="736" alt="Recording on a Pixel Tablet in landscape: Record in the transport bar, the new track armed, and Take 1 growing under the demo project's four tracks">
 
 ### Metronome
 
@@ -131,8 +147,8 @@ The build is gated on zero compiler warnings.
 ## How features get built
 
 Every feature goes through spec-kit: specify, clarify, plan, tasks, implement. The constitution sets
-the build order: tuner, metronome, audio playback, transport and timeline, mixer, effects and
-automation, recording and loops, then collaboration. To see how a finished feature was decided and
+the build order: tuner, metronome, the audio engine with transport and timeline, recording, large
+screens and desktop, mixer, effects and automation, loops and speed, then collaboration. To see how a finished feature was decided and
 tested, read the folder for that feature in `specs/`.
 
 ## License

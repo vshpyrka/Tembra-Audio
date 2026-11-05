@@ -93,6 +93,11 @@ oboe::Result OboeAudioDevice::openDuplexInputLocked() {
         return oboe::Result::ErrorInternal;
     }
     inputChannels_.store(static_cast<uint32_t>(inputStream_->getChannelCount()), std::memory_order_release);
+    // Two input bursts read ahead absorb a burst that lands just after the output callback (the reservoir's header);
+    // one burst left an occasional short read on the Pixel 6 Pro (one in a 29-minute take, 33 s into a 2-minute one).
+    const int32_t burst = inputStream_->getFramesPerBurst();
+    const uint32_t cushion = (burst > 0 ? static_cast<uint32_t>(burst) : kDefaultBurstFrames) * kCushionBursts;
+    inputReservoir_.configure(static_cast<uint32_t>(inputStream_->getChannelCount()), cushion);
     measureInputLatencyLocked();
     warmUpLeft_ = kWarmUpBursts;
     inputForCallback_.store(inputStream_.get(), std::memory_order_release);
@@ -165,6 +170,9 @@ void OboeAudioDevice::measureInputLatencyLocked() {
         const int32_t rate = inputStream_->getSampleRate();
         nanos = rate > 0 ? static_cast<int64_t>(inputStream_->getBufferSizeInFrames()) * 1'000'000'000LL / rate : 0;
     }
+    // The reservoir's cushion delays every captured frame by that many frames more: part of the input latency.
+    const int32_t rate = inputStream_->getSampleRate();
+    if (rate > 0) nanos += static_cast<int64_t>(inputReservoir_.cushionFrames()) * 1'000'000'000LL / rate;
     inputLatencyNanos_.store(nanos, std::memory_order_release);
 }
 
@@ -302,20 +310,18 @@ oboe::DataCallbackResult OboeAudioDevice::onAudioReady(oboe::AudioStream* stream
     if (stream->getDirection() == oboe::Direction::Input) {
         if (input_ != nullptr) input_(context_, static_cast<const float*>(audioData), static_cast<uint32_t>(numFrames));
     } else if (render_ != nullptr) {
-        // Feature 010 (research R2): the duplex input is read non-blocking here, zero-padded when short, and handed to
-        // the capture callback before the render of the same block; the first bursts after an open are a warm-up.
+        // Feature 010 (research R2): the duplex input is read non-blocking here through the reservoir, which keeps two
+        // bursts read ahead and zero-pads only when even those run out, and handed to the capture callback before the
+        // render of the same block; the first bursts after an open are a warm-up.
         inCallback_.store(true, std::memory_order_seq_cst);
         oboe::AudioStream* input = inputForCallback_.load(std::memory_order_seq_cst);
         if (input != nullptr && capture_ != nullptr) {
             const uint32_t channels = static_cast<uint32_t>(input->getChannelCount());
             const uint32_t frames = static_cast<uint32_t>(numFrames) > kMaxInputFrames ? kMaxInputFrames : static_cast<uint32_t>(numFrames);
-            const auto result = input->read(inputScratch_.data(), static_cast<int32_t>(frames), 0);
-            const uint32_t got = result ? static_cast<uint32_t>(result.value() < 0 ? 0 : result.value()) : 0u;
-            if (got < frames) {
-                float* pad = inputScratch_.data() + static_cast<size_t>(got) * channels;
-                for (size_t i = 0; i < static_cast<size_t>(frames - got) * channels; ++i) pad[i] = 0.0f;
-            }
-            uint32_t shortFrames = frames - got;
+            uint32_t shortFrames = inputReservoir_.pull(inputScratch_.data(), frames, [input](float* dst, uint32_t maxFrames) {
+                const auto result = input->read(dst, static_cast<int32_t>(maxFrames), 0);
+                return result ? static_cast<uint32_t>(result.value() < 0 ? 0 : result.value()) : 0u;
+            });
             if (warmUpLeft_ > 0) {
                 --warmUpLeft_;
                 shortFrames = 0;
