@@ -23,13 +23,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
@@ -48,6 +51,7 @@ import audio.tembra.ui.drop.DropCopy
 import audio.tembra.ui.drop.DropHoverBanner
 import audio.tembra.ui.drop.DropZone
 import audio.tembra.ui.drop.audioDropTarget
+import audio.tembra.ui.mixer.MixerSheet
 import audio.tembra.ui.platform.LocalTrackpadPinchSource
 import audio.tembra.ui.session.TransportTelemetry
 import audio.tembra.ui.shortcuts.RegisterShortcuts
@@ -112,6 +116,9 @@ internal fun TimelineScreenContent(
     // The iPad's trackpad pinch arrives from the shell's bridge in root pixels (feature 011, research R9): it zooms
     // around its focus, measured from the lanes' left edge (written at layout, read only by the collector).
     val lanesLeft = remember { mutableFloatStateOf(0f) }
+    // The lanes box's height, written at layout, sizes the mixer sheet (feature 012).
+    var lanesHeight by remember { mutableStateOf(0.dp) }
+    val onLanesMeasured by rememberUpdatedState(callbacks.onLanesMeasured)
     val playheadMask = remember { PlayheadMask() }
     val pinchSource = LocalTrackpadPinchSource.current
     val onZoomAround by rememberUpdatedState(callbacks.onZoomAround)
@@ -163,6 +170,7 @@ internal fun TimelineScreenContent(
                 onFullScreen = callbacks.onFullScreen,
                 onMetronomeSettings = callbacks.onMetronomeSettings,
                 onMonitorToggle = callbacks.onMonitorToggle,
+                onMixerToggle = callbacks.onMixerToggle,
             )
             TimelineRuler(
                 viewport = state.viewport,
@@ -186,7 +194,13 @@ internal fun TimelineScreenContent(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
-                    .onGloballyPositioned { coordinates -> lanesLeft.floatValue = coordinates.positionInRoot().x + headerColumn.toPx(density) },
+                    .onGloballyPositioned { coordinates -> lanesLeft.floatValue = coordinates.positionInRoot().x + headerColumn.toPx(density) }
+                    // The lanes box's height sizes the mixer sheet's anchors (feature 012, spec FR-016, FR-021).
+                    .onSizeChanged { size ->
+                        val height = with(density) { size.height.toDp() }
+                        lanesHeight = height
+                        onLanesMeasured(layout, height)
+                    },
             ) {
                 if (state.isEmpty) {
                     // An empty project takes dropped files as its first tracks, from the start (feature 011, FR-026).
@@ -207,6 +221,8 @@ internal fun TimelineScreenContent(
                     modifier = Modifier.fillMaxSize().padding(start = headerColumn),
                     mask = playheadMask,
                 )
+                // The mixer sheet slides up over the lanes, inside this box, so the strip and the transport bar stay in reach (feature 012, FR-016).
+                MixerSheet(ui = state.mixer, callbacks = callbacks, lanesHeight = lanesHeight)
             }
             if (state.overviewStripShown) {
                 // The strip adds its own side inset to this: the page margin, plus the part of the back-gesture zone that
@@ -236,7 +252,9 @@ internal fun TimelineScreenContent(
         if (deleting != null) {
             DeleteTrackDialog(trackName = deleting.name, onConfirm = callbacks.onConfirmDeleteTrack, onCancel = callbacks.onDismissDeleteTrack)
         }
-        SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = transportHeight + stripHeight)) { data ->
+        // Above the transport bar, the strip and, while it is open, the mixer sheet (feature 012, contracts/mixer-ui.md).
+        val sheetHeight = if (state.mixer.open) state.mixer.sheetHeight else 0.dp
+        SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = transportHeight + stripHeight + sheetHeight)) { data ->
             // The action as a tagged button: the denied message's "Open settings" / "Allow" (feature 010, FR-020) is a journey anchor.
             val label = data.visuals.actionLabel
             Snackbar(

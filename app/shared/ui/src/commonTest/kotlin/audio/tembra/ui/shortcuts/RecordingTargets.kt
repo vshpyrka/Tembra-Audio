@@ -45,6 +45,7 @@ class RecordingTargets(private val record: (ShortcutAction) -> Unit) {
         override fun arm() = true.also { record(ShortcutAction.TimelineArm) }
         override fun record() = true.also { this@RecordingTargets.record(ShortcutAction.TimelineRecord) }
         override fun toggleMonitor() = true.also { record(ShortcutAction.TimelineMonitor) }
+        override fun toggleMixer() = true.also { record(ShortcutAction.TimelineMixer) }
     }
     private val metronome = object : MetronomeShortcuts {
         override fun startStop() = true.also { record(ShortcutAction.MetronomeStartStop) }

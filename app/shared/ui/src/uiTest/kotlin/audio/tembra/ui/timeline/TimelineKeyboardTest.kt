@@ -57,6 +57,7 @@ class TimelineKeyboardTest {
         onSplit = { calls += "split" }, onDeleteClip = { calls += "delete(${it.value})" }, onUndo = { calls += "undo" }, onRedo = { calls += "redo" },
         onZoomStep = { calls += "zoom($it)" }, onToggleMute = { calls += "mute(${it.value})" }, onToggleSolo = { calls += "solo(${it.value})" },
         onArm = { calls += "arm(${it.value})" }, onRecord = { calls += "record" }, onMonitorToggle = { calls += "monitor" },
+        onMixerToggle = { calls += "mixer" },
     )
 
     /** Composes the key-handling root, enters keyboard mode and focuses it; false when this lane declares no keyboard mode. */
@@ -118,6 +119,15 @@ class TimelineKeyboardTest {
         press(Key.M)
         press(Key.O)
         assertEquals(listOf("zoom(1)", "zoom(1)", "zoom(-1)", "mute(t1)", "solo(t1)"), calls)
+    }
+
+    /** Feature 012 (FR-017, FR-029; T047): X opens and closes the mixer. */
+    @Test
+    fun theMixerKey() = runComposeUiTest {
+        if (!setRoot()) return@runComposeUiTest
+        press(Key.X)
+        press(Key.X)
+        assertEquals(listOf("mixer", "mixer"), calls)
     }
 
     /** Feature 010 (FR-028; T076): A arms the selected track, R records, I toggles monitoring. */

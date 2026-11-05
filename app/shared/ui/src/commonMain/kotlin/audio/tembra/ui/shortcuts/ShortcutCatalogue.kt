@@ -42,6 +42,8 @@ object ShortcutCatalogue {
         entry(ShortcutScope.Timeline, ShortcutAction.TimelineArm, ShortcutCopy.arm, char('a')),
         entry(ShortcutScope.Timeline, ShortcutAction.TimelineRecord, ShortcutCopy.record, char('r')),
         entry(ShortcutScope.Timeline, ShortcutAction.TimelineMonitor, ShortcutCopy.monitor, char('i')),
+        // Feature 012 (FR-017, FR-029): the mixer sheet.
+        entry(ShortcutScope.Timeline, ShortcutAction.TimelineMixer, ShortcutCopy.mixer, char('x')),
 
         entry(ShortcutScope.Tuner, ShortcutAction.TunerAutoListen, ShortcutCopy.autoListen, char('a')),
         entry(ShortcutScope.Tuner, ShortcutAction.TunerByEar, ShortcutCopy.byEar, char('e')),

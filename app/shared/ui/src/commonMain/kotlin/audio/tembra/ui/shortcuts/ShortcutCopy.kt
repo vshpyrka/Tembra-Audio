@@ -41,6 +41,7 @@ internal object ShortcutCopy {
     const val arm = "Arm the selected track for recording"
     const val record = "Record, or stop recording"
     const val monitor = "Hear the input while armed"
+    const val mixer = "Open or close the mixer"
     const val startStop = "Start or stop the metronome"
     const val tempoUp = "Tempo up 1 BPM"
     const val tempoDown = "Tempo down 1 BPM"

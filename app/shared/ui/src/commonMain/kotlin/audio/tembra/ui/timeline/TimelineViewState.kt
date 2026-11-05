@@ -29,4 +29,6 @@ internal data class TimelineViewState(
     val tapCaption: TapCaption = TapCaption.Rest,
     val positionBeats: Beats = Beats.Zero,
     val positionSeconds: Double = 0.0,
+    /** The mixer sheet (feature 012, spec FR-022): carried over when another project opens, unlike the rest. */
+    val mixer: MixerViewState = MixerViewState(),
 )

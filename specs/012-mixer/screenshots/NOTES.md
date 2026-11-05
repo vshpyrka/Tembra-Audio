@@ -23,6 +23,18 @@ simulator and emulator runs first and to be told before any real-device step. Em
 Real-device steps (the Pixel 6 Pro lane of T039/T043/T055, the device screenshots of T089, the loopback of T111,
 TalkBack of T093, the perf rounds) wait for the owner's go.
 
+## Phase 3 notes (User Story 1, 2026-11-05)
+
+- The half sheet's floor is 256 dp, not the 240 dp research R2 budgeted: R2 left the 32 dp handle row out of its sum,
+  and with it the compact strip's fader would have fallen to 112 dp, under FR-018's 120 dp throw. 256 dp keeps the
+  fader at 128 dp; FR-018's "at least 240 dp" still holds. `MixerAnchors.MinHalf` carries the reason.
+- Back closes the sheet through Navigation 3's `NavigationBackHandler` (`navigationevent-compose`, an API dependency of
+  `navigation3-ui`): Compose UI 1.12.2 deprecates its own `BackHandler`, and the zero-warning gate forbids the warning.
+  The common UI tests prove the close through the shell's overlay stack (Escape, ⌘.), since no lane can raise a platform
+  Back event inside `runComposeUiTest`; Back itself is checked by hand on the emulator and the simulator (quickstart §5).
+- Solo and Mute are the 36 dp squares research R2 and the design size them (two fill the 72 dp strip); the 44 dp rule
+  holds for the fader, the handle row and the toolbar button. Recorded in `../evidence/skill-review.md` for T121.
+
 ## Lanes
 
 | Target | Lane | Result | Counts | Notes |
@@ -32,3 +44,5 @@ TalkBack of T093, the perf rounds) wait for the owner's go.
 | Engine (C++) | `engineHostTest` | green, zero warnings | 291 Catch2 cases (40 new: pan law, parameters, ABI hold, meter, strip, bus, renderer, health, core) | 2026-11-05 after Phase 2 (T041); two meter-test timings corrected on the way (a 2 s settle; 14 blocks past the 64 ms window) |
 | Host (JVM, every module) | `checkAndroidHost` | green, zero warnings | `PanTest`, `FaderTaperTest`, `ProjectEditorSetPanTest`, the golden with `pan`, `oldDocumentReadsCentred`, `ProjectSessionTest` (+6), `FakeAudioEngineTest` (+3), `AudioHealthTelemetryTest` (15 counters), `TimelineUiStateTest` (+1) | 2026-11-05 after Phase 2 (T042); `FaderTaper`'s knot arrays had to be declared before `ticks` (object initialisers run in order) |
 | iPhone 18 Pro simulator, engine module | `:shared:engine:iosSimulatorArm64Test` | green | `NativeAudioEngineMixerTest` (the playback checks skip in the bare simulator process, as the transport test's do: no output unit), `NativeAudioEngineMixerCostTest` (median 0.08 µs), `NativeAudioEngineBlockingDispatchTest` (+ the mixer calls do not dispatch) | 2026-11-05 (T043, engine half; the full `checkIos` runs with Phase 3). Two fixes on the way: cinterop gives the nested `float peak[64][2]` no indexer (read flat through a reinterpreted pointer); one 1.08 ms scheduler outlier among 3,000 sub-microsecond calls made the "max < 1 ms" bound a retry-once / p99 < 1 ms / max < 10 ms rule in both cost tests |
+| Host (JVM, `:shared:ui`) | `:shared:ui:testAndroidHostTest` | green, zero warnings | `TimelineViewModelTest` (+8: toggle, X, strips, groups, anchors, the project switch), `MixerAnchorsTest` (7), the catalogue test with the X entry | 2026-11-05 after Phase 3 (T055, host part). Compose UI 1.12.2's `BackHandler` is deprecated: the sheet uses Navigation 3's `NavigationBackHandler` instead (see "Phase 3 notes") |
+| iPhone 18 Pro simulator, every module | `checkIos` | green, zero warnings | 1,160 Compose UI tests in `:shared:ui`, 0 failures: `FaderTest` (10), `MixerStripTest` (6), `MixerSheetTest` (7), `TimelineScreenTest` (+2), `TimelineToolbarTest` (+2), `TimelineKeyboardTest` (+1) | 2026-11-05 after Phase 3 (T055, simulator part). Three fixes on the way: the tap detector consumes the down, so the fader's drag takes the down unconsumed (the `GainReadout` pattern); the compact toolbar lets the Mixer button yield to the tempo pill at twice the font size (`CompactTail`, a layout-phase decision from the pill's intrinsic width; `TimelineLargeFontTest` had caught the 88 dp pill); the half sheet's floor is 256 dp (above) |

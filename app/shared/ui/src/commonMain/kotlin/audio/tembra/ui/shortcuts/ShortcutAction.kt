@@ -30,6 +30,8 @@ enum class ShortcutAction {
     TimelineArm,
     TimelineRecord,
     TimelineMonitor,
+    // Feature 012 (FR-017, FR-029): the mixer sheet.
+    TimelineMixer,
     MetronomeStartStop,
     MetronomeTempoUp,
     MetronomeTempoDown,
