@@ -58,6 +58,23 @@ jobs:
         # The release build runs R8, lintVital and the committed baseline profile: where a library update breaks
         # shrinking. Linux cannot build the iOS targets; the iOS job does.
         run: ./gradlew checkAndroidHost :androidApp:assembleRelease $GRADLE_GATES -Pkotlin.native.ignoreDisabledTargets=true
+      - name: R8 configuration scores on the run page
+        # The release build writes R8's Configuration Analyzer report beside the mapping (AGP 9.3); this puts its three
+        # scores and widest keep rules on the run's summary page. Reference values and how to read them:
+        # docs/research/r8-configuration-analysis.md. A report the script can't read must not fail the build.
+        continue-on-error: true
+        run: python3 tools/r8-config-summary.py androidApp/build/outputs/mapping/release/configanalyzer.pb >> "$GITHUB_STEP_SUMMARY"
+      - name: Keep the R8 configuration report
+        # One HTML file, not zipped (`archive: false`): download it from the run's Artifacts list and open it in a
+        # browser (it loads its viewer script from a CDN). Information, not a gate: a missing report only warns, and a
+        # re-run of the job replaces it.
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          path: app/androidApp/build/outputs/mapping/release/configanalyzer.html
+          archive: false
+          if-no-files-found: warn
+          overwrite: true
+          retention-days: 30
 
   ios:
     name: iOS simulator and C++ engine tests
