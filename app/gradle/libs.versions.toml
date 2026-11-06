@@ -42,7 +42,7 @@ androidx-tracing = "2.0.5"
 # WindowMetricsCalculator reads a free-form window's bounds in :androidApp's desktop device tests (feature 011, T010); test only.
 # Pinned to the version Material 3 adaptive already brings into the app: 1.5.1 made the test classpath differ from the
 # app's, and AGP 9.3.3 then fails to store mergeDebugAndroidTestManifest in the configuration cache (2026-11-03).
-androidx-window = "1.5.0"
+androidx-window = "1.5.1"
 android-compileSdk = "37"
 android-targetSdk = "36"
 android-minSdk = "26"
