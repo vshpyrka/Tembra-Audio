@@ -28,9 +28,12 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.unit.dp
 import audio.tembra.core.project.GainDb
 import audio.tembra.core.project.InstrumentLabel
+import audio.tembra.core.project.Pan
 import audio.tembra.core.project.TrackId
 import audio.tembra.ui.session.InputTelemetry
 import audio.tembra.ui.theme.TembraTheme
@@ -122,11 +125,28 @@ class TrackHeaderTest {
         assertEquals(listOf("settings"), calls)
     }
 
+    /** Feature 012 (spec FR-007, FR-008; T068): the expanded header's second row reads the pan under the gain. */
+    @Test
+    fun expandedHeaderReadsThePanUnderTheGain() = runComposeUiTest {
+        setExpanded(item = track.copy(pan = Pan(-35)))
+        onNodeWithTag(TimelineTestTags.header(1)).assertContentDescriptionEquals("Track 2, Guitar, −2.4dB, L 35, muted")
+        onNodeWithTag(TimelineTestTags.gain(1)).assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "−2.4dB, L 35"))
+        onNodeWithText("L 35", useUnmergedTree = true).assertExists()
+        onNodeWithTag(TimelineTestTags.gain(1)).assertWidthIsAtLeast(56.dp).assertHeightIsEqualTo(44.dp)
+    }
+
     @Test
     fun expandedHeaderIs200dpWithGainAndChevron() = runComposeUiTest {
         setExpanded()
         onNodeWithTag(TimelineTestTags.header(1)).assertWidthIsEqualTo(200.dp).assertContentDescriptionEquals("Track 2, Guitar, −2.4dB, muted")
-        onNodeWithTag(TimelineTestTags.gain(1)).assertExists()
+        // The readout keeps the room its text needs beside the toggles and the chevron; the pan reads under it (feature 012,
+        // spec FR-007), and the arm toggle sits on the first row, where the chip was.
+        onNodeWithTag(TimelineTestTags.gain(1)).assertExists().assertWidthIsAtLeast(56.dp)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "−2.4dB, C"))
+        val arm = onNodeWithTag(TimelineTestTags.arm(1)).getBoundsInRoot()
+        val gain = onNodeWithTag(TimelineTestTags.gain(1)).getBoundsInRoot()
+        assertTrue(arm.bottom <= gain.top, "the arm toggle $arm is not on the row above the readout $gain")
+        onNodeWithText("Guitar", useUnmergedTree = true).assertDoesNotExist()
         onNodeWithTag(TimelineTestTags.chevron(1)).assertContentDescriptionEquals(TimelineCopy.trackSettings).performClick()
         onNodeWithTag(TimelineTestTags.trackMenu(1)).performClick()
         onNodeWithTag("${TimelineTestTags.TRACK_MENU}.$MENU_MOVE_DOWN").assertIsNotEnabled()

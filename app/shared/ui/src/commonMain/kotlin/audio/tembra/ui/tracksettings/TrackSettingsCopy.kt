@@ -7,6 +7,7 @@ object TrackSettingsCopy {
     const val label = "Instrument"
     const val noLabel = "None"
     const val gain = "Gain"
+    const val pan = "Pan"
     const val mute = "Mute"
     const val solo = "Solo"
     const val deleteTrack = "Delete track"

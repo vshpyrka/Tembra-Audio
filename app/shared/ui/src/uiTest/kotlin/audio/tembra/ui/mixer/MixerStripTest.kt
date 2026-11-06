@@ -79,6 +79,8 @@ class MixerStripTest {
         onGain = { id, gain -> calls += "gain(${id.value},${gain.readout})" },
         onGainSettled = { calls += "settled" },
         onStripSelect = { calls += "select(${it.value})" },
+        onPan = { id, pan -> calls += "pan(${id.value},${pan.readout})" },
+        onPanSettled = { calls += "panSettled" },
     )
 
     /** The strip shown, held so a test can re-arm or disarm it; the meters' snapshot is written as the sheet root would write it. */
@@ -124,6 +126,13 @@ class MixerStripTest {
         val fader = onNodeWithTag(MixerTestTags.fader(0)).getUnclippedBoundsInRoot()
         val meter = onNodeWithTag(MixerTestTags.meter(0)).assertContentDescriptionEquals(MixerCopy.level).getUnclippedBoundsInRoot()
         assertTrue(dial.bottom <= solo.top, "the dial $dial is not above Solo $solo")
+        // Feature 012, User Story 3 (T073): the knob between the dial and the toggles, named after the track.
+        val knob = onNodeWithTag(MixerTestTags.pan(0)).assertContentDescriptionEquals(MixerCopy.panDescription("Drums"))
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "C")).getUnclippedBoundsInRoot()
+        assertTrue(knob.top >= dial.bottom && knob.bottom <= solo.top, "the knob $knob is not between the dial $dial and Solo $solo")
+        onNodeWithTag(MixerTestTags.pan(0)).performSemanticsAction(SemanticsActions.SetProgress) { it(-35f) }
+        assertEquals(listOf("pan(t1,L 35)", "panSettled"), calls)
+        calls.clear()
         assertTrue(meter.left >= fader.right, "the meter $meter is not beside the fader $fader")
         assertTrue(abs((meter.top - fader.top).value) <= 1f && abs((meter.bottom - fader.bottom).value) <= 1f, "the meter $meter does not span the fader $fader")
         onNodeWithTag(MixerTestTags.clip(0)).assertContentDescriptionEquals(MixerCopy.clipIndicator)

@@ -64,4 +64,6 @@ internal fun trackSettingsCallbacks(viewModel: TrackSettingsViewModel): TrackSet
     onDelete = viewModel::requestDelete,
     onConfirmDelete = viewModel::confirmDelete,
     onDismissDelete = viewModel::dismissDelete,
+    onPan = viewModel::setPan,
+    onPanSettled = viewModel::panSettled,
 )

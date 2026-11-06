@@ -7,6 +7,7 @@ import audio.tembra.ui.platform.FakeAudioRouteMonitor
 import audio.tembra.data.timeline.FakeTimelinePreferences
 import audio.tembra.core.project.GainDb
 import audio.tembra.core.project.InstrumentLabel
+import audio.tembra.core.project.Pan
 import audio.tembra.core.project.PlaybackState
 import audio.tembra.core.project.TrackId
 import audio.tembra.data.metronome.FakeMetronomePreferences
@@ -187,6 +188,23 @@ class TrackSettingsViewModelTest {
         other.commitName()
         assertEquals("Ki", trackName())
         assertNull(session.settingsDraft.value)
+    }
+
+    /** Feature 012 (spec FR-005, FR-007; T069): the slider's steps coalesce until the release, then a new step begins. */
+    @Test
+    fun panIsOneEditPerSliderGesture() = test {
+        openDrums()
+        assertEquals(Pan.Centre, ui().pan)
+        viewModel.setPan(Pan(20))
+        viewModel.setPan(Pan(40))
+        assertEquals(Pan(40), ui().pan)
+        assertEquals("setPan(0,0.4)", engine.calls.last())
+        viewModel.panSettled()
+        viewModel.setPan(Pan(50))
+        session.undo()
+        assertEquals(Pan(40), ui().pan, "the settled run stays as one step")
+        session.undo()
+        assertEquals(Pan.Centre, ui().pan)
     }
 
     @Test
