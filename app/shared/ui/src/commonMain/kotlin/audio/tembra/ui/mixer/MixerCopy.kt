@@ -1,5 +1,7 @@
 package audio.tembra.ui.mixer
 
+import audio.tembra.ui.designsystem.LevelMeterCopy
+
 /**
  * The mixer's user-facing strings (feature 012, contracts/mixer-ui.md "Copy"), kept as data so tests assert the exact
  * text. The pan readouts ("C", "L 35", "R 20") are `Pan.readout`'s, owned by the core type; the gain readouts are
@@ -16,10 +18,11 @@ object MixerCopy {
     const val mute = "Mute"
     const val master = "Master"
     const val masterVolume = "Master volume"
-    const val level = "Level"
-    const val vu = "VU"
+    const val level = LevelMeterCopy.level
+    const val vu = LevelMeterCopy.vu
     const val clipped = "clipped"
-    const val clippedTapToReset = "Clipped, tap to reset"
+    const val clipIndicator = LevelMeterCopy.clipIndicator
+    const val clippedTapToReset = LevelMeterCopy.clipped
     const val openInWindow = "Open in a window"
 
     /** The handle's state: which height the sheet stands at. */

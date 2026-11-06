@@ -70,6 +70,7 @@ import audio.tembra.ui.platform.AudioPickResult
 import audio.tembra.ui.platform.WindowControls
 import audio.tembra.ui.session.ImportTarget
 import audio.tembra.ui.session.InputTelemetry
+import audio.tembra.ui.session.MixTelemetry
 import audio.tembra.ui.session.ProjectSession
 import audio.tembra.ui.session.SessionMessage
 import audio.tembra.ui.session.SessionState
@@ -156,6 +157,9 @@ class TimelineViewModel(
 
     /** Draw-phase handle on the input (feature 010): the meter and the growing take read it once per frame. */
     val inputTelemetry: InputTelemetry get() = session.inputTelemetry
+
+    /** Draw-phase handle on the mixer's meters (feature 012): the sheet reads it once per frame. */
+    val mixTelemetry: MixTelemetry get() = session.mixTelemetry
 
     private val snapshot = TransportSnapshot()
     private var observeProjectJob: Job? = null
@@ -412,6 +416,12 @@ class TimelineViewModel(
 
     /** A fader, knob or master drag released: the coalesced run closes, the next change starts a new undo step (spec FR-005). */
     fun gestureSettled() = session.closeEditGroup()
+
+    /** A strip's clip square tapped: clears that track's latch at the engine's next block (spec FR-012). */
+    fun resetTrackClip(id: TrackId) = session.resetTrackClip(id)
+
+    /** The master's clip square tapped: clears the master latch (spec FR-012). */
+    fun resetMasterClip() = session.resetMasterClip()
 
     /** The lanes box measured under [layout] (spec FR-016, FR-021, FR-022): the anchors and the strip form derive from it. */
     fun lanesMeasured(layout: TimelineLayout, height: Dp) {

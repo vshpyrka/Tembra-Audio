@@ -900,6 +900,23 @@ TEST_CASE("a track panned hard left renders silence on the right within −60 dB
     REQUIRE(std::abs(centred[2 * 4799 + 1] - 0.5f) < 1e-4f);
 }
 
+TEST_CASE("a new session snaps the strips to the stored pan instead of ramping from the last session's", "[transport][mixer]") {
+    // The host pushes a track's pan before its arrangement lands (the session's order; the Pixel 9 Pro Fold lane caught a
+    // 10 ms ramp from the previous session's centre, which sat in the 64 ms peak window and the 300 ms rms for seconds).
+    Harness h;
+    tembra::ClipSource* source = h.addSource(kLongSource, constant(0.5f));
+    h.arrange({{0, source, 0.0, 0, kLongSource}}, 1);
+    h.play();
+    h.renderStereo(4800, 256);  // the first session settles at the centre: 0.5 on both sides
+    h.renderer().silence();
+    REQUIRE(h.renderer().mixParams().setPan(0, -1.0f));
+    h.arrange({{0, source, 0.0, 0, kLongSource}}, 1);
+    h.play();
+    const auto stereo = h.renderStereo(2560, 256);
+    REQUIRE(sidePeak(stereo, 1) == 0.0f);  // from the very first sample: a snap, not a ramp
+    REQUIRE(std::abs(sidePeak(stereo, 0) - 0.5f * kRoot2) < 1e-3f);
+}
+
 TEST_CASE("the meter record is published every block while metering is on and zeroed once when it turns off", "[transport][mixer][meter]") {
     Harness h;
     tembra::ClipSource* source = h.addSource(kLongSource, constant(0.5f));

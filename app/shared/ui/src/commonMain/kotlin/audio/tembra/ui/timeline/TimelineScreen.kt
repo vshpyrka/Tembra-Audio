@@ -141,6 +141,8 @@ fun TimelineScreen(
                 onMasterSettled = viewModel::gestureSettled,
                 onStripSelect = viewModel::selectTrack,
                 onLanesMeasured = viewModel::lanesMeasured,
+                onResetTrackClip = viewModel::resetTrackClip,
+                onResetMasterClip = viewModel::resetMasterClip,
             )
         }
         TimelineScreenContent(
@@ -148,6 +150,7 @@ fun TimelineScreen(
             callbacks = callbacks,
             telemetry = viewModel.telemetry,
             inputTelemetry = viewModel.inputTelemetry,
+            mixTelemetry = viewModel.mixTelemetry,
             layout = layout,
             snackbarHostState = snackbarHostState,
             modifier = Modifier.fillMaxSize(),

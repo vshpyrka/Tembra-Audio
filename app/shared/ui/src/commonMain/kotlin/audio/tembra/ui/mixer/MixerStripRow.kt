@@ -22,6 +22,7 @@ import kotlinx.collections.immutable.ImmutableList
  * The scrolling row of track strips (feature 012, spec FR-001, FR-023; research R2): a `LazyRow` keyed by track id, 72 dp
  * items, the page margin before the first, a scrollbar while a mouse or trackpad scrolls it (feature 011). The master
  * strip is pinned outside it by the sheet. When the row appears with a selected track its strip is scrolled into view.
+ * Every strip's meter draws from the sheet's [feed].
  */
 @Composable
 internal fun MixerStripRow(
@@ -29,6 +30,7 @@ internal fun MixerStripRow(
     form: StripForm,
     selectedIndex: Int?,
     callbacks: TimelineCallbacks,
+    feed: MeterFeed,
     modifier: Modifier = Modifier,
     listState: LazyListState = rememberLazyListState(),
 ) {
@@ -48,7 +50,7 @@ internal fun MixerStripRow(
         horizontalArrangement = Arrangement.spacedBy(spacing.xs),
     ) {
         items(strips, key = { it.id.value }) { strip ->
-            MixerStrip(strip = strip, form = form, selected = strip.index == selectedIndex, callbacks = callbacks)
+            MixerStrip(strip = strip, form = form, selected = strip.index == selectedIndex, callbacks = callbacks, feed = feed)
         }
     }
 }

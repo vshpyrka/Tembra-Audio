@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import audio.tembra.core.project.Beats
 import audio.tembra.core.project.TempoMap
 import audio.tembra.ui.session.InputTelemetry
+import audio.tembra.ui.session.MixTelemetry
 import audio.tembra.engine.perf.PerfSection
 import audio.tembra.engine.perf.PerfTrace
 import audio.tembra.ui.designsystem.FocusMemory
@@ -93,6 +94,8 @@ internal fun TimelineScreenContent(
     snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
     inputTelemetry: InputTelemetry = InputTelemetry { _, _ -> },
+    /** The mixer's meters (feature 012): the sheet reads it once per frame; silent by default for previews and tests. */
+    mixTelemetry: MixTelemetry = MixTelemetry { _, _ -> },
 ) {
     val spacing = TembraTheme.spacing
     val daw = TembraTheme.daw
@@ -222,7 +225,7 @@ internal fun TimelineScreenContent(
                     mask = playheadMask,
                 )
                 // The mixer sheet slides up over the lanes, inside this box, so the strip and the transport bar stay in reach (feature 012, FR-016).
-                MixerSheet(ui = state.mixer, callbacks = callbacks, lanesHeight = lanesHeight)
+                MixerSheet(ui = state.mixer, callbacks = callbacks, telemetry = mixTelemetry, inputTelemetry = inputTelemetry, lanesHeight = lanesHeight)
             }
             if (state.overviewStripShown) {
                 // The strip adds its own side inset to this: the page margin, plus the part of the back-gesture zone that
