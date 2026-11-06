@@ -224,9 +224,11 @@ class TimelineKeyboardTest {
         }
         if (!enterKeyboardMode(manager)) return@runComposeUiTest
         onNodeWithTag(TimelineTestTags.ROOT).requestFocus()
+        // Feature 012 moved the expanded header's arm toggle to the first row (the second had no room for the readout), so
+        // Tab reaches it before S and the chevron.
         val targets = listOf(
             TimelineTestTags.SPLIT, TimelineTestTags.MONITOR, TimelineTestTags.UNDO,
-            TimelineTestTags.solo(0), TimelineTestTags.arm(0), TimelineTestTags.chevron(0),
+            TimelineTestTags.arm(0), TimelineTestTags.solo(0), TimelineTestTags.chevron(0),
             audio.tembra.ui.perf.PerfAnchors.TRANSPORT_PLAY, audio.tembra.ui.perf.PerfAnchors.TRANSPORT_RECORD,
         )
         val firstSeen = mutableMapOf<String, Int>()
@@ -237,7 +239,7 @@ class TimelineKeyboardTest {
             }
         }
         val order = targets.map { firstSeen[it] ?: throw AssertionError("$it never received focus in 60 tabs") }
-        assertEquals(order.sorted(), order, "scissors, monitor, undo; S, arm, chevron; play, Record in that order; steps $firstSeen")
+        assertEquals(order.sorted(), order, "scissors, monitor, undo; arm, S, chevron; play, Record in that order; steps $firstSeen")
     }
 
     @Test

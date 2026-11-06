@@ -237,18 +237,18 @@ agree; an old document opens centred.
 
 ### Tests for User Story 3 (write first, watch them fail)
 
-- [ ] T067 [P] [US3] `UI_UITEST/designsystem/PanKnobTest.kt`: a vertical drag of 2 dp per 1 %; a release within 5 % settles on "C"; a double tap centres; wheel ±1 %; arrows ±1 %, Page ±10 %, Home centre; `progressBarRangeInfo` −100…100 and `setProgress`; `stateDescription` "L 35"; hover and focus
-- [ ] T068 [P] [US3] Extend `UI_UITEST/tracksettings/TrackSettingsFormTest.kt` (the Pan row after Gain, `trackSettings.pan`, readout) and `UI_UITEST/timeline/TrackHeaderTest.kt` (row 2 shows `PanReadout` after `GainReadout` in the 200 dp column; nothing clips at the largest font)
-- [ ] T069 [P] [US3] Extend `UI_TEST/timeline/TimelineViewModelTest.kt` (`setPanEditsTheTrack`, `aKnobTurnIsOneUndoStep`) and `UI_TEST/tracksettings/TrackSettingsViewModelTest.kt` (`setPan`, `panSettled`)
+- [X] T067 [P] [US3] `UI_UITEST/designsystem/PanKnobTest.kt`: a vertical drag of 2 dp per 1 %; a release within 5 % settles on "C"; a double tap centres; wheel ±1 %; arrows ±1 %, Page ±10 %, Home centre; `progressBarRangeInfo` −100…100 and `setProgress`; `stateDescription` "L 35"; hover and focus
+- [X] T068 [P] [US3] Extend `UI_UITEST/tracksettings/TrackSettingsFormTest.kt` (the Pan row after Gain, `trackSettings.pan`, readout) and `UI_UITEST/timeline/TrackHeaderTest.kt` (row 2 shows `PanReadout` after `GainReadout` in the 200 dp column; nothing clips at the largest font)
+- [X] T069 [P] [US3] Extend `UI_TEST/timeline/TimelineViewModelTest.kt` (`setPanEditsTheTrack`, `aKnobTurnIsOneUndoStep`) and `UI_TEST/tracksettings/TrackSettingsViewModelTest.kt` (`setPan`, `panSettled`)
 
 ### Implementation for User Story 3
 
-- [ ] T070 [US3] `UI/designsystem/PanKnob.kt` per contracts/mixer-ui.md (`PerfTrace.animation(TIMELINE_PAN_TURN)` over the gesture) (T067 green)
-- [ ] T071 [P] [US3] `UI/tracksettings/PanSlider.kt` (a `TembraSlider` −100…100 with the readout), `UI/tracksettings/TrackSettingsUiState.kt` + `pan`, `UI/tracksettings/TrackSettingsCallbacks.kt` + `onPan`, `onPanSettled`, `UI/tracksettings/TrackSettingsViewModel.kt` + `setPan`/`panSettled`, `UI/tracksettings/TrackSettingsForm.kt` the row after Gain (T068 form part, T069 settings part green)
-- [ ] T072 [P] [US3] `UI/timeline/components/PanReadout.kt` (the `GainReadout` pattern: vertical drag, double tap to centre, keys, semantics) and `UI/timeline/components/TrackHeader.kt` row 2 (T068 header part green)
-- [ ] T073 [US3] `UI/mixer/MixerStrip.kt`: the `PanKnob` in the `Full` form above Solo/Mute; `UI/timeline/TimelineViewModel.kt`: `setPan(id, pan)` → `edit(SetPan)`, `gestureSettled` (T069 green)
+- [X] T070 [US3] `UI/designsystem/PanKnob.kt` per contracts/mixer-ui.md (`PerfTrace.animation(TIMELINE_PAN_TURN)` over the gesture) (T067 green)
+- [X] T071 [P] [US3] `UI/tracksettings/PanSlider.kt` (a `TembraSlider` −100…100 with the readout), `UI/tracksettings/TrackSettingsUiState.kt` + `pan`, `UI/tracksettings/TrackSettingsCallbacks.kt` + `onPan`, `onPanSettled`, `UI/tracksettings/TrackSettingsViewModel.kt` + `setPan`/`panSettled`, `UI/tracksettings/TrackSettingsForm.kt` the row after Gain (T068 form part, T069 settings part green)
+- [X] T072 [P] [US3] `UI/timeline/components/PanReadout.kt` (the `GainReadout` pattern: vertical drag, double tap to centre, keys, semantics) and `UI/timeline/components/TrackHeader.kt` row 2 (T068 header part green)
+- [X] T073 [US3] `UI/mixer/MixerStrip.kt`: the `PanKnob` in the `Full` form above Solo/Mute; `UI/timeline/TimelineViewModel.kt`: `setPan(id, pan)` → `edit(SetPan)`, `gestureSettled` (T069 green)
 - [ ] T074 [US3] Run the three lanes through `gradle-run`; quickstart §6 by hand (announced) on the Pixel 6 Pro and the iPhone 18 Pro simulator; capture `SHOTS/android/pixel6pro/track-settings-pan-360.png`
-- [ ] T075 [US3] Skill review of Phase 5 (`compose-component-design`, `compose-focus-navigation`, `kotlin-control-flow`); findings into `EVID/skill-review.md`
+- [X] T075 [US3] Skill review of Phase 5 (`compose-component-design`, `compose-focus-navigation`, `kotlin-control-flow`); findings into `EVID/skill-review.md`
 
 **Checkpoint**: tracks sit left, centre or right without a jump in loudness.
 

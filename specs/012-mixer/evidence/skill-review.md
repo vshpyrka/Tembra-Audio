@@ -94,3 +94,24 @@ Skills: `compose-performance` (the draw path and the mirror), `compose-component
 | 4 | `designsystem/VuDial.kt` | spec FR-013 | The needle follows the engine's 300 ms rms, eased by the 30 ms smoother between frames; the "no twitch on single peaks" rule is the rms window's, proven at the engine (`mix_meter_test`), and the dial's test proves the easing (two frames after a jump the needle is in flight). | by construction |
 
 Lanes at the end of the phase: recorded in `../screenshots/NOTES.md`.
+
+## Phase 5 — User Story 3, pan (T075)
+
+Files: `ui.designsystem/{PanKnob, PanKnobDefaults}`, `ui.tracksettings/{PanSlider, TrackSettingsUiState, TrackSettingsCallbacks,
+TrackSettingsViewModel, TrackSettingsScreen, TrackSettingsForm, TrackSettingsCopy}`, `ui.timeline/{TimelineViewModel,
+TimelineScreen, components/GainReadout, components/TrackHeader}`, `ui.mixer/MixerStrip`; tests `PanKnobTest` and the
+additions to `TrackSettingsScreenTest`, `TrackHeaderTest`, `MixerStripTest`, `TimelineViewModelTest`,
+`TrackSettingsViewModelTest`.
+
+Skills: `compose-component-design`, `compose-focus-navigation`, `kotlin-control-flow`.
+
+| Phase | File:line | Skill | Finding | Fix (commit) or why not |
+|---|---|---|---|---|
+| 5 | `designsystem/PanKnob.kt` | compose-component-design | The fader's shape: `modifier` first among the optionals on the root, primitives and callbacks, the readout from `Pan.readout` (the core type owns it), the semantics in percent. The drag is the fader's (`awaitFirstDown(requireUnconsumed = false)` under the tap detector, the vertical slop, `drag`), the release snaps within 5 % through `Pan.snapToCentre`, every gesture settles once; `PerfTrace.animation(TIMELINE_PAN_TURN)` spans the drag. | by construction |
+| 5 | `designsystem/PanKnob.kt` keys | compose-focus-navigation | Arrows 1 %, Page 10 %, Home the centre, consumed only when handled; the knob composes between the dial and the toggles, so the strip's focus group walks knob → Solo → Mute → fader by composition order in the full forms and Solo → Mute → fader in the compact one. **Deviation from contracts/mixer-ui.md** "Solo → Mute → pan → fader": the knob sits above the toggles as spec FR-002 orders the strip (number, meter, VU, pan, Solo, Mute, fader, name), and the focus order follows the eye. | recorded; contract corrected in the docs task |
+| 5 | `timeline/components/TrackHeader.kt`, `GainReadout.kt` | spec FR-007 / feature 010 regression | **Deviation from contracts/mixer-ui.md and data-model.md**: the contract's `PanReadout` after the `GainReadout` in the expanded header's second row cannot exist. `TrackHeaderTest` measured the row: since feature 010 put the arm toggle there, the gain readout has 16 dp of the 184 (three 36 dp toggles, the 44 dp chevron and the gaps take 168), so its text was already clipped on every expanded window, and a second readout has no room at all. The fix keeps every control at its size: the arm toggle moves to the first row in the instrument chip's place (the label stays in the track's description and the settings form), which gives the readout its 56 dp, and the pan reads under the gain inside that readout (`GainReadout(caption = pan.readout)`, "−2.4dB" over "L 35", announced as "−2.4dB, L 35"). Pan is edited by the strip's knob and the settings slider; the header shows it, as FR-007 requires. `PanReadout` was not shipped. | fixed in the phase; recorded for the docs task and the owner's review (T124: the chip's departure from the expanded header) |
+| 5 | `tracksettings/PanSlider.kt` | compose-component-design | A `TembraSlider` over −100 … 100 with 199 steps (whole percent, Material's arrow step 1 %), the readout text after it; `onValueChangeFinished` is the settle. The row mirrors the gain row of feature 009. | by construction |
+| 5 | `tracksettings/TrackSettingsCallbacks.kt` | kotlin-api-design | `onPan` and `onPanSettled` default to no-ops so the two existing construction sites (a test fixture and the scrollbar test) keep compiling; the production wiring names them. | by construction |
+| 5 | `timeline/TimelineViewModel.kt` `setPan` | kotlin-control-flow | One line through `edit(SetPan)`; the session's `coalesces` (Phase 2) folds a run on one track into one undo step and `gestureSettled` closes it; `TimelineViewModelTest.aKnobTurnIsOneUndoStep` proves both ends. | by construction |
+
+Lanes at the end of the phase: recorded in `../screenshots/NOTES.md`.

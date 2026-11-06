@@ -31,6 +31,7 @@ import audio.tembra.ui.designsystem.Fader
 import audio.tembra.ui.designsystem.FaderScale
 import audio.tembra.ui.designsystem.LevelMeter
 import audio.tembra.ui.designsystem.MeterReading
+import audio.tembra.ui.designsystem.PanKnob
 import audio.tembra.ui.designsystem.VuDial
 import audio.tembra.ui.perf.traceFirstDraw
 import audio.tembra.ui.theme.TembraTheme
@@ -38,12 +39,13 @@ import audio.tembra.ui.timeline.TimelineCallbacks
 import audio.tembra.ui.timeline.components.MuteSoloButton
 
 /**
- * One track's strip (feature 012, spec FR-002, FR-012 to FR-014; research R2; contracts/mixer-ui.md "MixerStrip"): top
- * to bottom the number, the VU dial in the full form (the pan knob joins it in User Story 3), Solo and Mute side by side,
+ * One track's strip (feature 012, spec FR-002, FR-007, FR-012 to FR-014; research R2; contracts/mixer-ui.md
+ * "MixerStrip"): top to bottom the number, the VU dial in the full form, the pan knob in both full forms, Solo and Mute side by side,
  * the fader with the two-bar level meter beside it, and the name, over the track's tint band at the base. The meter
  * reads the strip's post-fader output from the sheet's [feed], or the microphone while the track is armed
  * ([MeterSource.Input]); its clip square clears the matching latch. The first strip's meter is the `timeline.mixerOpen`
- * section's end. One focus group, so Tab walks Solo, Mute, then the fader. The number and the name select the track.
+ * section's end. One focus group, so Tab walks the knob (where shown), Solo, Mute, then the fader. The number and the
+ * name select the track.
  */
 @Composable
 internal fun MixerStrip(
@@ -96,6 +98,15 @@ internal fun MixerStrip(
         )
         if (form.showsVu) {
             VuDial(levels = feed.levels, index = index, tick = feed.tick, level = feed.mirror.strip(index), testTag = MixerTestTags.vu(index))
+        }
+        if (form.showsPan) {
+            PanKnob(
+                pan = strip.pan,
+                onPan = { callbacks.onPan(strip.id, it) },
+                onSettled = callbacks.onPanSettled,
+                description = MixerCopy.panDescription(strip.name),
+                testTag = MixerTestTags.pan(index),
+            )
         }
         Row(horizontalArrangement = Arrangement.Center) {
             MuteSoloButton(

@@ -22,6 +22,7 @@ import audio.tembra.core.project.Beats
 import audio.tembra.core.project.ClipTemplate
 import audio.tembra.core.project.GainDb
 import audio.tembra.core.project.GridSize
+import audio.tembra.core.project.Pan
 import audio.tembra.core.project.PlaybackState
 import audio.tembra.core.project.RenameTrack
 import audio.tembra.data.metronome.FakeMetronomePreferences
@@ -939,6 +940,32 @@ class TimelineViewModelTest {
         viewModel.arm(drumsTrack)
         settle()
         assertEquals(MeterSource.Playback, ui().mixer.strips[0].meterSource, "disarmed: back to the playback meter")
+    }
+
+    // Feature 012, User Story 3 (T069): the pan edit and its undo group.
+
+    @Test
+    fun setPanEditsTheTrack() = test {
+        openDemo()
+        viewModel.setPan(drumsTrack, Pan(-35))
+        assertEquals(Pan(-35), ui().tracks[0].pan)
+        assertEquals(Pan(-35), ui().mixer.strips[0].pan)
+        assertEquals("setPan(0,-0.35)", engine.calls.last())
+        assertTrue(ui().canUndo)
+    }
+
+    @Test
+    fun aKnobTurnIsOneUndoStep() = test {
+        openDemo()
+        for (percent in listOf(-10, -20, -30)) viewModel.setPan(drumsTrack, Pan(percent))
+        viewModel.gestureSettled()
+        assertEquals(Pan(-30), ui().tracks[0].pan)
+        viewModel.setPan(drumsTrack, Pan(40))
+        viewModel.undo()
+        assertEquals(Pan(-30), ui().tracks[0].pan, "the settled turn stays as one step")
+        viewModel.undo()
+        assertEquals(Pan.Centre, ui().tracks[0].pan)
+        assertFalse(ui().canUndo, "the first turn was one step")
     }
 
     @Test

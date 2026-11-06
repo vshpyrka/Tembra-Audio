@@ -22,6 +22,7 @@ import audio.tembra.core.project.GridSize
 import audio.tembra.core.project.MoveClip
 import audio.tembra.core.project.MoveDirection
 import audio.tembra.core.project.MoveTrack
+import audio.tembra.core.project.Pan
 import audio.tembra.core.project.Percent
 import audio.tembra.core.project.PlaybackState
 import audio.tembra.core.project.Project
@@ -30,6 +31,7 @@ import audio.tembra.core.project.ProjectLimits
 import audio.tembra.core.project.SetGain
 import audio.tembra.core.project.SetMasterVolume
 import audio.tembra.core.project.SetMuted
+import audio.tembra.core.project.SetPan
 import audio.tembra.core.project.SetSoloed
 import audio.tembra.core.project.SetTempo
 import audio.tembra.core.project.SetTimeSignature
@@ -350,6 +352,9 @@ class TimelineViewModel(
     }
 
     fun setGain(id: TrackId, gainDb: GainDb) = edit(SetGain(id, gainDb))
+
+    /** The strip's knob or the header's readout (feature 012, spec FR-007): one coalesced run per track until [gestureSettled]. */
+    fun setPan(id: TrackId, pan: Pan) = edit(SetPan(id, pan))
 
     fun moveTrack(id: TrackId, delta: Int) {
         if (delta == 0 || takeRunning()) return
