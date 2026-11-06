@@ -162,7 +162,7 @@ batch of update pull requests and merges each one whose checks all pass.
 
 | Job (`.github/workflows/ci.yml`) | Runner | Runs on | Command (from `app/`) |
 |---|---|---|---|
-| Android host tests and release build | `ubuntu-24.04` | every push, every pull request to `main` | `checkAndroidHost :androidApp:assembleRelease` |
+| Android host tests and release build | `ubuntu-24.04` | every push, every pull request to `main` | `checkAndroidHost :androidApp:assembleRelease`, then R8's Configuration Analyzer scores on the run's summary page (`tools/r8-config-summary.py`) and the full report as the run's `configanalyzer.html` artifact, kept 30 days |
 | iOS simulator and C++ engine tests | `macos-26` (or `vars.CI_MACOS_RUNNER`) | every pull request to `main` | `checkIos engineHostTest` on the newest iPhone simulator |
 | Renovate config | `ubuntu-24.04` | every push, every pull request to `main` | `renovate-config-validator --strict` |
 | Google Play testing (`.github/workflows/play-closed-testing.yml`) | `ubuntu-24.04` | every push to `main` that changes the Android app, or by hand | `checkAndroidHost :androidApp:bundleRelease`, then signs with the upload key, releases on Google Play's internal testing track and deletes the run's bundle |
@@ -212,8 +212,9 @@ a performance round as usual (`perf/README.md`).
 2. **Secret.** Repository → Settings → Secrets and variables → Actions → New repository secret: `RENOVATE_TOKEN`.
    Until it exists the Renovate workflow only prints a notice.
 3. **Actions.** Settings → Actions → General: if you restrict which actions may run, allow `actions/checkout`,
-   `actions/setup-java`, `actions/cache`, `gradle/actions` and `renovatebot/github-action`, and for the Play
-   workflow `actions/upload-artifact`, `actions/download-artifact` and `google-github-actions/auth`. The workflows declare
+   `actions/setup-java`, `actions/cache`, `actions/upload-artifact`, `gradle/actions` and
+   `renovatebot/github-action`, and for the Play workflow `actions/download-artifact` and
+   `google-github-actions/auth`. The workflows declare
    their own `contents: read` permission, so the default workflow permission does not matter.
 4. **Merging.** Settings → General → Pull Requests: keep **Allow squash merging** on, and turn on **Automatically
    delete head branches**. Leave **Allow auto-merge** as it is; Renovate does not use it.
@@ -316,7 +317,7 @@ A dependency in the wrong direction fails configuration (`tembra.kmp.library`).
 | a platform permission | interface in `:shared:ui` `audio.tembra.ui.platform`; Android implementation in `:androidApp` (it needs the activity result registry), iOS implementation in `:shared:ui` `iosMain` | inject through Metro, `Fake…Permission` in `commonTest`; the OS prompt itself is a manual check |
 | a preference | `:shared:data`, package `tuner` (or the feature's): keys as constants, a snapshot data class with `decode`/`encode`, an interface with a `Flow` and `suspend fun update`, a `Fake…Preferences`, the DataStore implementation over `TembraDataStore.preferences` | one DataStore file per process (`tembra.preferences_pb`); unknown stored values decode to defaults |
 | a baseline-profile change (a new primary destination, journey or main interaction) | `uv run tracepulse profile generate --device pixel6` from `app/perf/`, then commit `androidApp/src/main/generated/baselineProfiles/{baseline-prof.txt,startup-prof.txt}`; a new destination the journeys visit goes into `androidApp/baseline-profile-coverage.txt` first | the host lane's `BaselineProfileCoverageTest` fails until the profile covers every rule; release-like builds refuse to ship without a committed profile; details in `app/perf/README.md` § Baseline profiles |
-| a keep rule for the shrunk release build | `androidApp/proguard-rules.pro`, with a comment naming the code path and the symptom a device run showed | only after a journey or a screenshot on the shrunk `perf` build fails; never `-dontwarn` wildcards |
+| a keep rule for the shrunk release build | `androidApp/src/main/keepRules/tembra.keep` (AGP 9.3 reads every `.keep` file there), with a comment naming the code path and the symptom a device run showed; compare `./gradlew :androidApp:analyzeReleaseR8Config` before and after against `docs/research/r8-configuration-analysis.md` | only after a journey or a screenshot on the shrunk `perf` build fails; never `-dontwarn` wildcards |
 | a performance round or session | `app/perf/` (`uv run tracepulse run --device <id> --label <feature> [--rounds 5]`), config `app/tracepulse.yml`, records on the `perf-history` branch | user tooling: it calls `./gradlew --console=plain -Ptembra.perf=true` itself; an agent builds through `gradle-run` and passes `--no-build --apk … --test-apk …`; raw traces stay in `app/perf/data/` (git-ignored) |
 | a benchmark journey | `perf-benchmarks/src/main/kotlin/audio/tembra/perf/journeys/` (UiAutomator over `PerfAnchors`) + a benchmark class; `iosApp/TembraPerfTests/Journeys/` + a test case; the name in `app/tracepulse.yml` | `:perf-benchmarks` is included only with `-Ptembra.perf=true`; anchors are `testTag`s listed in `audio.tembra.ui.perf.PerfAnchors`, mirrored in both drivers |
 | a named performance section or counter | `app/shared/engine/perf-catalogue.txt` + `PerfSection`/`PerfCounter`, then `PerfTrace.section { }` around non-composable work (or `TEMBRA_TRACE_SCOPE` in the engine's non-real-time code) | the only source of names; `generateTraceNames` keeps `engine/include/tembra_trace_names.h` in step; never on the audio callback (the poison test proves it); every feature instruments itself (constitution) |
