@@ -2,6 +2,7 @@ package audio.tembra.ui.mixer
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -95,12 +96,14 @@ class MixerStripTest {
         selected: Boolean = false,
         height: Dp = 400.dp,
         input: InputTelemetry = InputTelemetry { _, _ -> },
+        capture: @Composable () -> Unit = {},
     ) {
         shown.value = strip
         setContent {
             TembraTheme {
                 CompositionLocalProvider(LocalTembraMotion provides TembraMotion(reduceMotion = true), LocalDawColors provides meterColors) {
                     manager = LocalInputModeManager.current
+                    capture()
                     val feed = MeterFeed(levels = levels, tick = rememberFrameTick(active = true), mirror = remember { MixerLevelMirror() }, inputTelemetry = input)
                     Box(Modifier.height(height)) {
                         MixerStrip(strip = shown.value, form = form, selected = selected, callbacks = callbacks, feed = feed)
@@ -214,6 +217,33 @@ class MixerStripTest {
     fun anUnselectedStripIsNot() = runComposeUiTest {
         setStrip(selected = false)
         onNodeWithTag(MixerTestTags.number(0)).assertIsNotSelected()
+    }
+
+    /** Feature 012, User Story 4 (T076): Solo lights in lavender, Mute dimly, as the design table says. */
+    @Test
+    fun soloLightsLavenderAndMuteDimly() = runComposeUiTest {
+        var lavender = Color.Unspecified
+        setStrip(strip.copy(soloed = true, muted = true), capture = { lavender = TembraTheme.colors.primary })
+        val solo = onNodeWithTag(MixerTestTags.solo(0)).captureToImage().toPixelMap()
+        val mute = onNodeWithTag(MixerTestTags.mute(0)).captureToImage().toPixelMap()
+        val soloFill = solo[2, solo.height / 2]
+        val muteFill = mute[2, mute.height / 2]
+        assertTrue(abs(soloFill.red - lavender.red) < 0.1f && abs(soloFill.green - lavender.green) < 0.1f && abs(soloFill.blue - lavender.blue) < 0.1f, "Solo's fill $soloFill is not the lavender $lavender")
+        // The node's own capture keeps the fill's alpha: the dim M is the lavender at about a third of Solo's opacity.
+        assertTrue(muteFill.alpha < soloFill.alpha * 0.5f, "Mute's fill $muteFill is not dimmer than Solo's $soloFill")
+        onNodeWithTag(MixerTestTags.solo(0)).assertIsOn()
+        onNodeWithTag(MixerTestTags.mute(0)).assertIsOn()
+    }
+
+    /** Feature 012 (spec FR-028; T076): "M" and "O" on any focused control of the strip toggle this track; declared per lane. */
+    @Test
+    fun mAndOOnTheFocusedStripToggleItsTrack() = runComposeUiTest {
+        setStrip()
+        if (!enterKeyboardMode(manager)) return@runComposeUiTest
+        onNodeWithTag(MixerTestTags.fader(0)).requestFocus()
+        onNodeWithTag(MixerTestTags.fader(0)).performKeyInput { pressKey(Key.M) }
+        onNodeWithTag(MixerTestTags.fader(0)).performKeyInput { pressKey(Key.O) }
+        assertEquals(listOf("mute(t1)", "solo(t1)"), calls)
     }
 
     /** The strip is one focus group: Tab walks Solo, Mute, then the fader (contracts/mixer-ui.md "Keyboard"); declared per lane. */

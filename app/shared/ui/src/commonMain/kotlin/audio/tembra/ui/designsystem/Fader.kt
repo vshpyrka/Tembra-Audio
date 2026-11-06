@@ -73,6 +73,8 @@ internal fun Fader(
     scale: FaderScale = FaderScale.Gain,
     interactionSource: MutableInteractionSource? = null,
     testTag: String? = null,
+    /** The animation section spanning a drag: a strip's `timeline.faderDrag`, the master's `transport.masterDrag`. */
+    section: PerfSection = PerfSection.TIMELINE_FADER_DRAG,
 ) {
     val colors = TembraTheme.colors
     val spacing = TembraTheme.spacing
@@ -178,7 +180,7 @@ internal fun Fader(
                         startY = change.position.y - overSlop
                         offer(scale.valueOf((startThrow - overSlop / throwPx).coerceIn(0f, 1f)))
                     } ?: return@awaitEachGesture
-                    PerfTrace.animation(PerfSection.TIMELINE_FADER_DRAG) {
+                    PerfTrace.animation(section) {
                         drag(start.id) { change ->
                             change.consume()
                             offer(scale.valueOf((startThrow - (change.position.y - startY) / throwPx).coerceIn(0f, 1f)))

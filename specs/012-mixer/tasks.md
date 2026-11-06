@@ -264,15 +264,15 @@ into view; "M"/"O" act on the focused strip (spec US4; FR-010, FR-011, FR-023, F
 
 ### Tests for User Story 4 (write first, watch them fail)
 
-- [ ] T076 [P] [US4] `UI_UITEST/mixer/MasterStripTest.kt` ("Master" label; the percent fader 0…100 with steps of 1, Page 10; readout "80 %"; `mixer.master.fader`; the master meter and latch; no knob or toggles) and extend `UI_UITEST/mixer/MixerStripTest.kt` (Solo lit lavender when soloed, Mute dim; "M"/"O" on the focused strip call the strip's callbacks; tapping the name calls `onStripSelect`)
-- [ ] T077 [P] [US4] Extend `UI_TEST/timeline/TimelineViewModelTest.kt`: `stripAndHeaderStatesNeverDisagree` (200 randomised mute/solo toggles across `toggleMute`/`toggleSolo` and the strips' callbacks, compared through `TrackUi` and `StripUi`), `masterDragIsOneUndoStep`, `selectStripSelectsTheTrackAndRequestsAScroll`, `openingTheMixerScrollsToTheSelectedStrip`
+- [X] T076 [P] [US4] `UI_UITEST/mixer/MasterStripTest.kt` ("Master" label; the percent fader 0…100 with steps of 1, Page 10; readout "80 %"; `mixer.master.fader`; the master meter and latch; no knob or toggles) and extend `UI_UITEST/mixer/MixerStripTest.kt` (Solo lit lavender when soloed, Mute dim; "M"/"O" on the focused strip call the strip's callbacks; tapping the name calls `onStripSelect`)
+- [X] T077 [P] [US4] Extend `UI_TEST/timeline/TimelineViewModelTest.kt`: `stripAndHeaderStatesNeverDisagree` (200 randomised mute/solo toggles across `toggleMute`/`toggleSolo` and the strips' callbacks, compared through `TrackUi` and `StripUi`), `masterDragIsOneUndoStep`, `selectStripSelectsTheTrackAndRequestsAScroll`, `openingTheMixerScrollsToTheSelectedStrip`
 
 ### Implementation for User Story 4
 
-- [ ] T078 [US4] `UI/mixer/MasterStrip.kt`: the percent `Fader` wired to `onMasterVolume` and `onMasterSettled` with `PerfTrace.animation(TRANSPORT_MASTER_DRAG)`; `UI/mixer/MixerStrip.kt`: `MuteSoloButton` wired to `onMute`/`onSolo`, the `onKeyEvent` for M/O, `onStripSelect` on number and name (T076 green)
-- [ ] T079 [US4] `UI/timeline/TimelineViewModel.kt`: `selectStrip(id)` (`selectTrack` + a viewport request that brings the lane into view through the existing selection path), the initial `scrollToStrip` index in `MixerUi.selectedIndex`, `masterSettled`; `UI/mixer/MixerStripRow.kt`: `LaunchedEffect(selectedIndex)` → `animateScrollToItem` when the sheet opens (T077 green)
+- [X] T078 [US4] `UI/mixer/MasterStrip.kt`: the percent `Fader` wired to `onMasterVolume` and `onMasterSettled` with `PerfTrace.animation(TRANSPORT_MASTER_DRAG)`; `UI/mixer/MixerStrip.kt`: `MuteSoloButton` wired to `onMute`/`onSolo`, the `onKeyEvent` for M/O, `onStripSelect` on number and name (T076 green)
+- [X] T079 [US4] `UI/timeline/TimelineViewModel.kt`: `selectStrip(id)` (`selectTrack` + a viewport request that brings the lane into view through the existing selection path), the initial `scrollToStrip` index in `MixerUi.selectedIndex`, `masterSettled`; `UI/mixer/MixerStripRow.kt`: `LaunchedEffect(selectedIndex)` → `animateScrollToItem` when the sheet opens (T077 green)
 - [ ] T080 [US4] Run the three lanes through `gradle-run`; quickstart §5 steps 5–7 by hand on the Pixel 6 Pro
-- [ ] T081 [US4] Skill review of Phase 6 (`compose-state-and-effects`, `kotlin-control-flow`); findings into `EVID/skill-review.md`
+- [X] T081 [US4] Skill review of Phase 6 (`compose-state-and-effects`, `kotlin-control-flow`); findings into `EVID/skill-review.md`
 
 **Checkpoint**: the mixer and the timeline are one truth.
 

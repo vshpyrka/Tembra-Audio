@@ -20,6 +20,14 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isAltPressed
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.isMetaPressed
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
@@ -80,6 +88,17 @@ internal fun MixerStrip(
             .fillMaxHeight()
             .testTag(MixerTestTags.strip(index))
             .focusGroup()
+            // "M" and "O" on any focused control of the strip toggle this track (spec FR-028), before the root's handler
+            // reads them for the selected track.
+            .onKeyEvent { event ->
+                if (event.type != KeyEventType.KeyDown || event.isCtrlPressed || event.isMetaPressed || event.isAltPressed) return@onKeyEvent false
+                when (event.key) {
+                    Key.M -> callbacks.onToggleMute(strip.id)
+                    Key.O -> callbacks.onToggleSolo(strip.id)
+                    else -> return@onKeyEvent false
+                }
+                true
+            }
             .drawBehind {
                 val height = MixerStripDefaults.BandHeight.toPx()
                 drawRect(band, topLeft = Offset(0f, size.height - height), size = Size(size.width, height))
@@ -108,12 +127,13 @@ internal fun MixerStrip(
                 testTag = MixerTestTags.pan(index),
             )
         }
+        // The design's verdicts (contracts/mixer-ui.md): Solo lit in lavender, Mute dim; the same state as the header's S and M (FR-010).
         Row(horizontalArrangement = Arrangement.Center) {
             MuteSoloButton(
                 letter = SOLO_LETTER,
                 description = MixerCopy.solo,
                 checked = strip.soloed,
-                tint = tint,
+                tint = colors.primary,
                 onCheckedChange = { callbacks.onToggleSolo(strip.id) },
                 size = MixerStripDefaults.ToggleSize,
                 testTag = MixerTestTags.solo(index),
@@ -122,10 +142,11 @@ internal fun MixerStrip(
                 letter = MUTE_LETTER,
                 description = MixerCopy.mute,
                 checked = strip.muted,
-                tint = tint,
+                tint = colors.primary.copy(alpha = MUTE_LIT_ALPHA),
                 onCheckedChange = { callbacks.onToggleMute(strip.id) },
                 size = MixerStripDefaults.ToggleSize,
                 testTag = MixerTestTags.mute(index),
+                checkedContent = colors.onSurface,
             )
         }
         Row(modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(spacing.xs, Alignment.CenterHorizontally)) {
@@ -185,3 +206,6 @@ private fun StripLabel(
 private const val SOLO_LETTER = "S"
 private const val MUTE_LETTER = "M"
 private const val DIMMED_ALPHA = 0.4f
+
+/** A muted strip's M: the lavender at a third, the "dim" of the design table. */
+private const val MUTE_LIT_ALPHA = 0.35f

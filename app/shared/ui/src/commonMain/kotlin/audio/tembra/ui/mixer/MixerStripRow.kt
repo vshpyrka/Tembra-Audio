@@ -38,7 +38,7 @@ internal fun MixerStripRow(
     LaunchedEffect(listState) {
         val index = selectedIndex ?: return@LaunchedEffect
         val visible = listState.layoutInfo.visibleItemsInfo
-        if (index in strips.indices && visible.none { it.index == index }) listState.scrollToItem(index)
+        if (index in strips.indices && visible.none { it.index == index }) listState.animateScrollToItem(index)
     }
     LazyRow(
         state = listState,
