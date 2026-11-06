@@ -20,7 +20,7 @@ kotlinx-serialization = "1.12.0"
 kotlinx-collections-immutable = "0.5.2"
 # Local date-time for the Projects library's relative times (feature 009, FR-051).
 kotlinx-datetime = "0.8.0"
-metro = "1.5.0"
+metro = "1.5.1"
 androidx-activity = "1.13.0"
 androidx-compose = "1.12.1"
 androidx-test-runner = "1.7.0"
