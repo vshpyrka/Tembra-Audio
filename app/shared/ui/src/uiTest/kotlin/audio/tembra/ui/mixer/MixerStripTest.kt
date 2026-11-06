@@ -3,7 +3,11 @@ package audio.tembra.ui.mixer
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.platform.LocalInputModeManager
@@ -20,6 +24,7 @@ import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -35,12 +40,20 @@ import androidx.compose.ui.unit.width
 import audio.tembra.core.project.GainDb
 import audio.tembra.core.project.Pan
 import audio.tembra.core.project.TrackId
+import audio.tembra.engine.MixSnapshot
 import audio.tembra.ui.designsystem.FaderDefaults
+import audio.tembra.ui.designsystem.LevelMeterDefaults
 import audio.tembra.ui.designsystem.enterKeyboardMode
+import audio.tembra.ui.designsystem.rememberFrameTick
+import audio.tembra.ui.session.InputTelemetry
+import audio.tembra.ui.theme.DawColors
+import audio.tembra.ui.theme.LocalDawColors
 import audio.tembra.ui.theme.LocalTembraMotion
 import audio.tembra.ui.theme.TembraMotion
 import audio.tembra.ui.theme.TembraTheme
+import audio.tembra.ui.timeline.ScriptedInputTelemetry
 import audio.tembra.ui.timeline.TimelineCallbacks
+import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -68,17 +81,67 @@ class MixerStripTest {
         onStripSelect = { calls += "select(${it.value})" },
     )
 
-    private fun ComposeUiTest.setStrip(strip: StripUi = this@MixerStripTest.strip, form: StripForm = StripForm.Compact, selected: Boolean = false, height: Dp = 400.dp) {
+    /** The strip shown, held so a test can re-arm or disarm it; the meters' snapshot is written as the sheet root would write it. */
+    private val shown = mutableStateOf(strip)
+    private val levels = MixSnapshot()
+    private val body = Color(0xFF00FF00)
+    private val meterColors = DawColors.Default.copy(meterBody = body)
+
+    private fun ComposeUiTest.setStrip(
+        strip: StripUi = this@MixerStripTest.strip,
+        form: StripForm = StripForm.Compact,
+        selected: Boolean = false,
+        height: Dp = 400.dp,
+        input: InputTelemetry = InputTelemetry { _, _ -> },
+    ) {
+        shown.value = strip
         setContent {
             TembraTheme {
-                CompositionLocalProvider(LocalTembraMotion provides TembraMotion(reduceMotion = true)) {
+                CompositionLocalProvider(LocalTembraMotion provides TembraMotion(reduceMotion = true), LocalDawColors provides meterColors) {
                     manager = LocalInputModeManager.current
+                    val feed = MeterFeed(levels = levels, tick = rememberFrameTick(active = true), mirror = remember { MixerLevelMirror() }, inputTelemetry = input)
                     Box(Modifier.height(height)) {
-                        MixerStrip(strip = strip, form = form, selected = selected, callbacks = callbacks)
+                        MixerStrip(strip = shown.value, form = form, selected = selected, callbacks = callbacks, feed = feed)
                     }
                 }
             }
         }
+    }
+
+    /** The y of every pixel of the body colour down the meter's left bar. */
+    private fun ComposeUiTest.meterBodyRows(): List<Int> {
+        val pixels = onNodeWithTag(MixerTestTags.meter(0)).captureToImage().toPixelMap()
+        val x = with(density) { (LevelMeterDefaults.BarWidth / 2).roundToPx() }
+        return (0 until pixels.height).filter { y -> abs(pixels[x, y].green - body.green) < 0.1f && abs(pixels[x, y].red - body.red) < 0.1f && abs(pixels[x, y].blue - body.blue) < 0.1f }
+    }
+
+    /** Feature 012 (spec FR-002, FR-013; research R2; T059): the full form adds the VU dial above the toggles; the meter stands beside the fader in both forms. */
+    @Test
+    fun theFullFormAddsTheDialAboveTheTogglesAndTheMeterBesideTheFader() = runComposeUiTest {
+        setStrip(form = StripForm.Full, height = 520.dp)
+        val dial = onNodeWithTag(MixerTestTags.vu(0)).assertContentDescriptionEquals(MixerCopy.vu).getUnclippedBoundsInRoot()
+        val solo = onNodeWithTag(MixerTestTags.solo(0)).getUnclippedBoundsInRoot()
+        val fader = onNodeWithTag(MixerTestTags.fader(0)).getUnclippedBoundsInRoot()
+        val meter = onNodeWithTag(MixerTestTags.meter(0)).assertContentDescriptionEquals(MixerCopy.level).getUnclippedBoundsInRoot()
+        assertTrue(dial.bottom <= solo.top, "the dial $dial is not above Solo $solo")
+        assertTrue(meter.left >= fader.right, "the meter $meter is not beside the fader $fader")
+        assertTrue(abs((meter.top - fader.top).value) <= 1f && abs((meter.bottom - fader.bottom).value) <= 1f, "the meter $meter does not span the fader $fader")
+        onNodeWithTag(MixerTestTags.clip(0)).assertContentDescriptionEquals(MixerCopy.clipIndicator)
+        assertTrue(fader.height >= FaderDefaults.MinThrow, "the fader keeps its throw under the dial: ${fader.height}")
+    }
+
+    /** Spec FR-014 (T059): the armed strip's meter is the input meter; disarmed, it returns to the playback meter. */
+    @Test
+    fun anArmedStripShowsTheInputMeterAndReturnsToPlaybackWhenDisarmed() = runComposeUiTest {
+        val input = ScriptedInputTelemetry.level(0.5f)
+        setStrip(strip = strip.copy(meterSource = MeterSource.Input), input = input)
+        mainClock.autoAdvance = false
+        mainClock.advanceTimeBy(200)
+        assertTrue(input.reads > 0, "the armed strip's meter read the input")
+        assertTrue(meterBodyRows().isNotEmpty(), "the input's −6 dB fills the bar")
+        shown.value = strip
+        mainClock.advanceTimeBy(200)
+        assertEquals(emptyList(), meterBodyRows(), "the silent playback snapshot empties the bar once disarmed")
     }
 
     @Test
@@ -90,7 +153,8 @@ class MixerStripTest {
         val mute = onNodeWithTag(MixerTestTags.mute(0)).getUnclippedBoundsInRoot()
         val fader = onNodeWithTag(MixerTestTags.fader(0)).getUnclippedBoundsInRoot()
         val name = onNodeWithTag(MixerTestTags.name(0)).assertTextEquals("Drums").getUnclippedBoundsInRoot()
-        assertEquals(MixerStripDefaults.Width, frame.width, "the strip is ${frame.width} wide")
+        // Half a dp of pixel rounding at any density (the fold emulator's 2.6× reports 72.2 dp).
+        assertTrue(abs((frame.width - MixerStripDefaults.Width).value) <= 0.5f, "the strip is ${frame.width} wide")
         assertTrue(number.bottom <= solo.top, "the number $number is not above Solo $solo")
         assertTrue(solo.right <= mute.left && solo.top == mute.top, "Solo $solo and Mute $mute are not side by side")
         assertTrue(fader.top >= solo.bottom, "the fader $fader is not under the toggles")
@@ -108,9 +172,10 @@ class MixerStripTest {
         val solo = onNodeWithTag(MixerTestTags.solo(0)).getUnclippedBoundsInRoot()
         val mute = onNodeWithTag(MixerTestTags.mute(0)).getUnclippedBoundsInRoot()
         val fader = onNodeWithTag(MixerTestTags.fader(0)).getUnclippedBoundsInRoot()
-        assertTrue(solo.width >= 36.dp && solo.height >= 36.dp, "Solo is $solo")
-        assertTrue(mute.width >= 36.dp && mute.height >= 36.dp, "Mute is $mute")
-        assertTrue(fader.width >= FaderDefaults.HandleWidth, "the fader is ${fader.width} wide")
+        val rounding = 0.5.dp
+        assertTrue(solo.width >= 36.dp - rounding && solo.height >= 36.dp - rounding, "Solo is $solo")
+        assertTrue(mute.width >= 36.dp - rounding && mute.height >= 36.dp - rounding, "Mute is $mute")
+        assertTrue(fader.width >= FaderDefaults.HandleWidth - rounding, "the fader is ${fader.width} wide")
         // The throw is the fader's height, the handle included, as research R2 counts it (140 dp in its budget).
         assertTrue(fader.height >= FaderDefaults.MinThrow, "the fader's throw is ${fader.height}, under ${FaderDefaults.MinThrow}")
     }

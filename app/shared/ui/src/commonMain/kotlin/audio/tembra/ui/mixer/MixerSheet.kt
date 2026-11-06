@@ -26,6 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.layout.layout
@@ -37,6 +38,13 @@ import androidx.compose.ui.unit.Dp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
+import audio.tembra.engine.MixSnapshot
+import audio.tembra.engine.perf.PerfSection
+import audio.tembra.engine.perf.PerfTrace
+import audio.tembra.ui.designsystem.rememberFrameTick
+import audio.tembra.ui.perf.MeterFrameCounter
+import audio.tembra.ui.session.InputTelemetry
+import audio.tembra.ui.session.MixTelemetry
 import audio.tembra.ui.shortcuts.RegisterOverlay
 import audio.tembra.ui.theme.TembraShapes
 import audio.tembra.ui.theme.TembraTheme
@@ -53,13 +61,20 @@ import kotlin.math.roundToInt
  * motion); a settled drag reports [TimelineCallbacks.onMixerHeight] or, at Hidden, [TimelineCallbacks.onMixerToggle].
  * Back (a `NavigationBackHandler` registered inside the Timeline entry, so it outranks the shell's back stack while the
  * sheet is open) and the shell's close-overlay action (Escape, ⌘.) close it. Composed while open or still animating
- * shut; otherwise it takes no space. `paneTitle` "Mixer", tag `mixer.sheet`. The per-frame meter read joins in User
- * Story 2.
+ * shut; otherwise it takes no space. `paneTitle` "Mixer", tag `mixer.sheet`.
+ *
+ * The meters (research R6; spec FR-015): the root's `drawWithContent` reads [telemetry] once per frame into one shared
+ * snapshot inside the `timeline.mixerFrame` section and then draws the strips, whose meters and dials read that
+ * snapshot in their own draw lambdas through the frame tick; nothing recomposes per frame. A 10 Hz mirror of the
+ * snapshot feeds the meters' semantics; the armed strip's meter follows [inputTelemetry] instead (FR-014). Each drawn
+ * frame is reported to the shared `MeterFrameCounter`.
  */
 @Composable
 internal fun MixerSheet(
     ui: MixerUi,
     callbacks: TimelineCallbacks,
+    telemetry: MixTelemetry,
+    inputTelemetry: InputTelemetry,
     lanesHeight: Dp,
     modifier: Modifier = Modifier,
 ) {
@@ -108,12 +123,22 @@ internal fun MixerSheet(
             }
         }
     }
+    // The frame loop ends with the sheet: the next open starts a new run of the dropped-frame counter.
+    LaunchedEffect(ui.open) {
+        if (!ui.open) MeterFrameCounter.shared.pause()
+    }
     val shown = ui.open || state.currentValue != MixerSheetValue.Hidden || state.isAnimationRunning
     if (!shown) return
     if (ui.open) {
         NavigationBackHandler(state = rememberNavigationEventState(NavigationEventInfo.None), onBackCompleted = { callbacks.onMixerToggle() })
         RegisterOverlay { callbacks.onMixerToggle() }
     }
+    // The meters' feed (research R6): one snapshot per sheet, the frame tick while open, the 10 Hz mirror for semantics.
+    val levels = remember { MixSnapshot() }
+    val tick = rememberFrameTick(active = ui.open)
+    val armedIndex = ui.strips.firstOrNull { it.meterSource == MeterSource.Input }?.index
+    val mirror = rememberMixerLevelMirror(levels, active = ui.open, armedIndex = armedIndex, inputTelemetry = inputTelemetry)
+    val feed = remember(levels, tick, mirror, inputTelemetry) { MeterFeed(levels, tick, mirror, inputTelemetry) }
     val fling = AnchoredDraggableDefaults.flingBehavior(
         state = state,
         positionalThreshold = { distance -> distance * MixerSheetDefaults.POSITIONAL_THRESHOLD },
@@ -139,6 +164,15 @@ internal fun MixerSheet(
                 .fillMaxSize()
                 .testTag(MixerTestTags.SHEET)
                 .semantics { paneTitle = MixerCopy.mixer }
+                // One frame of the mixer: the one telemetry read, then every strip's draw (contracts/perf-instrumentation.md).
+                .drawWithContent {
+                    PerfTrace.section(PerfSection.TIMELINE_MIXER_FRAME) {
+                        val frameNanos = tick.longValue
+                        telemetry.read(frameNanos, levels)
+                        MeterFrameCounter.shared.frame(frameNanos)
+                        drawContent()
+                    }
+                }
                 .anchoredDraggable(state = state, orientation = Orientation.Vertical, flingBehavior = fling)
                 .background(daw.surfaceLevel2, RoundedCornerShape(topStart = TembraShapes.large, topEnd = TembraShapes.large))
                 .drawBehind { drawRect(border, topLeft = Offset.Zero, size = Size(size.width, borderWidth.toPx())) },
@@ -152,8 +186,8 @@ internal fun MixerSheet(
                 },
             )
             Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                MixerStripRow(strips = ui.strips, form = ui.form, selectedIndex = ui.selectedIndex, callbacks = callbacks, modifier = Modifier.weight(1f))
-                MasterStrip(master = ui.master, callbacks = callbacks, modifier = Modifier.padding(end = spacing.pageMargin))
+                MixerStripRow(strips = ui.strips, form = ui.form, selectedIndex = ui.selectedIndex, callbacks = callbacks, feed = feed, modifier = Modifier.weight(1f))
+                MasterStrip(master = ui.master, callbacks = callbacks, feed = feed, modifier = Modifier.padding(end = spacing.pageMargin))
             }
         }
     }

@@ -11,12 +11,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeUp
@@ -26,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import audio.tembra.core.project.GainDb
 import audio.tembra.core.project.Pan
 import audio.tembra.core.project.TrackId
+import audio.tembra.ui.session.InputTelemetry
 import audio.tembra.ui.shortcuts.LocalOverlayStack
 import audio.tembra.ui.shortcuts.OverlayStack
 import audio.tembra.ui.theme.TembraTheme
@@ -66,6 +72,8 @@ class MixerSheetTest {
         },
         onGain = { id, gain -> calls += "gain(${id.value},${gain.readout})" },
         onGainSettled = { calls += "settled" },
+        onResetTrackClip = { calls += "resetClip(${it.value})" },
+        onResetMasterClip = { calls += "resetMaster" },
     )
 
     private fun strips(count: Int) = List(count) { index ->
@@ -76,9 +84,20 @@ class MixerSheetTest {
     }.toPersistentList()
 
     /** The sheet inside a lanes box of [width] × [lanes] under [layout], opened at [height]; a 40 dp marker at the top stands for the lanes. */
-    private fun ComposeUiTest.setSheet(layout: TimelineLayout = TimelineLayout.Compact, width: Dp = 360.dp, lanes: Dp = 500.dp, height: MixerHeight = MixerHeight.Half, strips: Int = 3) {
+    private fun ComposeUiTest.setSheet(
+        layout: TimelineLayout = TimelineLayout.Compact,
+        width: Dp = 360.dp,
+        lanes: Dp = 500.dp,
+        height: MixerHeight = MixerHeight.Half,
+        strips: Int = 3,
+        telemetry: ScriptedMixTelemetry = ScriptedMixTelemetry.silent(strips),
+        frozen: Boolean = false,
+    ) {
         val anchors = MixerAnchors.of(layout, lanes)
         ui.value = MixerUi(open = true, height = height, form = StripForm.of(height, anchors.heightOf(height).value), anchors = anchors, strips = strips(strips))
+        // A frozen clock must be frozen before the first frame: the test harness parks an infinite animation (the meters'
+        // frame tick) for good once it has run under an auto-advancing clock.
+        if (frozen) mainClock.autoAdvance = false
         setContent {
             TembraTheme {
                 CompositionLocalProvider(LocalOverlayStack provides stack) {
@@ -86,12 +105,55 @@ class MixerSheetTest {
                     pageMargin = TembraTheme.spacing.pageMargin
                     Box(Modifier.requiredWidth(width).requiredHeight(lanes)) {
                         Box(Modifier.fillMaxWidth().height(LANES_MARKER_HEIGHT).align(Alignment.TopCenter).testTag(LANES_MARKER))
-                        MixerSheet(ui = ui.value, callbacks = callbacks, lanesHeight = lanes)
+                        MixerSheet(ui = ui.value, callbacks = callbacks, telemetry = telemetry, inputTelemetry = InputTelemetry { _, _ -> }, lanesHeight = lanes)
                     }
                 }
             }
         }
-        waitForIdle()
+        // The open animation (300 ms) under either clock.
+        if (frozen) mainClock.advanceTimeBy(600) else waitForIdle()
+    }
+
+    /** Research R6 (T059): the root reads the telemetry once per frame whatever the strip count; the strips draw from that one snapshot. */
+    @Test
+    fun theRootReadsTheTelemetryOncePerFrameForAnyNumberOfStrips() = runComposeUiTest {
+        val telemetry = ScriptedMixTelemetry.level(index = 0, peakDb = -20f, rmsDb = -23f, trackCount = 8)
+        setSheet(strips = 8, telemetry = telemetry, frozen = true)
+        val before = telemetry.reads
+        repeat(5) { mainClock.advanceTimeByFrame() }
+        val reads = telemetry.reads - before
+        assertTrue(reads in 4..6, "five frames with eight strips read the telemetry $reads times, not once per frame")
+        for (index in 0 until 3) onNodeWithTag(MixerTestTags.meter(index)).assertIsDisplayed()
+    }
+
+    /** The 10 Hz mirror (research R6): the meters' announcements follow the snapshot a tenth of a second later, strip by strip. */
+    @Test
+    fun theMirrorRefreshesTheMeterSemanticsAtTenHertz() = runComposeUiTest {
+        setSheet(telemetry = ScriptedMixTelemetry.level(index = 1, peakDb = -20f, rmsDb = -23f, trackCount = 3), frozen = true)
+        mainClock.advanceTimeBy(150)
+        onNodeWithTag(MixerTestTags.meter(1)).assertContentDescriptionEquals(MixerCopy.level).assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "−20 dB"))
+        onNodeWithTag(MixerTestTags.meter(0)).assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "−60 dB"))
+        onNodeWithTag(MixerTestTags.MASTER_METER).assertContentDescriptionEquals(MixerCopy.level).assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "−60 dB"))
+        onNodeWithTag(MixerTestTags.clip(1)).assertContentDescriptionEquals(MixerCopy.clipIndicator)
+    }
+
+    /** A lit latch reaches the strip's and the master's clip squares, and a tap on each asks for its reset (spec FR-012). */
+    @Test
+    fun aLitLatchAnnouncesOnceAndATapResetsIt() = runComposeUiTest {
+        val telemetry = ScriptedMixTelemetry { _, into ->
+            into.trackCount = 3
+            into.peak[0] = 1f
+            into.peak[1] = 1f
+            into.clipMask = 1L
+            into.masterPeak[0] = 1f
+            into.masterPeak[1] = 1f
+            into.masterClipped = true
+        }
+        setSheet(telemetry = telemetry, frozen = true)
+        mainClock.advanceTimeBy(150)
+        onNodeWithTag(MixerTestTags.clip(0)).assertContentDescriptionEquals(MixerCopy.clippedTapToReset).performClick()
+        onNodeWithTag(MixerTestTags.MASTER_CLIP).assertContentDescriptionEquals(MixerCopy.clippedTapToReset).performClick()
+        assertEquals(listOf("resetClip(t1)", "resetMaster"), calls)
     }
 
     private fun assertNear(expected: Dp, actual: Dp, what: String) =

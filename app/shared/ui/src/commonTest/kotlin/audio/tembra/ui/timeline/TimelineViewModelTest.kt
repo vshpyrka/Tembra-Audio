@@ -41,6 +41,7 @@ import audio.tembra.ui.drop.DropPlan
 import audio.tembra.ui.drop.SkipReason
 import audio.tembra.ui.drop.SkippedItem
 import audio.tembra.ui.metronome.TapCaption
+import audio.tembra.ui.mixer.MeterSource
 import audio.tembra.ui.mixer.MixerAnchors
 import audio.tembra.ui.mixer.MixerHeight
 import audio.tembra.ui.mixer.StripForm
@@ -922,6 +923,36 @@ class TimelineViewModelTest {
         assertTrue(ui().mixer.open, "the layout change keeps the sheet open")
         viewModel.lanesMeasured(TimelineLayout.Compact, 600.dp)
         assertEquals(MixerHeight.Half, ui().mixer.height, "the asked height returns with the two anchors")
+    }
+
+    // Feature 012, User Story 2 (T060): the armed strip's meter source and the clip latch resets.
+
+    @Test
+    fun theArmedStripShowsTheInputMeter() = recordingTest {
+        openDemo()
+        viewModel.toggleMixer()
+        assertEquals(MeterSource.Playback, ui().mixer.strips[0].meterSource)
+        viewModel.arm(drumsTrack)
+        settle()
+        assertEquals(MeterSource.Input, ui().mixer.strips[0].meterSource)
+        assertEquals(MeterSource.Playback, ui().mixer.strips[1].meterSource, "only the armed track's strip")
+        viewModel.arm(drumsTrack)
+        settle()
+        assertEquals(MeterSource.Playback, ui().mixer.strips[0].meterSource, "disarmed: back to the playback meter")
+    }
+
+    @Test
+    fun resetTrackClipReachesTheEngineByIndex() = test {
+        openDemo()
+        viewModel.resetTrackClip(bassTrack)
+        assertEquals("resetMixClip(1)", engine.calls.last())
+    }
+
+    @Test
+    fun resetMasterClipUsesTheMasterIndex() = test {
+        openDemo()
+        viewModel.resetMasterClip()
+        assertEquals("resetMixClip(64)", engine.calls.last())
     }
 
     @Test

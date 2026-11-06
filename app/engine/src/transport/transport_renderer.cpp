@@ -51,6 +51,10 @@ void TransportRenderer::silence() {
     mixParams_.reset();
     appliedMix_ = UINT64_MAX;
     appliedMixTracks_ = UINT32_MAX;
+    // The next session's first arrangement snaps every strip to the stored parameters instead of ramping from the
+    // last session's: a pan pushed before the arrangement lands renders at once, with nothing of the old mix in the meters.
+    stripSet_.fill(false);
+    monitorTrack_ = -1;
     meter_.reset();
     meteringOn_ = false;
     meterPublished_ = false;

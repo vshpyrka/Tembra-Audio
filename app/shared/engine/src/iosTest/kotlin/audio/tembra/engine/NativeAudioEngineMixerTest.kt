@@ -51,13 +51,18 @@ class NativeAudioEngineMixerTest {
         return path
     }
 
-    /** The transport open with a 0.5-peak tone on track 0 and an empty track 1; false in the bare simulator process. */
-    private suspend fun openWithOneClip(): Boolean {
+    /**
+     * The transport open with a 0.5-peak tone on track 0 and an empty track 1; false in the bare simulator process.
+     * Track 0's [pan] is stored before the arrangement lands, so the strip snaps there instead of ramping from the centre
+     * once the clip sounds (a ramp's first samples sit in the 64 ms peak window and the 300 ms rms window for seconds).
+     */
+    private suspend fun openWithOneClip(pan: Float = 0f): Boolean {
         val opened = engine.openTransport()
         if (opened != TransportOpenResult.Opened) {
             println("NativeAudioEngineMixerTest: no output unit in this simulator process ($opened); the playback checks are skipped")
             return false
         }
+        if (pan != 0f) engine.setPan(0, pan)
         val mono = assertIs<ClipSourceResult.Opened>(engine.openClipSource(wav("mono.wav", 6.0)))
         engine.setTempo(Tempo(120), TimeSignature.FourFour)
         engine.setArrangement(
@@ -84,8 +89,7 @@ class NativeAudioEngineMixerTest {
 
     @Test
     fun aClipPannedHardLeftMetersOnTheLeftAndReadsSilenceOnTheRight() = runBlocking {
-        if (!openWithOneClip()) return@runBlocking
-        engine.setPan(0, -1f)
+        if (!openWithOneClip(pan = -1f)) return@runBlocking
         engine.setMetering(true)
         assertEquals(PlayResult.Started, engine.play())
         val mix = awaitMix { it.metering && it.peakDb(0, 0) > -20f && it.rmsDb(0, 0) > -20f }
@@ -117,9 +121,8 @@ class NativeAudioEngineMixerTest {
 
     @Test
     fun resetMixClipClearsALatchAndTheHealthCountsTheClamp() = runBlocking {
-        if (!openWithOneClip()) return@runBlocking
+        if (!openWithOneClip(pan = -1f)) return@runBlocking
         engine.setTrack(0, 2f, true)  // +6 dB and hard left: the strip reaches √2, the master clamps
-        engine.setPan(0, -1f)
         engine.setMetering(true)
         assertEquals(PlayResult.Started, engine.play())
         val lit = awaitMix { it.clipped(0) && it.masterClipped }
