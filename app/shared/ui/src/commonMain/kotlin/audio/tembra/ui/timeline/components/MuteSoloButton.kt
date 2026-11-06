@@ -42,6 +42,8 @@ internal fun MuteSoloButton(
     size: Dp = TembraTheme.spacing.touchTargetMin,
     interactionSource: MutableInteractionSource? = null,
     testTag: String? = null,
+    /** The letter's colour while [checked]; the inverse `scrim` by default, `onSurface` on a dim fill (the mixer's Mute, feature 012). */
+    checkedContent: Color? = null,
 ) {
     val colors = TembraTheme.colors
     val spacing = TembraTheme.spacing
@@ -53,7 +55,7 @@ internal fun MuteSoloButton(
         hovered -> colors.surfaceContainerHighest
         else -> colors.surfaceContainerHigh
     }
-    val content = if (checked) colors.scrim else colors.onSurfaceVariant
+    val content = if (checked) checkedContent ?: colors.scrim else colors.onSurfaceVariant
     val ring = spacing.focusRingWidth
     val ringColor = colors.primary
     Box(

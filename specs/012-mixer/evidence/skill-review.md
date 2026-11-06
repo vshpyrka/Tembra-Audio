@@ -115,3 +115,20 @@ Skills: `compose-component-design`, `compose-focus-navigation`, `kotlin-control-
 | 5 | `timeline/TimelineViewModel.kt` `setPan` | kotlin-control-flow | One line through `edit(SetPan)`; the session's `coalesces` (Phase 2) folds a run on one track into one undo step and `gestureSettled` closes it; `TimelineViewModelTest.aKnobTurnIsOneUndoStep` proves both ends. | by construction |
 
 Lanes at the end of the phase: recorded in `../screenshots/NOTES.md`.
+
+## Phase 6 — User Story 4, mute, solo and the master (T081)
+
+Files: `ui.mixer/{MixerStrip, MasterStrip, MixerStripRow}`, `ui.designsystem/Fader`, `ui.timeline/components/{MuteSoloButton,
+TrackList}`; tests `MasterStripTest` and the additions to `MixerStripTest` and `TimelineViewModelTest`.
+
+Skills: `compose-state-and-effects`, `kotlin-control-flow`.
+
+| Phase | File:line | Skill | Finding | Fix (commit) or why not |
+|---|---|---|---|---|
+| 6 | `mixer/MixerStrip.kt` Solo / Mute | compose-state-and-effects | No state of its own: the toggles render `StripUi.soloed` / `muted`, the same document fields the headers render, and fire the same `onToggleSolo` / `onToggleMute` (FR-010); `TimelineViewModelTest.stripAndHeaderStatesNeverDisagree` walks 200 random toggles and compares every `TrackUi` with its `StripUi`, audibility included. | by construction |
+| 6 | `mixer/MixerStrip.kt` `onKeyEvent` | compose-focus-navigation / kotlin-control-flow | "M" and "O" are handled on the strip's focus group for its own track, unmodified keys only, consumed when handled; the root's catalogue handler still serves the selected track when focus is elsewhere. A `when (event.key)` with an `else` that returns false: an open key space, so the fallback stays. | by construction |
+| 6 | `timeline/components/MuteSoloButton.kt` | compose-component-design | The mixer's "Solo lit in lavender, Mute dim" needs a readable letter on a dim fill: one optional `checkedContent` colour, `scrim` by default, keeps feature 009's headers unchanged. The dim fill is the lavender at a third. | by construction |
+| 6 | `designsystem/Fader.kt` `section` | perf contract | The master's drag is `transport.masterDrag`, a strip's `timeline.faderDrag`: the section is a parameter with the strip's as its default, so the master passes its own. | by construction |
+| 6 | `timeline/components/TrackList.kt` | compose-state-and-effects / FR-023 | A track selected while its row is out of view (a strip's number or name) scrolls the lane into view through one `LaunchedEffect(selectedTrack)` keyed on the selection, animated; a header tap selects a visible row and moves nothing. No request state was added: the selection already is the request. The strip row's own first-composition scroll (Phase 3) became an animated one. | by construction |
+
+Lanes at the end of the phase: recorded in `../screenshots/NOTES.md`.

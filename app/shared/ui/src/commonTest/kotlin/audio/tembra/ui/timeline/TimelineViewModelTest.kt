@@ -942,6 +942,59 @@ class TimelineViewModelTest {
         assertEquals(MeterSource.Playback, ui().mixer.strips[0].meterSource, "disarmed: back to the playback meter")
     }
 
+    // Feature 012, User Story 4 (T077): one truth for the strips and the headers, the master's group, the selection path.
+
+    @Test
+    fun stripAndHeaderStatesNeverDisagree() = test {
+        openDemo()
+        viewModel.toggleMixer()
+        val ids = demo.tracks.map { it.id }
+        val random = kotlin.random.Random(12)
+        repeat(200) {
+            val id = ids[random.nextInt(ids.size)]
+            if (random.nextBoolean()) viewModel.toggleMute(id) else viewModel.toggleSolo(id)
+            val state = ui()
+            for ((track, strip) in state.tracks.zip(state.mixer.strips)) {
+                assertEquals(track.id, strip.id)
+                assertEquals(track.muted, strip.muted, "mute of ${track.name} after $it toggles")
+                assertEquals(track.soloed, strip.soloed, "solo of ${track.name} after $it toggles")
+                assertEquals(track.audible, strip.audible, "audibility of ${track.name} after $it toggles")
+            }
+        }
+    }
+
+    @Test
+    fun masterDragIsOneUndoStep() = test {
+        openDemo()
+        for (percent in listOf(75, 70, 65, 60)) viewModel.setMasterVolume(percent)
+        viewModel.gestureSettled()
+        assertEquals(60, ui().mixer.master.percent)
+        assertEquals(60, ui().masterVolume, "the speaker popup reads the same value")
+        assertEquals("setMaster(0.6)", engine.calls.last())
+        viewModel.undo()
+        assertEquals(80, ui().mixer.master.percent)
+        assertFalse(ui().canUndo, "the whole drag was one step")
+    }
+
+    @Test
+    fun selectingAStripSelectsTheTrackForTheHeadersAndTheStrips() = test {
+        openDemo()
+        viewModel.toggleMixer()
+        viewModel.selectTrack(bassTrack)
+        assertEquals(Selection.TrackSelected(bassTrack), ui().selection)
+        assertEquals(1, ui().mixer.selectedIndex, "the strip of the selected track")
+        viewModel.clearSelection()
+        assertEquals(null, ui().mixer.selectedIndex)
+    }
+
+    @Test
+    fun openingTheMixerCarriesTheSelectedStrip() = test {
+        openDemo()
+        viewModel.selectTrack(demo.tracks[3].id)
+        viewModel.toggleMixer()
+        assertEquals(3, ui().mixer.selectedIndex, "the row scrolls this strip into view when the sheet opens")
+    }
+
     // Feature 012, User Story 3 (T069): the pan edit and its undo group.
 
     @Test

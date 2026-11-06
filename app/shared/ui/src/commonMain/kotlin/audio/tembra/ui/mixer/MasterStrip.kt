@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import audio.tembra.engine.MixSnapshot
+import audio.tembra.engine.perf.PerfSection
 import audio.tembra.ui.designsystem.Fader
 import audio.tembra.ui.designsystem.FaderScale
 import audio.tembra.ui.designsystem.LevelMeter
@@ -73,6 +74,7 @@ internal fun MasterStrip(
                 modifier = Modifier.fillMaxHeight(),
                 scale = FaderScale.Percent,
                 testTag = MixerTestTags.MASTER_FADER,
+                section = PerfSection.TRANSPORT_MASTER_DRAG,
             )
             LevelMeter(
                 reading = reading,
