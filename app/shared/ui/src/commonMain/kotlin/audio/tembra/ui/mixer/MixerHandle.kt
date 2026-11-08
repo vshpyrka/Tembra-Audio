@@ -20,6 +20,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
@@ -59,6 +61,7 @@ internal fun MixerHandle(
             .testTag(MixerTestTags.HANDLE)
             .drawBehind { if (focused) drawFocusRing(ringColor, ring.toPx(), CornerRadius(TembraShapes.large.toPx())) }
             .hoverArea(hovered, TembraShapes.large)
+            .pointerHoverIcon(PointerIcon.Hand)
             .clickable(interactionSource = source, indication = null, enabled = onToggleHeight != null, role = Role.Button, onClick = { onToggleHeight?.invoke() })
             .semantics { stateDescription = state },
         contentAlignment = Alignment.Center,

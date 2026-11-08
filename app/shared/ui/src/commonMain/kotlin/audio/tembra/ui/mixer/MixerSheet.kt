@@ -186,7 +186,7 @@ internal fun MixerSheet(
                 },
             )
             Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                MixerStripRow(strips = ui.strips, form = ui.form, selectedIndex = ui.selectedIndex, callbacks = callbacks, feed = feed, modifier = Modifier.weight(1f))
+                MixerStripRow(strips = ui.strips, form = ui.form, selectedIndex = ui.selectedIndex, callbacks = callbacks, feed = feed, modifier = Modifier.weight(1f), canReorder = ui.canReorder)
                 MasterStrip(master = ui.master, callbacks = callbacks, feed = feed, modifier = Modifier.padding(end = spacing.pageMargin))
             }
         }

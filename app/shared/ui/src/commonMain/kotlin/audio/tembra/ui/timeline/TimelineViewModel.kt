@@ -737,6 +737,7 @@ class TimelineViewModel(
             }.toPersistentList(),
             master = MasterUi(project.masterVolume.value),
             selectedIndex = selection.trackIdOrNull?.let { id -> tracks.indexOfFirst { it.id == id }.takeIf { it >= 0 } },
+            canReorder = !takeRunning,
         )
         return TimelineUiState(
             loaded = true,

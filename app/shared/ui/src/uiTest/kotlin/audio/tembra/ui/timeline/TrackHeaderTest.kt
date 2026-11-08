@@ -132,7 +132,7 @@ class TrackHeaderTest {
         onNodeWithTag(TimelineTestTags.header(1)).assertContentDescriptionEquals("Track 2, Guitar, −2.4dB, L 35, muted")
         onNodeWithTag(TimelineTestTags.gain(1)).assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "−2.4dB, L 35"))
         onNodeWithText("L 35", useUnmergedTree = true).assertExists()
-        onNodeWithTag(TimelineTestTags.gain(1)).assertWidthIsAtLeast(56.dp).assertHeightIsEqualTo(44.dp)
+        onNodeWithTag(TimelineTestTags.gain(1)).assertWidthIsAtLeast(GAIN_READOUT_FLOOR).assertHeightIsEqualTo(44.dp)
     }
 
     @Test
@@ -141,7 +141,7 @@ class TrackHeaderTest {
         onNodeWithTag(TimelineTestTags.header(1)).assertWidthIsEqualTo(200.dp).assertContentDescriptionEquals("Track 2, Guitar, −2.4dB, muted")
         // The readout keeps the room its text needs beside the toggles and the chevron; the pan reads under it (feature 012,
         // spec FR-007), and the arm toggle sits on the first row, where the chip was.
-        onNodeWithTag(TimelineTestTags.gain(1)).assertExists().assertWidthIsAtLeast(56.dp)
+        onNodeWithTag(TimelineTestTags.gain(1)).assertExists().assertWidthIsAtLeast(GAIN_READOUT_FLOOR)
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "−2.4dB, C"))
         val arm = onNodeWithTag(TimelineTestTags.arm(1)).getBoundsInRoot()
         val gain = onNodeWithTag(TimelineTestTags.gain(1)).getBoundsInRoot()
@@ -211,5 +211,10 @@ class TrackHeaderTest {
         setExpanded()
         onNodeWithTag(TimelineTestTags.arm(1)).assertWidthIsEqualTo(36.dp).assertHeightIsEqualTo(36.dp).assertIsOff().performClick()
         assertEquals(listOf("arm(true)"), calls)
+    }
+
+    private companion object {
+        /** The expanded header's gain readout is 56 dp wide (feature 012); a fractional density rounds a pixel off it (55.4 dp at 2.6×). */
+        val GAIN_READOUT_FLOOR = 55.dp
     }
 }

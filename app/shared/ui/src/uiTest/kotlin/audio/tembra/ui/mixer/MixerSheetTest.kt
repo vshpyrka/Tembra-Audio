@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -19,24 +20,35 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.isDisplayed
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
+import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.test.v2.runComposeUiTest
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.height
+import androidx.compose.ui.unit.width
 import audio.tembra.core.project.GainDb
 import audio.tembra.core.project.Pan
 import audio.tembra.core.project.TrackId
+import audio.tembra.ui.designsystem.FaderDefaults
+import audio.tembra.ui.designsystem.ScrollbarShown
 import audio.tembra.ui.session.InputTelemetry
 import audio.tembra.ui.shortcuts.LocalOverlayStack
 import audio.tembra.ui.shortcuts.OverlayStack
 import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.ui.timeline.TimelineCallbacks
 import audio.tembra.ui.timeline.TimelineLayout
+import audio.tembra.ui.transport.TransportCopy
 import kotlinx.collections.immutable.toPersistentList
 import kotlin.math.abs
 import kotlin.test.Test
@@ -60,6 +72,9 @@ class MixerSheetTest {
     private val ui = mutableStateOf(MixerUi())
     private var densityScale = 1f
     private var pageMargin = 0.dp
+    private val shownLayout = mutableStateOf(TimelineLayout.Compact)
+    private val shownWidth = mutableStateOf(360.dp)
+    private val shownLanes = mutableStateOf(500.dp)
 
     private val callbacks = TimelineCallbacks.None.copy(
         onMixerToggle = {
@@ -76,14 +91,18 @@ class MixerSheetTest {
         onResetMasterClip = { calls += "resetMaster" },
     )
 
-    private fun strips(count: Int) = List(count) { index ->
+    private fun strips(count: Int, names: (Int) -> String = { "Track ${it + 1}" }) = List(count) { index ->
         StripUi(
-            id = TrackId("t${index + 1}"), index = index, number = index + 1, name = "Track ${index + 1}", colorIndex = index,
+            id = TrackId("t${index + 1}"), index = index, number = index + 1, name = names(index), colorIndex = index,
             gainDb = GainDb.Unity, pan = Pan.Centre, muted = false, soloed = false, audible = true,
         )
     }.toPersistentList()
 
-    /** The sheet inside a lanes box of [width] × [lanes] under [layout], opened at [height]; a 40 dp marker at the top stands for the lanes. */
+    /**
+     * The sheet inside a lanes box of [width] × [lanes] under [layout], opened at [height]; a 40 dp marker at the top
+     * stands for the lanes. The box follows [shownWidth] and [shownLanes], so [relayout] can change the window while
+     * the sheet stays composed.
+     */
     private fun ComposeUiTest.setSheet(
         layout: TimelineLayout = TimelineLayout.Compact,
         width: Dp = 360.dp,
@@ -92,26 +111,50 @@ class MixerSheetTest {
         strips: Int = 3,
         telemetry: ScriptedMixTelemetry = ScriptedMixTelemetry.silent(strips),
         frozen: Boolean = false,
+        fontScale: Float = 1f,
+        names: (Int) -> String = { "Track ${it + 1}" },
     ) {
         val anchors = MixerAnchors.of(layout, lanes)
-        ui.value = MixerUi(open = true, height = height, form = StripForm.of(height, anchors.heightOf(height).value), anchors = anchors, strips = strips(strips))
+        shownLayout.value = layout
+        shownWidth.value = width
+        shownLanes.value = lanes
+        ui.value = MixerUi(open = true, height = height, form = StripForm.of(height, anchors.heightOf(height).value), anchors = anchors, strips = strips(strips, names))
         // A frozen clock must be frozen before the first frame: the test harness parks an infinite animation (the meters'
         // frame tick) for good once it has run under an auto-advancing clock.
         if (frozen) mainClock.autoAdvance = false
         setContent {
-            TembraTheme {
-                CompositionLocalProvider(LocalOverlayStack provides stack) {
-                    densityScale = LocalDensity.current.density
-                    pageMargin = TembraTheme.spacing.pageMargin
-                    Box(Modifier.requiredWidth(width).requiredHeight(lanes)) {
-                        Box(Modifier.fillMaxWidth().height(LANES_MARKER_HEIGHT).align(Alignment.TopCenter).testTag(LANES_MARKER))
-                        MixerSheet(ui = ui.value, callbacks = callbacks, telemetry = telemetry, inputTelemetry = InputTelemetry { _, _ -> }, lanesHeight = lanes)
+            val base = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(base.density, fontScale = fontScale)) {
+                TembraTheme {
+                    CompositionLocalProvider(LocalOverlayStack provides stack) {
+                        densityScale = base.density
+                        pageMargin = TembraTheme.spacing.pageMargin
+                        Box(Modifier.requiredWidth(shownWidth.value).requiredHeight(shownLanes.value)) {
+                            Box(Modifier.fillMaxWidth().height(LANES_MARKER_HEIGHT).align(Alignment.TopCenter).testTag(LANES_MARKER))
+                            MixerSheet(ui = ui.value, callbacks = callbacks, telemetry = telemetry, inputTelemetry = InputTelemetry { _, _ -> }, lanesHeight = shownLanes.value)
+                        }
                     }
                 }
             }
         }
         // The open animation (300 ms) under either clock.
         if (frozen) mainClock.advanceTimeBy(600) else waitForIdle()
+    }
+
+    /** A window change while the sheet stays composed: the layout class, width and lanes height, the anchors and form recomputed as the ViewModel would. */
+    private fun ComposeUiTest.relayout(layout: TimelineLayout = shownLayout.value, width: Dp = shownWidth.value, lanes: Dp = shownLanes.value) {
+        val anchors = MixerAnchors.of(layout, lanes)
+        shownLayout.value = layout
+        shownWidth.value = width
+        shownLanes.value = lanes
+        ui.value = ui.value.copy(anchors = anchors, form = StripForm.of(ui.value.height, anchors.heightOf(ui.value.height).value))
+        waitForIdle()
+    }
+
+    /** The index of the first strip the row shows, in whole or in part. */
+    private fun ComposeUiTest.firstVisibleStrip(count: Int): Int = (0 until count).first { index ->
+        val tag = MixerTestTags.strip(index)
+        onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty() && onNodeWithTag(tag).isDisplayed()
     }
 
     /** Research R6 (T059): the root reads the telemetry once per frame whatever the strip count; the strips draw from that one snapshot. */
@@ -236,6 +279,94 @@ class MixerSheetTest {
         assertTrue(calls.any { it.startsWith("gain(t2,") }, "the fader did not move: $calls")
         assertTrue(calls.none { it.startsWith("height") || it == "toggle" }, "the sheet moved under the fader drag: $calls")
         assertEquals("settled", calls.last())
+    }
+
+    /** Data model §5 (T082): the anchors at the four reference widths; the half sheet is never under 240 dp; the expanded one leaves 192 dp of lanes. */
+    @Test
+    fun theAnchorsFollowTheLayoutClassAtEveryWidth() = runComposeUiTest {
+        setSheet(lanes = 600.dp)
+        for ((width, layout) in listOf(360.dp to TimelineLayout.Compact, 600.dp to TimelineLayout.Medium, 840.dp to TimelineLayout.Expanded, 1024.dp to TimelineLayout.Expanded)) {
+            relayout(layout = layout, width = width)
+            val anchors = MixerAnchors.of(layout, 600.dp)
+            assertTrue(anchors.half >= 240.dp, "$layout at $width: the half sheet is ${anchors.half}")
+            if (layout == TimelineLayout.Expanded) assertEquals(600.dp - MixerAnchors.ExpandedLanesKept, anchors.half, "$layout at $width: two expanded lanes stay visible")
+            assertNear(600.dp - anchors.half, onNodeWithTag(MixerTestTags.SHEET).getUnclippedBoundsInRoot().top, "$layout at $width: the half sheet's top")
+            onNodeWithTag(LANES_MARKER).assertIsDisplayed()
+            // The root may be wider than the screen (1024 dp on a phone): the master is checked by its bounds, not its visibility.
+            assertTrue(onNodeWithTag(MixerTestTags.MASTER).getUnclippedBoundsInRoot().right >= width - pageMargin - 1.dp, "$layout at $width: the master is not pinned at the right edge")
+        }
+        assertEquals(emptyList(), calls)
+    }
+
+    /** Spec FR-019 (T082): phone landscape at 600 × 400 has the one full anchor and the full form without the dial. */
+    @Test
+    fun landscapeSixHundredByFourHundredKeepsTheKnobAndDropsTheDial() = runComposeUiTest {
+        setSheet(layout = TimelineLayout.Landscape, width = 600.dp, lanes = 400.dp, height = MixerHeight.Full)
+        assertEquals(StripForm.FullNoVu, ui.value.form)
+        assertNear(0.dp, onNodeWithTag(MixerTestTags.SHEET).getUnclippedBoundsInRoot().top, "the sheet's top")
+        onNodeWithTag(MixerTestTags.pan(0)).assertIsDisplayed()
+        onNodeWithTag(MixerTestTags.vu(0)).assertDoesNotExist()
+        assertTrue(onNodeWithTag(MixerTestTags.fader(0)).getUnclippedBoundsInRoot().height >= FaderDefaults.MinThrow - 0.5.dp, "the fader's throw in landscape")
+    }
+
+    /** Spec FR-025 (T082): a 440 dp full sheet drops the dial and keeps the knob; a 280 dp one drops the knob too, before the fader falls under 120 dp. */
+    @Test
+    fun aShortFullSheetDropsTheDialFirstAndTheKnobSecond() = runComposeUiTest {
+        setSheet(lanes = 440.dp, height = MixerHeight.Full)
+        assertEquals(StripForm.FullNoVu, ui.value.form)
+        onNodeWithTag(MixerTestTags.pan(0)).assertIsDisplayed()
+        onNodeWithTag(MixerTestTags.vu(0)).assertDoesNotExist()
+        assertTrue(onNodeWithTag(MixerTestTags.fader(0)).getUnclippedBoundsInRoot().height >= FaderDefaults.MinThrow - 0.5.dp, "the fader's throw at 440 dp")
+        relayout(lanes = 280.dp)
+        assertEquals(StripForm.Compact, ui.value.form)
+        onNodeWithTag(MixerTestTags.pan(0)).assertDoesNotExist()
+        assertTrue(onNodeWithTag(MixerTestTags.fader(0)).getUnclippedBoundsInRoot().height >= FaderDefaults.MinThrow - 0.5.dp, "the fader's throw at 280 dp")
+    }
+
+    /** Spec FR-026 (T082): at the largest font nothing is clipped: the labels grow in height, the strip keeps its width and the name ellipsises inside it. */
+    @Test
+    fun theLargestFontClipsNothingAndEllipsisesTheName() = runComposeUiTest {
+        setSheet(fontScale = 2f, names = { "Acoustic guitar overdub ${it + 1}" })
+        val sheet = onNodeWithTag(MixerTestTags.SHEET).getUnclippedBoundsInRoot()
+        val strip = onNodeWithTag(MixerTestTags.strip(0)).getUnclippedBoundsInRoot()
+        assertNear(MixerStripDefaults.Width, strip.width, "the strip's width at the largest font")
+        assertTrue(strip.top >= sheet.top - 0.5.dp && strip.bottom <= sheet.bottom + 0.5.dp, "the strip $strip is clipped by the sheet $sheet")
+        for (tag in listOf(MixerTestTags.number(0), MixerTestTags.solo(0), MixerTestTags.mute(0), MixerTestTags.fader(0), MixerTestTags.meter(0), MixerTestTags.name(0))) {
+            val bounds = onNodeWithTag(tag).assertIsDisplayed().getUnclippedBoundsInRoot()
+            assertTrue(bounds.top >= strip.top - 0.5.dp && bounds.bottom <= strip.bottom + 0.5.dp, "$tag $bounds is clipped by the strip $strip")
+            assertTrue(bounds.left >= strip.left - 0.5.dp && bounds.right <= strip.right + 0.5.dp, "$tag $bounds runs past the strip $strip")
+        }
+        val layouts = mutableListOf<TextLayoutResult>()
+        onNodeWithTag(MixerTestTags.name(0)).performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
+        // Truncated to the label's width (Skia's layout reports the truncation as overflow, not as an ellipsised line).
+        val layout = layouts.single()
+        val stripPx = with(density) { MixerStripDefaults.Width.roundToPx() }
+        assertTrue(layout.hasVisualOverflow && layout.size.width <= stripPx, "the long name is not ellipsised inside the strip: overflow=${layout.hasVisualOverflow}, width=${layout.size.width} px of $stripPx")
+        onNodeWithTag(MixerTestTags.MASTER_FADER).assertIsDisplayed()
+        onNodeWithText(TransportCopy.masterVolumePercent(MasterUi.DEFAULT_PERCENT)).assertIsDisplayed()
+    }
+
+    /** Spec FR-022 (T082): a window change while the sheet is open keeps it open at its height and keeps the strip row where it was scrolled. */
+    @Test
+    fun aLayoutClassChangeKeepsTheSheetOpenAtItsHeightAndTheRowsScroll() = runComposeUiTest {
+        setSheet(lanes = 600.dp, strips = 24)
+        onNodeWithTag(MixerTestTags.STRIPS).performTouchInput { swipeLeft(startX = right - 10f, endX = left + 10f, durationMillis = 1_000) }
+        waitForIdle()
+        val scrolledTo = firstVisibleStrip(24)
+        assertTrue(scrolledTo > 0, "the row did not scroll")
+        relayout(layout = TimelineLayout.Expanded, width = 840.dp)
+        assertTrue(ui.value.open, "the sheet closed on the layout change")
+        assertEquals(MixerHeight.Half, ui.value.height)
+        assertNear(600.dp - MixerAnchors.of(TimelineLayout.Expanded, 600.dp).half, onNodeWithTag(MixerTestTags.SHEET).getUnclippedBoundsInRoot().top, "the expanded half sheet's top")
+        assertEquals(scrolledTo, firstVisibleStrip(24), "the row's scroll offset after the layout change")
+        assertEquals(emptyList(), calls)
+    }
+
+    /** Feature 011's scrollbar on the strip row (T084): the row carries one for the strips that overflow the width. */
+    @Test
+    fun theStripRowCarriesAScrollbar() = runComposeUiTest {
+        setSheet(strips = 12)
+        onNodeWithTag(MixerTestTags.STRIPS).assert(SemanticsMatcher.keyIsDefined(ScrollbarShown))
     }
 
     private companion object {

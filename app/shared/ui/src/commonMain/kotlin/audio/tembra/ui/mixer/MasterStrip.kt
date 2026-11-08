@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
@@ -54,12 +55,14 @@ internal fun MasterStrip(
             .fillMaxHeight()
             .testTag(MixerTestTags.MASTER)
             .focusGroup()
+            // The catalogue's Mixer scope for the master: its fader's steps, pages and home (spec FR-028).
+            .mixerKeyHandling(remember(master, callbacks) { MasterKeyTargets(master, callbacks) })
             .background(daw.surfaceLevel3)
             .padding(vertical = spacing.xs),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(spacing.xs),
     ) {
-        Box(Modifier.fillMaxWidth().height(MixerStripDefaults.LabelHeight), contentAlignment = Alignment.Center) {
+        Box(Modifier.fillMaxWidth().heightIn(min = MixerStripDefaults.LabelHeight), contentAlignment = Alignment.Center) {
             Text(MixerCopy.master, style = TembraTheme.typography.labelMedium, color = colors.onSurface, maxLines = 1, textAlign = TextAlign.Center)
         }
         // The toggles' row of the track strips, kept empty so the master's fader lines up with theirs.
@@ -86,7 +89,7 @@ internal fun MasterStrip(
                 clipTestTag = MixerTestTags.MASTER_CLIP,
             )
         }
-        Box(Modifier.fillMaxWidth().height(MixerStripDefaults.LabelHeight), contentAlignment = Alignment.Center) {
+        Box(Modifier.fillMaxWidth().heightIn(min = MixerStripDefaults.LabelHeight), contentAlignment = Alignment.Center) {
             Text(TransportCopy.masterVolumePercent(master.percent), style = TembraTheme.typographyExtras.tabularParam, color = colors.onSurfaceVariant, maxLines = 1)
         }
     }

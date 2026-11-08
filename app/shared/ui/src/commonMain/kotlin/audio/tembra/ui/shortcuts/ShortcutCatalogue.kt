@@ -45,6 +45,18 @@ object ShortcutCatalogue {
         // Feature 012 (FR-017, FR-029): the mixer sheet.
         entry(ShortcutScope.Timeline, ShortcutAction.TimelineMixer, ShortcutCopy.mixer, char('x')),
 
+        // Feature 012 (FR-028): a focused strip's keys. The fader and the knob answer their own keys first; the strip
+        // serves the rest for its track, so a key on Solo or the name still reaches the fader.
+        entry(ShortcutScope.Mixer, ShortcutAction.MixerFaderUp, ShortcutCopy.mixerFaderUp, named(Key.DirectionUp)),
+        entry(ShortcutScope.Mixer, ShortcutAction.MixerFaderDown, ShortcutCopy.mixerFaderDown, named(Key.DirectionDown)),
+        entry(ShortcutScope.Mixer, ShortcutAction.MixerKnobRight, ShortcutCopy.mixerKnobRight, named(Key.DirectionRight)),
+        entry(ShortcutScope.Mixer, ShortcutAction.MixerKnobLeft, ShortcutCopy.mixerKnobLeft, named(Key.DirectionLeft)),
+        entry(ShortcutScope.Mixer, ShortcutAction.MixerPageUp, ShortcutCopy.mixerPageUp, named(Key.PageUp)),
+        entry(ShortcutScope.Mixer, ShortcutAction.MixerPageDown, ShortcutCopy.mixerPageDown, named(Key.PageDown)),
+        entry(ShortcutScope.Mixer, ShortcutAction.MixerHome, ShortcutCopy.mixerHome, named(Key.MoveHome)),
+        entry(ShortcutScope.Mixer, ShortcutAction.MixerMute, ShortcutCopy.mixerMute, char('m')),
+        entry(ShortcutScope.Mixer, ShortcutAction.MixerSolo, ShortcutCopy.mixerSolo, char('o')),
+
         entry(ShortcutScope.Tuner, ShortcutAction.TunerAutoListen, ShortcutCopy.autoListen, char('a')),
         entry(ShortcutScope.Tuner, ShortcutAction.TunerByEar, ShortcutCopy.byEar, char('e')),
         entry(ShortcutScope.Tuner, ShortcutAction.TunerPlayString1, ShortcutCopy.playString(1), char('1')),

@@ -6,33 +6,33 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.isAltPressed
-import androidx.compose.ui.input.key.isCtrlPressed
-import androidx.compose.ui.input.key.isMetaPressed
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onKeyEvent
-import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.DpOffset
 import audio.tembra.engine.CaptureSnapshot
 import audio.tembra.engine.perf.PerfSection
 import audio.tembra.ui.designsystem.Fader
@@ -41,10 +41,17 @@ import audio.tembra.ui.designsystem.LevelMeter
 import audio.tembra.ui.designsystem.MeterReading
 import audio.tembra.ui.designsystem.PanKnob
 import audio.tembra.ui.designsystem.VuDial
+import audio.tembra.ui.designsystem.onSecondaryClick
+import audio.tembra.ui.designsystem.pointerMenuAnchor
+import audio.tembra.ui.designsystem.pointerMenuItem
+import audio.tembra.ui.designsystem.rememberPointerMenuAnchor
+import audio.tembra.engine.perf.PerfTrace
 import audio.tembra.ui.perf.traceFirstDraw
 import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.ui.timeline.TimelineCallbacks
+import audio.tembra.ui.timeline.TimelineTestTags
 import audio.tembra.ui.timeline.components.MuteSoloButton
+import audio.tembra.ui.timeline.components.TrackMenu
 
 /**
  * One track's strip (feature 012, spec FR-002, FR-007, FR-012 to FR-014; research R2; contracts/mixer-ui.md
@@ -63,15 +70,23 @@ internal fun MixerStrip(
     callbacks: TimelineCallbacks,
     feed: MeterFeed,
     modifier: Modifier = Modifier,
+    /** The track menu's availability (feature 011): the ends of the row and whether a take runs. */
+    isFirst: Boolean = false,
+    isLast: Boolean = false,
+    canReorder: Boolean = true,
 ) {
     val daw = TembraTheme.daw
     val colors = TembraTheme.colors
     val spacing = TembraTheme.spacing
+    val density = LocalDensity.current
     val tint = daw.trackTints[strip.colorIndex % daw.trackTints.size]
     val band = if (strip.audible) tint else tint.copy(alpha = DIMMED_ALPHA)
     val index = strip.index
     val text = if (strip.audible) colors.onSurface else colors.onSurfaceVariant
     val onSelect = { callbacks.onStripSelect(strip.id) }
+    val menuAnchor = rememberPointerMenuAnchor()
+    var menuOpen by rememberSaveable { mutableStateOf(false) }
+    var menuOffset by remember { mutableStateOf(DpOffset.Zero) }
     val reading = remember(index, strip.meterSource, feed) {
         when (strip.meterSource) {
             MeterSource.Playback -> MeterReading.playback(feed.levels, index)
@@ -82,28 +97,80 @@ internal fun MixerStrip(
         MeterSource.Playback -> ({ callbacks.onResetTrackClip(strip.id) })
         MeterSource.Input -> ({ callbacks.onResetClip(strip.id) })
     }
-    Column(
+    Box(
         modifier = modifier
+            // 72 dp at every font size: the labels grow in height and the name ellipsises (spec FR-025, FR-026).
             .width(MixerStripDefaults.Width)
             .fillMaxHeight()
             .testTag(MixerTestTags.strip(index))
             .focusGroup()
-            // "M" and "O" on any focused control of the strip toggle this track (spec FR-028), before the root's handler
-            // reads them for the selected track.
-            .onKeyEvent { event ->
-                if (event.type != KeyEventType.KeyDown || event.isCtrlPressed || event.isMetaPressed || event.isAltPressed) return@onKeyEvent false
-                when (event.key) {
-                    Key.M -> callbacks.onToggleMute(strip.id)
-                    Key.O -> callbacks.onToggleSolo(strip.id)
-                    else -> return@onKeyEvent false
+            // The catalogue's Mixer scope on any focused control of the strip (spec FR-028): M and O toggle this track,
+            // the arrows, Page and Home reach its fader from Solo, Mute or the name; the root's handler never sees them.
+            .mixerKeyHandling(remember(strip, callbacks) { StripKeyTargets(strip, callbacks) })
+            // A secondary click anywhere on the strip opens the track menu at the pointer (feature 011, spec FR-012).
+            .pointerMenuItem(menuAnchor)
+            .onSecondaryClick(strip.id) { position ->
+                PerfTrace.section(PerfSection.TIMELINE_CONTEXT_MENU) {
+                    menuOffset = menuAnchor.offsetFor(position, density)
+                    menuOpen = true
                 }
-                true
             }
             .drawBehind {
                 val height = MixerStripDefaults.BandHeight.toPx()
                 drawRect(band, topLeft = Offset(0f, size.height - height), size = Size(size.width, height))
             }
             .padding(vertical = spacing.xs),
+    ) {
+        // The menu's anchor takes no room: a point at the strip's top-left corner the pointer offset is measured from.
+        TrackMenu(
+            expanded = menuOpen,
+            isFirst = isFirst,
+            isLast = isLast,
+            onDismiss = { menuOpen = false },
+            onSettings = { callbacks.onTrackSettings(strip.id) },
+            onAddAudio = { callbacks.onAddAudio(strip.id) },
+            onMoveUp = { callbacks.onMoveTrack(strip.id, -1) },
+            onMoveDown = { callbacks.onMoveTrack(strip.id, 1) },
+            onDelete = { callbacks.onDeleteTrack(strip.id) },
+            modifier = Modifier.align(Alignment.TopStart),
+            testTag = TimelineTestTags.TRACK_MENU,
+            canReorder = canReorder,
+            offset = menuOffset,
+        ) {
+            Box(Modifier.pointerMenuAnchor(menuAnchor))
+        }
+        StripBody(
+            strip = strip,
+            form = form,
+            selected = selected,
+            callbacks = callbacks,
+            feed = feed,
+            reading = reading,
+            onResetClip = onResetClip,
+            onSelect = onSelect,
+            text = text,
+        )
+    }
+}
+
+/** The strip's controls top to bottom (research R2): number, dial and knob in the full forms, Solo and Mute, the fader with its meter, the name. */
+@Composable
+private fun StripBody(
+    strip: StripUi,
+    form: StripForm,
+    selected: Boolean,
+    callbacks: TimelineCallbacks,
+    feed: MeterFeed,
+    reading: MeterReading,
+    onResetClip: () -> Unit,
+    onSelect: () -> Unit,
+    text: Color,
+) {
+    val colors = TembraTheme.colors
+    val spacing = TembraTheme.spacing
+    val index = strip.index
+    Column(
+        modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(spacing.xs),
     ) {
@@ -180,7 +247,7 @@ internal fun MixerStrip(
     }
 }
 
-/** The number or the name: a 20 dp row that selects the track; the selected strip's rows read as selected. */
+/** The number or the name: a row of at least 20 dp (taller at a larger font) that selects the track; the selected strip's rows read as selected. */
 @Composable
 private fun StripLabel(
     text: String,
@@ -193,8 +260,10 @@ private fun StripLabel(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(MixerStripDefaults.LabelHeight)
+            .heightIn(min = MixerStripDefaults.LabelHeight)
             .testTag(testTag)
+            // A tap or a screen reader selects the track; the Tab order is the strip's controls alone (contracts/mixer-ui.md "Keyboard").
+            .focusProperties { canFocus = false }
             .selectable(selected = selected, role = Role.Button, onClick = onSelect)
             .padding(horizontal = TembraTheme.spacing.xs),
         contentAlignment = Alignment.Center,

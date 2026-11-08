@@ -23,6 +23,7 @@ import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.doubleClick
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performSemanticsAction
@@ -183,6 +184,22 @@ class PanKnobTest {
         val edge = DpOffset(1.dp, PanKnobDefaults.Size / 2)
         val ring = onNodeWithTag(TAG).averageColorAt(onNodeWithTag(TAG).captureToImage(), edge, pixelDensity, radius = 0)
         assertTrue(abs(ring.red - primary.red) < 0.12f && abs(ring.green - primary.green) < 0.12f && abs(ring.blue - primary.blue) < 0.12f, "the focus ring reads $ring, not the primary $primary")
+    }
+
+    /** Feature 012 (spec FR-027; T084): hover shows the tooltip with the description and 011's hover layer over the whole dial, the arc's gap included. */
+    @Test
+    fun hoverShowsTheTooltipAndTheHoverLayer() = runComposeUiTest {
+        val source = MutableInteractionSource()
+        setKnob(Pan.Centre, source = source)
+        onNodeWithText(DESCRIPTION).assertDoesNotExist()
+        // The bottom edge's middle: the arc leaves it open, nothing of the knob is drawn there at rest.
+        val gap = DpOffset(PanKnobDefaults.Size / 2, PanKnobDefaults.Size - 1.dp)
+        val plain = onNodeWithTag(TAG).averageColorAt(onNodeWithTag(TAG).captureToImage(), gap, pixelDensity, radius = 0)
+        runBlocking { source.emit(HoverInteraction.Enter()) }
+        waitForIdle()
+        onNodeWithText(DESCRIPTION).assertExists()
+        val hovered = onNodeWithTag(TAG).averageColorAt(onNodeWithTag(TAG).captureToImage(), gap, pixelDensity, radius = 0)
+        assertNotEquals(plain, hovered, "the hover layer left the dial's gap unchanged")
     }
 
     private companion object {
