@@ -33,6 +33,8 @@ internal fun MixerStripRow(
     feed: MeterFeed,
     modifier: Modifier = Modifier,
     listState: LazyListState = rememberLazyListState(),
+    /** False while a take runs: the strips' menus offer no move or delete (feature 010, spec FR-018). */
+    canReorder: Boolean = true,
 ) {
     val spacing = TembraTheme.spacing
     LaunchedEffect(listState) {
@@ -50,7 +52,16 @@ internal fun MixerStripRow(
         horizontalArrangement = Arrangement.spacedBy(spacing.xs),
     ) {
         items(strips, key = { it.id.value }) { strip ->
-            MixerStrip(strip = strip, form = form, selected = strip.index == selectedIndex, callbacks = callbacks, feed = feed)
+            MixerStrip(
+                strip = strip,
+                form = form,
+                selected = strip.index == selectedIndex,
+                callbacks = callbacks,
+                feed = feed,
+                isFirst = strip.index == 0,
+                isLast = strip.index == strips.lastIndex,
+                canReorder = canReorder,
+            )
         }
     }
 }

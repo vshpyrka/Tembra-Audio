@@ -54,7 +54,8 @@ import kotlin.math.sin
  * right, the lit part from the centre to the pointer. A vertical drag turns it 1 % per [PanKnobDefaults.DpPerPercent]
  * (upward to the right), keeps following off the dial, and a release within 5 % of the centre settles there
  * ([Pan.snapToCentre]); every gesture ends with one [onSettled]. A double tap returns to the centre; the wheel moves 1 %
- * per notch, the arrows 1 %, Page 10 %, Home to the centre, each a settled gesture. Hover tints the dial, keyboard focus
+ * per notch, the arrows 1 %, Page 10 %, Home to the centre, each a settled gesture. Hover shows the tooltip and the
+ * layer over the whole dial and tints the dial, keyboard focus
  * draws the ring. Semantics: [description] names it ("<track>, pan"), the readout ("L 35", "C", "R 20") is its state,
  * `progressBarRangeInfo` and `setProgress` work in percent.
  */
@@ -96,106 +97,109 @@ internal fun PanKnob(
         currentOnSettled()
     }
 
-    Box(
-        modifier = modifier
-            .then(if (testTag != null) Modifier.testTag(testTag) else Modifier)
-            .focusIdentity(testTag)
-            .size(PanKnobDefaults.Size)
-            .hoverable(source)
-            .focusable(interactionSource = source)
-            .pointerHoverIcon(PointerIcon.Hand)
-            .drawBehind {
-                val stroke = PanKnobDefaults.ArcStroke.toPx()
-                val radius = size.minDimension / 2 - stroke
-                val centre = Offset(size.width / 2, size.height / 2)
-                drawCircle(dial, radius = radius - stroke, center = centre)
-                val arcTopLeft = Offset(centre.x - radius, centre.y - radius)
-                val arcSize = Size(radius * 2, radius * 2)
-                drawArc(track, START_ANGLE, SWEEP, useCenter = false, topLeft = arcTopLeft, size = arcSize, style = Stroke(stroke, cap = StrokeCap.Round))
-                val fraction = (pan.percent + Pan.MAX) / (2f * Pan.MAX)
-                val pointerAngle = START_ANGLE + SWEEP * fraction
-                val centreAngle = START_ANGLE + SWEEP / 2
-                if (pan.percent != 0) {
-                    val from = minOf(centreAngle, pointerAngle)
-                    drawArc(lit, from, kotlin.math.abs(pointerAngle - centreAngle), useCenter = false, topLeft = arcTopLeft, size = arcSize, style = Stroke(stroke, cap = StrokeCap.Round))
+    TembraTooltip(text = description, interactionSource = source) {
+        Box(
+            modifier = modifier
+                .then(if (testTag != null) Modifier.testTag(testTag) else Modifier)
+                .focusIdentity(testTag)
+                .hoverArea(hovered, PanKnobDefaults.Size / 2)
+                .size(PanKnobDefaults.Size)
+                .hoverable(source)
+                .focusable(interactionSource = source)
+                .pointerHoverIcon(PointerIcon.Hand)
+                .drawBehind {
+                    val stroke = PanKnobDefaults.ArcStroke.toPx()
+                    val radius = size.minDimension / 2 - stroke
+                    val centre = Offset(size.width / 2, size.height / 2)
+                    drawCircle(dial, radius = radius - stroke, center = centre)
+                    val arcTopLeft = Offset(centre.x - radius, centre.y - radius)
+                    val arcSize = Size(radius * 2, radius * 2)
+                    drawArc(track, START_ANGLE, SWEEP, useCenter = false, topLeft = arcTopLeft, size = arcSize, style = Stroke(stroke, cap = StrokeCap.Round))
+                    val fraction = (pan.percent + Pan.MAX) / (2f * Pan.MAX)
+                    val pointerAngle = START_ANGLE + SWEEP * fraction
+                    val centreAngle = START_ANGLE + SWEEP / 2
+                    if (pan.percent != 0) {
+                        val from = minOf(centreAngle, pointerAngle)
+                        drawArc(lit, from, kotlin.math.abs(pointerAngle - centreAngle), useCenter = false, topLeft = arcTopLeft, size = arcSize, style = Stroke(stroke, cap = StrokeCap.Round))
+                    }
+                    val radians = pointerAngle * PI / 180.0
+                    val inner = radius * POINTER_FROM
+                    val tip = Offset(centre.x + radius * cos(radians).toFloat(), centre.y + radius * sin(radians).toFloat())
+                    val base = Offset(centre.x + inner * cos(radians).toFloat(), centre.y + inner * sin(radians).toFloat())
+                    drawLine(pointer, start = base, end = tip, strokeWidth = PanKnobDefaults.PointerStroke.toPx(), cap = StrokeCap.Round)
+                    if (focused) drawCircle(ringColor, radius = size.minDimension / 2 - ringWidth.toPx() / 2, center = centre, style = Stroke(ringWidth.toPx()))
                 }
-                val radians = pointerAngle * PI / 180.0
-                val inner = radius * POINTER_FROM
-                val tip = Offset(centre.x + radius * cos(radians).toFloat(), centre.y + radius * sin(radians).toFloat())
-                val base = Offset(centre.x + inner * cos(radians).toFloat(), centre.y + inner * sin(radians).toFloat())
-                drawLine(pointer, start = base, end = tip, strokeWidth = PanKnobDefaults.PointerStroke.toPx(), cap = StrokeCap.Round)
-                if (focused) drawCircle(ringColor, radius = size.minDimension / 2 - ringWidth.toPx() / 2, center = centre, style = Stroke(ringWidth.toPx()))
-            }
-            .pointerInput(Unit) {
-                awaitEachGesture {
-                    val down = awaitFirstDown(requireUnconsumed = false)
-                    val dpPerPercent = PanKnobDefaults.DpPerPercent.toPx()
-                    var startPercent = 0
-                    var startY = 0f
-                    // The value the turn reached, kept here: the composition's copy lags the last report by a frame.
-                    var reached = current
-                    val start = awaitVerticalTouchSlopOrCancellation(down.id) { change, overSlop ->
-                        change.consume()
-                        startPercent = current.percent
-                        startY = change.position.y - overSlop
-                        reached = offer(startPercent - (overSlop / dpPerPercent).roundToInt())
-                    } ?: return@awaitEachGesture
-                    PerfTrace.animation(PerfSection.TIMELINE_PAN_TURN) {
-                        drag(start.id) { change ->
+                .pointerInput(Unit) {
+                    awaitEachGesture {
+                        val down = awaitFirstDown(requireUnconsumed = false)
+                        val dpPerPercent = PanKnobDefaults.DpPerPercent.toPx()
+                        var startPercent = 0
+                        var startY = 0f
+                        // The value the turn reached, kept here: the composition's copy lags the last report by a frame.
+                        var reached = current
+                        val start = awaitVerticalTouchSlopOrCancellation(down.id) { change, overSlop ->
                             change.consume()
-                            reached = offer(startPercent - ((change.position.y - startY) / dpPerPercent).roundToInt())
+                            startPercent = current.percent
+                            startY = change.position.y - overSlop
+                            reached = offer(startPercent - (overSlop / dpPerPercent).roundToInt())
+                        } ?: return@awaitEachGesture
+                        PerfTrace.animation(PerfSection.TIMELINE_PAN_TURN) {
+                            drag(start.id) { change ->
+                                change.consume()
+                                reached = offer(startPercent - ((change.position.y - startY) / dpPerPercent).roundToInt())
+                            }
                         }
-                    }
-                    // A release near the centre settles there (spec FR-008).
-                    val settledAt = reached.snapToCentre()
-                    if (settledAt != reached) currentOnPan(settledAt)
-                    currentOnSettled()
-                }
-            }
-            .pointerInput(Unit) {
-                detectTapGestures(onDoubleTap = {
-                    offer(Pan.Centre.percent)
-                    currentOnSettled()
-                })
-            }
-            .pointerInput(Unit) {
-                awaitPointerEventScope {
-                    while (true) {
-                        val event = awaitPointerEvent()
-                        if (event.type != PointerEventType.Scroll) continue
-                        val delta = event.changes.sumOf { it.scrollDelta.y.toDouble() }
-                        if (delta == 0.0) continue
-                        step(if (delta < 0) STEP else -STEP)
-                        event.changes.forEach { it.consume() }
-                    }
-                }
-            }
-            .onKeyEvent { event ->
-                if (event.type != KeyEventType.KeyDown) return@onKeyEvent false
-                when (event.key) {
-                    Key.DirectionUp, Key.DirectionRight -> step(STEP)
-                    Key.DirectionDown, Key.DirectionLeft -> step(-STEP)
-                    Key.PageUp -> step(PAGE)
-                    Key.PageDown -> step(-PAGE)
-                    Key.MoveHome -> {
-                        offer(Pan.Centre.percent)
+                        // A release near the centre settles there (spec FR-008).
+                        val settledAt = reached.snapToCentre()
+                        if (settledAt != reached) currentOnPan(settledAt)
                         currentOnSettled()
                     }
-                    else -> return@onKeyEvent false
                 }
-                true
-            }
-            .semantics(mergeDescendants = true) {
-                contentDescription = description
-                stateDescription = readout
-                progressBarRangeInfo = ProgressBarRangeInfo(pan.percent.toFloat(), -Pan.MAX.toFloat()..Pan.MAX.toFloat(), 0)
-                setProgress { next ->
-                    offer(next.roundToInt())
-                    currentOnSettled()
+                .pointerInput(Unit) {
+                    detectTapGestures(onDoubleTap = {
+                        offer(Pan.Centre.percent)
+                        currentOnSettled()
+                    })
+                }
+                .pointerInput(Unit) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            val event = awaitPointerEvent()
+                            if (event.type != PointerEventType.Scroll) continue
+                            val delta = event.changes.sumOf { it.scrollDelta.y.toDouble() }
+                            if (delta == 0.0) continue
+                            step(if (delta < 0) STEP else -STEP)
+                            event.changes.forEach { it.consume() }
+                        }
+                    }
+                }
+                .onKeyEvent { event ->
+                    if (event.type != KeyEventType.KeyDown) return@onKeyEvent false
+                    when (event.key) {
+                        Key.DirectionUp, Key.DirectionRight -> step(STEP)
+                        Key.DirectionDown, Key.DirectionLeft -> step(-STEP)
+                        Key.PageUp -> step(PAGE)
+                        Key.PageDown -> step(-PAGE)
+                        Key.MoveHome -> {
+                            offer(Pan.Centre.percent)
+                            currentOnSettled()
+                        }
+                        else -> return@onKeyEvent false
+                    }
                     true
                 }
-            },
-    )
+                .semantics(mergeDescendants = true) {
+                    contentDescription = description
+                    stateDescription = readout
+                    progressBarRangeInfo = ProgressBarRangeInfo(pan.percent.toFloat(), -Pan.MAX.toFloat()..Pan.MAX.toFloat(), 0)
+                    setProgress { next ->
+                        offer(next.roundToInt())
+                        currentOnSettled()
+                        true
+                    }
+                },
+        )
+    }
 }
 
 /** The arc from hard left (lower left) over the top to hard right (lower right), in Compose's degrees. */

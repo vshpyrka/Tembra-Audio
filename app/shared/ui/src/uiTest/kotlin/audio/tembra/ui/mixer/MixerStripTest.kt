@@ -7,7 +7,10 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.key.Key
@@ -30,9 +33,11 @@ import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
+import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.requestFocus
+import androidx.compose.ui.test.rightClick
 import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -54,6 +59,8 @@ import audio.tembra.ui.theme.TembraMotion
 import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.ui.timeline.ScriptedInputTelemetry
 import audio.tembra.ui.timeline.TimelineCallbacks
+import audio.tembra.ui.timeline.TimelineTestTags
+import audio.tembra.ui.timeline.components.MENU_MOVE_UP
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -229,8 +236,11 @@ class MixerStripTest {
         val soloFill = solo[2, solo.height / 2]
         val muteFill = mute[2, mute.height / 2]
         assertTrue(abs(soloFill.red - lavender.red) < 0.1f && abs(soloFill.green - lavender.green) < 0.1f && abs(soloFill.blue - lavender.blue) < 0.1f, "Solo's fill $soloFill is not the lavender $lavender")
-        // The node's own capture keeps the fill's alpha: the dim M is the lavender at about a third of Solo's opacity.
-        assertTrue(muteFill.alpha < soloFill.alpha * 0.5f, "Mute's fill $muteFill is not dimmer than Solo's $soloFill")
+        // The dim M is the lavender at about a third of Solo's opacity: a node's own capture keeps that alpha on iOS and
+        // composites it on Android, so both fills are laid over black before their brightness is compared.
+        val soloLit = soloFill.compositeOver(Color.Black).luminance()
+        val muteLit = muteFill.compositeOver(Color.Black).luminance()
+        assertTrue(muteLit < soloLit * 0.5f, "Mute's fill $muteFill ($muteLit) is not dimmer than Solo's $soloFill ($soloLit)")
         onNodeWithTag(MixerTestTags.solo(0)).assertIsOn()
         onNodeWithTag(MixerTestTags.mute(0)).assertIsOn()
     }
@@ -260,5 +270,43 @@ class MixerStripTest {
         // The fader's Up arrow reaches the strip's gain (0.5 dB) and settles the step.
         onNodeWithTag(MixerTestTags.fader(0)).performKeyInput { pressKey(Key.DirectionUp) }
         assertEquals(listOf("gain(t1,−2.5dB)", "settled"), calls)
+    }
+
+    /** Spec FR-028 (T087): the arrows, Page and Home on Solo or Mute reach the strip's own fader and pan through the catalogue's Mixer scope. */
+    @Test
+    fun theStripsKeysReachItsFaderAndPanFromTheToggles() = runComposeUiTest {
+        setStrip()
+        if (!enterKeyboardMode(manager)) return@runComposeUiTest
+        onNodeWithTag(MixerTestTags.solo(0)).requestFocus()
+        onNodeWithTag(MixerTestTags.solo(0)).performKeyInput { pressKey(Key.DirectionUp) }
+        onNodeWithTag(MixerTestTags.solo(0)).performKeyInput { pressKey(Key.PageDown) }
+        onNodeWithTag(MixerTestTags.mute(0)).requestFocus()
+        onNodeWithTag(MixerTestTags.mute(0)).performKeyInput { pressKey(Key.MoveHome) }
+        onNodeWithTag(MixerTestTags.mute(0)).performKeyInput { pressKey(Key.DirectionRight) }
+        // Each key reads the strip's state as shown (−3 dB, centre): one settled gesture each.
+        assertEquals(
+            listOf("gain(t1,−2.5dB)", "settled", "gain(t1,−9.0dB)", "settled", "gain(t1,${GainDb.Unity.readout})", "settled", "pan(t1,${Pan(1).readout})", "panSettled"),
+            calls,
+        )
+    }
+
+    /** Feature 011's secondary click on the strip (spec FR-012 there; T084): the track menu opens at the pointer; the click selects nothing. */
+    @Test
+    fun aSecondaryClickOpensTheTrackMenuAtThePointer() = runComposeUiTest {
+        setStrip()
+        val scale = density.density
+        val local = Offset(30f * scale, 150f * scale)
+        onNodeWithTag(MixerTestTags.strip(0)).performMouseInput { rightClick(local) }
+        waitForIdle()
+        val click = onNodeWithTag(MixerTestTags.strip(0)).fetchSemanticsNode().positionOnScreen + local
+        val menu = onNodeWithTag(TimelineTestTags.TRACK_MENU).fetchSemanticsNode()
+        val topLeft = menu.positionOnScreen
+        val bottomRight = topLeft + Offset(menu.size.width.toFloat(), menu.size.height.toFloat())
+        val slack = 24f * scale
+        val nearX = abs(topLeft.x - click.x) <= slack || abs(bottomRight.x - click.x) <= slack
+        val nearY = abs(topLeft.y - click.y) <= slack || abs(bottomRight.y - click.y) <= slack
+        assertTrue(nearX && nearY, "the menu ($topLeft – $bottomRight px) is not at the pointer $click px")
+        onNodeWithTag("${TimelineTestTags.TRACK_MENU}.$MENU_MOVE_UP").assertExists()
+        assertTrue(calls.none { it.startsWith("select") }, "the secondary click selected the track: $calls")
     }
 }

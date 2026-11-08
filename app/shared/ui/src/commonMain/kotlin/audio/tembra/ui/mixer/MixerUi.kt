@@ -21,6 +21,8 @@ data class MixerUi(
     val master: MasterUi = MasterUi(),
     val windowAvailable: Boolean = false,
     val selectedIndex: Int? = null,
+    /** False while a take runs: the strips' menus offer no move or delete (feature 010, spec FR-018). */
+    val canReorder: Boolean = true,
 ) {
     /** The sheet's height now, from its anchors. */
     val sheetHeight: Dp get() = anchors.heightOf(height)

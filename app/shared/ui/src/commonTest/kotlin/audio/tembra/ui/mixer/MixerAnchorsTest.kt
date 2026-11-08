@@ -45,6 +45,10 @@ class MixerAnchorsTest {
         assertEquals(StripForm.Compact, StripForm.of(MixerHeight.Half, 1000f))
         assertEquals(StripForm.FullNoVu, StripForm.of(MixerHeight.Full, 479f))
         assertEquals(StripForm.Full, StripForm.of(MixerHeight.Full, 480f))
+        // Spec FR-025's order (T082): a 440 dp sheet keeps the knob, a 280 dp one drops it before the fader loses its throw.
+        assertEquals(StripForm.FullNoVu, StripForm.of(MixerHeight.Full, 440f))
+        assertEquals(StripForm.FullNoVu, StripForm.of(MixerHeight.Full, 292f))
+        assertEquals(StripForm.Compact, StripForm.of(MixerHeight.Full, 280f))
         assertEquals(false, StripForm.Compact.showsPan)
         assertEquals(true, StripForm.FullNoVu.showsPan)
         assertEquals(false, StripForm.FullNoVu.showsVu)

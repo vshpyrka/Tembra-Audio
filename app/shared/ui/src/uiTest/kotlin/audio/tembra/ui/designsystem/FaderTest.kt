@@ -27,6 +27,7 @@ import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.doubleClick
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performSemanticsAction
@@ -244,6 +245,22 @@ class FaderTest {
         onNodeWithTag(TAG).performKeyInput { pressKey(Key.PageUp) }
         onNodeWithTag(TAG).performKeyInput { pressKey(Key.MoveHome) }
         assertEquals(listOf(81f, 71f, 81f, 91f, 100f, 80f), changes)
+    }
+
+    /** Feature 012 (spec FR-027; T084): hover shows the tooltip with the description and 011's hover layer over the whole control, rail gaps included. */
+    @Test
+    fun hoverShowsTheTooltipAndTheHoverLayer() = runComposeUiTest {
+        val source = MutableInteractionSource()
+        setFader(0f, source = source)
+        onNodeWithText(DESCRIPTION).assertDoesNotExist()
+        // The top edge's middle: above the rail, nothing of the fader is drawn there at rest.
+        val edge = DpOffset(FaderDefaults.HandleWidth / 2, 3.dp)
+        val plain = onNodeWithTag(TAG).averageColorAt(onNodeWithTag(TAG).captureToImage(), edge, pixelDensity, radius = 0)
+        runBlocking { source.emit(HoverInteraction.Enter()) }
+        waitForIdle()
+        onNodeWithText(DESCRIPTION).assertExists()
+        val hovered = onNodeWithTag(TAG).averageColorAt(onNodeWithTag(TAG).captureToImage(), edge, pixelDensity, radius = 0)
+        assertNotEquals(plain, hovered, "the hover layer left the fader's edge unchanged")
     }
 
     private fun Color.near(other: Color): Boolean =
