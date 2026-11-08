@@ -17,9 +17,11 @@ import audio.tembra.ui.platform.IosAudioFilePicker
 import audio.tembra.ui.platform.IosBackgroundPlaybackHost
 import audio.tembra.ui.platform.IosMicrophonePermission
 import audio.tembra.ui.platform.IosTrackpadPinchSource
+import audio.tembra.ui.platform.IosWindowCapabilities
 import audio.tembra.ui.platform.IosWindowControls
 import audio.tembra.ui.platform.MicrophonePermission
 import audio.tembra.ui.platform.TrackpadPinchSource
+import audio.tembra.ui.platform.WindowCapabilities
 import audio.tembra.ui.platform.WindowControls
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.DependencyGraph
@@ -60,6 +62,10 @@ interface IosAppGraph : AppGraph {
     @Provides
     @SingleIn(AppScope::class)
     fun provideWindowControls(): WindowControls = IosWindowControls()
+
+    /** One window on iOS (feature 012, research R10): the mixer's own window is never offered. */
+    @Provides
+    fun provideWindowCapabilities(): WindowCapabilities = IosWindowCapabilities()
 
     /** The shell's trackpad pinch bridge reports here (feature 011, research R9); deleted with Compose 1.13. */
     @Provides

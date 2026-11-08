@@ -48,7 +48,7 @@ typedef struct tembra_mix_snapshot {
 ```
 
 `tembra_audio_health` appends `uint32_t master_clips;` (blocks in which the clamp engaged;
-`sizeof == 60`, `offsetof == 56`; `audio_health_test` static asserts updated).
+the struct's padding held it: `sizeof` stays 56 and `offsetof == 52`; `audio_health_test` static asserts updated).
 
 ## Renderer rules
 
@@ -110,5 +110,5 @@ none suspend. `FakeAudioEngine` records every call and scripts `readMix` per blo
 | `track_strip_test.cpp` (extended) | two ramps land in 10 ms; a pan step is click-free (max per-sample step ≤ the 10 ms ramp's step); a centred mono track is unchanged from revision 7 (bit-exact) |
 | `master_bus_test.cpp` (extended) | `master_clips` counts a clamped block once; the clamp latch |
 | `transport_renderer_test.cpp` (extended) | a stereo `renderStereo` helper; a track panned hard left renders silence on the right; the meter record is published every block and is zero when metering is off |
-| `audio_health_test.cpp`, `engine_info_test.cpp` | `sizeof == 60`, `offsetof(master_clips) == 56`; ABI 8 |
-| `trace_shim_test.cpp`, `trace_poison_test` | 49 names; the new RT sources poisoned |
+| `audio_health_test.cpp`, `engine_info_test.cpp` | `sizeof == 56`, `offsetof(master_clips) == 52`; ABI 8 |
+| `trace_shim_test.cpp`, `trace_poison_test` | 52 names; the new RT sources poisoned |

@@ -398,6 +398,7 @@ BENCHMARK_CLASS_OF = {
     "recording": "RecordingJourneyBenchmark",
     "stress": "StressJourneyBenchmark",
     "windowing": "WindowingJourneyBenchmark",
+    "mixer": "MixerJourneyBenchmark",
 }
 _INSTRUMENT_FAILURE_MARKERS = ("FAILURES!!!", "INSTRUMENTATION_FAILED", "Process crashed", "shortMsg=")
 _INSTRUMENT_TERMINAL_MARKERS = ("OK (", "FAILURES!!!", "INSTRUMENTATION_CODE:")

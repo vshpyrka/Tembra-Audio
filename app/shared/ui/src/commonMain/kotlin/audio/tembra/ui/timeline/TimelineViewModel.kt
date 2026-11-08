@@ -60,7 +60,6 @@ import audio.tembra.ui.drop.DropOutcome
 import audio.tembra.ui.drop.DropPlan
 import audio.tembra.ui.metronome.TapCaption
 import audio.tembra.ui.mixer.MasterUi
-import audio.tembra.ui.mixer.MeterSource
 import audio.tembra.ui.mixer.MixerAnchors
 import audio.tembra.ui.mixer.MixerHeight
 import audio.tembra.ui.mixer.MixerUi
@@ -69,6 +68,7 @@ import audio.tembra.ui.mixer.StripUi
 import audio.tembra.ui.platform.AudioFilePicker
 import audio.tembra.ui.platform.AudioPickRequest
 import audio.tembra.ui.platform.AudioPickResult
+import audio.tembra.ui.platform.WindowCapabilities
 import audio.tembra.ui.platform.WindowControls
 import audio.tembra.ui.session.ImportTarget
 import audio.tembra.ui.session.InputTelemetry
@@ -123,6 +123,7 @@ class TimelineViewModel(
     private val preferences: MetronomePreferences,
     private val timelinePreferences: TimelinePreferences,
     private val windowControls: WindowControls,
+    private val windowCapabilities: WindowCapabilities,
 ) : ViewModel() {
 
     private val view = MutableStateFlow(TimelineViewState())
@@ -405,6 +406,11 @@ class TimelineViewModel(
      * (FR-024); the close is the `timeline.mixerClose` section.
      */
     fun toggleMixer() {
+        // While the mixer has a window of its own, the button and X bring that window to the front (spec FR-021a).
+        if (windowCapabilities.mixerWindowOpen.value) {
+            windowCapabilities.openMixerWindow()
+            return
+        }
         if (view.value.mixer.open) {
             PerfTrace.section(PerfSection.TIMELINE_MIXER_CLOSE) {
                 view.update { it.copy(mixer = it.mixer.copy(open = false)) }
@@ -414,6 +420,15 @@ class TimelineViewModel(
             view.update { it.copy(mixer = it.mixer.copy(open = true, height = MixerHeight.Half)) }
             session.setMetering(true)
         }
+    }
+
+    /**
+     * The handle's "Open in a window" (spec FR-021a): the sheet closes (its metering count goes with it; the window holds
+     * its own) and the platform opens the mixer's window over the same session.
+     */
+    fun openMixerWindow() {
+        if (view.value.mixer.open) toggleMixer()
+        windowCapabilities.openMixerWindow()
     }
 
     /** The height a settled drag or the handle asked for (spec FR-018); landscape's single anchor overrides it when mapped. */
@@ -720,24 +735,11 @@ class TimelineViewModel(
             height = mixerHeight,
             form = StripForm.of(mixerHeight, anchors.heightOf(mixerHeight).value),
             anchors = anchors,
-            strips = tracks.mapIndexed { index, track ->
-                StripUi(
-                    id = track.id,
-                    index = index,
-                    number = index + 1,
-                    name = track.name,
-                    colorIndex = track.colorIndex,
-                    gainDb = track.gainDb,
-                    pan = track.pan,
-                    muted = track.muted,
-                    soloed = track.soloed,
-                    audible = track.audible,
-                    meterSource = if (track.armed) MeterSource.Input else MeterSource.Playback,
-                )
-            }.toPersistentList(),
+            strips = StripUi.forProject(project, armedTrack),
             master = MasterUi(project.masterVolume.value),
             selectedIndex = selection.trackIdOrNull?.let { id -> tracks.indexOfFirst { it.id == id }.takeIf { it >= 0 } },
             canReorder = !takeRunning,
+            windowAvailable = windowCapabilities.multipleWindows,
         )
         return TimelineUiState(
             loaded = true,

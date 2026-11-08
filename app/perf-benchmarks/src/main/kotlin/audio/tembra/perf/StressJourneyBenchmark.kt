@@ -27,7 +27,8 @@ class StressJourneyBenchmark {
         iterations = PerfMetrics.ITERATIONS,
         setupBlock = {
             pressHome()
-            startActivityAndWait()
+            // Feature 012: the measurement build builds the 24-track stress project on this request (once per install).
+            startActivityAndWait { it.putExtra("tembra.stress.tracks", "24") }
         },
     ) {
         trace("journey.stress") { journey.run(device) }

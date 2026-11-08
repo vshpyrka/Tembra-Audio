@@ -136,6 +136,7 @@ fun TimelineScreen(
                 // The mixer (feature 012): every settled gesture closes the undo group the same way.
                 onMixerToggle = viewModel::toggleMixer,
                 onMixerHeight = viewModel::setMixerHeight,
+                onOpenMixerWindow = viewModel::openMixerWindow,
                 onPan = viewModel::setPan,
                 onGainSettled = viewModel::gestureSettled,
                 onPanSettled = viewModel::gestureSettled,

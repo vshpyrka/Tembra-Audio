@@ -16,6 +16,7 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performKeyInput
@@ -116,6 +117,18 @@ class MixerSemanticsTest {
         onNodeWithTag(MixerTestTags.MASTER_METER).assertContentDescriptionEquals(MixerCopy.level)
         onNodeWithTag(MixerTestTags.solo(0)).assertContentDescriptionEquals(MixerCopy.solo)
         onNodeWithTag(MixerTestTags.mute(0)).assertContentDescriptionEquals(MixerCopy.mute)
+    }
+
+    /** T092's desktop finding: a sheet opened under a keyboard puts the focus on the handle, so Tab walks the strips next. */
+    @Test
+    fun openingTheSheetUnderAKeyboardFocusesTheHandle() = runComposeUiTest {
+        setSheet()
+        if (!enterKeyboardMode(manager)) return@runComposeUiTest
+        ui.value = ui.value.copy(open = false)
+        waitUntil(timeoutMillis = 5_000) { onAllNodesWithTag(MixerTestTags.HANDLE).fetchSemanticsNodes().isEmpty() }
+        ui.value = ui.value.copy(open = true)
+        waitForIdle()
+        onNodeWithTag(MixerTestTags.HANDLE).assertIsFocused()
     }
 
     /** Contracts/mixer-ui.md "Keyboard": the handle, then each strip's controls top to bottom (the knob above the toggles in the full form), then the master's fader; the labels are not stops. */

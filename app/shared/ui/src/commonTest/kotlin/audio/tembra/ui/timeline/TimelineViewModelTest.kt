@@ -48,6 +48,7 @@ import audio.tembra.ui.mixer.MixerHeight
 import audio.tembra.ui.mixer.StripForm
 import audio.tembra.ui.platform.FakeAudioFilePicker
 import audio.tembra.ui.platform.FakeBackgroundPlaybackHost
+import audio.tembra.ui.platform.FakeWindowCapabilities
 import audio.tembra.ui.platform.FakeWindowControls
 import audio.tembra.ui.session.AppStartup
 import audio.tembra.ui.session.ProjectSession
@@ -106,6 +107,7 @@ class TimelineViewModelTest {
     private val recordingPreferences = FakeTimelinePreferences()
     private val routes = FakeAudioRouteMonitor()
     private val windowControls = FakeWindowControls()
+    private val windowCapabilities = FakeWindowCapabilities()
     private val session = ProjectSession(
         repository = repository,
         audio = engine,
@@ -133,7 +135,7 @@ class TimelineViewModelTest {
     @BeforeTest
     fun setUp() {
         Dispatchers.setMain(dispatcher)
-        viewModel = TimelineViewModel(session, picker, preferences, timelinePreferences, windowControls)
+        viewModel = TimelineViewModel(session, picker, preferences, timelinePreferences, windowControls, windowCapabilities)
     }
 
     @AfterTest
@@ -701,7 +703,7 @@ class TimelineViewModelTest {
         assertFalse(session.state.value.canUndo, "zoom and grid are not edits")
         assertEquals(demo, repository.saved.getValue(demo.id), "the document is untouched")
         // A fresh ViewModel after a relaunch measures the same lane and lands on the stored zoom.
-        val later = TimelineViewModel(session, picker, preferences, timelinePreferences, windowControls)
+        val later = TimelineViewModel(session, picker, preferences, timelinePreferences, windowControls, windowCapabilities)
         later.screenVisible(true)
         later.viewportMeasured(1000.0, 2.0)
         runCurrent()
@@ -729,7 +731,7 @@ class TimelineViewModelTest {
         assertEquals("Second", ui().projectName)
         assertFalse(ui().overviewStripShown)
         // A fresh ViewModel after a relaunch reads the stored choice once the timeline shows.
-        val later = TimelineViewModel(session, picker, preferences, timelinePreferences, windowControls)
+        val later = TimelineViewModel(session, picker, preferences, timelinePreferences, windowControls, windowCapabilities)
         later.screenVisible(true)
         runCurrent()
         assertFalse(later.uiState.value.overviewStripShown)
@@ -744,7 +746,7 @@ class TimelineViewModelTest {
     @Test
     fun aStoredHiddenStripIsReadWhenTheTimelineShows() = test {
         val hidden = FakeTimelinePreferences(initialShown = false)
-        val fresh = TimelineViewModel(session, picker, preferences, hidden, windowControls)
+        val fresh = TimelineViewModel(session, picker, preferences, hidden, windowControls, windowCapabilities)
         fresh.screenVisible(true)
         runCurrent()
         assertFalse(fresh.uiState.value.overviewStripShown, "the stored choice hides the strip")
@@ -961,6 +963,43 @@ class TimelineViewModelTest {
                 assertEquals(track.audible, strip.audible, "audibility of ${track.name} after $it toggles")
             }
         }
+    }
+
+    /** Spec FR-021a (T101): the handle's button closes the sheet, releases its metering and asks the platform for the window. */
+    @Test
+    fun openMixerWindowClosesTheSheetAndAsksTheCapabilities() = test {
+        val capable = FakeWindowCapabilities(multipleWindows = true)
+        val windowed = TimelineViewModel(session, picker, preferences, timelinePreferences, windowControls, capable)
+        openDemo()
+        windowed.screenVisible(true)
+        runCurrent()
+        assertTrue(windowed.uiState.value.mixer.windowAvailable)
+        windowed.toggleMixer()
+        runCurrent()
+        assertTrue(windowed.uiState.value.mixer.open)
+        windowed.openMixerWindow()
+        runCurrent()
+        assertFalse(windowed.uiState.value.mixer.open, "the sheet closes when the window opens")
+        assertEquals(1, capable.opens)
+        assertEquals("setMetering(false)", engine.calls.last(), "the sheet's metering count went with it")
+        // While the window is open, the Mixer button (and X) bring it to the front instead of opening the sheet.
+        capable.mixerWindowOpen.value = true
+        windowed.toggleMixer()
+        runCurrent()
+        assertFalse(windowed.uiState.value.mixer.open)
+        assertEquals(2, capable.opens)
+        windowed.screenVisible(false)
+    }
+
+    /** Spec FR-021a (T101): without the capability the handle offers no window button, and X opens the sheet as before. */
+    @Test
+    fun windowButtonHiddenWithoutCapabilities() = test {
+        openDemo()
+        assertFalse(ui().mixer.windowAvailable)
+        viewModel.toggleMixer()
+        runCurrent()
+        assertTrue(ui().mixer.open)
+        assertEquals(0, windowCapabilities.opens)
     }
 
     @Test

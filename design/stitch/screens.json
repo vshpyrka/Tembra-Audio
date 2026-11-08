@@ -447,6 +447,86 @@
       "height": "1600",
       "html": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/12096855136060347142:download",
       "screenshot": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/12096855136060347459:download"
+    },
+    {
+      "slug": "mixer/phone-half",
+      "screenId": "1653020756071234654",
+      "title": "Tembra Audio - Mixer Half (Mobile)",
+      "device": "MOBILE",
+      "width": 1206,
+      "height": 2622,
+      "screenshot": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/1653020756071234201:download",
+      "source": "app capture 2026-11-08 (feature 012, T123)"
+    },
+    {
+      "slug": "mixer/phone-full",
+      "screenId": "17280931068107950113",
+      "title": "Tembra Audio - Mixer Full (Mobile)",
+      "device": "MOBILE",
+      "width": 1206,
+      "height": 2622,
+      "screenshot": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/17280931068107948610:download",
+      "source": "app capture 2026-11-08 (feature 012, T123)"
+    },
+    {
+      "slug": "mixer/phone-strip-rest",
+      "screenId": "2496172348999300593",
+      "title": "Tembra Audio - Mixer Strip at Rest (Mobile)",
+      "device": "MOBILE",
+      "width": 1440,
+      "height": 3120,
+      "screenshot": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/2496172348999301478:download",
+      "source": "app capture 2026-11-08 (feature 012, T123)"
+    },
+    {
+      "slug": "mixer/phone-strip-clipped",
+      "screenId": "12577865071216487959",
+      "title": "Tembra Audio - Mixer Strip Clipped (Mobile)",
+      "device": "MOBILE",
+      "width": 1440,
+      "height": 3120,
+      "screenshot": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/12577865071216486680:download",
+      "source": "app capture 2026-11-08 (feature 012, T123)"
+    },
+    {
+      "slug": "mixer/phone-strip-armed",
+      "screenId": "2951328823473356597",
+      "title": "Tembra Audio - Mixer Strip Armed (Mobile)",
+      "device": "MOBILE",
+      "width": 1440,
+      "height": 3120,
+      "screenshot": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/2951328823473356202:download",
+      "source": "app capture 2026-11-08 (feature 012, T123)"
+    },
+    {
+      "slug": "mixer/phone-track-settings-pan",
+      "screenId": "11333700616507983093",
+      "title": "Tembra Audio - Track Settings Pan (Mobile)",
+      "device": "MOBILE",
+      "width": 1440,
+      "height": 3120,
+      "screenshot": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/11333700616507982246:download",
+      "source": "app capture 2026-11-08 (feature 012, T123)"
+    },
+    {
+      "slug": "mixer/tablet",
+      "screenId": "6081843259204039959",
+      "title": "Tembra Audio - Mixer (Tablet)",
+      "device": "TABLET",
+      "width": 2560,
+      "height": 1600,
+      "screenshot": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/6081843259204039396:download",
+      "source": "app capture 2026-11-08 (feature 012, T123)"
+    },
+    {
+      "slug": "mixer/desktop-window",
+      "screenId": "12481728472282616027",
+      "title": "Tembra Audio - Mixer Window (Desktop)",
+      "device": "DESKTOP",
+      "width": 3840,
+      "height": 2160,
+      "screenshot": "https://stitch.googleapis.com/v1/projects/12040171611712589599/files/12481728472282618170:download",
+      "source": "app capture 2026-11-08 (feature 012, T123)"
     }
   ],
   "uploadedReferenceScreens": [

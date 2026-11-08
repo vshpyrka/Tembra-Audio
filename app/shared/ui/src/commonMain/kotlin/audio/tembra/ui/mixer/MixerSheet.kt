@@ -25,12 +25,16 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
@@ -38,10 +42,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
-import audio.tembra.engine.MixSnapshot
 import audio.tembra.engine.perf.PerfSection
 import audio.tembra.engine.perf.PerfTrace
-import audio.tembra.ui.designsystem.rememberFrameTick
 import audio.tembra.ui.perf.MeterFrameCounter
 import audio.tembra.ui.session.InputTelemetry
 import audio.tembra.ui.session.MixTelemetry
@@ -134,11 +136,14 @@ internal fun MixerSheet(
         RegisterOverlay { callbacks.onMixerToggle() }
     }
     // The meters' feed (research R6): one snapshot per sheet, the frame tick while open, the 10 Hz mirror for semantics.
-    val levels = remember { MixSnapshot() }
-    val tick = rememberFrameTick(active = ui.open)
-    val armedIndex = ui.strips.firstOrNull { it.meterSource == MeterSource.Input }?.index
-    val mirror = rememberMixerLevelMirror(levels, active = ui.open, armedIndex = armedIndex, inputTelemetry = inputTelemetry)
-    val feed = remember(levels, tick, mirror, inputTelemetry) { MeterFeed(levels, tick, mirror, inputTelemetry) }
+    val feed = rememberMeterFeed(active = ui.open, strips = ui.strips, inputTelemetry = inputTelemetry)
+    // Opened under a keyboard (X on a desktop, where the input mode is the keyboard): the focus moves to the handle, so
+    // Tab walks the strips next instead of the toolbar and every track header (the T092 desktop pass's finding).
+    val handleFocus = remember { FocusRequester() }
+    val inputModeManager = LocalInputModeManager.current
+    LaunchedEffect(ui.open) {
+        if (ui.open && inputModeManager.inputMode == InputMode.Keyboard) handleFocus.requestFocus()
+    }
     val fling = AnchoredDraggableDefaults.flingBehavior(
         state = state,
         positionalThreshold = { distance -> distance * MixerSheetDefaults.POSITIONAL_THRESHOLD },
@@ -167,8 +172,8 @@ internal fun MixerSheet(
                 // One frame of the mixer: the one telemetry read, then every strip's draw (contracts/perf-instrumentation.md).
                 .drawWithContent {
                     PerfTrace.section(PerfSection.TIMELINE_MIXER_FRAME) {
-                        val frameNanos = tick.longValue
-                        telemetry.read(frameNanos, levels)
+                        val frameNanos = feed.tick.longValue
+                        telemetry.read(frameNanos, feed.levels)
                         MeterFrameCounter.shared.frame(frameNanos)
                         drawContent()
                     }
@@ -184,6 +189,9 @@ internal fun MixerSheet(
                 } else {
                     { callbacks.onMixerHeight(if (ui.height == MixerHeight.Half) MixerHeight.Full else MixerHeight.Half) }
                 },
+                // The second window where the platform offers one (spec FR-021a).
+                onOpenWindow = if (ui.windowAvailable) callbacks.onOpenMixerWindow else null,
+                modifier = Modifier.focusRequester(handleFocus),
             )
             Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
                 MixerStripRow(strips = ui.strips, form = ui.form, selectedIndex = ui.selectedIndex, callbacks = callbacks, feed = feed, modifier = Modifier.weight(1f), canReorder = ui.canReorder)

@@ -160,3 +160,47 @@ Skills: `compose-focus-navigation`, `compose-component-design`, `compose-ui-test
 
 Lanes at the end of the phase: recorded in `../screenshots/NOTES.md`. Open after this phase: T088's emulator lane, the
 T089/T090 captures, the T091 design comparison, the T092 desktop-emulator pass, T093 TalkBack and VoiceOver (owner).
+
+## Phase 8 — User Story 6, many tracks stay smooth (T099)
+
+Files: `ui.mixer/{MixerStripRow, MixerStrip, MeterFeed}`, `ui.projects/{StressProjectRequest, StressProject,
+StressProjectSeeder}`, `ui/App`, `ui.di/{AppGraph, AppBindings}`, `data.projects/{ProjectRepository, OkioProjectRepository,
+FakeProjectRepository}`, `ui.perf/PerfAnchors`, the Android and iOS entry points and journeys
+(`StressJourney.kt`/`.swift`, `StressJourneyBenchmark`, `StressPerfTests`); tests `MixerStripRowTest`,
+`StressProjectRequestTest`, the additions to `MixerSheetTest`.
+
+Skills: `compose-performance` (the compiler report as evidence), `kotlin-api-design`, `kotlin-concurrency-and-flow`.
+
+| Phase | File:line | Skill | Finding | Fix (commit) or why not |
+|---|---|---|---|---|
+| 8 | `mixer/MixerStripRow.kt` `items(...)` | compose-performance | The row was keyed by track id since Phase 3; `contentType` added so a scrolled-out strip's slot is reused for the next one. The strips' own lambdas (`onSelect`, the toggles', the fader's) capture a `@Immutable StripUi` and the callbacks data class, both stable, so the strong-skipping compiler memoises them: no `remember` wrapping was needed, and the report below shows every `ui.mixer` composable skippable. | by construction; report in `compose-report/` |
+| 8 | `mixer/MixerStrip.kt` meters | compose-performance / research R6 | Each strip's meter reads its own slice of the shared snapshot (`MeterReading.playback(levels, index)`) in draw; the sheet's root reads the telemetry once per frame. `MixerSheetTest.tenOpenCloseCyclesSettleWithinThreeHundredMillisecondsEach` keeps the read at one per frame with 24 strips across ten cycles. A per-strip recomposition counter was not added: it needs a hook in production code; the compiler report's skippability is the evidence instead. | deviation recorded |
+| 8 | `projects/StressProjectSeeder.kt` | kotlin-api-design / kotlin-concurrency-and-flow | The 24-track project is built by a launch argument the journey passes (`tembra.stress.tracks=24`), not by the UI automation: a seeder on the session's scope, once per process, after the startup (`beforeStart`), that creates the project under one fixed id (`projects.card.stressTracks` is the journey's anchor) and hands the demo's bundled loops to the session's import path as picked files, so the tracks are made exactly as a user's imports are. The import is a lambda seam (`importInto`), so the test drives the seeder with the fake repository alone. `ProjectRepository.create` gained an optional id with a default, so every other caller is unchanged. | by construction |
+| 8 | `MainActivity.kt` | kotlin-control-flow | The stress argument is read under `BuildConfig.DEBUG || PerfBuild.PERF_ENABLED`: the perf build type inherits release, so `DEBUG` alone (the other debug arguments' gate) would have left the measured journey without its project. | by construction |
+| 8 | `StressJourney.kt`/`.swift` | perf contract | The stress journey opens the stress card when the launch built it and the demo otherwise (a release baseline has no argument), records on the added track (index 24 or 4), and adds the mixer phase before the health dump; the fader drag is undone so the document is the same across iterations. | by construction |
+
+Lanes at the end of the phase: recorded in `../screenshots/NOTES.md`.
+
+## Phase 9 — User Story 7, the mixer in its own window (T106)
+
+Files: `ui.platform/WindowCapabilities`, `ui.platform/IosWindowCapabilities` (iOS), `android/{AndroidWindowCapabilities,
+MixerWindowActivity}`, `ui.mixer/{MixerWindowViewModel, MixerWindowUiState, MixerWindowContent, MixerWindow, MixerHandle,
+MeterFeed, StripUi}`, `ui.timeline/{TimelineViewModel, TimelineScreen}`, the two graphs, the manifest; tests
+`FakeWindowCapabilities`, `MixerWindowViewModelTest`, `AndroidWindowCapabilitiesTest`, the additions to
+`TimelineViewModelTest` and `MixerSheetTest`.
+
+Skills: `kotlin-api-design` (the capabilities seam), `compose-state-and-effects` (the second host).
+
+| Phase | File:line | Skill | Finding | Fix (commit) or why not |
+|---|---|---|---|---|
+| 9 | `platform/WindowCapabilities.kt` | kotlin-api-design | One interface in `ui.platform` with three members: whether a second window exists, whether the mixer's is open, and the one action. Android binds it to free-form window management and a second activity; iOS returns false (research R10: Android first). The Timeline's ViewModel reads it for the handle's button and for the Mixer button's meaning while the window is open. | by construction |
+| 9 | `mixer/MixerWindowViewModel.kt` | compose-state-and-effects | The window is a second host over the same `ProjectSession`: its state is a map of the session's state (no copy of the document), its edits are the session's edits (one undo history, one coalesced run per settled drag), it holds a metering count from `init` to `onCleared`. The selection stays in the timeline's window (the strips' labels select nothing here): a window shows the console, it is not a second timeline. | by construction |
+| 9 | `mixer/MixerWindow.kt` `LaunchedEffect(state.open)` | compose-state-and-effects | The window closes when the project is gone: the effect keyed on `open` waits 300 ms before reporting, so the empty state a project switch passes through cancels it. Kept in the composable rather than the activity, which keeps `:androidApp` free of the core document types. | by construction |
+| 9 | `mixer/StripUi.kt` `forProject` | kotlin-api-design | The strip mapping both ViewModels need moved from the Timeline's `mapState` into a companion factory on `StripUi`, with the audibility rule read from `Project.audibleTracks` as before. | by construction |
+| 9 | `mixer/MeterFeed.kt` `rememberMeterFeed` | compose-state-and-effects | The sheet's snapshot, frame tick and 10 Hz mirror became one remembered feed both surfaces build the same way; each surface's root still does the one read per frame. | by construction |
+| 9 | `android/AndroidWindowCapabilities.kt`, the manifest | kotlin-api-design | `MixerWindowActivity` is `singleTask` with its own `taskAffinity`, so one window exists and a second open brings it forward; the first open adds `FLAG_ACTIVITY_MULTIPLE_TASK` and launch bounds (720 × 480 dp centred), as research R10 asked. The activity's minimum is 360 × 320 dp: the full strip form fits 320 dp with the dial dropped (`StripForm.of`). The timeline window's close finishes the mixer window's task (`MainActivity.onDestroy` while finishing → `closeMixerWindow`), because the session never has no project: the user's "project close" is that window (quickstart §12 by hand, `screenshots/android/desktop-api37/`). The window's root carries the perf anchor root, so its tags reach the journeys and adb. | by construction |
+| 9 | `android/AndroidWindowCapabilities.kt` `multipleWindows` | kotlin-api-design / spec FR-021a | The capability is the platform's free-form feature flag, as research R10 and feature 011's desktop tests read it. The Pixel Tablet reports the flag while in touch mode too (its desktop mode is a display away), so its handle shows the button and the window opens as a full-screen task there (`android/pixel-tablet/1024dp-mixer-full.png`). The spec's "where the platform offers a second window" is met by the flag; reading the live windowing mode instead would need an attached activity (011's `AndroidWindowControls` pattern) and is left for the owner's T124 call. | deviation recorded |
+| 9 | the T100 spike | — | Run with the real activity on the Android 17 desktop emulator rather than a throwaway: the second free-form window opened in its own task and closed back to one (`window-spike.md`). Four of feature 011's full-screen tests timed out in the same lane and passed once the other windows other tests leave open were closed and animations were off: an emulator state, not the second window. | go |
+| 9 | `mixer/MixerWindowContent.kt` | compose-component-design | The window's strips show the track menu of the sheet, whose settings, add-audio, move and delete actions are the Timeline's: in the window they are no-ops. Recorded for the docs task; a window that drives those actions would need the timeline's navigation, outside this story. | deviation recorded |
+
+Lanes at the end of the phase: recorded in `../screenshots/NOTES.md`.

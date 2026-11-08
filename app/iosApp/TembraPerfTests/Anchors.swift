@@ -72,6 +72,8 @@ enum Anchors {
 
     // Feature 012 (contracts/perf-instrumentation.md, journey `mixer`): the Mixer button, the sheet, the first strip's
     // controls (strip i through the functions below), the master strip, the window button and the settings' pan slider.
+    static let projectsCardStress = "projects.card.stressTracks"
+    static let timelineOverflowButton = "timeline.toolbar.overflow.button"
     static let timelineMixer = "timeline.toolbar.mixer"
     static let timelineOverflowMixer = "timeline.toolbar.overflow.mixer"
     static let mixerSheet = "mixer.sheet"

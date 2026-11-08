@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
@@ -28,20 +29,24 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import audio.tembra.ui.designsystem.drawFocusRing
 import audio.tembra.ui.designsystem.hoverArea
+import audio.tembra.ui.theme.TembraIcon
 import audio.tembra.ui.theme.TembraShapes
 import audio.tembra.ui.theme.TembraTheme
+import audio.tembra.ui.transport.TransportButton
 
 /**
  * The sheet's grabber row (feature 012, spec FR-018; contracts/mixer-ui.md "MixerHandle"): a 32 dp row with the pill
  * and the "Mixer" label, the surface a finger drags between the two heights. Focusable; a tap, Enter or Space asks
- * for the other height ([onToggleHeight]; nothing where the sheet has one anchor). Its state reads the height. The
- * "Open in a window" button (spec FR-021a) joins the row with User Story 7.
+ * for the other height ([onToggleHeight]; nothing where the sheet has one anchor). Its state reads the height. Where
+ * the platform offers a second window, the "Open in a window" button (spec FR-021a, `mixer.window.open`) sits at
+ * the row's end ([onOpenWindow]).
  */
 @Composable
 internal fun MixerHandle(
     height: MixerHeight,
     onToggleHeight: (() -> Unit)?,
     modifier: Modifier = Modifier,
+    onOpenWindow: (() -> Unit)? = null,
 ) {
     val colors = TembraTheme.colors
     val spacing = TembraTheme.spacing
@@ -69,6 +74,15 @@ internal fun MixerHandle(
         Row(horizontalArrangement = Arrangement.spacedBy(spacing.sm), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(MixerSheetDefaults.GrabberWidth, MixerSheetDefaults.GrabberHeight).background(colors.onSurfaceVariant, CircleShape))
             Text(MixerCopy.mixer, style = TembraTheme.typography.labelMedium, color = colors.onSurface, maxLines = 1)
+        }
+        if (onOpenWindow != null) {
+            TransportButton(
+                icon = TembraIcon.OpenInNew,
+                description = MixerCopy.openInWindow,
+                onClick = onOpenWindow,
+                modifier = Modifier.align(Alignment.CenterEnd).padding(end = spacing.sm),
+                testTag = MixerTestTags.WINDOW_OPEN,
+            )
         }
     }
 }

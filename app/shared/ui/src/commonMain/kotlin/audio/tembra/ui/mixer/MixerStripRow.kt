@@ -51,7 +51,7 @@ internal fun MixerStripRow(
         contentPadding = PaddingValues(start = spacing.pageMargin, end = spacing.sm),
         horizontalArrangement = Arrangement.spacedBy(spacing.xs),
     ) {
-        items(strips, key = { it.id.value }) { strip ->
+        items(strips, key = { it.id.value }, contentType = { STRIP_CONTENT_TYPE }) { strip ->
             MixerStrip(
                 strip = strip,
                 form = form,
@@ -65,3 +65,6 @@ internal fun MixerStripRow(
         }
     }
 }
+
+/** Every item of the row is a strip: one content type, so the `LazyRow` reuses a strip's slot for another strip (spec FR-024). */
+private const val STRIP_CONTENT_TYPE = "strip"

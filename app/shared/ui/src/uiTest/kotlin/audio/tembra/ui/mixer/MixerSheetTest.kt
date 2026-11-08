@@ -20,7 +20,6 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
-import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -89,6 +88,7 @@ class MixerSheetTest {
         onGainSettled = { calls += "settled" },
         onResetTrackClip = { calls += "resetClip(${it.value})" },
         onResetMasterClip = { calls += "resetMaster" },
+        onOpenMixerWindow = { calls += "openWindow" },
     )
 
     private fun strips(count: Int, names: (Int) -> String = { "Track ${it + 1}" }) = List(count) { index ->
@@ -113,12 +113,13 @@ class MixerSheetTest {
         frozen: Boolean = false,
         fontScale: Float = 1f,
         names: (Int) -> String = { "Track ${it + 1}" },
+        windowAvailable: Boolean = false,
     ) {
         val anchors = MixerAnchors.of(layout, lanes)
         shownLayout.value = layout
         shownWidth.value = width
         shownLanes.value = lanes
-        ui.value = MixerUi(open = true, height = height, form = StripForm.of(height, anchors.heightOf(height).value), anchors = anchors, strips = strips(strips, names))
+        ui.value = MixerUi(open = true, height = height, form = StripForm.of(height, anchors.heightOf(height).value), anchors = anchors, strips = strips(strips, names), windowAvailable = windowAvailable)
         // A frozen clock must be frozen before the first frame: the test harness parks an infinite animation (the meters'
         // frame tick) for good once it has run under an auto-advancing clock.
         if (frozen) mainClock.autoAdvance = false
@@ -151,10 +152,13 @@ class MixerSheetTest {
         waitForIdle()
     }
 
-    /** The index of the first strip the row shows, in whole or in part. */
-    private fun ComposeUiTest.firstVisibleStrip(count: Int): Int = (0 until count).first { index ->
-        val tag = MixerTestTags.strip(index)
-        onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty() && onNodeWithTag(tag).isDisplayed()
+    /** The index of the first strip inside the row's bounds, in whole or in part (by bounds: a root wider than the screen overflows it). */
+    private fun ComposeUiTest.firstVisibleStrip(count: Int): Int {
+        val row = onNodeWithTag(MixerTestTags.STRIPS).getUnclippedBoundsInRoot()
+        return (0 until count).first { index ->
+            val tag = MixerTestTags.strip(index)
+            onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty() && onNodeWithTag(tag).getUnclippedBoundsInRoot().right > row.left
+        }
     }
 
     /** Research R6 (T059): the root reads the telemetry once per frame whatever the strip count; the strips draw from that one snapshot. */
@@ -290,10 +294,13 @@ class MixerSheetTest {
             val anchors = MixerAnchors.of(layout, 600.dp)
             assertTrue(anchors.half >= 240.dp, "$layout at $width: the half sheet is ${anchors.half}")
             if (layout == TimelineLayout.Expanded) assertEquals(600.dp - MixerAnchors.ExpandedLanesKept, anchors.half, "$layout at $width: two expanded lanes stay visible")
-            assertNear(600.dp - anchors.half, onNodeWithTag(MixerTestTags.SHEET).getUnclippedBoundsInRoot().top, "$layout at $width: the half sheet's top")
-            onNodeWithTag(LANES_MARKER).assertIsDisplayed()
-            // The root may be wider than the screen (1024 dp on a phone): the master is checked by its bounds, not its visibility.
-            assertTrue(onNodeWithTag(MixerTestTags.MASTER).getUnclippedBoundsInRoot().right >= width - pageMargin - 1.dp, "$layout at $width: the master is not pinned at the right edge")
+            // The root may be wider than the screen (1024 dp on a phone) and is then centred over it: every edge is read against
+            // the lanes box and the sheet, never the screen.
+            val box = onNodeWithTag(LANES_MARKER).assertExists().getUnclippedBoundsInRoot()
+            val sheet = onNodeWithTag(MixerTestTags.SHEET).getUnclippedBoundsInRoot()
+            assertNear(box.top + 600.dp - anchors.half, sheet.top, "$layout at $width: the half sheet's top")
+            assertNear(width, sheet.width, "$layout at $width: the sheet's width")
+            assertTrue(onNodeWithTag(MixerTestTags.MASTER).getUnclippedBoundsInRoot().right >= sheet.right - pageMargin - 1.dp, "$layout at $width: the master is not pinned at the sheet's right edge")
         }
         assertEquals(emptyList(), calls)
     }
@@ -303,8 +310,11 @@ class MixerSheetTest {
     fun landscapeSixHundredByFourHundredKeepsTheKnobAndDropsTheDial() = runComposeUiTest {
         setSheet(layout = TimelineLayout.Landscape, width = 600.dp, lanes = 400.dp, height = MixerHeight.Full)
         assertEquals(StripForm.FullNoVu, ui.value.form)
-        assertNear(0.dp, onNodeWithTag(MixerTestTags.SHEET).getUnclippedBoundsInRoot().top, "the sheet's top")
-        onNodeWithTag(MixerTestTags.pan(0)).assertIsDisplayed()
+        // A 600 dp root overflows a phone's portrait screen: the knob is checked by its bounds inside the sheet, not its visibility.
+        val sheet = onNodeWithTag(MixerTestTags.SHEET).getUnclippedBoundsInRoot()
+        assertNear(onNodeWithTag(LANES_MARKER).getUnclippedBoundsInRoot().top, sheet.top, "the sheet's top")
+        val knob = onNodeWithTag(MixerTestTags.pan(0)).assertExists().getUnclippedBoundsInRoot()
+        assertTrue(knob.top >= sheet.top && knob.bottom <= sheet.bottom && knob.left >= sheet.left, "the knob $knob is outside the sheet $sheet")
         onNodeWithTag(MixerTestTags.vu(0)).assertDoesNotExist()
         assertTrue(onNodeWithTag(MixerTestTags.fader(0)).getUnclippedBoundsInRoot().height >= FaderDefaults.MinThrow - 0.5.dp, "the fader's throw in landscape")
     }
@@ -357,9 +367,61 @@ class MixerSheetTest {
         relayout(layout = TimelineLayout.Expanded, width = 840.dp)
         assertTrue(ui.value.open, "the sheet closed on the layout change")
         assertEquals(MixerHeight.Half, ui.value.height)
-        assertNear(600.dp - MixerAnchors.of(TimelineLayout.Expanded, 600.dp).half, onNodeWithTag(MixerTestTags.SHEET).getUnclippedBoundsInRoot().top, "the expanded half sheet's top")
+        val boxTop = onNodeWithTag(LANES_MARKER).getUnclippedBoundsInRoot().top
+        assertNear(boxTop + 600.dp - MixerAnchors.of(TimelineLayout.Expanded, 600.dp).half, onNodeWithTag(MixerTestTags.SHEET).getUnclippedBoundsInRoot().top, "the expanded half sheet's top")
         assertEquals(scrolledTo, firstVisibleStrip(24), "the row's scroll offset after the layout change")
         assertEquals(emptyList(), calls)
+    }
+
+    /**
+     * Spec SC-005, FR-024 (T096): ten open-and-close cycles under the frozen clock, each settled within the 300 ms tween
+     * plus the frames that take the request, start the effect and report the animation over ([SETTLE_FRAMES]), and
+     * reporting nothing back; the root's read stays one per frame with 24 strips afterwards.
+     */
+    @Test
+    fun tenOpenCloseCyclesSettleWithinThreeHundredMillisecondsEach() = runComposeUiTest {
+        val telemetry = ScriptedMixTelemetry.level(index = 0, peakDb = -20f, rmsDb = -23f, trackCount = 24)
+        setSheet(strips = 24, telemetry = telemetry, frozen = true)
+        repeat(10) { cycle ->
+            ui.value = ui.value.copy(open = false)
+            framesUntil("cycle $cycle: the close") { onAllNodesWithTag(MixerTestTags.SHEET).fetchSemanticsNodes().isEmpty() }
+            ui.value = ui.value.copy(open = true)
+            framesUntil("cycle $cycle: the open") {
+                onAllNodesWithTag(MixerTestTags.SHEET).fetchSemanticsNodes().isNotEmpty() &&
+                    abs((onNodeWithTag(MixerTestTags.SHEET).getUnclippedBoundsInRoot().top - HALF_TOP).value) <= 1f
+            }
+        }
+        val before = telemetry.reads
+        repeat(5) { mainClock.advanceTimeByFrame() }
+        val reads = telemetry.reads - before
+        assertTrue(reads in 4..6, "five frames with 24 strips read the telemetry $reads times, not once per frame")
+        onNodeWithTag(MixerTestTags.meter(0)).assertIsDisplayed()
+        assertEquals(emptyList(), calls)
+    }
+
+    /** Advances the frozen clock frame by frame until [settled] holds; fails when [SETTLE_FRAMES] frames were not enough. */
+    private fun ComposeUiTest.framesUntil(what: String, settled: () -> Boolean) {
+        var frames = 0
+        while (!settled()) {
+            assertTrue(frames < SETTLE_FRAMES, "$what did not settle within $SETTLE_FRAMES frames")
+            mainClock.advanceTimeByFrame()
+            frames++
+        }
+    }
+
+    /** Spec FR-021a (T102): the handle offers "Open in a window" only where the platform has a second window, and the tap asks for it. */
+    @Test
+    fun theHandleOffersTheWindowOnlyWhereThePlatformHasOne() = runComposeUiTest {
+        setSheet(windowAvailable = true)
+        onNodeWithTag(MixerTestTags.WINDOW_OPEN).assertIsDisplayed().assertContentDescriptionEquals(MixerCopy.openInWindow).performClick()
+        assertEquals(listOf("openWindow"), calls)
+    }
+
+    @Test
+    fun theHandleHasNoWindowButtonWithoutTheCapability() = runComposeUiTest {
+        setSheet()
+        onNodeWithTag(MixerTestTags.WINDOW_OPEN).assertDoesNotExist()
+        onNodeWithTag(MixerTestTags.HANDLE).assertIsDisplayed()
     }
 
     /** Feature 011's scrollbar on the strip row (T084): the row carries one for the strips that overflow the width. */
@@ -375,5 +437,8 @@ class MixerSheetTest {
 
         /** 500 dp of lanes less the 256 dp half sheet. */
         val HALF_TOP = 244.dp
+
+        /** The 300 ms tween at 16 ms frames (19), plus the frame that takes the request, the one that starts the effect and two that report the animation over. */
+        const val SETTLE_FRAMES = 23
     }
 }
