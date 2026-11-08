@@ -40,7 +40,7 @@
       "description": "in measurement order; `full` present only with --with-full"
     },
     "iterations": { "type": "integer", "minimum": 1 },
-    "journeys": { "type": "array", "items": { "enum": ["startup", "tuner", "metronome", "timeline", "recording", "stress"] }, "minItems": 1 },
+    "journeys": { "type": "array", "items": { "enum": ["startup", "tuner", "metronome", "timeline", "recording", "mixer", "stress"] }, "minItems": 1 },
     "metrics": {
       "type": "object",
       "description": "keyed by series key `<journey>/<metric>` (the store's convention, e.g. startup/startup.ttid_ms), because the frames and memory keys repeat across the three journeys",
@@ -49,7 +49,7 @@
         "required": ["journey", "unit", "higher_is_worse", "by_state", "change_pct", "direction", "p_value", "confirmed"],
         "additionalProperties": false,
         "properties": {
-          "journey": { "enum": ["startup", "tuner", "metronome", "timeline", "recording", "stress"] },
+          "journey": { "enum": ["startup", "tuner", "metronome", "timeline", "recording", "mixer", "stress"] },
           "unit": { "type": "string" },
           "higher_is_worse": { "type": "boolean" },
           "by_state": {

@@ -78,6 +78,8 @@ object Anchors {
 
     // Feature 012 (contracts/perf-instrumentation.md, journey `mixer`): the Mixer button, the sheet, the first strip's
     // controls (strip i through the functions below), the master strip, the window button and the settings' pan slider.
+    const val PROJECTS_CARD_STRESS = "projects.card.stressTracks"
+    const val TIMELINE_OVERFLOW_BUTTON = "timeline.toolbar.overflow.button"
     const val TIMELINE_MIXER = "timeline.toolbar.mixer"
     const val TIMELINE_OVERFLOW_MIXER = "timeline.toolbar.overflow.mixer"
     const val MIXER_SHEET = "mixer.sheet"

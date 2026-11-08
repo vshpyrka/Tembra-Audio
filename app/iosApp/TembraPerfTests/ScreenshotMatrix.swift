@@ -366,6 +366,9 @@ final class ScreenshotMatrix: XCTestCase {
         }
         if want("mixer-landscape") {
             XCUIDevice.shared.orientation = .landscapeLeft; sleep(2)
+            // Compose keeps the portrait accessibility frames after a rotation (the toolbar's hit point lands above the
+            // screen), so the app is relaunched in landscape before the tap; it reopens the same project.
+            dismiss()
             if openMixer() { sleep(1); shot("mixer-landscape") } else { print("ScreenshotMatrix: the mixer did not open in landscape") }
             XCUIDevice.shared.orientation = .portrait; sleep(2)
             dismiss()

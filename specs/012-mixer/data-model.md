@@ -61,10 +61,10 @@ Research references: [research.md](research.md).
 
 | Layout | Half | Full | Form at Half | Form at Full |
 |---|---|---|---|---|
-| Compact (< 600 dp) | max(240 dp, 45 % of the lanes box) | the lanes box | Compact | Full (FullNoVu below 480 dp of sheet height) |
+| Compact (< 600 dp) | max(256 dp, 45 % of the lanes box) | the lanes box | Compact | Full (FullNoVu below 480 dp of sheet height) |
 | Medium (600–839 dp) | the same | the same | Compact | Full |
 | Landscape (≥ 600 wide, < 480 tall) | none (one anchor) | the lanes box | — | FullNoVu |
-| Expanded (≥ 840 dp, ≥ 480 dp tall) | max(240 dp, lanes box − 2 × 96 dp) | the lanes box | Compact | Full |
+| Expanded (≥ 840 dp, ≥ 480 dp tall) | max(256 dp, lanes box − 2 × 96 dp) | the lanes box | Compact | Full |
 
 The lanes box excludes the toolbar, the ruler, the overview strip and the transport bar
 (FR-016, FR-021); the strip width is 72 dp, the master strip is pinned at the right edge

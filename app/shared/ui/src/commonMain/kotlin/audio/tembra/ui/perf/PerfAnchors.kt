@@ -31,6 +31,9 @@ object PerfAnchors {
     const val PROJECTS_ROOT = "screen.projects"
     const val PROJECTS_SEARCH = "projects.search"
     const val PROJECTS_CARD_DEMO = "projects.card.demo"
+
+    /** The stress journey's 24-track project (feature 012): `projects.card.<StressProject.ID>`, built on request by a debug or measurement build. */
+    const val PROJECTS_CARD_STRESS = "projects.card.stressTracks"
     const val NAV_TIMELINE = "nav.item.timeline"
     const val TIMELINE_ROOT = "screen.timeline"
     const val TIMELINE_ADD_TRACK = "timeline.toolbar.addTrack"
@@ -101,7 +104,7 @@ object PerfAnchors {
         TUNER_ROOT, TUNER_MODE_AUTO_LISTEN, TUNER_MODE_BY_EAR, TUNER_NOTE_READOUT,
         METRONOME_ROOT, METRONOME_START_STOP, METRONOME_TEMPO_UP, METRONOME_TEMPO_DOWN, METRONOME_TEMPO_READOUT,
         DEVTOOLS_WRITE_HEALTH,
-        NAV_PROJECTS, PROJECTS_ROOT, PROJECTS_SEARCH, PROJECTS_CARD_DEMO,
+        NAV_PROJECTS, PROJECTS_ROOT, PROJECTS_SEARCH, PROJECTS_CARD_DEMO, PROJECTS_CARD_STRESS,
         NAV_TIMELINE, TIMELINE_ROOT, TIMELINE_ADD_TRACK, TIMELINE_SPLIT, TIMELINE_UNDO, TIMELINE_RULER,
         TIMELINE_LANE_FIRST, TIMELINE_CLIP_FIRST, TIMELINE_TRACK_MENU_FIRST, TIMELINE_TRACK_SETTINGS, TIMELINE_SETTINGS_CLOSE,
         TRANSPORT_PLAY, TRANSPORT_SKIP_START, TRANSPORT_METRONOME, TRANSPORT_READOUT,

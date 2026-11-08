@@ -78,9 +78,9 @@ class FakeProjectRepository(
 
     override fun library(): Flow<LibraryIndex> = index
 
-    override suspend fun create(name: String): Project {
+    override suspend fun create(name: String, id: ProjectId): Project {
         calls += "create($name)"
-        val project = Project.new(IdGenerator.projectId(), name)
+        val project = Project.new(id, name)
         put(project, ProjectOrigin.User)
         return project
     }

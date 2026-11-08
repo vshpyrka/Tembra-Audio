@@ -15,6 +15,7 @@ import audio.tembra.ui.platform.BackgroundPlaybackHost
 import audio.tembra.ui.platform.MicrophonePermission
 import audio.tembra.ui.platform.NoTrackpadPinches
 import audio.tembra.ui.platform.TrackpadPinchSource
+import audio.tembra.ui.platform.WindowCapabilities
 import audio.tembra.ui.platform.WindowControls
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.DependencyGraph
@@ -36,6 +37,9 @@ interface AndroidAppGraph : AppGraph {
 
     /** The activity attaches itself here for app-requested full screen (feature 011, research R21). */
     val androidWindowControls: AndroidWindowControls
+
+    /** The mixer window's activity reports its life here (feature 012, spec FR-021a). */
+    val androidWindowCapabilities: AndroidWindowCapabilities
 
     /** The activity attaches itself here to request a drop's permissions (feature 011, research R12). */
     val androidDroppedFilesReader: AndroidDroppedFilesReader
@@ -93,6 +97,14 @@ interface AndroidAppGraph : AppGraph {
     /** Full screen from the Timeline's menu in a desktop window (feature 011, spec FR-010a). */
     @Provides
     fun provideWindowControls(controls: AndroidWindowControls): WindowControls = controls
+
+    @Provides
+    @SingleIn(AppScope::class)
+    fun provideAndroidWindowCapabilities(context: Context): AndroidWindowCapabilities = AndroidWindowCapabilities(context)
+
+    /** The mixer in a window of its own where the device manages free-form windows (feature 012, spec FR-021a). */
+    @Provides
+    fun provideWindowCapabilities(capabilities: AndroidWindowCapabilities): WindowCapabilities = capabilities
 
     /** Android trackpads pinch through Compose's own `Scale` pointer events (feature 011, research R9). */
     @Provides

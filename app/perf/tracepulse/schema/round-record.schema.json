@@ -71,7 +71,7 @@
         "type": "object",
         "required": ["journey", "iterations", "metrics"],
         "properties": {
-          "journey": { "enum": ["startup", "tuner", "metronome", "timeline", "recording", "stress", "windowing"] },
+          "journey": { "enum": ["startup", "tuner", "metronome", "timeline", "recording", "mixer", "stress", "windowing"] },
           "iterations": { "type": "integer", "minimum": 1 },
           "metrics": {
             "type": "object",

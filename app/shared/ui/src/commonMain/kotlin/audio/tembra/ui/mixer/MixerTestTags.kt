@@ -19,6 +19,9 @@ object MixerTestTags {
     const val MASTER_CLIP = PerfAnchors.MIXER_MASTER_CLIP
     const val WINDOW_OPEN = PerfAnchors.MIXER_WINDOW_OPEN
 
+    /** The mixer window's root (feature 012, spec FR-021a). */
+    const val WINDOW = "mixer.window"
+
     fun strip(index: Int): String = "mixer.strip.$index"
     fun number(index: Int): String = "mixer.strip.number.$index"
     fun fader(index: Int): String = "mixer.strip.fader.$index"

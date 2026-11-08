@@ -64,6 +64,25 @@ so it is a once-per-phase-group check, not a per-change one.
 | iPad Pro 13-inch (M5) simulator, every module | `checkIos -Ptembra.iosSimulator="iPad Pro 13-inch (M5)"` | green, zero warnings | the same 1,218 tests | 2026-11-06 after Phase 7 (T088) |
 | iPhone Duo simulator (`8AF0F092-16BB-4286-8F8F-E0AB208CBA8A`), every module | `checkIos -Ptembra.iosSimulator=8AF0F092-…` | green, zero warnings | the same 1,218 tests | 2026-11-06 after Phase 7 (T088) |
 | Pixel 9 Pro Fold emulator (API 36, `emulator-5584`), every module | `tools/gradlew-device.sh emulator-5584 checkAndroidDevice --continue` | engine green; UI 1,214 tests, 10 failures, all test-side or emulator flakes (below) | five `captureToImage` window-capture timeouts at 2 s on the slow emulator (`PointerAreaTest.aSegment`, `TembraGradientCardTest` ×2, `MetronomeControlsTest.hoverRaisesTheTapCard`, `PlayheadOverlayTest.theLineLeavesOutTheExpandedTracksSettings`: features 002–011's tests, the class recorded after Phase 3); `MixerSheetTest.theAnchorsFollowTheLayoutClassAtEveryWidth` asserted the master *displayed* inside a 1024 dp root wider than the screen (now its bounds); `…aLayoutClassChangeKeepsTheSheetOpenAtItsHeightAndTheRowsScroll` scrolled 12 strips past what an 840 dp row can keep (24 strips now); `MixerStripTest.soloLightsLavenderAndMuteDimly` compared alphas that Android's capture composites away (both fills over black, by brightness now); `TrackHeaderTest` ×2 read the 56 dp gain readout at 55.38 dp (one pixel of rounding at the fold's density; the floor is asserted at 55 dp) | 2026-11-06 06:18, 2 h 47 min (T088, device part; the Phases 4–7 changes in one lane). The Pixel 6 Pro lane follows (owner's go of 2026-11-08) |
+| Pixel 6 Pro (`19021FDEE001AH`, Android 17, 411 × 891 dp), every module | `tools/gradlew-device.sh 19021FDEE001AH checkAndroidDevice --continue` (run conditions applied first: music stream muted, do-not-disturb, brightness floor) | engine 114 tests green, data green; UI 1,214 tests, 4 failures, all test-side | the four were test roots wider than the 411 dp screen, which Compose centres and overflows: `MixerSheetTest.theAnchorsFollowTheLayoutClassAtEveryWidth` read the master's right edge against the root's width (now the sheet's), `…landscapeSixHundredByFourHundred…` and `TimelineScreenTest.theExpandedToolbarCarriesTheMixerButton` asserted controls *displayed* off the screen's edge (now their bounds inside the sheet, or existence), `…aLayoutClassChangeKeepsTheSheetOpen…` counted the first *displayed* strip (now the first inside the row's bounds) | 2026-11-08, 17 min 27 s (the owner's go of 2026-11-08; T039/T043/T055/T065/T074/T080's device part). The `:shared:ui` rerun after the fixes follows |
+| Pixel 6 Pro (`19021FDEE001AH`), `:shared:ui` | `tools/gradlew-device.sh 19021FDEE001AH :shared:ui:connectedAndroidDeviceTest` | green | 1,220 UI tests, 0 failures, 4 skipped (the Phase 7 tests after the screen-width fixes, `MixerStripRowTest` (2) and the ten open/close cycles of Phase 8) | 2026-11-08, 16 min (T088 device part closed; the device half of T039/T043/T055/T065/T074/T080) |
+| Host (JVM, every module) | `checkAndroidHost` | green, zero warnings | `StressProjectRequestTest` (3: the argument, the seeder's one build after the startup with one loop per track, nothing on a second launch), `PerfAnchorsCatalogueTest` at 67 anchors, `TimelineViewModelTest` (+2: the window button and the capability), `MixerWindowViewModelTest` (3: the strips follow the session, a drag in the window is one undo step, the state ends with the project) | 2026-11-08 after Phases 8 and 9 (code) |
+| iPhone 18 Pro simulator, every module | `checkIos` | green, zero warnings | `MixerStripRowTest` (2: 24 strips with the master pinned, a removed track keeps the row's place), `MixerSheetTest` (+3: ten open/close cycles settle within the 300 ms tween plus four frames with 24 strips, the handle's window button with and without the capability) | 2026-11-08 after Phases 8 and 9 (code). On the way: the cycles test counted frames by hand (the request's frame, the effect's start and two that report the animation over) |
+| Perf pipeline (Python) | `cd app/perf && uv run pytest` | 367 passed, 1 skipped | the `mixer` journey in every registry, the two mixer counters, the profile fixtures regenerated with a `mixer` method (only additions), the report golden regenerated (only the two new catalogue entries) | 2026-11-08 (T108) |
+| Tembra_Desktop_API37 (`emulator-5582`, Android 17 desktop, user 10, `-no-audio`), `:androidApp` | `tools/gradlew-device.sh emulator-5582 :androidApp:connectedDebugAndroidTest` | 50 tests, 4 failures, all feature 011's full-screen tests | `AndroidWindowCapabilitiesTest` green (the second free-form window opens in its own task and reports back: the T100 spike's go, `../evidence/window-spike.md`); the four failures are `FullScreenTest`, `WindowResizeAudioTest` × 2 and `WindowForegroundTest` timing out on the Android 17 preview's full-screen and minimise transitions (feature 011 recorded the shell's "denied by system policy" quirk on this emulator), not the mixer's window: rerun of the four classes below | 2026-11-08, 36 min (T100, T102) |
+| Pixel 6 Pro + Pixel Tablet, captures | `capture_android.py` (adb, by test tag) after `:androidApp:installDebug` on each | 31 files | `android/README.md`: six states at 360/600/840 dp (plus font 2.0) on the Pixel 6 Pro, 1024/1200 dp on the tablet; the clipped and armed states are live (meters, latches, the input meter); one defect found: the master label clipped to "Mast" at font 2.0 (now ellipsised) | 2026-11-08 (T089, the devices' part) |
+| Tembra_Desktop_API37, `FullScreenTest` alone | `tools/gradlew-device.sh emulator-5582 :androidApp:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=audio.tembra.android.desktop.FullScreenTest` | green | the same test that timed out in the full lane passed once the Settings and Files windows other tests had left open were force-stopped and the three animation scales were set to 0 (the state feature 011 recorded for this emulator: "window animations off"); the full lane had run with animations on and those windows in front. The other three classes rerun next | 2026-11-08 |
+| Tembra_Desktop_API37, `WindowResizeAudioTest` + `WindowForegroundTest` | the same, `…class=audio.tembra.android.WindowResizeAudioTest,audio.tembra.android.WindowForegroundTest` | green | the three other tests of the full lane's four pass in the same prepared state: the emulator's `:androidApp` suite is green for the branch once the other windows are closed and animations are off | 2026-11-08 |
+| Tembra_Desktop_API37, quickstart §12 by hand | adb by test tag and content description, `am task resize` | done | `android/desktop-api37/README.md`: open from the handle, beside the timeline, a fader in one read in the other, undo in the timeline, X brings the window forward, the timeline window's close closes both (the caption button; Back only backgrounds the task on Android 12+). The timeline window's close finishing the mixer window was added during the walkthrough (`MainActivity.onDestroy` → `AndroidWindowCapabilities.closeMixerWindow`) | 2026-11-08 (T105) |
+| iPhone 18 Pro, iPad Pro 13-inch (M5), iPhone Duo simulators, captures | `xcodebuild test-without-building -xctestrun …TembraPerf…` with `TEST_RUNNER_TEMBRA_CAPTURE_DIR` in the environment (the Mac muted) | 21 files | `ios/README.md`: seven states per simulator (the iPad's settings inline); the environment form is the one the test runner sees, build-setting arguments skip the matrix; landscape needs a relaunch after the rotation (Compose keeps the portrait accessibility frames); the iPhone's landscape state is missing: its toolbar sits above the screen in landscape (pre-existing, see "Findings for the owner") | 2026-11-08, T090 |
+| Pixel 9 Pro Fold emulator (`emulator-5584`, `-no-audio`), captures | `capture_android.py` after `:androidApp:installDebug`, open and closed (`adb emu fold`) | 11 files | `android/README.md`: the open posture's six states, the closed posture's five (folding locks the screen: swipe keyguard dismissed first; the first taps after a restart need retries on this emulator; the closed landscape is an emulator quirk kept as evidence) | 2026-11-08, T089 |
+| Pixel 6 Pro, manual mixer session with `adb logcat -s StrictMode` | `strictmode_session.py` (adb by test tag, five minutes, playback with the music stream muted) | 10 `StrictMode` lines, all at the app's start | `../evidence/main-thread-audit.md` §4: ten `DiskReadViolation`s from the DI graph's construction in `MainActivity.onCreate` (pre-existing), none during the mixer's use | 2026-11-08, T121 |
+| Pixel 6 Pro (`19021FDEE001AH`), `:shared:ui` | `tools/gradlew-device.sh 19021FDEE001AH :shared:ui:connectedAndroidDeviceTest` (run conditions applied; `adb logcat -s StrictMode` beside it) | green | 1,231 UI tests, 0 failures, 18 min 36 s, after the master label's ellipsis, the mixer window's anchor root and the timeline window's close hook; zero `StrictMode` lines during the lane (`../evidence/main-thread-audit.md` §4) | 2026-11-08 |
+| iPhone 18 Pro simulator, every module | `checkIos -Ptembra.iosSimulator="iPhone 18 Pro"` | green, zero warnings | after the master label's ellipsis, the mixer window's anchor root, the timeline window's close hook and the screenshot matrix's landscape relaunch | 2026-11-09 |
+| iPad Pro 13-inch (M5) simulator, every module | `checkIos -Ptembra.iosSimulator="iPad Pro 13-inch (M5)"` | green, zero warnings | 1,231 UI tests in `:shared:ui`, 0 failures (T118) | 2026-11-09 |
+| iPhone Duo simulator (`8AF0F092-…`), every module | `checkIos -Ptembra.iosSimulator=8AF0F092-…` | green, zero warnings | 1,231 UI tests in `:shared:ui`, 0 failures (T118) | 2026-11-09 |
+| Host (JVM, every module) | `checkAndroidHost` | green, zero warnings | after the sheet's focus-on-open (T092's finding) | 2026-11-09 |
+| iPhone 18 Pro simulator, every module | `checkIos -Ptembra.iosSimulator="iPhone 18 Pro"` | green, zero warnings | 1,232 UI tests in `:shared:ui`, 0 failures: `MixerSemanticsTest.openingTheSheetUnderAKeyboardFocusesTheHandle` (+1) | 2026-11-09 |
 
 ## Phase 7 notes (User Story 5, 2026-11-06)
 
@@ -79,3 +98,62 @@ so it is a once-per-phase-group check, not a per-change one.
 - T092's iOS half is the lanes above (the Compose tests drive Tab, the arrows, Page, Home, M, O, Escape, hover,
   tooltips, the wheel and the secondary click on the iPad and the Duo); the desktop emulator pass, the T089/T090
   captures and the T091 comparison wait for the emulator lane (one Gradle build at a time).
+
+## T091: the captures against the Stitch mixer screens and `theme.json` (2026-11-08)
+
+References: `design/stitch/screens/mixer-timeline/phone-drawer/screenshot.jpg` (the sheet labelled MIXER rising over the
+lanes with a master fader and a stereo meter) and `tablet-split-console/screenshot.jpg` (numbered strips: meter, VU dial,
+knob, Solo, Mute, a scaled fader, the name at the foot). Captures: `android/pixel-6-pro/*`, `android/pixel-tablet/*`.
+
+| Element | Design | App | Verdict |
+|---|---|---|---|
+| The sheet | a grabber row labelled MIXER over the lanes, `surface-level-2`, rounded top | the same: the 32 dp handle with the pill and "Mixer", 16 dp top corners, the seam | matches |
+| Strip order | number, meter, VU, knob, Solo, Mute, fader (scale beside), name | number, VU (tall sheets), knob, S/M, fader with the meter beside it (research R2's "dual LED meter beside the fader"), name | matches R2; the console's meter-above-dial order is the Studio Sound screen's, not this design system's |
+| Solo and Mute | "Solo"/"Mute" pills | the header's `S`/`M` squares (FR-010: the same component and state as the track headers) | deviation by decision (plan, R2), recorded for T124 |
+| Fader | lavender rail, dark handle with a line, scale marks | `primary` lit rail, `surface-container-high` 44 × 28 dp handle, `micro-label` marks | matches `theme.json` |
+| Meters | two bars, body/warning/clip | `meter_body` green to −6 dB, `meter_warning` above, `meter_clip` square (lit in `360dp-mixer-clipped`) | matches the tokens |
+| VU dial | on every strip | only on sheets ≥ 480 dp tall (`FullNoVu` below): none on the phone or the 640 dp-tall tablet screen in these captures | by FR-025's drop order; shows on tall windows (the Duo's open posture, the desktop window) |
+| Master | pinned at the right, labelled | pinned on `surface-level-3`, "Master", the percent readout | matches |
+| Typography and spacing | `tabular-param` numbers, `label-md` names, 72 dp strips | the same tokens; the names ellipsise at font 2.0 | matches; one fix from the captures: the master label now ellipsises too |
+
+No token or spacing change was needed beyond the master label's overflow.
+
+
+## T091 continued: the iOS and fold captures against the design (2026-11-08)
+
+| Capture | Verdict |
+|---|---|
+| iPhone 18 Pro half / full / clipped / armed / settings / largest font | the same tokens as the Android set; the full sheet is the full form (dials and knobs) on the 874 pt screen; "Master" ellipsises at the largest font ("Mast…", the fix of the Android round); the clipped master latch lights as on Android |
+| iPad Pro 13-inch half | the expanded half anchor leaves 192 dp of lanes (data model §5), so the sheet is about 1,050 dp tall and still the compact form: faders over 900 dp long. Spec-conformant, visually odd; listed below for T124 |
+| iPad Pro 13-inch full / landscape / settings inline | the full form with dials and knobs; landscape is the two-anchor expanded layout at the half anchor (compact strips about 500 dp tall); the inline settings carry the pan row at the design's position |
+| iPhone Duo (closed, upright) | the end-rail layout keeps the sheet's geometry; four strips with the master pinned over the row's end at 466 pt; nothing of the mixer collides with the rail |
+| Pixel 9 Pro Fold open | the expanded layout with the rail; half compact, full with dials; identical to the Pixel Tablet's forms |
+| Pixel 9 Pro Fold closed | the compact layout at 443 dp: the half sheet shows four strips and the master; the landscape capture shows an emulator rendering quirk (the window in the left 890 px), not compared |
+
+## Findings for the owner (T124) and follow-ups
+
+- **The half anchor on tall screens.** `StripForm.of` returns the compact form at the half anchor whatever the
+  sheet's height (data model §5). On the iPad Pro in portrait the half sheet is about 1,050 dp tall; on the Pixel
+  9 Pro Fold open, about 290 dp; on the iPad in landscape about 500 dp. Candidates: let the form follow the
+  height at the half anchor too (the full form from 480 dp), or cap the expanded half anchor so more lanes stay
+  visible on tall windows. The owner's call; nothing changed tonight.
+- **iPhone landscape: the toolbar sits above the screen.** In landscape on the iPhone 18 Pro simulator the timeline's
+  toolbar row is laid out above the window's top (XCUITest computes the overflow button's hit point at y = −7; the
+  probe screenshot shows the ruler at the very top and only the pill's lower edge): the Mixer button cannot be
+  reached, so `ios-mixer-landscape` is missing for the iPhone. The branch changes no inset code (the diff against
+  `main` has none), so this looks pre-existing (the single-anchor landscape layout of 009/011); verify on `main`
+  and open a fix outside this feature if it reproduces there.
+- **X with the focus on the navigation rail.** On the desktop emulator a mouse click on a rail item leaves the focus
+  on the rail; X then does nothing (the Timeline scope's handler sits under the screen, not the shell), the sheet
+  opens once the focus is back inside the timeline (a click on the ruler). 011's scope model decides whether the
+  shell should route the Timeline shortcuts while the rail has focus; recorded, not changed.
+- **TalkBack and VoiceOver (T093)** are left to the owner: the screen readers speak, and the run tonight had to stay
+  silent.
+
+## The lane tasks of Phases 2–7 (T039, T043, T055, T065, T074, T080, T088)
+
+Marked done on 2026-11-08 against the lane table above: every phase's host, iOS and Pixel 6 Pro lanes ran green
+(the Pixel lane once for all of them on 2026-11-08, its four test-side fixes recorded), the iPad and Duo lanes after
+Phase 7. The captures those tasks name (`pixel6pro/mixer-half-360.png` and friends) are the Pixel 6 Pro files
+`pixel-6-pro/360dp-mixer-*.png` of T089. The by-hand steps with headphones (quickstart §6 and §7, "announced") were
+not performed under the no-sound rule: they fold into T111 (the loopback measurements, announced) and T124.

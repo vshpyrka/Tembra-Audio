@@ -13,7 +13,8 @@ struct ComposeView: UIViewControllerRepresentable {
             tunerTestSignal: launchArgument(prefix: "--tembra-tuner-test-signal="),
             tunerNoiseGate: launchArgument(prefix: "--tembra-tuner-noise-gate="),
             metronomeSyncopation: launchArgument(prefix: "--tembra-metronome-syncopation="),
-            projectsSeed: launchArgument(prefix: "--tembra-projects-seed=")
+            projectsSeed: launchArgument(prefix: "--tembra-projects-seed="),
+            stressTracks: launchArgument(prefix: "--tembra-stress-tracks=")
         )
         context.coordinator.attach(to: controller.view)
         return controller
@@ -25,7 +26,7 @@ struct ComposeView: UIViewControllerRepresentable {
 /// Debug builds accept `--tembra-developer-view=<value>` (spec FR-022 of feature 002), `--tembra-tuner-test-signal=<value>`
 /// (spec FR-032 of feature 003), `--tembra-tuner-noise-gate=<value>` (spec FR-023 of feature 006) and
 /// `--tembra-metronome-syncopation=<value>` (spec FR-037 of feature 004) and `--tembra-projects-seed=<count>` (feature 009,
-/// T121) on the command line; Release passes nil for all five.
+/// T121) and `--tembra-stress-tracks=<count>` (feature 012, the stress journey's project) on the command line; Release passes nil for all six.
 private func launchArgument(prefix: String) -> String? {
     #if DEBUG
     return CommandLine.arguments.first { $0.hasPrefix(prefix) }.map { String($0.dropFirst(prefix.count)) }

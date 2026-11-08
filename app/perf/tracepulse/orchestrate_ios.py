@@ -57,6 +57,7 @@ JOURNEY_TEST_CLASSES = {
     "recording": "RecordingPerfTests",
     "stress": "StressPerfTests",
     "windowing": "WindowingPerfTests",
+    "mixer": "MixerPerfTests",
 }
 
 

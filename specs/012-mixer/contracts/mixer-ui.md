@@ -27,7 +27,7 @@ sources, frozen clock, semantics before pixels, keyboard tests declared per lane
 | `MixerStripRow(strips, form, callbacks, …)` | a `LazyRow` keyed by id, 72 dp items, `contentPadding` for the pinned master; tag `mixer.strips`; `tembraScrollbar` after 011 |
 | `MixerStrip(strip: StripUi, form, selected, callbacks, telemetry, inputTelemetry, modifier)` | the frame: tint band at the base, number at the top (`tabularParam`), `VuDial` and `PanKnob` in `Full`, `MuteSoloButton` × 2 (36 dp, the header's component reused), `Fader` with `LevelMeter` beside it, the name (ellipsised) at the bottom; `focusGroup()`; `selectable` on the number and name → `onStripSelect`; secondary click → the track menu (011's `onSecondaryClick`); `MeterSource.Input` swaps `LevelMeter` for 010's `InputMeter` pattern (the input snapshot through `inputTelemetry`) |
 | `MasterStrip(master: MasterUi, callbacks, telemetry, modifier)` | the same frame: "Master" label, `Fader` in percent mode (0…100, readout "80 %", `MasterVolumeSlider`'s steps), `LevelMeter` on the master fields, the clip latch; no knob or toggles |
-| `Fader(value: Float, range, readout: String, onValue, onSettled, modifier, taper: FaderTaper?, interactionSource?, testTag?)` (`designsystem`) | vertical: a rail, the lit track below the handle, the 44 × 28 dp handle, the scale ticks (`remember(range, height)`); drag 1:1 in throw space (`awaitEachGesture`, keeps following off the rail), double tap → `onValue(unity)` animated; wheel ±1 step; arrows ±step, Page ±page, Home → unity; hover tint and the focus ring; semantics: `contentDescription` (the track and "gain"/"master volume"), `stateDescription = readout`, `progressBarRangeInfo` + `setProgress` in the value domain, `Role.Slider` |
+| `Fader(value: Float, onValue, onSettled, description, readout: String, modifier, scale: FaderScale, interactionSource?, testTag?, section)` (`designsystem`) | vertical: a rail, the lit track below the handle, the 44 × 28 dp handle, the scale ticks (`remember(range, height)`); drag 1:1 in throw space (`awaitEachGesture`, keeps following off the rail), double tap → `onValue(unity)` animated; wheel ±1 step; arrows ±step, Page ±page, Home → unity; hover tint and the focus ring; semantics: `contentDescription` (the track and "gain"/"master volume"), `stateDescription = readout`, `progressBarRangeInfo` + `setProgress` in the value domain (Compose has no slider role; the range semantics stand in) |
 | `PanKnob(pan: Pan, onPan, onSettled, modifier, interactionSource?, testTag?)` (`designsystem`) | a 40 dp dial with an arc and a pointer; vertical drag 2 dp per 1 %; release within 5 % snaps to the centre; double tap → centre; wheel ±1 %, arrows ±1 %, Page ±10 %, Home → centre; semantics like the fader with the "L 35 / C / R 20" readout |
 | `LevelMeter(telemetry: MixTelemetry, index: Int (64 = master), mirror: StripLevel, onResetClip, modifier)` (`designsystem`) | two 6 dp bars in `drawBehind` through `LevelHold` and `LevelSmoother`, −60…0 dB linear in dB, `meterBody` to −6 dB, `meterWarning` above, the hold mark, the `meterClip` square lit from `clipMask`/`masterClipped`; `clickable` on the square → `onResetClip`; semantics from the mirror ("Level", "<n> dB", "clipped" once through a live region) |
 | `VuDial(telemetry, index, modifier)` (`designsystem`) | a 48 dp half-dial drawn in `drawBehind`: the needle from the published RMS mapped to −20…+3 VU (0 VU = −18 dBFS), the arc red above 0 VU (`meterWarning`); semantics "VU", `stateDescription` from the mirror |
@@ -39,10 +39,10 @@ sources, frozen clock, semantics before pixels, keyboard tests declared per lane
 
 ## Layout rules (data model §5; FR-018 to FR-022, FR-025, FR-026)
 
-- Compact and Medium: Half ≥ 240 dp; Full = the lanes box; three strips plus the master at
+- Compact and Medium: Half ≥ 256 dp (research R2's 240 dp plus the handle row, so the fader keeps its 120 dp throw); Full = the lanes box; three strips plus the master at
   360 dp; the row scrolls sideways; the master stays pinned.
 - Landscape: one anchor (Full); `FullNoVu`.
-- Expanded: Half = lanes box − 192 dp (two expanded lanes stay visible) and ≥ 240 dp; Full =
+- Expanded: Half = lanes box − 192 dp (two expanded lanes stay visible) and ≥ 256 dp; Full =
   the lanes box; `Full` form; as many strips as fit, never stretched.
 - Crossing a breakpoint keeps `open`, maps the height (landscape forces Full), keeps the
   row's scroll position (`rememberLazyListState` keyed by nothing) and a drag in progress
@@ -55,7 +55,8 @@ sources, frozen clock, semantics before pixels, keyboard tests declared per lane
 ## Keyboard (FR-028, FR-029)
 
 `X` toggles the sheet (root handler; `ShortcutCatalogue` after 011). Tab order inside the
-sheet: handle → per strip Solo, Mute, pan, fader → master fader. Fader: arrows 0.5 dB, Page
+sheet: handle → per strip the knob (full form), Solo, Mute, fader → master fader (the number
+and name labels select on a tap but are no Tab stops). Fader: arrows 0.5 dB, Page
 6 dB, Home 0 dB; knob: arrows 1 %, Page 10 %, Home centre; master: arrows 1 %, Page 10 %.
 "M"/"O" on a focused strip toggle that track. Escape (011's overlay stack) and Back close.
 

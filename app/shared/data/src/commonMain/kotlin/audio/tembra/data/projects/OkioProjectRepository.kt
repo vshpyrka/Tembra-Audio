@@ -67,8 +67,8 @@ class OkioProjectRepository(
 
     override fun library(): Flow<LibraryIndex> = version.map { loadIndex() }
 
-    override suspend fun create(name: String): Project = io {
-        val project = Project.new(IdGenerator.projectId(), name)
+    override suspend fun create(name: String, id: ProjectId): Project = io {
+        val project = Project.new(id, name)
         val folder = folders.folder(project.id)
         writeDocument(folder, project)
         updateIndex { index -> index.withEntry(entryOf(project, folder, ProjectOrigin.User, clock())) }

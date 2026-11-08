@@ -24,6 +24,7 @@ ANDROID_KEYS = {
     "audio.over_budget", "audio.xruns", "audio.realtime",
     "audio.avg_us", "audio.starvation", "audio.clips_active",
     "audio.input_overruns", "audio.record_backlog", "audio.take_alignment_ms", "audio.monitor_delay_ms",
+    "audio.master_clips", "audio.meter_frames_dropped",
 }
 
 IOS_KEYS = {
@@ -37,6 +38,7 @@ IOS_KEYS = {
     "audio.over_budget", "audio.xruns", "audio.realtime",
     "audio.avg_us", "audio.starvation", "audio.clips_active",
     "audio.input_overruns", "audio.record_backlog", "audio.take_alignment_ms", "audio.monitor_delay_ms",
+    "audio.master_clips", "audio.meter_frames_dropped",
     "audio.ioproc_p99_us",
 }
 
@@ -158,6 +160,17 @@ def test_recording_counters_gates_and_journeys():
     assert "recording" in CATALOGUE[("ios", "journey.duration_ms")].journeys
 
 
-def test_report_orders_the_recording_journey_between_timeline_and_stress():
+def test_mixer_counters_gates_and_journeys():
+    """Feature 012: master clips flag any increase; dropped meter frames have a 20 % gate over a floor of 2; the mixer journey is measured."""
+    for platform in ("android", "ios"):
+        clips = CATALOGUE[(platform, "audio.master_clips")]
+        assert clips.gate_limit_abs == 1.0 and clips.screening_abs == 1.0 and clips.journeys == ("stress",)
+        dropped = CATALOGUE[(platform, "audio.meter_frames_dropped")]
+        assert dropped.gate_limit_pct == 20 and dropped.floor_abs == 2.0 and dropped.unit == "count"
+    assert "mixer" in CATALOGUE[("android", "frames.p50_ms")].journeys
+    assert "mixer" in CATALOGUE[("ios", "journey.duration_ms")].journeys
+
+
+def test_report_orders_the_journeys_in_navigation_order():
     from tracepulse.report import _JOURNEY_ORDER
-    assert sorted(_JOURNEY_ORDER, key=_JOURNEY_ORDER.get) == ["startup", "tuner", "metronome", "timeline", "recording", "stress"]
+    assert sorted(_JOURNEY_ORDER, key=_JOURNEY_ORDER.get) == ["startup", "tuner", "metronome", "timeline", "recording", "mixer", "stress", "windowing"]

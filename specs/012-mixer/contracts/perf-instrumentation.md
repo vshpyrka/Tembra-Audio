@@ -25,7 +25,7 @@ on any increase in `stress` like `starvation`; `meterFramesDropped`: expected 0 
 reference devices, 20 % gate with a floor of 2), `traces_android.AUDIO_COUNTER_KEYS`
 (`audio.master_clips`, `audio.meter_frames_dropped`), `collect_ios._HEALTH_KEYS`,
 `tests/fixtures/engine-health.json` and `specs/007-performance-pipeline/contracts/metric-catalogue.md`
-gain the two counters. `trace_shim_test` expects 49 names.
+gain the two counters. `trace_shim_test` expects 52 names.
 
 ## Anchors (`PerfAnchors` + `PerfAnchorsCatalogueTest` + the Android and iOS mirrors)
 

@@ -52,10 +52,11 @@ outside it at the right edge; after 011 merges the row gets `tembraScrollbar`.
 **Rationale**: FR-002, FR-018 (at least three strips and the master at 360 dp: 3 × 72 + 72 +
 gaps = 312 dp), FR-025 (72 dp strips, 44 dp handle), the design table ("Dual vertical LED
 meter per strip" beside the fader in `tablet-split-v2`). The fader's throw at the half height
-(240 dp) is 240 − 20 (number) − 36 (toggles) − 20 (name) − 24 (gaps) = 140 dp ≥ 120 dp
+(256 dp, the implementation's floor: this sum forgot the 32 dp handle row and the 8 dp of padding)
+is 256 − 32 (handle) − 8 (padding) − 20 (number) − 36 (toggles) − 20 (name) − 16 (gaps) = 124 dp ≥ 120 dp
 (FR-018). `laneHeightCompact = 88` and `laneHeightExpanded = 96` (`TembraSpacing.kt`) give
 the "two lanes visible" rule of FR-021 its number: Half = lanes box − 2 × 96 dp on expanded
-windows, never under 240 dp.
+windows, never under 256 dp.
 
 **Alternatives**: a `Row` with horizontal scroll (no item recycling at 64 tracks); the design's
 meter above the knob (a third row of height the half form cannot afford).

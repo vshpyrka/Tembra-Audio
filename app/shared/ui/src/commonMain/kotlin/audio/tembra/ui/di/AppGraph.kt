@@ -14,6 +14,7 @@ import audio.tembra.ui.platform.MicrophonePermission
 import audio.tembra.ui.platform.TrackpadPinchSource
 import audio.tembra.ui.platform.WindowControls
 import audio.tembra.ui.projects.ProjectsSeeder
+import audio.tembra.ui.projects.StressProjectSeeder
 import audio.tembra.ui.session.AppStartup
 import audio.tembra.ui.session.ProjectSession
 import dev.zacsweers.metrox.viewmodel.ViewModelGraph
@@ -39,6 +40,7 @@ interface AppGraph : ViewModelGraph {
     val projectSession: ProjectSession
     val appStartup: AppStartup
     val projectsSeeder: ProjectsSeeder
+    val stressProjectSeeder: StressProjectSeeder
 }
 
 /**

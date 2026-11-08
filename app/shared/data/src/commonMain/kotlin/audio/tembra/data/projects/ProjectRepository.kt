@@ -1,6 +1,7 @@
 package audio.tembra.data.projects
 
 import audio.tembra.core.project.AudioAssetId
+import audio.tembra.core.project.IdGenerator
 import audio.tembra.core.project.Project
 import audio.tembra.core.project.ProjectId
 import audio.tembra.engine.TakeInfo
@@ -17,8 +18,8 @@ interface ProjectRepository {
     /** Emits the index on subscription and after every change; rebuilt from the folders when missing, unreadable or stale. */
     fun library(): Flow<LibraryIndex>
 
-    /** A new folder and document at the defaults (120 BPM, 4/4, empty) plus its index entry. */
-    suspend fun create(name: String): Project
+    /** A new folder and document at the defaults (120 BPM, 4/4, empty) plus its index entry; [id] is fixed only by the stress project (feature 012). */
+    suspend fun create(name: String, id: ProjectId = IdGenerator.projectId()): Project
 
     /** Reads and validates the document. */
     suspend fun open(id: ProjectId): OpenResult

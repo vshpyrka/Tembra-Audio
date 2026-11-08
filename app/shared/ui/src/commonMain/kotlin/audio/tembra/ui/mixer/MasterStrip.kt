@@ -19,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
 import audio.tembra.engine.MixSnapshot
 import audio.tembra.engine.perf.PerfSection
@@ -63,7 +64,7 @@ internal fun MasterStrip(
         verticalArrangement = Arrangement.spacedBy(spacing.xs),
     ) {
         Box(Modifier.fillMaxWidth().heightIn(min = MixerStripDefaults.LabelHeight), contentAlignment = Alignment.Center) {
-            Text(MixerCopy.master, style = TembraTheme.typography.labelMedium, color = colors.onSurface, maxLines = 1, textAlign = TextAlign.Center)
+            Text(MixerCopy.master, style = TembraTheme.typography.labelMedium, color = colors.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
         }
         // The toggles' row of the track strips, kept empty so the master's fader lines up with theirs.
         Spacer(Modifier.height(MixerStripDefaults.ToggleSize))

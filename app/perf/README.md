@@ -144,12 +144,19 @@ change, and with the overview strip as the device's zoom control drag its window
 back (inside `timeline.scroll`); then pause, skip to start; both D1 steps are skipped where their control is
 absent), `recording` (feature 010: Projects → the demo card, add a track, arm it, switch monitoring on and
 off, record one bar of count-in plus four bars, stop the take while playback continues, pause, undo twice,
-skip to start; the runner grants the microphone first) and `stress` (the demo
-project plays with the click on while the lane scrolls for five seconds, the tuner cycle then takes the
-audio through the stop-and-leave dialog, the metronome runs while the tuner listens; the engine's audio-health
-counters are written right after the playback phase, while the transport still owns the device (on Android the
-counter tracks keep their peak over the trace, since the engine restarts them per stream session) — its duration
-stepped up at the 009 label boundary, as expected).
+skip to start; the runner grants the microphone first), `mixer` (feature 012: Projects → the demo card, play, open the
+mixer sheet from the toolbar or the overflow menu, drag the first fader down by a third and back over a second each
+way, turn the first knob 60 dp up and back, solo the second strip and back, mute the third and back, swipe the strip
+row to its end and back, drag the master down by a quarter and back, close the sheet, undo until nothing is left,
+pause, skip to start) and `stress` (since feature 012 on the 24-track stress
+project the measurement build builds on the journey's request, `tembra.stress.tracks=24` on Android and
+`--tembra-stress-tracks=24` on iOS, the demo's loops imported six times over through the import path, once per
+install; on the demo when the launch built none: the project plays with the click on while the lane scrolls for
+five seconds, a short take is recorded, the mixer sheet opens for five seconds of live meters with the lane still
+scrolling, one fader drag and closes, the tuner cycle then takes the audio through the stop-and-leave dialog, the
+metronome runs while the tuner listens; the engine's audio-health counters are written right after the mixer phase,
+while the transport still owns the device (on Android the counter tracks keep their peak over the trace, since the
+engine restarts them per stream session) — its duration stepped up at the 009 label boundary, as expected).
 20 iterations each. The catalogue
 (`tracepulse/catalogue.py`, contract `metric-catalogue.md`) names every series per platform with its unit,
 source, gate default and screening gate; families marked non-comparable (startup, frames, memory,

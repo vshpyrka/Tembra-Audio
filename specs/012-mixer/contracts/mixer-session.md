@@ -38,7 +38,7 @@ callbacks built once).
 - `applyToEngine`: `is SetPan -> audio.setPan(index, pan.toLinear())`; `SetGain` and
   `SetSoloed`/`SetMuted` keep `pushTrack`; `SetMasterVolume` keeps `setMaster`. After
   `setArrangement` (project open, undo/redo that changes the track list) the session pushes
-  every track's pan once (`pushPans`), because pan is not in the arrangement struct.
+  the pans that differ from what the engine holds (`pushPans` is differential), because pan is not in the arrangement struct.
 - `setMetering(on)`: a counter; `audio.setMetering(true)` on 0 → 1, `false` on 1 → 0; reset
   to 0 when the transport closes or the project changes.
 - `mixTelemetry`: `read(frameNanos, into)` memoised on the frame time, filling one
