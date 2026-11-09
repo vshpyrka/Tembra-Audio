@@ -98,8 +98,45 @@ bring lanes 0 to 4 back. The journey now swipes down over the track list itself 
 top to an eighth from its bottom, 12 steps) until the first lane is composed again. The mixer journey completed a
 third time (20 iterations, 49 s).
 
-**Open**: round 7 with the list swipe: `audio.meterFramesDropped = 0` and `audio.masterClips` from the stress
-journey's health dump.
+## Round 7, `20261109T102048Z_012-mixer`: both journeys green; the pull did not make it
+
+`--journeys stress,mixer` on the merged branch's APKs with the list swipe. Status `succeeded`, gate within limits,
+no badges, thermal 36 °C, battery 100 %. The stress journey ran its 20 iterations (39.7 s median; frames p50 9.08 ms,
+p90 11.99 ms, p99 15.49 ms; the mixer phase's `timeline.mixerFrame` 520 frames and 95 ms an iteration) and the mixer
+journey its 20. But the record carries no journeys: the phones reach adb through an ssh tunnel today, which pulls at
+0.6 MB/s, and a class's 1 GB of traces did not fit the pipeline's ten-minute pull window; `adb pull` returned 124,
+the pipeline ignored it, found two traces and no JSON, and wrote a "succeeded" record without data (round 6 and round
+5 had the same silent pull behind their failures). Two pipeline changes: a pull that fails or times out now fails the
+round ("ran, but its output did not reach the Mac"), and the pull window is 40 minutes (`PULL_TIMEOUT_S`, with the
+reason in the code and the perf README); `uv run pytest`: 367 passed.
+
+The mixer journey's JSON was still on the phone and was pulled by hand (8 s) into the round folder; the pipeline's own
+collector (`collect_round`) read it offline. Medians over the 20 iterations:
+
+| Catalogue metric | Median | Min to max |
+|---|---|---|
+| `journey.duration_ms` | 49,370 ms | 49,210 to 66,060 |
+| `frames.p50_ms` / `p90` / `p99` | 9.60 / 12.46 / 14.49 ms | p99 14.37 to 14.73 |
+| `frames.overrun_p90_ms` | −1.49 ms | −1.69 to −1.36 |
+| `memory.end_kb` / `memory.peak_kb` | 134,900 / 183,600 kB | peak 172,200 to 191,200 |
+| `section.timeline.mixerOpen` | 1 × 0.022 ms | |
+| `section.timeline.mixerClose` | 1 × 0.146 ms | |
+| `section.timeline.mixerFrame` | 2,757 × 488 ms in all (0.18 ms a frame) | 436 to 675 ms |
+| `section.timeline.faderDrag` | 2 × 10,770 ms in all | |
+| `section.timeline.panTurn` | 1 × 2,870 ms | |
+| `section.transport.masterDrag` | 2 × 12,380 ms in all | |
+| `section.engine.panApply` | 27 × 0.133 ms in all | |
+| `section.timeline.playheadFrame` | 2,806 × 9.9 ms | |
+| `section.timeline.projectSave` | 16 × 299 ms | 15 to 22 saves |
+| `section.transport.play` | 1 × 3.6 ms | |
+
+Every section the contract lists for the journey is present in all 20 iterations with a constant count. The stress
+journey's traces (the source of `audio.meterFramesDropped` and `audio.masterClips`: the pipeline reads the counter
+tracks of each iteration's trace) were cleared from the phone before the mixer class ran, so the counters come from
+the next round.
+
+**Open**: round 8, `--journeys stress` with the 40-minute pull window: `audio.meterFramesDropped = 0` and
+`audio.masterClips`.
 
 ## iOS: the journey on the iPhone 18 Pro simulator (2026-11-09, 08:19 to 08:49)
 
