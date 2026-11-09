@@ -108,7 +108,9 @@ iOS script switches to the Xcode whose SDK covers it.
 
 Device runs on one Android target (feature 010): `tools/gradlew-device.sh <serial> <gradle arguments…>` runs the
 wrapper with `ANDROID_SERIAL` set, so `tools/gradlew-device.sh 19021FDEE001AH checkAndroidDevice` runs the device
-lane on the Pixel 6 Pro alone. Before any lane, capture or perf round on a physical device apply the owner's run
+lane on the Pixel 6 Pro alone; `--adb-server-port <port>` before the serial points the lane at a second adb server
+(`ANDROID_ADB_SERVER_PORT`, honoured by adb and AGP), for a local emulator while the phones come through an ssh
+tunnel on 5037. Before any lane, capture or perf round on a physical device apply the owner's run
 conditions with `tools/apply-device-run-conditions.sh <serial>` (the screen awake, brightness at its floor, the
 music stream silent, do-not-disturb on; the OPPO refuses the brightness settings and is dimmed by hand). The device
 UI tests run behind the black `Theme.Tembra.DeviceTest` window. The only step that makes a sound is the loopback
