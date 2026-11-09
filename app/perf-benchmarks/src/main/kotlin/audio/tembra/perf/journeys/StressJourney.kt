@@ -28,7 +28,7 @@ class StressJourney {
         device.anchor(Anchors.TIMELINE_ROOT)
         device.tap(Anchors.TRANSPORT_METRONOME)
         device.tap(Anchors.TRANSPORT_PLAY)
-        scrollFirstLane(device, SCROLL_MILLIS)
+        scrollLane(device, Anchors.TIMELINE_LANE_FIRST, SCROLL_MILLIS)
         recordWhileScrolling(device, newTrack = if (stress) STRESS_TRACK_COUNT else RecordingJourney.NEW_TRACK_INDEX)
         mixerPhase(device)
         // The measurement build dumps the audio-health counters here, while the transport still owns the device (the
@@ -54,9 +54,10 @@ class StressJourney {
     /**
      * Feature 010: add a track, arm it, record for three seconds while the lane scrolls, stop the take, undo twice (the
      * take, then the track). Guarded: a device without the microphone grant finds no meter, skips the recording and
-     * the journey completes (the tap of Record is then a no-op). The lane is looked up again for the scroll: adding and
-     * arming a track recomposes the track list, and on the 24-track project the lane's node is replaced, so a handle
-     * taken before the add is stale (`StaleObjectException`, the 2026-11-09 round).
+     * the journey completes (the tap of Record is then a no-op). The new track's lane is the one scrolled, as on iOS:
+     * the list scrolls the added track into view, and on the 24-track project the first lane leaves the lazy list's
+     * composition (a handle taken before the add throws `StaleObjectException`, a fresh lookup finds nothing; the
+     * 2026-11-09 rounds).
      */
     private fun recordWhileScrolling(device: UiDevice, newTrack: Int) {
         val index = newTrack
@@ -64,7 +65,7 @@ class StressJourney {
         device.tapIfPresent(Anchors.trackArm(index))
         if (device.wait(androidx.test.uiautomator.Until.hasObject(androidx.test.uiautomator.By.res(Anchors.trackMeter(index))), ARM_TIMEOUT_MS)) {
             device.tapRecord(index)
-            scrollFirstLane(device, RECORD_MILLIS)
+            scrollLane(device, Anchors.timelineLane(index), RECORD_MILLIS)
             device.tapRecord(index)
             device.wait(androidx.test.uiautomator.Until.gone(androidx.test.uiautomator.By.res(Anchors.TIMELINE_CLIP_TAKE)), ADOPT_TIMEOUT_MS)
             device.wait(androidx.test.uiautomator.Until.findObject(androidx.test.uiautomator.By.res(Anchors.TIMELINE_UNDO).enabled(true)), ADOPT_TIMEOUT_MS)
@@ -79,12 +80,15 @@ class StressJourney {
      * live while the first lane scrolls above the half sheet and the metronome runs, one drag of the first fader (undone:
      * the document persists between iterations), then closed. The Mixer control sits in the toolbar on a wide bar and in
      * the overflow menu on a compact one. The sheet's meters keep the UI from reading idle while it is open, hence the
-     * short idle waits (`withShortIdleWaits`).
+     * short idle waits (`withShortIdleWaits`). The recording phase leaves the stress project's list scrolled to where
+     * its new track was, so the list is scrolled back to its top first: the first lane then stays visible above the
+     * half sheet.
      */
     private fun mixerPhase(device: UiDevice): Unit = withShortIdleWaits {
+        scrollListToTop(device)
         toggleMixer(device)
         device.anchor(Anchors.MIXER_SHEET)
-        scrollFirstLane(device, MIXER_MILLIS)
+        scrollLane(device, Anchors.TIMELINE_LANE_FIRST, MIXER_MILLIS)
         device.anchor(Anchors.MIXER_STRIP_FADER_FIRST).swipe(Direction.UP, FADER_SWIPE_PERCENT, SCROLL_SPEED)
         device.waitForIdle()
         device.tapIfPresent(Anchors.TIMELINE_UNDO)
@@ -93,19 +97,35 @@ class StressJourney {
     }
 
     /**
-     * Scrolls the first lane right and left until [millis] have passed. The lane's node can be replaced while the list
+     * Scrolls the lane [tag] right and left until [millis] have passed. The lane's node can be replaced while the list
      * recomposes (a track added or armed, the sheet opening), which makes a held `UiObject2` stale; the lane is then
      * found again and the scrolling goes on.
      */
-    private fun scrollFirstLane(device: UiDevice, millis: Long) {
-        var lane: UiObject2 = device.anchor(Anchors.TIMELINE_LANE_FIRST)
+    private fun scrollLane(device: UiDevice, tag: String, millis: Long) {
+        var lane: UiObject2 = device.anchor(tag)
         val until = System.currentTimeMillis() + millis
         while (System.currentTimeMillis() < until) {
             try {
                 lane.scroll(Direction.RIGHT, SCROLL_PERCENT, SCROLL_SPEED)
                 lane.scroll(Direction.LEFT, SCROLL_PERCENT, SCROLL_SPEED)
             } catch (_: StaleObjectException) {
-                lane = device.anchor(Anchors.TIMELINE_LANE_FIRST)
+                lane = device.anchor(tag)
+            }
+        }
+    }
+
+    /**
+     * Flings the track list up (a vertical fling on whichever lane is composed; a lane is too short for a plain scroll
+     * to move 25 tracks) until the first lane is composed again.
+     */
+    private fun scrollListToTop(device: UiDevice) {
+        repeat(MAX_LIST_SCROLLS) {
+            if (device.hasObject(By.res(Anchors.TIMELINE_LANE_FIRST))) return
+            val lane = device.findObject(Anchors.TIMELINE_LANE_ANY) ?: return
+            try {
+                lane.fling(Direction.UP)
+            } catch (_: StaleObjectException) {
+                // The list recomposed under the gesture: the next pass finds a lane again.
             }
         }
     }
@@ -131,5 +151,7 @@ class StressJourney {
         const val SCROLL_MILLIS = 5_000L
         const val SCROLL_PERCENT = 0.5f
         const val SCROLL_SPEED = 2_000
+        /** Vertical flings that bring a 25-track list back to its top. */
+        const val MAX_LIST_SCROLLS = 10
     }
 }

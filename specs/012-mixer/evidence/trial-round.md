@@ -50,10 +50,46 @@ budget and caps the wall time at three hours, so the round sat on the unreachabl
 (no `record.json`; the five journeys' logs and traces are in the round folder). The mixer journey has not completed
 a measured run yet.
 
-**Open**: with the phone reconnected, rerun the mixer journey and the stress journey (which carries
-`audio.meterFramesDropped` and `audio.masterClips` in its health dump) and complete this file: every mixer section
-present (`timeline.mixerOpen`, `timeline.mixerClose`, `timeline.mixerFrame`, `timeline.faderDrag`,
-`timeline.panTurn`, `transport.masterDrag`, `engine.panApply`) and `audio.meterFramesDropped = 0`.
+## Round 4, `20261109T082126Z_012-mixer`: the mixer journey measured; the stress journey's stale lane
+
+The phones back on the hub at 10:20 (through an ssh tunnel to adb), `--journeys mixer,stress`, the APKs of the
+idle-wait fix. Status `failed` on the stress journey; the mixer journey completed its 20 iterations (`MixerJourneyBenchmark-attempt1.log`,
+every trace written). Medians over the 20 iterations (count per iteration, sum per iteration):
+
+| Section or metric | Count | Median | Notes |
+|---|---|---|---|
+| `journey.mixer` | 1 | 49.3 s (49.1 to 49.7) | 75 s before the 500 ms idle waits |
+| `timeline.mixerOpen` | 1 | 0.021 ms | the toggle to the sheet's first strip draw |
+| `timeline.mixerClose` | 1 | 0.13 ms | |
+| `timeline.mixerFrame` | 2,760 frames | 467 ms in all, 0.17 ms a frame (max 506 ms) | the sheet's draw with the one `MixTelemetry.read` |
+| `timeline.faderDrag` | 2 | 10.7 s in all | the two one-second gestures as UiAutomator plays them (200 steps each way) |
+| `timeline.panTurn` | 1 | 2.87 s | the knob up and back |
+| `transport.masterDrag` | 2 | 12.4 s in all | |
+| `engine.panApply` | 27 | 0.135 ms in all, 5 µs each | |
+| `timeline.playheadFrame` | 2,812 | 10.0 ms in all | |
+| `timeline.projectSave` | 16 | 166 ms in all | the fader, knob, solo, mute and master edits and their undos |
+| frames (CPU) | 2,864 | p50 9.6 ms, p90 12.5 ms, p99 14.5 ms | overrun p50 −4.3 ms, p90 −1.5 ms, p99 +1.07 ms |
+| memory | | 125 MB anon RSS at the end, 179 MB peak | |
+
+Every mixer section is present in every iteration. The mixer journey carries no counters; `audio.meterFramesDropped`
+comes from the stress journey's health dump, which failed: both attempts threw `StaleObjectException` at
+`StressJourney.recordWhileScrolling` (`StressJourney.kt:71`) on the first `lane.scroll` after the add, the arm and the
+Record tap. The first fix made the scrolling stale-safe (find the lane again) and gave the mixer phase the short idle
+waits (`withShortIdleWaits`, shared with the mixer journey).
+
+## Round 5, `20261109T085909Z_012-mixer`: the first lane leaves the list
+
+`--journeys mixer,stress` on the merged branch's APKs (10:58). The mixer journey completed again (20 iterations,
+49.3 s median; frames p50 9.56 ms, p90 12.43 ms, p99 14.54 ms; `timeline.mixerFrame` 448 ms an iteration;
+`engine.panApply` 0.128 ms). The stress journey failed both attempts with `perf anchor 'timeline.lane.0' not found
+within 10000 ms` from the fresh lookup: on the 24-track project the list scrolls the added 25th track into view and the
+first lane leaves the lazy list's composition, so it was never stale but gone. The recording phase now scrolls the new
+track's lane (as the iOS journey has since feature 010) and the mixer phase flings the list back to its top before the
+sheet opens so the first lane stays visible above the half sheet (contract, "Journey `stress`"; the skill review's
+row).
+
+**Open**: round 6 with the lane fix: `audio.meterFramesDropped = 0` and `audio.masterClips` from the stress
+journey's health dump.
 
 ## iOS: the journey on the iPhone 18 Pro simulator (2026-11-09, 08:19 to 08:49)
 

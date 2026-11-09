@@ -79,10 +79,12 @@ After the existing playback-and-scroll phase and the recording phase, before
 `devtools.writeHealth`: open the mixer, keep it open with the meters live for five seconds
 while the lane scrolls and the metronome runs, drag the first fader once, close it. The
 health dump then carries `audio.masterClips` and `audio.meterFramesDropped`. The 75 s
-xctrace window is rechecked. On Android the lane is scrolled through a stale-safe helper: adding and
-arming the 25th track of the 24-track project recomposes the track list and replaces the first lane's
-node, so a `UiObject2` held from before the add throws `StaleObjectException` (the 2026-11-09 round,
-both attempts, at the recording step); the mixer phase runs under the same 500 ms idle waits as the
+xctrace window is rechecked. On the 24-track project the list scrolls the added 25th track into view
+and the first lane leaves the lazy list's composition (a `UiObject2` held from before the add throws
+`StaleObjectException`, a fresh lookup finds nothing: the 2026-11-09 rounds), so the recording phase
+scrolls the new track's lane on both platforms, and the mixer phase scrolls the list back to its top
+before the sheet opens so the first lane stays visible above the half sheet; on Android the lane
+scrolls through a stale-safe helper and the mixer phase runs under the same 500 ms idle waits as the
 mixer journey (`withShortIdleWaits`).
 
 ## Baseline profile

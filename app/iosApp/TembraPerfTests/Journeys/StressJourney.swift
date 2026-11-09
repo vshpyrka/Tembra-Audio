@@ -83,8 +83,10 @@ struct StressJourney {
     /// Feature 012 (contracts/perf-instrumentation.md "Journey `stress`"): the mixer open for five seconds with the meters
     /// live while the first lane scrolls above the half sheet and the metronome runs, one drag of the first fader (undone:
     /// the document persists between iterations), then closed. The Mixer control sits in the toolbar on a wide bar and in
-    /// the overflow menu on a compact one.
+    /// the overflow menu on a compact one. The recording phase leaves the stress project's list scrolled to where its new
+    /// track was, so the list is scrolled back to its top first: the first lane then stays visible above the half sheet.
     private func mixerPhase(_ app: XCUIApplication) {
+        scrollListToTop(app)
         toggleMixer(app)
         app.waitForAnchor(Anchors.mixerSheet)
         let lane = app.anchor(Anchors.timelineLaneFirst)
@@ -100,6 +102,16 @@ struct StressJourney {
         toggleMixer(app)
         let gone = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: app.anchor(Anchors.mixerSheet))
         _ = XCTWaiter.wait(for: [gone], timeout: 10)
+    }
+
+    /// Swipes down over the timeline (its centre lies in the lanes) until the first lane exists again (at most ten swipes
+    /// for 25 tracks).
+    private func scrollListToTop(_ app: XCUIApplication) {
+        let timeline = app.anchor(Anchors.timelineRoot)
+        for _ in 0..<10 where !app.anchor(Anchors.timelineLaneFirst).exists {
+            guard timeline.exists else { return }
+            timeline.swipeDown(velocity: .fast)
+        }
     }
 
     private func toggleMixer(_ app: XCUIApplication) {
