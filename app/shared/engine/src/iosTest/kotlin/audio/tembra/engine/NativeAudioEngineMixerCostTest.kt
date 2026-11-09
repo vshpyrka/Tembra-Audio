@@ -3,8 +3,10 @@ package audio.tembra.engine
 import audio.tembra.core.metronome.Tempo
 import audio.tembra.core.metronome.TimeSignature
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.toKString
 import kotlinx.coroutines.runBlocking
 import platform.Foundation.NSThread
+import platform.posix.getenv
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertTrue
@@ -50,10 +52,14 @@ class NativeAudioEngineMixerCostTest {
         val median = samples[samples.size / 2]
         val p99 = samples[samples.size * 99 / 100]
         val max = samples.last()
-        println("NativeAudioEngineMixerCostTest: median ${median / 1_000.0} µs, p99 ${p99 / 1_000.0} µs, max ${max / 1_000.0} µs over ${samples.size} calls")
-        assertTrue(median < MEDIAN_BOUND_NANOS, "median $median ns is not under 50 µs")
-        assertTrue(p99 < P99_BOUND_NANOS, "99th percentile $p99 ns is not under 1 ms")
-        assertTrue(max < MAX_BOUND_NANOS, "max $max ns is not under 10 ms: a call waited on the engine")
+        // GitHub's shared macOS runners preempt the simulator process for milliseconds at a time (PR #22, 2026-11-09):
+        // there every bound is ten times wider, which a wait behind the command mutex (hundreds of ms) would still fail.
+        // The build logic forwards GITHUB_ACTIONS (or -Ptembra.ci) into the simulator process.
+        val slack = if (getenv("GITHUB_ACTIONS")?.toKString().isNullOrEmpty()) 1 else CI_SLACK
+        println("NativeAudioEngineMixerCostTest: median ${median / 1_000.0} µs, p99 ${p99 / 1_000.0} µs, max ${max / 1_000.0} µs over ${samples.size} calls (bounds x$slack)")
+        assertTrue(median < MEDIAN_BOUND_NANOS * slack, "median $median ns is not under ${50 * slack} µs")
+        assertTrue(p99 < P99_BOUND_NANOS * slack, "99th percentile $p99 ns is not under $slack ms")
+        assertTrue(max < MAX_BOUND_NANOS * slack, "max $max ns is not under ${10 * slack} ms: a call waited on the engine")
     }
 
     /** One round of a thousand pan steps, gain steps and reads, timed one call at a time; sorted ascending. */
@@ -83,5 +89,7 @@ class NativeAudioEngineMixerCostTest {
         const val MEDIAN_BOUND_NANOS = 50_000L
         const val P99_BOUND_NANOS = 1_000_000L
         const val MAX_BOUND_NANOS = 10_000_000L
+        /** The bounds' multiplier on GitHub's shared runners. */
+        const val CI_SLACK = 10L
     }
 }

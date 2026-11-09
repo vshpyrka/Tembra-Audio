@@ -94,6 +94,13 @@ tasks.register("checkAndroidHost") {
 tasks.withType<KotlinNativeSimulatorTest>().configureEach {
     val simulator = providers.gradleProperty("tembra.iosSimulator")
     if (simulator.isPresent) device.set(simulator)
+    // Timing tests widen their bounds on GitHub's shared runners: the flag reaches the simulator process (the Kotlin
+    // plugin runs the binary through `simctl spawn`, which forwards only SIMCTL_CHILD_-prefixed variables); `-Ptembra.ci=true` rehearses it locally.
+    val ci = providers.gradleProperty("tembra.ci").orNull ?: System.getenv("GITHUB_ACTIONS")
+    if (!ci.isNullOrEmpty()) {
+        environment("GITHUB_ACTIONS", ci)
+        environment("SIMCTL_CHILD_GITHUB_ACTIONS", ci)  // `simctl spawn` hands SIMCTL_CHILD_-prefixed variables to the process
+    }
 }
 tasks.register("checkIos") {
     group = "verification"
