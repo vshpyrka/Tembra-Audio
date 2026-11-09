@@ -145,12 +145,23 @@ No token or spacing change was needed beyond the master label's overflow.
   9 Pro Fold open, about 290 dp; on the iPad in landscape about 500 dp. Candidates: let the form follow the
   height at the half anchor too (the full form from 480 dp), or cap the expanded half anchor so more lanes stay
   visible on tall windows. The owner's call; nothing changed tonight.
-- **iPhone landscape: the toolbar sits above the screen.** In landscape on the iPhone 18 Pro simulator the timeline's
-  toolbar row is laid out above the window's top (XCUITest computes the overflow button's hit point at y = −7; the
-  probe screenshot shows the ruler at the very top and only the pill's lower edge): the Mixer button cannot be
-  reached, so `ios-mixer-landscape` is missing for the iPhone. The branch changes no inset code (the diff against
-  `main` has none), so this looks pre-existing (the single-anchor landscape layout of 009/011); verify on `main`
-  and open a fix outside this feature if it reproduces there.
+- **Fixed (2026-11-09 evening, the owner's finding on the iPhone 14): iPhone landscape cut the toolbar off above and
+  the transport bar below.** Feature 011's window minimum (`ContentView.swift`, `.frame(minWidth: 360, minHeight: 480)`,
+  spec FR-004) applied on the phone too, whose window is its screen: 390 points tall in landscape on the iPhone 14,
+  402 on the iPhone 18 Pro, so SwiftUI made the Compose view 480 points tall and centred it, 45 (39) points past each
+  edge (the T090 probe's overflow button at y = −7 was this, not the single-anchor layout). The frame holds no
+  minimum on a phone now (`WindowMinimum.frameMinimum`; the scene's `sizeRestrictions` is nil there anyway) and iPad
+  windows keep theirs. The capture matrix's `ios-mixer-landscape` for the iPhone 18 Pro, missing before, is in
+  `ios/iphone-18-pro/`: the whole toolbar and transport bar in view. The iPad and the Android targets never had it
+  (their windows are taller than the minimum; Android's manifest `<layout>` minimum applies to free-form windows only).
+- **Fixed (2026-11-09 evening, the owner's finding): the strips' tint bands outlived the closing sheet.** The sheet's
+  layout measured its content at the visible height all the way down, so during the close the strips shrank in place
+  and their bands, drawn at every strip's base, stayed on the lanes box's bottom edge until the last frame (the
+  ease-out spends its last 100 ms on the last few dp). Below its lowest open anchor the sheet now keeps that anchor's
+  height and slides out of the box, clipped at its bottom edge, so the bands leave with it; between the anchors the
+  content still follows the visible height (the strips fit what shows during a drag).
+  `MixerSheetTest.aClosingSheetSlidesOutWithItsBandsInsteadOfCollapsing` (half-way through the close the sheet keeps
+  its 256 dp and its strips their height, their bases below the box; before the fix the sheet measured 45 dp there).
 - **X with the focus on the navigation rail.** On the desktop emulator a mouse click on a rail item leaves the focus
   on the rail; X then does nothing (the Timeline scope's handler sits under the screen, not the shell), the sheet
   opens once the focus is back inside the timeline (a click on the ruler). 011's scope model decides whether the

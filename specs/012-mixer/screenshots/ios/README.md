@@ -9,8 +9,10 @@ passed as build-setting arguments they reach the build, not the test runner, and
 playback with every strip at +6 dB and the master at 100 %; `mixer-armed` adds a fifth track and arms it;
 `track-settings-pan` opens the first track's settings (the expanded iPad layout shows them inline:
 `…-pan-inline`); `mixer-landscape` rotates the simulator and relaunches the app before the tap (Compose keeps the
-portrait accessibility frames after a rotation, so the toolbar's hit point landed above the screen); the
-`largestFont` file is the accessibility XXXL size.
+portrait accessibility frames after a rotation); the `largestFont` file is the accessibility XXXL size. The iPhone
+18 Pro's landscape file dates from 2026-11-09 evening, after the window-minimum fix: feature 011's 360 × 480 frame
+minimum had pushed the toolbar above the phone's 402-point-tall landscape screen and the transport bar below it
+(`../NOTES.md`, "Findings for the owner"), which is why the T090 run had no iPhone landscape capture.
 
 | Simulator | Slug | Size (pt) | Files |
 |---|---|---|---|
@@ -22,7 +24,8 @@ portrait accessibility frames after a rotation, so the toolbar's hit point lande
 
 - iPhone 18 Pro: four strips and the master at the half height in the compact form; the full sheet is the full form
   (VU dials and knobs: the lanes box is 480 dp tall or more); the largest font ellipsises "Master" ("Mast…") and the
-  track names; landscape is the single anchor.
+  track names; landscape (captured after the window-minimum fix) is the single anchor, with the toolbar and the
+  transport bar whole.
 - iPad Pro: the expanded layout's half anchor leaves 192 dp of lanes, so the half sheet is about 1,050 dp tall and
   still the compact form (data model §5: half means compact strips), with faders over 900 dp long; the full sheet
   shows the dials and knobs; the inline track settings carry the pan row; in landscape the two-anchor layout opens
