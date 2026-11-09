@@ -107,6 +107,14 @@ Worked examples (A = Accent, C = Click, s = Sub; subdivision ticks in lower case
   route-change guidance and Android's becoming-noisy convention require; connecting a new output
   still continues the click on it (FR-027, User Story 6).
 
+### Session 2026-11-09
+
+- Q (design iteration D2): What does the card behind the tempo dial look like? → A: It has the
+  same glow as the tuner's meter card and no vertical tint, on every form of the screen. The
+  stacked and tabletop dial cards, and the pocket form's card without the ring, also take the
+  tuner's two corner discs. The wide and book forms keep their discs in the opposite corners,
+  and the landscape form and the pocket form's ring card have none.
+
 ## User Scenarios & Testing *(mandatory)*
 
 The users of this feature are musicians who open Tembra Audio to practise or warm up to a steady

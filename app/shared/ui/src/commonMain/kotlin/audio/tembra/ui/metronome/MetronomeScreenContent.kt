@@ -175,7 +175,7 @@ private fun StackedMetronome(state: MetronomeUiState, callbacks: MetronomeCallba
                 )
             },
             dialCard = {
-                DialCard(state = state, callbacks = callbacks, discs = CardDiscs.None, modifier = Modifier.fillMaxSize()) {
+                DialCard(state = state, callbacks = callbacks, discs = CardDiscs.TopStartBottomEnd, modifier = Modifier.fillMaxSize()) {
                     DialInCard(state, callbacks, cap = MetronomeDefaults.CompactDialMax)
                 }
             },
@@ -261,10 +261,10 @@ private fun TempoCard(state: MetronomeUiState, callbacks: MetronomeCallbacks, sl
     val spacing = TembraTheme.spacing
     val gradients = TembraTheme.gradients
     TembraGradientCard(
-        glow = gradients.tempoDialCard,
+        glow = gradients.meterCompact,
         modifier = modifier,
-        discs = CardDiscs.None,
-        overlay = gradients.tempoDialOverlay,
+        discs = CardDiscs.TopStartBottomEnd,
+        overlay = null,
         testTag = "metronome.dialCard",
     ) {
         Column(
@@ -630,10 +630,10 @@ private fun TabletopDialCard(state: MetronomeUiState, callbacks: MetronomeCallba
     val spacing = TembraTheme.spacing
     val gradients = TembraTheme.gradients
     TembraGradientCard(
-        glow = gradients.tempoDialCard,
+        glow = gradients.meterCompact,
         modifier = modifier,
-        discs = CardDiscs.None,
-        overlay = gradients.tempoDialOverlay,
+        discs = CardDiscs.TopStartBottomEnd,
+        overlay = null,
         testTag = "metronome.dialCard",
     ) {
         BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(spacing.sm), contentAlignment = Alignment.Center) {
@@ -776,10 +776,10 @@ private fun DialCard(
     val spacing = TembraTheme.spacing
     val gradients = TembraTheme.gradients
     TembraGradientCard(
-        glow = gradients.tempoDialCard,
+        glow = gradients.meterCompact,
         modifier = modifier,
         discs = discs,
-        overlay = gradients.tempoDialOverlay,
+        overlay = null,
         testTag = "metronome.dialCard",
     ) {
         Column(
