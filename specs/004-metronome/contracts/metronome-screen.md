@@ -71,7 +71,7 @@ Column(testTag "screen.metronome", padding pageMargin)
 │   │   ├── AccentCells(oneRow) — every beat in one row whenever each cell keeps 44 dp: the row spans the card's inner width with a 2–4 dp gap and the cell width is the share of that width; the level label is hidden when a cell is narrower than its widest label (6/8 and 7/8 on a phone) and the bar alone shows the level; only when 44 dp cannot be kept the cells wrap as before   "metronome.cells", cells "metronome.cell.<n>"
 │   │   └── StyleRow(state.settings.style, onStyle)                                                      "metronome.style", pills "metronome.style.<id>"
 │   ├── ClickSoundPicker(layout = Dropdown, sound, customSound, onSound, onImport, onReplace)             "metronome.sound", menu items "metronome.sound.<id>", "metronome.sound.replace"
-│   └── TembraGradientCard(glow = tempoDialCard, weight 1, testTag "metronome.dialCard"): TempoDial sized from the remaining height (ring 160–300 dp)   "metronome.dial", steppers "metronome.dial.down" / "metronome.dial.up"
+│   └── TembraGradientCard(glow = meterCompact, discs = TopStartBottomEnd, weight 1, testTag "metronome.dialCard"): TempoDial sized from the remaining height (ring 160–300 dp)   "metronome.dial", steppers "metronome.dial.down" / "metronome.dial.up"
 │       └── TempoSlider(tempo, onTempo)                                                                   "metronome.slider"
 └── Row(pinned, gap md): TapTempoButton(caption, onTap) "metronome.tap"; PlayPauseButton(running, onTogglePlayback) "metronome.play"
 
@@ -84,7 +84,7 @@ of Stacked; every other device and every test keep the bands above. Research and
 Column(testTag "screen.metronome", padding pageMargin × sm, gap sm)
 ├── Card (surfaceContainerLow, medium corners, padding sm): AccentCells(form = BarOnly, gap 4 dp)      "metronome.cells"
 ├── Box(weight 1)
-│   ├── TembraGradientCard(tempoDialCard, fills the box): TempoDial (ring up to 300 dp) + TempoSlider      "metronome.dialCard"
+│   ├── TembraGradientCard(meterCompact, discs = None, fills the box): TempoDial (ring up to 300 dp) + TempoSlider; the tiers without the ring use the same glow with discs = TopStartBottomEnd      "metronome.dialCard"
 │   └── settings button (TopEnd, inset xs): 44 dp round surfaceContainerHigh, TembraIcon.Settings, "Metronome settings"   "metronome.pocket.settings"
 └── Row(pinned, gap md): TapTempoButton + PlayPauseButton (above the bottom edge; since 2026-10-04 the shell's
     LayoutMode.EndRail puts the navigation in the end-edge column on the Duo, so no bottom bar sits under the row)
@@ -109,14 +109,14 @@ Wide (840 dp or wider and 480 dp or taller):
 Row(testTag "screen.metronome", padding pageMargin, gap md)
 ├── Column(width max(1/3, wideSettingsMinWidth), verticalScroll): MetronomeSettingsPanel with ClickSoundPicker(layout = Tiles) in a "CLICK TIMBRE" card
 └── Column(weight 1, gap md)
-    ├── TembraGradientCard(tempoDialCard, discs = TopEndBottomStart, weight 1): TempoDial (max 420 dp, centred) + TempoSlider
+    ├── TembraGradientCard(meterCompact, discs = TopEndBottomStart, weight 1): TempoDial (max 420 dp, centred) + TempoSlider
     └── Card: Row(max 448 dp, centred): TapTempoButton (weight 1) + PlayPauseButton
 
 Landscape (600 dp or wider, shorter than 480 dp):
 Row(testTag "screen.metronome", padding pageMargin × sm, gap md)
 ├── settings column (2⁄5 of the content width — a 2:3 split against the dial pane, the user's choice on 2026-10-01 — never under 240 dp × font scale; verticalScroll only when the card does not fit): the LANDSCAPE bar-shape card, which differs from the Stacked card because the real column is only about 300 dp on the Pixel 6 Pro and 260 dp on the iPhone 17 once the rail and the safe areas are taken (sixth check, 2026-10-01): Row(gap sm): TimeSignatureMenu + StyleMenu ("Standard ▾", see design-system-additions); Row: SubdivisionTiles filling the width; AccentCells(labels hidden — the bar's height and colour carry the level, the stateDescription announces it — gap 4 dp, one row when every cell keeps 44 dp, otherwise two rows of 44 dp cells); then ClickSoundPicker(Dropdown). Heights at the default font: about 180 dp at 4/4 and 232 dp at 7/8, inside the 287 dp (Pixel) / 292 dp (iPhone 17) content height, so nothing scrolls. TimeSignatureChips and SubdivisionChips remain the Wide controls only
 └── dial pane (the remaining 3⁄5): Column(gap sm) filling the pane's width — the dial card spans the whole pane (the ring centred, sized from the height) and the transport row under it spans the pane too (revised 2026-10-01, the user's second to fourth landscape checks)
-    ├── TembraGradientCard(tempoDialCard, testTag "metronome.dialCard"): TempoDial with the ring sized from the pane height (height − transport row − slider − gaps − paddings, clamped 160–300 dp), TempoSlider
+    ├── TembraGradientCard(meterCompact, discs = None, testTag "metronome.dialCard"): TempoDial with the ring sized from the pane height (height − transport row − slider − gaps − paddings, clamped 160–300 dp), TempoSlider
     └── Row(gap sm): TapTempoButton (weight 1) + PlayPauseButton — the row's height scales between 48 and 64 dp with the pane height (targets never under 44 dp); the pane scrolls only when even a 48 dp row leaves the ring under 160 dp
     (the former "larger dial" rule that put tap and play beside the dial card is withdrawn)
 ```

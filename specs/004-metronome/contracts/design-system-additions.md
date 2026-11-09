@@ -12,7 +12,9 @@
 - `TembraGradients`: `tempoArc: LinearGlow` (new helper `LinearGlow(start: Offset fraction, end: Offset fraction, stops)` with `brush(size)`, beside `RadialGlow`), `tempoDialCard: RadialGlow`,
   `tempoDialOverlay: LinearGlow`, `accentGlow: Glow`, `playGlow: Glow` (radius 8 dp since 2026-10-01, was 24 dp: the halo overlapped the Tap Tempo card). No colour token is added
   (`ThemeJsonParityTest` unchanged; `MetronomeTokensTest` asserts every stop is a scheme colour or
-  the documented in-gradient stop `#1E1B2E`).
+  the documented in-gradient stop `#1E1B2E`). Since 2026-11-09 the dial card draws the tuner's
+  `meterCompact` with no overlay, so `tempoDialCard` and `tempoDialOverlay` stay in the theme with no
+  screen drawing them.
 - `TembraIcon`: `Remove, Add, TouchApp, MusicNote, GraphicEq, RadioButtonChecked, Notifications,
   Sensors, Tune, Check` (fetched by `tools/fetch-material-symbols.sh`; `IconAssetsTest` extended).
 

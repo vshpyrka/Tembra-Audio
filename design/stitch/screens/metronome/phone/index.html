@@ -86,8 +86,9 @@
 </div>
 </div>
 <!-- 4. Dial card: radial glow + primary/secondary overlay, the dial filling the room left, the 40-240 slider -->
-<section class="relative flex-1 min-h-0 rounded-2xl overflow-hidden border border-surface-container-high/60 bg-surface-container-low" style="background-image: linear-gradient(180deg, rgba(206,189,255,0.10) 0%, rgba(0,0,0,0) 50%, rgba(255,175,211,0.10) 100%), radial-gradient(circle, rgba(167,139,250,0.08) 0%, rgba(30,27,46,0.4) 40%, rgba(19,19,22,0.95) 100%);">
-<div class="h-full p-3 flex flex-col items-center gap-1">
+<section class="relative flex-1 min-h-0 rounded-2xl overflow-hidden border border-surface-container-high/60 bg-surface-container-lowest" style="background-image: radial-gradient(circle at 60% 45%, rgba(167, 139, 250, 0.12) 0%, rgba(217, 70, 239, 0.06) 35%, transparent 70%);">
+<div class="absolute -top-16 -left-16 w-56 h-56 rounded-full bg-primary-container/10 blur-3xl pointer-events-none"></div><div class="absolute -bottom-16 -right-16 w-56 h-56 rounded-full bg-secondary-container/15 blur-3xl pointer-events-none"></div>
+<div class="relative h-full p-3 flex flex-col items-center gap-1">
 <div class="dial-room flex-1 min-h-0 w-full flex items-center justify-center">
 <div class="dial-box relative">
 <svg class="absolute inset-0 w-full h-full" viewBox="0 0 240 240" aria-hidden="true">
