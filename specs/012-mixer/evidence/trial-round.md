@@ -173,7 +173,43 @@ an edit that makes clips of one asset overlap tops them up on the session's scop
 short of sources, clips share one and still play, as every clip did before. The skill review has the row; the 009
 session contract's two rows are updated.
 
-**Open**: round 9, `--journeys stress` with the fix: `audio.starvation` back to the prime's few dozen.
+## Round 9, `20261109T123904Z_012-mixer`: the fix, confirmed
+
+`--journeys stress` with `fffcc1a4` in the perf APKs. The journey ran its 20 iterations (39.7 s median; frames p50
+9.03 ms, p90 11.93 ms, p99 14.53 ms; `timeline.mixerFrame` 526 frames and 94.7 ms an iteration; memory peak
+199 MB: the same as round 8, so the further sources cost nothing the UI sees). The pipeline's pull failed loudly
+again at 4 % and the traces came over in chunks (28 minutes); the counters, medians over the 20 iterations:
+
+| Counter | Round 8 (one source per asset) | Round 9 (a source per clip that sounds at once) |
+|---|---|---|
+| `audio.starvation` | 358,400 | **0** (0 in every iteration) |
+| `audio.meter_frames_dropped` | 0 | **0** |
+| `audio.xruns` / `audio.over_budget` | 0 / 0 | 0 / 0 |
+| `audio.input_overruns` | 0 (max 1) | 0 (max 1) |
+| `audio.clips_active` | 24 | 24 |
+| `audio.avg_us` / `audio.max_callback_us` | 65.5 / 405 µs | 74 / 448 µs (max 641) |
+| `audio.master_clips` | 0 | 14,760 (14,760 in every iteration) |
+| `audio.record_backlog` / `audio.take_alignment_ms` | 672 / 135 | 576 / 135 |
+
+Every clip of the 24-track project now reads its own frames: the callback costs 9 µs more on average with 24 real
+clips mixed instead of one, far inside its budget (`over_budget` 0). `audio.master_clips` rose from 0 to 14,760
+clamped blocks an iteration for the same reason: the stress project is the demo's four loops six times over at
+unity gain, a sum about 15.6 dB above one copy, so the master clamps on most blocks and its latch lights (the
+clamp and the latch are feature 012's behaviour; round 8 read 0 only because five clips in six were silent). The
+counter is informational in the catalogue (no gate) and the spec's zero criteria at 24 tracks are starvation and
+dropped meter frames; a stress fixture that sums to a sane level (each imported track about −15.6 dB) is a choice
+for the owner, noted in `../screenshots/NOTES.md`'s findings.
+
+## Verdict (T109)
+
+The `mixer` journey completes with every section present in all 20 iterations (rounds 4, 5, 6 and 7, the last on
+the merged branch: `timeline.mixerOpen`, `timeline.mixerClose`, `timeline.mixerFrame`, `timeline.faderDrag`,
+`timeline.panTurn`, `transport.masterDrag`, `engine.panApply`), 49 s an iteration, frames p99 14.5 ms, and the
+`stress` journey's health dump reads `audio.meterFramesDropped = 0` and `audio.starvation = 0` on the 24-track
+project (round 9). Along the way the round found and fixed two journey problems (the half sheet's missing knob, the
+meters keeping UiAutomator from idling), two stress-journey problems on the 24-track project (the first lane
+leaving the lazy list), one pipeline problem (a pull that failed silently) and one session defect (one engine
+source per asset however many clips sounded at once).
 
 ## iOS: the journey on the iPhone 18 Pro simulator (2026-11-09, 08:19 to 08:49)
 
