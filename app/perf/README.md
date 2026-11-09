@@ -32,7 +32,10 @@ downloads on first use), Jinja2, jsonschema. None of it ships in the app.
   mode on, wakes the screen and dismisses a credential-less keyguard, keeps the screen on, and restores
   the first two when it ends. A PIN-locked phone is refused (unlock it first). Checks and limits:
   battery ≥ 50 %, temperature ≤ 35 °C (per-device override `battery_temp_max_c`, 40 °C on the Pixel
-  6 Pro), ≥ 2 GiB free, JDK 21, Android SDK.
+  6 Pro), ≥ 2 GiB free, JDK 21, Android SDK. A class leaves about 1 GB of traces (20 iterations), which the
+  round pulls after the class: over USB in a minute or two, through an ssh tunnel to another Mac's adb (2026-11-09,
+  0.6 MB/s) in close to half an hour; the pull window is 40 minutes, and a pull that fails or times out fails
+  the round ("ran, but its output did not reach the Mac") instead of leaving a record without journeys.
 - **iOS (iPhone 14)**: USB to the Apple Silicon Mac, paired, Developer Mode on, unlocked and awake. The
   first run installs two apps (the measurement build and the `TembraPerfTests` runner); the runner's
   profile must be trusted once on the phone (Settings → General → VPN & Device Management) or the round

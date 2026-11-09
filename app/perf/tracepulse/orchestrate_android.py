@@ -100,7 +100,9 @@ _WIRELESS_POWERED_RE = re.compile(r"Wireless powered:\s*(true|false)", re.IGNORE
 _WAKEFULNESS_RE = re.compile(r"mWakefulness=(\w+)")
 _KEYGUARD_SHOWING_RE = re.compile(r"KeyguardServiceDelegate\s*\n\s*showing=(true|false)")
 DETACHED_CMD_TIMEOUT_S = 60
-PULL_TIMEOUT_S = 600
+# A class leaves about 1 GB of traces behind (20 iterations); adb over USB pulls that in a minute or two, adb through an
+# ssh tunnel (the owner's hub on another machine, 2026-11-09: 0.6 MB/s) in close to half an hour.
+PULL_TIMEOUT_S = 2400
 BUILD_TIMEOUT_S = 3600
 
 
@@ -495,9 +497,19 @@ def _tail(text: str, n: int = 5) -> str:
     return " | ".join(line for line in text.splitlines()[-n:] if line.strip())
 
 
+class PullError(Exception):
+    """The benchmark output did not reach the Mac: the round has no data to collect and must say so."""
+
+
 def _pull(cfg: Config, device: Device, runner: Runner, dest: str) -> None:
+    """Pull the class's benchmark output (its JSON and traces) into `dest`. A pull that times out or fails used to pass
+    silently and leave a round "succeeded" with no journeys (2026-11-09, the tunnelled Pixel 6 Pro); it fails now."""
     os.makedirs(dest, exist_ok=True)
-    runner.run(_adb(cfg, device) + ["pull", media_dir(cfg), dest], timeout=PULL_TIMEOUT_S)
+    completed = runner.run(_adb(cfg, device) + ["pull", media_dir(cfg), dest], timeout=PULL_TIMEOUT_S)
+    if completed.returncode != 0:
+        detail = (completed.stderr or completed.stdout or "").strip().splitlines()
+        raise PullError(f"adb pull of {media_dir(cfg)} returned {completed.returncode} after up to {PULL_TIMEOUT_S} s"
+                        + (f": {detail[-1]}" if detail else ""))
 
 
 def _clear_media_dir(cfg: Config, device: Device, runner: Runner) -> None:
@@ -578,7 +590,12 @@ def _run_round_inner(cfg: Config, device: Device, runner: Runner, clock: Clock, 
         _clear_media_dir(cfg, device, runner)
         class_dir = os.path.join(round_dir, BENCHMARK_CLASS_OF[journey])
         ok, reason = _run_class_with_retry(cfg, device, runner, clock, fqcn, options.iterations, round_dir)
-        _pull(cfg, device, runner, class_dir)
+        try:
+            _pull(cfg, device, runner, class_dir)
+        except PullError as exc:
+            if ok:
+                failed = (journey, f"{BENCHMARK_CLASS_OF[journey]} ran, but its output did not reach the Mac: {exc}")
+                break
         if not ok:
             failed = (journey, f"{BENCHMARK_CLASS_OF[journey]} failed twice: {reason or 'see the attempt logs'}")
             break
