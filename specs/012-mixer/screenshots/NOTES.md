@@ -274,3 +274,23 @@ The trial round's stress journey found `ClipSourceRegistry` sharing one engine s
 | Tembra_Desktop_API37 (`emulator-5582`, local adb server on 5038), every module | `tools/gradlew-device.sh --adb-server-port 5038 emulator-5582 checkAndroidDevice --continue`, then `:shared:engine:connectedAndroidDeviceTest` alone | data 156 and UI 1,238 (2 skipped) green; engine 114 with one failure, then 114 green | `MetronomeTimingEndToEndTest.ticksAreFiveHundredMillisecondsApartAndTheFirstArrivesQuickly` read spacings of 488 to 516 ms once (fitted period 498.8 ms) on the emulator's audio backend; green on the rerun and in every earlier lane today | 2026-11-09 15:02 |
 | Pixel_9_Pro_Fold (`emulator-5584`, local adb server on 5038), every module | `tools/gradlew-device.sh --adb-server-port 5038 emulator-5584 checkAndroidDevice --continue` | green, zero warnings | engine 114, data 156, UI 1,238 (4 skipped); 18 min with the Mac also pulling a round's traces | 2026-11-09 15:25 |
 | Pixel 6 Pro (`19021FDEE001AH`, Android 17, through the ssh tunnel), every module | `tools/gradlew-device.sh 19021FDEE001AH checkAndroidDevice --continue` | green, zero warnings | engine 114, data 156, UI 1,238 (4 skipped), 18 min 55 s; the merged branch with the clip-source fix | 2026-11-09 15:55 |
+
+## Release builds of the final commit (`e4de4ed5`, 2026-11-09 evening)
+
+The owner asked for the latest changes in release mode on every connected device, iOS included, after PR #22 opened.
+`tools/release-android.sh` (every adb device) and `tools/release-ios.sh` (every connected iPhone and booted simulator)
+built from `e4de4ed5`, whose app code is that of `fffcc1a4` with the regenerated profile (the commits after it touch
+tests, the perf pipeline and documentation). The two Android emulators had been shut down and were not rebooted:
+they carry the same app from the 16:24 install.
+
+| Target | OS | Outcome | When |
+|---|---|---|---|
+| Pixel 6 Pro (`19021FDEE001AH`) | Android 17 | installed, compiled from the profile (speed-profile), launched; the mixer opened from the toolbar (4 strips, the master) | 19:35 |
+| Pixel 7 Pro (`33241FDH3000NZ`) | Android 17 | installed, speed-profile, launched; the mixer opened (4 strips, the master) | 19:35 |
+| Pixel Tablet (`3621105H803UFX`) | Android 17 | installed, speed-profile, launched; the mixer opened (6 strips, the master) | 19:35 |
+| OPPO CPH2239 (`O7PBYLZP4HMBW8S4`) | Android 13 | installed, speed-profile, launched; the mixer opened (4 strips, the master) | 19:35 |
+| Redmi Note 5 (`e9446ac2`) | Android 9 (API 28) | installed, launched; the profile broadcast answered 1 this time, compile status `run-from-apk` (the first runs use the JIT, as on every earlier release); the mixer opened: the screenshot shows the half sheet with four strips and the master, while `uiautomator dump` on this API 28 phone never lists the sheet's nodes (the toolbar's ids it lists), so the script reports it closed | 19:40 |
+| iPhone 14 (`00008110-001049660E3A401E`) | iOS 27.2 | Release installed and launched | 19:48 |
+| iPhone 18 Pro simulator | iOS 27.0 | Release installed and launched | 19:48 |
+| iPad Pro 13-inch (M5) simulator | iOS 27.0 | Release installed and launched | 19:48 |
+| iPhone Duo simulator | iOS 27.1 | Release installed and launched | 19:48 |
