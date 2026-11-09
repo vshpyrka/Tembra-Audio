@@ -249,6 +249,7 @@ profile compiled). Built on the merged branch (`3185b8a2` and after).
 | Redmi Note 5 (`e9446ac2`) | Android 9 (API 28) | release | installed, launched; the profile broadcast gave no result on API 28 (the first runs use the JIT, as on every earlier release there); two "device not found" blips from the tunnel during its steps, recovered | 2026-11-09 16:20 |
 | Tembra_Desktop_API37 (`emulator-5582`, local adb server) | Android 17 desktop preview | release (`--no-build`) | installed, launched; profile broadcast result 4, compile status `verify` (the preview image does not take the profile compile; the first runs use the JIT) | 2026-11-09 16:24 |
 | Pixel_9_Pro_Fold (`emulator-5584`, local adb server) | Android 16 | release (`--no-build`) | installed, speed-profile, launched | 2026-11-09 16:24 |
+| Pixel 6 Pro (`19021FDEE001AH`) | Android 17 | release (`--no-build`, after its profile comparison) | installed, speed-profile, launched; the mixer opened from the toolbar (4 strips, the master) | 2026-11-09 19:05 |
 
 The script's check is the launch; the mixer on the iOS Release build was not opened by the agent (the Perf build's
 screenshot matrix opened it on the same three simulators, `ios/README.md`). The Android release was built once on the
