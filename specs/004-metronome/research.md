@@ -456,6 +456,10 @@ tuner's placement.
 | expanded | tablet `grid-cols-12 gap-3`: left `col-span-4` (signature, subdivision, accents, click timbre), right `col-span-8` (dial card `flex-1`, then a card with tap/play centred `max-w-md`) | `MetronomeLayout.Wide`: left column 1/3 of the width (min 320 dp), right column the rest; the tap/play card under the dial card |
 | phone landscape | uploaded screen: rail, `w-72` controls column (signature 2 × 3, subdivision, accents + style, sound dropdown), main pane with the dial (`h-full` ring), slider, tap/play row | `MetronomeLayout.Landscape`: controls column 36 % of the content width within 224–280 dp (feature 003's landscape tokens), scrolling; the dial sized from the pane height so dial, slider and the tap/play row fit without scrolling |
 
+**2026-11-09 (design iteration D2):** the "dial card" row above records the original design and
+no longer describes the app. The card now draws `meterCompact` on `surfaceContainerLowest` with no
+overlay, and each form's disc placement is in `contracts/metronome-screen.md`.
+
 Two design details are corrected rather than copied, as in feature 003: chips and pills keep
 their drawn height but get a 44 dp touch target (`minimumInteractiveComponentSize`), and no drop
 shadows are drawn (DESIGN.md), glows being radial or stroke gradients.

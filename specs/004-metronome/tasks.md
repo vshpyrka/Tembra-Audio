@@ -336,6 +336,18 @@ description: "Task list for feature 004: metronome"
 
 ---
 
+## Phase 12: Design iteration D2 (2026-11-09) — the dial card takes the tuner meter's glow
+
+**Goal**: every metronome dial card draws the tuner's meter-card glow with no vertical tint, the stacked and tabletop dial cards and the pocket card without the ring take the tuner's corner discs, and the specs and the Stitch screens say the same.
+
+- [X] T153 `MetronomeScreenContent.kt`: `glow = meterCompact` and `overlay = null` on `DialCard`, `TempoCard` and `TabletopDialCard`; `discs = TopStartBottomEnd` on the stacked `DialCard`, `TempoCard` and `TabletopDialCard`. The wide and book forms keep `TopEndBottomStart`; landscape and the pocket ring card keep `None`
+- [X] T154 Specs: `spec.md` (Session 2026-11-09), `contracts/metronome-screen.md`, `contracts/design-system-additions.md`, `data-model.md`, `research.md` R10
+- [X] T155 Stitch: the five metronome screens re-uploaded from their live HTML with the new card (phone v7, landscape v13, tablet v6, tabletop v6, book v5), placed where the old versions sat, the old instances hidden, `design/stitch/` re-pulled and byte-compared against the project
+- [X] T156 Tests: CI on the PR (`checkAndroidHost`, `:androidApp:assembleRelease`, `checkIos`, `engineHostTest`); `audio.tembra.ui.metronome.*` and `TembraGradientCardTest` on the iPhone Duo, iPad Pro 13-inch and iPhone 18 Pro simulators; `audio.tembra.ui.metronome` on the `Tembra_Desktop_API37` emulator
+- [ ] T157 The same Android package on the Pixel 6 Pro, Pixel 7 Pro, Pixel Tablet, OPPO and Redmi once the `012-mixer` device lanes have finished (the Redmi's first attempt lost its USB link after 48 passing tests)
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies

@@ -261,11 +261,11 @@ Tokens added (tested for parity with research R10 in `MetronomeTokensTest`):
 | `TembraSpacing.soundMenuWidth` / `soundTileHeight` / `soundTileGlyphBox` | 160 dp / 44 dp / 28 dp |
 | `TembraSpacing.wideSettingsMinWidth` | 320 dp (the wide layout's left column, 1/3 of the width at least this) |
 | `TembraGradients.tempoArc` | linear, start → end of the dial box: `primary` (#CEBDFF) → `primaryContainer` (#A78BFA) at 50 % → `secondary` (#FFAFD3) |
-| `TembraGradients.tempoDialCard` | radial at (0.5, 0.5): `primaryContainer` 8 % → #1E1B2E 40 % at 40 % → `surfaceDim` 95 % at 100 % |
-| `TembraGradients.tempoDialOverlay` | vertical linear: `primary` 10 % → transparent at 50 % → `secondary` 10 % |
+| `TembraGradients.tempoDialCard` | radial at (0.5, 0.5): `primaryContainer` 8 % → #1E1B2E 40 % at 40 % → `surfaceDim` 95 % at 100 %. Since 2026-11-09 no screen draws it: the dial card uses the tuner's `meterCompact` |
+| `TembraGradients.tempoDialOverlay` | vertical linear: `primary` 10 % → transparent at 50 % → `secondary` 10 %. Since 2026-11-09 no screen draws it |
 | `TembraGradients.accentGlow` | `Glow(secondary 50 %, 12 dp)` |
 | `TembraGradients.playGlow` | `Glow(secondary 35 %, 24 dp)` |
-| `CardDiscs.TopStartBottomEnd` (default, the tuner's) / `CardDiscs.TopEndBottomStart` (the tablet dial card) | placement of the existing disc tokens |
+| `CardDiscs.TopStartBottomEnd` (default, the tuner's; since 2026-11-09 also the stacked and tabletop dial cards and the pocket card without the ring) / `CardDiscs.TopEndBottomStart` (the tablet dial card) | placement of the existing disc tokens |
 
 `TembraIcon` gains `Remove, Add, TouchApp, MusicNote, GraphicEq, RadioButtonChecked,
 Notifications, Sensors, Tune, Check`. No colour is added to `TembraColorScheme` or `DawColors`.
