@@ -11,6 +11,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.InputModeManager
+import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
@@ -22,6 +24,7 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertHeightIsEqualTo
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -57,6 +60,7 @@ import audio.tembra.core.timeline.TimelineViewport
 import audio.tembra.data.projects.OverviewStatus
 import audio.tembra.ui.mixer.MixerAnchors
 import audio.tembra.ui.mixer.MixerTestTags
+import audio.tembra.ui.designsystem.enterKeyboardMode
 import audio.tembra.ui.mixer.StripUi
 import audio.tembra.ui.perf.PerfAnchors
 import audio.tembra.ui.theme.DawColors
@@ -93,6 +97,7 @@ class TimelineScreenTest {
     private val shown = mutableStateOf<TimelineMessage?>(null)
     private val results = mutableListOf<SnackbarResult>()
 
+    private var manager: InputModeManager? = null
     private val callbacks = TimelineCallbacks.None.copy(
         onPlayPause = { calls += "play" },
         onConfirmDeleteTrack = { calls += "deleteConfirmed" },
@@ -166,6 +171,7 @@ class TimelineScreenTest {
         mainClock.autoAdvance = false
         setContent {
             TembraTheme {
+                manager = LocalInputModeManager.current
                 CompositionLocalProvider(LocalDawColors provides (daw ?: LocalDawColors.current)) {
                     Box(if (width != null) Modifier.requiredWidth(width).fillMaxHeight() else Modifier) {
                         LaunchedEffect(shown.value) {
@@ -556,6 +562,20 @@ class TimelineScreenTest {
     }
 
     /** Feature 012 (spec FR-017, FR-021): the Mixer button is in the toolbar of an expanded window as well. */
+    /** T092's desktop finding: under a keyboard the sheet takes the focus when it opens and returns it to the Mixer button when it closes, so X and Tab carry on. */
+    @Test
+    fun theSheetTakesAndReturnsTheKeyboardFocus() = runComposeUiTest {
+        setScreen(demoState(), TimelineLayout.Expanded, width = 900.dp)
+        if (!enterKeyboardMode(manager)) return@runComposeUiTest
+        mainClock.autoAdvance = true
+        screen.value = screen.value.copy(mixer = screen.value.mixer.copy(open = true))
+        waitForIdle()
+        onNodeWithTag(MixerTestTags.HANDLE).assertIsFocused()
+        screen.value = screen.value.copy(mixer = screen.value.mixer.copy(open = false))
+        waitForIdle()
+        onNodeWithTag(MixerTestTags.TOOLBAR_BUTTON).assertIsFocused()
+    }
+
     @Test
     fun theExpandedToolbarCarriesTheMixerButton() = runComposeUiTest {
         setScreen(demoState(), TimelineLayout.Expanded, width = 900.dp)

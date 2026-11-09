@@ -11,7 +11,8 @@ import audio.tembra.perf.journeys.Anchors.tap
  * The mixer journey (feature 012, contracts/perf-instrumentation.md "Journey `mixer`", the same fourteen steps on both
  * platforms): open Projects, open the demo card, wait for the timeline, play; open the mixer from the toolbar (the
  * overflow menu on a compact bar) and wait for the first strip's meter; drag the first fader down by a third and back
- * over a second each way; turn the first knob up by 60 dp and back; solo the second strip and back; mute the third and
+ * over a second each way; raise the sheet to its full form where the knob is not yet shown (a phone opens at the half
+ * height), turn the first knob up by 60 dp and back; solo the second strip and back; mute the third and
  * back; swipe the strip row to its end and back; drag the master down by a quarter and back; close the sheet; undo
  * until nothing is left (the document is the same across iterations); pause; skip to start.
  */
@@ -37,6 +38,13 @@ class MixerJourney {
         device.swipe(fader.centerX(), fader.centerY() + faderThird, fader.centerX(), fader.centerY(), DRAG_STEPS)
         device.waitForIdle()
 
+        // The knob lives in the full form: a tap on the handle raises a half sheet (skipped where the knob already shows);
+        // the sheet goes back to its half height before it closes, so every iteration starts the same way.
+        val raised = !device.hasObject(By.res(Anchors.MIXER_STRIP_PAN_FIRST))
+        if (raised) {
+            device.tap(Anchors.MIXER_HANDLE)
+            device.waitForIdle()
+        }
         val knob = device.anchor(Anchors.MIXER_STRIP_PAN_FIRST).visibleBounds
         val knobTurn = (KNOB_TURN_DP * device.displayMetrics().density).toInt()
         device.swipe(knob.centerX(), knob.centerY(), knob.centerX(), knob.centerY() - knobTurn, DRAG_STEPS / 2)
@@ -62,6 +70,10 @@ class MixerJourney {
         device.swipe(master.centerX(), master.centerY() + masterQuarter, master.centerX(), master.centerY(), DRAG_STEPS)
         device.waitForIdle()
 
+        if (raised) {
+            device.tap(Anchors.MIXER_HANDLE)
+            device.waitForIdle()
+        }
         toggleMixer(device)
         check(device.wait(Until.gone(By.res(Anchors.MIXER_SHEET)), CLOSE_TIMEOUT_MS)) { "the mixer sheet did not close" }
         undoAll(device)

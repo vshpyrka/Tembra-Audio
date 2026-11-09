@@ -79,6 +79,8 @@ internal fun MixerSheet(
     inputTelemetry: InputTelemetry,
     lanesHeight: Dp,
     modifier: Modifier = Modifier,
+    /** Where the keyboard focus goes back to when the sheet closes (the toolbar's Mixer button); null keeps the platform's default. */
+    returnFocusTo: FocusRequester? = null,
 ) {
     val density = LocalDensity.current
     val motion = TembraTheme.motion
@@ -137,12 +139,15 @@ internal fun MixerSheet(
     }
     // The meters' feed (research R6): one snapshot per sheet, the frame tick while open, the 10 Hz mirror for semantics.
     val feed = rememberMeterFeed(active = ui.open, strips = ui.strips, inputTelemetry = inputTelemetry)
-    // Opened under a keyboard (X on a desktop, where the input mode is the keyboard): the focus moves to the handle, so
-    // Tab walks the strips next instead of the toolbar and every track header (the T092 desktop pass's finding).
+    // Under a keyboard (X on a desktop, where the input mode is the keyboard): an opening sheet moves the focus to the
+    // handle, so Tab walks the strips next instead of the toolbar and every track header; a closing one hands it back
+    // to the toolbar's Mixer button, so X and Tab carry on from there (the T092 desktop pass's two findings). The close
+    // branch runs while the handle still exists (the slide-out), so the focus never falls to nothing.
     val handleFocus = remember { FocusRequester() }
     val inputModeManager = LocalInputModeManager.current
     LaunchedEffect(ui.open) {
-        if (ui.open && inputModeManager.inputMode == InputMode.Keyboard) handleFocus.requestFocus()
+        if (inputModeManager.inputMode != InputMode.Keyboard) return@LaunchedEffect
+        if (ui.open) handleFocus.requestFocus() else runCatching { returnFocusTo?.requestFocus() }
     }
     val fling = AnchoredDraggableDefaults.flingBehavior(
         state = state,

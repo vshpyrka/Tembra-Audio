@@ -204,3 +204,49 @@ Skills: `kotlin-api-design` (the capabilities seam), `compose-state-and-effects`
 | 9 | `mixer/MixerWindowContent.kt` | compose-component-design | The window's strips show the track menu of the sheet, whose settings, add-audio, move and delete actions are the Timeline's: in the window they are no-ops. Recorded for the docs task; a window that drives those actions would need the timeline's navigation, outside this story. | deviation recorded |
 
 Lanes at the end of the phase: recorded in `../screenshots/NOTES.md`.
+
+## Phase 10 — the polish round and the final review of the whole diff (T122)
+
+Files reviewed in this round beyond the phase sections above: `ui.mixer/MixerSheet` (the focus-on-open),
+`ui.projects/{StressProjectRequest, StressProject, StressProjectSeeder}`, the perf journeys on both platforms, the
+pipeline's registries, the capture and audit evidence. The compose compiler report of 2026-11-08
+(`compose-report/`) is the stability evidence: every `ui.mixer` composable and the four design-system controls are
+skippable, `MixerUi`/`StripUi`/`MasterUi`/`MixerWindowUiState` stable, `MeterFeed`/`MixerLevelMirror` unstable by
+design (read in the draw phase only).
+
+| Phase | File:line | Skill | Finding | Fix (commit) or why not |
+|---|---|---|---|---|
+| 10 | `mixer/MixerSheet.kt` `handleFocus` | compose-focus-navigation | The desktop pass (T092) found that X opened the sheet while the focus stayed in the toolbar, so Tab walked the toolbar and every track header before the first strip (35 stops on the demo, 150 on 24 tracks). The sheet now requests the handle's focus from a `LaunchedEffect(ui.open)` when the input mode is the keyboard: the request runs after the handle is attached, touch devices are untouched (their input mode stays touch), and the existing Tab order from the handle holds. `MixerSemanticsTest.openingTheSheetUnderAKeyboardFocusesTheHandle`. | fixed (the T092 commit) |
+| 10 | `mixer/MixerSheet.kt` `remember { FocusRequester() }` after `if (!shown) return` | compose-state-and-effects | A `remember` and an effect below an early return: the slot table drops and recreates them with the sheet's subtree, which is the intended lifetime (a new open is a new request). | no change |
+| 10 | `projects/StressProjectSeeder.kt` | kotlin-concurrency-and-flow | The seeder runs once on the application scope, awaits the repository's creation and imports through the session's own import path, so the 24 tracks arrive like a user's import (decode, overview, autosave) and no second write path exists. Debug and perf builds only (`BuildConfig.DEBUG || PerfBuild.PERF_ENABLED`). | no change |
+| 10 | `perf-benchmarks/.../MixerJourney.kt`, `IOSPERF/Journeys/MixerJourney.swift` | perf contract | The 14 steps match contracts/perf-instrumentation.md; the drag runs 200 steps on Android and a pressed drag on iOS so the fader's `onGainSettled` fires once per gesture and `timeline.faderDrag` brackets the whole move. | no change |
+| 10 | `perf-benchmarks/.../MixerJourney.kt`, `IOSPERF/Journeys/MixerJourney.swift` step 6 | perf contract | The trial round's mixer journey failed twice on the Pixel 6 Pro: `mixer.strip.pan.0` never appeared, because a phone opens the sheet at its half height where the knob is not shown (data model §5). The journey now taps the handle for the full form when the knob is absent and taps it back before the close, so every iteration starts the same way; the contract's steps 6 and 11 say so. | fixed (the T109 commit) |
+| 10 | `tracepulse/catalogue.py` `audio.meter_frames_dropped` | perf contract | The 20 % gate with a floor of 2 keeps a single dropped meter frame in a 25-frame window from failing a round, as the contract's note asks; `audio.master_clips` is informational. | no change |
+| 10 | `ScreenshotMatrix.swift` landscape | compose-ui-testing-patterns | The matrix relaunches the app after rotating, since Compose keeps the portrait accessibility frames after a rotation; the iPhone's landscape still has no mixer capture because the timeline toolbar sits above the window there (pre-existing, recorded for the owner in `../screenshots/NOTES.md`). | recorded |
+| 10 | `StripForm.of` at the half anchor | compose-component-design / spec | Half means the compact form whatever the sheet's height (data model §5); on the iPad in portrait the half sheet is about 1,050 dp tall with 900 dp faders. Spec-conformant; a design-iteration candidate for the owner (T124). | recorded |
+
+### Summary of the review (T122)
+
+81 rows across Phases 2–10: 54 findings the code already met when the skill was applied
+("by construction": the row records the check and the evidence), 11 fixed in the phase that raised them
+(each names its commit or the phase), 16 recorded as decisions with their reason (the
+deviations list in `../screenshots/NOTES.md`; the T100 spike's "go" counts here). By primary skill:
+
+| Skill | Findings | Already met (by construction) | Fixed | Recorded as a decision |
+|---|---|---|---|---|
+| kotlin-api-design | 11 | 9 | 0 | 2 |
+| compose-component-design | 11 | 8 | 0 | 3 |
+| compose-state-and-effects | 9 | 9 | 0 | 0 |
+| compose-focus-navigation | 8 | 5 | 1 | 2 |
+| kotlin-control-flow | 5 | 3 | 1 | 1 |
+| compose-performance | 5 | 4 | 0 | 1 |
+| kotlin-concurrency-and-flow | 4 | 3 | 0 | 1 |
+| compose-ui-testing-patterns | 5 | 3 | 0 | 2 |
+| compose-animations | 1 | 1 | 0 | 0 |
+| navigation-event | 1 | 0 | 1 | 0 |
+| spec, contracts, constitution and perf-contract rows | 21 | 9 | 8 | 4 |
+
+Every fixed row names its commit or phase; every recorded row names the spec clause or the research decision it rests
+on. The constitution's Principle I (nothing Kotlin on the audio callback) is the subject of the main-thread audit
+(`main-thread-audit.md`): every mixer call from the main thread is an atomic store or one seqlock copy, and the
+StrictMode reads found zero mixer lines.

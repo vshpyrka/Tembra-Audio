@@ -83,6 +83,9 @@ so it is a once-per-phase-group check, not a per-change one.
 | iPhone Duo simulator (`8AF0F092-…`), every module | `checkIos -Ptembra.iosSimulator=8AF0F092-…` | green, zero warnings | 1,231 UI tests in `:shared:ui`, 0 failures (T118) | 2026-11-09 |
 | Host (JVM, every module) | `checkAndroidHost` | green, zero warnings | after the sheet's focus-on-open (T092's finding) | 2026-11-09 |
 | iPhone 18 Pro simulator, every module | `checkIos -Ptembra.iosSimulator="iPhone 18 Pro"` | green, zero warnings | 1,232 UI tests in `:shared:ui`, 0 failures: `MixerSemanticsTest.openingTheSheetUnderAKeyboardFocusesTheHandle` (+1) | 2026-11-09 |
+| iPhone 18 Pro simulator, every module | `checkIos -Ptembra.iosSimulator="iPhone 18 Pro"` | green, zero warnings | 1,233 UI tests, 0 failures: `TimelineScreenTest.theSheetTakesAndReturnsTheKeyboardFocus` (+1, the focus return to the Mixer button) | 2026-11-09 |
+| Pixel 7 Pro (`33241FDH3000NZ`, Android 17, 420 dpi), every module | `tools/gradlew-device.sh 33241FDH3000NZ checkAndroidDevice --continue` (run conditions applied) | engine and data green; UI 1,228 tests, 1 failure, test-side | `TrackHeaderTest.expandedHeaderReadsThePanUnderTheGain` read the readout's height as exactly 44 dp: the lane row's height rounds to whole pixels and the readout is 114 px = 43.4 dp on this 2.625× screen; the test now accepts 44 dp within a pixel. The class reran green (12 tests), 19 min 54 s + 32 s | 2026-11-09, T112 |
+| Pixel Tablet (`3621105H803UFX`, Android 17, 2560 × 1600), every module | `tools/gradlew-device.sh 3621105H803UFX checkAndroidDevice --continue` (run conditions applied) | green, zero warnings | engine 114, data 156, UI 1,229 tests, 0 failures, 20 min 4 s | 2026-11-09, T113 |
 
 ## Phase 7 notes (User Story 5, 2026-11-06)
 
@@ -147,6 +150,11 @@ No token or spacing change was needed beyond the master label's overflow.
   on the rail; X then does nothing (the Timeline scope's handler sits under the screen, not the shell), the sheet
   opens once the focus is back inside the timeline (a click on the ruler). 011's scope model decides whether the
   shell should route the Timeline shortcuts while the rail has focus; recorded, not changed.
+- **Fixed from the same pass (2026-11-09):** X opened the sheet but left the focus in the toolbar, so Tab walked the
+  toolbar and every track header before the first strip (about 35 stops on the demo, 150 on 24 tracks). The sheet now
+  moves the focus to its handle when it opens under a keyboard (`MixerSheet`, `LaunchedEffect(ui.open)` gated on the
+  keyboard input mode; `MixerSemanticsTest.openingTheSheetUnderAKeyboardFocusesTheHandle`); touch devices are
+  untouched.
 - **TalkBack and VoiceOver (T093)** are left to the owner: the screen readers speak, and the run tonight had to stay
   silent.
 
@@ -157,3 +165,38 @@ Marked done on 2026-11-08 against the lane table above: every phase's host, iOS 
 Phase 7. The captures those tasks name (`pixel6pro/mixer-half-360.png` and friends) are the Pixel 6 Pro files
 `pixel-6-pro/360dp-mixer-*.png` of T089. The by-hand steps with headphones (quickstart §6 and §7, "announced") were
 not performed under the no-sound rule: they fold into T111 (the loopback measurements, announced) and T124.
+
+## T092: the keyboard and pointer pass on `Tembra_Desktop_API34` (2026-11-09)
+
+`emulator-5580` (Android 14 desktop, 3840 × 2160 at 320 dpi, no touchscreen), the branch's debug build in a 1600 × 950 dp
+free-form window, driven over adb: keys with `input keyevent`, clicks with `input mouse tap` (a mouse-sourced tap the
+window always takes), the tree read with `uiautomator dump` (the focused node, `checked`, the header's gain text);
+captures in `android/desktop-api34/`. The scratchpad script `t092_api34.py` ran five times; the first runs found the two
+focus gaps below, the last run verified the fixed build.
+
+| Check | Result | Evidence |
+|---|---|---|
+| X opens the sheet from the timeline | pass: the sheet opens and the focus lands on the handle | `01-x-open.png`; "focus right after X => mixer.handle" |
+| Tab order from the handle | pass: "Open in a window", then Solo, Mute, fader per strip (the compact form has no knob), then the next strip; the master after the last | the 11-Tab walk read `mixer.window.open, solo.0, mute.0, fader.0, solo.1, …` |
+| Arrow keys on the focused fader | pass: Up, Up → +1.0 dB; Down → +0.5 dB (0.5 dB steps, FR-028) | the Drums header's readout; `02a-fader-after-up-up.png` |
+| Page Up / Page Down / Home on the fader | pass: Page Up → +6.0 dB (the fader's top), Page Down → +0.0 dB, Home → 0 dB | the header's readout |
+| M and O on the focused strip | pass: Mute checked true then false, Solo checked true then false | `02b-after-M.png`, `02c-after-O.png` |
+| Enter on the handle | pass: the sheet goes to its full height; the knobs and dials appear | `03-full-form-after-enter.png` |
+| Tab to the knob, Right, Left, Page Up, Home | pass: two Tabs from the handle reach `mixer.strip.pan.0` (the window button between); the keys turn the indicator; the focus shows the "Drums, pan" tooltip | `03a-knob-after-right-right.png`, `03b-knob-after-page-up.png` (the readout lives in the state description, which the dump does not print; the step sizes are `PanKnobTest`'s) |
+| Escape | pass: the sheet closes and the focus returns to the toolbar's Mixer button, so X reopens it | "Escape closes => True; X reopens => True" |
+| Back | pass in two presses: with a control focused, Compose's first Back clears the focus (the platform's keyboard convention); the second closes the sheet; X reopens it | `05-after-back.png` (the sheet open, no focus ring) |
+| Hover, tooltips on hover, the wheel, a secondary click, a pointer drag, the row's scrollbar | not verifiable on this emulator tonight: the virtio tablet's `sendevent` stream reaches the kernel (`getevent` shows it) but no longer the app after 22:40 (one early run worked); `input` cannot hover, scroll or right-click. Covered by the Compose tests on every target (`FaderTest`/`PanKnobTest` tooltip and hover layer, `MixerStripTest` secondary click, `MixerSheetTest` scrollbar, the wheel in the control's own steps) and by 011's hover parity on API37 | `04-hover-tooltip.png`, `06-secondary-click.png`, `08/09-row-*.png` show the untouched state |
+| 24 strips | the sheet opens on the stress project (`--es tembra.stress.tracks 24`), 19 strips and the master visible at 1600 dp; `uiautomator dump` never settles while it is open (the meters redraw every frame), so the row's checks are the Compose tests' | `08-row-24-strips-hover.png` |
+
+Two gaps the pass found and the fixes (both in `MixerSheet`, lanes green on host, iPhone 18 Pro, Pixel 7 Pro's header class):
+
+1. X opened the sheet but left the focus in the toolbar, so Tab walked the toolbar and every track header before the
+   first strip (about 35 stops on the demo, 150 on 24 tracks). Under the keyboard input mode the sheet now requests the
+   handle's focus when it opens (`MixerSemanticsTest.openingTheSheetUnderAKeyboardFocusesTheHandle`).
+2. Closing the sheet with Escape left the focus nowhere, so X did nothing until a click. The sheet now hands the focus
+   back to the toolbar's Mixer button when it closes under the keyboard (`TimelineScreenContent` passes the button's
+   `FocusRequester`; `TimelineScreenTest.theSheetTakesAndReturnsTheKeyboardFocus`). Touch devices are untouched: both
+   requests are gated on `InputMode.Keyboard`.
+
+The iOS half of T092 is the Compose UI lanes on the iPad Pro and the Duo (the same tests drive Tab, the arrows, Page,
+Home, M, O, Escape, hover, tooltips, the wheel and the secondary click): green on 2026-11-09 with the fixes.
