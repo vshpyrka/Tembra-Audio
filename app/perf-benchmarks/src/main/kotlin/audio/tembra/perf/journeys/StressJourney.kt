@@ -115,18 +115,17 @@ class StressJourney {
     }
 
     /**
-     * Flings the track list up (a vertical fling on whichever lane is composed; a lane is too short for a plain scroll
-     * to move 25 tracks) until the first lane is composed again.
+     * Swipes down over the track list, fast and across most of its height, until the first lane is composed again: a
+     * `UiObject2.fling` on one lane travels a lane's height and barely moves a 25-track list, where three such swipes
+     * bring lane 0 back from the end (measured by hand on the Pixel 6 Pro, 2026-11-09).
      */
     private fun scrollListToTop(device: UiDevice) {
         repeat(MAX_LIST_SCROLLS) {
             if (device.hasObject(By.res(Anchors.TIMELINE_LANE_FIRST))) return
-            val lane = device.findObject(Anchors.TIMELINE_LANE_ANY) ?: return
-            try {
-                lane.fling(Direction.UP)
-            } catch (_: StaleObjectException) {
-                // The list recomposed under the gesture: the next pass finds a lane again.
-            }
+            val bounds = (device.findObject(By.res(Anchors.TIMELINE_TRACKS)) ?: return).visibleBounds
+            val x = bounds.centerX()
+            device.swipe(x, bounds.top + bounds.height() / 4, x, bounds.bottom - bounds.height() / 8, LIST_SWIPE_STEPS)
+            device.waitForIdle()
         }
     }
 
@@ -151,7 +150,9 @@ class StressJourney {
         const val SCROLL_MILLIS = 5_000L
         const val SCROLL_PERCENT = 0.5f
         const val SCROLL_SPEED = 2_000
-        /** Vertical flings that bring a 25-track list back to its top. */
+        /** Downward swipes that bring a 25-track list back to its top (three suffice on the Pixel 6 Pro). */
         const val MAX_LIST_SCROLLS = 10
+        /** Steps of one list swipe, about 5 ms each: fast enough to fling. */
+        const val LIST_SWIPE_STEPS = 12
     }
 }
