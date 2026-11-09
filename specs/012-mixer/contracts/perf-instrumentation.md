@@ -40,11 +40,13 @@ gain the two counters. `trace_shim_test` expects 52 names.
 1. tap `nav.item.projects`, wait `screen.projects`; 2. tap `projects.card.demo`, wait
 `screen.timeline` ready; 3. tap `transport.play`; 4. tap `timeline.toolbar.mixer`, wait
 `mixer.strip.meter.0`; 5. drag `mixer.strip.fader.0` down by a third of its height over one
-second and back up over one second (the readout returns to its start); 6. drag
-`mixer.strip.pan.0` up by 60 dp over half a second and back; 7. tap `mixer.strip.solo.1`,
+second and back up over one second (the readout returns to its start); 6. where
+`mixer.strip.pan.0` is not shown (a phone opens the sheet at its half height), tap `mixer.handle`
+for the full form; drag `mixer.strip.pan.0` up by 60 dp over half a second and back; 7. tap `mixer.strip.solo.1`,
 tap it again; 8. tap `mixer.strip.mute.2`, tap it again; 9. swipe `mixer.strips` to its end
-and back; 10. drag `mixer.master.fader` down by a quarter and back; 11. tap
-`timeline.toolbar.mixer` (the sheet closes), wait `mixer.sheet` gone; 12. tap
+and back; 10. drag `mixer.master.fader` down by a quarter and back; 11. tap `mixer.handle`
+back to the half height where step 6 raised it, then tap `timeline.toolbar.mixer` (the sheet
+closes), wait `mixer.sheet` gone; 12. tap
 `timeline.toolbar.undo` until it disables (the document is unchanged across iterations;
 the fader and knob returns are two steps each, the toggles four); 13. tap `transport.play`
 (pause); 14. tap `transport.skipStart`.

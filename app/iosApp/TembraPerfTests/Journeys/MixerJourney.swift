@@ -3,7 +3,8 @@ import XCTest
 /// The mixer journey (feature 012, contracts/perf-instrumentation.md "Journey `mixer`", the same fourteen steps on both
 /// platforms): open Projects, open the demo card, wait for the timeline's overviews, play; open the mixer from the
 /// toolbar (the overflow menu on a compact bar) and wait for the first strip's meter; drag the first fader down by a
-/// third and back over a second each way; turn the first knob up by 60 pt and back; solo the second strip and back; mute
+/// third and back over a second each way; raise the sheet to its full form where the knob is not yet shown (a phone
+/// opens at the half height), turn the first knob up by 60 pt and back; solo the second strip and back; mute
 /// the third and back; swipe the strip row to its end and back; drag the master down by a quarter and back; close the
 /// sheet; undo until nothing is left (the document is the same across iterations); pause; skip to start.
 struct MixerJourney {
@@ -26,6 +27,10 @@ struct MixerJourney {
         drag(app, from: centre(of: fader), by: CGVector(dx: 0, dy: faderThird), seconds: 1)
         drag(app, from: centre(of: fader).withOffset(CGVector(dx: 0, dy: faderThird)), by: CGVector(dx: 0, dy: -faderThird), seconds: 1)
 
+        // The knob lives in the full form: a tap on the handle raises a half sheet (skipped where the knob already shows);
+        // the sheet goes back to its half height before it closes, so every iteration starts the same way.
+        let raised = !app.anchor(Anchors.mixerStripPanFirst).exists
+        if raised { app.tapAnchor(Anchors.mixerHandle); sleep(1) }
         let knob = app.waitForAnchor(Anchors.mixerStripPanFirst)
         drag(app, from: centre(of: knob), by: CGVector(dx: 0, dy: -Self.knobTurn), seconds: 0.5)
         drag(app, from: centre(of: knob).withOffset(CGVector(dx: 0, dy: -Self.knobTurn)), by: CGVector(dx: 0, dy: Self.knobTurn), seconds: 0.5)
@@ -44,6 +49,7 @@ struct MixerJourney {
         drag(app, from: centre(of: master), by: CGVector(dx: 0, dy: masterQuarter), seconds: 1)
         drag(app, from: centre(of: master).withOffset(CGVector(dx: 0, dy: masterQuarter)), by: CGVector(dx: 0, dy: -masterQuarter), seconds: 1)
 
+        if raised { app.tapAnchor(Anchors.mixerHandle); sleep(1) }
         toggleMixer(app)
         let gone = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: app.anchor(Anchors.mixerSheet))
         XCTAssertEqual(XCTWaiter.wait(for: [gone], timeout: 5), .completed, "the mixer sheet did not close")

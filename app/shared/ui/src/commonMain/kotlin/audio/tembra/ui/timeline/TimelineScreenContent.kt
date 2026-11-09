@@ -157,6 +157,8 @@ internal fun TimelineScreenContent(
             .timelineKeyHandling({ state }, callbacks),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
+            // The mixer sheet takes the keyboard focus when it opens and hands it back to the Mixer button when it closes (T092).
+            val mixerFocus = remember { FocusRequester() }
             TimelineToolbar(
                 state = state,
                 layout = layout,
@@ -174,6 +176,7 @@ internal fun TimelineScreenContent(
                 onMetronomeSettings = callbacks.onMetronomeSettings,
                 onMonitorToggle = callbacks.onMonitorToggle,
                 onMixerToggle = callbacks.onMixerToggle,
+                mixerFocusRequester = mixerFocus,
             )
             TimelineRuler(
                 viewport = state.viewport,
@@ -225,7 +228,7 @@ internal fun TimelineScreenContent(
                     mask = playheadMask,
                 )
                 // The mixer sheet slides up over the lanes, inside this box, so the strip and the transport bar stay in reach (feature 012, FR-016).
-                MixerSheet(ui = state.mixer, callbacks = callbacks, telemetry = mixTelemetry, inputTelemetry = inputTelemetry, lanesHeight = lanesHeight)
+                MixerSheet(ui = state.mixer, callbacks = callbacks, telemetry = mixTelemetry, inputTelemetry = inputTelemetry, lanesHeight = lanesHeight, returnFocusTo = mixerFocus)
             }
             if (state.overviewStripShown) {
                 // The strip adds its own side inset to this: the page margin, plus the part of the back-gesture zone that

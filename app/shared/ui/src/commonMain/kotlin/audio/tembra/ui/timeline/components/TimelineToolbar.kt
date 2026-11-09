@@ -13,6 +13,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
@@ -66,6 +68,8 @@ internal fun TimelineToolbar(
     onMonitorToggle: () -> Unit = {},
     /** The mixer (feature 012, spec FR-017): a toggle after redo at every width, mirrored by a checked row in the compact overflow. */
     onMixerToggle: () -> Unit = {},
+    /** The mixer sheet hands the keyboard focus back to the Mixer button when it closes (feature 012, T092). */
+    mixerFocusRequester: FocusRequester? = null,
 ) {
     val spacing = TembraTheme.spacing
     val full = layout == TimelineLayout.Expanded || layout == TimelineLayout.Medium
@@ -109,7 +113,15 @@ internal fun TimelineToolbar(
         TransportButton(icon = TembraIcon.Redo, description = TimelineCopy.redo, onClick = onRedo, enabled = state.canRedo, testTag = TimelineTestTags.REDO)
         // The mixer's toggle (feature 012, spec FR-017): after redo at every width; the compact tail lets it yield to the pill.
         val mixerButton: @Composable () -> Unit = {
-            TransportButton(icon = TembraIcon.InstantMix, description = MixerCopy.mixer, onClick = onMixerToggle, enabled = state.loaded, selected = state.mixer.open, testTag = MixerTestTags.TOOLBAR_BUTTON)
+            TransportButton(
+                icon = TembraIcon.InstantMix,
+                description = MixerCopy.mixer,
+                onClick = onMixerToggle,
+                modifier = if (mixerFocusRequester != null) Modifier.focusRequester(mixerFocusRequester) else Modifier,
+                enabled = state.loaded,
+                selected = state.mixer.open,
+                testTag = MixerTestTags.TOOLBAR_BUTTON,
+            )
         }
         val overflowMenu: @Composable () -> Unit = {
             TembraMenu(

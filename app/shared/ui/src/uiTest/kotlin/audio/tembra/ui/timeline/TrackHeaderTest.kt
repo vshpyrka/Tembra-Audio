@@ -10,6 +10,7 @@ import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertHeightIsEqualTo
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOff
@@ -31,6 +32,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.height
 import audio.tembra.core.project.GainDb
 import audio.tembra.core.project.InstrumentLabel
 import audio.tembra.core.project.Pan
@@ -46,6 +48,7 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.math.abs
 
 /** The two track headers (contracts/timeline-screen.md; T092): semantics, the M/S toggles, the menu's availability. */
 @OptIn(ExperimentalTestApi::class)
@@ -132,7 +135,9 @@ class TrackHeaderTest {
         onNodeWithTag(TimelineTestTags.header(1)).assertContentDescriptionEquals("Track 2, Guitar, −2.4dB, L 35, muted")
         onNodeWithTag(TimelineTestTags.gain(1)).assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "−2.4dB, L 35"))
         onNodeWithText("L 35", useUnmergedTree = true).assertExists()
-        onNodeWithTag(TimelineTestTags.gain(1)).assertWidthIsAtLeast(GAIN_READOUT_FLOOR).assertHeightIsEqualTo(44.dp)
+        // 44 dp within the pixel the lane row's height rounds to: 43.4 dp on the Pixel 7 Pro's 2.625x screen (114 px).
+        val height = onNodeWithTag(TimelineTestTags.gain(1)).assertWidthIsAtLeast(GAIN_READOUT_FLOOR).getUnclippedBoundsInRoot().height
+        assertTrue(abs((height - 44.dp).value) <= 1f, "the readout is $height tall, not 44 dp within a pixel")
     }
 
     @Test
