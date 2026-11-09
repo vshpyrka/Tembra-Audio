@@ -9,6 +9,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstddef>
+#include <cstdlib>
 #include <limits>
 #include <memory>
 #include <thread>
@@ -77,7 +78,12 @@ TEST_CASE("the mixer setters return within a millisecond while another thread ho
     REQUIRE(tembra_transport_set_master(0.9f) == TEMBRA_OK);
     const auto elapsed = Clock::now() - start;
     holder.join();
-    REQUIRE(elapsed < std::chrono::milliseconds(1));
+    // The mutex is held for 200 ms: a setter that waited behind it would take that long. On a development Mac the nine
+    // calls take microseconds and a millisecond is the bound; GitHub's shared macOS runners preempt the test thread for
+    // milliseconds at a time (PR #22, 2026-11-09), so there the bound is 20 ms, still a tenth of the hold.
+    const auto bound = std::getenv("GITHUB_ACTIONS") != nullptr ? std::chrono::milliseconds(20) : std::chrono::milliseconds(1);
+    INFO("the nine calls took " << std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count() << " us");
+    REQUIRE(elapsed < bound);
     // What was stored while the mutex was held reaches the renderer's parameters.
     const tembra::TransportRenderer* renderer = tembra::EngineCore::instance().transportRendererForTest();
     REQUIRE(renderer != nullptr);
