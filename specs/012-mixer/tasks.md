@@ -376,7 +376,7 @@ request (contracts/perf-instrumentation.md, skills-and-audit.md; quickstart §2�
 - [ ] T111 [P] Level measurements (quickstart §8, the loopback step, announced): the three-track measurement project, SC-003 (0 dB centred within 0.5 dB, 0 VU at −18 dBFS, ≤ 50 ms), SC-004 (`tools/measure-pan-law.py`: `L² + R²` equal within 0.5 dB; the opposite side below −60 dB), SC-002 (the sweep: no step larger than the ramp's, click count 0, first change within 20 ms) on the Pixel 6 Pro and the iPhone 14; `EVID/levels.md`
 - [X] T112 [P] Device lane, Pixel 7 Pro: `tools/apply-device-run-conditions.sh 33241FDH3000NZ` then `tools/gradlew-device.sh 33241FDH3000NZ checkAndroidDevice`; results and any skipped test with its reason into `SHOTS/NOTES.md`
 - [X] T113 [P] Device lane, Pixel Tablet `3621105H803UFX` (as T112; plus the 1024/1200 dp captures if T089 did not)
-- [ ] T114 [P] Device lane, OPPO CPH2239 `O7PBYLZP4HMBW8S4` (brightness by hand; the two engine recording tests skip as in 010; the mixer tests must run)
+- [X] T114 [P] Device lane, OPPO CPH2239 `O7PBYLZP4HMBW8S4` (brightness by hand; the two engine recording tests skip as in 010; the mixer tests must run)
 - [ ] T115 [P] Device lane, Redmi Note 5 `e9446ac2` (refuses do-not-disturb; Play Protect "Don't send"; no Perfetto)
 - [ ] T116 [P] Device lane, fold emulator `Pixel_9_Pro_Fold` (`emulator-5554`, booted with audio; about 2.5 h; PixelCopy flakes retried once)
 - [ ] T117 [P] Device lane, desktop emulator `Tembra_Desktop_API37` (`emulator-5582`, user 10, `-no-window` allowed) and `:androidApp:connectedDebugAndroidTest` on `Tembra_Desktop_API34` (`emulator-5580`); one desktop emulator at a time
