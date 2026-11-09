@@ -41,13 +41,23 @@ class AndroidWindowCapabilitiesTest {
         val window = awaitResumed<MixerWindowActivity>()
         assertTrue("the window did not report itself open", capabilities.mixerWindowOpen.value)
         assertEquals("the mixer window has no task of its own", 2, DesktopWindow.taskCount())
-        // Opened again while open: the same window comes forward, no second task.
+        // Opened again while open: the same window comes forward, no second task (the count settles a moment later
+        // on Android 14, where the task list is re-read while the window comes to the front).
         instrumentation.runOnMainSync { capabilities.openMixerWindow() }
-        SystemClock.sleep(1_000)
+        awaitTaskCount(2)
         assertEquals(2, DesktopWindow.taskCount())
+        assertTrue("the window closed on its second open", capabilities.mixerWindowOpen.value)
         instrumentation.runOnMainSync { window.finishAndRemoveTask() }
         awaitClosed(capabilities)
+        // Android 14 keeps the removed task in the app's task list as not running for a while: the helper counts running
+        // tasks, and the count settles a moment after the activity's destroy.
+        awaitTaskCount(1)
         assertEquals(1, DesktopWindow.taskCount())
+    }
+
+    private fun awaitTaskCount(expected: Int) {
+        val deadline = SystemClock.uptimeMillis() + TIMEOUT_MS
+        while (SystemClock.uptimeMillis() < deadline && DesktopWindow.taskCount() != expected) SystemClock.sleep(100)
     }
 
     private inline fun <reified T : Activity> awaitResumed(): T {
