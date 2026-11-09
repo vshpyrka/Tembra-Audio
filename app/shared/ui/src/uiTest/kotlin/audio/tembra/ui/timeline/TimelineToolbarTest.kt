@@ -1,5 +1,6 @@
 package audio.tembra.ui.timeline
 
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertIsOff
@@ -7,6 +8,7 @@ import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.v2.runComposeUiTest
 import audio.tembra.core.recording.MonitorState
 import audio.tembra.ui.mixer.MixerCopy
@@ -88,9 +90,11 @@ class TimelineToolbarTest {
         val redo = onNodeWithTag(TimelineTestTags.REDO).getUnclippedBoundsInRoot()
         val button = onNodeWithTag(MixerTestTags.TOOLBAR_BUTTON).assertContentDescriptionEquals(MixerCopy.mixer).getUnclippedBoundsInRoot()
         assertTrue(button.left >= redo.right, "the Mixer button $button is not after redo $redo")
-        onNodeWithTag(MixerTestTags.TOOLBAR_BUTTON).performClick()
+        // Semantics clicks: the full row is wider than a 360 dp phone's screen (where this layout never shows), and a
+        // touch injected outside the screen is dropped (the OPPO CPH2239 lane, 2026-11-09).
+        onNodeWithTag(MixerTestTags.TOOLBAR_BUTTON).performSemanticsAction(SemanticsActions.OnClick)
         assertEquals(listOf("mixer"), calls)
-        onNodeWithTag(TimelineTestTags.OVERFLOW_BUTTON).performClick()
+        onNodeWithTag(TimelineTestTags.OVERFLOW_BUTTON).performSemanticsAction(SemanticsActions.OnClick)
         when (layout) {
             TimelineLayout.Medium, TimelineLayout.Expanded -> onNodeWithTag(MixerTestTags.OVERFLOW_BUTTON).assertDoesNotExist()
             TimelineLayout.Compact, TimelineLayout.Landscape -> {
