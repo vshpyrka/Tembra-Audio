@@ -255,8 +255,11 @@ screenshot matrix opened it on the same three simulators, `ios/README.md`). The 
 merged branch with the clip-source fix and the regenerated profile and installed with `--no-build` on the emulators
 (through the local adb server) and on the Pixel 6 Pro after its profile comparison. The mixer was opened on the two
 emulators' release builds by their toolbar button (`timeline.toolbar.mixer` by `input tap`; `uiautomator dump` then
-lists `mixer.sheet`, `mixer.handle`, the strips and the master); on the phones the toolbar is reached the same way
-once the tunnel serves them again.
+lists `mixer.sheet`, `mixer.handle`, the strips and the master), then on the phones once they were back on USB: the
+Pixel 7 Pro, the Pixel Tablet and the OPPO the same way (4, 6 and 4 strips composed, the master present); on the
+Redmi the sheet opened too (the screenshot shows the half sheet with its four strips and the master), its first
+`uiautomator dump` only came before the sheet had composed on that API 28 phone. The Pixel 6 Pro follows its
+profile comparison.
 
 ## After the clip-source fix (2026-11-09, `fffcc1a4`)
 
