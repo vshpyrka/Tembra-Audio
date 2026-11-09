@@ -406,7 +406,10 @@ _INSTRUMENT_FAILURE_MARKERS = ("FAILURES!!!", "INSTRUMENTATION_FAILED", "Process
 _INSTRUMENT_TERMINAL_MARKERS = ("OK (", "FAILURES!!!", "INSTRUMENTATION_CODE:")
 _DETACHED_BEACON = "TRACEPULSE_ATTEMPT_START"
 _DETACHED_POLL_INTERVAL_S = 10
-_DETACHED_TIMEOUT_S = 1500
+# One class or comparison state: 20 iterations of the longest journey. The mixer journey runs about 50 s an iteration
+# fully compiled and close to 80 s in the comparison's JIT-only and profile states (2026-11-09: the profile state hit
+# the old 1500 s at iteration 18), so the window is 40 minutes; the wall cap below still bounds an unreachable device.
+_DETACHED_TIMEOUT_S = 2400
 _DETACHED_WALL_CAP_S = 3 * 3600
 COOLDOWN_BETWEEN_CLASSES_S = 120
 
