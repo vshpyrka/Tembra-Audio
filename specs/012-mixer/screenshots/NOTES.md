@@ -219,3 +219,20 @@ R8 configuration analysis (#17), `androidx.test.uiautomator` 2.4.1 (#18), `andro
 | Tembra_Desktop_API37 (`emulator-5582`, host GPU, audio on), every module | `tools/gradlew-device.sh emulator-5582 checkAndroidDevice --continue`, then `:shared:engine:connectedAndroidDeviceTest` alone | data 156 and UI 1,229 (2 skipped) green; engine 114 with one failure, then 114 green on the rerun | `NativeAudioEngineTest.theStreamProbeSeesAnOpenOutput` missed its one-second window once ("the probe did not see the tone's output stream"): the emulator's output thread had gone to standby three seconds before the tone started (`dumpsys media.audio_flinger`), and the first stream open after standby took longer than the probe waits. Test-side timing on an emulator, not a change of this merge (feature 011 already made this probe compare players by identity) | 2026-11-09 08:22 |
 | Pixel_9_Pro_Fold (`emulator-5584`, host GPU, audio on), every module | `tools/gradlew-device.sh emulator-5584 checkAndroidDevice --continue` | green, zero warnings | engine 114, data 156, UI 1,229 (4 skipped), 6 min 51 s | 2026-11-09 08:30 |
 | iPad Pro 13-inch (M5) simulator | `./gradlew checkIos -Ptembra.iosSimulator=<udid>` | green, zero warnings | core 262, engine 115, data 156, UI 1,233 tests; 1 min 23 s with the Kotlin/Native test binaries already built | 2026-11-09 08:39 |
+
+## Release builds (T119)
+
+The way users get the app: `tools/release-ios.sh` (Release configuration, every connected device and booted
+simulator) and `tools/release-android.sh` (the `release` type signed with the debug key, the committed baseline
+profile compiled). Built on the merged branch (`3185b8a2` and after).
+
+| Target | OS | Build | Outcome | When |
+|---|---|---|---|---|
+| iPhone 18 Pro simulator | iOS 27.0 | Release, iphonesimulator | installed as `com.tembraaudio<team>`, launched | 2026-11-09 10:25 |
+| iPad Pro 13-inch (M5) simulator | iOS 27.0 | Release, iphonesimulator | installed, launched | 2026-11-09 10:25 |
+| iPhone Duo simulator | iOS 27.1 | Release, iphonesimulator | installed, launched | 2026-11-09 10:25 |
+| iPhone 14 (`00008110-001049660E3A401E`) | iOS 27.2 | Release, iphoneos | installed, launched (the script warned that iOS 27.2 is newer than the installed Xcode's SDK; the install went through) | 2026-11-09 10:25 |
+
+The script's check is the launch; the mixer on the Release build was not opened by the agent (the Perf build's
+screenshot matrix opened it on the same three simulators, `ios/README.md`). The Android rows follow once the USB
+hub returns the phones (dropped at 08:44, see the trial round).
