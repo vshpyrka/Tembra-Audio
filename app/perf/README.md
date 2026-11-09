@@ -332,7 +332,7 @@ carries no profile and is not shrunk. iOS has no equivalent and is untouched.
 |---|---|
 | the two profiles (generated, committed, never edited by hand) | `androidApp/src/main/generated/baselineProfiles/baseline-prof.txt`, `startup-prof.txt` |
 | the coverage rule the host lane checks (`BaselineProfileCoverageTest`) | `androidApp/baseline-profile-coverage.txt` — `<label> <class descriptor>` per line |
-| the keep rules of the shrunk build, each with its reason | `androidApp/proguard-rules.pro` |
+| the keep rules of the shrunk build, each with its reason | `androidApp/src/main/keepRules/tembra.keep` |
 | the generator and the comparison class | `perf-benchmarks/.../BaselineProfileGenerator.kt`, `ProfileComparisonBenchmark.kt`, `CompareState.kt` |
 | comparison outputs and generation logs | `app/perf/data/comparisons/<id>/`, `app/perf/data/profile-generate/<id>/` (git-ignored) |
 
@@ -383,7 +383,7 @@ exits 0 whatever the numbers say; a worse metric is a finding to record in the f
 reason to change the comparison. `--no-build --apk … --test-apk …` reuses artifacts an agent built through
 `gradle-run`.
 
-**Keep rules** (`androidApp/proguard-rules.pro`): the shrunk build is accepted only after a round's four
+**Keep rules** (`androidApp/src/main/keepRules/tembra.keep`): the shrunk build is accepted only after a round's four
 journeys complete on it and every primary destination is screenshot-verified at compact and expanded widths
 against the debug build. A rule is added only when such a run fails, with a comment naming the code path
 and the symptom; never a `-dontwarn` wildcard, never shrinking turned off for a build. Zero R8 warnings is

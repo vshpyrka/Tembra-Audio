@@ -28,13 +28,17 @@ android {
     }
     buildTypes {
         // Shrunk and obfuscated since feature 008 (spec FR-005a, D3): R8 is what lays the startup profile's classes
-        // out together, and it makes the app smaller. Keep rules live in proguard-rules.pro, each with its reason.
+        // out together, and it makes the app smaller. Keep rules live in src/main/keepRules/*.keep (AGP 9.3 reads
+        // them with either DSL), each with its reason; docs/research/r8-configuration-analysis.md has the analysis.
+        // Still the legacy switches, not AGP 9.3's `optimization { enable = true }`: the baseline-profile plugin
+        // (1.5.0, and 1.6.0-alpha01) derives nonMinifiedRelease with initWith(release) + isMinifyEnabled = false,
+        // which does not switch the new block off, so the profile-generation build came out shrunk (2026-11-05).
         // No signing config: the bundle leaves Gradle unsigned and the Play workflow signs it with the upload key in a
         // separate job that never runs Gradle (docs/google-play-publishing.md § Keys and credentials).
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
             // The engine's symbol table rides in the bundle, so Play Console names the C++ frames of a crash or ANR.
             ndk.debugSymbolLevel = "SYMBOL_TABLE"
         }

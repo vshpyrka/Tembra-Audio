@@ -20,7 +20,7 @@ kotlinx-serialization = "1.12.0"
 kotlinx-collections-immutable = "0.5.2"
 # Local date-time for the Projects library's relative times (feature 009, FR-051).
 kotlinx-datetime = "0.8.0"
-metro = "1.5.0"
+metro = "1.5.1"
 androidx-activity = "1.13.0"
 androidx-compose = "1.12.1"
 androidx-test-runner = "1.7.0"
@@ -36,13 +36,13 @@ okio = "3.18.2"
 androidx-benchmark = "1.5.0"
 # Installs the shipped baseline profile on direct installs and backs the comparison's Partial(Require) state (feature 008, D4).
 androidx-profileinstaller = "1.4.1"
-androidx-uiautomator = "2.4.0"
+androidx-uiautomator = "2.4.1"
 androidx-test-ext-junit = "1.3.0"
 androidx-tracing = "2.0.5"
 # WindowMetricsCalculator reads a free-form window's bounds in :androidApp's desktop device tests (feature 011, T010); test only.
 # Pinned to the version Material 3 adaptive already brings into the app: 1.5.1 made the test classpath differ from the
 # app's, and AGP 9.3.3 then fails to store mergeDebugAndroidTestManifest in the configuration cache (2026-11-03).
-androidx-window = "1.5.0"
+androidx-window = "1.5.1"
 android-compileSdk = "37"
 android-targetSdk = "36"
 android-minSdk = "26"
