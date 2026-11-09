@@ -243,10 +243,17 @@ profile compiled). Built on the merged branch (`3185b8a2` and after).
 | iPad Pro 13-inch (M5) simulator | iOS 27.0 | Release, iphonesimulator | installed, launched | 2026-11-09 10:25 |
 | iPhone Duo simulator | iOS 27.1 | Release, iphonesimulator | installed, launched | 2026-11-09 10:25 |
 | iPhone 14 (`00008110-001049660E3A401E`) | iOS 27.2 | Release, iphoneos | installed, launched (the script warned that iOS 27.2 is newer than the installed Xcode's SDK; the install went through) | 2026-11-09 10:25 |
+| Pixel 7 Pro (`33241FDH3000NZ`) | Android 17 | release, debug key, the regenerated profile (c1d39486) | installed, compiled from the profile (speed-profile), launched | 2026-11-09 16:20 |
+| Pixel Tablet (`3621105H803UFX`) | Android 17 | release | installed, speed-profile, launched | 2026-11-09 16:20 |
+| OPPO CPH2239 (`O7PBYLZP4HMBW8S4`) | Android 13 | release | installed, speed-profile, launched | 2026-11-09 16:20 |
+| Redmi Note 5 (`e9446ac2`) | Android 9 (API 28) | release | installed, launched; the profile broadcast gave no result on API 28 (the first runs use the JIT, as on every earlier release there); two "device not found" blips from the tunnel during its steps, recovered | 2026-11-09 16:20 |
+| Tembra_Desktop_API37 (`emulator-5582`, local adb server) | Android 17 desktop preview | release (`--no-build`) | installed, launched; profile broadcast result 4, compile status `verify` (the preview image does not take the profile compile; the first runs use the JIT) | 2026-11-09 16:24 |
+| Pixel_9_Pro_Fold (`emulator-5584`, local adb server) | Android 16 | release (`--no-build`) | installed, speed-profile, launched | 2026-11-09 16:24 |
 
-The script's check is the launch; the mixer on the Release build was not opened by the agent (the Perf build's
-screenshot matrix opened it on the same three simulators, `ios/README.md`). The Android rows follow once the USB
-hub returns the phones (dropped at 08:44, see the trial round).
+The script's check is the launch; the mixer on the iOS Release build was not opened by the agent (the Perf build's
+screenshot matrix opened it on the same three simulators, `ios/README.md`). The Android release was built once on the
+merged branch with the clip-source fix and the regenerated profile and installed with `--no-build` on the emulators
+(through the local adb server) and on the Pixel 6 Pro after its profile comparison.
 
 ## After the clip-source fix (2026-11-09, `fffcc1a4`)
 
