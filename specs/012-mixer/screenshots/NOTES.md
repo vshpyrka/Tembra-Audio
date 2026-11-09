@@ -253,7 +253,10 @@ profile compiled). Built on the merged branch (`3185b8a2` and after).
 The script's check is the launch; the mixer on the iOS Release build was not opened by the agent (the Perf build's
 screenshot matrix opened it on the same three simulators, `ios/README.md`). The Android release was built once on the
 merged branch with the clip-source fix and the regenerated profile and installed with `--no-build` on the emulators
-(through the local adb server) and on the Pixel 6 Pro after its profile comparison.
+(through the local adb server) and on the Pixel 6 Pro after its profile comparison. The mixer was opened on the two
+emulators' release builds by their toolbar button (`timeline.toolbar.mixer` by `input tap`; `uiautomator dump` then
+lists `mixer.sheet`, `mixer.handle`, the strips and the master); on the phones the toolbar is reached the same way
+once the tunnel serves them again.
 
 ## After the clip-source fix (2026-11-09, `fffcc1a4`)
 
