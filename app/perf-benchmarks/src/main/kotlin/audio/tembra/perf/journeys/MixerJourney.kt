@@ -1,6 +1,7 @@
 package audio.tembra.perf.journeys
 
 import androidx.test.uiautomator.By
+import androidx.test.uiautomator.Configurator
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiObject2
 import androidx.test.uiautomator.Until
@@ -18,6 +19,23 @@ import audio.tembra.perf.journeys.Anchors.tap
  */
 class MixerJourney {
     fun run(device: UiDevice) {
+        // The sheet's meters update their semantics ten times a second while it is open, so UiAutomator never sees the UI
+        // idle: each click's acknowledgment and each `waitForIdle` would run to the default 10 s and take an iteration to
+        // 75 s (the 2026-11-09 trial round timed out at 18 of 20). Short idle waits for this journey, restored after it.
+        val configurator = Configurator.getInstance()
+        val idleBefore = configurator.waitForIdleTimeout
+        val ackBefore = configurator.actionAcknowledgmentTimeout
+        configurator.setWaitForIdleTimeout(IDLE_TIMEOUT_MS)
+        configurator.setActionAcknowledgmentTimeout(IDLE_TIMEOUT_MS)
+        try {
+            runSteps(device)
+        } finally {
+            configurator.setWaitForIdleTimeout(idleBefore)
+            configurator.setActionAcknowledgmentTimeout(ackBefore)
+        }
+    }
+
+    private fun runSteps(device: UiDevice) {
         device.tap(Anchors.NAV_PROJECTS)
         device.anchor(Anchors.PROJECTS_ROOT)
         device.tap(Anchors.PROJECTS_CARD_DEMO)
@@ -110,5 +128,7 @@ class MixerJourney {
         const val DRAG_STEPS = 200
         const val KNOB_TURN_DP = 60f
         const val MAX_UNDO_STEPS = 12
+        /** UiAutomator's idle and acknowledgment waits while the sheet's meters keep the UI busy. */
+        const val IDLE_TIMEOUT_MS = 500L
     }
 }
