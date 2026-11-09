@@ -43,7 +43,7 @@ class ArrangementMapperTest {
     private fun track(id: String, muted: Boolean = false, soloed: Boolean = false, gain: GainDb = GainDb.Unity, vararg clips: Clip) =
         Track(TrackId(id), "T$id", colorIndex = 0, gainDb = gain, muted = muted, soloed = soloed, clips = persistentListOf(*clips))
 
-    private val sources = mapOf(assetA to ClipSourceHandle(1), assetB to ClipSourceHandle(2))
+    private val sources = mapOf(assetA to listOf(ClipSourceHandle(1)), assetB to listOf(ClipSourceHandle(2)))
 
     @Test
     fun theSoloMuteTruthTableBecomesAudibility() {
@@ -75,7 +75,7 @@ class ArrangementMapperTest {
 
     @Test
     fun aClipWithoutAnOpenSourceIsLeftOut() {
-        val mapped = ArrangementMapper.map(project(track("1", clips = arrayOf(clip("c1", assetA, 0.0), clip("c2", assetB, 4.0)))), mapOf(assetA to ClipSourceHandle(7))) as ArrangementResult.Mapped
+        val mapped = ArrangementMapper.map(project(track("1", clips = arrayOf(clip("c1", assetA, 0.0), clip("c2", assetB, 4.0)))), mapOf(assetA to listOf(ClipSourceHandle(7)))) as ArrangementResult.Mapped
         assertEquals(1, mapped.snapshot.clips.size)
         assertEquals(7, mapped.snapshot.clips.single().source.id)
     }
@@ -92,5 +92,62 @@ class ArrangementMapperTest {
         assertEquals(false, ArrangementMapper.track(p, 0).audible)
         assertEquals(0.5012f, ArrangementMapper.track(p, 0).gainLinear, absoluteTolerance = 0.001f)
         assertEquals(true, ArrangementMapper.track(p, 1).audible)
+    }
+
+    // --- Sources per clip that sounds at once (feature 012: the stress project's loop on six tracks) -----------------
+    // The fixture's clips are 44,100 frames at 44.1 kHz: one second, two beats at 120 BPM.
+
+    @Test
+    fun clipsOfOneAssetThatSoundAtOnceEachTakeTheirOwnSource() {
+        val three = mapOf(assetA to listOf(ClipSourceHandle(1), ClipSourceHandle(3), ClipSourceHandle(5)))
+        val p = project(
+            track("1", clips = arrayOf(clip("a", assetA, 0.0))),
+            track("2", clips = arrayOf(clip("b", assetA, 0.0))),
+            track("3", clips = arrayOf(clip("c", assetA, 1.0))),  // starts half a second into a and b
+        )
+        val mapped = ArrangementMapper.map(p, three) as ArrangementResult.Mapped
+        assertEquals(setOf(1, 3, 5), mapped.snapshot.clips.map { it.source.id }.toSet())
+        assertEquals(mapOf(assetA to 3), ArrangementMapper.sourcesNeeded(p))
+    }
+
+    @Test
+    fun clipsOfOneAssetApartInTimeShareTheFirstSource() {
+        val two = mapOf(assetA to listOf(ClipSourceHandle(1), ClipSourceHandle(3)))
+        // a ends at beat 2 (one second); b starts at beat 8, three seconds later: past the one-second reuse gap.
+        val p = project(track("1", clips = arrayOf(clip("a", assetA, 0.0))), track("2", clips = arrayOf(clip("b", assetA, 8.0))))
+        val mapped = ArrangementMapper.map(p, two) as ArrangementResult.Mapped
+        assertEquals(listOf(1, 1), mapped.snapshot.clips.map { it.source.id })
+        assertEquals(mapOf(assetA to 1), ArrangementMapper.sourcesNeeded(p))
+    }
+
+    @Test
+    fun backToBackClipsNeedTwoSourcesAndAShortageFallsBackToSharing() {
+        // b starts as a ends: within the reuse gap, so two sources are wanted; with one open, both clips still play on it.
+        val p = project(track("1", clips = arrayOf(clip("a", assetA, 0.0))), track("2", clips = arrayOf(clip("b", assetA, 2.0))))
+        assertEquals(mapOf(assetA to 2), ArrangementMapper.sourcesNeeded(p))
+        val mapped = ArrangementMapper.map(p, mapOf(assetA to listOf(ClipSourceHandle(1)))) as ArrangementResult.Mapped
+        assertEquals(listOf(1, 1), mapped.snapshot.clips.map { it.source.id })
+    }
+
+    @Test
+    fun sourcesNeededCountsEachAssetOnItsOwn() {
+        val p = project(
+            track("1", clips = arrayOf(clip("a", assetA, 0.0), clip("d", assetB, 0.0))),
+            track("2", clips = arrayOf(clip("b", assetA, 0.0))),
+            track("3", clips = arrayOf(clip("c", assetB, 0.0))),
+        )
+        assertEquals(mapOf(assetA to 2, assetB to 2), ArrangementMapper.sourcesNeeded(p))
+    }
+
+    @Test
+    fun theTwoHalvesOfASplitClipShareOneSource() {
+        // The first half holds source frames 0 to 22,050 and ends at beat 1; the second starts there with offset 22,050.
+        val first = Clip(ClipId("a"), assetA, Beats(0.0), 0, 22_050, "x")
+        val second = Clip(ClipId("b"), assetA, Beats(1.0), 22_050, 22_050, "x")
+        val p = project(track("1", clips = arrayOf(first, second)))
+        assertEquals(mapOf(assetA to 1), ArrangementMapper.sourcesNeeded(p))
+        // The same halves on two tracks with the second starting while the first still plays: two sources.
+        val overlapping = project(track("1", clips = arrayOf(first)), track("2", clips = arrayOf(second.copy(startBeats = Beats(0.5)))))
+        assertEquals(mapOf(assetA to 2), ArrangementMapper.sourcesNeeded(overlapping))
     }
 }

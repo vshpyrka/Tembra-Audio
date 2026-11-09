@@ -222,6 +222,13 @@ R8 configuration analysis (#17), `androidx.test.uiautomator` 2.4.1 (#18), `andro
 | Pixel 7 Pro (`33241FDH3000NZ`, Android 17), every module | `tools/gradlew-device.sh 33241FDH3000NZ checkAndroidDevice --continue` (run conditions applied) | green, zero warnings | engine 114, data 156, UI 1,229 (4 skipped), 21 min 11 s | 2026-11-09 10:42 |
 | Pixel Tablet (`3621105H803UFX`, Android 17), every module | `tools/gradlew-device.sh 3621105H803UFX checkAndroidDevice --continue` (run conditions applied), twice | first run: engine 114 with one failure, UI stopped at 562 of 1,229 ("Test run failed to complete"); rerun: engine 114, data 156, UI 1,229 (4 skipped) green, zero warnings, 21 min 22 s | the first run's two problems: `NativeAudioEngineRecordingTest.armsRecordsATakeWithTheCountInAndDisarms` read an output latency of 0 from the duplex stream (the same test was green on this tablet before the merge and on the rerun), and the UI instrumentation ended after `ProjectsKeyHandlingTest.ctrlFFocusesTheSearchField` with no crash, kill or adb disconnect in the logs; both an hour after the USB hub had dropped every phone. Not reproduced | 2026-11-09 11:20 |
 
+Not rerun on the merged state, by choice: the OPPO CPH2239 and the Redmi (API 28), whose lanes were green on the
+branch the same morning and which none of main's four changes targets (Metro's codegen is covered by the host lane
+on every module, `androidx.window` 1.5.1 by the tablet and the two desktop emulators, the keep-rules move by the
+release build below, `uiautomator` 2.4.1 by the perf journeys on the Pixel 6 Pro); the iPhone 18 Pro and Duo
+simulators, whose Kotlin/Native test binaries are the ones the iPad ran. The Pixel 6 Pro's lane on the merged state
+follows the trial rounds (the device was measuring).
+
 ## Release builds (T119)
 
 The way users get the app: `tools/release-ios.sh` (Release configuration, every connected device and booted
