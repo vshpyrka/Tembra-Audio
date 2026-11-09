@@ -163,6 +163,8 @@ No token or spacing change was needed beyond the master label's overflow.
 - **TalkBack and VoiceOver (T093)** are left to the owner: the screen readers speak, and the run tonight had to stay
   silent.
 
+- **The stress project clips the master.** With every clip reading its own frames (`fffcc1a4`), the 24-track stress project, the demo's four loops six times over at unity, sums about 15.6 dB above one copy: `audio.master_clips` reads 14,760 clamped blocks an iteration and the master latch lights (`../evidence/trial-round.md`, round 9). Expected physics, informational in the catalogue; a fixture that sums sanely (each imported track about −15.6 dB) is a choice for the owner.
+
 ## The lane tasks of Phases 2–7 (T039, T043, T055, T065, T074, T080, T088)
 
 Marked done on 2026-11-08 against the lane table above: every phase's host, iOS and Pixel 6 Pro lanes ran green
@@ -245,3 +247,15 @@ profile compiled). Built on the merged branch (`3185b8a2` and after).
 The script's check is the launch; the mixer on the Release build was not opened by the agent (the Perf build's
 screenshot matrix opened it on the same three simulators, `ios/README.md`). The Android rows follow once the USB
 hub returns the phones (dropped at 08:44, see the trial round).
+
+## After the clip-source fix (2026-11-09, `fffcc1a4`)
+
+The trial round's stress journey found `ClipSourceRegistry` sharing one engine source among every clip of an asset
+(`../evidence/trial-round.md`, round 8); the fix touches `:shared:ui`'s session, so the lanes ran again:
+
+| Target | Command | Result | Notes | When |
+|---|---|---|---|---|
+| Host (JVM) | `./gradlew checkAndroidHost` | green, zero warnings | the nine new tests (mapper, registry, session) with the suite | 2026-11-09 14:30 |
+| iPad Pro 13-inch (M5) simulator | `./gradlew checkIos -Ptembra.iosSimulator=<udid>` | green, zero warnings | UI 1,242 tests, 1 min 24 s | 2026-11-09 14:36 |
+| Tembra_Desktop_API37 (`emulator-5582`, local adb server on 5038), every module | `tools/gradlew-device.sh --adb-server-port 5038 emulator-5582 checkAndroidDevice --continue`, then `:shared:engine:connectedAndroidDeviceTest` alone | data 156 and UI 1,238 (2 skipped) green; engine 114 with one failure, then 114 green | `MetronomeTimingEndToEndTest.ticksAreFiveHundredMillisecondsApartAndTheFirstArrivesQuickly` read spacings of 488 to 516 ms once (fitted period 498.8 ms) on the emulator's audio backend; green on the rerun and in every earlier lane today | 2026-11-09 15:02 |
+| Pixel_9_Pro_Fold (`emulator-5584`, local adb server on 5038), every module | `tools/gradlew-device.sh --adb-server-port 5038 emulator-5584 checkAndroidDevice --continue` | green, zero warnings | engine 114, data 156, UI 1,238 (4 skipped); 18 min with the Mac also pulling a round's traces | 2026-11-09 15:25 |
