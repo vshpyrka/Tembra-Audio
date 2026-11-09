@@ -40,13 +40,33 @@ result and the Android 17 desktop preview emulator does not take the compile (bo
 
 ## Compare
 
-`uv run tracepulse profile compare --device pixel6 --journeys mixer --no-build --apk … --test-apk …` (the states
-`none` and `profile`, 20 iterations each; comparison id `20261109T142240Z_19021FDEE001AH`). It started at 16:22 on
-the Pixel 6 Pro through the owner's ssh tunnel to adb; at about 16:28 a local adb server took `127.0.0.1:5037` while
-the tunnel's listener on `[::1]:5037` stopped answering, so the phone became unreachable from the Mac mid-measurement
-(the pipeline's detached poll waits for it, three hours at most). The first attempt was stopped by hand before that,
-to add the comparison's JSON-only fallback for a pull that fails through a slow adb (`5592ecc3`).
+`uv run tracepulse profile compare --device pixel6 --journeys mixer --no-build --apk … --test-apk …`: the states
+`none` (compilation reset, the worst case after a direct install) and `profile` (the shipped profile compiled ahead
+of time), each from a fresh install, 20 iterations. Three attempts: the first was stopped by hand to add the
+comparison's JSON-only fallback for a pull that fails through a slow adb (`5592ecc3`); the second ran `none` and
+timed out in `profile` at iteration 18 of 20, because under JIT the mixer journey takes close to 80 s an iteration
+and the pipeline's instrument window was 25 minutes (the window is 40 minutes since `38a5d0f0`); the third,
+`20261109T155733Z_19021FDEE001AH` (build `38a5d0f0`), completed. Medians, `profile` against `none`:
 
-**Open**: the comparison's numbers once the phone is reachable again (`comparison.md` under
-`app/perf/data/comparisons/20261109T142240Z_19021FDEE001AH/` or a rerun), with the headline `startup.ttid_ms`, the
-mixer journey's duration and frame percentiles for `none` against `profile`, and the Mann–Whitney verdict per series.
+| Series (mixer journey) | none | profile | Change | Confirmed (Mann–Whitney p < 0.01) |
+|---|---|---|---|---|
+| `journey.duration_ms` | 49,170 | 49,360 | +0.4 % | no |
+| `frames.p50_ms` / `p90` / `p99` | 9.6 / 12.3 / 14.5 | 9.6 / 12.4 / 14.5 | +0.2 / +0.3 / −0.1 % | no |
+| `frames.overrun_p90_ms` | −1.6 | −1.6 | | no |
+| `memory.peak_kb` / `memory.end_kb` | 179,674 / 132,386 | 179,046 / 133,886 | −0.3 / +1.1 % | no |
+| `section.timeline.mixerFrame.sum_ms` (2,760 frames) | 443.8 | 469.1 | +5.7 % | no |
+| `section.timeline.mixerOpen.sum_ms` | 0.0 | 0.0 | −8.1 % | no |
+| `section.timeline.mixerClose.sum_ms` | 0.2 | 0.2 | −5.1 % | no |
+| `section.timeline.faderDrag.sum_ms` / `panTurn` / `masterDrag` | 10,746 / 2,864 / 12,356 | 10,747 / 2,865 / 12,357 | +0.0 % | no |
+| `section.engine.panApply.sum_ms` | 0.1 | 0.1 | +3.4 % | no |
+| `section.timeline.playheadFrame.sum_ms` (2,810 frames) | 9.5 | 10.0 | +5.2 % | **yes** |
+| `section.timeline.projectSave.sum_ms` | 170.7 | 168.0 | −1.6 % | no |
+| `section.transport.play.sum_ms` | 3.2 | 3.7 | +14.9 % | no |
+
+`startup.ttid_ms` was not measured (`--journeys mixer`; the startup journey's comparison belongs to the post-merge
+session). The profile gives no measurable change to the mixer journey: the duration, the frame percentiles and
+every mixer section are within noise, and the one confirmed difference is half a millisecond of playhead frames
+over an iteration (9.5 to 10.0 ms for 2,810 frames). The same picture as feature 010's recording compare: the
+journeys are gesture-paced (the drags and the knob turn take 26 of the 49 s) and the sheet's frame work is small
+either way (0.16 ms a frame). The profile's value stays with the cold start, which this comparison did not measure.
+Files: `app/perf/data/comparisons/20261109T155733Z_19021FDEE001AH/{comparison.json,comparison.md}`.
