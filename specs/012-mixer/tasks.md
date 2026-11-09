@@ -378,7 +378,7 @@ request (contracts/perf-instrumentation.md, skills-and-audit.md; quickstart ยง2โ
 - [X] T113 [P] Device lane, Pixel Tablet `3621105H803UFX` (as T112; plus the 1024/1200 dp captures if T089 did not)
 - [X] T114 [P] Device lane, OPPO CPH2239 `O7PBYLZP4HMBW8S4` (brightness by hand; the two engine recording tests skip as in 010; the mixer tests must run)
 - [X] T115 [P] Device lane, Redmi Note 5 `e9446ac2` (refuses do-not-disturb; Play Protect "Don't send"; no Perfetto)
-- [ ] T116 [P] Device lane, fold emulator `Pixel_9_Pro_Fold` (`emulator-5554`, booted with audio; about 2.5 h; PixelCopy flakes retried once)
+- [X] T116 [P] Device lane, fold emulator `Pixel_9_Pro_Fold` (`emulator-5554`, booted with audio; about 2.5 h; PixelCopy flakes retried once)
 - [X] T117 [P] Device lane, desktop emulator `Tembra_Desktop_API37` (`emulator-5582`, user 10, `-no-window` allowed) and `:androidApp:connectedDebugAndroidTest` on `Tembra_Desktop_API34` (`emulator-5580`); one desktop emulator at a time
 - [X] T118 [P] Simulator lanes: `./gradlew checkIos -Ptembra.iosSimulator="iPhone 18 Pro"`, `="iPad Pro 13-inch (M5)"`, `=8AF0F092-16BB-4286-8F8F-E0AB208CBA8A` (the Duo) through `gradle-run`; results into `SHOTS/NOTES.md`
 - [ ] T119 Release builds on every attached target: `tools/release-android.sh` (the five devices and the three emulators that are up) and `tools/release-ios.sh` (the iPhone 14, the iPhone 18 Pro, the iPad, the Duo); launch and open the mixer on each; the table of targets, OS versions and outcomes in `SHOTS/NOTES.md`; any target skipped named with the reason
