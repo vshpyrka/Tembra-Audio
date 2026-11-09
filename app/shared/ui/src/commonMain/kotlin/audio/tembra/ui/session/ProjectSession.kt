@@ -253,6 +253,7 @@ class ProjectSession(
                 lastEdit = edit
                 history = next
                 applyToEngine(result.project, edit)
+                topUpSources(result.project)
                 settle(next)
                 null
             }
@@ -345,6 +346,7 @@ class ProjectSession(
             _messages.trySend(SessionMessage.AssetsMissing(1))
         }
         overviews.track(projectId, edit.assetId, overviewPath)
+        ensureSourcesAndPush()
     }
 
     override fun playbackStartedByTake() = dispatch(PlaybackEvent.RecordStarted)
@@ -609,6 +611,7 @@ class ProjectSession(
                 AdoptedTake.Discarded, is AdoptedTake.Failed -> Unit
             }
         }
+        ensureSources(document)
         if (transportOpen) pushEngine(document, document.metronomeOn)
         val started = EditHistory.start(document)
         history = started
@@ -672,6 +675,31 @@ class ProjectSession(
     }
 
     // --- Engine binding ----------------------------------------------------------------------------------------------
+
+    /**
+     * Opens the further sources [project]'s clips need: one per clip of an asset that sounds at the same time as another
+     * of it ([ArrangementMapper.sourcesNeeded]; a source has one read position). The number opened.
+     */
+    private suspend fun ensureSources(project: Project): Int {
+        var opened = 0
+        for ((assetId, needed) in ArrangementMapper.sourcesNeeded(project)) opened += sources.ensure(assetId, needed)
+        return opened
+    }
+
+    private suspend fun ensureSourcesAndPush() {
+        val project = history?.present ?: return
+        if (ensureSources(project) > 0 && transportOpen) pushArrangement(project)
+    }
+
+    /**
+     * A synchronous edit (a move, a split, an undo) can make clips of one asset overlap. The arrangement just pushed
+     * shares the sources open now, so every clip plays; the missing sources open on the session's scope and the
+     * arrangement is pushed again with them.
+     */
+    private fun topUpSources(project: Project) {
+        if (!sources.lacks(ArrangementMapper.sourcesNeeded(project))) return
+        scope.launch(CoroutineName("ensureSources")) { ensureSourcesAndPush() }
+    }
 
     /** The smallest engine update for a settled [edit] (contracts/project-session.md "Engine binding rules"). */
     private fun applyToEngine(project: Project, edit: ProjectEdit) {
@@ -753,6 +781,7 @@ class ProjectSession(
         }
         if (project.masterVolume != before.masterVolume) audio.setMaster(project.masterVolume.toLinear())
         pushArrangement(project)
+        topUpSources(project)
         settle(restored)
     }
 
@@ -977,6 +1006,7 @@ class ProjectSession(
             _messages.trySend(SessionMessage.AssetsMissing(unplayable.size))
         }
         for (result in playable) overviews.track(projectId, result.assetId, result.overviewPath)
+        ensureSourcesAndPush()
     }
 
     private fun refusalText(reason: ImportRefusal): String = when (reason) {

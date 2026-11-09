@@ -6,6 +6,7 @@ import audio.tembra.core.project.AudioAsset
 import audio.tembra.core.project.AudioAssetId
 import audio.tembra.core.project.AudioFormat
 import audio.tembra.core.project.Beats
+import audio.tembra.core.project.ClipId
 import audio.tembra.core.project.ClipTemplate
 import audio.tembra.core.project.DeleteTrack
 import audio.tembra.core.project.GainDb
@@ -46,6 +47,8 @@ import audio.tembra.ui.platform.FakeAudioRouteMonitor
 import audio.tembra.ui.platform.FakeBackgroundPlaybackHost
 import audio.tembra.ui.platform.FakeMicrophonePermission
 import audio.tembra.ui.platform.MicrophonePermissionStatus
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -134,6 +137,30 @@ class ProjectSessionTest {
     private fun callNames(): List<String> = engine.calls.map { it.substringBefore('(') }
 
     // --- Open --------------------------------------------------------------------------------------------------------
+
+    /**
+     * Feature 012's stress project: the same loop on several tracks sounds at once, and a source has one read position,
+     * so each such clip gets its own source (contracts/project-session.md; `ClipSourceRegistry.ensure`).
+     */
+    @Test
+    fun clipsOfOneAssetOnSeveralTracksEachGetTheirOwnSource() = runTest(dispatcher) {
+        val drums = demo.tracks[0].clips.first()
+        val doubled = demo.copy(
+            tracks = demo.tracks.mapIndexed { index, track ->
+                if (index == 1) track.copy(clips = persistentListOf(drums.copy(id = ClipId("drums-again")))) else track
+            }.toPersistentList(),
+        )
+        val repository = FakeProjectRepository(initial = listOf(doubled))
+        val session = newSession(repository)
+        session.start()
+        runCurrent()
+        session.open(doubled.id)
+        runCurrent()
+        val drumsSources = engine.lastArrangement!!.clips.filter { it.trackIndex <= 1 }.map { it.source }
+        assertEquals(2, drumsSources.size)
+        assertEquals(2, drumsSources.toSet().size, "two clips of the drums at the start: two sources")
+        assertEquals(5, callNames().count { it == "openClipSource" }, "four assets and one more source for the drums")
+    }
 
     /** Leaving the Timeline hands the device over (the tuner and the metronome need an idle engine); returning takes it back at the position (spec FR-008a). */
     @Test

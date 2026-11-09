@@ -135,8 +135,45 @@ journey's traces (the source of `audio.meterFramesDropped` and `audio.masterClip
 tracks of each iteration's trace) were cleared from the phone before the mixer class ran, so the counters come from
 the next round.
 
-**Open**: round 8, `--journeys stress` with the 40-minute pull window: `audio.meterFramesDropped = 0` and
-`audio.masterClips`.
+## Round 8, `20261109T112441Z_012-mixer`: the counters, and what they found
+
+`--journeys stress` alone. The journey ran its 20 iterations (39.7 s median; frames p50 9.11 ms, p90 12.07 ms, p99
+14.51 ms; `timeline.mixerFrame` 521 frames and 99.5 ms an iteration; memory peak 202 MB). The pull failed again, this
+time with `adb pull` returning 1 part-way through the first trace: the tunnel drops the phone for a moment now and
+then, and a 43 MB transfer does not survive it (the round failed loudly, as the pipeline change intends). The twenty
+traces came over in 4 MB chunks, each checked against the phone's md5 (`chunked_pull.py`, 26 minutes, 15 retries),
+and the pipeline's own reader (`counter_series`) took the counters from them. Medians over the 20 iterations, min to
+max:
+
+| Counter | Median | Range |
+|---|---|---|
+| `audio.meter_frames_dropped` | **0** | 0 |
+| `audio.master_clips` | **0** | 0 |
+| `audio.xruns` | 0 | 0 |
+| `audio.over_budget` | 0 | 0 |
+| `audio.input_overruns` | 0 | 0 to 1 |
+| `audio.clips_active` | 24 | 24 |
+| `audio.callbacks` | 16,910 | 16,610 to 17,910 |
+| `audio.avg_us` / `audio.max_callback_us` | 65.5 / 405 µs | 61 to 85 / 325 to 509 |
+| `audio.record_backlog` | 672 frames | 576 to 672 |
+| `audio.take_alignment_ms` | 135 | 135 to 137 |
+| `audio.starvation` | **358,400** | 358,300 to 358,500 |
+
+No meter frame dropped and no master clip in 20 iterations of 24 strips: the two counters this feature added read as
+the spec asks. `audio.starvation`, which the spec also wants at zero (SC on the 24-track project; it read 20 to 40
+on the demo project's journeys and 0 on the recording journey), did not: the counter track in one trace rises by
+about 11,600 a second for the whole 31 s of playback, 23 of the 24 active clips starved on every callback. Cause,
+found in the session rather than the engine: `ClipSourceRegistry` held one engine source per asset however many
+clips used it, and a source has one read position; the stress project's 24 clips are the demo's four loops six times
+over, so five clips in six asked the shared fifo for frames it had already passed, parked it and starved. The fix:
+`ArrangementMapper` hands an asset's sources out first-fit over its clips by start (a source is free again one
+second after its clip ends; the two halves of a split continue one source, so the demo keeps its four), the
+registry's `ensure` opens as many as `sourcesNeeded` asks for (at most one per track) on open, import and take, and
+an edit that makes clips of one asset overlap tops them up on the session's scope and pushes the arrangement again;
+short of sources, clips share one and still play, as every clip did before. The skill review has the row; the 009
+session contract's two rows are updated.
+
+**Open**: round 9, `--journeys stress` with the fix: `audio.starvation` back to the prime's few dozen.
 
 ## iOS: the journey on the iPhone 18 Pro simulator (2026-11-09, 08:19 to 08:49)
 
