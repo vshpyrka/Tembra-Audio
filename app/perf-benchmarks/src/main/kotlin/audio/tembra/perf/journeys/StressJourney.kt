@@ -2,6 +2,7 @@ package audio.tembra.perf.journeys
 
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Direction
+import androidx.test.uiautomator.StaleObjectException
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiObject2
 import androidx.test.uiautomator.Until
@@ -27,13 +28,8 @@ class StressJourney {
         device.anchor(Anchors.TIMELINE_ROOT)
         device.tap(Anchors.TRANSPORT_METRONOME)
         device.tap(Anchors.TRANSPORT_PLAY)
-        val lane = device.anchor(Anchors.TIMELINE_LANE_FIRST)
-        val until = System.currentTimeMillis() + SCROLL_MILLIS
-        while (System.currentTimeMillis() < until) {
-            lane.scroll(androidx.test.uiautomator.Direction.RIGHT, SCROLL_PERCENT, SCROLL_SPEED)
-            lane.scroll(androidx.test.uiautomator.Direction.LEFT, SCROLL_PERCENT, SCROLL_SPEED)
-        }
-        recordWhileScrolling(device, lane, newTrack = if (stress) STRESS_TRACK_COUNT else RecordingJourney.NEW_TRACK_INDEX)
+        scrollFirstLane(device, SCROLL_MILLIS)
+        recordWhileScrolling(device, newTrack = if (stress) STRESS_TRACK_COUNT else RecordingJourney.NEW_TRACK_INDEX)
         mixerPhase(device)
         // The measurement build dumps the audio-health counters here, while the transport still owns the device (the
         // engine restarts them per stream session and the metronome and the tuner take the device next; feature 007,
@@ -58,19 +54,17 @@ class StressJourney {
     /**
      * Feature 010: add a track, arm it, record for three seconds while the lane scrolls, stop the take, undo twice (the
      * take, then the track). Guarded: a device without the microphone grant finds no meter, skips the recording and
-     * the journey completes (the tap of Record is then a no-op).
+     * the journey completes (the tap of Record is then a no-op). The lane is looked up again for the scroll: adding and
+     * arming a track recomposes the track list, and on the 24-track project the lane's node is replaced, so a handle
+     * taken before the add is stale (`StaleObjectException`, the 2026-11-09 round).
      */
-    private fun recordWhileScrolling(device: UiDevice, lane: UiObject2, newTrack: Int) {
+    private fun recordWhileScrolling(device: UiDevice, newTrack: Int) {
         val index = newTrack
         device.tapIfPresent(Anchors.TIMELINE_ADD_TRACK)
         device.tapIfPresent(Anchors.trackArm(index))
         if (device.wait(androidx.test.uiautomator.Until.hasObject(androidx.test.uiautomator.By.res(Anchors.trackMeter(index))), ARM_TIMEOUT_MS)) {
             device.tapRecord(index)
-            val until = System.currentTimeMillis() + RECORD_MILLIS
-            while (System.currentTimeMillis() < until) {
-                lane.scroll(androidx.test.uiautomator.Direction.RIGHT, SCROLL_PERCENT, SCROLL_SPEED)
-                lane.scroll(androidx.test.uiautomator.Direction.LEFT, SCROLL_PERCENT, SCROLL_SPEED)
-            }
+            scrollFirstLane(device, RECORD_MILLIS)
             device.tapRecord(index)
             device.wait(androidx.test.uiautomator.Until.gone(androidx.test.uiautomator.By.res(Anchors.TIMELINE_CLIP_TAKE)), ADOPT_TIMEOUT_MS)
             device.wait(androidx.test.uiautomator.Until.findObject(androidx.test.uiautomator.By.res(Anchors.TIMELINE_UNDO).enabled(true)), ADOPT_TIMEOUT_MS)
@@ -84,22 +78,36 @@ class StressJourney {
      * Feature 012 (contracts/perf-instrumentation.md "Journey `stress`"): the mixer open for five seconds with the meters
      * live while the first lane scrolls above the half sheet and the metronome runs, one drag of the first fader (undone:
      * the document persists between iterations), then closed. The Mixer control sits in the toolbar on a wide bar and in
-     * the overflow menu on a compact one.
+     * the overflow menu on a compact one. The sheet's meters keep the UI from reading idle while it is open, hence the
+     * short idle waits (`withShortIdleWaits`).
      */
-    private fun mixerPhase(device: UiDevice) {
+    private fun mixerPhase(device: UiDevice): Unit = withShortIdleWaits {
         toggleMixer(device)
         device.anchor(Anchors.MIXER_SHEET)
-        val lane = device.anchor(Anchors.TIMELINE_LANE_FIRST)
-        val until = System.currentTimeMillis() + MIXER_MILLIS
-        while (System.currentTimeMillis() < until) {
-            lane.scroll(Direction.RIGHT, SCROLL_PERCENT, SCROLL_SPEED)
-            lane.scroll(Direction.LEFT, SCROLL_PERCENT, SCROLL_SPEED)
-        }
+        scrollFirstLane(device, MIXER_MILLIS)
         device.anchor(Anchors.MIXER_STRIP_FADER_FIRST).swipe(Direction.UP, FADER_SWIPE_PERCENT, SCROLL_SPEED)
         device.waitForIdle()
         device.tapIfPresent(Anchors.TIMELINE_UNDO)
         toggleMixer(device)
         device.wait(Until.gone(By.res(Anchors.MIXER_SHEET)), ADOPT_TIMEOUT_MS)
+    }
+
+    /**
+     * Scrolls the first lane right and left until [millis] have passed. The lane's node can be replaced while the list
+     * recomposes (a track added or armed, the sheet opening), which makes a held `UiObject2` stale; the lane is then
+     * found again and the scrolling goes on.
+     */
+    private fun scrollFirstLane(device: UiDevice, millis: Long) {
+        var lane: UiObject2 = device.anchor(Anchors.TIMELINE_LANE_FIRST)
+        val until = System.currentTimeMillis() + millis
+        while (System.currentTimeMillis() < until) {
+            try {
+                lane.scroll(Direction.RIGHT, SCROLL_PERCENT, SCROLL_SPEED)
+                lane.scroll(Direction.LEFT, SCROLL_PERCENT, SCROLL_SPEED)
+            } catch (_: StaleObjectException) {
+                lane = device.anchor(Anchors.TIMELINE_LANE_FIRST)
+            }
+        }
     }
 
     private fun toggleMixer(device: UiDevice) {
