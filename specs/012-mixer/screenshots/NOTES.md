@@ -305,3 +305,20 @@ they carry the same app from the 16:24 install.
 | iPhone 18 Pro simulator | iOS 27.0 | Release installed and launched | 19:48 |
 | iPad Pro 13-inch (M5) simulator | iOS 27.0 | Release installed and launched | 19:48 |
 | iPhone Duo simulator | iOS 27.1 | Release installed and launched | 19:48 |
+
+## Release builds of the two fixes (`a01d393c`, 2026-11-09 late evening)
+
+After the owner's first look (the two findings above) the release build of the fixed branch went to every connected
+target: `tools/release-android.sh --no-build` after the wrapper's `:androidApp:assembleRelease`, `tools/release-ios.sh`
+for the iPhone 14 and the booted iPhone 18 Pro simulator (the iPad and Duo simulators stayed shut down: their layouts
+are untouched by both fixes). Run conditions applied on every phone first.
+
+| Target | OS | Outcome | When |
+|---|---|---|---|
+| Pixel 6 Pro (`19021FDEE001AH`) | Android 17 | installed, speed-profile, launched; the close checked at `animator_duration_scale 10` (restored to 1 after): ten screen captures over the 3 s close show the sheet moving down as one piece, cut cleanly at the lanes box's bottom edge, the strips' bands leaving with it; before the fix they stayed on the edge | 21:30 |
+| Pixel 7 Pro (`33241FDH3000NZ`) | Android 17 | installed, speed-profile, launched | 21:28 |
+| Pixel Tablet (`3621105H803UFX`) | Android 17 | installed, speed-profile, launched | 21:28 |
+| OPPO CPH2239 (`O7PBYLZP4HMBW8S4`) | Android 13 | installed, speed-profile, launched | 21:28 |
+| Redmi Note 5 (`e9446ac2`) | Android 9 (API 28) | installed, launched; compile status `run-from-apk` as on every earlier release (the first runs use the JIT) | 21:28 |
+| iPhone 14 (`00008110-001049660E3A401E`) | iOS 27.2 | Release installed and launched; the landscape check is the owner's (the phone cannot be rotated from the Mac); the same fix is proven by the simulator's `ios-mixer-landscape` capture above | 21:33 |
+| iPhone 18 Pro simulator | iOS 27.0 | Release installed and launched | 21:33 |
