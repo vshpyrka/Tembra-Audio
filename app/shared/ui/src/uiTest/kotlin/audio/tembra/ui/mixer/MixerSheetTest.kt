@@ -399,6 +399,31 @@ class MixerSheetTest {
         assertEquals(emptyList(), calls)
     }
 
+    /**
+     * The owner's finding of 2026-11-09: the strips' tint bands stayed on the lanes box's bottom edge while the sheet
+     * closed, because the sheet collapsed in height and every band sits at the base of its strip. Below its lowest anchor
+     * the sheet slides out instead: half-way through the close it keeps the half anchor's height and the strips theirs,
+     * their bases (and bands) have left the lanes box with it, and at the end nothing of it remains.
+     */
+    @Test
+    fun aClosingSheetSlidesOutWithItsBandsInsteadOfCollapsing() = runComposeUiTest {
+        setSheet(frozen = true)
+        val sheetBefore = onNodeWithTag(MixerTestTags.SHEET).getUnclippedBoundsInRoot()
+        val stripBefore = onNodeWithTag(MixerTestTags.strip(0)).getUnclippedBoundsInRoot()
+        assertNear(shownLanes.value, stripBefore.bottom, "the strip's base at the half height")
+        ui.value = ui.value.copy(open = false)
+        mainClock.advanceTimeBy(150)
+        val sheet = onNodeWithTag(MixerTestTags.SHEET).getUnclippedBoundsInRoot()
+        val strip = onNodeWithTag(MixerTestTags.strip(0)).getUnclippedBoundsInRoot()
+        assertTrue(sheet.top > sheetBefore.top + 20.dp, "half-way through the close the sheet's top is ${sheet.top}, not well below ${sheetBefore.top}")
+        assertNear(sheetBefore.height, sheet.height, "the closing sheet's height")
+        assertNear(stripBefore.height, strip.height, "the closing sheet's first strip's height")
+        assertTrue(strip.bottom > shownLanes.value + 20.dp, "the strip's base is at ${strip.bottom}, not below the lanes box's bottom (${shownLanes.value})")
+        mainClock.advanceTimeBy(600)
+        assertTrue(onAllNodesWithTag(MixerTestTags.SHEET).fetchSemanticsNodes().isEmpty(), "the sheet is still composed after the close")
+        assertEquals(emptyList(), calls)
+    }
+
     /** Advances the frozen clock frame by frame until [settled] holds; fails when [SETTLE_FRAMES] frames were not enough. */
     private fun ComposeUiTest.framesUntil(what: String, settled: () -> Boolean) {
         var frames = 0
