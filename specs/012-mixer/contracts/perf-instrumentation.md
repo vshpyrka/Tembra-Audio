@@ -49,7 +49,10 @@ back to the half height where step 6 raised it, then tap `timeline.toolbar.mixer
 closes), wait `mixer.sheet` gone; 12. tap
 `timeline.toolbar.undo` until it disables (the document is unchanged across iterations;
 the fader and knob returns are two steps each, the toggles four); 13. tap `transport.play`
-(pause); 14. tap `transport.skipStart`.
+(pause); 14. tap `transport.skipStart`. UiAutomator's idle waits (each click's acknowledgment and
+`waitForIdle`) are shortened to 500 ms for this journey: the sheet's meters update their semantics ten
+times a second while it is open, so the UI never reads idle and the default 10 s waits took an iteration to
+75 s (the 2026-11-09 trial round timed out at 18 of 20).
 
 Sections measured: `timeline.mixerOpen`, `timeline.mixerClose`, `timeline.mixerFrame`,
 `timeline.faderDrag`, `timeline.panTurn`, `transport.masterDrag`, `engine.panApply`, plus
