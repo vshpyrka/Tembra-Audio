@@ -66,6 +66,11 @@ sed -i '' 's/^hw.keyboard=no/hw.keyboard=yes/' $CFG
 # partition"): 4G boots with 10–12 GB free, 6G does not.
 grep -q '^disk.dataPartition.size' $CFG && sed -i '' 's/^disk.dataPartition.size=.*/disk.dataPartition.size=4G/' $CFG \
   || echo 'disk.dataPartition.size=4G' >> $CFG
+# avdmanager creates the AVD with software graphics (hw.gpu.enabled=no, hw.gpu.mode=auto, which picks SwiftShader on
+# this Mac). At 2880×1800 that renderer takes 3.5 h for the UI lane and times out Compose's pixel captures (32 of 1,229
+# tests on 2026-11-09, "Failed waiting for PixelCopy!"); on the host GPU the same module ran green in 5 min 49 s.
+# Equivalent for one boot: -gpu host.
+sed -i '' 's/^hw.gpu.enabled=no/hw.gpu.enabled=yes/; s/^hw.gpu.mode=auto/hw.gpu.mode=host/' $CFG
 $SDK/emulator/emulator -avd Tembra_Desktop_API37 -port 5582 &            # add -no-window for headless runs
 # The image runs a headless system user: the desktop session is user 10. After every cold boot:
 adb -s emulator-5582 wait-for-device shell am switch-user 10
@@ -77,6 +82,8 @@ yes | $SDK/cmdline-tools/latest/bin/sdkmanager --install "system-images;android-
 echo no | $SDK/cmdline-tools/latest/bin/avdmanager create avd -n Tembra_Desktop_API34 \
   -k "system-images;android-34;android-desktop;arm64-v8a" -d desktop_medium
 sed -i '' 's/^hw.keyboard=no/hw.keyboard=yes/' ~/.android/avd/Tembra_Desktop_API34.avd/config.ini
+sed -i '' 's/^hw.gpu.enabled=no/hw.gpu.enabled=yes/; s/^hw.gpu.mode=auto/hw.gpu.mode=host/' \
+  ~/.android/avd/Tembra_Desktop_API34.avd/config.ini                      # the same graphics change
 $SDK/emulator/emulator -avd Tembra_Desktop_API34 -port 5580 &
 ```
 
