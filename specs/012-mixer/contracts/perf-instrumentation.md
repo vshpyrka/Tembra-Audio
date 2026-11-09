@@ -52,7 +52,10 @@ the fader and knob returns are two steps each, the toggles four); 13. tap `trans
 (pause); 14. tap `transport.skipStart`. UiAutomator's idle waits (each click's acknowledgment and
 `waitForIdle`) are shortened to 500 ms for this journey: the sheet's meters update their semantics ten
 times a second while it is open, so the UI never reads idle and the default 10 s waits took an iteration to
-75 s (the 2026-11-09 trial round timed out at 18 of 20).
+75 s (the 2026-11-09 trial round timed out at 18 of 20). On iOS the same meters keep XCUITest's quiescence
+waits long: on the iPhone 18 Pro simulator (the Mac loaded by two emulator lanes) an iteration took 96 s and the
+Perf test plan's 30-minute per-test allowance stopped the journey at its 20th iteration with no step failing, so
+`TembraPerf.xctestplan` now allows an hour per test (the pipeline's outer window is two hours).
 
 Sections measured: `timeline.mixerOpen`, `timeline.mixerClose`, `timeline.mixerFrame`,
 `timeline.faderDrag`, `timeline.panTurn`, `transport.masterDrag`, `engine.panApply`, plus
