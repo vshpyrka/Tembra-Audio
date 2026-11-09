@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.InputMode
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
@@ -58,8 +59,11 @@ import kotlin.math.roundToInt
  * The mixer sheet over the lanes box (feature 012, spec FR-016 to FR-022; research R1; contracts/mixer-ui.md
  * "MixerSheet"): the handle row, the strip row and the pinned master on the raised surface, sliding up from the box's
  * bottom edge. `anchoredDraggable` holds its position over the anchors Hidden, Half and Full (landscape has no Half)
- * from [MixerUi.anchors]; the offset is read in the layout phase only, where the sheet's visible height follows it so
- * the strips always fit what shows. A keyed effect animates to the height the state asks for (a snap under reduce
+ * from [MixerUi.anchors]; the offset is read in the layout phase only, where the sheet's visible height follows it
+ * between the anchors so the strips always fit what shows, while below the lowest open anchor the sheet keeps that
+ * anchor's height and slides out of the box, clipped at its bottom edge, so the strips' tint bands leave with it (a
+ * collapsing sheet left them on the edge until the close's last frame). A keyed effect animates to the height the
+ * state asks for (a snap under reduce
  * motion); a settled drag reports [TimelineCallbacks.onMixerHeight] or, at Hidden, [TimelineCallbacks.onMixerToggle].
  * Back (a `NavigationBackHandler` registered inside the Timeline entry, so it outranks the shell's back stack while the
  * sheet is open) and the shell's close-overlay action (Escape, ⌘.) close it. Composed while open or still animating
@@ -87,6 +91,8 @@ internal fun MixerSheet(
     val daw = TembraTheme.daw
     val spacing = TembraTheme.spacing
     val lanesPx = with(density) { lanesHeight.toPx() }
+    // The lowest open anchor's height: the content is never measured shorter (the layout below).
+    val lowestOpenPx = with(density) { (if (ui.anchors.singleAnchor) ui.anchors.full else ui.anchors.half).toPx() }
     val anchors = remember(lanesPx, ui.anchors) {
         val halfPx = with(density) { ui.anchors.half.toPx() }
         val fullPx = with(density) { ui.anchors.full.toPx() }
@@ -159,11 +165,18 @@ internal fun MixerSheet(
     Box(
         modifier = modifier
             .fillMaxSize()
+            // What slides below the lanes box's bottom edge is cut off there, not drawn over the overview strip and the transport bar.
+            .clipToBounds()
             .layout { measurable, constraints ->
                 // The layout phase reads the drag offset: the sheet's visible height follows it, nothing recomposes.
+                // Between the anchors the content is measured at the visible height, so the strips fit what shows. Below
+                // the lowest open anchor it keeps that anchor's height and slides out of the box instead: a collapsing
+                // sheet left the strips' tint bands, which sit at every strip's base, on the box's bottom edge until the
+                // last frame of the close (the owner's finding of 2026-11-09).
                 val offset = if (state.offset.isNaN()) lanesPx else state.requireOffset()
                 val visible = (lanesPx - offset).roundToInt().coerceIn(0, constraints.maxHeight)
-                val placeable = measurable.measure(constraints.copy(minHeight = visible, maxHeight = visible))
+                val measured = maxOf(visible, lowestOpenPx.roundToInt().coerceIn(0, constraints.maxHeight))
+                val placeable = measurable.measure(constraints.copy(minHeight = measured, maxHeight = measured))
                 layout(constraints.maxWidth, constraints.maxHeight) {
                     placeable.placeRelative(0, (constraints.maxHeight - visible).coerceAtLeast(0))
                 }
