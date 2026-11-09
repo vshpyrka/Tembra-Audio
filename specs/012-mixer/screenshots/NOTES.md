@@ -205,3 +205,17 @@ Two gaps the pass found and the fixes (both in `MixerSheet`, lanes green on host
 
 The iOS half of T092 is the Compose UI lanes on the iPad Pro and the Duo (the same tests drive Tab, the arrows, Page,
 Home, M, O, Escape, hover, tooltips, the wheel and the secondary click): green on 2026-11-09 with the fixes.
+
+## Merged main (2026-11-09)
+
+`origin/main` moved on during the implementation: `3185b8a2` merges it into the branch (no conflicts; the three
+overlapping files were documentation). What came in: the R8 keep rules moved to the `keepRules` source set with the
+R8 configuration analysis (#17), `androidx.test.uiautomator` 2.4.1 (#18), `androidx.window` 1.5.1 (#19) and Metro
+1.5.1 (#20). The lanes rerun on the merged state:
+
+| Target | Command | Result | Notes | When |
+|---|---|---|---|---|
+| Host (JVM) | `./gradlew checkAndroidHost` | green, zero warnings | 45 s | 2026-11-09 08:20 |
+| Tembra_Desktop_API37 (`emulator-5582`, host GPU, audio on), every module | `tools/gradlew-device.sh emulator-5582 checkAndroidDevice --continue`, then `:shared:engine:connectedAndroidDeviceTest` alone | data 156 and UI 1,229 (2 skipped) green; engine 114 with one failure, then 114 green on the rerun | `NativeAudioEngineTest.theStreamProbeSeesAnOpenOutput` missed its one-second window once ("the probe did not see the tone's output stream"): the emulator's output thread had gone to standby three seconds before the tone started (`dumpsys media.audio_flinger`), and the first stream open after standby took longer than the probe waits. Test-side timing on an emulator, not a change of this merge (feature 011 already made this probe compare players by identity) | 2026-11-09 08:22 |
+| Pixel_9_Pro_Fold (`emulator-5584`, host GPU, audio on), every module | `tools/gradlew-device.sh emulator-5584 checkAndroidDevice --continue` | green, zero warnings | engine 114, data 156, UI 1,229 (4 skipped), 6 min 51 s | 2026-11-09 08:30 |
+| iPad Pro 13-inch (M5) simulator | `./gradlew checkIos -Ptembra.iosSimulator=<udid>` | green, zero warnings | core 262, engine 115, data 156, UI 1,233 tests; 1 min 23 s with the Kotlin/Native test binaries already built | 2026-11-09 08:39 |
