@@ -88,7 +88,17 @@ track's lane (as the iOS journey has since feature 010) and the mixer phase flin
 sheet opens so the first lane stays visible above the half sheet (contract, "Journey `stress`"; the skill review's
 row).
 
-**Open**: round 6 with the lane fix: `audio.meterFramesDropped = 0` and `audio.masterClips` from the stress
+## Round 6, `20261109T093719Z_012-mixer`: the list stays where the recording left it
+
+The recording phase passed with the new track's lane. The mixer phase then failed both attempts on the first lane
+after the list was "flung" to its top: a `UiObject2.fling` on one lane travels a lane's height and barely moves a
+25-track list. Measured by hand on the Pixel 6 Pro without playback (`stress_repro.py`, `uiautomator dump`): after
+the add the composed lanes are 20 to 24 and the list is 12,100 px long; three downward swipes of 900 px over the list
+bring lanes 0 to 4 back. The journey now swipes down over the track list itself (`timeline.tracks`, a quarter from its
+top to an eighth from its bottom, 12 steps) until the first lane is composed again. The mixer journey completed a
+third time (20 iterations, 49 s).
+
+**Open**: round 7 with the list swipe: `audio.meterFramesDropped = 0` and `audio.masterClips` from the stress
 journey's health dump.
 
 ## iOS: the journey on the iPhone 18 Pro simulator (2026-11-09, 08:19 to 08:49)

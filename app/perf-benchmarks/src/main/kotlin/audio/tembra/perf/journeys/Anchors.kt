@@ -5,7 +5,6 @@ import androidx.test.uiautomator.BySelector
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiObject2
 import androidx.test.uiautomator.Until
-import java.util.regex.Pattern
 
 /**
  * The perf anchors as UiAutomator sees them: every `testTag` of `audio.tembra.ui.perf.PerfAnchors` is a view
@@ -38,6 +37,7 @@ object Anchors {
     const val TIMELINE_SPLIT = "timeline.toolbar.split"
     const val TIMELINE_UNDO = "timeline.toolbar.undo"
     const val TIMELINE_RULER = "timeline.ruler"
+    const val TIMELINE_TRACKS = "timeline.tracks"
     const val TIMELINE_LANE_FIRST = "timeline.lane.0"
     const val TIMELINE_CLIP_FIRST = "timeline.clip.first"
     const val TIMELINE_TRACK_MENU_FIRST = "timeline.track.menu.0"
@@ -73,9 +73,6 @@ object Anchors {
     fun trackArm(index: Int): String = "timeline.track.arm.$index"
     fun trackMeter(index: Int): String = "timeline.track.meter.$index"
     fun timelineLane(index: Int): String = "timeline.lane.$index"
-
-    /** Any lane the track list currently composes (a lazy list: a lane scrolled away has no node). */
-    val TIMELINE_LANE_ANY: BySelector = By.res(Pattern.compile("timeline\\.lane\\.\\d+"))
     fun trackRecord(index: Int): String = "timeline.track.record.$index"
     // Feature 011 (contracts/perf-instrumentation.md, journey `windowing`): the first clip's menu and the shortcut sheet.
     const val TIMELINE_CLIP_MENU_FIRST = "timeline.clip.first.menu"
