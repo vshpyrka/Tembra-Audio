@@ -512,6 +512,20 @@ def _pull(cfg: Config, device: Device, runner: Runner, dest: str) -> None:
                         + (f": {detail[-1]}" if detail else ""))
 
 
+def _pull_json_only(cfg: Config, device: Device, runner: Runner, dest: str) -> None:
+    """The benchmark JSON files alone, one by one: what a comparison needs when a slow adb (an ssh tunnel, 2026-11-09)
+    will not deliver a class's traces. Raises PullError when there is none or one does not arrive."""
+    os.makedirs(dest, exist_ok=True)
+    listing = _shell(cfg, device, runner, "ls", media_dir(cfg), timeout=60).stdout
+    names = [name for name in listing.split() if name.endswith("-benchmarkData.json")]
+    if not names:
+        raise PullError(f"no benchmarkData.json in {media_dir(cfg)}")
+    for name in names:
+        completed = runner.run(_adb(cfg, device) + ["pull", media_dir(cfg) + name, dest], timeout=300)
+        if completed.returncode != 0:
+            raise PullError(f"adb pull of {name} returned {completed.returncode}")
+
+
 def _clear_media_dir(cfg: Config, device: Device, runner: Runner) -> None:
     _shell(cfg, device, runner, "rm", "-rf", media_dir(cfg))
 

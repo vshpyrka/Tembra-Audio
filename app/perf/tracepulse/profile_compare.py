@@ -29,8 +29,8 @@ from .detect import mw_two_sided_p
 from .device_state import measurement_state
 from .devices import Device, DeviceError, attached, register, resolve
 from .orchestrate_android import (
-    BuildError, Refused, _clear_media_dir, _discover, _instrument_cmd, _instrument_ok, _pull,
-    _run_instrument_detached, _shell, apk_paths, build, doctor, fingerprint, install, media_dir,
+    BuildError, PullError, Refused, _clear_media_dir, _discover, _instrument_cmd, _instrument_ok, _pull,
+    _pull_json_only, _run_instrument_detached, _shell, apk_paths, build, doctor, fingerprint, install, media_dir,
 )
 from .records import JourneyResult, make_round_id
 from .run import _repo_root, git_info
@@ -94,7 +94,12 @@ def _measure_state(cfg: Config, device: Device, runner: Runner, clock: Clock, st
         fh.write(f"# {' '.join(cmd)}\n# rc={res.returncode}\n\n{res.stdout}")
         if res.stderr:
             fh.write("\n--- stderr ---\n" + res.stderr)
-    _pull(cfg, device, runner, state_dir)
+    try:
+        _pull(cfg, device, runner, state_dir)
+    except PullError as exc:
+        # The comparison reads the benchmark JSON; the traces are a bonus a slow adb may not deliver.
+        print(f"state {state}: {exc}; pulling the benchmark JSON alone")
+        _pull_json_only(cfg, device, runner, state_dir)
     if not _instrument_ok(res):
         raise StateFailed(f"state {state}: instrumentation did not complete (rc={res.returncode}); see {log_path}")
     json_paths, _traces = _discover(state_dir)
