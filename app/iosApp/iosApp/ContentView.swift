@@ -39,8 +39,11 @@ struct ContentView: View {
     var body: some View {
         ComposeView()
             .ignoresSafeArea()
-            // Feature 011 (spec FR-004): no window smaller than 360 × 480 points.
-            .frame(minWidth: WindowMinimum.size.width, minHeight: WindowMinimum.size.height)
+            // Feature 011 (spec FR-004): no window smaller than 360 × 480 points, where a window can be resized. A phone's
+            // window is its screen, which in landscape is under 480 points tall (390 on an iPhone 14): a minimum there made
+            // the Compose view taller than the screen, and SwiftUI centred it, cutting the toolbar off above and the
+            // transport bar below (the owner's finding of 2026-11-09). On a phone the frame holds no minimum.
+            .frame(minWidth: WindowMinimum.frameMinimum?.width, minHeight: WindowMinimum.frameMinimum?.height)
             .background(WindowMinimum().frame(width: 1, height: 1).allowsHitTesting(false))
     }
 }

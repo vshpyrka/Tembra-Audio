@@ -57,8 +57,11 @@ Tests (`androidApp/src/androidTest`, desktop emulator and phones):
 
 ## iOS (`app/iosApp`)
 
-- `ContentView.swift`: `.frame(minWidth: 360, minHeight: 480)` on the Compose view; on iPadOS 26+ set
-  `windowScene.sizeRestrictions?.minimumSize` to 360×480 when the scene connects.
+- `ContentView.swift`: `.frame(minWidth: 360, minHeight: 480)` on the Compose view where a window can be resized
+  (`WindowMinimum.frameMinimum`: none on a phone, whose window is its screen and in landscape shorter than 480 points;
+  with the minimum the Compose view overflowed the screen and SwiftUI centred it, cutting the timeline's toolbar off
+  above and the transport bar below, found by the owner on the iPhone 14 on 2026-11-09 during feature 012); on iPadOS
+  26+ set `windowScene.sizeRestrictions?.minimumSize` to 360×480 when the scene connects.
 - `iOSApp.swift`: `.commands { }` builds one `CommandMenu` per `ShortcutScope` with a `Button` per Command chord from
   `ShortcutCatalogue` (exported to Swift through the shared framework), each calling
   `ShortcutDispatcher.dispatch(action)` in Kotlin; plain keys are not menu commands (Compose receives them).
