@@ -35,6 +35,7 @@ import audio.tembra.ui.theme.TembraTheme
 import kotlinx.collections.immutable.persistentListOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 /**
  * The user's place across window changes (feature 011, spec FR-007, SC-003; contracts/window-behaviour.md): scrolled
@@ -69,9 +70,9 @@ class PlaceAcrossLayoutsTest {
                     TimelineScreenContent(
                         state = state,
                         callbacks = TimelineCallbacks.None.copy(
-                            onViewportMeasured = { widthPx, density ->
+                            onViewportMeasured = { widthPx, density, leadInPx ->
                                 val port = state.viewport
-                                state = state.copy(viewport = port.copy(widthPx = widthPx, densityScale = density).withZoom(port.zoom))
+                                state = state.copy(viewport = port.copy(widthPx = widthPx, densityScale = density, leadInPx = leadInPx).withZoom(port.zoom))
                             },
                         ),
                         telemetry = ScriptedTransportTelemetry.stopped(0.0),
@@ -100,6 +101,22 @@ class PlaceAcrossLayoutsTest {
         for (step in listOf(700.dp, 400.dp, 1200.dp)) {
             width = step
             assertPlaceKept(step)
+        }
+    }
+
+    /**
+     * The lanes report the lead-in with their width: the minimum beside the expanded layout's header column, which keeps the
+     * back-gesture zone off them, and at least that on every other layout.
+     */
+    @Test
+    fun theLanesReportTheirLeadIn() = runComposeUiTest {
+        setTimeline()
+        val minimum = 24.0 * state.viewport.densityScale
+        assertEquals(minimum, state.viewport.leadInPx, 0.5, "beside the header column")
+        for (step in listOf(700.dp, 400.dp)) {
+            width = step
+            waitForIdle()
+            assertTrue(state.viewport.leadInPx >= minimum - 0.5, "the lead-in at $step is ${state.viewport.leadInPx} px, under the minimum of $minimum")
         }
     }
 }

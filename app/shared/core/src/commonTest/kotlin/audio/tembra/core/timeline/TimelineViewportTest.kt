@@ -79,6 +79,73 @@ class TimelineViewportTest {
         assertEquals(Beats.Zero, viewport.scrollTo(Beats(-1.0)).scrollBeats)
     }
 
+    /** 40 device px of lead-in are two beats at this zoom: the view at rest, with 0:00 that far in from the left edge. */
+    private val atStart = viewport.copy(leadInPx = 40.0, scrollBeats = Beats(-2.0))
+
+    @Test
+    fun theLeadInPutsBeatZeroInFromTheLeftEdgeAtRest() {
+        assertClose(-2.0, atStart.startScrollBeats.value)
+        assertClose(40.0, atStart.xOf(Beats.Zero))
+        assertClose(0.0, atStart.beatsAt(40.0).value)
+        assertClose(-2.0, atStart.beatsAt(0.0).value)
+    }
+
+    @Test
+    fun theLeadInScrollsAwayWithTheClips() {
+        val scrolled = atStart.scrollBy(100.0)
+        assertClose(3.0, scrolled.scrollBeats.value)
+        assertClose(-60.0, scrolled.xOf(Beats.Zero))
+    }
+
+    @Test
+    fun scrollStopsAtTheLeadIn() {
+        assertClose(-2.0, atStart.scrollBy(-1_000.0).scrollBeats.value)
+        assertClose(-2.0, atStart.scrollTo(Beats(-50.0)).scrollBeats.value)
+        assertClose(-2.0, atStart.scrollBy(100.0).scrollToStart().scrollBeats.value)
+    }
+
+    @Test
+    fun theFitLeavesRoomForTheLeadIn() {
+        val fitted = atStart.fit()
+        assertClose((800.0 - 40.0) / (128.0 * 2.0), fitted.pixelsPerBeat)
+        assertClose(40.0, fitted.xOf(Beats.Zero))
+        assertClose(800.0, fitted.xOf(Beats(128.0)))
+    }
+
+    @Test
+    fun aViewAtTheStartStaysThereThroughAZoom() {
+        assertClose(40.0, atStart.withZoom(ZoomLevel(20.0)).xOf(Beats.Zero))
+        assertClose(40.0, atStart.withZoom(ZoomLevel(5.0)).xOf(Beats.Zero))
+        assertClose(40.0, atStart.zoomAround(centreX = 0.0, factor = 2.0).xOf(Beats.Zero))
+        assertClose(40.0, atStart.zoomAround(centreX = 0.0, factor = 0.5).xOf(Beats.Zero))
+    }
+
+    @Test
+    fun aRemeasuredViewAtTheStartStaysThereAndAnyOtherKeepsItsLeftEdgeBeat() {
+        val wider = atStart.remeasured(widthPx = 1_200.0, densityScale = 2.0, leadInPx = 60.0)
+        assertClose(60.0, wider.xOf(Beats.Zero))
+        assertClose(10.0, wider.pixelsPerBeat)
+        val before = viewport.copy(leadInPx = 0.0, scrollBeats = Beats.Zero).remeasured(widthPx = 800.0, densityScale = 2.0, leadInPx = 40.0)
+        assertClose(40.0, before.xOf(Beats.Zero))
+        val scrolled = atStart.scrollTo(Beats(12.0)).remeasured(widthPx = 600.0, densityScale = 2.0, leadInPx = 60.0)
+        assertClose(12.0, scrolled.scrollBeats.value)
+        assertClose(10.0, scrolled.pixelsPerBeat)
+    }
+
+    @Test
+    fun aSpanFromTheStartFillsTheLanesAfterTheLeadIn() {
+        val fromStart = atStart.zoomToSpan(Beats.Zero, Beats(19.0))
+        assertClose(40.0, fromStart.xOf(Beats.Zero))
+        assertClose(800.0, fromStart.xOf(Beats(19.0)))
+        val fromHome = atStart.zoomToSpan(atStart.startScrollBeats, Beats(19.0))
+        assertClose(40.0, fromHome.xOf(Beats.Zero))
+        assertClose(800.0, fromHome.xOf(Beats(19.0)))
+        val later = atStart.zoomToSpan(Beats(8.0), Beats(24.0))
+        assertClose(0.0, later.xOf(Beats(8.0)))
+        assertClose(800.0, later.xOf(Beats(24.0)))
+        assertEquals(atStart, atStart.zoomToSpan(Beats(8.0), Beats(8.0)), "an empty span changes nothing")
+    }
+
     @Test
     fun aViewportWithoutAWidthHasNoBoundsYet() {
         val unmeasured = viewport.copy(widthPx = 0.0)
