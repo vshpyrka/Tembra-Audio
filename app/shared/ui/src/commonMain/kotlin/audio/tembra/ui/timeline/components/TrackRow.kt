@@ -11,6 +11,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import audio.tembra.core.project.ClipId
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.core.project.TempoMap
 import audio.tembra.ui.session.InputTelemetry
@@ -129,6 +130,8 @@ internal fun TrackRow(
                 onResetClip = { callbacks.onResetClip(track.id) },
                 menuOpen = trackMenuOpen,
                 onMenuOpen = { trackMenuOpen = it },
+                // Just past 0:00, so the playhead at rest falls between the dot and the name.
+                nameStart = with(LocalDensity.current) { state.viewport.leadInPx.toFloat().toDp() } + spacing.sm,
             )
             TrackLane(
                 track = track,

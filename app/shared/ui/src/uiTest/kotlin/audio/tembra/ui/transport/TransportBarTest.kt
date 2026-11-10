@@ -335,6 +335,20 @@ class TransportBarTest {
         assertTrue(percent.left >= slider.right && percent.right <= skip.left, "the percentage $percent is not between the slider $slider and skip-to-start $skip")
     }
 
+    /** On a tablet's or a desktop's bar the controls stay together in the middle, the same free space either side of them. */
+    @Test
+    fun theWideBarCentresItsControls() = runComposeUiTest {
+        setBar(width = 1200.dp)
+        val bar = onNodeWithTag(ROOT_TAG).getUnclippedBoundsInRoot()
+        val first = onNodeWithTag(TAG).getUnclippedBoundsInRoot()
+        val last = onNodeWithTag(PerfAnchors.TRANSPORT_METRONOME).getUnclippedBoundsInRoot()
+        // Material lays the slider's node out about 10 dp past its slot (see masterPercentGap): the group starts that far in.
+        val before = first.left + 10.dp - bar.left
+        val after = bar.right - last.right
+        assertTrue(before >= 100.dp, "the controls start at the bar's edge: $before of free space before them")
+        assertTrue(kotlin.math.abs((before - after).value) <= 2f, "$before free before the controls, $after after them")
+    }
+
     /** The form changes at exactly 600 dp of bar width: 599 dp is a phone's, 600 dp keeps the slider inline. */
     @Test
     fun theSliderIsInlineFrom600dp() = runComposeUiTest {

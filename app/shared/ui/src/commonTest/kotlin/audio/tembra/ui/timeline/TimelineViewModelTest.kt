@@ -429,6 +429,44 @@ class TimelineViewModelTest {
         assertEquals(port.visibleBeats + 1.0, paged.viewport.scrollBeats.value, "the view paged to the playhead")
     }
 
+    /** The lead-in before 0:00: the view rests with it shown, it scrolls away, and skip-to-start brings it back. */
+    @Test
+    fun theViewRestsWithTheLeadInAndSkipToStartBringsItBack() = test {
+        openDemo()
+        viewModel.viewportMeasured(widthPx = 1000.0, densityScale = 2.0, leadInPx = 48.0)
+        assertEquals(48.0, ui().viewport.xOf(Beats.Zero), 1e-9, "0:00 is in from the left edge at rest")
+        viewModel.zoomStep(4)
+        viewModel.scrollBy(400.0)
+        assertTrue(ui().viewport.xOf(Beats.Zero) < 0.0, "0:00 scrolled off the screen")
+        viewModel.skipToStart()
+        assertEquals(48.0, ui().viewport.xOf(Beats.Zero), 1e-9, "skip-to-start shows the lead-in again")
+    }
+
+    @Test
+    fun theFollowingViewPagesThePlayheadToTheLeadIn() = test {
+        openDemo()
+        viewModel.viewportMeasured(widthPx = 1000.0, densityScale = 2.0, leadInPx = 48.0)
+        viewModel.zoomStep(6)
+        val target = ui().viewport.endBeats.value + 1.0
+        viewModel.playPause()
+        runCurrent()
+        engine.nextTransport.positionBeats = target
+        engine.nextTransport.audiblePositionSeconds = 20.0
+        advanceTimeBy(150)
+        runCurrent()
+        assertEquals(48.0, ui().viewport.xOf(Beats(target)), 1e-9, "the page starts with the playhead past the lead-in")
+    }
+
+    /** Dragging the overview's edge from the project's start keeps the lead-in before 0:00. */
+    @Test
+    fun aZoomSpanFromTheStartKeepsTheLeadIn() = test {
+        openDemo()
+        viewModel.viewportMeasured(widthPx = 1000.0, densityScale = 2.0, leadInPx = 48.0)
+        viewModel.zoomTo(Beats.Zero, Beats(16.0))
+        assertEquals(48.0, ui().viewport.xOf(Beats.Zero), 1e-9)
+        assertEquals(1000.0, ui().viewport.xOf(Beats(16.0)), 1e-9)
+    }
+
     // --- User Story 6 (T112) --------------------------------------------------------------------------------------------
 
     @Test

@@ -83,13 +83,14 @@ data class RulerLabels(val bars: RulerRow, val time: RulerRow) {
         }
 
         private fun beatPositions(viewport: TimelineViewport, step: Double): List<Double> {
-            val first = ceil((viewport.scrollBeats.value - EPSILON) / step).toLong()
+            // The lead-in shows the left edge at a negative beat: the rows begin at the project's start all the same.
+            val first = ceil((viewport.scrollBeats.coerceAtLeastZero().value - EPSILON) / step).toLong()
             val last = floor((viewport.endBeats.value + EPSILON) / step).toLong()
             return (first..last).map { it * step }
         }
 
         private fun secondPositions(viewport: TimelineViewport, tempoMap: TempoMap, step: Double): List<Double> {
-            val startSeconds = tempoMap.beatsToSeconds(viewport.scrollBeats)
+            val startSeconds = tempoMap.beatsToSeconds(viewport.scrollBeats.coerceAtLeastZero())
             val endSeconds = tempoMap.beatsToSeconds(viewport.endBeats)
             val first = ceil((startSeconds - EPSILON) / step).toLong()
             val last = floor((endSeconds + EPSILON) / step).toLong()

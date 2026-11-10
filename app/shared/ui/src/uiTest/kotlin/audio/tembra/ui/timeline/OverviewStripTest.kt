@@ -75,9 +75,18 @@ class OverviewStripTest {
         muted = false, soloed = false, audible = true, clips = persistentListOf(clip),
     )
 
-    private fun viewport(density: Float) = TimelineViewport(
+    private fun viewport(density: Float) = port?.invoke(density) ?: TimelineViewport(
         pixelsPerBeat = 8.0, scrollBeats = Beats(20.0), widthPx = 320.0 * density, densityScale = density.toDouble(),
         projectLengthBeats = Beats(160.0), beatsPerBar = 4,
+    )
+
+    /** When set, the viewport the strip shows instead of the default above. */
+    private var port: ((Float) -> TimelineViewport)? = null
+
+    /** The default viewport resting at the start behind a 40 dp lead-in. */
+    private fun restingAtTheStart(density: Float): TimelineViewport = TimelineViewport(
+        pixelsPerBeat = 8.0, scrollBeats = Beats(-5.0), widthPx = 320.0 * density, densityScale = density.toDouble(),
+        projectLengthBeats = Beats(160.0), beatsPerBar = 4, leadInPx = 40.0 * density,
     )
 
     private fun ComposeUiTest.setStrip(
@@ -252,6 +261,21 @@ class OverviewStripTest {
         }
         // Held inside the project: 160 beats less the 40 in view.
         assertEquals(120.0, scrolls.last(), 1e-6)
+    }
+
+    /** Behind the lead-in the left edge is a negative beat: the strip still names bar 1, and its window scrolls no earlier than the lead-in. */
+    @Test
+    fun aViewAtTheStartNamesBarOneAndItsWindowStopsAtTheLeadIn() = runComposeUiTest {
+        port = ::restingAtTheStart
+        setStrip()
+        onNodeWithTag(TimelineTestTags.OVERVIEW)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "bars 1 to 9 in view"))
+            .performTouchInput {
+                down(Offset(dpAtBeat(20f).dp.toPx(), centerY))
+                repeat(10) { moveBy(Offset(-dpAtBeat(4f).dp.toPx(), 0f)) }
+                up()
+            }
+        assertEquals(-5.0, scrolls.last(), 1e-6)
     }
 
     @Test

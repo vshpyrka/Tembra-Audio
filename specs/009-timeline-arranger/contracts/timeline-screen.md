@@ -22,10 +22,10 @@ ui/timeline/
     TimelineRuler.kt           Canvas: bar row + time row (RulerLabels) only, playhead chip; leftSlot (expanded: the empty 200 dp over the header column); nothing overlays the canvas; tap/drag → onSeek/onScrub; hover time
     TempoPill.kt, RulerPill.kt "124 BPM" pill in the toolbar at every width → TempoDialog (D1; the ruler carries no pills)
     OverviewStrip.kt           the whole project, clip blocks, playhead, a draggable window whose edges zoom; between the lanes and the transport bar, composed unless the device hid it; inset outside the tagged node by margin (default the 16 dp page margin) plus the part of gestureInsets (default WindowInsets.systemGestures) its ancestors have not consumed: the rail, the Duo's end column and the header column consume what they cover (D1, T151, T153)
-    TrackList.kt               LazyColumn of TrackRow; vertical scroll; expanded inline settings row
+    TrackList.kt               LazyColumn of TrackRow; vertical scroll; expanded inline settings row; reports the lane width and the lead-in before 0:00 (the 24 dp `timelineLeadInMin`, or a page margin past the unconsumed back-gesture zone where that is more, FR-016)
     TrackRow.kt                header + lane in one row (header pinned in expanded layouts)
     TrackHeader.kt             expanded: colour dot, name, InstrumentChip, GainReadout, M, S, chevron, menu
-    TrackHeaderCompact.kt      compact: colour dot, name, chip, M, S, menu (56 dp)
+    TrackHeaderCompact.kt      compact: colour dot, name, chip, M, S, menu (56 dp); nameStart puts the name 8 dp past the lead-in, so the playhead at 0:00 falls between the dot and the name
     TrackLane.kt               Canvas: clips via ClipPainter; gestures (tap, long-press drag, plain drag → scroll)
     ClipPainter.kt             DrawScope extension: rounded block, caption band, waveform columns from WaveformOverview, selection outline, unavailable style
     PlayheadOverlay.kt         Canvas over ruler + lanes; reads telemetry in draw (PerfTrace.section(TIMELINE_PLAYHEAD_FRAME))
@@ -36,7 +36,7 @@ ui/timeline/
     MetronomeSettingsSheet.kt  ModalBottomSheet: the tempo read-only ("124 BPM, from the project") beside the project's TimeSignatureMenu (D1), ClickSoundPicker, SubdivisionTiles, AccentCells, StyleMenu
   TimelineKeyHandling.kt       a Modifier.onPreviewKeyEvent owner on the screen root mapping the FR-057 keys to callbacks (US8)
 ui/transport/
-  TransportBar.kt              (state: TransportUiState, callbacks, telemetry, modifier): MasterVolumeSlider, skip, step back, PlayPauseButton (metronome's), step forward, TimeReadout, MetronomeToggle
+  TransportBar.kt              (state: TransportUiState, callbacks, telemetry, modifier): MasterVolumeSlider, skip, step back, PlayPauseButton (metronome's), step forward, TimeReadout, MetronomeToggle; from 600 dp the controls sit together, centred in the bar (2026-11-10)
   TransportUiState.kt, TransportCallbacks.kt, TransportButton.kt, MasterVolumeSlider.kt, MetronomeToggle.kt
   MasterVolumePopup.kt         below 600 dp of bar width: the 44 dp speaker button ("80 percent") and the pop-up above the bar with the 200 dp slider and its percentage (D1)
   TimeReadout.kt               a Canvas: reads TransportTelemetry in draw and paints "mm:ss.hh / mm:ss.hh" with drawText in tabularTimecode (never a Text recomposed per frame); semantics text from the 10 Hz UiState value, announced at 1 Hz

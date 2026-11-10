@@ -65,12 +65,14 @@ class TimelineRulerTest {
     private var chip: Color = Color.Unspecified
     private var playhead: Color = Color.Unspecified
     private var viewport: TimelineViewport? = null
+    private var onScrubEnd: (Beats) -> Unit = {}
 
     private fun ComposeUiTest.setRuler(
         positionBeats: Beats = Beats(16.0),
         playing: Boolean = false,
         telemetry: ScriptedTransportTelemetry = ScriptedTransportTelemetry.stopped(0.0),
         leftSlot: (@Composable () -> Unit)? = null,
+        leadInDp: Double = 0.0,
     ) {
         setContent {
             TembraTheme {
@@ -80,6 +82,8 @@ class TimelineRulerTest {
                 // 32 bars across 600 dp: the widest zoom at this width.
                 val widthPx = 600.0 * densityScale
                 val port = TimelineViewport.fitted(widthPx = widthPx, densityScale = densityScale.toDouble(), projectLengthBeats = Beats(128.0), beatsPerBar = 4)
+                    .copy(leadInPx = leadInDp * densityScale)
+                    .fit()
                 viewport = port
                 TimelineRuler(
                     viewport = port,
@@ -90,7 +94,10 @@ class TimelineRulerTest {
                     onSeek = { seeks += it },
                     onScrubStart = { scrubs += "start" },
                     onScrub = { scrubs += "scrub" },
-                    onScrubEnd = { scrubs += "end" },
+                    onScrubEnd = {
+                        scrubs += "end"
+                        onScrubEnd(it)
+                    },
                     modifier = Modifier.width(600.dp).testTag(ROW),
                     leftSlot = leftSlot,
                 )
@@ -185,6 +192,26 @@ class TimelineRulerTest {
         val canvasWidthPx = onNodeWithTag(TimelineTestTags.RULER).fetchSemanticsNode().size.width.toDouble()
         val expected = port.beatsAt(canvasWidthPx / 2).value
         assertTrue(abs(seeks.single().value - expected) < 0.5, "seeked to ${seeks.single().value}, expected about $expected")
+    }
+
+    /** Left of 0:00 lies the lead-in: a tap anywhere in it seeks to the project's start, never before it. */
+    @Test
+    fun aTapInTheLeadInSeeksToTheStart() = runComposeUiTest {
+        setRuler(leadInDp = 40.0)
+        mainClock.autoAdvance = true
+        onNodeWithTag(TimelineTestTags.RULER).performTouchInput { click(Offset(10.dp.toPx(), height / 2f)) }
+        assertEquals(listOf(Beats.Zero), seeks)
+    }
+
+    /** A drag that runs into the lead-in lands on 0:00, so the very start is in reach of a finger that stops short of the edge. */
+    @Test
+    fun aDragIntoTheLeadInEndsOnTheStart() = runComposeUiTest {
+        val scrubbed = mutableListOf<Beats>()
+        onScrubEnd = { scrubbed += it }
+        setRuler(leadInDp = 40.0)
+        mainClock.autoAdvance = true
+        onNodeWithTag(TimelineTestTags.RULER).performTouchInput { swipe(Offset(width * 0.4f, height / 2f), Offset(20.dp.toPx(), height / 2f), durationMillis = 300) }
+        assertEquals(listOf(Beats.Zero), scrubbed)
     }
 
     @Test

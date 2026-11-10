@@ -206,7 +206,7 @@ class TimelineViewModel(
 
     fun skipToStart() {
         if (takeRunning()) return
-        view.update { it.copy(following = true, positionBeats = Beats.Zero, positionSeconds = 0.0, viewport = it.viewport.scrollTo(Beats.Zero)) }
+        view.update { it.copy(following = true, positionBeats = Beats.Zero, positionSeconds = 0.0, viewport = it.viewport.scrollToStart()) }
         session.skipToStart()
     }
 
@@ -257,13 +257,16 @@ class TimelineViewModel(
     // --- Viewport ----------------------------------------------------------------------------------------------------
 
     /** The lane area's width in pixels and the density; the first measure fits the project or restores the stored zoom. */
-    fun viewportMeasured(widthPx: Double, densityScale: Double) {
+    fun viewportMeasured(widthPx: Double, densityScale: Double, leadInPx: Double = 0.0) {
         if (widthPx <= 0.0) return
         view.update { current ->
             val port = current.viewport
-            if (port.widthPx == widthPx && port.densityScale == densityScale) return@update current
-            val measured = port.copy(widthPx = widthPx, densityScale = densityScale)
-            val next = if (port.widthPx <= 0.0) initialZoom(measured) else measured.withZoom(measured.zoom)
+            if (port.widthPx == widthPx && port.densityScale == densityScale && port.leadInPx == leadInPx) return@update current
+            val next = if (port.widthPx <= 0.0) {
+                initialZoom(port.copy(widthPx = widthPx, densityScale = densityScale, leadInPx = leadInPx))
+            } else {
+                port.remeasured(widthPx, densityScale, leadInPx)
+            }
             current.copy(viewport = next)
         }
     }
@@ -296,14 +299,15 @@ class TimelineViewModel(
 
     /**
      * The overview strip's edge dragged (spec FR-015, D1): the span from [startBeats] to [endBeats] fills the lanes,
-     * the zoom clamped to the widest and closest levels and [startBeats] kept at the left edge; an empty span is ignored.
+     * the zoom clamped to the widest and closest levels and [startBeats] kept at the left edge (a span from the project's
+     * start keeps the lead-in before it); an empty span is ignored.
      */
     fun zoomTo(startBeats: Beats, endBeats: Beats) {
         val span = endBeats.value - startBeats.value
         if (span <= 0.0) return
         view.update { it.copy(following = false) }
         updateViewport { port ->
-            if (port.widthPx <= 0.0) port else port.withZoom(ZoomLevel(port.widthPx / (span * port.densityScale))).scrollTo(startBeats)
+            port.zoomToSpan(startBeats, endBeats)
         }
         scheduleViewStateSave()
     }
@@ -952,11 +956,11 @@ class TimelineViewModel(
         }
     }
 
-    /** Pages so [beats] is visible: the playhead lands at the left edge when it leaves the view. */
+    /** Pages so [beats] is visible: when it leaves the view the playhead lands just past the left edge, by the lead-in. */
     private fun TimelineViewport.follow(beats: Beats): TimelineViewport {
         if (widthPx <= 0.0) return this
         val inView = beats.value >= scrollBeats.value && beats.value < endBeats.value
-        return if (inView) this else scrollTo(beats)
+        return if (inView) this else scrollTo(Beats(beats.value - leadInPx / devicePixelsPerBeat))
     }
 
     private companion object {

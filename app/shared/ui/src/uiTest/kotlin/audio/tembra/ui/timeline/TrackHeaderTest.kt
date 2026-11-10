@@ -27,11 +27,15 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.height
 import audio.tembra.core.project.GainDb
 import audio.tembra.core.project.InstrumentLabel
@@ -46,6 +50,7 @@ import audio.tembra.ui.timeline.components.TrackHeader
 import audio.tembra.ui.timeline.components.TrackHeaderCompact
 import kotlinx.collections.immutable.persistentListOf
 import kotlin.test.Test
+import kotlin.test.assertFalse
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.math.abs
@@ -63,17 +68,22 @@ class TrackHeaderTest {
     /** The open menu as the row that owns it holds it (feature 011: hoisted above the two header forms). */
     private var menuOpen by mutableStateOf(false)
 
-    private fun ComposeUiTest.setCompact(isFirst: Boolean = true, isLast: Boolean = false, item: TrackUi = track, narrow: Boolean = false) {
+    private fun ComposeUiTest.setCompact(isFirst: Boolean = true, isLast: Boolean = false, item: TrackUi = track, narrow: Boolean = false, nameStart: Dp = 0.dp, width: Dp? = null) {
         setContent {
             TembraTheme {
                 TrackHeaderCompact(
-                    modifier = if (narrow) Modifier.requiredWidth(360.dp) else Modifier,
+                    modifier = when {
+                        width != null -> Modifier.requiredWidth(width)
+                        narrow -> Modifier.requiredWidth(360.dp)
+                        else -> Modifier
+                    },
                     onArm = { calls += "arm($it)" },
                     track = item, index = 1, selected = true, isFirst = isFirst, isLast = isLast,
                     onSelect = { calls += "select" }, onMute = { calls += "mute($it)" }, onSolo = { calls += "solo($it)" },
                     onSettings = { calls += "settings" }, onAddAudio = { calls += "addAudio" }, onMoveUp = { calls += "up" },
                     onMoveDown = { calls += "down" }, onDelete = { calls += "delete" },
                     menuOpen = menuOpen, onMenuOpen = { menuOpen = it },
+                    nameStart = nameStart,
                 )
             }
         }
@@ -95,6 +105,26 @@ class TrackHeaderTest {
                 )
             }
         }
+    }
+
+    /** The playhead at 0:00 must not cross the name: given a start past its usual place, the name begins there, the dot staying put. */
+    @Test
+    fun theCompactNameBeginsAtTheGivenStart() = runComposeUiTest {
+        setCompact(nameStart = 54.dp)
+        val header = onNodeWithTag(TimelineTestTags.header(1)).getUnclippedBoundsInRoot()
+        // The unmerged tree: the header merges the name into its own node.
+        val name = onNodeWithText("Track 2", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        assertTrue(kotlin.math.abs((name.left - header.left - 54.dp).value) <= 1f, "the name starts ${name.left - header.left} in, not 54 dp")
+    }
+
+    /** With the name moved past 0:00 a phone's header still has room for it whole beside the chip (it used to give half the free width away). */
+    @Test
+    fun aMovedNameIsNotCutOffOnAPhone() = runComposeUiTest {
+        setCompact(nameStart = 54.dp, width = 411.dp)
+        val layouts = mutableListOf<TextLayoutResult>()
+        onNodeWithText("Track 2", useUnmergedTree = true).performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
+        val name = layouts.single()
+        assertFalse(name.isLineEllipsized(0), "the name is cut off: ${name.size} wide against ${name.multiParagraph.width}, overflow ${name.didOverflowWidth}/${name.didOverflowHeight}")
     }
 
     @Test
