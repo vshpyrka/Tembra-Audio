@@ -66,7 +66,7 @@ Guitar (6 or 7 strings, several tuning presets) and cello are supported.
 A library of your projects with search, filters and sorting. Rename a project, add a description or
 a key, duplicate it or delete it. Edits are saved automatically.
 
-<img src="docs/screenshots/projects-android-pixel6pro-library.png" width="240" alt="Projects library with search, filters and two project cards showing tempo, key, length and track count">
+<img src="docs/screenshots/projects-android-pixel6pro-library.png" width="240" alt="Projects library with search, filters and the demo project's card showing tempo, key, length and track count">
 
 ### Adaptive layout
 

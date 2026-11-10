@@ -456,6 +456,11 @@ every target with zero warnings.
 - [ ] T154 At 360 dp the metronome sheet's "Standard" pill sits under the system's gesture handle at the bottom edge (seen
   in D1 and again in the captures after the zoom verdict): for the owner to decide whether the sheet clears the
   navigation-bar inset (`UI/timeline/components/MetronomeSettingsSheet.kt`)
+- [X] T155 The owner's fixes of 2026-11-10: a scrolling lead-in before 0:00 clear of the back-gesture zone (FR-016;
+  `TimelineViewport.leadInPx`, `TrackList` reports it; tests in `TimelineViewportTest`, `RulerLabelsTest`,
+  `TimelineViewModelTest`, `TimelineRulerTest`, `OverviewStripTest`, `PlaceAcrossLayoutsTest`), and the transport
+  bar's controls centred from 600 dp (`TransportBarTest.theWideBarCentresItsControls`), and the compact header's name
+  started past 0:00 so the playhead at rest does not cross it (FR-016; `TrackHeaderCompact.nameStart`, `TrackHeaderTest`)
 
 ---
 
