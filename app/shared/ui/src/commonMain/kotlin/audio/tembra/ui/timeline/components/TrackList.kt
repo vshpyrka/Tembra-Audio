@@ -2,13 +2,18 @@ package audio.tembra.ui.timeline.components
 
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.systemGestures
+import androidx.compose.foundation.layout.windowInsetsStartWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
@@ -42,9 +47,12 @@ import audio.tembra.ui.tracksettings.TrackSettingsInlineRow
 /**
  * The vertically scrolling list of [TrackRow]s (spec FR-016; contracts/timeline-screen.md): keyed by track id so a
  * reorder moves rows instead of rebuilding them. Its lane width (the list minus the pinned header column) is reported
- * through [TimelineCallbacks.onViewportMeasured] whenever it changes, which is what the viewport maps beats to. A
- * track just added is selected (009 FR-019) and lands below the visible rows on a phone: the list scrolls it into
- * view, so its arm toggle is at hand (feature 010, FR-008; the recording journey arms it right after "+ Track").
+ * through [TimelineCallbacks.onViewportMeasured] whenever it changes, which is what the viewport maps beats to, with
+ * the lead-in before 0:00: at least `timelineLeadInMin`, and a page margin past whatever part of the system's back-gesture
+ * zone reaches the lanes, so the playhead's chip at the start lies clear of a back swipe. Beside a rail or the expanded
+ * layout's header column no zone is left, and the minimum is what remains. A track just added is selected (009 FR-019)
+ * and lands below the visible rows on a phone: the list scrolls it into view, so its arm toggle is at hand (feature
+ * 010, FR-008; the recording journey arms it right after "+ Track").
  */
 @Composable
 internal fun TrackList(
@@ -58,6 +66,18 @@ internal fun TrackList(
     val density = LocalDensity.current
     val headerWidthPx = if (layout.pinnedHeaders) with(density) { TembraTheme.spacing.headerColumnWidth.toPx() } else 0f
     val onMeasured by rememberUpdatedState(callbacks.onViewportMeasured)
+    val leadInMinPx = with(density) { TembraTheme.spacing.timelineLeadInMin.toPx() }
+    val leadInClearancePx = with(density) { TembraTheme.spacing.pageMargin.toPx() }
+    // The two measurements arrive from two nodes in the same layout pass, either first: each reports with the latest of both.
+    var listWidthPx by remember { mutableFloatStateOf(0f) }
+    var gestureZonePx by remember { mutableIntStateOf(0) }
+    val reportMeasured = {
+        if (listWidthPx > 0f) {
+            val leadInPx = if (layout.pinnedHeaders) leadInMinPx else maxOf(leadInMinPx, gestureZonePx + leadInClearancePx)
+            onMeasured((listWidthPx - headerWidthPx).toDouble(), density.density.toDouble(), leadInPx.toDouble())
+        }
+    }
+    val report by rememberUpdatedState(reportMeasured)
     val firstClipIndices = remember(state.tracks) {
         var running = 0
         state.tracks.map { track -> running.also { running += track.clips.size } }
@@ -102,7 +122,10 @@ internal fun TrackList(
             state = listState,
             modifier = Modifier
                 .fillMaxSize()
-                .onSizeChanged { size -> onMeasured((size.width - headerWidthPx).toDouble(), density.density.toDouble()) }
+                .onSizeChanged { size ->
+                    listWidthPx = size.width.toFloat()
+                    report()
+                }
                 .testTag(TimelineTestTags.TRACK_LIST)
                 // Scrollbars while a mouse or trackpad scrolls (feature 011, spec FR-014a): the tracks, and time along the foot.
                 .tembraScrollbar(ScrollbarAdapter(listState), Orientation.Vertical)
@@ -130,6 +153,13 @@ internal fun TrackList(
                 }
             }
         }
+        // The back-gesture zone's reach past what the ancestors consumed; takes no height and carries no semantics.
+        Spacer(
+            Modifier.windowInsetsStartWidth(WindowInsets.systemGestures).onSizeChanged { size ->
+                gestureZonePx = size.width
+                report()
+            },
+        )
         drops.hover?.let { hover -> DropHoverBanner(hoverText(hover.preview, state), Modifier.align(Alignment.TopCenter)) }
     }
 }

@@ -173,6 +173,18 @@ class RulerLabelsTest {
         assertEquals(80.0, fast.labels[1].x)
     }
 
+    /** The lead-in shows the left edge at a negative beat: both rows start at the project's start and never before it. */
+    @Test
+    fun nothingIsLabelledBeforeTheStartInTheLeadIn() {
+        val rows = labels(20.0, scroll = -2.0)
+        assertEquals("1", rows.bars.labels.first().text)
+        assertEquals(40.0, rows.bars.labels.first().x)
+        assertEquals(40.0, rows.time.labels.first().x)
+        assertTrue(rows.time.labels.none { it.text.contains('-') }, "a negative time label: ${rows.time.labels.map { it.text }}")
+        assertTrue(rows.bars.ticks.none { it < 40.0 }, "a bar tick before the start: ${rows.bars.ticks}")
+        assertTrue(rows.time.ticks.none { it < 40.0 }, "a time tick before the start: ${rows.time.ticks}")
+    }
+
     @Test
     fun theSweepCoversTheWholeRange() {
         assertTrue(abs(ln(sweep.last() / sweep.first()) - ln(256.0)) < 1e-9)

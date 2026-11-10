@@ -281,7 +281,7 @@ private fun DrawScope.drawWindow(viewport: TimelineViewport, style: OverviewStyl
 /** "bars 6 to 15 in view": the bars the lanes show, partly shown ones included. */
 private fun barsInView(viewport: TimelineViewport): String {
     val perBar = viewport.beatsPerBar.coerceAtLeast(1).toDouble()
-    val first = floor(viewport.scrollBeats.value / perBar).toInt() + 1
+    val first = floor(viewport.scrollBeats.coerceAtLeastZero().value / perBar).toInt() + 1
     val last = ceil(viewport.endBeats.value / perBar - BAR_EPSILON).toInt().coerceAtLeast(first)
     return TimelineCopy.barsInView(first, last)
 }
@@ -312,6 +312,8 @@ private enum class OverviewTarget {
 /** One gesture's arithmetic in beats, fixed at the press: the edge that stays put never drifts while the viewport follows. */
 private class OverviewDrag(port: TimelineViewport, private val stripWidth: Float, private val target: OverviewTarget, downX: Float) {
     private val span = port.overviewSpanBeats()
+    /** The earliest scroll: the window held at the strip's start still leaves the lead-in showing in the lanes. */
+    private val earliest = port.startScrollBeats.value
     private val beatsPerPx = span / stripWidth
     private val start = port.scrollBeats.value
     private val visible = port.visibleBeats
@@ -325,11 +327,11 @@ private class OverviewDrag(port: TimelineViewport, private val stripWidth: Float
     }
 
     /** The scroll that centres the window on [x], held inside the project. */
-    fun centredAt(x: Float): Beats = Beats(clamp(at(x) - visible / 2, 0.0, max(0.0, span - visible)))
+    fun centredAt(x: Float): Beats = Beats(clamp(at(x) - visible / 2, earliest, max(earliest, span - visible)))
 
     fun moveTo(x: Float, onScrollTo: (Beats) -> Unit, onZoomTo: (Beats, Beats) -> Unit) {
         when (target) {
-            OverviewTarget.Window -> onScrollTo(Beats(clamp(at(x) - grab, 0.0, max(0.0, span - visible))))
+            OverviewTarget.Window -> onScrollTo(Beats(clamp(at(x) - grab, earliest, max(earliest, span - visible))))
             OverviewTarget.Outside -> onScrollTo(centredAt(x))
             OverviewTarget.RightEdge -> onZoomTo(Beats(start), Beats(clamp(at(x) - grab, start + narrowest, start + widest)))
             OverviewTarget.LeftEdge -> onZoomTo(Beats(clamp(at(x) - grab, max(0.0, end - widest), end - narrowest)), Beats(end))

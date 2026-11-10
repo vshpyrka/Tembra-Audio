@@ -112,7 +112,8 @@ internal fun TimelineRuler(
                     stateDescription = chipText
                 }
                 .pointerInput(Unit) {
-                    detectTapGestures(onTap = { offset -> currentOnSeek(currentViewport.beatsAt(offset.x.toDouble())) })
+                    // Left of 0:00 lies the lead-in: a tap there means the start, as a drag into it does.
+                    detectTapGestures(onTap = { offset -> currentOnSeek(currentViewport.beatsAt(offset.x.toDouble()).coerceAtLeastZero()) })
                 }
                 .viewportGestures(dragScrolls = false, onZoomAround = onZoomAround, onScrollBy = onScrollBy)
                 .pointerInput(Unit) {

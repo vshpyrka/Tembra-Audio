@@ -122,6 +122,8 @@ data class TembraSpacing(
     val transportHeightExpanded: Dp = 72.dp,
     /** The pinned track-header column of the expanded layout. */
     val headerColumnWidth: Dp = 200.dp,
+    /** The least empty timeline before 0:00: enough for the playhead chip at the start and for a finger short of the screen's edge. */
+    val timelineLeadInMin: Dp = 24.dp,
     /** The project card's overview chart. */
     val cardOverviewHeight: Dp = 56.dp,
     // Timeline recording metrics (feature 010, contracts/timeline-recording-ui.md): the input meter along both headers'
