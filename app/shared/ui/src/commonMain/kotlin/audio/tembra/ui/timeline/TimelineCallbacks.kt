@@ -30,7 +30,7 @@ data class TimelineCallbacks(
     val onMetronomeToggle: () -> Unit,
     val onMetronomeSettings: () -> Unit,
     // Viewport (US3)
-    val onViewportMeasured: (widthPx: Double, densityScale: Double) -> Unit,
+    val onViewportMeasured: (widthPx: Double, densityScale: Double, leadInPx: Double) -> Unit,
     val onZoomAround: (centreX: Double, factor: Double) -> Unit,
     /** The "+" and "−" keys (spec FR-015): one step is a factor of √2. */
     val onZoomStep: (steps: Int) -> Unit,
@@ -118,7 +118,7 @@ data class TimelineCallbacks(
         val None = TimelineCallbacks(
             onPlayPause = {}, onSkipToStart = {}, onStepBar = {}, onSeek = {}, onScrubStart = {}, onScrub = {}, onScrubEnd = {},
             onMasterVolume = {}, onMetronomeToggle = {}, onMetronomeSettings = {},
-            onViewportMeasured = { _, _ -> }, onZoomAround = { _, _ -> }, onZoomStep = {}, onScrollBy = {},
+            onViewportMeasured = { _, _, _ -> }, onZoomAround = { _, _ -> }, onZoomStep = {}, onScrollBy = {},
             onScrollTo = {}, onZoomTo = { _, _ -> }, onOverviewStripShown = {}, onFullScreen = {}, onGrid = {},
             onAddTrack = {}, onSelectTrack = {}, onToggleMute = {}, onToggleSolo = {}, onGain = { _, _ -> }, onTrackSettings = {},
             onMoveTrack = { _, _ -> }, onDeleteTrack = {}, onConfirmDeleteTrack = {}, onDismissDeleteTrack = {}, onAddAudio = {}, onAddAudioAsNewTrack = {}, onExpandTrack = {},

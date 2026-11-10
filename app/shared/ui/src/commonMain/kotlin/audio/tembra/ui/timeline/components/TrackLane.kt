@@ -183,7 +183,8 @@ internal fun TrackLane(
         Canvas(modifier = Modifier.fillMaxSize()) {
             drawRect(background)
             val beatsPerBar = viewport.beatsPerBar.toDouble()
-            var bar = floor(viewport.scrollBeats.value / beatsPerBar) * beatsPerBar
+            // Bar lines start at the project's start: the lead-in before it stays empty.
+            var bar = floor(viewport.scrollBeats.coerceAtLeastZero().value / beatsPerBar) * beatsPerBar
             while (true) {
                 val x = viewport.xOf(Beats(bar)).toFloat()
                 if (x > size.width) break
@@ -363,7 +364,7 @@ private fun isMultipleOf(value: Double, step: Double): Boolean {
 
 /** One 1 px column every [step] beats from the first at or after the left edge to the canvas's right edge, on whole pixels. */
 private fun DrawScope.drawSnapLines(viewport: TimelineViewport, step: Double, color: Color) {
-    var line = ceil(viewport.scrollBeats.value / step - MULTIPLE_TOLERANCE)
+    var line = ceil(viewport.scrollBeats.coerceAtLeastZero().value / step - MULTIPLE_TOLERANCE)
     while (true) {
         val x = floor(viewport.xOf(Beats(line * step))).toFloat()
         if (x >= size.width) break

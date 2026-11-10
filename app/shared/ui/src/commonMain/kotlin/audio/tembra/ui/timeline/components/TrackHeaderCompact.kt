@@ -28,7 +28,9 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.max
 import audio.tembra.ui.session.InputTelemetry
 import audio.tembra.engine.perf.PerfSection
 import audio.tembra.engine.perf.PerfTrace
@@ -77,6 +79,8 @@ internal fun TrackHeaderCompact(
     menuOpen: Boolean,
     onMenuOpen: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    /** Where the name begins, from the header's left edge, when that is past its usual place: past 0:00, so the playhead at rest does not cross it (spec FR-016). */
+    nameStart: Dp = 0.dp,
 ) {
     val colors = TembraTheme.colors
     val daw = TembraTheme.daw
@@ -125,21 +129,28 @@ internal fun TrackHeaderCompact(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(Modifier.size(DotSize).background(if (track.audible) tint else tint.copy(alpha = DimmedAlpha), CircleShape))
-        Text(
-            text = track.name,
-            style = TembraTheme.typography.labelLarge,
-            color = if (track.audible) colors.onSurface else colors.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f, fill = false).widthIn(min = NameMinWidth).padding(start = spacing.xs),
-        )
-        // While armed with Record available here the chip makes room for the Record control (contract, "Layout rules").
-        if (track.armed && track.recordHere) {
-            RecordButton(state = recordState, onRecord = onRecord, testTag = TimelineTestTags.record(index))
-        } else {
-            track.label?.let { InstrumentChip(it) }
+        // The name and what follows it share all the room the controls leave, the name taking what the chip does not: a
+        // spacer beside the name would halve that room and cut a short name off. What is left stays empty before M.
+        Row(
+            modifier = Modifier.weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(spacing.xs),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = track.name,
+                style = TembraTheme.typography.labelLarge,
+                color = if (track.audible) colors.onSurface else colors.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false).widthIn(min = NameMinWidth).padding(start = max(spacing.xs, nameStart - spacing.md - DotSize - spacing.xs)),
+            )
+            // While armed with Record available here the chip makes room for the Record control (contract, "Layout rules").
+            if (track.armed && track.recordHere) {
+                RecordButton(state = recordState, onRecord = onRecord, testTag = TimelineTestTags.record(index))
+            } else {
+                track.label?.let { InstrumentChip(it) }
+            }
         }
-        Box(Modifier.weight(1f))
         MuteSoloButton(letter = "M", description = MUTE_DESCRIPTION, checked = track.muted, tint = tint, onCheckedChange = onMute, testTag = TimelineTestTags.mute(index))
         MuteSoloButton(letter = "S", description = SOLO_DESCRIPTION, checked = track.soloed, tint = tint, onCheckedChange = onSolo, testTag = TimelineTestTags.solo(index))
         ArmButton(armed = track.armed, trackTint = tint, onToggle = onArm, testTag = TimelineTestTags.arm(index))
