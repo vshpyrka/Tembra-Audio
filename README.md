@@ -48,7 +48,7 @@ Tempo from 40 to 240 BPM via a dial, a slider or tap tempo. Choose the time sign
 subdivisions, the accent for each beat, a click sound, or a WAV file of your own. Playback continues
 in the background. The engine schedules each click to the exact sample, so ticks don't drift.
 
-<img src="specs/005-tabletop-posture/screenshots/android-pixel6pro-metronome.png" width="240" alt="Metronome at 120 BPM in 4/4 with an accented first beat">
+<img src="docs/screenshots/metronome-android-pixel6pro.png" width="240" alt="Metronome at 120 BPM in 4/4 with an accented first beat">
 
 ### Tuner
 
@@ -57,8 +57,8 @@ from the reference pitch. *By Ear* plays reference tones for each string, either
 Guitar (6 or 7 strings, several tuning presets) and cello are supported.
 
 <p>
-  <img src="specs/005-tabletop-posture/screenshots/android-pixel6pro-autolisten.png" width="240" alt="Tuner in Auto Listen mode reading E2 from a guitar">
-  <img src="specs/005-tabletop-posture/screenshots/android-pixel6pro-d2-byear.png" width="240" alt="Tuner in By Ear mode with a reference tone card for each guitar string">
+  <img src="docs/screenshots/tuner-auto-listen-android-pixel6pro.png" width="240" alt="Tuner in Auto Listen mode reading E2">
+  <img src="docs/screenshots/tuner-by-ear-android-pixel6pro.png" width="240" alt="Tuner in By Ear mode with a reference tone card for each guitar string">
 </p>
 
 ### Projects
