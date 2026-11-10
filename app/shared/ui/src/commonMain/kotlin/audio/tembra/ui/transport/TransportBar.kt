@@ -24,6 +24,7 @@ import audio.tembra.ui.theme.TembraTheme
  * `surface_level2_border` seam above, [height] tall, the master volume at the start, skip-to-start, one bar back,
  * the metronome's play/pause button (tagged `transport.play`), one bar forward, the time readout and the metronome
  * toggle. Stateless: [state] and [callbacks] come from the owning screen, [telemetry] feeds the readout per frame.
+ * On a tablet or desktop window the controls stay together, centred in the bar.
  * The master volume follows the bar's own width (spec FR-007, D1 2026-10-26): from [MasterInlineFrom] the slider is
  * inline with its percentage ([MasterVolumeInline]); narrower it is a speaker button that opens the slider in a pop-up
  * above the bar ([MasterVolumeButton]). Narrower than [ReadoutStacksBelow] (a phone in portrait) the readout stacks
@@ -62,9 +63,10 @@ internal fun TransportBar(
                 .background(daw.surfaceLevel1)
                 .padding(horizontal = sidePadding)
                 .testTag(ROOT_TAG),
-            // The inline slider's weight takes up the room the controls leave; the speaker button cannot, so the phone
-            // bar spreads that room evenly between the seven (the budget above keeps every gap at least [gap]).
-            horizontalArrangement = if (masterInline) Arrangement.spacedBy(gap) else Arrangement.SpaceBetween,
+            // From a tablet's width up the controls stay together in the middle of the bar, the slider at its own width
+            // (its weight does not fill) with the free space split either side. A phone's bar has only the speaker button
+            // and spreads the room evenly between the seven (the budget above keeps every gap at least [gap]).
+            horizontalArrangement = if (masterInline) Arrangement.spacedBy(gap, Alignment.CenterHorizontally) else Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (masterInline) {
