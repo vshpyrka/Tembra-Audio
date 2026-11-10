@@ -6,6 +6,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import audio.tembra.perf.journeys.MetronomeJourney
+import audio.tembra.perf.journeys.MixerJourney
 import audio.tembra.perf.journeys.RecordingJourney
 import audio.tembra.perf.journeys.StressJourney
 import audio.tembra.perf.journeys.TimelineJourney
@@ -68,6 +69,7 @@ class BaselineProfileGenerator {
         MetronomeJourney().run(device)
         TimelineJourney().run(device)
         RecordingJourney().run(device)
+        MixerJourney().run(device)
         StressJourney().run(device)
     }
 }

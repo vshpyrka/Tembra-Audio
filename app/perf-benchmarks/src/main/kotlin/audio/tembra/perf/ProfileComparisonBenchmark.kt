@@ -7,6 +7,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.tracing.trace
 import audio.tembra.perf.journeys.MetronomeJourney
+import audio.tembra.perf.journeys.MixerJourney
 import audio.tembra.perf.journeys.RecordingJourney
 import audio.tembra.perf.journeys.StressJourney
 import audio.tembra.perf.journeys.TimelineJourney
@@ -129,6 +130,25 @@ class ProfileComparisonBenchmark {
             },
         ) {
             trace("journey.recording") { journey.run(device) }
+        }
+    }
+
+    @Test
+    fun mixer() {
+        val state = state()
+        val journey = MixerJourney()
+        benchmarkRule.measureRepeated(
+            packageName = PerfMetrics.PACKAGE,
+            metrics = PerfMetrics.journey("mixer"),
+            compilationMode = state.compilationMode(),
+            startupMode = StartupMode.WARM,
+            iterations = iterations(),
+            setupBlock = {
+                pressHome()
+                startActivityAndWait()
+            },
+        ) {
+            trace("journey.mixer") { journey.run(device) }
         }
     }
 

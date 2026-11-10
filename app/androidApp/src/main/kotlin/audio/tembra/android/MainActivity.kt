@@ -12,7 +12,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import audio.tembra.ui.App
 import audio.tembra.ui.devtools.DeveloperViewRequest
 import audio.tembra.ui.metronome.MetronomeDebugRequest
+import audio.tembra.engine.perf.PerfBuild
 import audio.tembra.ui.projects.ProjectsSeedRequest
+import audio.tembra.ui.projects.StressProjectRequest
 import audio.tembra.ui.shortcuts.systemShortcutGroups
 import audio.tembra.ui.platform.ProvideLaidOutWindowSize
 import audio.tembra.ui.platform.dispatchEscapeAsBack
@@ -65,11 +67,13 @@ class MainActivity : ComponentActivity() {
         }
         // "tembra.projects.seed" fills the library for the SC-010 timing (feature 009, T121).
         val projectsSeed = if (BuildConfig.DEBUG) ProjectsSeedRequest.parse(intent.getStringExtra("tembra.projects.seed")) else null
+        // "tembra.stress.tracks" builds the stress journey's 24-track project; the measurement build runs that journey (feature 012).
+        val stressProject = if (BuildConfig.DEBUG || PerfBuild.PERF_ENABLED) StressProjectRequest.parse(intent.getStringExtra("tembra.stress.tracks")) else null
         setContent {
             // This activity rotates in place (configChanges), which leaves Compose's window size one rotation behind on some
             // devices (API 28 and 30 seen); the wrapper hands every adaptive layout the laid-out window instead.
             ProvideLaidOutWindowSize {
-                App(appGraph = appGraph, developerView = request, tunerTestSignal = testSignal, tunerNoiseGate = noiseGate, metronomeDebug = metronomeDebug, projectsSeed = projectsSeed)
+                App(appGraph = appGraph, developerView = request, tunerTestSignal = testSignal, tunerNoiseGate = noiseGate, metronomeDebug = metronomeDebug, projectsSeed = projectsSeed, stressProject = stressProject)
             }
         }
     }
@@ -107,6 +111,9 @@ class MainActivity : ComponentActivity() {
         appGraph.notificationPermissionHost.detach()
         appGraph.androidWindowControls.detach(this)
         appGraph.androidDroppedFilesReader.detach(this)
+        // The timeline window closing for good closes the mixer's window with it (feature 012, spec FR-021a): the console has
+        // no project view of its own to stay for.
+        if (isFinishing) appGraph.androidWindowCapabilities.closeMixerWindow()
         super.onDestroy()
     }
 }

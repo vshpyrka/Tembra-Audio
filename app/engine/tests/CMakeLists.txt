@@ -43,6 +43,11 @@ add_executable(tembra_engine_tests
     input_reservoir_test.cpp
     take_recorder_test.cpp
     monitor_strip_test.cpp
+    # Feature 012 (the mixer, contracts/engine-c-abi-v8.md): the pan law, the lock-free parameters, the ABI, the meters.
+    pan_law_test.cpp
+    mix_params_test.cpp
+    mixer_abi_test.cpp
+    mix_meter_test.cpp
 )
 target_include_directories(tembra_engine_tests PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../src
@@ -83,6 +88,9 @@ set(TEMBRA_RT_SOURCES
     # Feature 010: the capture source (and the peak ring and capture record it includes) and the monitor strip.
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/capture/capture_source.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/mixer/monitor_strip.cpp
+    # Feature 012: the meter the callback measures and publishes (mix_params.h, pan_law.h, recent_peak.h and mix_record.h
+    # come in through the strip, the renderer and the meter).
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/mixer/mix_meter.cpp
 )
 add_library(tembra_rt_poison OBJECT ${TEMBRA_RT_SOURCES})
 target_include_directories(tembra_rt_poison PRIVATE

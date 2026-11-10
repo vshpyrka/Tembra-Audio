@@ -1,5 +1,6 @@
 package audio.tembra.ui.timeline
 
+import androidx.compose.ui.unit.Dp
 import audio.tembra.core.metronome.ClickSound
 import audio.tembra.core.metronome.MetronomeStyle
 import audio.tembra.core.metronome.Subdivision
@@ -10,8 +11,10 @@ import audio.tembra.core.project.ClipId
 import audio.tembra.core.project.CountIn
 import audio.tembra.core.project.GainDb
 import audio.tembra.core.project.GridSize
+import audio.tembra.core.project.Pan
 import audio.tembra.core.project.TrackId
 import audio.tembra.ui.drop.DropOutcome
+import audio.tembra.ui.mixer.MixerHeight
 
 /** The timeline's intents as plain functions (Constitution II); [None] for previews and tests. */
 data class TimelineCallbacks(
@@ -91,6 +94,25 @@ data class TimelineCallbacks(
     val onRequestMicrophone: () -> Unit = {},
     // Files dropped on the tracks or the space below (feature 011, spec FR-026)
     val onDrop: (DropOutcome) -> Unit = {},
+    // The mixer (feature 012, contracts/mixer-ui.md)
+    /** The toolbar's Mixer button and the X key: opens the sheet at its half height, closes it when open (spec FR-017). */
+    val onMixerToggle: () -> Unit = {},
+    /** A settled drag or a tap on the handle: the sheet's other height (spec FR-018). */
+    val onMixerHeight: (MixerHeight) -> Unit = {},
+    val onPan: (TrackId, Pan) -> Unit = { _, _ -> },
+    /** A fader, knob or master drag released: the coalesced edits close as one undo step (spec FR-005). */
+    val onGainSettled: () -> Unit = {},
+    val onPanSettled: () -> Unit = {},
+    val onMasterSettled: () -> Unit = {},
+    /** A strip's clip square tapped clears that track's latch; the master's clears its own (spec FR-012). */
+    val onResetTrackClip: (TrackId) -> Unit = {},
+    val onResetMasterClip: () -> Unit = {},
+    /** A strip's number or name tapped: selects the track (spec FR-023). */
+    val onStripSelect: (TrackId) -> Unit = {},
+    /** The handle row's "Open in a window" (spec FR-021a). */
+    val onOpenMixerWindow: () -> Unit = {},
+    /** The lanes box measured under a layout: the sheet's anchors and strip form follow it (spec FR-016, FR-021, FR-022). */
+    val onLanesMeasured: (TimelineLayout, Dp) -> Unit = { _, _ -> },
 ) {
     companion object {
         val None = TimelineCallbacks(

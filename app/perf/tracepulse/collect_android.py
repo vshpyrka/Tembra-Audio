@@ -183,6 +183,7 @@ _JOURNEY_OF_CLASS = {
     "RecordingJourneyBenchmark": "recording",
     "StressJourneyBenchmark": "stress",
     "WindowingJourneyBenchmark": "windowing",
+    "MixerJourneyBenchmark": "mixer",
 }
 # Families every journey class must deliver (per the catalogue's journey column).
 _REQUIRED = {
@@ -197,6 +198,11 @@ _REQUIRED = {
                   "memory.peak_kb", "memory.end_kb", "journey.duration_ms"),
     "stress": ("frames.p50_ms", "frames.p90_ms", "frames.p99_ms", "frames.overrun_p90_ms",
                "memory.peak_kb", "memory.end_kb", "journey.duration_ms"),
+    # Feature 012: the round fails when the sheet never opened, closed or drew a frame, or no fader moved.
+    "mixer": ("frames.p50_ms", "frames.p90_ms", "frames.p99_ms", "frames.overrun_p90_ms",
+              "memory.peak_kb", "memory.end_kb", "journey.duration_ms",
+              "section.timeline.mixerOpen.sum_ms", "section.timeline.mixerClose.sum_ms",
+              "section.timeline.mixerFrame.sum_ms", "section.timeline.faderDrag.sum_ms"),
     # Feature 011: the round fails when a window change, the right-click menu or a destination chord left no section.
     "windowing": ("frames.p50_ms", "frames.p90_ms", "frames.p99_ms", "frames.overrun_p90_ms",
                   "memory.peak_kb", "memory.end_kb", "journey.duration_ms",
@@ -232,7 +238,7 @@ def journey_of(class_name: str) -> str:
 
 # The comparison class of `tracepulse profile compare` (feature 008) holds one test per journey, named after it.
 COMPARISON_CLASS = "ProfileComparisonBenchmark"
-COMPARISON_METHODS = ("startup", "tuner", "metronome", "timeline", "recording", "stress")
+COMPARISON_METHODS = ("startup", "tuner", "metronome", "timeline", "recording", "mixer", "stress")
 
 
 def journey_of_method(class_name: str, method: str) -> str:

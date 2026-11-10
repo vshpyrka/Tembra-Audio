@@ -11,6 +11,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.InputModeManager
+import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
@@ -22,6 +24,7 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertHeightIsEqualTo
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -42,6 +45,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.height
 import audio.tembra.core.metronome.Tempo
 import audio.tembra.core.metronome.TimeSignature
 import audio.tembra.core.project.Beats
@@ -54,6 +58,10 @@ import audio.tembra.ui.session.LiveTakeUi
 import audio.tembra.ui.transport.RecordButtonState
 import audio.tembra.core.timeline.TimelineViewport
 import audio.tembra.data.projects.OverviewStatus
+import audio.tembra.ui.mixer.MixerAnchors
+import audio.tembra.ui.mixer.MixerTestTags
+import audio.tembra.ui.designsystem.enterKeyboardMode
+import audio.tembra.ui.mixer.StripUi
 import audio.tembra.ui.perf.PerfAnchors
 import audio.tembra.ui.theme.DawColors
 import audio.tembra.ui.theme.LocalDawColors
@@ -89,6 +97,7 @@ class TimelineScreenTest {
     private val shown = mutableStateOf<TimelineMessage?>(null)
     private val results = mutableListOf<SnackbarResult>()
 
+    private var manager: InputModeManager? = null
     private val callbacks = TimelineCallbacks.None.copy(
         onPlayPause = { calls += "play" },
         onConfirmDeleteTrack = { calls += "deleteConfirmed" },
@@ -117,6 +126,17 @@ class TimelineScreenTest {
         },
         onRecord = { calls += "record" },
         onSeek = { calls += "seek" },
+        // Feature 012: the mixer's open state, strips and anchors as the ViewModel would hold them.
+        onMixerToggle = {
+            calls += "mixerToggle"
+            val strips = screen.value.tracks.mapIndexed { index, track ->
+                StripUi(track.id, index, index + 1, track.name, track.colorIndex, track.gainDb, track.pan, track.muted, track.soloed, track.audible)
+            }.toPersistentList()
+            screen.value = screen.value.copy(mixer = screen.value.mixer.copy(open = !screen.value.mixer.open, strips = strips))
+        },
+        onLanesMeasured = { layout, height ->
+            screen.value = screen.value.copy(mixer = screen.value.mixer.copy(anchors = MixerAnchors.of(layout, height)))
+        },
     )
 
     private fun demoState(ready: Boolean = true): TimelineUiState {
@@ -151,6 +171,7 @@ class TimelineScreenTest {
         mainClock.autoAdvance = false
         setContent {
             TembraTheme {
+                manager = LocalInputModeManager.current
                 CompositionLocalProvider(LocalDawColors provides (daw ?: LocalDawColors.current)) {
                     Box(if (width != null) Modifier.requiredWidth(width).fillMaxHeight() else Modifier) {
                         LaunchedEffect(shown.value) {
@@ -505,6 +526,66 @@ class TimelineScreenTest {
         onNodeWithTag(PerfAnchors.TRANSPORT_RECORD).assertContentDescriptionEquals("Recording").assertIsEnabled()
         // Mute, solo and the arm toggle keep working; the arm toggle is only refused by the ViewModel (spec FR-018).
         onNodeWithTag(TimelineTestTags.mute(0)).assertIsEnabled()
+    }
+
+    /**
+     * Feature 012 (spec FR-016 to FR-018; T047): the toolbar's Mixer button opens the sheet inside the lanes box, above the
+     * overview strip and the transport bar, which stays usable; the half sheet leaves lanes visible; a snackbar shows above
+     * the open sheet, not under it.
+     */
+    @Test
+    fun theMixerButtonOpensTheSheetOverTheLanesAndTheTransportStaysUsable() = runComposeUiTest {
+        setScreen(demoState(), TimelineLayout.Compact, width = 360.dp)
+        onNodeWithTag(MixerTestTags.SHEET).assertDoesNotExist()
+        onNodeWithTag(MixerTestTags.TOOLBAR_BUTTON).assertIsDisplayed().performClick()
+        assertEquals(listOf("mixerToggle"), calls)
+        mainClock.autoAdvance = true
+        waitForIdle()
+        val sheet = onNodeWithTag(MixerTestTags.SHEET).assertIsDisplayed().getUnclippedBoundsInRoot()
+        val lanes = onNodeWithTag(TimelineTestTags.TRACK_LIST).getUnclippedBoundsInRoot()
+        val strip = onNodeWithTag(TimelineTestTags.OVERVIEW).getUnclippedBoundsInRoot()
+        assertTrue(sheet.bottom <= lanes.bottom + 1.dp && sheet.bottom <= strip.top + 1.dp, "the sheet $sheet is not inside the lanes box $lanes above the strip $strip")
+        assertTrue(sheet.top > lanes.top + 40.dp, "the half sheet $sheet leaves no lane visible above it in $lanes")
+        assertTrue(sheet.height >= 240.dp - 1.dp, "the half sheet is ${sheet.height} tall")
+        onNodeWithTag(MixerTestTags.strip(0)).assertIsDisplayed()
+        onNodeWithTag(MixerTestTags.MASTER).assertIsDisplayed()
+        onNodeWithTag(PerfAnchors.TRANSPORT_PLAY).assertIsEnabled().performClick()
+        assertEquals(listOf("mixerToggle", "play"), calls)
+        shown.value = TimelineMessage.SaveFailed
+        waitForIdle()
+        val snackbar = onNodeWithText(TimelineMessage.SaveFailed.text).assertIsDisplayed().getUnclippedBoundsInRoot()
+        assertTrue(snackbar.bottom <= sheet.top + 1.dp, "the snackbar $snackbar is not above the open sheet $sheet")
+        // The button closes it again.
+        onNodeWithTag(MixerTestTags.TOOLBAR_BUTTON).performClick()
+        waitForIdle()
+        onNodeWithTag(MixerTestTags.SHEET).assertDoesNotExist()
+    }
+
+    /** Feature 012 (spec FR-017, FR-021): the Mixer button is in the toolbar of an expanded window as well. */
+    /** T092's desktop finding: under a keyboard the sheet takes the focus when it opens and returns it to the Mixer button when it closes, so X and Tab carry on. */
+    @Test
+    fun theSheetTakesAndReturnsTheKeyboardFocus() = runComposeUiTest {
+        setScreen(demoState(), TimelineLayout.Expanded, width = 900.dp)
+        if (!enterKeyboardMode(manager)) return@runComposeUiTest
+        mainClock.autoAdvance = true
+        screen.value = screen.value.copy(mixer = screen.value.mixer.copy(open = true))
+        waitForIdle()
+        onNodeWithTag(MixerTestTags.HANDLE).assertIsFocused()
+        screen.value = screen.value.copy(mixer = screen.value.mixer.copy(open = false))
+        waitForIdle()
+        onNodeWithTag(MixerTestTags.TOOLBAR_BUTTON).assertIsFocused()
+    }
+
+    @Test
+    fun theExpandedToolbarCarriesTheMixerButton() = runComposeUiTest {
+        setScreen(demoState(), TimelineLayout.Expanded, width = 900.dp)
+        onNodeWithTag(MixerTestTags.TOOLBAR_BUTTON).assertIsDisplayed().performClick()
+        assertEquals(listOf("mixerToggle"), calls)
+        mainClock.autoAdvance = true
+        waitForIdle()
+        onNodeWithTag(MixerTestTags.SHEET).assertIsDisplayed()
+        // The 900 dp root overflows a phone's screen: the master's existence is the check, not its visibility.
+        onNodeWithTag(MixerTestTags.MASTER_FADER).assertExists()
     }
 
     /** The denied message (feature 010, FR-020; T071): the snackbar carries "Open settings" as a tagged action and reports the tap. */

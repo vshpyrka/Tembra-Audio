@@ -14,6 +14,8 @@ object TrackSettingsTestTags {
     const val LABEL_MENU = "trackSettings.label.menu"
     const val GAIN_SLIDER = "trackSettings.gainSlider"
     const val GAIN = "trackSettings.gain"
+    /** The pan slider after the gain row (feature 012, spec FR-007); also the journeys' anchor. */
+    const val PAN = PerfAnchors.TRACK_SETTINGS_PAN
     const val MUTE = "trackSettings.mute"
     const val SOLO = "trackSettings.solo"
     const val DELETE = "trackSettings.delete"

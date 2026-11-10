@@ -10,6 +10,7 @@ import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertHeightIsEqualTo
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOff
@@ -28,9 +29,13 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.height
 import audio.tembra.core.project.GainDb
 import audio.tembra.core.project.InstrumentLabel
+import audio.tembra.core.project.Pan
 import audio.tembra.core.project.TrackId
 import audio.tembra.ui.session.InputTelemetry
 import audio.tembra.ui.theme.TembraTheme
@@ -43,6 +48,7 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.math.abs
 
 /** The two track headers (contracts/timeline-screen.md; T092): semantics, the M/S toggles, the menu's availability. */
 @OptIn(ExperimentalTestApi::class)
@@ -122,11 +128,30 @@ class TrackHeaderTest {
         assertEquals(listOf("settings"), calls)
     }
 
+    /** Feature 012 (spec FR-007, FR-008; T068): the expanded header's second row reads the pan under the gain. */
+    @Test
+    fun expandedHeaderReadsThePanUnderTheGain() = runComposeUiTest {
+        setExpanded(item = track.copy(pan = Pan(-35)))
+        onNodeWithTag(TimelineTestTags.header(1)).assertContentDescriptionEquals("Track 2, Guitar, −2.4dB, L 35, muted")
+        onNodeWithTag(TimelineTestTags.gain(1)).assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "−2.4dB, L 35"))
+        onNodeWithText("L 35", useUnmergedTree = true).assertExists()
+        // 44 dp within the pixel the lane row's height rounds to: 43.4 dp on the Pixel 7 Pro's 2.625x screen (114 px).
+        val height = onNodeWithTag(TimelineTestTags.gain(1)).assertWidthIsAtLeast(GAIN_READOUT_FLOOR).getUnclippedBoundsInRoot().height
+        assertTrue(abs((height - 44.dp).value) <= 1f, "the readout is $height tall, not 44 dp within a pixel")
+    }
+
     @Test
     fun expandedHeaderIs200dpWithGainAndChevron() = runComposeUiTest {
         setExpanded()
         onNodeWithTag(TimelineTestTags.header(1)).assertWidthIsEqualTo(200.dp).assertContentDescriptionEquals("Track 2, Guitar, −2.4dB, muted")
-        onNodeWithTag(TimelineTestTags.gain(1)).assertExists()
+        // The readout keeps the room its text needs beside the toggles and the chevron; the pan reads under it (feature 012,
+        // spec FR-007), and the arm toggle sits on the first row, where the chip was.
+        onNodeWithTag(TimelineTestTags.gain(1)).assertExists().assertWidthIsAtLeast(GAIN_READOUT_FLOOR)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "−2.4dB, C"))
+        val arm = onNodeWithTag(TimelineTestTags.arm(1)).getBoundsInRoot()
+        val gain = onNodeWithTag(TimelineTestTags.gain(1)).getBoundsInRoot()
+        assertTrue(arm.bottom <= gain.top, "the arm toggle $arm is not on the row above the readout $gain")
+        onNodeWithText("Guitar", useUnmergedTree = true).assertDoesNotExist()
         onNodeWithTag(TimelineTestTags.chevron(1)).assertContentDescriptionEquals(TimelineCopy.trackSettings).performClick()
         onNodeWithTag(TimelineTestTags.trackMenu(1)).performClick()
         onNodeWithTag("${TimelineTestTags.TRACK_MENU}.$MENU_MOVE_DOWN").assertIsNotEnabled()
@@ -191,5 +216,10 @@ class TrackHeaderTest {
         setExpanded()
         onNodeWithTag(TimelineTestTags.arm(1)).assertWidthIsEqualTo(36.dp).assertHeightIsEqualTo(36.dp).assertIsOff().performClick()
         assertEquals(listOf("arm(true)"), calls)
+    }
+
+    private companion object {
+        /** The expanded header's gain readout is 56 dp wide (feature 012); a fractional density rounds a pixel off it (55.4 dp at 2.6×). */
+        val GAIN_READOUT_FLOOR = 55.dp
     }
 }

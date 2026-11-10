@@ -100,7 +100,9 @@ _WIRELESS_POWERED_RE = re.compile(r"Wireless powered:\s*(true|false)", re.IGNORE
 _WAKEFULNESS_RE = re.compile(r"mWakefulness=(\w+)")
 _KEYGUARD_SHOWING_RE = re.compile(r"KeyguardServiceDelegate\s*\n\s*showing=(true|false)")
 DETACHED_CMD_TIMEOUT_S = 60
-PULL_TIMEOUT_S = 600
+# A class leaves about 1 GB of traces behind (20 iterations); adb over USB pulls that in a minute or two, adb through an
+# ssh tunnel (the owner's hub on another machine, 2026-11-09: 0.6 MB/s) in close to half an hour.
+PULL_TIMEOUT_S = 2400
 BUILD_TIMEOUT_S = 3600
 
 
@@ -398,12 +400,16 @@ BENCHMARK_CLASS_OF = {
     "recording": "RecordingJourneyBenchmark",
     "stress": "StressJourneyBenchmark",
     "windowing": "WindowingJourneyBenchmark",
+    "mixer": "MixerJourneyBenchmark",
 }
 _INSTRUMENT_FAILURE_MARKERS = ("FAILURES!!!", "INSTRUMENTATION_FAILED", "Process crashed", "shortMsg=")
 _INSTRUMENT_TERMINAL_MARKERS = ("OK (", "FAILURES!!!", "INSTRUMENTATION_CODE:")
 _DETACHED_BEACON = "TRACEPULSE_ATTEMPT_START"
 _DETACHED_POLL_INTERVAL_S = 10
-_DETACHED_TIMEOUT_S = 1500
+# One class or comparison state: 20 iterations of the longest journey. The mixer journey runs about 50 s an iteration
+# fully compiled and close to 80 s in the comparison's JIT-only and profile states (2026-11-09: the profile state hit
+# the old 1500 s at iteration 18), so the window is 40 minutes; the wall cap below still bounds an unreachable device.
+_DETACHED_TIMEOUT_S = 2400
 _DETACHED_WALL_CAP_S = 3 * 3600
 COOLDOWN_BETWEEN_CLASSES_S = 120
 
@@ -494,9 +500,33 @@ def _tail(text: str, n: int = 5) -> str:
     return " | ".join(line for line in text.splitlines()[-n:] if line.strip())
 
 
+class PullError(Exception):
+    """The benchmark output did not reach the Mac: the round has no data to collect and must say so."""
+
+
 def _pull(cfg: Config, device: Device, runner: Runner, dest: str) -> None:
+    """Pull the class's benchmark output (its JSON and traces) into `dest`. A pull that times out or fails used to pass
+    silently and leave a round "succeeded" with no journeys (2026-11-09, the tunnelled Pixel 6 Pro); it fails now."""
     os.makedirs(dest, exist_ok=True)
-    runner.run(_adb(cfg, device) + ["pull", media_dir(cfg), dest], timeout=PULL_TIMEOUT_S)
+    completed = runner.run(_adb(cfg, device) + ["pull", media_dir(cfg), dest], timeout=PULL_TIMEOUT_S)
+    if completed.returncode != 0:
+        detail = (completed.stderr or completed.stdout or "").strip().splitlines()
+        raise PullError(f"adb pull of {media_dir(cfg)} returned {completed.returncode} after up to {PULL_TIMEOUT_S} s"
+                        + (f": {detail[-1]}" if detail else ""))
+
+
+def _pull_json_only(cfg: Config, device: Device, runner: Runner, dest: str) -> None:
+    """The benchmark JSON files alone, one by one: what a comparison needs when a slow adb (an ssh tunnel, 2026-11-09)
+    will not deliver a class's traces. Raises PullError when there is none or one does not arrive."""
+    os.makedirs(dest, exist_ok=True)
+    listing = _shell(cfg, device, runner, "ls", media_dir(cfg), timeout=60).stdout
+    names = [name for name in listing.split() if name.endswith("-benchmarkData.json")]
+    if not names:
+        raise PullError(f"no benchmarkData.json in {media_dir(cfg)}")
+    for name in names:
+        completed = runner.run(_adb(cfg, device) + ["pull", media_dir(cfg) + name, dest], timeout=300)
+        if completed.returncode != 0:
+            raise PullError(f"adb pull of {name} returned {completed.returncode}")
 
 
 def _clear_media_dir(cfg: Config, device: Device, runner: Runner) -> None:
@@ -577,7 +607,12 @@ def _run_round_inner(cfg: Config, device: Device, runner: Runner, clock: Clock, 
         _clear_media_dir(cfg, device, runner)
         class_dir = os.path.join(round_dir, BENCHMARK_CLASS_OF[journey])
         ok, reason = _run_class_with_retry(cfg, device, runner, clock, fqcn, options.iterations, round_dir)
-        _pull(cfg, device, runner, class_dir)
+        try:
+            _pull(cfg, device, runner, class_dir)
+        except PullError as exc:
+            if ok:
+                failed = (journey, f"{BENCHMARK_CLASS_OF[journey]} ran, but its output did not reach the Mac: {exc}")
+                break
         if not ok:
             failed = (journey, f"{BENCHMARK_CLASS_OF[journey]} failed twice: {reason or 'see the attempt logs'}")
             break

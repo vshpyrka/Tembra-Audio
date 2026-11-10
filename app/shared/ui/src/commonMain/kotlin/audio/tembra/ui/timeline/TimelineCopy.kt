@@ -116,6 +116,8 @@ object TimelineCopy {
         EditRejection.ProjectNameOutOfRange, EditRejection.DescriptionTooLong, EditRejection.TrackNameTooLong -> nameTooLong
         EditRejection.TrackAtEnd -> ""
         EditRejection.TakeTooShort -> takeTooShort
+        // Feature 012: the controls clamp a pan before they edit, so the refusal never reaches a user.
+        EditRejection.PanOutOfRange -> ""
         is EditRejection.UnknownTrack, is EditRejection.UnknownClip, is EditRejection.UnknownAsset -> ""
     }
 

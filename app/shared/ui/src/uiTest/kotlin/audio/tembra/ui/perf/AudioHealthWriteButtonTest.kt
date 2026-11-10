@@ -26,7 +26,8 @@ class AudioHealthWriteButtonTest {
         engine.scriptAudioHealth(AudioHealth(callbacks = 7, lastMicros = 1, maxMicros = 2, overBudget = 0, xruns = 0, realtime = false))
         val written = mutableListOf<String>()
         setContent {
-            TembraTheme { AudioHealthWriteButton(engine = engine, writer = { json -> written += json; "/tmp/engine-health.json" }) }
+            // Its own frame counter: the shared one may carry frames other tests' sheets dropped under the frozen clock.
+            TembraTheme { AudioHealthWriteButton(engine = engine, writer = { json -> written += json; "/tmp/engine-health.json" }, meterFrames = MeterFrameCounter()) }
         }
         onNodeWithTag(PerfAnchors.DEVTOOLS_WRITE_HEALTH).assertContentDescriptionEquals("Write engine health")
         onNodeWithTag(PerfAnchors.DEVTOOLS_WRITE_HEALTH).performClick()

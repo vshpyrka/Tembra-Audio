@@ -10,7 +10,9 @@ import audio.tembra.core.project.Percent
 import audio.tembra.core.project.PlaybackState
 import audio.tembra.core.project.ProjectNames
 import audio.tembra.core.project.RenameTrack
+import audio.tembra.core.project.Pan
 import audio.tembra.core.project.SetGain
+import audio.tembra.core.project.SetPan
 import audio.tembra.core.project.SetLabel
 import audio.tembra.core.project.SetMasterVolume
 import audio.tembra.core.project.SetMuted
@@ -107,6 +109,12 @@ class TrackSettingsViewModel(private val session: ProjectSession) : ViewModel() 
 
     fun setGain(gainDb: GainDb) = track { session.edit(SetGain(it, gainDb)) }
 
+    /** Feature 012 (spec FR-007): the pan slider's steps coalesce into one undo step until [panSettled]. */
+    fun setPan(pan: Pan) = track { session.edit(SetPan(it, pan)) }
+
+    /** The pan slider released: the next step starts a new undo step (FR-005). */
+    fun panSettled() = session.closeEditGroup()
+
     fun setMuted(muted: Boolean) = track { session.edit(SetMuted(it, muted)) }
 
     fun setSoloed(soloed: Boolean) = track { session.edit(SetSoloed(it, soloed)) }
@@ -177,6 +185,7 @@ class TrackSettingsViewModel(private val session: ProjectSession) : ViewModel() 
             label = track.label,
             colorIndex = track.colorIndex,
             gainDb = track.gainDb,
+            pan = track.pan,
             muted = track.muted,
             soloed = track.soloed,
             nameDraft = view.nameDraft,

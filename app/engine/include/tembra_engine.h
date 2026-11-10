@@ -1,5 +1,5 @@
 /*
- * Tembra Audio engine C ABI, revision 7.
+ * Tembra Audio engine C ABI, revision 8.
  *
  * This header is the only interface the Kotlin side ever sees (JNI shim on Android, cinterop on
  * iOS). Rules: plain C, no C++ types, no callbacks into the host, every returned pointer has static
@@ -20,7 +20,10 @@
  * tembra_transport_record_start/cancel/stop, the tembra_capture_* telemetry, tembra_storage_free_bytes, TEMBRA_ERR_IO, the
  * count_in_beats_left and recording fields of tembra_transport_snapshot and the input_overruns, record_backlog and
  * input_xruns fields of tembra_audio_health; every revision 6 function unchanged) is
- * specs/010-timeline-recording/contracts/engine-c-abi-v7.md.
+ * specs/010-timeline-recording/contracts/engine-c-abi-v7.md; revision 8 (the mixer: the lock-free tembra_mixer_set_track /
+ * set_pan / set_master / set_metering, the tembra_mixer_read telemetry and tembra_mixer_reset_clip, TEMBRA_MIXER_MASTER_INDEX,
+ * the master_clips field of tembra_audio_health; tembra_transport_set_track and set_master keep their signatures and
+ * forward to the lock-free path; every revision 7 function unchanged) is specs/012-mixer/contracts/engine-c-abi-v8.md.
  */
 #ifndef TEMBRA_ENGINE_H
 #define TEMBRA_ENGINE_H
@@ -32,7 +35,7 @@ extern "C" {
 #endif
 
 /* ABI revision of this header. Incremented whenever a function is added, removed or changed. */
-#define TEMBRA_ENGINE_ABI_VERSION 7u
+#define TEMBRA_ENGINE_ABI_VERSION 8u
 uint32_t tembra_engine_abi_version(void);
 
 /* Human-readable engine name, e.g. "Tembra Engine". Static storage. */
@@ -195,6 +198,7 @@ typedef struct tembra_audio_health {
     uint32_t input_overruns; /* revision 7: captured frames lost (a full fifo, a short read after warm-up) since the arm */
     uint32_t record_backlog; /* revision 7: the largest count of captured frames waiting in the fifo since the take began */
     uint32_t input_xruns;    /* revision 7: the input stream's own xrun count on Android; 0 on iOS */
+    uint32_t master_clips;   /* revision 8: blocks in which the master clamp engaged since the transport opened (fills revision 7's padding: sizeof stays 56) */
 } tembra_audio_health;
 /* Non-real-time. Copies the counters into *out (the callback writes them with atomic stores; the xrun count is
    sampled from the platform stream on the calling thread). Returns 0, -1 when no stream is open, or
@@ -354,6 +358,37 @@ uint32_t tembra_capture_read_peaks(uint64_t from_index, tembra_peak_bucket* out,
    oldest kept bucket and *out_next_index − returned > from_index tells the host it missed some (it repeats the previous bucket) */
 
 int64_t tembra_storage_free_bytes(const char* path);      /* statvfs of the containing volume; any thread; −1 on error */
+
+/* --- The mixer (revision 8, specs/012-mixer/contracts/engine-c-abi-v8.md; research R4-R6) --- */
+
+/* Mixer parameters: lock-free, bounded, any host thread; never take the command mutex, so a fader step from the main
+   thread cannot wait behind play or record-stop. TEMBRA_ERR_ARGUMENT for an index ≥ 64, a non-finite value or a value
+   out of range; TEMBRA_ERR_STATE when the transport is not open; otherwise TEMBRA_OK. The callback applies a change at
+   its next block through the strips' 10 ms ramps. Mono sources follow the centre-compensated constant-power pan law
+   (1/1 at the centre, √2/0 at the extremes); stereo sources are balanced (the opposite side attenuates). */
+int32_t tembra_mixer_set_track(uint32_t index, float gain_linear, float pan, uint32_t audible); /* gain 0..2.0; pan -1 (left) .. 1 (right) */
+int32_t tembra_mixer_set_pan(uint32_t index, float pan);                                        /* -1..1; the gain and audibility kept */
+int32_t tembra_mixer_set_master(float gain_linear);                                             /* 0..1; smoothed over 10 ms */
+int32_t tembra_mixer_set_metering(uint32_t enabled);                                            /* 0 stops measuring; the next block publishes a zeroed snapshot */
+
+#define TEMBRA_MIXER_MASTER_INDEX 64u
+
+/* Meter telemetry: published once per callback block while metering is on, after the fader, pan and audibility of each
+   strip and after the master gain and clamp (the click is not metered). */
+typedef struct tembra_mix_snapshot {
+    uint64_t block;            /* the callback block the record was published on */
+    uint32_t track_count;      /* tracks of the arrangement; entries above it are zero */
+    uint32_t metering;         /* 1 while measuring */
+    float    peak[TEMBRA_MAX_TRACKS][2];   /* max |x| over the last 64 ms per side */
+    float    rms[TEMBRA_MAX_TRACKS][2];    /* root mean square over a 300 ms window per side */
+    float    master_peak[2];   /* after the master gain and the clamp */
+    float    master_rms[2];
+    uint64_t clip_mask;        /* bit i set while strip i's latch is lit (|x| ≥ 0.9999 on either side) */
+    uint32_t master_clipped;   /* sticky: the clamp engaged, or full scale was reached, since the last reset */
+} tembra_mix_snapshot;
+
+void    tembra_mixer_read(tembra_mix_snapshot* out);  /* lock-free seqlock read, safe every frame; zeros when metering is off or the transport is closed */
+int32_t tembra_mixer_reset_clip(uint32_t index);      /* 0..63 a strip, TEMBRA_MIXER_MASTER_INDEX the master; applied at the next block; ERR_STATE unless TRANSPORT */
 
 #ifdef __cplusplus
 }

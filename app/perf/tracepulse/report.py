@@ -28,7 +28,7 @@ from .text import (
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _TEMPLATE_DIR = os.path.join(_HERE, "templates")
 _STATIC_DIR = os.path.join(_HERE, "static")
-_JOURNEY_ORDER = {"startup": 0, "tuner": 1, "metronome": 2, "timeline": 3, "recording": 4, "stress": 5}
+_JOURNEY_ORDER = {"startup": 0, "tuner": 1, "metronome": 2, "timeline": 3, "recording": 4, "mixer": 5, "stress": 6, "windowing": 7}
 _PLATFORM_ORDER = {"android": 0, "ios": 1}
 _FAMILY_TITLES = {"startup": "Startup", "frames": "Frames", "memory": "Memory", "cpu": "CPU",
                   "journey": "Journeys", "section": "Sections", "app": "App size", "audio": "Audio health"}

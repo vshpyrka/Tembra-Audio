@@ -35,6 +35,8 @@ public:
     void setTransportCounters(uint32_t starvation, uint32_t clipsActive);
     /** The capture counters (feature 010, revision 7), sampled on the host thread from the source and the input stream. */
     void setCaptureCounters(uint32_t inputOverruns, uint32_t recordBacklog, uint32_t inputXruns);
+    /** The mixer's counter (feature 012, revision 8): blocks in which the master clamp engaged, sampled from the renderer. */
+    void setMixCounters(uint32_t masterClips);
 
     /** Copies the counters into [out]; false (and [out] untouched) while no stream is open. avg_us is the running mean. */
     bool read(tembra_audio_health& out) const;
@@ -52,6 +54,7 @@ private:
     std::atomic<uint32_t> inputOverruns_{0};
     std::atomic<uint32_t> recordBacklog_{0};
     std::atomic<uint32_t> inputXruns_{0};
+    std::atomic<uint32_t> masterClips_{0};
     std::atomic<bool> realtime_{false};
 };
 

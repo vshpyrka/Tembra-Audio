@@ -1,7 +1,7 @@
 """Deterministic Macrobenchmark `benchmarkData.json` fixtures for `tracepulse profile compare` (feature 008).
 
 One file per optimisation state (`none`, `profile`, `full`) in the shape Macrobenchmark 1.5 writes for
-`audio.tembra.perf.ProfileComparisonBenchmark` (methods `startup`, `tuner`, `metronome`, `timeline`, `recording`, `stress`, 20
+`audio.tembra.perf.ProfileComparisonBenchmark` (methods `startup`, `tuner`, `metronome`, `timeline`, `recording`, `mixer`, `stress`, 20
 iterations each; the key set mirrors `tests/fixtures/benchmarkData-1.5.json`). Medians are chosen so the
 comparison tests can assert hand-computed outcomes:
 
@@ -94,6 +94,10 @@ TIMELINE_SEED = {"none": 41, "profile": 53, "full": 67}
 # Feature 010's recording journey likewise has its own generator.
 RECORDING_JOURNEY = {"none": 21800.0, "profile": 21500.0, "full": 21450.0}
 RECORDING_SEED = {"none": 43, "profile": 59, "full": 71}
+# Feature 012's mixer journey likewise has its own generator.
+MIXER_JOURNEY = {"none": 26400.0, "profile": 26050.0, "full": 26000.0}
+MIXER_OPEN = {"none": 96.0, "profile": 74.0, "full": 70.0}
+MIXER_SEED = {"none": 47, "profile": 61, "full": 73}
 STRESS_PEAK_KB = {"none": 207500.0, "profile": 206000.0, "full": 207500.0}  # none == full → gap undefined
 # `none` and `full` draw the stress peak from the same seed so their medians are identical, not merely close.
 STRESS_PEAK_SEED = {"none": 99, "profile": 23, "full": 99}
@@ -167,6 +171,25 @@ def build(state):
         "frameDurationCpuMs": _sampled(recording_gen, 8.8, 2.0),
         "frameOverrunMs": _sampled(recording_gen, -3.2, 2.0),
     })
+    mixer_gen = _lcg(MIXER_SEED[state])
+    mixer = _benchmark("mixer", {
+        "memoryRssAnonMaxKb": _single(_samples(mixer_gen, 203900.0, 1500.0, nd=0)),
+        "memoryRssAnonLastKb": _single(_samples(mixer_gen, 64100.0, 400.0, nd=0)),
+        "journey.mixerSumMs": _single(_samples(mixer_gen, MIXER_JOURNEY[state], 60.0)),
+        "journey.mixerCount": _single([1.0] * ITERATIONS),
+        "timeline.mixerOpenSumMs": _single(_samples(mixer_gen, MIXER_OPEN[state], 4.0)),
+        "timeline.mixerOpenCount": _single([1.0] * ITERATIONS),
+        "timeline.mixerCloseSumMs": _single(_samples(mixer_gen, 28.0, 2.0)),
+        "timeline.mixerCloseCount": _single([1.0] * ITERATIONS),
+        "timeline.mixerFrameSumMs": _single(_samples(mixer_gen, 2400.0, 60.0)),
+        "timeline.mixerFrameCount": _single([1100.0] * ITERATIONS),
+        "timeline.faderDragSumMs": _single(_samples(mixer_gen, 2010.0, 30.0)),
+        "timeline.faderDragCount": _single([2.0] * ITERATIONS),
+        "frameCount": _single([float(FRAMES_PER_ITERATION)] * ITERATIONS),
+    }, {
+        "frameDurationCpuMs": _sampled(mixer_gen, 8.4, 2.0),
+        "frameOverrunMs": _sampled(mixer_gen, -3.6, 2.0),
+    })
     stress = _benchmark("stress", {
         "memoryRssAnonMaxKb": _single(_samples(_lcg(STRESS_PEAK_SEED[state]), STRESS_PEAK_KB[state], 300.0, nd=0)),
         "memoryRssAnonLastKb": _single(_samples(gen, 54200.0, 400.0, nd=0)),
@@ -177,7 +200,7 @@ def build(state):
         "frameDurationCpuMs": _sampled(gen, 9.5, 2.0),
         "frameOverrunMs": _sampled(gen, -2.1, 2.0),
     })
-    return {"context": _context(state), "benchmarks": [startup, tuner, metronome, timeline, recording, stress]}
+    return {"context": _context(state), "benchmarks": [startup, tuner, metronome, timeline, recording, mixer, stress]}
 
 
 def main():

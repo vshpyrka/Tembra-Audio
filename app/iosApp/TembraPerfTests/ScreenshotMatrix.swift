@@ -310,4 +310,78 @@ final class ScreenshotMatrix: XCTestCase {
         openDemo()
         if armNewTrack() { shot("largestFont") } else { print("ScreenshotMatrix: largestFont: could not arm"); shot("largestFont-unarmed") }
     }
+
+    // MARK: Feature 012 (mixer) states
+
+    /// Opens the mixer sheet from the toolbar's Mixer button or, on a compact toolbar, the overflow row; false when neither is there.
+    @discardableResult
+    private func openMixer() -> Bool {
+        if app.anchor(Anchors.mixerSheet).exists { return true }
+        let opened = app.anchor(Anchors.timelineMixer).exists ? tapIfPresent(Anchors.timelineMixer) : overflow("mixer")
+        return opened && app.anchor(Anchors.mixerSheet).waitForExistence(timeout: 5)
+    }
+
+    /// The mixer states of spec FR-034 (quickstart §9): the sheet at its half and full heights, in landscape, the summed
+    /// output clipped with the master's latch lit, an armed strip's input meter, the track settings' pan row.
+    func testMixerStates() {
+        let wanted = ["mixer-half", "mixer-full", "mixer-landscape", "mixer-clipped", "mixer-armed", "track-settings-pan"]
+        guard wanted.contains(where: want) else { return }
+        openDemo()
+        tapIfPresent(Anchors.transportSkipStart, timeout: 2)
+        if want("mixer-half") || want("mixer-full") || want("mixer-clipped") {
+            if openMixer() {
+                sleep(1)
+                if want("mixer-half") { shot("mixer-half") }
+                if want("mixer-full") || want("mixer-clipped") {
+                    app.anchor(Anchors.mixerHandle).swipeUp(); sleep(1)
+                    if want("mixer-full") { shot("mixer-full") }
+                }
+                if want("mixer-clipped") {
+                    // Every visible strip's fader to the top (+6 dB) and the master to 100 %, then a few seconds of the
+                    // demo: the summed output clips and the master's latch lights. The five gain edits are undone after.
+                    var edits = 0
+                    for index in 0..<4 where app.anchor(Anchors.mixerFader(index)).exists { app.anchor(Anchors.mixerFader(index)).swipeUp(); edits += 1 }
+                    let master = app.anchor(Anchors.mixerMasterFader)
+                    if master.exists { master.swipeUp(); edits += 1 }
+                    tapIfPresent(Anchors.transportPlay); sleep(6)
+                    shot("mixer-clipped")
+                    tapIfPresent(Anchors.transportPlay); tapIfPresent(Anchors.transportSkipStart)
+                    for _ in 0..<edits { tapIfPresent(Anchors.timelineUndo, timeout: 1) }
+                }
+                dismiss()
+            } else { print("ScreenshotMatrix: the mixer did not open") }
+        }
+        if want("mixer-armed") {
+            if armNewTrack(), openMixer() {
+                // The new track's strip is the fifth: scroll the row to its end.
+                sleep(1); app.anchor(Anchors.mixerStrips).swipeLeft(); sleep(1)
+                shot("mixer-armed")
+            } else { print("ScreenshotMatrix: mixer-armed: could not arm or open") }
+            dismiss()
+        }
+        if want("track-settings-pan"), tapIfPresent(Anchors.timelineTrackMenuFirst), tapIfPresent(Anchors.timelineTrackSettings) {
+            if !app.anchor(Anchors.trackSettingsPan).waitForExistence(timeout: 3) { app.swipeUp() }
+            sleep(1); shot(app.anchor("timeline.settings.inline").exists ? "track-settings-pan-inline" : "track-settings-pan")
+            tapIfPresent(Anchors.timelineSettingsClose); waitReady()
+        }
+        if want("mixer-landscape") {
+            XCUIDevice.shared.orientation = .landscapeLeft; sleep(2)
+            // Compose keeps the portrait accessibility frames after a rotation (the toolbar's hit point lands above the
+            // screen), so the app is relaunched in landscape before the tap; it reopens the same project.
+            dismiss()
+            if openMixer() { sleep(1); shot("mixer-landscape") } else { print("ScreenshotMatrix: the mixer did not open in landscape") }
+            XCUIDevice.shared.orientation = .portrait; sleep(2)
+            dismiss()
+        }
+    }
+
+    /// The half sheet at the largest accessibility text size (launch argument; the app reads the content size category).
+    func testMixerLargestFont() {
+        guard want("mixer-largestFont") else { return }
+        app.terminate()
+        app.launchArguments += ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
+        app.launch(); app.waitForAnchor(Anchors.startRoot)
+        openDemo()
+        if openMixer() { sleep(1); shot("mixer-largestFont") } else { print("ScreenshotMatrix: mixer-largestFont: the mixer did not open") }
+    }
 }

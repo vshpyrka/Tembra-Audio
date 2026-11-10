@@ -3,6 +3,7 @@ package audio.tembra.ui.tracksettings
 import androidx.compose.runtime.Immutable
 import audio.tembra.core.project.GainDb
 import audio.tembra.core.project.InstrumentLabel
+import audio.tembra.core.project.Pan
 import audio.tembra.core.project.TrackId
 import audio.tembra.ui.transport.TransportUiState
 
@@ -18,6 +19,8 @@ data class TrackSettingsUiState(
     val label: InstrumentLabel? = null,
     val colorIndex: Int = 0,
     val gainDb: GainDb = GainDb.Unity,
+    /** Feature 012 (spec FR-007): the pan the form's slider edits. */
+    val pan: Pan = Pan.Centre,
     val muted: Boolean = false,
     val soloed: Boolean = false,
     val nameDraft: String? = null,

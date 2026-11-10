@@ -57,4 +57,4 @@ ios:
   test_target: TembraPerfTests
   size_variant: iPhone14,7
 
-journeys: [startup, tuner, metronome, timeline, recording, stress, windowing]
+journeys: [startup, tuner, metronome, timeline, recording, mixer, stress, windowing]

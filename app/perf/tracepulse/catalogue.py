@@ -11,7 +11,7 @@ from typing import Dict, Iterable, List, Mapping, Optional, Tuple
 
 PLATFORMS = ("android", "ios")
 FAMILIES = ("startup", "frames", "memory", "cpu", "journey", "section", "app", "audio")
-JOURNEYS_MEASURED = ("tuner", "metronome", "timeline", "recording", "stress", "windowing")
+JOURNEYS_MEASURED = ("tuner", "metronome", "timeline", "recording", "mixer", "stress", "windowing")
 # The section families of app/shared/engine/perf-catalogue.txt (its second column, counters aside): a section key is
 # `section.<family>.<name>.<suffix>`. SHELL is feature 011's (window relayout, shortcut navigation).
 SECTION_FAMILIES = ("tuner", "metronome", "timeline", "transport", "engine", "shell")
@@ -131,6 +131,10 @@ _AUDIO = (
     ("audio.record_backlog", "frames", dict(gate_limit_pct=50, screening_pct=10, floor_abs=2048.0)),
     ("audio.take_alignment_ms", "ms", dict(gate_limit_pct=20, screening_pct=5, floor_abs=2.0)),
     ("audio.monitor_delay_ms", "ms", dict(gate_limit_pct=20, screening_pct=5, floor_abs=2.0)),
+    # Feature 012 (ABI revision 8): the mixer counters. Master clips are informational and flagged on any increase, as
+    # starvation is; dropped meter frames are expected to read 0 on the reference devices (20 % gate, a floor of 2).
+    ("audio.master_clips", "count", dict(gate_limit_abs=1.0, screening_abs=1.0)),
+    ("audio.meter_frames_dropped", "count", dict(gate_limit_pct=20, screening_pct=5, floor_abs=2.0)),
 )
 for _key, _unit, _gates in _AUDIO:
     _ANDROID.append(_m("android", _key, "audio", "perfetto counter track (last value)", _unit, ("stress",),

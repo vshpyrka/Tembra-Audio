@@ -29,4 +29,7 @@ interface TimelineShortcuts {
     fun record(): Boolean
 
     fun toggleMonitor(): Boolean
+
+    /** Feature 012 (FR-017, FR-029): open or close the mixer sheet. */
+    fun toggleMixer(): Boolean
 }

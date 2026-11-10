@@ -37,6 +37,7 @@ object ProjectValidator {
         if (!ProjectNames.isValidDescription(project.description)) failures += ValidationFailure.DescriptionLength(project.description.trim().length)
         for (track in project.tracks) {
             if (!ProjectNames.isValidTrackName(track.name)) failures += ValidationFailure.TrackNameLength(track.id, track.name.trim().length)
+            if (!track.pan.inRange) failures += ValidationFailure.PanOutOfRange(track.id, track.pan.percent)
         }
         for ((id, asset) in project.assets) {
             if (asset.channels !in 1..2 || asset.sampleRate <= 0 || asset.frames <= 0 || asset.byteSize < 0) failures += ValidationFailure.AssetFactsInvalid(id)

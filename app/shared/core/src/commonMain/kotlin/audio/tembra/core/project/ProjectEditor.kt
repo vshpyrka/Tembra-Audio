@@ -23,6 +23,7 @@ object ProjectEditor {
         is RenameTrack -> renameTrack(project, edit)
         is SetLabel -> updateTrack(project, edit.id) { it.copy(label = edit.label) }
         is SetGain -> updateTrack(project, edit.id) { it.copy(gainDb = edit.gainDb) }
+        is SetPan -> setPan(project, edit)
         is SetMuted -> updateTrack(project, edit.id) { it.copy(muted = edit.muted) }
         is SetSoloed -> updateTrack(project, edit.id) { it.copy(soloed = edit.soloed) }
         is MoveTrack -> moveTrack(project, edit)
@@ -56,6 +57,12 @@ object ProjectEditor {
         val otherNames = project.tracks.filter { it.id != edit.id }.map { it.name }
         val name = ProjectNames.trackNameOrDefault(edit.name, otherNames)
         return updateTrack(project, edit.id) { it.copy(name = name) }
+    }
+
+    /** The pan (feature 012, spec FR-006): the track must exist and the value lie within −100..100. */
+    private fun setPan(project: Project, edit: SetPan): EditResult {
+        if (!edit.pan.inRange) return EditResult.Rejected(EditRejection.PanOutOfRange)
+        return updateTrack(project, edit.id) { it.copy(pan = edit.pan) }
     }
 
     private fun moveTrack(project: Project, edit: MoveTrack): EditResult {

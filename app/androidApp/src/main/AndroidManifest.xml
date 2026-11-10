@@ -65,6 +65,20 @@
                 <data android:mimeType="audio/mpeg" />
             </intent-filter>
         </activity>
+        <!--
+            Feature 012 (spec FR-021a, research R10): the mixer in a window of its own on devices with free-form windows.
+            A task of its own (its affinity), one instance (singleTask), resizable, the same configuration handling as
+            the main window; no launcher entry: AndroidWindowCapabilities starts it.
+        -->
+        <activity
+            android:name=".MixerWindowActivity"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:taskAffinity="com.tembraaudio.mixer"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|uiMode|density|keyboard|keyboardHidden|navigation|touchscreen"
+            android:resizeableActivity="true">
+            <layout android:minWidth="360dp" android:minHeight="320dp" android:defaultWidth="720dp" android:defaultHeight="480dp" />
+        </activity>
 
         <service
             android:name=".PlaybackForegroundService"

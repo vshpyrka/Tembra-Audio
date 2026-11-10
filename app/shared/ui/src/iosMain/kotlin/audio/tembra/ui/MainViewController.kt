@@ -6,6 +6,7 @@ import audio.tembra.engine.perf.PerfBuild
 import audio.tembra.ui.devtools.DeveloperViewRequest
 import audio.tembra.ui.metronome.MetronomeDebugRequest
 import audio.tembra.ui.projects.ProjectsSeedRequest
+import audio.tembra.ui.projects.StressProjectRequest
 import audio.tembra.ui.tuner.TunerNoiseGateRequest
 import audio.tembra.ui.tuner.TunerTestSignalRequest
 import dev.zacsweers.metro.createGraph
@@ -30,6 +31,7 @@ fun MainViewController(
     tunerNoiseGate: String? = null,
     metronomeSyncopation: String? = null,
     projectsSeed: String? = null,
+    stressTracks: String? = null,
 ): UIViewController =
     ComposeUIViewController(configure = {
         // Measurement builds (feature 007, FR-016): Compose's own frame phases become os_signpost intervals.
@@ -42,6 +44,7 @@ fun MainViewController(
             tunerNoiseGate = TunerNoiseGateRequest.parse(tunerNoiseGate),
             metronomeDebug = MetronomeDebugRequest.parse(metronomeSyncopation),
             projectsSeed = ProjectsSeedRequest.parse(projectsSeed),
+            stressProject = StressProjectRequest.parse(stressTracks),
         )
     }
 

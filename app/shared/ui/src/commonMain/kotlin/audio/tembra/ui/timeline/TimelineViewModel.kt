@@ -22,6 +22,7 @@ import audio.tembra.core.project.GridSize
 import audio.tembra.core.project.MoveClip
 import audio.tembra.core.project.MoveDirection
 import audio.tembra.core.project.MoveTrack
+import audio.tembra.core.project.Pan
 import audio.tembra.core.project.Percent
 import audio.tembra.core.project.PlaybackState
 import audio.tembra.core.project.Project
@@ -30,6 +31,7 @@ import audio.tembra.core.project.ProjectLimits
 import audio.tembra.core.project.SetGain
 import audio.tembra.core.project.SetMasterVolume
 import audio.tembra.core.project.SetMuted
+import audio.tembra.core.project.SetPan
 import audio.tembra.core.project.SetSoloed
 import audio.tembra.core.project.SetTempo
 import audio.tembra.core.project.SetTimeSignature
@@ -57,12 +59,20 @@ import audio.tembra.engine.perf.PerfTrace
 import audio.tembra.ui.drop.DropOutcome
 import audio.tembra.ui.drop.DropPlan
 import audio.tembra.ui.metronome.TapCaption
+import audio.tembra.ui.mixer.MasterUi
+import audio.tembra.ui.mixer.MixerAnchors
+import audio.tembra.ui.mixer.MixerHeight
+import audio.tembra.ui.mixer.MixerUi
+import audio.tembra.ui.mixer.StripForm
+import audio.tembra.ui.mixer.StripUi
 import audio.tembra.ui.platform.AudioFilePicker
 import audio.tembra.ui.platform.AudioPickRequest
 import audio.tembra.ui.platform.AudioPickResult
+import audio.tembra.ui.platform.WindowCapabilities
 import audio.tembra.ui.platform.WindowControls
 import audio.tembra.ui.session.ImportTarget
 import audio.tembra.ui.session.InputTelemetry
+import audio.tembra.ui.session.MixTelemetry
 import audio.tembra.ui.session.ProjectSession
 import audio.tembra.ui.session.SessionMessage
 import audio.tembra.ui.session.SessionState
@@ -113,6 +123,7 @@ class TimelineViewModel(
     private val preferences: MetronomePreferences,
     private val timelinePreferences: TimelinePreferences,
     private val windowControls: WindowControls,
+    private val windowCapabilities: WindowCapabilities,
 ) : ViewModel() {
 
     private val view = MutableStateFlow(TimelineViewState())
@@ -129,11 +140,14 @@ class TimelineViewModel(
     /** The menu's full-screen row from the platform's window controls (feature 011, spec FR-010a). */
     private val fullScreenItem = combine(windowControls.fullScreenAvailable, windowControls.isFullScreen, ::fullScreenItemOf)
 
-    /** The window's chrome: the bar's width and the full-screen row, paired so the state combines five flows. */
-    private val chrome = combine(barWidth, fullScreenItem, ::Pair)
+    /** The lanes box as the screen measured it (feature 012, spec FR-016, FR-021): the mixer's anchors and strip form follow it. */
+    private val lanes = MutableStateFlow(LanesBox())
 
-    val uiState: StateFlow<TimelineUiState> = combine(session.state, view, overviewStripShown, metronomeSettings, chrome) { state, view, strip, metronome, (width, fullScreen) ->
-        mapState(state, view, strip, metronome, width, fullScreen)
+    /** The window's chrome: the bar's width, the full-screen row and the lanes box, grouped so the state combines five flows. */
+    private val chrome = combine(barWidth, fullScreenItem, lanes, ::Triple)
+
+    val uiState: StateFlow<TimelineUiState> = combine(session.state, view, overviewStripShown, metronomeSettings, chrome) { state, view, strip, metronome, (width, fullScreen, lanes) ->
+        mapState(state, view, strip, metronome, width, fullScreen, lanes)
     }
         .stateIn(viewModelScope, SharingStarted.Eagerly, currentUi())
 
@@ -146,6 +160,9 @@ class TimelineViewModel(
 
     /** Draw-phase handle on the input (feature 010): the meter and the growing take read it once per frame. */
     val inputTelemetry: InputTelemetry get() = session.inputTelemetry
+
+    /** Draw-phase handle on the mixer's meters (feature 012): the sheet reads it once per frame. */
+    val mixTelemetry: MixTelemetry get() = session.mixTelemetry
 
     private val snapshot = TransportSnapshot()
     private var observeProjectJob: Job? = null
@@ -337,6 +354,9 @@ class TimelineViewModel(
 
     fun setGain(id: TrackId, gainDb: GainDb) = edit(SetGain(id, gainDb))
 
+    /** The strip's knob or the header's readout (feature 012, spec FR-007): one coalesced run per track until [gestureSettled]. */
+    fun setPan(id: TrackId, pan: Pan) = edit(SetPan(id, pan))
+
     fun moveTrack(id: TrackId, delta: Int) {
         if (delta == 0 || takeRunning()) return
         edit(MoveTrack(id, if (delta < 0) MoveDirection.Up else MoveDirection.Down))
@@ -376,6 +396,61 @@ class TimelineViewModel(
     /** The transport bar's width from the screen's constraints: Record and the monitor toggle move with it (spec FR-007, FR-026). */
     fun barWidthMeasured(width: Dp) {
         barWidth.value = width
+    }
+
+    // --- The mixer (feature 012, contracts/mixer-ui.md, mixer-session.md) ------------------------------------------------
+
+    /**
+     * The Mixer button and the X key (spec FR-017, FR-018): opens the sheet at its half height and starts the meters (the
+     * sheet holds one of the session's metering counts), or closes it and releases them. Never touches the transport
+     * (FR-024); the close is the `timeline.mixerClose` section.
+     */
+    fun toggleMixer() {
+        // While the mixer has a window of its own, the button and X bring that window to the front (spec FR-021a).
+        if (windowCapabilities.mixerWindowOpen.value) {
+            windowCapabilities.openMixerWindow()
+            return
+        }
+        if (view.value.mixer.open) {
+            PerfTrace.section(PerfSection.TIMELINE_MIXER_CLOSE) {
+                view.update { it.copy(mixer = it.mixer.copy(open = false)) }
+                session.setMetering(false)
+            }
+        } else {
+            view.update { it.copy(mixer = it.mixer.copy(open = true, height = MixerHeight.Half)) }
+            session.setMetering(true)
+        }
+    }
+
+    /**
+     * The handle's "Open in a window" (spec FR-021a): the sheet closes (its metering count goes with it; the window holds
+     * its own) and the platform opens the mixer's window over the same session.
+     */
+    fun openMixerWindow() {
+        if (view.value.mixer.open) toggleMixer()
+        windowCapabilities.openMixerWindow()
+    }
+
+    /** The height a settled drag or the handle asked for (spec FR-018); landscape's single anchor overrides it when mapped. */
+    fun setMixerHeight(height: MixerHeight) = view.update { it.copy(mixer = it.mixer.copy(height = height)) }
+
+    /** A fader, knob or master drag released: the coalesced run closes, the next change starts a new undo step (spec FR-005). */
+    fun gestureSettled() = session.closeEditGroup()
+
+    /** A strip's clip square tapped: clears that track's latch at the engine's next block (spec FR-012). */
+    fun resetTrackClip(id: TrackId) = session.resetTrackClip(id)
+
+    /** The master's clip square tapped: clears the master latch (spec FR-012). */
+    fun resetMasterClip() = session.resetMasterClip()
+
+    /** The lanes box measured under [layout] (spec FR-016, FR-021, FR-022): the anchors and the strip form derive from it. */
+    fun lanesMeasured(layout: TimelineLayout, height: Dp) {
+        lanes.value = LanesBox(layout, height)
+    }
+
+    override fun onCleared() {
+        // The sheet dies with the ViewModel: its metering count is released so the engine stops measuring (FR-013).
+        if (view.value.mixer.open) session.setMetering(false)
     }
 
     /** The arm toggle (spec FR-001, FR-005): arms [id], disarms it when it is the armed one; nothing during a take (FR-018). */
@@ -580,6 +655,7 @@ class TimelineViewModel(
         metronomeSettings: MetronomeSettings,
         barWidth: Dp,
         fullScreenItem: FullScreenItem,
+        lanes: LanesBox,
     ): TimelineUiState {
         val project = state.project ?: return TimelineUiState(
             loaded = state.unavailable != null,
@@ -607,6 +683,7 @@ class TimelineViewModel(
                 audible = track.id in audible,
                 armed = track.id == armedTrack,
                 recordHere = track.id == armedTrack && !recordInBar,
+                pan = track.pan,
                 clips = track.clips.map { clip ->
                     val asset = project.assets[clip.assetId]
                     val available = asset?.isAvailable == true && clip.assetId !in state.missingAssets
@@ -650,6 +727,20 @@ class TimelineViewModel(
             at - start > ProjectLimits.MIN_SPLIT_EDGE_SECONDS && end - at > ProjectLimits.MIN_SPLIT_EDGE_SECONDS
         }
         val ready = tracks.all { track -> track.clips.all { !it.available || it.overviewStatus !is OverviewStatus.Building } }
+        // The mixer (feature 012, data-model.md §4, §5): one strip per track, the heights from the lanes box, landscape's one anchor.
+        val anchors = MixerAnchors.of(lanes.layout, lanes.height)
+        val mixerHeight = if (anchors.singleAnchor) MixerHeight.Full else view.mixer.height
+        val mixer = MixerUi(
+            open = view.mixer.open,
+            height = mixerHeight,
+            form = StripForm.of(mixerHeight, anchors.heightOf(mixerHeight).value),
+            anchors = anchors,
+            strips = StripUi.forProject(project, armedTrack),
+            master = MasterUi(project.masterVolume.value),
+            selectedIndex = selection.trackIdOrNull?.let { id -> tracks.indexOfFirst { it.id == id }.takeIf { it >= 0 } },
+            canReorder = !takeRunning,
+            windowAvailable = windowCapabilities.multipleWindows,
+        )
         return TimelineUiState(
             loaded = true,
             projectName = project.name,
@@ -696,6 +787,7 @@ class TimelineViewModel(
             liveTake = liveTake,
             permission = recording.permission,
             barWidth = barWidth,
+            mixer = mixer,
         )
     }
 
@@ -740,6 +832,7 @@ class TimelineViewModel(
         metronomeSettings.value,
         barWidth.value,
         fullScreenItemOf(windowControls.fullScreenAvailable.value, windowControls.isFullScreen.value),
+        lanes.value,
     )
 
     private fun fullScreenItemOf(available: Boolean, fullScreen: Boolean): FullScreenItem = when {
@@ -827,7 +920,8 @@ class TimelineViewModel(
             view.update { current ->
                 if (current.projectId == id) return@update current
                 val port = current.viewport
-                val fresh = TimelineViewState(projectId = id, viewport = port.copy(scrollBeats = Beats.Zero))
+                // The mixer sheet stays as it was (feature 012, spec FR-022): its metering count belongs to the sheet, not the project.
+                val fresh = TimelineViewState(projectId = id, viewport = port.copy(scrollBeats = Beats.Zero), mixer = current.mixer)
                 if (port.widthPx > 0.0) {
                     val project = session.state.value.project
                     val measured = port.copy(scrollBeats = Beats.Zero, projectLengthBeats = project?.lengthBeats ?: Beats.Zero, beatsPerBar = project?.timeSignature?.beats ?: port.beatsPerBar)

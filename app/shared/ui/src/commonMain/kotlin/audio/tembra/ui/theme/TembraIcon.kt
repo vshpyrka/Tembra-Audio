@@ -13,6 +13,7 @@ import audio.tembra.ui.resources.ic_expand_less_24
 import audio.tembra.ui.resources.ic_expand_more_24
 import audio.tembra.ui.resources.ic_fullscreen_24
 import audio.tembra.ui.resources.ic_fullscreen_exit_24
+import audio.tembra.ui.resources.ic_open_in_new_24
 import audio.tembra.ui.resources.ic_fast_forward_24
 import audio.tembra.ui.resources.ic_fast_rewind_24
 import audio.tembra.ui.resources.ic_folder_24
@@ -20,6 +21,7 @@ import audio.tembra.ui.resources.ic_graphic_eq_24
 import audio.tembra.ui.resources.ic_headphones_24
 import audio.tembra.ui.resources.ic_grid_on_24
 import audio.tembra.ui.resources.ic_hearing_24
+import audio.tembra.ui.resources.ic_instant_mix_24
 import audio.tembra.ui.resources.ic_library_music_24
 import audio.tembra.ui.resources.ic_metronome_24
 import audio.tembra.ui.resources.ic_mic_24
@@ -101,6 +103,7 @@ enum class TembraIcon(internal val resource: DrawableResource) {
     // The Timeline menu's full-screen items in a desktop window (feature 011, spec FR-010a).
     Fullscreen(Res.drawable.ic_fullscreen_24),
     FullscreenExit(Res.drawable.ic_fullscreen_exit_24),
+    OpenInNew(Res.drawable.ic_open_in_new_24),
     // The shortcut sheet's close button (feature 011, spec FR-022).
     Close(Res.drawable.ic_close_24),
     // Filled variants (FILL 1) for the metronome's play button, as the design draws them (`tools/fetch-material-symbols.sh --fill`).
@@ -138,4 +141,6 @@ enum class TembraIcon(internal val resource: DrawableResource) {
     Piano(Res.drawable.ic_piano_24),
     // Feature 010 (timeline recording): the input monitoring toggle.
     Headphones(Res.drawable.ic_headphones_24),
+    // Feature 012 (the mixer): the toolbar's Mixer button, the design's sliders glyph (spec FR-017).
+    InstantMix(Res.drawable.ic_instant_mix_24),
 }

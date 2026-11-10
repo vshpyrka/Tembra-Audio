@@ -30,6 +30,18 @@ enum class ShortcutAction {
     TimelineArm,
     TimelineRecord,
     TimelineMonitor,
+    // Feature 012 (FR-017, FR-029): the mixer sheet.
+    TimelineMixer,
+    // Feature 012 (FR-028, FR-029): the keys of a focused strip, served by the strip's own handler.
+    MixerFaderUp,
+    MixerFaderDown,
+    MixerKnobRight,
+    MixerKnobLeft,
+    MixerPageUp,
+    MixerPageDown,
+    MixerHome,
+    MixerMute,
+    MixerSolo,
     MetronomeStartStop,
     MetronomeTempoUp,
     MetronomeTempoDown,

@@ -22,6 +22,9 @@
 #include "metronome/metronome_renderer.h"
 #include "metronome/triple_buffer.h"
 #include "mixer/master_bus.h"
+#include "mixer/mix_meter.h"
+#include "mixer/mix_params.h"
+#include "mixer/mix_record.h"
 #include "mixer/monitor_strip.h"
 #include "mixer/track_strip.h"
 #include "timeline/arrangement_snapshot.h"
@@ -67,9 +70,19 @@ public:
     // --- Host -----------------------------------------------------------------------------------------------------
 
     void setArrangement(const ArrangementSnapshot& snapshot) { arrangementSlots_.write(snapshot); }
-    void setTracks(const TrackTable& tracks) { trackSlots_.write(tracks); }
+    /** The revision-6 table seeds the lock-free parameters (gain and audibility; every pan is kept): feature 012, R4. */
+    void setTracks(const TrackTable& tracks) { mixParams_.seed(tracks); }
     void setTempo(const TempoMap& tempo) { tempoSlots_.write(tempo); }
     void setMaster(float gain) { masterTarget_.store(gain, std::memory_order_release); }
+
+    // --- The mixer (feature 012, contracts/engine-c-abi-v8.md): lock-free from any host thread -----------------------
+
+    /** Per-track gain, pan and audibility plus the metering switch; the callback applies a change at its next block. */
+    MixParams& mixParams() { return mixParams_; }
+    const MixParams& mixParams() const { return mixParams_; }
+
+    /** Clears strip [index]'s clip latch (0..63) or the master's (TEMBRA_MIXER_MASTER_INDEX) at the next publish. */
+    void requestClipReset(uint32_t index) { meter_.requestReset(index); }
 
     /** The click voice the transport drives (research R4); set before the callback can see this renderer. */
     void setMetronome(MetronomeRenderer* metronome) { metronome_.store(metronome, std::memory_order_release); }
@@ -129,6 +142,12 @@ public:
     uint32_t starvation() const { return starvation_.load(std::memory_order_relaxed); }
     uint32_t clipsActive() const { return clipsActive_.load(std::memory_order_relaxed); }
     uint32_t sampleRate() const { return rate_; }
+    /** The meter record of the last block published while metering was on, or the zeroed one published when it turned off. */
+    MixRecord mixRecord() const { return mixRecord_.load(); }
+    /** Blocks in which the master clamp engaged since the session started (health counter master_clips; counted whether or not metering is on). */
+    uint32_t masterClips() const { return masterClips_.load(std::memory_order_relaxed); }
+    /** The meter's measurement calls so far (the test that metering off measures nothing). */
+    uint64_t meterMeasureCalls() const { return meter_.measureCalls(); }
 
     // --- Audio thread ----------------------------------------------------------------------------------------------
 
@@ -151,7 +170,8 @@ private:
     };
 
     void renderBlock(float* out, uint32_t frames, const InputBlock& input);
-    void applyTracks(const TrackTable& table);
+    void applyMix(uint32_t trackCount);
+    void finishBus(float* out, uint32_t frames);
     void recomputeClipFrames();
     void requestSources(int64_t position);
     uint32_t renderPlaying(int64_t position, uint32_t frames, float* out, const InputBlock& input, uint32_t inputOffset);
@@ -163,8 +183,8 @@ private:
 
     // Host → callback.
     TripleBuffer<ArrangementSnapshot> arrangementSlots_;
-    TripleBuffer<TrackTable> trackSlots_;
     TripleBuffer<TempoMap> tempoSlots_;
+    MixParams mixParams_;  // feature 012: the lock-free gain, pan, audibility and metering switch (research R4)
     std::atomic<float> masterTarget_{1.0f};
     std::atomic<MetronomeRenderer*> metronome_{nullptr};
     std::atomic<bool> metronomeEnabled_{false};
@@ -184,14 +204,21 @@ private:
     std::atomic<uint64_t> blocks_{0};
     std::atomic<uint32_t> starvation_{0};
     std::atomic<uint32_t> clipsActive_{0};
+    std::atomic<uint32_t> masterClips_{0};
     Seqlock<TransportRecord> record_;
+    Seqlock<MixRecord> mixRecord_;  // feature 012: the meters, one record per block while metering is on (research R6)
 
     // Callback-owned.
     TransportClock clock_;
     TempoMap tempo_;
     const ArrangementSnapshot* arrangement_ = nullptr;
     uint64_t framesVersion_ = UINT64_MAX;  // the arrangement version the clip frames were computed for
-    uint64_t appliedTracks_ = UINT64_MAX;
+    uint64_t appliedMix_ = UINT64_MAX;     // the MixParams version the strips' targets were set from
+    uint32_t appliedMixTracks_ = UINT32_MAX;
+    MixMeter meter_;
+    bool meteringOn_ = false;
+    bool meterPublished_ = false;  // a record went out since metering was last on: one zeroed record follows the switch off
+    bool clampThisBlock_ = false;
     float masterApplied_ = 1.0f;
     bool clickRunning_ = false;
     bool releasing_ = false;

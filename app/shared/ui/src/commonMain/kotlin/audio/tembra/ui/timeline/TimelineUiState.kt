@@ -14,6 +14,7 @@ import audio.tembra.core.project.TrackId
 import audio.tembra.core.recording.MonitorState
 import audio.tembra.core.timeline.TimelineViewport
 import audio.tembra.ui.metronome.TapCaption
+import audio.tembra.ui.mixer.MixerUi
 import audio.tembra.ui.platform.MicrophonePermissionStatus
 import audio.tembra.ui.session.LiveTakeUi
 import audio.tembra.ui.transport.RecordButtonState
@@ -84,6 +85,8 @@ data class TimelineUiState(
     val permission: MicrophonePermissionStatus = MicrophonePermissionStatus.NotDetermined,
     /** The transport bar's width, which places Record and the monitor toggle (spec FR-007, FR-026); 0 until measured. */
     val barWidth: Dp = 0.dp,
+    // The mixer (feature 012, data-model.md §4).
+    val mixer: MixerUi = MixerUi(),
 ) {
     val isEmpty: Boolean get() = loaded && tracks.isEmpty()
 

@@ -51,3 +51,14 @@ AUDIO_INPUT_OVERRUNS counter audio.inputOverruns
 AUDIO_RECORD_BACKLOG counter audio.recordBacklog
 AUDIO_TAKE_ALIGNMENT_MS counter audio.takeAlignmentMs
 AUDIO_MONITOR_DELAY_MS counter audio.monitorDelayMs
+# Feature 012 (mixer, contracts/perf-instrumentation.md): the sheet, the meters per frame, the fader, knob and master gestures, the pan apply.
+TIMELINE_MIXER_OPEN timeline timeline.mixerOpen
+TIMELINE_MIXER_CLOSE timeline timeline.mixerClose
+TIMELINE_MIXER_FRAME timeline timeline.mixerFrame
+TIMELINE_FADER_DRAG timeline timeline.faderDrag
+TIMELINE_PAN_TURN timeline timeline.panTurn
+TRANSPORT_MASTER_DRAG transport transport.masterDrag
+ENGINE_PAN_APPLY engine engine.panApply
+# Feature 012: the master clamp and the meter frames the UI missed (ABI revision 8).
+AUDIO_MASTER_CLIPS counter audio.masterClips
+AUDIO_METER_FRAMES_DROPPED counter audio.meterFramesDropped

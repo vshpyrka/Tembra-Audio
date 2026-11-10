@@ -45,6 +45,7 @@ class RecordingTargets(private val record: (ShortcutAction) -> Unit) {
         override fun arm() = true.also { record(ShortcutAction.TimelineArm) }
         override fun record() = true.also { this@RecordingTargets.record(ShortcutAction.TimelineRecord) }
         override fun toggleMonitor() = true.also { record(ShortcutAction.TimelineMonitor) }
+        override fun toggleMixer() = true.also { record(ShortcutAction.TimelineMixer) }
     }
     private val metronome = object : MetronomeShortcuts {
         override fun startStop() = true.also { record(ShortcutAction.MetronomeStartStop) }
@@ -71,6 +72,14 @@ class RecordingTargets(private val record: (ShortcutAction) -> Unit) {
         override fun focusSearch() = true.also { record(ShortcutAction.ProjectsFocusSearch) }
         override fun newProject() = true.also { record(ShortcutAction.ProjectsNewProject) }
     }
+    private val mixer = object : MixerShortcuts {
+        override fun faderStep(direction: Int) = true.also { record(if (direction > 0) ShortcutAction.MixerFaderUp else ShortcutAction.MixerFaderDown) }
+        override fun knobStep(direction: Int) = true.also { record(if (direction > 0) ShortcutAction.MixerKnobRight else ShortcutAction.MixerKnobLeft) }
+        override fun page(direction: Int) = true.also { record(if (direction > 0) ShortcutAction.MixerPageUp else ShortcutAction.MixerPageDown) }
+        override fun home() = true.also { record(ShortcutAction.MixerHome) }
+        override fun mute() = true.also { record(ShortcutAction.MixerMute) }
+        override fun solo() = true.also { record(ShortcutAction.MixerSolo) }
+    }
 
-    val all = ShortcutTargets(shell = shell, timeline = timeline, tuner = tuner, metronome = metronome, projects = projects)
+    val all = ShortcutTargets(shell = shell, timeline = timeline, tuner = tuner, metronome = metronome, projects = projects, mixer = mixer)
 }

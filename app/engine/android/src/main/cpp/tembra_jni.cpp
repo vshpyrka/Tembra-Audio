@@ -132,19 +132,20 @@ Java_audio_tembra_engine_NativeAudioEngine_nativeToneStop(JNIEnv*, jobject) {
 JNIEXPORT jint JNICALL
 Java_audio_tembra_engine_NativeAudioEngine_nativeAudioHealth(JNIEnv* env, jobject, jlongArray out) {
     // Feature 007: fills [callbacks, lastUs, maxUs, overBudget, xruns, realtime, avgUs, starvation, clipsActive,
-    // inputOverruns, recordBacklog, inputXruns] (avgUs..clipsActive since ABI revision 6, feature 009; the last three
-    // since revision 7, feature 010); -1 while no stream is open.
-    if (out == nullptr || env->GetArrayLength(out) < 12) return TEMBRA_ERR_ARGUMENT;
+    // inputOverruns, recordBacklog, inputXruns, masterClips] (avgUs..clipsActive since ABI revision 6, feature 009;
+    // the capture three since revision 7, feature 010; masterClips since revision 8, feature 012); -1 while no stream is open.
+    if (out == nullptr || env->GetArrayLength(out) < 13) return TEMBRA_ERR_ARGUMENT;
     tembra_audio_health health{};
     const int32_t result = tembra_engine_audio_health(&health);
     if (result != 0) return result;
-    const jlong fields[12] = {
+    const jlong fields[13] = {
         static_cast<jlong>(health.callbacks), static_cast<jlong>(health.last_us), static_cast<jlong>(health.max_us),
         static_cast<jlong>(health.over_budget), static_cast<jlong>(health.xruns), static_cast<jlong>(health.realtime),
         static_cast<jlong>(health.avg_us), static_cast<jlong>(health.starvation), static_cast<jlong>(health.clips_active),
         static_cast<jlong>(health.input_overruns), static_cast<jlong>(health.record_backlog), static_cast<jlong>(health.input_xruns),
+        static_cast<jlong>(health.master_clips),
     };
-    env->SetLongArrayRegion(out, 0, 12, fields);
+    env->SetLongArrayRegion(out, 0, 13, fields);
     return 0;
 }
 
@@ -492,6 +493,54 @@ Java_audio_tembra_engine_NativeAudioEngine_nativeStorageFreeBytes(JNIEnv* env, j
     const int64_t result = tembra_storage_free_bytes(utf);
     env->ReleaseStringUTFChars(path, utf);
     return static_cast<jlong>(result);
+}
+
+// --- The mixer (revision 8, feature 012): lock-free setters and the allocation-free meter read ----------------------------
+
+JNIEXPORT jint JNICALL
+Java_audio_tembra_engine_NativeAudioEngine_nativeMixerSetTrack(JNIEnv*, jobject, jint index, jfloat gain, jfloat pan, jboolean audible) {
+    return static_cast<jint>(tembra_mixer_set_track(static_cast<uint32_t>(index), gain, pan, audible ? 1u : 0u));
+}
+
+JNIEXPORT jint JNICALL
+Java_audio_tembra_engine_NativeAudioEngine_nativeMixerSetPan(JNIEnv*, jobject, jint index, jfloat pan) {
+    return static_cast<jint>(tembra_mixer_set_pan(static_cast<uint32_t>(index), pan));
+}
+
+JNIEXPORT jint JNICALL
+Java_audio_tembra_engine_NativeAudioEngine_nativeMixerSetMaster(JNIEnv*, jobject, jfloat gain) {
+    return static_cast<jint>(tembra_mixer_set_master(gain));
+}
+
+JNIEXPORT jint JNICALL
+Java_audio_tembra_engine_NativeAudioEngine_nativeMixerSetMetering(JNIEnv*, jobject, jboolean enabled) {
+    return static_cast<jint>(tembra_mixer_set_metering(enabled ? 1u : 0u));
+}
+
+JNIEXPORT void JNICALL
+Java_audio_tembra_engine_NativeAudioEngine_nativeMixerRead(JNIEnv* env, jobject, jintArray ints, jfloatArray peaks, jfloatArray rms, jfloatArray master, jlongArray longs) {
+    // Fills ints [trackCount, metering, masterClipped], peaks and rms [64 tracks × 2 sides], master [peakL, peakR, rmsL, rmsR]
+    // and longs [block, clipMask] from one seqlock read; allocates nothing (draw-phase caller, the nativeCaptureRead pattern).
+    if (ints == nullptr || peaks == nullptr || rms == nullptr || master == nullptr || longs == nullptr) return;
+    if (env->GetArrayLength(ints) < 3 || env->GetArrayLength(peaks) < TEMBRA_MAX_TRACKS * 2 || env->GetArrayLength(rms) < TEMBRA_MAX_TRACKS * 2 ||
+        env->GetArrayLength(master) < 4 || env->GetArrayLength(longs) < 2) {
+        return;
+    }
+    tembra_mix_snapshot snapshot{};
+    tembra_mixer_read(&snapshot);
+    const jint i[3] = {static_cast<jint>(snapshot.track_count), static_cast<jint>(snapshot.metering), static_cast<jint>(snapshot.master_clipped)};
+    const jfloat m[4] = {snapshot.master_peak[0], snapshot.master_peak[1], snapshot.master_rms[0], snapshot.master_rms[1]};
+    const jlong l[2] = {static_cast<jlong>(snapshot.block), static_cast<jlong>(snapshot.clip_mask)};
+    env->SetIntArrayRegion(ints, 0, 3, i);
+    env->SetFloatArrayRegion(peaks, 0, TEMBRA_MAX_TRACKS * 2, &snapshot.peak[0][0]);
+    env->SetFloatArrayRegion(rms, 0, TEMBRA_MAX_TRACKS * 2, &snapshot.rms[0][0]);
+    env->SetFloatArrayRegion(master, 0, 4, m);
+    env->SetLongArrayRegion(longs, 0, 2, l);
+}
+
+JNIEXPORT jint JNICALL
+Java_audio_tembra_engine_NativeAudioEngine_nativeMixerResetClip(JNIEnv*, jobject, jint index) {
+    return static_cast<jint>(tembra_mixer_reset_clip(static_cast<uint32_t>(index)));
 }
 
 }  // extern "C"

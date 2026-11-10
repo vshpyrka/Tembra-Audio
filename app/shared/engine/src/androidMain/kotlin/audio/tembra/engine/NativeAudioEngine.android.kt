@@ -257,7 +257,7 @@ actual class NativeAudioEngine(
     override val audioState: AudioState
         get() = AudioState.fromNative(nativeAudioState())
 
-    /** Reused by every [audioHealth]: [callbacks, lastUs, maxUs, overBudget, xruns, realtime, avgUs, starvation, clipsActive, inputOverruns, recordBacklog, inputXruns]. */
+    /** Reused by every [audioHealth]: [callbacks, lastUs, maxUs, overBudget, xruns, realtime, avgUs, starvation, clipsActive, inputOverruns, recordBacklog, inputXruns, masterClips]. */
     private val healthFields = LongArray(HEALTH_FIELDS)
 
     override fun audioHealth(): AudioHealth? {
@@ -275,6 +275,7 @@ actual class NativeAudioEngine(
             inputOverruns = healthFields[9].toInt(),
             recordBacklog = healthFields[10].toInt(),
             inputXruns = healthFields[11].toInt(),
+            masterClips = healthFields[12].toInt(),
         )
     }
 
@@ -492,6 +493,43 @@ actual class NativeAudioEngine(
 
     override fun freeBytes(path: String): Long = nativeStorageFreeBytes(path)
 
+    // --- The mixer (feature 012, contracts/engine-c-abi-v8.md "Kotlin seam") -----------------------------------------
+    // Atomic stores and a seqlock copy on the engine: synchronous, no dispatcher hop, allocation-free reads.
+
+    /** Reused by every [readMix]: the ints [trackCount, metering, masterClipped], the strips' peaks and rms, the master's four, the longs [block, clipMask]. */
+    private val mixInts = IntArray(MIX_INTS)
+    private val mixPeaks = FloatArray(MixSnapshot.TRACKS * 2)
+    private val mixRms = FloatArray(MixSnapshot.TRACKS * 2)
+    private val mixMaster = FloatArray(MIX_MASTER)
+    private val mixLongs = LongArray(MIX_LONGS)
+
+    override fun setPan(index: Int, pan: Float) {
+        nativeMixerSetPan(index, pan)
+    }
+
+    override fun setMetering(enabled: Boolean) {
+        nativeMixerSetMetering(enabled)
+    }
+
+    override fun readMix(into: MixSnapshot) {
+        nativeMixerRead(mixInts, mixPeaks, mixRms, mixMaster, mixLongs)
+        into.trackCount = mixInts[0]
+        into.metering = mixInts[1] != 0
+        into.masterClipped = mixInts[2] != 0
+        mixPeaks.copyInto(into.peak)
+        mixRms.copyInto(into.rms)
+        into.masterPeak[0] = mixMaster[0]
+        into.masterPeak[1] = mixMaster[1]
+        into.masterRms[0] = mixMaster[2]
+        into.masterRms[1] = mixMaster[3]
+        into.block = mixLongs[0]
+        into.clipMask = mixLongs[1]
+    }
+
+    override fun resetMixClip(index: Int) {
+        nativeMixerResetClip(index)
+    }
+
     override suspend fun inspect(path: String): AudioInfo? = withContext(Dispatchers.IO) {
         val ints = IntArray(CLIP_INFO_INTS)
         val longs = LongArray(CLIP_INFO_LONGS)
@@ -565,13 +603,22 @@ actual class NativeAudioEngine(
     private external fun nativeCaptureResetClip()
     private external fun nativeCaptureReadPeaks(fromIndex: Long, buffer: java.nio.ByteBuffer, maxCount: Int, next: LongArray): Int
     private external fun nativeStorageFreeBytes(path: String): Long
+    private external fun nativeMixerSetTrack(index: Int, gain: Float, pan: Float, audible: Boolean): Int
+    private external fun nativeMixerSetPan(index: Int, pan: Float): Int
+    private external fun nativeMixerSetMaster(gain: Float): Int
+    private external fun nativeMixerSetMetering(enabled: Boolean): Int
+    private external fun nativeMixerRead(ints: IntArray, peaks: FloatArray, rms: FloatArray, master: FloatArray, longs: LongArray)
+    private external fun nativeMixerResetClip(index: Int): Int
 
     private companion object {
         const val READING_FIELDS = 9
         const val TICK_FIELDS = 7
         const val CUSTOM_INFO_FIELDS = 4
         const val CUSTOM_MS_FIELDS = 2
-        const val HEALTH_FIELDS = 12
+        const val HEALTH_FIELDS = 13
+        const val MIX_INTS = 3
+        const val MIX_MASTER = 4
+        const val MIX_LONGS = 2
         const val TRANSPORT_LONGS = 7
         const val TRANSPORT_DOUBLES = 2
         const val CAPTURE_INTS = 10

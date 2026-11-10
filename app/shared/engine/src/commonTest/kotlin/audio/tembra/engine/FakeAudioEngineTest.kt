@@ -567,4 +567,74 @@ class FakeAudioEngineTest {
         assertEquals(listOf("/cache/a.peaks", "/cache/a.bad"), written)
         assertEquals(listOf("buildOverview(/a.wav)", "buildOverview(/a.wav)"), engine.calls)
     }
+
+    // --- The mixer (feature 012, contracts/engine-c-abi-v8.md "Kotlin seam"; T021) --------------------------------------
+
+    @Test
+    fun theMixerCallsAreRecordedAndThePansKept() {
+        val engine = FakeAudioEngine()
+        engine.setPan(1, -0.35f)
+        engine.setMetering(true)
+        engine.resetMixClip(MixSnapshot.MASTER_INDEX)
+        engine.setMetering(false)
+        assertEquals(listOf("setPan(1,-0.35)", "setMetering(true)", "resetMixClip(64)", "setMetering(false)"), engine.calls)
+        assertEquals(-0.35f, engine.pans[1])
+        assertEquals(0f, engine.pans[0])
+        assertTrue(!engine.metering)
+    }
+
+    @Test
+    fun readMixFollowsTheScriptWhileMeteringIsOnAndIsClearedOtherwise() {
+        val engine = FakeAudioEngine()
+        engine.scriptedMix = { block, into ->
+            into.trackCount = 2
+            into.peak[0] = 0.5f
+            into.rms[1] = 0.25f
+            into.masterPeak[0] = 0.9f
+            into.clipMask = if (block >= 2) 1L else 0L
+            into.masterClipped = true
+        }
+        val snapshot = MixSnapshot()
+        engine.readMix(snapshot)
+        assertTrue(!snapshot.metering)  // metering off: zeros, whatever the script says
+        assertEquals(0f, snapshot.peak[0])
+        engine.setMetering(true)
+        engine.readMix(snapshot)
+        assertTrue(snapshot.metering)
+        assertEquals(1L, snapshot.block)
+        assertEquals(2, snapshot.trackCount)
+        assertEquals(0.5f, snapshot.peak[0])
+        assertEquals(0.25f, snapshot.rms[1])
+        assertEquals(0.9f, snapshot.masterPeak[0])
+        assertTrue(!snapshot.clipped(0))
+        assertTrue(snapshot.masterClipped)
+        engine.readMix(snapshot)
+        assertEquals(2L, snapshot.block)
+        assertTrue(snapshot.clipped(0))
+        assertEquals(3, engine.readMixCount)
+        engine.setMetering(false)
+        engine.readMix(snapshot)
+        assertTrue(!snapshot.metering)
+        assertEquals(0L, snapshot.clipMask)
+    }
+
+    @Test
+    fun theSnapshotConvertsLevelsToDecibelsWithAFloorAndCopies() {
+        val snapshot = MixSnapshot()
+        snapshot.trackCount = 1
+        snapshot.peak[0] = 0.5f
+        snapshot.rms[1] = 0.1f
+        snapshot.masterPeak[1] = 1f
+        assertTrue(kotlin.math.abs(snapshot.peakDb(0, 0) + 6.02f) < 0.01f)
+        assertTrue(kotlin.math.abs(snapshot.rmsDb(0, 1) + 20f) < 0.01f)
+        assertEquals(0f, snapshot.masterPeakDb(1))
+        assertEquals(MixSnapshot.SILENCE_DB, snapshot.peakDb(0, 1))
+        assertEquals(MixSnapshot.SILENCE_DB, snapshot.masterRmsDb(0))
+        val copy = MixSnapshot()
+        copy.copyFrom(snapshot)
+        assertEquals(1, copy.trackCount)
+        assertEquals(0.5f, copy.peak[0])
+        assertEquals(0.1f, copy.rms[1])
+        assertEquals(1f, copy.masterPeak[1])
+    }
 }

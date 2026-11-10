@@ -6,13 +6,16 @@ import audio.tembra.core.project.AudioAsset
 import audio.tembra.core.project.AudioAssetId
 import audio.tembra.core.project.AudioFormat
 import audio.tembra.core.project.Beats
+import audio.tembra.core.project.ClipId
 import audio.tembra.core.project.ClipTemplate
 import audio.tembra.core.project.DeleteTrack
 import audio.tembra.core.project.GainDb
+import audio.tembra.core.project.Pan
 import audio.tembra.core.project.PlaybackState
 import audio.tembra.core.project.RenameTrack
 import audio.tembra.core.project.SetGain
 import audio.tembra.core.project.SetMasterVolume
+import audio.tembra.core.project.SetPan
 import audio.tembra.core.project.SetSoloed
 import audio.tembra.core.project.SetTempo
 import audio.tembra.core.project.Percent
@@ -37,12 +40,15 @@ import audio.tembra.core.recording.TakeStopReason
 import audio.tembra.engine.AudioEvent
 import audio.tembra.engine.FakeAudioEngine
 import audio.tembra.engine.AudioState
+import audio.tembra.engine.MixSnapshot
 import audio.tembra.engine.PlayResult
 import audio.tembra.engine.TransportSnapshot
 import audio.tembra.ui.platform.FakeAudioRouteMonitor
 import audio.tembra.ui.platform.FakeBackgroundPlaybackHost
 import audio.tembra.ui.platform.FakeMicrophonePermission
 import audio.tembra.ui.platform.MicrophonePermissionStatus
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -131,6 +137,30 @@ class ProjectSessionTest {
     private fun callNames(): List<String> = engine.calls.map { it.substringBefore('(') }
 
     // --- Open --------------------------------------------------------------------------------------------------------
+
+    /**
+     * Feature 012's stress project: the same loop on several tracks sounds at once, and a source has one read position,
+     * so each such clip gets its own source (contracts/project-session.md; `ClipSourceRegistry.ensure`).
+     */
+    @Test
+    fun clipsOfOneAssetOnSeveralTracksEachGetTheirOwnSource() = runTest(dispatcher) {
+        val drums = demo.tracks[0].clips.first()
+        val doubled = demo.copy(
+            tracks = demo.tracks.mapIndexed { index, track ->
+                if (index == 1) track.copy(clips = persistentListOf(drums.copy(id = ClipId("drums-again")))) else track
+            }.toPersistentList(),
+        )
+        val repository = FakeProjectRepository(initial = listOf(doubled))
+        val session = newSession(repository)
+        session.start()
+        runCurrent()
+        session.open(doubled.id)
+        runCurrent()
+        val drumsSources = engine.lastArrangement!!.clips.filter { it.trackIndex <= 1 }.map { it.source }
+        assertEquals(2, drumsSources.size)
+        assertEquals(2, drumsSources.toSet().size, "two clips of the drums at the start: two sources")
+        assertEquals(5, callNames().count { it == "openClipSource" }, "four assets and one more source for the drums")
+    }
 
     /** Leaving the Timeline hands the device over (the tuner and the metronome need an idle engine); returning takes it back at the position (spec FR-008a). */
     @Test
@@ -667,6 +697,125 @@ class ProjectSessionTest {
         assertEquals(3.0, into.positionBeats)
         session.transportTelemetry.read(20L, into)
         assertEquals(2, engine.readTransportCount)
+    }
+
+    // --- The mixer (feature 012, contracts/mixer-session.md; T022) ----------------------------------------------------------
+
+    @Test
+    fun aPanEditUsesThePanFastPathOnly() = runTest(dispatcher) {
+        openDemo()
+        val before = engine.calls.size
+        assertNull(session.edit(SetPan(bassTrack, Pan(-35))))
+        assertEquals(listOf("setPan(1,-0.35)"), engine.calls.drop(before))
+        assertEquals(Pan(-35), session.state.value.project?.tracks?.get(1)?.pan)
+        assertTrue(session.state.value.canUndo)
+    }
+
+    @Test
+    fun aRunOfPanChangesIsOneUndoStepUntilTheGroupCloses() = runTest(dispatcher) {
+        openDemo()
+        session.edit(SetPan(drumsTrack, Pan(-10)))
+        session.edit(SetPan(drumsTrack, Pan(-20)))
+        session.edit(SetPan(drumsTrack, Pan(-30)))
+        session.closeEditGroup()
+        session.edit(SetPan(drumsTrack, Pan(-40)))
+        session.undo()
+        assertEquals(Pan(-30), session.state.value.project?.tracks?.first()?.pan)
+        session.undo()
+        assertEquals(Pan.Centre, session.state.value.project?.tracks?.first()?.pan, "the three pan changes undo as one")
+        assertFalse(session.state.value.canUndo)
+        // A pan on another track never joins the run.
+        session.edit(SetPan(drumsTrack, Pan(10)))
+        session.edit(SetPan(bassTrack, Pan(20)))
+        session.undo()
+        assertEquals(Pan(10), session.state.value.project?.tracks?.get(0)?.pan)
+        assertEquals(Pan.Centre, session.state.value.project?.tracks?.get(1)?.pan)
+    }
+
+    /** Pan is not in the arrangement struct: after one, the session pushes every index whose pan the engine does not hold yet. */
+    @Test
+    fun pansArePushedAfterAnArrangementWhenTheIndicesMove() = runTest(dispatcher) {
+        openDemo()
+        session.edit(SetPan(bassTrack, Pan(-35)))
+        val before = engine.calls.size
+        session.edit(DeleteTrack(drumsTrack))  // the bass moves from index 1 to 0
+        val calls = engine.calls.drop(before)
+        assertTrue(calls.first().startsWith("setArrangement("), calls.toString())
+        assertEquals(listOf("setPan(0,-0.35)", "setPan(1,0.0)"), calls.filter { it.startsWith("setPan") })
+        assertEquals(-0.35f, engine.pans[0])
+        assertEquals(0f, engine.pans[1])
+        // Undo brings the drums back: the bass is index 1 again, so both pans move back; a centred project pushes nothing.
+        val beforeUndo = engine.calls.size
+        session.undo()
+        assertEquals(listOf("setPan(0,0.0)", "setPan(1,-0.35)"), engine.calls.drop(beforeUndo).filter { it.startsWith("setPan") })
+        val beforeTempo = engine.calls.size
+        session.edit(SetTempo(Tempo(100)))
+        assertEquals(emptyList(), engine.calls.drop(beforeTempo).filter { it.startsWith("setPan") })
+    }
+
+    @Test
+    fun meteringIsOnWhileAnyHolderIsOpenAndIsPushedAgainWhenTheTransportRebinds() = runTest(dispatcher) {
+        openDemo()
+        val before = engine.calls.size
+        session.setMetering(true)
+        session.setMetering(true)  // a second holder (a window beside the sheet)
+        session.setMetering(false)
+        assertEquals(listOf("setMetering(true)"), engine.calls.drop(before))
+        session.setMetering(false)
+        assertEquals(listOf("setMetering(true)", "setMetering(false)"), engine.calls.drop(before))
+        session.setMetering(false)  // never below zero
+        assertEquals(2, engine.calls.drop(before).size)
+        // A holder open while the Timeline is left and re-entered: the reopened transport meters again.
+        session.setMetering(true)
+        session.transportHostVisible(false)
+        runCurrent()
+        assertEquals("closeTransport", engine.calls.last())
+        session.transportHostVisible(true)
+        runCurrent()
+        val sinceReopen = engine.calls.drop(engine.calls.lastIndexOf("openTransport"))
+        assertTrue("setMetering(true)" in sinceReopen, sinceReopen.toString())
+        assertTrue(engine.metering)
+    }
+
+    @Test
+    fun playFromAStopClearsTheLatchesWhileAMixerIsOpen() = runTest(dispatcher) {
+        openDemo()
+        session.setMetering(true)
+        val before = engine.calls.size
+        session.play()
+        runCurrent()
+        val calls = engine.calls.drop(before)
+        assertEquals(listOf("resetMixClip(0)", "resetMixClip(1)", "resetMixClip(2)", "resetMixClip(3)", "resetMixClip(64)"), calls.filter { it.startsWith("resetMixClip") })
+        assertTrue(calls.indexOf("resetMixClip(64)") < calls.indexOf("play"))
+        // Without a mixer open nothing is reset.
+        session.pause()
+        session.setMetering(false)
+        val beforeSecond = engine.calls.size
+        session.play()
+        runCurrent()
+        assertTrue(engine.calls.drop(beforeSecond).none { it.startsWith("resetMixClip") })
+    }
+
+    @Test
+    fun mixTelemetryReadsOncePerFrameAndTheLatchesResetByIndex() = runTest(dispatcher) {
+        openDemo()
+        engine.scriptedMix = { _, into ->
+            into.trackCount = 4
+            into.peak[2] = 0.5f
+        }
+        session.setMetering(true)
+        val into = MixSnapshot()
+        session.mixTelemetry.read(10L, into)
+        session.mixTelemetry.read(10L, into)
+        assertEquals(1, engine.readMixCount)
+        assertEquals(0.5f, into.peak[2])
+        assertEquals(4, into.trackCount)
+        session.mixTelemetry.read(20L, into)
+        assertEquals(2, engine.readMixCount)
+        val beforeReset = engine.calls.size
+        session.resetTrackClip(bassTrack)
+        session.resetMasterClip()
+        assertEquals(listOf("resetMixClip(1)", "resetMixClip(64)"), engine.calls.drop(beforeReset))
     }
 
     // --- Stop-and-leave guard ----------------------------------------------------------------------------------------

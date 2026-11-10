@@ -72,6 +72,12 @@ internal fun TrackList(
         // when the row slides out from under the finger (the recording journey lost its arm tap once in 49 runs).
         if (grew && selectedTrack != null && state.tracks.lastOrNull()?.id == selectedTrack) listState.scrollToItem(state.tracks.lastIndex)
     }
+    // A track selected out of view (a mixer strip's number or name, feature 012 spec FR-023) scrolls its lane into view;
+    // a header tap selects a visible row and moves nothing.
+    LaunchedEffect(selectedTrack) {
+        val index = state.tracks.indexOfFirst { it.id == selectedTrack }
+        if (index >= 0 && listState.layoutInfo.visibleItemsInfo.none { it.index == index }) listState.animateScrollToItem(index)
+    }
     val onScrollBy by rememberUpdatedState(callbacks.onScrollBy)
     // Files dropped on a track's row join that track, below the rows they become new tracks (feature 011, FR-026): the
     // zone is the row under the pointer, the beat the snapped one under it. Where the platform does not say where the

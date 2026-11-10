@@ -1,0 +1,138 @@
+stable class audio.tembra.ui.designsystem.MeterLevel {
+  stable val peakDb: Float
+  stable val rmsDb: Float
+  stable val clipped: Boolean
+}
+
+stable class audio.tembra.ui.mixer.MasterUi {
+  stable val percent: Int
+}
+
+unstable class audio.tembra.ui.mixer.MeterFeed {
+  unstable val levels: MixSnapshot
+  stable val tick: LongState
+  runtime val mirror: MixerLevelMirror
+  runtime val inputTelemetry: InputTelemetry
+  <runtime stability> = Unstable
+}
+
+stable class audio.tembra.ui.mixer.MixerAnchors {
+  stable val half: Dp
+  stable val full: Dp
+  stable val singleAnchor: Boolean
+}
+
+unstable class audio.tembra.ui.mixer.MixerLevelMirror {
+  runtime val strips: List<MutableState<MeterLevel>>
+  stable val masterState: MutableState<MeterLevel>
+  unstable val capture: CaptureSnapshot
+  <runtime stability> = Unstable
+}
+
+stable class audio.tembra.ui.mixer.MixerUi {
+  stable val open: Boolean
+  stable val height: MixerHeight
+  stable val form: StripForm
+  stable val anchors: MixerAnchors
+  stable val strips: ImmutableList<StripUi>
+  stable val master: MasterUi
+  stable val windowAvailable: Boolean
+  stable val selectedIndex: Int?
+  stable val canReorder: Boolean
+}
+
+stable class audio.tembra.ui.mixer.MixerWindowUiState {
+  stable val open: Boolean
+  stable val strips: ImmutableList<StripUi>
+  stable val master: MasterUi
+  stable val canReorder: Boolean
+}
+
+stable class audio.tembra.ui.mixer.StripUi {
+  stable val id: TrackId
+  stable val index: Int
+  stable val number: Int
+  stable val name: String
+  stable val colorIndex: Int
+  stable val gainDb: GainDb
+  stable val pan: Pan
+  stable val muted: Boolean
+  stable val soloed: Boolean
+  stable val audible: Boolean
+  stable val meterSource: MeterSource
+}
+
+stable class audio.tembra.ui.timeline.TimelineCallbacks {
+  stable val onPlayPause: Function0<Unit>
+  stable val onSkipToStart: Function0<Unit>
+  stable val onStepBar: Function1<@[ParameterName(name = 'delta')] Int, Unit>
+  stable val onSeek: Function1<@[ParameterName(name = 'beats')] Beats, Unit>
+  stable val onScrubStart: Function0<Unit>
+  stable val onScrub: Function1<@[ParameterName(name = 'beats')] Beats, Unit>
+  stable val onScrubEnd: Function1<@[ParameterName(name = 'beats')] Beats, Unit>
+  stable val onMasterVolume: Function1<@[ParameterName(name = 'percent')] Int, Unit>
+  stable val onMetronomeToggle: Function0<Unit>
+  stable val onMetronomeSettings: Function0<Unit>
+  stable val onViewportMeasured: Function2<@[ParameterName(name = 'widthPx')] Double, @[ParameterName(name = 'densityScale')] Double, Unit>
+  stable val onZoomAround: Function2<@[ParameterName(name = 'centreX')] Double, @[ParameterName(name = 'factor')] Double, Unit>
+  stable val onZoomStep: Function1<@[ParameterName(name = 'steps')] Int, Unit>
+  stable val onScrollBy: Function1<@[ParameterName(name = 'px')] Double, Unit>
+  stable val onScrollTo: Function1<@[ParameterName(name = 'beats')] Beats, Unit>
+  stable val onZoomTo: Function2<@[ParameterName(name = 'startBeats')] Beats, @[ParameterName(name = 'endBeats')] Beats, Unit>
+  stable val onOverviewStripShown: Function1<@[ParameterName(name = 'shown')] Boolean, Unit>
+  stable val onFullScreen: Function1<Boolean, Unit>
+  stable val onGrid: Function1<GridSize, Unit>
+  stable val onAddTrack: Function0<Unit>
+  stable val onSelectTrack: Function1<TrackId, Unit>
+  stable val onToggleMute: Function1<TrackId, Unit>
+  stable val onToggleSolo: Function1<TrackId, Unit>
+  stable val onGain: Function2<TrackId, GainDb, Unit>
+  stable val onTrackSettings: Function1<TrackId, Unit>
+  stable val onMoveTrack: Function2<TrackId, Int, Unit>
+  stable val onDeleteTrack: Function1<TrackId, Unit>
+  stable val onConfirmDeleteTrack: Function0<Unit>
+  stable val onDismissDeleteTrack: Function0<Unit>
+  stable val onAddAudio: Function1<TrackId?, Unit>
+  stable val onAddAudioAsNewTrack: Function0<Unit>
+  stable val onExpandTrack: Function1<TrackId?, Unit>
+  stable val onSelectClip: Function2<TrackId, ClipId, Unit>
+  stable val onClearSelection: Function0<Unit>
+  stable val onSplit: Function0<Unit>
+  stable val onMoveClip: Function3<ClipId, TrackId, Beats, Unit>
+  stable val onDeleteClip: Function1<ClipId, Unit>
+  stable val onClipDragStart: Function1<ClipId, Unit>
+  stable val onClipDrag: Function3<ClipId, @[ParameterName(name = 'deltaBeats')] Double, @[ParameterName(name = 'deltaTracks')] Int, Unit>
+  stable val onClipDragEnd: Function0<Unit>
+  stable val onClipDragCancel: Function0<Unit>
+  stable val onUndo: Function0<Unit>
+  stable val onRedo: Function0<Unit>
+  stable val onOpenSheet: Function1<TimelineSheet?, Unit>
+  stable val onTempoDragging: Function1<Tempo, Unit>
+  stable val onTempoCommit: Function1<Tempo, Unit>
+  stable val onTapTempo: Function1<@[ParameterName(name = 'nanos')] Long, Unit>
+  stable val onTimeSignature: Function1<TimeSignature, Unit>
+  stable val onClickSound: Function1<ClickSound, Unit>
+  stable val onImportCustomSound: Function0<Unit>
+  stable val onSubdivision: Function1<Subdivision, Unit>
+  stable val onCycleBeat: Function1<Int, Unit>
+  stable val onStyle: Function1<MetronomeStyle, Unit>
+  stable val onArm: Function1<TrackId, Unit>
+  stable val onRecord: Function0<Unit>
+  stable val onResetClip: Function1<TrackId, Unit>
+  stable val onMonitorToggle: Function0<Unit>
+  stable val onCountIn: Function1<CountIn, Unit>
+  stable val onRequestMicrophone: Function0<Unit>
+  stable val onDrop: Function1<DropOutcome, Unit>
+  stable val onMixerToggle: Function0<Unit>
+  stable val onMixerHeight: Function1<MixerHeight, Unit>
+  stable val onPan: Function2<TrackId, Pan, Unit>
+  stable val onGainSettled: Function0<Unit>
+  stable val onPanSettled: Function0<Unit>
+  stable val onMasterSettled: Function0<Unit>
+  stable val onResetTrackClip: Function1<TrackId, Unit>
+  stable val onResetMasterClip: Function0<Unit>
+  stable val onStripSelect: Function1<TrackId, Unit>
+  stable val onOpenMixerWindow: Function0<Unit>
+  stable val onLanesMeasured: Function2<TimelineLayout, Dp, Unit>
+  <runtime stability> = Stable
+}
