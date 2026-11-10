@@ -18,6 +18,7 @@ import audio.tembra.core.project.ImportToTrack
 import audio.tembra.core.project.MoveClip
 import audio.tembra.core.project.MoveTrack
 import audio.tembra.core.project.NewTrackWithClip
+import audio.tembra.core.project.Pan
 import audio.tembra.core.project.PlaybackEvent
 import audio.tembra.core.project.PlaybackPolicy
 import audio.tembra.core.project.PlaybackState
@@ -36,6 +37,7 @@ import audio.tembra.core.project.SetKey
 import audio.tembra.core.project.SetLabel
 import audio.tembra.core.project.SetMasterVolume
 import audio.tembra.core.project.SetMuted
+import audio.tembra.core.project.SetPan
 import audio.tembra.core.project.SetSoloed
 import audio.tembra.core.project.SetTempo
 import audio.tembra.core.project.SetTimeSignature
@@ -55,8 +57,10 @@ import audio.tembra.data.projects.PickedFile
 import audio.tembra.data.projects.ProjectRepository
 import audio.tembra.data.projects.ProjectViewState
 import audio.tembra.data.projects.WaveformOverview
+import audio.tembra.engine.ArrangementSnapshot
 import audio.tembra.engine.AudioEvent
 import audio.tembra.engine.MetronomeAudio
+import audio.tembra.engine.MixSnapshot
 import audio.tembra.engine.PlayResult
 import audio.tembra.engine.TimelineAudio
 import audio.tembra.engine.TransportOpenResult
@@ -153,6 +157,9 @@ class ProjectSession(
     /** Draw-phase handle for the meter and the growing take (feature 010, research R8). */
     val inputTelemetry: InputTelemetry get() = recording.inputTelemetry
 
+    /** Draw-phase handle for the mixer's meters (feature 012, research R6): one engine read per frame, shared by every strip. */
+    val mixTelemetry: MixTelemetry = MixTelemetry(::readMixFrame)
+
     private val sources = ClipSourceRegistry(audio)
     private val bridge = MetronomeBridge(metronome, audio)
     private val overviews = OverviewTracker(repository, overviewReader, ioDispatcher, scope, ::onOverview)
@@ -180,6 +187,14 @@ class ProjectSession(
     private val frameSnapshot = TransportSnapshot()
     private var lastFrameNanos = Long.MIN_VALUE
     private val positionSnapshot = TransportSnapshot()
+
+    // The mixer (feature 012, contracts/mixer-session.md). The engine keeps the pans it was given across arrangements
+    // and forgets them when its transport opens, so the session remembers what it pushed per index and sends only
+    // what differs; the surfaces that show meters (the sheet, a window) are counted, and metering is on while any is open.
+    private val mixFrameSnapshot = MixSnapshot()
+    private var lastMixFrameNanos = Long.MIN_VALUE
+    private val pushedPans = FloatArray(ArrangementSnapshot.MAX_TRACKS)
+    private var meterHolders = 0
 
     // --- Lifecycle ---------------------------------------------------------------------------------------------------
 
@@ -238,6 +253,7 @@ class ProjectSession(
                 lastEdit = edit
                 history = next
                 applyToEngine(result.project, edit)
+                topUpSources(result.project)
                 settle(next)
                 null
             }
@@ -330,6 +346,7 @@ class ProjectSession(
             _messages.trySend(SessionMessage.AssetsMissing(1))
         }
         overviews.track(projectId, edit.assetId, overviewPath)
+        ensureSourcesAndPush()
     }
 
     override fun playbackStartedByTake() = dispatch(PlaybackEvent.RecordStarted)
@@ -416,6 +433,29 @@ class ProjectSession(
 
     /** The engine's transport state for the 10 Hz mirror (semantics and tests); the per-frame readers use [transportTelemetry]. */
     fun readTransport(into: TransportSnapshot) = audio.readTransport(into)
+
+    // --- The mixer (feature 012, contracts/mixer-session.md) -----------------------------------------------------------
+
+    /**
+     * A surface that shows the meters opened ([on]) or closed: metering runs while any is open (the sheet and a
+     * window each hold one). Synchronous: the engine's switch is an atomic store. A transport that rebinds while a
+     * holder is open is told again ([pushEngine]).
+     */
+    fun setMetering(on: Boolean) {
+        val before = meterHolders
+        meterHolders = if (on) before + 1 else (before - 1).coerceAtLeast(0)
+        if (before == 0 && meterHolders == 1) audio.setMetering(true)
+        if (before == 1 && meterHolders == 0) audio.setMetering(false)
+    }
+
+    /** Clears the clip latch of [id]'s strip at the engine's next block (spec FR-012). */
+    fun resetTrackClip(id: TrackId) {
+        val index = history?.present?.tracks?.indexOfFirst { it.id == id } ?: return
+        if (index >= 0) audio.resetMixClip(index)
+    }
+
+    /** Clears the master's clip latch at the engine's next block (spec FR-012). */
+    fun resetMasterClip() = audio.resetMixClip(MixSnapshot.MASTER_INDEX)
 
     override suspend fun confirmLeave(): Boolean {
         val phase = recording.state.value.phase
@@ -525,6 +565,7 @@ class ProjectSession(
             return false
         }
         transportOpen = true
+        pushedPans.fill(0f)  // a fresh transport holds every track at the centre
         return true
     }
 
@@ -535,6 +576,7 @@ class ProjectSession(
         pushArrangement(project)
         bridge.apply(settings, project.tempo, project.timeSignature)
         bridge.setEnabled(metronomeOn)
+        if (meterHolders > 0) audio.setMetering(true)  // a mixer open across the rebind keeps its meters (feature 012)
     }
 
     // --- Open and close ----------------------------------------------------------------------------------------------
@@ -569,6 +611,7 @@ class ProjectSession(
                 AdoptedTake.Discarded, is AdoptedTake.Failed -> Unit
             }
         }
+        ensureSources(document)
         if (transportOpen) pushEngine(document, document.metronomeOn)
         val started = EditHistory.start(document)
         history = started
@@ -633,10 +676,36 @@ class ProjectSession(
 
     // --- Engine binding ----------------------------------------------------------------------------------------------
 
+    /**
+     * Opens the further sources [project]'s clips need: one per clip of an asset that sounds at the same time as another
+     * of it ([ArrangementMapper.sourcesNeeded]; a source has one read position). The number opened.
+     */
+    private suspend fun ensureSources(project: Project): Int {
+        var opened = 0
+        for ((assetId, needed) in ArrangementMapper.sourcesNeeded(project)) opened += sources.ensure(assetId, needed)
+        return opened
+    }
+
+    private suspend fun ensureSourcesAndPush() {
+        val project = history?.present ?: return
+        if (ensureSources(project) > 0 && transportOpen) pushArrangement(project)
+    }
+
+    /**
+     * A synchronous edit (a move, a split, an undo) can make clips of one asset overlap. The arrangement just pushed
+     * shares the sources open now, so every clip plays; the missing sources open on the session's scope and the
+     * arrangement is pushed again with them.
+     */
+    private fun topUpSources(project: Project) {
+        if (!sources.lacks(ArrangementMapper.sourcesNeeded(project))) return
+        scope.launch(CoroutineName("ensureSources")) { ensureSourcesAndPush() }
+    }
+
     /** The smallest engine update for a settled [edit] (contracts/project-session.md "Engine binding rules"). */
     private fun applyToEngine(project: Project, edit: ProjectEdit) {
         when (edit) {
             is SetGain -> pushTrack(project, edit.id)
+            is SetPan -> pushPan(project, edit.id)
             is SetMuted -> pushTrack(project, edit.id)
             is SetSoloed -> project.tracks.indices.forEach { pushTrack(project, it) }
             is SetTempo, is SetTimeSignature -> pushTempo(project)
@@ -656,6 +725,27 @@ class ProjectSession(
         audio.setTrack(index, render.gainLinear, render.audible)
     }
 
+    private fun pushPan(project: Project, id: TrackId) {
+        val index = project.tracks.indexOfFirst { it.id == id }
+        if (index >= 0) pushPan(index, project.tracks[index].pan)
+    }
+
+    /** The lock-free pan path (feature 012, research R4): an atomic store the callback ramps toward at its next block. */
+    private fun pushPan(index: Int, pan: Pan) {
+        if (index >= pushedPans.size) return
+        val linear = pan.toLinear()
+        pushedPans[index] = linear
+        audio.setPan(index, linear)
+    }
+
+    /** Pan is not in the arrangement struct: after one, every index whose pan the engine does not hold yet is pushed. */
+    private fun pushPans(project: Project) {
+        for ((index, track) in project.tracks.withIndex()) {
+            if (index >= pushedPans.size) break
+            if (pushedPans[index] != track.pan.toLinear()) pushPan(index, track.pan)
+        }
+    }
+
     private fun pushTempo(project: Project) {
         audio.setTempo(project.tempo, project.timeSignature)
         pushArrangement(project)
@@ -664,9 +754,19 @@ class ProjectSession(
 
     private fun pushArrangement(project: Project) {
         when (val result = ArrangementMapper.map(project, sources.handles)) {
-            is ArrangementResult.Mapped -> audio.setArrangement(result.snapshot)
+            is ArrangementResult.Mapped -> {
+                audio.setArrangement(result.snapshot)
+                pushPans(project)
+            }
             ArrangementResult.TooLarge -> _messages.trySend(SessionMessage.ProjectTooLarge)
         }
+    }
+
+    /** Play from a stop clears every latch while a mixer shows them (spec FR-012 "until playback next starts from a stop"). */
+    private fun resetLatches() {
+        val tracks = history?.present?.tracks ?: return
+        for (index in tracks.indices) audio.resetMixClip(index)
+        audio.resetMixClip(MixSnapshot.MASTER_INDEX)
     }
 
     /** Undo and redo re-push what differs from [before] (the metronome toggle and the count-in stay as they are: not history). */
@@ -681,6 +781,7 @@ class ProjectSession(
         }
         if (project.masterVolume != before.masterVolume) audio.setMaster(project.masterVolume.toLinear())
         pushArrangement(project)
+        topUpSources(project)
         settle(restored)
     }
 
@@ -709,11 +810,14 @@ class ProjectSession(
         _state.update { it.copy(assetsReady = it.assetsReady.removing(assetId), overviews = it.overviews.removing(assetId), missingAssets = it.missingAssets.removing(assetId)) }
     }
 
+    /** A run of one control's steps is one undo step: a gain or pan drag on one track, a master drag, a tempo scrub (spec FR-035; feature 012 FR-005). */
     private fun coalesces(edit: ProjectEdit, last: ProjectEdit?): Boolean = when (edit) {
         is SetGain -> last is SetGain && last.id == edit.id
+        is SetPan -> last is SetPan && last.id == edit.id
         is SetMasterVolume -> last is SetMasterVolume
         is SetTempo -> last is SetTempo
-        else -> false
+        is AddTrack, is RenameTrack, is SetLabel, is SetMuted, is SetSoloed, is MoveTrack, is DeleteTrack, is ImportClips, is SplitClip,
+        is MoveClip, is DeleteClip, is SetTimeSignature, is RenameProject, is SetDescription, is SetKey, is RecordTake, is SetCountIn -> false
     }
 
     // --- Playback policy ---------------------------------------------------------------------------------------------
@@ -723,7 +827,10 @@ class ProjectSession(
         val outcome = PlaybackPolicy.onEvent(before, event)
         _state.update { it.copy(playback = outcome.state) }
         when (val transition = outcome.transition) {
-            PlaybackTransition.Start -> if (startJob?.isActive != true) startJob = scope.launch(CoroutineName("startPlayback")) { startPlayback() }
+            PlaybackTransition.Start -> {
+                if (before is PlaybackState.Stopped && meterHolders > 0) resetLatches()
+                if (startJob?.isActive != true) startJob = scope.launch(CoroutineName("startPlayback")) { startPlayback() }
+            }
             PlaybackTransition.BecomePlaying -> Unit
             PlaybackTransition.StopWithMessage -> {
                 host.release()
@@ -784,6 +891,14 @@ class ProjectSession(
             audio.readTransport(frameSnapshot)
         }
         into.copyFrom(frameSnapshot)
+    }
+
+    private fun readMixFrame(frameNanos: Long, into: MixSnapshot) {
+        if (frameNanos != lastMixFrameNanos) {
+            lastMixFrameNanos = frameNanos
+            audio.readMix(mixFrameSnapshot)
+        }
+        into.copyFrom(mixFrameSnapshot)
     }
 
     // --- Observers ---------------------------------------------------------------------------------------------------
@@ -891,6 +1006,7 @@ class ProjectSession(
             _messages.trySend(SessionMessage.AssetsMissing(unplayable.size))
         }
         for (result in playable) overviews.track(projectId, result.assetId, result.overviewPath)
+        ensureSourcesAndPush()
     }
 
     private fun refusalText(reason: ImportRefusal): String = when (reason) {

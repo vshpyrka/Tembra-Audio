@@ -48,8 +48,10 @@ import audio.tembra.ui.transport.TransportButton
 
 /**
  * The expanded track header (contracts/timeline-screen.md; the arranger tablet screen): the pinned 200 dp column
- * beside the lane with the colour dot, name, instrument chip and menu on the first row, the gain readout, M, S and the
- * chevron that opens the inline settings on the second (spec FR-041). Tapping the header selects the track.
+ * beside the lane with the colour dot, name, arm toggle and menu on the first row, the gain readout with the pan under
+ * it (feature 012, spec FR-007), M, S and the chevron that opens the inline settings on the second (spec FR-041). The
+ * instrument label lives in the description and the settings: feature 010's arm toggle left the second row no room for
+ * the readout (16 dp), so the arm took the chip's place. Tapping the header selects the track.
  */
 @Composable
 internal fun TrackHeader(
@@ -133,7 +135,9 @@ internal fun TrackHeader(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
             )
-            track.label?.let { InstrumentChip(it) }
+            // The arm toggle on the first row (feature 012 moved it up from the second: the readout there had 16 dp left
+            // beside the three toggles and the chevron; the instrument label stays in the description and the settings).
+            ArmButton(armed = track.armed, trackTint = tint, onToggle = onArm, size = SmallToggle, testTag = TimelineTestTags.arm(index))
             TrackMenu(
                 expanded = menuOpen,
                 isFirst = isFirst,
@@ -161,10 +165,10 @@ internal fun TrackHeader(
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(spacing.xs), verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-            GainReadout(gain = track.gainDb, onGain = onGain, modifier = Modifier.weight(1f), testTag = TimelineTestTags.gain(index))
+            // The gain with the pan under it (feature 012, spec FR-007): the 200 dp column holds no further control here.
+            GainReadout(gain = track.gainDb, onGain = onGain, modifier = Modifier.weight(1f), testTag = TimelineTestTags.gain(index), caption = track.pan.readout)
             MuteSoloButton(letter = "M", description = MUTE_DESCRIPTION, checked = track.muted, tint = tint, onCheckedChange = onMute, size = SmallToggle, testTag = TimelineTestTags.mute(index))
             MuteSoloButton(letter = "S", description = SOLO_DESCRIPTION, checked = track.soloed, tint = tint, onCheckedChange = onSolo, size = SmallToggle, testTag = TimelineTestTags.solo(index))
-            ArmButton(armed = track.armed, trackTint = tint, onToggle = onArm, size = SmallToggle, testTag = TimelineTestTags.arm(index))
             TransportButton(
                 icon = if (expanded) TembraIcon.ExpandLess else TembraIcon.ExpandMore,
                 description = if (expanded) COLLAPSE_SETTINGS else TimelineCopy.trackSettings,

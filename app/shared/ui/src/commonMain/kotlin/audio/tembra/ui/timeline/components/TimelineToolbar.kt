@@ -1,7 +1,6 @@
 package audio.tembra.ui.timeline.components
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,12 +13,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import audio.tembra.core.project.GridSize
 import audio.tembra.core.recording.MonitorState
 import audio.tembra.ui.designsystem.MenuItemSpec
 import audio.tembra.ui.designsystem.TembraMenu
+import audio.tembra.ui.mixer.MixerCopy
+import audio.tembra.ui.mixer.MixerTestTags
 import audio.tembra.ui.theme.TembraIcon
 import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.ui.timeline.FullScreenItem
@@ -62,6 +66,10 @@ internal fun TimelineToolbar(
     modifier: Modifier = Modifier,
     /** Input monitoring (feature 010, spec FR-016): the toggle after the scissors from 600 dp, a checked overflow row below. */
     onMonitorToggle: () -> Unit = {},
+    /** The mixer (feature 012, spec FR-017): a toggle after redo at every width, mirrored by a checked row in the compact overflow. */
+    onMixerToggle: () -> Unit = {},
+    /** The mixer sheet hands the keyboard focus back to the Mixer button when it closes (feature 012, T092). */
+    mixerFocusRequester: FocusRequester? = null,
 ) {
     val spacing = TembraTheme.spacing
     val full = layout == TimelineLayout.Expanded || layout == TimelineLayout.Medium
@@ -81,6 +89,7 @@ internal fun TimelineToolbar(
             MenuItemSpec(ADD_AUDIO_NEW, TimelineCopy.addAudioAsNewTrack, TembraIcon.PlaylistAdd, enabled = state.canImport),
             MenuItemSpec(SNAP, TimelineCopy.snapEntry(state.grid.label), TembraIcon.GridOn, enabled = state.loaded),
             MenuItemSpec(MONITOR, TimelineCopy.monitorInput, TembraIcon.Headphones, enabled = state.loaded, selected = state.monitor != MonitorState.Off),
+            MenuItemSpec(MIXER, MixerCopy.mixer, TembraIcon.InstantMix, enabled = state.loaded, selected = state.mixer.open),
             overviewStrip,
             MenuItemSpec(METRONOME, TimelineCopy.metronomeSettings, TembraIcon.Metronome, enabled = state.loaded),
             fullScreen,
@@ -102,34 +111,84 @@ internal fun TimelineToolbar(
         if (full) MonitorToggle(state = state.monitor, onToggle = onMonitorToggle, enabled = state.loaded)
         TransportButton(icon = TembraIcon.Undo, description = TimelineCopy.undo, onClick = onUndo, enabled = state.canUndo, testTag = TimelineTestTags.UNDO)
         TransportButton(icon = TembraIcon.Redo, description = TimelineCopy.redo, onClick = onRedo, enabled = state.canRedo, testTag = TimelineTestTags.REDO)
+        // The mixer's toggle (feature 012, spec FR-017): after redo at every width; the compact tail lets it yield to the pill.
+        val mixerButton: @Composable () -> Unit = {
+            TransportButton(
+                icon = TembraIcon.InstantMix,
+                description = MixerCopy.mixer,
+                onClick = onMixerToggle,
+                modifier = if (mixerFocusRequester != null) Modifier.focusRequester(mixerFocusRequester) else Modifier,
+                enabled = state.loaded,
+                selected = state.mixer.open,
+                testTag = MixerTestTags.TOOLBAR_BUTTON,
+            )
+        }
+        val overflowMenu: @Composable () -> Unit = {
+            TembraMenu(
+                expanded = overflowOpen,
+                onDismiss = { overflowOpen = false },
+                items = overflowItems,
+                onSelect = { id ->
+                    when (id) {
+                        ADD_AUDIO -> onAddAudio()
+                        ADD_AUDIO_NEW -> onAddAudioAsNewTrack()
+                        SNAP -> onSnapSheet()
+                        MONITOR -> onMonitorToggle()
+                        MIXER -> onMixerToggle()
+                        OVERVIEW_STRIP -> onOverviewStripShown(!state.overviewStripShown)
+                        METRONOME -> onMetronomeSettings()
+                        FULL_SCREEN -> onFullScreen(state.fullScreenItem == FullScreenItem.Enter)
+                    }
+                },
+                testTag = TimelineTestTags.OVERFLOW,
+            ) {
+                TransportButton(icon = TembraIcon.MoreVert, description = MORE, onClick = { overflowOpen = true }, testTag = TimelineTestTags.OVERFLOW_BUTTON)
+            }
+        }
         if (full) {
+            mixerButton()
             Spacer(Modifier.weight(1f))
             GridPicker(grid = state.grid, onGrid = onGrid)
             TempoPill(tempo = state.tempo, onClick = onTempo, enabled = state.canEditTempo)
             TransportButton(icon = TembraIcon.Metronome, description = TimelineCopy.metronomeSettings, onClick = onMetronomeSettings, enabled = state.loaded, testTag = TimelineTestTags.METRONOME_SETTINGS)
+            overflowMenu()
         } else {
-            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
-                TempoPill(tempo = state.tempo, onClick = onTempo, enabled = state.canEditTempo)
-            }
+            CompactTail(
+                mixer = mixerButton,
+                pill = { TempoPill(tempo = state.tempo, onClick = onTempo, enabled = state.canEditTempo) },
+                overflow = overflowMenu,
+                modifier = Modifier.weight(1f),
+            )
         }
-        TembraMenu(
-            expanded = overflowOpen,
-            onDismiss = { overflowOpen = false },
-            items = overflowItems,
-            onSelect = { id ->
-                when (id) {
-                    ADD_AUDIO -> onAddAudio()
-                    ADD_AUDIO_NEW -> onAddAudioAsNewTrack()
-                    SNAP -> onSnapSheet()
-                    MONITOR -> onMonitorToggle()
-                    OVERVIEW_STRIP -> onOverviewStripShown(!state.overviewStripShown)
-                    METRONOME -> onMetronomeSettings()
-                    FULL_SCREEN -> onFullScreen(state.fullScreenItem == FullScreenItem.Enter)
-                }
-            },
-            testTag = TimelineTestTags.OVERFLOW,
-        ) {
-            TransportButton(icon = TembraIcon.MoreVert, description = MORE, onClick = { overflowOpen = true }, testTag = TimelineTestTags.OVERFLOW_BUTTON)
+    }
+}
+
+/**
+ * The compact row's tail: the Mixer button, the tempo pill and the overflow button (feature 012, spec FR-017, FR-026).
+ * The pill takes its own width (125 dp at twice the font size on a 360 dp phone, feature 011's rule) and the Mixer
+ * button yields to it: when the three do not fit the room, the button stays out of the row and the overflow's Mixer row
+ * serves. Decided in the layout phase from the pill's intrinsic width, so no width or font-size threshold is hard-coded.
+ */
+@Composable
+private fun CompactTail(
+    mixer: @Composable () -> Unit,
+    pill: @Composable () -> Unit,
+    overflow: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Layout(contents = listOf(mixer, pill, overflow), modifier = modifier) { (mixerMeasurables, pillMeasurables, overflowMeasurables), constraints ->
+        val loose = constraints.copy(minWidth = 0, minHeight = 0)
+        val overflowPlaceable = overflowMeasurables.first().measure(loose)
+        val pillWidth = pillMeasurables.first().maxIntrinsicWidth(constraints.maxHeight)
+        val mixerWidth = mixerMeasurables.first().maxIntrinsicWidth(constraints.maxHeight)
+        val room = constraints.maxWidth - overflowPlaceable.width
+        val mixerPlaceable = if (room - pillWidth >= mixerWidth) mixerMeasurables.first().measure(loose) else null
+        val pillPlaceable = pillMeasurables.first().measure(loose.copy(maxWidth = (room - (mixerPlaceable?.width ?: 0)).coerceAtLeast(0)))
+        val height = if (constraints.hasBoundedHeight) constraints.maxHeight else maxOf(overflowPlaceable.height, pillPlaceable.height, mixerPlaceable?.height ?: 0)
+        layout(constraints.maxWidth, height) {
+            mixerPlaceable?.placeRelative(0, (height - mixerPlaceable.height) / 2)
+            pillPlaceable.placeRelative(constraints.maxWidth - overflowPlaceable.width - pillPlaceable.width, (height - pillPlaceable.height) / 2)
+            overflowPlaceable.placeRelative(constraints.maxWidth - overflowPlaceable.width, (height - overflowPlaceable.height) / 2)
         }
     }
 }
@@ -140,6 +199,8 @@ private const val ADD_AUDIO_NEW = "addAudioNewTrack"
 private const val SNAP = "snap"
 /** The row id: tagged [TimelineTestTags.OVERFLOW_MONITOR]. */
 private const val MONITOR = "monitor"
+/** The row id: tagged [MixerTestTags.OVERFLOW_BUTTON] (feature 012). */
+private const val MIXER = "mixer"
 private const val METRONOME = "metronomeSettings"
 /** The row id: tagged [TimelineTestTags.OVERFLOW_OVERVIEW_STRIP]. */
 private const val OVERVIEW_STRIP = "overviewStrip"

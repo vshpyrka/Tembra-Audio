@@ -62,13 +62,20 @@ object DesktopWindow {
 
     /** The task id of the app's single task. */
     fun taskId(): Int {
-        val tasks = context.getSystemService(ActivityManager::class.java).appTasks
+        val tasks = runningTasks()
         check(tasks.size == 1) { "expected one task, found ${tasks.size}" }
         return checkNotNull(tasks.single().taskInfo) { "the task has no info" }.taskId
     }
 
     /** Number of tasks the app has (the single-window rule, FR-010). */
-    fun taskCount(): Int = context.getSystemService(ActivityManager::class.java).appTasks.size
+    fun taskCount(): Int = runningTasks().size
+
+    /**
+     * The app's tasks that still run: Android 14 keeps a task `finishAndRemoveTask()` removed in the app's task list for
+     * a while with `isRunning` false (the mixer window's close, feature 012), which is no second window.
+     */
+    private fun runningTasks(): List<ActivityManager.AppTask> =
+        context.getSystemService(ActivityManager::class.java).appTasks.filter { it.taskInfo?.isRunning == true }
 
     /** Sets the task's bounds in pixels with `am task resize`; not clamped to any minimum, not remembered. */
     fun resizeTask(left: Int, top: Int, right: Int, bottom: Int) {

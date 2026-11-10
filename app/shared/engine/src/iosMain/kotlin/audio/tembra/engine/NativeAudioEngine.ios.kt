@@ -51,6 +51,11 @@ import audio.tembra.engine.cinterop.tembra_engine_abi_version
 import audio.tembra.engine.cinterop.tembra_engine_describe
 import audio.tembra.engine.cinterop.tembra_metronome_grid
 import audio.tembra.engine.cinterop.tembra_metronome_load_custom_sound
+import audio.tembra.engine.cinterop.tembra_mix_snapshot
+import audio.tembra.engine.cinterop.tembra_mixer_read
+import audio.tembra.engine.cinterop.tembra_mixer_reset_clip
+import audio.tembra.engine.cinterop.tembra_mixer_set_metering
+import audio.tembra.engine.cinterop.tembra_mixer_set_pan
 import audio.tembra.engine.cinterop.tembra_metronome_preview
 import audio.tembra.engine.cinterop.tembra_metronome_read
 import audio.tembra.engine.cinterop.tembra_metronome_select_sound
@@ -75,6 +80,7 @@ import audio.tembra.engine.cinterop.tembra_tuner_start_test_signal
 import audio.tembra.engine.cinterop.tembra_tuner_stop
 import kotlinx.coroutines.delay
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.FloatVar
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.alloc
 import kotlinx.cinterop.allocArray
@@ -141,6 +147,8 @@ actual class NativeAudioEngine internal constructor(
     private val capture = nativeHeap.alloc<tembra_capture_snapshot>()
     private val peakBuckets = nativeHeap.allocArray<tembra_peak_bucket>(PeakBuckets.DEFAULT_CAPACITY)
     private val peakNext = nativeHeap.alloc<ULongVar>()
+    // Feature 012: the mixer's meter snapshot, allocated once (read every frame while the sheet is open).
+    private val mix = nativeHeap.alloc<tembra_mix_snapshot>()
 
     /** Guards [previewGeneration] against a start or stop racing the main-queue check. */
     private val previewLock = NSLock()
@@ -401,6 +409,10 @@ actual class NativeAudioEngine internal constructor(
             avgMicros = health.avg_us.toInt(),
             starvation = health.starvation.toInt(),
             clipsActive = health.clips_active.toInt(),
+            inputOverruns = health.input_overruns.toInt(),
+            recordBacklog = health.record_backlog.toInt(),
+            inputXruns = health.input_xruns.toInt(),
+            masterClips = health.master_clips.toInt(),
         )
     }
 
@@ -657,6 +669,42 @@ actual class NativeAudioEngine internal constructor(
     }
 
     override fun freeBytes(path: String): Long = tembra_storage_free_bytes(path)
+
+    // --- The mixer (feature 012, contracts/engine-c-abi-v8.md "Kotlin seam") -----------------------------------------
+    // Atomic stores and a seqlock copy on the engine: synchronous, no dispatcher hop, one struct allocated for the reads.
+
+    override fun setPan(index: Int, pan: Float) {
+        tembra_mixer_set_pan(index.toUInt(), pan)
+    }
+
+    override fun setMetering(enabled: Boolean) {
+        tembra_mixer_set_metering(if (enabled) 1u else 0u)
+    }
+
+    override fun readMix(into: MixSnapshot) {
+        tembra_mixer_read(mix.ptr)
+        into.trackCount = mix.track_count.toInt()
+        into.metering = mix.metering != 0u
+        into.masterClipped = mix.master_clipped != 0u
+        // `float peak[64][2]` is 128 contiguous floats in the snapshot's own order (track × 2 + side): read it flat,
+        // the nested C array has no indexer through cinterop.
+        val peaks = mix.peak.reinterpret<FloatVar>()
+        val rms = mix.rms.reinterpret<FloatVar>()
+        for (i in 0 until MixSnapshot.TRACKS * 2) {
+            into.peak[i] = peaks[i]
+            into.rms[i] = rms[i]
+        }
+        into.masterPeak[0] = mix.master_peak[0]
+        into.masterPeak[1] = mix.master_peak[1]
+        into.masterRms[0] = mix.master_rms[0]
+        into.masterRms[1] = mix.master_rms[1]
+        into.block = mix.block.toLong()
+        into.clipMask = mix.clip_mask.toLong()
+    }
+
+    override fun resetMixClip(index: Int) {
+        tembra_mixer_reset_clip(index.toUInt())
+    }
 
     override suspend fun inspect(path: String): AudioInfo? = withContext(Dispatchers.IO) {
         memScoped {

@@ -25,6 +25,7 @@ _TEST_JOURNEYS = {
     "RecordingPerfTests": "recording",
     "StressPerfTests": "stress",
     "WindowingPerfTests": "windowing",
+    "MixerPerfTests": "mixer",
 }
 _STARTUP_TESTS = {"testColdLaunchToFirstFrame": "ttid", "testColdLaunchToResponsive": "ttfd"}
 # Feature 011, as on Android: a windowing round fails when a window change, the right-click menu or a destination chord
@@ -32,6 +33,9 @@ _STARTUP_TESTS = {"testColdLaunchToFirstFrame": "ttid", "testColdLaunchToRespons
 _REQUIRED_SECTIONS = {
     "windowing": ("section.shell.windowRelayout.sum_ms", "section.shell.shortcutNavigate.sum_ms",
                   "section.timeline.contextMenu.sum_ms"),
+    # Feature 012, as on Android: a mixer round fails when the sheet never opened, closed or drew a frame, or no fader moved.
+    "mixer": ("section.timeline.mixerOpen.sum_ms", "section.timeline.mixerClose.sum_ms",
+              "section.timeline.mixerFrame.sum_ms", "section.timeline.faderDrag.sum_ms"),
 }
 # Sections only a pointer reaches: an iPhone has none (XCUITest: "Pointer events are not supported for this device").
 _POINTER_SECTIONS = {"section.timeline.contextMenu.sum_ms"}
@@ -57,6 +61,7 @@ _HEALTH_KEYS = {
     "avg_us": "audio.avg_us", "starvation": "audio.starvation", "clips_active": "audio.clips_active",
     "input_overruns": "audio.input_overruns", "record_backlog": "audio.record_backlog",
     "take_alignment_ms": "audio.take_alignment_ms", "monitor_delay_ms": "audio.monitor_delay_ms",
+    "master_clips": "audio.master_clips", "meter_frames_dropped": "audio.meter_frames_dropped",
 }
 
 
@@ -210,7 +215,7 @@ def collect_round(metrics_json_path: str, cfg: Config, simulator: bool,
         raise CollectError(f"no journey test with metrics in {metrics_json_path}")
     results = [JourneyResult(journey=j, iterations=max(len(m.samples) for m in ms.values()), metrics=ms)
                for j, ms in journeys.items()]
-    order = {"startup": 0, "tuner": 1, "metronome": 2, "timeline": 3, "recording": 4, "stress": 5, "windowing": 6}
+    order = {"startup": 0, "tuner": 1, "metronome": 2, "timeline": 3, "recording": 4, "mixer": 5, "stress": 6, "windowing": 7}
     results.sort(key=lambda r: order.get(r.journey, 9))
     badges = (["simulator"] if simulator else []) + (["short-iterations"] if short else [])
     return CollectedRound(journeys=results, badges=badges, thermal_seconds=0.0)

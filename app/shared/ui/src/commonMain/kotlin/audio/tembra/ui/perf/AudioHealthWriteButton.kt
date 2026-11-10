@@ -35,6 +35,8 @@ fun AudioHealthWriteButton(
     engine: AudioEngine,
     modifier: Modifier = Modifier,
     writer: EngineHealthWriter = rememberEngineHealthWriter(),
+    /** The meter frames the mixer sheet missed (feature 012), written beside the engine's counters. */
+    meterFrames: MeterFrameCounter = MeterFrameCounter.shared,
 ) {
     // The caller's alignment and inset padding stay on an outer box, and the dot's touch bounds are its own 8 dp:
     // Compose grows every clickable's touch bounds to the view configuration's 48 dp minimum and Android accessibility
@@ -54,7 +56,7 @@ fun AudioHealthWriteButton(
                     .size(TembraTheme.spacing.sm)
                     .clip(CircleShape)
                     .background(TembraTheme.colors.onSurfaceVariant)
-                    .pointerHoverIcon(PointerIcon.Hand).clickable(role = Role.Button) { writer.write(engineHealthJson(engine.audioHealth(), CaptureSnapshot().also(engine::readCapture))) }
+                    .pointerHoverIcon(PointerIcon.Hand).clickable(role = Role.Button) { writer.write(engineHealthJson(engine.audioHealth(), CaptureSnapshot().also(engine::readCapture), meterFrames.dropped)) }
                     .testTag(PerfAnchors.DEVTOOLS_WRITE_HEALTH)
                     .semantics { contentDescription = "Write engine health" },
             )

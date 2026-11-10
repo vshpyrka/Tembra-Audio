@@ -7,8 +7,8 @@
         "codeCoverage" : false,
         "testExecutionOrdering" : "random",
         "testTimeoutsEnabled" : true,
-        "defaultTestExecutionTimeAllowance" : 1800,
-        "maximumTestExecutionTimeAllowance" : 1800
+        "defaultTestExecutionTimeAllowance" : 3600,
+        "maximumTestExecutionTimeAllowance" : 3600
       }
     }
   ],

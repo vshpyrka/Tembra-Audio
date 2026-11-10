@@ -55,7 +55,8 @@ FR-046, FR-049; data model §1.
         "gainDb": 0.0, "muted": false, "soloed": false,
         "clips": [
           { "id": "…", "assetId": "3f8a…", "startBeats": 0.0, "offsetFrames": 0, "lengthFrames": 1486452, "name": "drums" }
-        ]
+        ],
+        "pan": 0
       }
     ]
   }
@@ -66,8 +67,10 @@ Field notes: `tempo` is the integer BPM (the metronome's `Tempo`); `timeSignatur
 metronome's id string ("4/4", "3/4", "6/8", "2/4", "5/4", "7/8"); `key` is one of the 24 display
 names or absent; `gainDb` uses `"-Infinity"` for silence (the JSON codec is configured with
 `allowSpecialFloatingPointValues = true`); `label` is the lower-case enum name or absent;
-`colorIndex` 0–5. Every field has exactly one JSON type (no number-or-string fields), so the
-same shape maps onto ProtoBuf without change.
+`colorIndex` 0–5; `pan` (field 9 of `Track`, after `clips`; added by feature 012) is the whole
+percentage per side, an integer −100 (full left) … 100 (full right), default 0 (the centre), so a
+document from before feature 012 reads with every track centred. Every field has exactly one JSON
+type (no number-or-string fields), so the same shape maps onto ProtoBuf without change.
 
 ## Validation on read (`ProjectValidator`)
 

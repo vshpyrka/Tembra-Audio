@@ -35,6 +35,12 @@ enum Metrics {
                                     "transport.recordStop", "timeline.monitorToggle", "timeline.waveform", "transport.play",
                                     "timeline.playheadFrame", "timeline.projectSave"]
     static let recordingEngineSections = ["engine.takeAlignment"]
+    /// Feature 012 (contracts/perf-instrumentation.md): the mixer's sections and the timeline ones the journey plays over;
+    /// `engine.panApply` is the C++ one.
+    static let mixerSections = ["timeline.mixerOpen", "timeline.mixerClose", "timeline.mixerFrame", "timeline.faderDrag",
+                                "timeline.panTurn", "transport.masterDrag", "transport.play", "timeline.playheadFrame",
+                                "timeline.projectSave"]
+    static let mixerEngineSections = ["engine.panApply"]
 
     static func section(_ name: String) -> XCTOSSignpostMetric {
         section(name, category: "ui")
@@ -58,8 +64,9 @@ enum Metrics {
         case "metronome": return metronomeSections
         case "timeline": return timelineSections
         case "recording": return recordingSections
-        case "stress": return tunerSections + metronomeSections + stressTimelineSections
+        case "stress": return tunerSections + metronomeSections + stressTimelineSections + ["timeline.mixerFrame"]
         case "windowing": return windowingSections
+        case "mixer": return mixerSections
         default: return []
         }
     }
@@ -68,6 +75,7 @@ enum Metrics {
         switch journey {
         case "timeline": return timelineEngineSections
         case "recording": return recordingEngineSections
+        case "mixer": return mixerEngineSections
         default: return []
         }
     }

@@ -32,7 +32,10 @@ downloads on first use), Jinja2, jsonschema. None of it ships in the app.
   mode on, wakes the screen and dismisses a credential-less keyguard, keeps the screen on, and restores
   the first two when it ends. A PIN-locked phone is refused (unlock it first). Checks and limits:
   battery ≥ 50 %, temperature ≤ 35 °C (per-device override `battery_temp_max_c`, 40 °C on the Pixel
-  6 Pro), ≥ 2 GiB free, JDK 21, Android SDK.
+  6 Pro), ≥ 2 GiB free, JDK 21, Android SDK. A class leaves about 1 GB of traces (20 iterations), which the
+  round pulls after the class: over USB in a minute or two, through an ssh tunnel to another Mac's adb (2026-11-09,
+  0.6 MB/s) in close to half an hour; the pull window is 40 minutes, and a pull that fails or times out fails
+  the round ("ran, but its output did not reach the Mac") instead of leaving a record without journeys.
 - **iOS (iPhone 14)**: USB to the Apple Silicon Mac, paired, Developer Mode on, unlocked and awake. The
   first run installs two apps (the measurement build and the `TembraPerfTests` runner); the runner's
   profile must be trusted once on the phone (Settings → General → VPN & Device Management) or the round
@@ -144,12 +147,19 @@ change, and with the overview strip as the device's zoom control drag its window
 back (inside `timeline.scroll`); then pause, skip to start; both D1 steps are skipped where their control is
 absent), `recording` (feature 010: Projects → the demo card, add a track, arm it, switch monitoring on and
 off, record one bar of count-in plus four bars, stop the take while playback continues, pause, undo twice,
-skip to start; the runner grants the microphone first) and `stress` (the demo
-project plays with the click on while the lane scrolls for five seconds, the tuner cycle then takes the
-audio through the stop-and-leave dialog, the metronome runs while the tuner listens; the engine's audio-health
-counters are written right after the playback phase, while the transport still owns the device (on Android the
-counter tracks keep their peak over the trace, since the engine restarts them per stream session) — its duration
-stepped up at the 009 label boundary, as expected).
+skip to start; the runner grants the microphone first), `mixer` (feature 012: Projects → the demo card, play, open the
+mixer sheet from the toolbar or the overflow menu, drag the first fader down by a third and back over a second each
+way, turn the first knob 60 dp up and back, solo the second strip and back, mute the third and back, swipe the strip
+row to its end and back, drag the master down by a quarter and back, close the sheet, undo until nothing is left,
+pause, skip to start) and `stress` (since feature 012 on the 24-track stress
+project the measurement build builds on the journey's request, `tembra.stress.tracks=24` on Android and
+`--tembra-stress-tracks=24` on iOS, the demo's loops imported six times over through the import path, once per
+install; on the demo when the launch built none: the project plays with the click on while the lane scrolls for
+five seconds, a short take is recorded, the mixer sheet opens for five seconds of live meters with the lane still
+scrolling, one fader drag and closes, the tuner cycle then takes the audio through the stop-and-leave dialog, the
+metronome runs while the tuner listens; the engine's audio-health counters are written right after the mixer phase,
+while the transport still owns the device (on Android the counter tracks keep their peak over the trace, since the
+engine restarts them per stream session) — its duration stepped up at the 009 label boundary, as expected).
 20 iterations each. The catalogue
 (`tracepulse/catalogue.py`, contract `metric-catalogue.md`) names every series per platform with its unit,
 source, gate default and screening gate; families marked non-comparable (startup, frames, memory,

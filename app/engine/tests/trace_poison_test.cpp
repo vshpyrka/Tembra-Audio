@@ -6,7 +6,9 @@
 // (the fifo pop), mixer/track_strip.cpp, mixer/master_bus.cpp and transport/transport_renderer.cpp; the disk
 // streamer, the decoder and the overview builder stay out of it because they trace on their own threads. Since
 // feature 010 it also holds the capture path the callback runs: capture/capture_source.cpp, capture/peak_ring.h
-// (through the source) and mixer/monitor_strip.cpp; the take recorder thread and the WAV writer stay out.
+// (through the source) and mixer/monitor_strip.cpp; the take recorder thread and the WAV writer stay out. Since
+// feature 012 it also holds the mixer's meter, mixer/mix_meter.cpp (with mix_params.h, pan_law.h, recent_peak.h and
+// mix_record.h through the strip, the renderer and the meter); mixer_abi.cpp stays out because it traces the pan apply.
 #include <catch2/catch_test_macros.hpp>
 
 #ifndef TEMBRA_POISON_NEGATIVE_FAILED
@@ -16,8 +18,8 @@
 TEST_CASE("the real-time sources build with the tracing facade poisoned", "[trace][rt]") {
     // Linking this test executable against tembra_rt_poison proves the build succeeded; nothing to run. The object
     // library lists, besides the feature-007 units, clip_source.cpp, track_strip.cpp, master_bus.cpp and
-    // transport_renderer.cpp (feature 009, T047, T049, T050), and capture_source.cpp, peak_ring.h and
-    // monitor_strip.cpp (feature 010, T016).
+    // transport_renderer.cpp (feature 009, T047, T049, T050), capture_source.cpp, peak_ring.h and
+    // monitor_strip.cpp (feature 010, T016), and mix_meter.cpp (feature 012, T005).
     SUCCEED("tembra_rt_poison compiled every real-time source with TEMBRA_TRACING=1 TEMBRA_TRACE_POISON=1");
 }
 

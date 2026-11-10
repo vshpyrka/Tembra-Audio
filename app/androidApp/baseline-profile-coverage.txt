@@ -12,3 +12,5 @@ timeline     Laudio/tembra/ui/timeline/TimelineScreenKt;
 tuner        Laudio/tembra/ui/tuner/TunerScreenKt;
 metronome    Laudio/tembra/ui/metronome/MetronomeScreenKt;
 projects     Laudio/tembra/ui/projects/ProjectsScreenKt;
+# Feature 012: the mixer sheet the mixer journey opens on the Timeline (its strips, meters and the master live under it).
+mixer        Laudio/tembra/ui/mixer/MixerSheetKt;

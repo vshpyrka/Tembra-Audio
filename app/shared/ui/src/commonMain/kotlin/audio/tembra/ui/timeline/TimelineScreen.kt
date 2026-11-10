@@ -133,6 +133,18 @@ fun TimelineScreen(
                 onMonitorToggle = viewModel::toggleMonitor,
                 onCountIn = viewModel::setCountIn,
                 onRequestMicrophone = viewModel::requestMicrophone,
+                // The mixer (feature 012): every settled gesture closes the undo group the same way.
+                onMixerToggle = viewModel::toggleMixer,
+                onMixerHeight = viewModel::setMixerHeight,
+                onOpenMixerWindow = viewModel::openMixerWindow,
+                onPan = viewModel::setPan,
+                onGainSettled = viewModel::gestureSettled,
+                onPanSettled = viewModel::gestureSettled,
+                onMasterSettled = viewModel::gestureSettled,
+                onStripSelect = viewModel::selectTrack,
+                onLanesMeasured = viewModel::lanesMeasured,
+                onResetTrackClip = viewModel::resetTrackClip,
+                onResetMasterClip = viewModel::resetMasterClip,
             )
         }
         TimelineScreenContent(
@@ -140,6 +152,7 @@ fun TimelineScreen(
             callbacks = callbacks,
             telemetry = viewModel.telemetry,
             inputTelemetry = viewModel.inputTelemetry,
+            mixTelemetry = viewModel.mixTelemetry,
             layout = layout,
             snackbarHostState = snackbarHostState,
             modifier = Modifier.fillMaxSize(),

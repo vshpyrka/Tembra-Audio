@@ -19,7 +19,8 @@ import kotlin.test.assertTrue
  * Arming and disarming restart the RemoteIO unit and switch the audio session, hundreds of milliseconds of blocking
  * work (the iPhone 14 trial round of 2026-11-02 measured the arm at 604 ms). The session scope that calls them is
  * main-immediate, so the actual must hop to its blocking dispatcher for both, the way the Android actual does, or the
- * main thread drops frames on every arm tap.
+ * main thread drops frames on every arm tap. The mixer's calls (feature 012) are the opposite case: atomic stores and
+ * a seqlock copy, synchronous by design, so they never dispatch at all.
  */
 @OptIn(ExperimentalForeignApi::class)
 class NativeAudioEngineBlockingDispatchTest {
@@ -66,6 +67,25 @@ class NativeAudioEngineBlockingDispatchTest {
         val beforeClose = blocking.dispatches
         engine.closeTransport()
         assertTrue(blocking.dispatches > beforeClose, "closeTransport ran on the caller's thread instead of the blocking dispatcher")
+    }
+
+    /** Feature 012 (contracts/skills-and-audit.md §C part 3): the mixer's setters and read are synchronous and bounded; no hop, open or refused. */
+    @Test
+    fun theMixerSettersAndReadDoNotDispatch() = runBlocking {
+        val opened = engine.openTransport()
+        if (opened == TransportOpenResult.Opened) {
+            engine.setArrangement(ArrangementSnapshot(tracks = listOf(TrackRender(1f, true)), clips = emptyList()))
+        }
+        val before = blocking.dispatches
+        engine.setPan(0, -0.5f)
+        engine.setTrack(0, 0.8f, true)
+        engine.setMaster(0.9f)
+        engine.setMetering(true)
+        engine.readMix(MixSnapshot())
+        engine.resetMixClip(0)
+        engine.resetMixClip(MixSnapshot.MASTER_INDEX)
+        engine.setMetering(false)
+        assertEquals(before, blocking.dispatches, "a mixer call hopped to the blocking dispatcher")
     }
 }
 

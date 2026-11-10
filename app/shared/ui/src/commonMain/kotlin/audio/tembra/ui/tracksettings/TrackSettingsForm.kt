@@ -34,7 +34,8 @@ import audio.tembra.ui.timeline.components.MuteSoloButton
 /**
  * The fields of one track (spec FR-020, FR-023 to FR-025, FR-041), shared by the nested screen and the inline row:
  * the name (40 characters, committed when the field loses focus), the instrument label menu, the gain slider with
- * its readout, the M/S toggles, the Effects placeholder and "Delete track" behind its confirmation.
+ * its readout, the pan slider with its readout (feature 012), the M/S toggles, the Effects placeholder and "Delete
+ * track" behind its confirmation.
  */
 @Composable
 internal fun TrackSettingsForm(
@@ -91,6 +92,11 @@ internal fun TrackSettingsForm(
             Text(TrackSettingsCopy.gain, style = TembraTheme.typography.bodyLarge, color = colors.onSurface)
             GainSlider(gain = state.gainDb, onGain = callbacks.onGain, modifier = Modifier.weight(1f), testTag = TrackSettingsTestTags.GAIN_SLIDER)
             GainReadout(gain = state.gainDb, onGain = callbacks.onGain, testTag = TrackSettingsTestTags.GAIN)
+        }
+        // The pan row after the gain (feature 012, spec FR-007): the slider with its readout.
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(spacing.md)) {
+            Text(TrackSettingsCopy.pan, style = TembraTheme.typography.bodyLarge, color = colors.onSurface)
+            PanSlider(pan = state.pan, onPan = callbacks.onPan, onSettled = callbacks.onPanSettled, modifier = Modifier.weight(1f), testTag = TrackSettingsTestTags.PAN)
         }
         Row(horizontalArrangement = Arrangement.spacedBy(spacing.sm), verticalAlignment = Alignment.CenterVertically) {
             MuteSoloButton(letter = "M", description = TrackSettingsCopy.mute, checked = state.muted, tint = tint, onCheckedChange = callbacks.onMute, testTag = TrackSettingsTestTags.MUTE)

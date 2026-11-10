@@ -30,6 +30,8 @@
 		7E5F000000000000000000F1 /* RecordingJourney.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F000000000000000000F3 /* RecordingJourney.swift */; };
 		7E5F000000000000000000D7 /* WindowingPerfTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F00000000000000000073 /* WindowingPerfTests.swift */; };
 		7E5F000000000000000000D8 /* WindowingJourney.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F00000000000000000074 /* WindowingJourney.swift */; };
+		7E5F000000000000000000DB /* MixerPerfTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F0000000000000000007B /* MixerPerfTests.swift */; };
+		7E5F000000000000000000DC /* MixerJourney.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F0000000000000000007C /* MixerJourney.swift */; };
 		7E5F000000000000000000E1 /* ScreenshotMatrix.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F000000000000000000E0 /* ScreenshotMatrix.swift */; };
 		7E5F000000000000000000D4 /* AudioTracePass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F00000000000000000070 /* AudioTracePass.swift */; };
 		7E5F000000000000000000DA /* ColdLaunchHitchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F0000000000000000007A /* ColdLaunchHitchTests.swift */; };
@@ -100,6 +102,8 @@
 		7E5F000000000000000000F3 /* RecordingJourney.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingJourney.swift; sourceTree = "<group>"; };
 		7E5F00000000000000000073 /* WindowingPerfTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowingPerfTests.swift; sourceTree = "<group>"; };
 		7E5F00000000000000000074 /* WindowingJourney.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowingJourney.swift; sourceTree = "<group>"; };
+		7E5F0000000000000000007B /* MixerPerfTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MixerPerfTests.swift; sourceTree = "<group>"; };
+		7E5F0000000000000000007C /* MixerJourney.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MixerJourney.swift; sourceTree = "<group>"; };
 		7E5F000000000000000000E0 /* ScreenshotMatrix.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotMatrix.swift; sourceTree = "<group>"; };
 		7E5F00000000000000000004 /* TembraPerfTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TembraPerfTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		7E5F01100000000000000020 /* DesktopTestCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopTestCase.swift; sourceTree = "<group>"; };
@@ -211,6 +215,7 @@
 				7E5F000000000000000000F2 /* RecordingPerfTests.swift */,
 				7E5F000000000000000000F7 /* RecordingSoakTests.swift */,
 				7E5F00000000000000000073 /* WindowingPerfTests.swift */,
+				7E5F0000000000000000007B /* MixerPerfTests.swift */,
 				7E5F0000000000000000006B /* StressPerfTests.swift */,
 				7E5F0000000000000000006C /* FacadeSelfCheckTests.swift */,
 				7E5F00000000000000000070 /* AudioTracePass.swift */,
@@ -228,6 +233,7 @@
 				7E5F00000000000000000072 /* TimelineJourney.swift */,
 				7E5F000000000000000000F3 /* RecordingJourney.swift */,
 				7E5F00000000000000000074 /* WindowingJourney.swift */,
+				7E5F0000000000000000007C /* MixerJourney.swift */,
 				7E5F0000000000000000006F /* StressJourney.swift */,
 			);
 			path = Journeys;
@@ -435,6 +441,8 @@
 				7E5F000000000000000000D6 /* TimelineJourney.swift in Sources */,
 				7E5F000000000000000000F1 /* RecordingJourney.swift in Sources */,
 				7E5F000000000000000000D8 /* WindowingJourney.swift in Sources */,
+				7E5F000000000000000000DB /* MixerPerfTests.swift in Sources */,
+				7E5F000000000000000000DC /* MixerJourney.swift in Sources */,
 				7E5F000000000000000000E1 /* ScreenshotMatrix.swift in Sources */,
 				7E5F000000000000000000D3 /* StressJourney.swift in Sources */,
 				7E5F000000000000000000D4 /* AudioTracePass.swift in Sources */,

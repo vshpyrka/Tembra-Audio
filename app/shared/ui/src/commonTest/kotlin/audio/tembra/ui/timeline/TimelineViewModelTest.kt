@@ -22,7 +22,9 @@ import audio.tembra.core.project.Beats
 import audio.tembra.core.project.ClipTemplate
 import audio.tembra.core.project.GainDb
 import audio.tembra.core.project.GridSize
+import audio.tembra.core.project.Pan
 import audio.tembra.core.project.PlaybackState
+import audio.tembra.core.project.RenameTrack
 import audio.tembra.data.metronome.FakeMetronomePreferences
 import audio.tembra.data.projects.DemoProject
 import audio.tembra.data.projects.DemoProjectIds
@@ -40,11 +42,25 @@ import audio.tembra.ui.drop.DropPlan
 import audio.tembra.ui.drop.SkipReason
 import audio.tembra.ui.drop.SkippedItem
 import audio.tembra.ui.metronome.TapCaption
+import audio.tembra.ui.mixer.MeterSource
+import audio.tembra.ui.mixer.MixerAnchors
+import audio.tembra.ui.mixer.MixerHeight
+import audio.tembra.ui.mixer.StripForm
 import audio.tembra.ui.platform.FakeAudioFilePicker
 import audio.tembra.ui.platform.FakeBackgroundPlaybackHost
+import audio.tembra.ui.platform.FakeWindowCapabilities
 import audio.tembra.ui.platform.FakeWindowControls
 import audio.tembra.ui.session.AppStartup
 import audio.tembra.ui.session.ProjectSession
+import audio.tembra.ui.shortcuts.KeyInput
+import audio.tembra.ui.shortcuts.PrimaryModifier
+import audio.tembra.ui.shortcuts.ShortcutAction
+import audio.tembra.ui.shortcuts.ShortcutCatalogue
+import audio.tembra.ui.shortcuts.ShortcutDispatcher
+import audio.tembra.ui.shortcuts.ShortcutPlatform
+import audio.tembra.ui.shortcuts.ShortcutScope
+import audio.tembra.ui.shortcuts.ShortcutTargets
+import androidx.compose.ui.input.key.Key
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -91,6 +107,7 @@ class TimelineViewModelTest {
     private val recordingPreferences = FakeTimelinePreferences()
     private val routes = FakeAudioRouteMonitor()
     private val windowControls = FakeWindowControls()
+    private val windowCapabilities = FakeWindowCapabilities()
     private val session = ProjectSession(
         repository = repository,
         audio = engine,
@@ -118,7 +135,7 @@ class TimelineViewModelTest {
     @BeforeTest
     fun setUp() {
         Dispatchers.setMain(dispatcher)
-        viewModel = TimelineViewModel(session, picker, preferences, timelinePreferences, windowControls)
+        viewModel = TimelineViewModel(session, picker, preferences, timelinePreferences, windowControls, windowCapabilities)
     }
 
     @AfterTest
@@ -686,7 +703,7 @@ class TimelineViewModelTest {
         assertFalse(session.state.value.canUndo, "zoom and grid are not edits")
         assertEquals(demo, repository.saved.getValue(demo.id), "the document is untouched")
         // A fresh ViewModel after a relaunch measures the same lane and lands on the stored zoom.
-        val later = TimelineViewModel(session, picker, preferences, timelinePreferences, windowControls)
+        val later = TimelineViewModel(session, picker, preferences, timelinePreferences, windowControls, windowCapabilities)
         later.screenVisible(true)
         later.viewportMeasured(1000.0, 2.0)
         runCurrent()
@@ -714,7 +731,7 @@ class TimelineViewModelTest {
         assertEquals("Second", ui().projectName)
         assertFalse(ui().overviewStripShown)
         // A fresh ViewModel after a relaunch reads the stored choice once the timeline shows.
-        val later = TimelineViewModel(session, picker, preferences, timelinePreferences, windowControls)
+        val later = TimelineViewModel(session, picker, preferences, timelinePreferences, windowControls, windowCapabilities)
         later.screenVisible(true)
         runCurrent()
         assertFalse(later.uiState.value.overviewStripShown)
@@ -729,7 +746,7 @@ class TimelineViewModelTest {
     @Test
     fun aStoredHiddenStripIsReadWhenTheTimelineShows() = test {
         val hidden = FakeTimelinePreferences(initialShown = false)
-        val fresh = TimelineViewModel(session, picker, preferences, hidden, windowControls)
+        val fresh = TimelineViewModel(session, picker, preferences, hidden, windowControls, windowCapabilities)
         fresh.screenVisible(true)
         runCurrent()
         assertFalse(fresh.uiState.value.overviewStripShown, "the stored choice hides the strip")
@@ -785,6 +802,291 @@ class TimelineViewModelTest {
         assertEquals(GainDb(-3f), ui().tracks[0].gainDb)
         viewModel.undo()
         assertEquals(GainDb.Unity, ui().tracks[0].gainDb, "each change is its own undo step")
+    }
+
+    // --- Feature 012: the mixer (contracts/mixer-session.md, mixer-ui.md; T046) ---------------------------------------
+
+    @Test
+    fun toggleMixerOpensAtHalfAndMeters() = test {
+        openDemo()
+        viewModel.lanesMeasured(TimelineLayout.Compact, 600.dp)
+        assertFalse(engine.metering)
+        assertFalse(ui().mixer.open)
+        viewModel.toggleMixer()
+        assertTrue(engine.metering, "metering starts with the toggle, synchronously")
+        assertEquals("setMetering(true)", engine.calls.last())
+        val mixer = ui().mixer
+        assertTrue(mixer.open)
+        assertEquals(MixerHeight.Half, mixer.height)
+        assertEquals(StripForm.Compact, mixer.form)
+        assertEquals(MixerAnchors(half = 270.dp, full = 600.dp), mixer.anchors)
+        assertEquals(listOf("Drums", "Bass", "Keys", "Pad"), mixer.strips.map { it.name })
+        assertEquals(listOf(1, 2, 3, 4), mixer.strips.map { it.number })
+        assertEquals(listOf(0, 1, 2, 3), mixer.strips.map { it.index })
+        assertEquals(80, mixer.master.percent)
+        assertEquals(null, mixer.selectedIndex)
+        viewModel.selectTrack(bassTrack)
+        assertEquals(1, ui().mixer.selectedIndex)
+    }
+
+    @Test
+    fun toggleAgainClosesAndStopsMetering() = test {
+        openDemo()
+        viewModel.toggleMixer()
+        viewModel.toggleMixer()
+        assertFalse(ui().mixer.open)
+        assertFalse(engine.metering)
+        assertEquals("setMetering(false)", engine.calls.last())
+        assertEquals(PlaybackState.Stopped(Beats.Zero), ui().playback, "opening and closing never touches the transport")
+    }
+
+    @Test
+    fun xTogglesTheMixer() = test {
+        openDemo()
+        val platform = ShortcutPlatform(PrimaryModifier.Ctrl, menuServesPrimaryChords = false)
+        val x = KeyInput(key = Key.X, codePoint = 'x'.code, ctrl = false, meta = false, shift = false, alt = false, down = true)
+        val action = ShortcutCatalogue.match(x, ShortcutScope.Timeline, platform)
+        assertEquals(ShortcutAction.TimelineMixer, action)
+        val callbacks = TimelineCallbacks.None.copy(onMixerToggle = viewModel::toggleMixer)
+        val targets = ShortcutTargets(timeline = TimelineKeyTargets({ viewModel.uiState.value }, { callbacks }))
+        assertTrue(ShortcutDispatcher.dispatch(ShortcutAction.TimelineMixer, targets))
+        assertTrue(ui().mixer.open)
+        ShortcutDispatcher.dispatch(ShortcutAction.TimelineMixer, targets)
+        assertFalse(ui().mixer.open)
+    }
+
+    @Test
+    fun stripsFollowTheTracks() = test {
+        openDemo()
+        viewModel.toggleMixer()
+        viewModel.addTrack()
+        assertEquals(5, ui().mixer.strips.size)
+        assertEquals(5, ui().mixer.strips.last().number)
+        assertEquals("Track 1", ui().mixer.strips.last().name)
+        session.edit(RenameTrack(drumsTrack, "Kit"))
+        assertEquals("Kit", ui().mixer.strips[0].name)
+        viewModel.requestDeleteTrack(drumsTrack)
+        viewModel.confirmDeleteTrack()
+        assertEquals(listOf("Bass", "Keys", "Pad", "Track 1"), ui().mixer.strips.map { it.name })
+        assertEquals(listOf(1, 2, 3, 4), ui().mixer.strips.map { it.number }, "numbers are positions, never skipped")
+        viewModel.toggleMute(bassTrack)
+        viewModel.toggleSolo(bassTrack)
+        assertTrue(ui().mixer.strips[0].muted && ui().mixer.strips[0].soloed)
+        assertFalse(ui().mixer.strips[1].audible, "solo silences the others")
+    }
+
+    @Test
+    fun gestureEndClosesTheGroup() = test {
+        openDemo()
+        viewModel.setGain(drumsTrack, GainDb(-3f))
+        viewModel.setGain(drumsTrack, GainDb(-4f))
+        viewModel.gestureSettled()
+        viewModel.setGain(drumsTrack, GainDb(-5f))
+        viewModel.undo()
+        assertEquals(GainDb(-4f), ui().tracks[0].gainDb, "the settled run stays as one step")
+        viewModel.undo()
+        assertEquals(GainDb.Unity, ui().tracks[0].gainDb)
+    }
+
+    @Test
+    fun aFaderDragIsOneUndoStep() = test {
+        openDemo()
+        viewModel.toggleMixer()
+        for (db in listOf(-1f, -2f, -3f, -4f)) viewModel.setGain(drumsTrack, GainDb(db))
+        viewModel.gestureSettled()
+        assertEquals(GainDb(-4f), ui().mixer.strips[0].gainDb)
+        assertTrue(engine.calls.contains("setTrack(0,0.631,true)"), "the engine followed the drag: ${engine.calls.filter { it.startsWith("setTrack") }}")
+        viewModel.undo()
+        assertEquals(GainDb.Unity, ui().mixer.strips[0].gainDb)
+        assertFalse(ui().canUndo, "the whole drag was one step")
+        for (percent in listOf(70, 60, 50)) viewModel.setMasterVolume(percent)
+        viewModel.gestureSettled()
+        assertEquals(50, ui().mixer.master.percent)
+        viewModel.undo()
+        assertEquals(80, ui().mixer.master.percent, "the master drag was one step")
+    }
+
+    @Test
+    fun theLanesBoxDecidesTheAnchorsAndTheFormAndLandscapeForcesFull() = test {
+        openDemo()
+        viewModel.toggleMixer()
+        viewModel.lanesMeasured(TimelineLayout.Compact, 400.dp)
+        assertEquals(MixerAnchors(half = 256.dp, full = 400.dp), ui().mixer.anchors)
+        viewModel.setMixerHeight(MixerHeight.Full)
+        assertEquals(MixerHeight.Full, ui().mixer.height)
+        assertEquals(StripForm.FullNoVu, ui().mixer.form, "a 400 dp sheet drops the VU dial")
+        viewModel.lanesMeasured(TimelineLayout.Expanded, 800.dp)
+        assertEquals(MixerAnchors(half = 608.dp, full = 800.dp), ui().mixer.anchors)
+        assertEquals(StripForm.Full, ui().mixer.form)
+        viewModel.setMixerHeight(MixerHeight.Half)
+        assertEquals(StripForm.Compact, ui().mixer.form)
+        viewModel.lanesMeasured(TimelineLayout.Landscape, 300.dp)
+        assertEquals(MixerHeight.Full, ui().mixer.height, "landscape has the one anchor")
+        assertEquals(StripForm.FullNoVu, ui().mixer.form)
+        assertTrue(ui().mixer.open, "the layout change keeps the sheet open")
+        viewModel.lanesMeasured(TimelineLayout.Compact, 600.dp)
+        assertEquals(MixerHeight.Half, ui().mixer.height, "the asked height returns with the two anchors")
+    }
+
+    // Feature 012, User Story 2 (T060): the armed strip's meter source and the clip latch resets.
+
+    @Test
+    fun theArmedStripShowsTheInputMeter() = recordingTest {
+        openDemo()
+        viewModel.toggleMixer()
+        assertEquals(MeterSource.Playback, ui().mixer.strips[0].meterSource)
+        viewModel.arm(drumsTrack)
+        settle()
+        assertEquals(MeterSource.Input, ui().mixer.strips[0].meterSource)
+        assertEquals(MeterSource.Playback, ui().mixer.strips[1].meterSource, "only the armed track's strip")
+        viewModel.arm(drumsTrack)
+        settle()
+        assertEquals(MeterSource.Playback, ui().mixer.strips[0].meterSource, "disarmed: back to the playback meter")
+    }
+
+    // Feature 012, User Story 4 (T077): one truth for the strips and the headers, the master's group, the selection path.
+
+    @Test
+    fun stripAndHeaderStatesNeverDisagree() = test {
+        openDemo()
+        viewModel.toggleMixer()
+        val ids = demo.tracks.map { it.id }
+        val random = kotlin.random.Random(12)
+        repeat(200) {
+            val id = ids[random.nextInt(ids.size)]
+            if (random.nextBoolean()) viewModel.toggleMute(id) else viewModel.toggleSolo(id)
+            val state = ui()
+            for ((track, strip) in state.tracks.zip(state.mixer.strips)) {
+                assertEquals(track.id, strip.id)
+                assertEquals(track.muted, strip.muted, "mute of ${track.name} after $it toggles")
+                assertEquals(track.soloed, strip.soloed, "solo of ${track.name} after $it toggles")
+                assertEquals(track.audible, strip.audible, "audibility of ${track.name} after $it toggles")
+            }
+        }
+    }
+
+    /** Spec FR-021a (T101): the handle's button closes the sheet, releases its metering and asks the platform for the window. */
+    @Test
+    fun openMixerWindowClosesTheSheetAndAsksTheCapabilities() = test {
+        val capable = FakeWindowCapabilities(multipleWindows = true)
+        val windowed = TimelineViewModel(session, picker, preferences, timelinePreferences, windowControls, capable)
+        openDemo()
+        windowed.screenVisible(true)
+        runCurrent()
+        assertTrue(windowed.uiState.value.mixer.windowAvailable)
+        windowed.toggleMixer()
+        runCurrent()
+        assertTrue(windowed.uiState.value.mixer.open)
+        windowed.openMixerWindow()
+        runCurrent()
+        assertFalse(windowed.uiState.value.mixer.open, "the sheet closes when the window opens")
+        assertEquals(1, capable.opens)
+        assertEquals("setMetering(false)", engine.calls.last(), "the sheet's metering count went with it")
+        // While the window is open, the Mixer button (and X) bring it to the front instead of opening the sheet.
+        capable.mixerWindowOpen.value = true
+        windowed.toggleMixer()
+        runCurrent()
+        assertFalse(windowed.uiState.value.mixer.open)
+        assertEquals(2, capable.opens)
+        windowed.screenVisible(false)
+    }
+
+    /** Spec FR-021a (T101): without the capability the handle offers no window button, and X opens the sheet as before. */
+    @Test
+    fun windowButtonHiddenWithoutCapabilities() = test {
+        openDemo()
+        assertFalse(ui().mixer.windowAvailable)
+        viewModel.toggleMixer()
+        runCurrent()
+        assertTrue(ui().mixer.open)
+        assertEquals(0, windowCapabilities.opens)
+    }
+
+    @Test
+    fun masterDragIsOneUndoStep() = test {
+        openDemo()
+        for (percent in listOf(75, 70, 65, 60)) viewModel.setMasterVolume(percent)
+        viewModel.gestureSettled()
+        assertEquals(60, ui().mixer.master.percent)
+        assertEquals(60, ui().masterVolume, "the speaker popup reads the same value")
+        assertEquals("setMaster(0.6)", engine.calls.last())
+        viewModel.undo()
+        assertEquals(80, ui().mixer.master.percent)
+        assertFalse(ui().canUndo, "the whole drag was one step")
+    }
+
+    @Test
+    fun selectingAStripSelectsTheTrackForTheHeadersAndTheStrips() = test {
+        openDemo()
+        viewModel.toggleMixer()
+        viewModel.selectTrack(bassTrack)
+        assertEquals(Selection.TrackSelected(bassTrack), ui().selection)
+        assertEquals(1, ui().mixer.selectedIndex, "the strip of the selected track")
+        viewModel.clearSelection()
+        assertEquals(null, ui().mixer.selectedIndex)
+    }
+
+    @Test
+    fun openingTheMixerCarriesTheSelectedStrip() = test {
+        openDemo()
+        viewModel.selectTrack(demo.tracks[3].id)
+        viewModel.toggleMixer()
+        assertEquals(3, ui().mixer.selectedIndex, "the row scrolls this strip into view when the sheet opens")
+    }
+
+    // Feature 012, User Story 3 (T069): the pan edit and its undo group.
+
+    @Test
+    fun setPanEditsTheTrack() = test {
+        openDemo()
+        viewModel.setPan(drumsTrack, Pan(-35))
+        assertEquals(Pan(-35), ui().tracks[0].pan)
+        assertEquals(Pan(-35), ui().mixer.strips[0].pan)
+        assertEquals("setPan(0,-0.35)", engine.calls.last())
+        assertTrue(ui().canUndo)
+    }
+
+    @Test
+    fun aKnobTurnIsOneUndoStep() = test {
+        openDemo()
+        for (percent in listOf(-10, -20, -30)) viewModel.setPan(drumsTrack, Pan(percent))
+        viewModel.gestureSettled()
+        assertEquals(Pan(-30), ui().tracks[0].pan)
+        viewModel.setPan(drumsTrack, Pan(40))
+        viewModel.undo()
+        assertEquals(Pan(-30), ui().tracks[0].pan, "the settled turn stays as one step")
+        viewModel.undo()
+        assertEquals(Pan.Centre, ui().tracks[0].pan)
+        assertFalse(ui().canUndo, "the first turn was one step")
+    }
+
+    @Test
+    fun resetTrackClipReachesTheEngineByIndex() = test {
+        openDemo()
+        viewModel.resetTrackClip(bassTrack)
+        assertEquals("resetMixClip(1)", engine.calls.last())
+    }
+
+    @Test
+    fun resetMasterClipUsesTheMasterIndex() = test {
+        openDemo()
+        viewModel.resetMasterClip()
+        assertEquals("resetMixClip(64)", engine.calls.last())
+    }
+
+    @Test
+    fun theOpenMixerSurvivesAProjectSwitchAndKeepsOneMeteringHolder() = test {
+        openDemo()
+        viewModel.toggleMixer()
+        scope.launch { session.open(repository.create("Second").id) }
+        advanceTimeBy(200)
+        runCurrent()
+        assertEquals("Second", ui().projectName)
+        assertTrue(ui().mixer.open, "the sheet stays open across the switch")
+        assertEquals(ui().tracks.size, ui().mixer.strips.size)
+        assertTrue(engine.metering)
+        viewModel.toggleMixer()
+        assertFalse(engine.metering, "one holder, released once")
     }
 
     @Test

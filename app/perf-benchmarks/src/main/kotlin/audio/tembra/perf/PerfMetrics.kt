@@ -37,7 +37,12 @@ object PerfMetrics {
     private val windowingSections = listOf(
         "shell.windowRelayout", "timeline.contextMenu", "shell.shortcutNavigate", "metronome.load", "timeline.projectOpen", "transport.play",
     )
-    private val stressSections = tunerSections + metronomeSections + listOf("timeline.scroll", "timeline.playheadFrame", "transport.play")
+    // Feature 012 (contracts/perf-instrumentation.md): the mixer's sections and the timeline ones the journey plays over.
+    private val mixerSections = listOf(
+        "timeline.mixerOpen", "timeline.mixerClose", "timeline.mixerFrame", "timeline.faderDrag", "timeline.panTurn",
+        "transport.masterDrag", "engine.panApply", "transport.play", "timeline.playheadFrame", "timeline.projectSave",
+    )
+    private val stressSections = tunerSections + metronomeSections + listOf("timeline.scroll", "timeline.playheadFrame", "transport.play", "timeline.mixerFrame")
 
     fun journey(name: String): List<Metric> = listOf(
         FrameTimingMetric(),
@@ -53,6 +58,7 @@ object PerfMetrics {
         "recording" -> recordingSections
         "stress" -> stressSections
         "windowing" -> windowingSections
+        "mixer" -> mixerSections
         else -> emptyList()
     }
 }

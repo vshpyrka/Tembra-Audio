@@ -1,0 +1,189 @@
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.designsystem.Fader(
+  stable value: Float
+  stable onValue: Function1<Float, Unit>
+  stable onSettled: Function0<Unit>
+  stable description: String
+  stable readout: String
+  stable modifier: Modifier? = @static <expression>
+  scale: FaderScale? = @static <expression>
+  stable interactionSource: MutableInteractionSource? = @static null
+  stable testTag: String? = @static null
+  stable section: PerfSection? = @static <expression>
+)
+
+fun audio.tembra.ui.designsystem.rememberFrameTick(
+  stable active: Boolean
+)
+
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.designsystem.LevelMeter(
+  reading: MeterReading
+  stable tick: LongState
+  stable level: State<MeterLevel>
+  stable onResetClip: Function0<Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable testTag: String? = @static null
+  stable clipTestTag: String? = @static null
+)
+
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.designsystem.PanKnob(
+  stable pan: Pan
+  stable onPan: Function1<Pan, Unit>
+  stable onSettled: Function0<Unit>
+  stable description: String
+  stable modifier: Modifier? = @static <expression>
+  stable interactionSource: MutableInteractionSource? = @static null
+  stable testTag: String? = @static null
+)
+
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.designsystem.VuDial(
+  unstable levels: MixSnapshot
+  stable index: Int
+  stable tick: LongState
+  stable level: State<MeterLevel>
+  stable modifier: Modifier? = @static <expression>
+  stable testTag: String? = @static null
+)
+
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.mixer.MasterStrip(
+  stable master: MasterUi
+  callbacks: TimelineCallbacks
+  feed: MeterFeed
+  stable modifier: Modifier? = @static <expression>
+)
+
+fun audio.tembra.ui.mixer.rememberMeterFeed(
+  stable active: Boolean
+  stable strips: ImmutableList<StripUi>
+  inputTelemetry: InputTelemetry
+)
+
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.mixer.MixerHandle(
+  stable height: MixerHeight
+  stable onToggleHeight: Function0<Unit>?
+  stable modifier: Modifier? = @static <expression>
+  stable onOpenWindow: Function0<Unit>? = @static null
+)
+
+fun audio.tembra.ui.mixer.rememberMixerLevelMirror(
+  unstable levels: MixSnapshot
+  stable active: Boolean
+  stable armedIndex: Int?
+  inputTelemetry: InputTelemetry
+)
+
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.mixer.MixerSheet(
+  stable ui: MixerUi
+  callbacks: TimelineCallbacks
+  telemetry: MixTelemetry
+  inputTelemetry: InputTelemetry
+  stable lanesHeight: Dp
+  stable modifier: Modifier? = @static <expression>
+)
+
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.mixer.MixerStrip(
+  stable strip: StripUi
+  stable form: StripForm
+  stable selected: Boolean
+  callbacks: TimelineCallbacks
+  feed: MeterFeed
+  stable modifier: Modifier? = @static <expression>
+  stable isFirst: Boolean = @static false
+  stable isLast: Boolean = @static false
+  stable canReorder: Boolean = @static true
+)
+
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.mixer.StripBody(
+  stable strip: StripUi
+  stable form: StripForm
+  stable selected: Boolean
+  callbacks: TimelineCallbacks
+  feed: MeterFeed
+  reading: MeterReading
+  stable onResetClip: Function0<Unit>
+  stable onSelect: Function0<Unit>
+  stable text: Color
+)
+
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.mixer.StripLabel(
+  stable text: String
+  stable style: TextStyle
+  stable color: Color
+  stable selected: Boolean
+  stable onSelect: Function0<Unit>
+  stable testTag: String
+)
+
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.mixer.MixerStripRow(
+  stable strips: ImmutableList<StripUi>
+  stable form: StripForm
+  stable selectedIndex: Int?
+  callbacks: TimelineCallbacks
+  feed: MeterFeed
+  stable modifier: Modifier? = @static <expression>
+  stable listState: LazyListState? = @dynamic <expression>
+  stable canReorder: Boolean = @static true
+)
+
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.mixer.MixerWindow(
+  appGraph: AppGraph
+  stable modifier: Modifier? = @static <expression>
+  stable onProjectGone: Function0<Unit>? = @static <expression>
+)
+
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.mixer.MixerWindowScreen(
+  stable onProjectGone: Function0<Unit>
+  stable modifier: Modifier? = @static <expression>
+  viewModel: MixerWindowViewModel? = @dynamic <expression>
+)
+
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.mixer.MixerWindowContent(
+  stable state: MixerWindowUiState
+  callbacks: TimelineCallbacks
+  telemetry: MixTelemetry
+  inputTelemetry: InputTelemetry
+  stable modifier: Modifier? = @static <expression>
+)
+
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.timeline.components.GainReadout(
+  stable gain: GainDb
+  stable onGain: Function1<GainDb, Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable interactionSource: MutableInteractionSource? = @static null
+  stable testTag: String? = @static null
+  stable caption: String? = @static null
+)
+
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.timeline.components.TrackHeader(
+  stable track: TrackUi
+  stable index: Int
+  stable selected: Boolean
+  stable expanded: Boolean
+  stable isFirst: Boolean
+  stable isLast: Boolean
+  stable onSelect: Function0<Unit>
+  stable onMute: Function1<Boolean, Unit>
+  stable onSolo: Function1<Boolean, Unit>
+  stable onGain: Function1<GainDb, Unit>
+  stable onExpand: Function1<Boolean, Unit>
+  stable onSettings: Function0<Unit>
+  stable onAddAudio: Function0<Unit>
+  stable onMoveUp: Function0<Unit>
+  stable onMoveDown: Function0<Unit>
+  stable onDelete: Function0<Unit>
+  stable onArm: Function1<Boolean, Unit>? = @static <expression>
+  stable canReorder: Boolean = @static true
+  inputTelemetry: InputTelemetry? = @static null
+  stable onResetClip: Function0<Unit>? = @static <expression>
+  stable menuOpen: Boolean
+  stable onMenuOpen: Function1<Boolean, Unit>
+  stable modifier: Modifier? = @static <expression>
+)
+
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun audio.tembra.ui.tracksettings.PanSlider(
+  stable pan: Pan
+  stable onPan: Function1<Pan, Unit>
+  stable onSettled: Function0<Unit>
+  stable modifier: Modifier? = @static <expression>
+  stable interactionSource: MutableInteractionSource? = @static null
+  stable testTag: String? = @static null
+)

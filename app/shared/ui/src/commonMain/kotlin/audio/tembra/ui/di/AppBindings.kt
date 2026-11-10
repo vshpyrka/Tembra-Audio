@@ -8,6 +8,7 @@ import audio.tembra.data.metronome.CustomClickSoundStore
 import audio.tembra.data.metronome.DataStoreMetronomePreferences
 import audio.tembra.data.metronome.MetronomePreferences
 import audio.tembra.data.metronome.OkioCustomClickSoundStore
+import audio.tembra.core.project.Beats
 import audio.tembra.data.projects.DemoAudioSource
 import audio.tembra.data.projects.OkioProjectRepository
 import audio.tembra.data.projects.ProjectRepository
@@ -22,6 +23,8 @@ import audio.tembra.engine.TimelineAudio
 import audio.tembra.engine.TunerAudio
 import audio.tembra.ui.drop.ProjectFromAudio
 import audio.tembra.ui.drop.SessionProjectFromAudio
+import audio.tembra.ui.projects.StressProjectSeeder
+import audio.tembra.ui.session.ImportTarget
 import audio.tembra.ui.projects.ComposeDemoAudioSource
 import audio.tembra.ui.session.AppStartup
 import audio.tembra.ui.session.PlaybackGuard
@@ -120,6 +123,23 @@ object AppBindings {
     /** The navigation shell asks the session before leaving a playing timeline (spec FR-008a). */
     @Provides
     fun providePlaybackGuard(session: ProjectSession): PlaybackGuard = session
+
+    /**
+     * The stress journey's project (feature 012, contracts/perf-instrumentation.md): built after the startup, its loops
+     * imported into the opened project as picked files are.
+     */
+    @Provides
+    @SingleIn(AppScope::class)
+    fun provideStressProjectSeeder(
+        repository: ProjectRepository,
+        session: ProjectSession,
+        startup: AppStartup,
+        demoAudio: DemoAudioSource,
+        @Named("session") scope: CoroutineScope,
+    ): StressProjectSeeder = StressProjectSeeder(repository, demoAudio, scope, beforeStart = startup::awaitStarted) { id, files ->
+        session.open(id)
+        if (session.state.value.project?.id == id) session.importAudio(files, ImportTarget.NewTracks(Beats.Zero))
+    }
 
     /** Files dropped on Projects or opened with the app become a new project (feature 011, spec FR-026, FR-026a). */
     @Provides

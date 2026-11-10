@@ -26,4 +26,7 @@ data class AudioHealth(
     val recordBacklog: Int = 0,
     /** The input stream's own xrun count (Android); 0 on iOS. */
     val inputXruns: Int = 0,
+    // ABI revision 8 (feature 012): the mixer's counter; zero from a revision-7 reader.
+    /** Blocks in which the master clamp engaged since the transport opened. */
+    val masterClips: Int = 0,
 )

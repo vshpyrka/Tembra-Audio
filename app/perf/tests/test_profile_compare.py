@@ -268,7 +268,7 @@ def test_comparison_json_validates_and_markdown_has_a_row_per_metric_and_the_hea
         jsonschema.validate(data, json.load(fh), cls=jsonschema.Draft202012Validator)
     assert data["build"]["commit"] == "0123456789abcdef" and data["build"]["dirty"] is False
     assert data["device"]["device_id"] == SERIAL and data["device"]["fingerprint"]["sdk"] == 37
-    assert data["journeys"] == ["startup", "tuner", "metronome", "timeline", "recording", "stress"]
+    assert data["journeys"] == ["startup", "tuner", "metronome", "timeline", "recording", "mixer", "stress"]
     assert set(data["artifacts"]) == {"none", "profile", "full"}
     md_path = os.path.join(os.path.dirname(payload["comparison_json"]), "comparison.md")
     with open(md_path) as fh:

@@ -2,6 +2,7 @@ package audio.tembra.data.projects
 
 import audio.tembra.core.project.AudioAssetId
 import audio.tembra.core.project.ClipId
+import audio.tembra.core.project.Pan
 import audio.tembra.core.project.TrackId
 import kotlinx.collections.immutable.toPersistentList
 import kotlin.test.Test
@@ -80,8 +81,19 @@ class ProjectValidatorTest {
     }
 
     @Test
+    fun aPanOutsideTheRangeIsReported() {
+        // Feature 012 (spec FR-006): the constructor accepts the value so the document can be reported, the validator refuses it.
+        val tracks = listOf(DataFixtures.track(1).copy(pan = Pan(101)), DataFixtures.track(2).copy(pan = Pan(-100)), DataFixtures.track(3).copy(pan = Pan(-101)))
+        assertEquals(
+            listOf(ValidationFailure.PanOutOfRange(TrackId("track-1"), 101), ValidationFailure.PanOutOfRange(TrackId("track-3"), -101)),
+            ProjectValidator.validate(DataFixtures.project(tracks = tracks, assets = assets)),
+        )
+    }
+
+    @Test
     fun failuresHaveMessages() {
         assertEquals("Duplicate id \"track-1\"", ValidationFailure.DuplicateId("track-1").message)
         assertEquals("Tempo 300 is outside 40..240", ValidationFailure.TempoOutOfRange(300).message)
+        assertEquals("Track track-1 has a pan of 140, outside −100..100", ValidationFailure.PanOutOfRange(TrackId("track-1"), 140).message)
     }
 }

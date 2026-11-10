@@ -70,6 +70,37 @@ enum Anchors {
     static let timelineClipMenuFirst = "timeline.clip.first.menu"
     static let shortcutSheet = "shortcuts.sheet"
 
+    // Feature 012 (contracts/perf-instrumentation.md, journey `mixer`): the Mixer button, the sheet, the first strip's
+    // controls (strip i through the functions below), the master strip, the window button and the settings' pan slider.
+    static let projectsCardStress = "projects.card.stressTracks"
+    static let timelineOverflowButton = "timeline.toolbar.overflow.button"
+    static let timelineMixer = "timeline.toolbar.mixer"
+    static let timelineOverflowMixer = "timeline.toolbar.overflow.mixer"
+    static let mixerSheet = "mixer.sheet"
+    static let mixerHandle = "mixer.handle"
+    static let mixerStrips = "mixer.strips"
+    static let mixerStripFaderFirst = "mixer.strip.fader.0"
+    static let mixerStripPanFirst = "mixer.strip.pan.0"
+    static let mixerStripSoloFirst = "mixer.strip.solo.0"
+    static let mixerStripMuteFirst = "mixer.strip.mute.0"
+    static let mixerStripMeterFirst = "mixer.strip.meter.0"
+    static let mixerStripClipFirst = "mixer.strip.clip.0"
+    static let mixerStripNameFirst = "mixer.strip.name.0"
+    static let mixerMasterFader = "mixer.master.fader"
+    static let mixerMasterMeter = "mixer.master.meter"
+    static let mixerMasterClip = "mixer.master.clip"
+    static let mixerWindowOpen = "mixer.window.open"
+    static let trackSettingsPan = "trackSettings.pan"
+
+    /// The fader, pan knob, Solo, Mute, meter, clip latch and name of strip `index`.
+    static func mixerFader(_ index: Int) -> String { "mixer.strip.fader.\(index)" }
+    static func mixerPan(_ index: Int) -> String { "mixer.strip.pan.\(index)" }
+    static func mixerSolo(_ index: Int) -> String { "mixer.strip.solo.\(index)" }
+    static func mixerMute(_ index: Int) -> String { "mixer.strip.mute.\(index)" }
+    static func mixerMeter(_ index: Int) -> String { "mixer.strip.meter.\(index)" }
+    static func mixerClip(_ index: Int) -> String { "mixer.strip.clip.\(index)" }
+    static func mixerName(_ index: Int) -> String { "mixer.strip.name.\(index)" }
+
     /// The `screen.timeline` value once every visible overview is built; "loading" before (not an anchor of its own).
     static let timelineReadyState = "ready"
 

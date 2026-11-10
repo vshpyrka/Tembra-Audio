@@ -6,6 +6,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.focusable
@@ -52,6 +53,8 @@ internal fun GainReadout(
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource? = null,
     testTag: String? = null,
+    /** A second, smaller line under the readout (feature 012: the expanded header's pan, "L 35"); read after the gain. */
+    caption: String? = null,
 ) {
     val colors = TembraTheme.colors
     val spacing = TembraTheme.spacing
@@ -108,7 +111,7 @@ internal fun GainReadout(
             }
             .semantics(mergeDescendants = true) {
                 contentDescription = GAIN_DESCRIPTION
-                stateDescription = readout
+                stateDescription = if (caption == null) readout else "$readout, $caption"
                 progressBarRangeInfo = ProgressBarRangeInfo(numeric(gain), SILENCE_DB..GainDb.MAX, 0)
                 setProgress { value ->
                     offer((value * 2).roundToInt() / 2f)
@@ -117,7 +120,14 @@ internal fun GainReadout(
             },
         contentAlignment = Alignment.Center,
     ) {
-        Text(readout, style = TembraTheme.typographyExtras.tabularParam, color = colors.onSurface, maxLines = 1)
+        if (caption == null) {
+            Text(readout, style = TembraTheme.typographyExtras.tabularParam, color = colors.onSurface, maxLines = 1)
+        } else {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(readout, style = TembraTheme.typographyExtras.tabularParam, color = colors.onSurface, maxLines = 1)
+                Text(caption, style = TembraTheme.typographyExtras.microLabel, color = colors.onSurfaceVariant, maxLines = 1)
+            }
+        }
     }
 }
 
@@ -128,5 +138,7 @@ internal const val SILENCE_DB = -60f
 internal const val ARROW_STEP_DB = 0.5f
 internal const val PAGE_STEP_DB = 6f
 private const val DRAG_DB_PER_DP = 0.25f
-private const val MinWidthDp = 64
+
+/** The room "−2.4dB" needs in `tabularParam`; the expanded header's second row gives it exactly this beside its toggles. */
+private const val MinWidthDp = 56
 private val Int.dp get() = androidx.compose.ui.unit.Dp(this.toFloat())

@@ -4,23 +4,31 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.v2.runComposeUiTest
 import audio.tembra.core.project.GainDb
 import audio.tembra.core.project.InstrumentLabel
+import audio.tembra.core.project.Pan
 import audio.tembra.core.project.TrackId
+import kotlin.test.assertTrue
 import audio.tembra.ui.perf.PerfAnchors
 import audio.tembra.ui.theme.TembraTheme
 import audio.tembra.ui.timeline.ScriptedTransportTelemetry
@@ -37,7 +45,7 @@ class TrackSettingsScreenTest {
 
     private val calls = mutableListOf<String>()
     private val state = TrackSettingsUiState(
-        trackId = TrackId("t2"), name = "Guitar", label = InstrumentLabel.Guitar, colorIndex = 1, gainDb = GainDb(-2.4f),
+        trackId = TrackId("t2"), name = "Guitar", label = InstrumentLabel.Guitar, colorIndex = 1, gainDb = GainDb(-2.4f), pan = Pan(-35),
         muted = true, soloed = false, transport = TransportUiState(lengthSeconds = 30.9677, hasProject = true),
     )
 
@@ -53,6 +61,7 @@ class TrackSettingsScreenTest {
                         onName = { calls += "name($it)"; current = current.copy(name = it) }, onNameCommit = { calls += "commit" }, onLabel = { calls += "label($it)" },
                         onGain = { calls += "gain(${it.readout})" }, onMute = { calls += "mute($it)" }, onSolo = { calls += "solo($it)" },
                         onDelete = { calls += "delete" }, onConfirmDelete = { calls += "confirm" }, onDismissDelete = { calls += "dismiss" },
+                        onPan = { calls += "pan(${it.readout})" }, onPanSettled = { calls += "panSettled" },
                     ),
                     transportCallbacks = TransportCallbacks.None.copy(onPlayPause = { calls += "play" }),
                     telemetry = ScriptedTransportTelemetry.stopped(0.0),
@@ -71,6 +80,15 @@ class TrackSettingsScreenTest {
         onNodeWithTag(TrackSettingsTestTags.LABEL).assertContentDescriptionEquals("Instrument, Guitar")
         onNodeWithTag(TrackSettingsTestTags.GAIN).assertExists()
         onNodeWithTag(TrackSettingsTestTags.GAIN_SLIDER).assertExists()
+        // Feature 012 (spec FR-007; T068): the pan row after the gain row, the slider named "Pan" with the readout as its state.
+        val gain = onNodeWithTag(TrackSettingsTestTags.GAIN_SLIDER).getUnclippedBoundsInRoot()
+        val pan = onNodeWithTag(TrackSettingsTestTags.PAN).assertContentDescriptionEquals(TrackSettingsCopy.pan)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "L 35")).getUnclippedBoundsInRoot()
+        assertTrue(pan.top >= gain.bottom, "the pan row $pan is not under the gain row $gain")
+        onNodeWithText("L 35").assertExists()
+        onNodeWithTag(TrackSettingsTestTags.PAN).performSemanticsAction(SemanticsActions.SetProgress) { it(20f) }
+        assertEquals(listOf("pan(R 20)", "panSettled"), calls)
+        calls.clear()
         onNodeWithTag(TrackSettingsTestTags.MUTE).assertIsOn()
         onNodeWithTag(TrackSettingsTestTags.SOLO).assertIsOff()
         onNodeWithTag("transport.bar").assertExists()

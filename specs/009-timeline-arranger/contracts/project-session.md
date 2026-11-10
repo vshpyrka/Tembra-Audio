@@ -13,8 +13,8 @@ scope, named launches, `StateFlow` for state, `Channel` for one-shot messages),
 | `ProjectSession` (`@Inject @SingleIn(AppScope)`) | the open project's lifecycle: open, edit, undo/redo, save, play, pause, seek, metronome, import; exposes `state: StateFlow<SessionState>`, `messages: Flow<SessionMessage>`, `transportTelemetry` |
 | `EditHistory` (`core`) | 50 immutable snapshots (data model §1) |
 | `ProjectEditor` (`core`) | `apply(project, edit)` pure |
-| `ArrangementMapper` | `Project` + open clip-source handles → `ArrangementSnapshot`; the solo/mute truth table → `audible`; `GainDb.toLinear()` |
-| `ClipSourceRegistry` | asset id → `ClipSourceHandle`; opens sources on project open and on import, closes on project close and when an asset leaves the project **and** the history |
+| `ArrangementMapper` | `Project` + open clip-source handles → `ArrangementSnapshot`; the solo/mute truth table → `audible`; `GainDb.toLinear()`; an asset's sources handed out first-fit over its clips by start (a source is free again a second after its clip ends; the halves of a split continue one source); `sourcesNeeded` says how many each asset wants (feature 012, 2026-11-09) |
+| `ClipSourceRegistry` | asset id → its `ClipSourceHandle`s: one, plus one for every further clip of the asset that sounds at the same time (`ensure`, at most one per track; a source has one read position, and feature 012's stress project, the same loop on six tracks, starved five pops in six until 2026-11-09); opens on project open and on import, tops up after an edit that makes clips overlap, closes on project close and when an asset leaves the project **and** the history |
 | `AutosaveScheduler` | contracts/project-storage.md |
 | `PlaybackPolicy` (`core`) | pure transitions below |
 | `OverviewTracker` | asset id → `OverviewStatus` from the repository's flows |
