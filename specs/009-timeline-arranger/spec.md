@@ -692,8 +692,9 @@ clips, overlaps or hides behind the transport bar.
   settings screen, above the navigation bar in compact windows and spanning the content width
   in expanded windows, and MUST contain, left to right: the master volume slider with its
   percentage, skip-to-start, step-back-one-bar, play/pause, step-forward-one-bar, the position
-  and length readout, and the metronome toggle. It MUST NOT contain a playback speed or loop
-  control.
+  and length readout, and the metronome toggle. On a bar 600 dp wide or more the controls MUST
+  stay together, centred in the bar (the owner's request of 2026-11-10). It MUST NOT contain a
+  playback speed or loop control.
 - **FR-005**: Play MUST start sound within 100 ms of the press from the playhead position, with
   every clip whose span contains that position starting mid-clip at the right point, and the
   button MUST show pause while playing. Pause MUST stop within 10 ms with a short fade so there
@@ -776,7 +777,13 @@ clips, overlaps or hides behind the transport bar.
 - **FR-016**: The timeline MUST scroll horizontally by drag, by the scroll wheel without the
   modifier and by a two-finger trackpad swipe; the track list MUST scroll vertically when the
   tracks exceed the height, with the ruler pinned at the top and, in expanded windows, the
-  headers pinned at the left.
+  headers pinned at the left. At rest the timeline MUST show a short empty lead-in before 0:00
+  (at least 24 dp, and at least 16 dp past any part of the system's back-gesture zone that
+  reaches the lanes; the owner's request of 2026-11-10), so the start can be reached without a
+  back swipe. The lead-in MUST scroll away with the clips, and a tap or drag on the ruler inside
+  it MUST land on 0:00. Where the headers are not pinned beside the lanes, the track name in the
+  strip above each lane MUST start past the 0:00 position, so the playhead at rest does not
+  cross it.
 - **FR-017**: The playhead, the clips and the waveforms MUST stay aligned with the ruler at
   every zoom level and scroll position, with no visible drift between the ruler's time row and
   the readout.

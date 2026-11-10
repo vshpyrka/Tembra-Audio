@@ -70,7 +70,7 @@ opens; not persisted.
 
 | Type | Purpose |
 |---|---|
-| `TimelineViewport(pixelsPerBeat, scrollBeats, widthPx, densityScale)` | pure mapping beats ↔ x; `zoomAround(centreX, factor)`, `scrollBy(px)`, clamped to `[fitLevel, closestLevel]` (FR-015: whole project and ≥ 32 bars fit at the widest; one beat ≥ width at the closest) |
+| `TimelineViewport(pixelsPerBeat, scrollBeats, widthPx, densityScale, leadInPx)` | pure mapping beats ↔ x; `zoomAround(centreX, factor)`, `scrollBy(px)`, clamped to `[fitLevel, closestLevel]` (FR-015: whole project and ≥ 32 bars fit at the widest after the lead-in; one beat ≥ width at the closest); `scrollBeats` goes as low as `startScrollBeats`, the negative beat `leadInPx` before zero (FR-016) |
 | `RulerLabels` | FR-014: given a viewport, tempo map and width returns the bar-row labels (every Nth bar, N a power of two; bars; "bar.beat"; subdivisions to sixteenths), the time-row labels (minutes; seconds; tenths; hundredths) and the tick level below the labelled level; the rule: no two labels in a row closer than their width plus a gap |
 | `Snap` | `snap(beats, grid, signature)`; identity for `Off` |
 | `ClipHit` | resolves a tap at (x, y) in a lane to `Clip`, empty space, or the playhead marker |
