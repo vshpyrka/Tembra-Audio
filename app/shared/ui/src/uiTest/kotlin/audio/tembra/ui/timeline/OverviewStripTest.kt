@@ -396,15 +396,26 @@ class OverviewStripTest {
     }
 
     /** Presses inside the window, so only the double tap's own animation calls back. */
-    private fun ComposeUiTest.doubleTap(atDp: Float) {
+    /** Two taps at [atDp], the second pressed [gapMillis] after the first's release (by default a finger's pace). */
+    private fun ComposeUiTest.doubleTap(atDp: Float, gapMillis: Long? = null) {
         onNodeWithTag(TimelineTestTags.OVERVIEW).performTouchInput {
             val at = Offset(atDp.dp.toPx(), centerY)
             down(at)
             up()
-            advanceEventTime(viewConfiguration.doubleTapMinTimeMillis + 50)
+            advanceEventTime(gapMillis ?: (viewConfiguration.doubleTapMinTimeMillis + 50))
             down(at)
             up()
         }
+    }
+
+    /** XCUITest's doubleTap() presses again at the first release's very time; the strip takes it as a double tap. */
+    @Test
+    fun aSecondPressAtTheFirstReleasesTimeStillFits() = runComposeUiTest {
+        setStrip()
+        mainClock.autoAdvance = false
+        doubleTap(dpAtBeat(40f), gapMillis = 0)
+        mainClock.advanceTimeBy(800)
+        assertEquals(1, fits, "a zero-gap double tap did not fit")
     }
 
     @Test

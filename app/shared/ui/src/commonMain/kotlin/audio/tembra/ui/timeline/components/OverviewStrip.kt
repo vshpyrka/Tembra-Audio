@@ -434,9 +434,10 @@ private suspend fun PointerInputScope.detectOverviewGestures(
         val windowLeft = port.windowLeftOn(stripWidth, minWindow)
         val windowWidth = port.windowWidthOn(stripWidth, minWindow)
         val drag = OverviewDrag(port, stripWidth, down.position.x, down.position.y, zoomPx)
+        // No lower bound on the gap (Compose's detectTapGestures waits doubleTapMinTimeMillis): XCUITest's doubleTap()
+        // puts the second press at the first release's very time, and no finger taps that fast.
         val elapsed = down.uptimeMillis - lastTapUp
-        val secondTap = lastTapUp >= 0 &&
-            elapsed >= viewConfiguration.doubleTapMinTimeMillis && elapsed <= viewConfiguration.doubleTapTimeoutMillis &&
+        val secondTap = lastTapUp >= 0 && elapsed in 0..viewConfiguration.doubleTapTimeoutMillis &&
             abs(down.position.x - lastTapX) <= tapReach
         lastTapUp = -1L
         down.consume()
