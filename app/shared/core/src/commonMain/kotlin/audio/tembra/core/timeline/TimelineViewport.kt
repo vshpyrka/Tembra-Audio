@@ -82,6 +82,16 @@ data class TimelineViewport(
         return copy(pixelsPerBeat = clampZoom(contentWidthPx / (end.value * densityScale))).scrollToStart()
     }
 
+    /**
+     * [spanBeats] across the whole lanes width, the zoom clamped to the bounds and [start] at the left edge (held at the new
+     * zoom's [startScrollBeats] at the earliest). Unlike [zoomToSpan] the span never depends on where [start] lies, so a
+     * drag carrying the window across the project's start does not change the zoom; an empty span changes nothing.
+     */
+    fun zoomToVisible(start: Beats, spanBeats: Double): TimelineViewport {
+        if (widthPx <= 0.0 || spanBeats <= 0.0) return this
+        return copy(pixelsPerBeat = clampZoom(widthPx / (spanBeats * densityScale))).scrollTo(start)
+    }
+
     /** "Fit project": the widest zoom from the start. */
     fun fit(): TimelineViewport = copy(pixelsPerBeat = clampZoom(if (widthPx > 0.0) fitPixelsPerBeat else pixelsPerBeat)).scrollToStart()
 

@@ -312,6 +312,19 @@ class TimelineViewModel(
         scheduleViewStateSave()
     }
 
+    /**
+     * The overview strip dragged (experiment): [spanBeats] fills the lanes, the zoom clamped to the widest and closest
+     * levels and [startBeats] at the left edge, held at the lead-in at the earliest; an empty span is ignored.
+     */
+    fun zoomWindow(startBeats: Beats, spanBeats: Double) {
+        if (spanBeats <= 0.0) return
+        view.update { it.copy(following = false) }
+        updateViewport { port ->
+            port.zoomToVisible(startBeats, spanBeats)
+        }
+        scheduleViewStateSave()
+    }
+
     fun setGrid(grid: GridSize) {
         view.update { it.copy(grid = grid) }
         scheduleViewStateSave()
