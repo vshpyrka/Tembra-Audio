@@ -73,14 +73,17 @@ value before the step and the document is unchanged across iterations; 8b. (D1, 
 menu's "Overview strip" entry, T151, and a hidden strip skips the step silently) drag
 `timeline.overview.window` from its centre
 by a quarter of its width to the right, then back from its new centre by the distance it moved
-(it stops at the project's end; the scroll position is not stored); 9. tap `transport.play`
+(it stops at the project's end; the scroll position is not stored); 8c. (the strip's gestures, the
+owner's request of 2026-11-11; same condition as 8b) drag the strip up from its centre by a third
+of the screen height and back down (zoom in and out); 8d. double-tap the strip and wait for the
+fit (the animated zoom-out over about 300 ms); 9. tap `transport.play`
 (pause); 10. tap `transport.skipStart`.
 
 Sections measured: `timeline.projectOpen`, `timeline.waveform`, `transport.play`,
 `transport.seek`, `timeline.zoom`, `timeline.scroll`, `timeline.clipSplit`,
 `timeline.playheadFrame`, `engine.prime`, `engine.loadClip`, `transport.masterPopup` (D1; 0 on
 Android and no interval on iOS where the bar shows the inline slider). The strip's window drag
-runs inside the existing `timeline.scroll`.
+runs inside the existing `timeline.scroll`; steps 8c and 8d run inside the existing `timeline.zoom`.
 
 Files: Android `journeys/TimelineJourney.kt`, `TimelineJourneyBenchmark.kt`,
 `PerfMetrics.sectionsOf("timeline")`, `BaselineProfileGenerator.journeys()`,

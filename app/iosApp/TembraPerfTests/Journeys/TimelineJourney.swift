@@ -4,7 +4,8 @@ import XCTest
 /// every visible overview (`screen.timeline`'s value reads "ready"), play eight bars, seek on the ruler, pinch the
 /// first lane in and out, split the first clip, open and close the first track's settings, toggle the metronome
 /// twice, on a phone open the master volume pop-up, drag its slider and close it, drag the overview strip's window
-/// there and back (unless the device hid the strip), pause, skip to start.
+/// there and back, drag the strip up and down from its centre to zoom in and out, double-tap it to fit the whole project
+/// (all three unless the device hid the strip), pause, skip to start.
 struct TimelineJourney {
     func run(_ app: XCUIApplication) {
         app.tapAnchor(Anchors.navProjects)
@@ -48,6 +49,8 @@ struct TimelineJourney {
         app.tapAnchor(Anchors.transportMetronome)
         adjustMasterVolume(app)
         dragOverviewWindow(app)
+        zoomOverviewStrip(app)
+        fitOverviewStrip(app)
         app.tapAnchor(Anchors.transportPlay)
         app.tapAnchor(Anchors.transportSkipStart)
     }
@@ -89,6 +92,33 @@ struct TimelineJourney {
             let from = screenPoint(app, after.midX, after.midY)
             from.press(forDuration: 0.05, thenDragTo: from.withOffset(CGVector(dx: -distance, dy: 0)))
         }
+    }
+
+    /// Step 8c, with the strip shown: a press at the strip's centre dragged straight up by a third of the screen's height
+    /// zooms in about 2^(h/3/60 pt) around the window's centre (the drag locks to its first direction, and straight
+    /// vertical picks zoom), then the same drag straight down zooms back out to about the same level.
+    private func zoomOverviewStrip(_ app: XCUIApplication) {
+        guard app.anchor(Anchors.timelineOverview).exists else { return }
+        let strip = app.waitForAnchor(Anchors.timelineOverview).frame
+        let distance = app.frame.height / 3
+        let centre = screenPoint(app, strip.midX, strip.midY)
+        centre.press(forDuration: 0.05, thenDragTo: centre.withOffset(CGVector(dx: 0, dy: -distance)))
+        let top = screenPoint(app, strip.midX, strip.midY - distance)
+        top.press(forDuration: 0.05, thenDragTo: top.withOffset(CGVector(dx: 0, dy: distance)))
+    }
+
+    /// Step 8d, with the strip shown: `doubleTap()` at the strip's centre animates over 300 ms to the fit (the whole
+    /// project from its start, the window spanning the strip), so every iteration ends at the same view whatever zoom the
+    /// earlier steps and the saved view state left. Waits up to 4 s for the window's width to match the strip's.
+    private func fitOverviewStrip(_ app: XCUIApplication) {
+        guard app.anchor(Anchors.timelineOverview).exists else { return }
+        let strip = app.waitForAnchor(Anchors.timelineOverview)
+        let width = strip.frame.width
+        screenPoint(app, strip.frame.midX, strip.frame.midY).doubleTap()
+        let window = app.anchor(Anchors.timelineOverviewWindow)
+        let deadline = Date().addingTimeInterval(4)
+        while abs(window.frame.width - width) > 4, Date() < deadline { Thread.sleep(forTimeInterval: 0.1) }
+        XCTAssertLessThanOrEqual(abs(window.frame.width - width), 4, "the double tap did not fit the overview strip")
     }
 
     /// A point in screen coordinates (an element's `frame`), reached from the app's origin rather than through an element

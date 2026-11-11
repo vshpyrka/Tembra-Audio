@@ -133,17 +133,42 @@ class TimelineViewportTest {
     }
 
     @Test
-    fun aSpanFromTheStartFillsTheLanesAfterTheLeadIn() {
-        val fromStart = atStart.zoomToSpan(Beats.Zero, Beats(19.0))
-        assertClose(40.0, fromStart.xOf(Beats.Zero))
-        assertClose(800.0, fromStart.xOf(Beats(19.0)))
-        val fromHome = atStart.zoomToSpan(atStart.startScrollBeats, Beats(19.0))
-        assertClose(40.0, fromHome.xOf(Beats.Zero))
-        assertClose(800.0, fromHome.xOf(Beats(19.0)))
-        val later = atStart.zoomToSpan(Beats(8.0), Beats(24.0))
-        assertClose(0.0, later.xOf(Beats(8.0)))
-        assertClose(800.0, later.xOf(Beats(24.0)))
-        assertEquals(atStart, atStart.zoomToSpan(Beats(8.0), Beats(8.0)), "an empty span changes nothing")
+    fun zoomToVisibleFillsTheWholeWidthWithTheStartAtTheLeftEdge() {
+        val zoomed = atStart.zoomToVisible(Beats(8.0), 16.0)
+        assertClose(16.0, zoomed.visibleBeats)
+        assertClose(0.0, zoomed.xOf(Beats(8.0)))
+        assertClose(800.0, zoomed.xOf(Beats(24.0)))
+    }
+
+    @Test
+    fun zoomToVisibleHoldsAStartBeforeTheNewZoomsLeadInAtTheStartScrollBeats() {
+        val zoomed = atStart.zoomToVisible(Beats(-10.0), 20.0)
+        assertClose(20.0, zoomed.visibleBeats)
+        assertClose(zoomed.startScrollBeats.value, zoomed.scrollBeats.value)
+        assertClose(40.0, zoomed.xOf(Beats.Zero))
+    }
+
+    @Test
+    fun zoomToVisibleIsClampedToTheFitAndTheClosestLevels() {
+        val wide = atStart.zoomToVisible(Beats.Zero, 10_000.0)
+        assertClose(atStart.fitPixelsPerBeat, wide.pixelsPerBeat)
+        val close = atStart.zoomToVisible(Beats(8.0), 0.01)
+        assertClose(atStart.closestPixelsPerBeat, close.pixelsPerBeat)
+        assertClose(1.0, close.visibleBeats)
+    }
+
+    @Test
+    fun zoomToVisibleWithAnEmptySpanOrAnUnmeasuredViewportChangesNothing() {
+        assertEquals(atStart, atStart.zoomToVisible(Beats(8.0), 0.0))
+        assertEquals(atStart, atStart.zoomToVisible(Beats(8.0), -4.0))
+        val unmeasured = atStart.copy(widthPx = 0.0)
+        assertEquals(unmeasured, unmeasured.zoomToVisible(Beats(8.0), 16.0))
+    }
+
+    @Test
+    fun zoomToVisibleKeepsTheSpanWhereverTheStartLies() {
+        val spans = listOf(-6.0, -2.0, 0.0, 0.5, 8.0).map { atStart.zoomToVisible(Beats(it), 19.0).visibleBeats }
+        spans.forEach { assertClose(19.0, it) }
     }
 
     @Test

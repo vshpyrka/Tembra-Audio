@@ -21,7 +21,7 @@ ui/timeline/
     SnapSheet.kt               ModalBottomSheet "Snap to grid": the five GridSize rows, the current one checked (TimelineSheet.GridMenu; compact overflow)
     TimelineRuler.kt           Canvas: bar row + time row (RulerLabels) only, playhead chip; leftSlot (expanded: the empty 200 dp over the header column); nothing overlays the canvas; tap/drag → onSeek/onScrub; hover time
     TempoPill.kt, RulerPill.kt "124 BPM" pill in the toolbar at every width → TempoDialog (D1; the ruler carries no pills)
-    OverviewStrip.kt           the whole project, clip blocks, playhead, a draggable window whose edges zoom; between the lanes and the transport bar, composed unless the device hid it; inset outside the tagged node by margin (default the 16 dp page margin) plus the part of gestureInsets (default WindowInsets.systemGestures) its ancestors have not consumed: the rail, the Duo's end column and the header column consume what they cover (D1, T151, T153)
+    OverviewStrip.kt           the whole project, clip blocks, playhead, a draggable window, a drag anywhere on it locked to its first direction (sideways scrolls, up or down zooms around the window's centre), a double tap fits the project, animated over about 300 ms (2026-11-11); between the lanes and the transport bar, composed unless the device hid it; inset outside the tagged node by margin (default the 16 dp page margin) plus the part of gestureInsets (default WindowInsets.systemGestures) its ancestors have not consumed: the rail, the Duo's end column and the header column consume what they cover (D1, T151, T153)
     TrackList.kt               LazyColumn of TrackRow; vertical scroll; expanded inline settings row; reports the lane width and the lead-in before 0:00 (the 24 dp `timelineLeadInMin`, or a page margin past the unconsumed back-gesture zone where that is more, FR-016)
     TrackRow.kt                header + lane in one row (header pinned in expanded layouts)
     TrackHeader.kt             expanded: colour dot, name, InstrumentChip, GainReadout, M, S, chevron, menu
@@ -72,7 +72,7 @@ Nothing scrolls horizontally except the timeline content.
 |---|---|---|
 | Lane, empty or on a clip | tap: select clip / clear; plain drag: scroll; long press on clip then drag: move (clip lifts); two-finger pinch: zoom around centroid | click: select; press-drag on clip: move; wheel: scroll; modifier + wheel / trackpad pinch: zoom; hover: clip hover state |
 | Ruler | tap: seek (snap); drag marker: silent scrub (snapped), resume on release; pinch: zoom | same; hover shows time under pointer |
-| Overview strip (D1, T151; unless hidden) | drag the window scrolls, drag an edge zooms, tap outside centres; the inset at either side is no target | same |
+| Overview strip (D1, T151; unless hidden) | press anywhere on the strip, drag locked to its first direction: sideways scrolls, up zooms in and down zooms out (2x per 60 dp, around the window's centre); tap outside the window centres it; double tap animates to the fit of the project (2026-11-11); the inset at either side is no target | same |
 | Headers | tap: select track; M/S toggles; chevron (expanded); menu | hover states, tooltips on icon buttons |
 
 Scroll and zoom run inside `PerfTrace.animation(TIMELINE_SCROLL / TIMELINE_ZOOM)`; `following`

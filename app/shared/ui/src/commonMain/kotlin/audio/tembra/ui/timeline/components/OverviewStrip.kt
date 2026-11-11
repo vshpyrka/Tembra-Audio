@@ -1,5 +1,8 @@
 package audio.tembra.ui.timeline.components
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -16,6 +19,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
@@ -48,12 +52,16 @@ import audio.tembra.ui.timeline.TimelineCopy
 import audio.tembra.ui.timeline.TimelineTestTags
 import audio.tembra.ui.timeline.TrackUi
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.pow
 import kotlin.math.roundToInt
+import kotlin.math.sign
 
 /**
  * The overview strip above the transport bar (spec FR-015, D1): the whole project at the fit scale of the strip's own
@@ -72,9 +80,11 @@ import kotlin.math.roundToInt
  * the tagged node: its bounds, its semantics and its pointer input cover the strip alone, and the beat-to-pixel
  * arithmetic runs on that inset width. Tests pass a zero [gestureInsets] and [margin] for a strip as wide as its host.
  *
- * Dragging inside the window scrolls ([onScrollTo] with the new left-edge beat: the window follows the finger, held
- * inside the project); dragging a handle zooms ([onZoomTo] with the new span, the opposite edge fixed, held between
- * the viewport's widest and closest levels); a tap outside centres the window on the tap. While [playing] the line
+ * A drag anywhere on the strip moves the window
+ * relative to the press: sideways scrolls ([onScrollTo], the window's centre moves by the finger's offset), up zooms in
+ * and down zooms out about the window's centre ([onZoomTo], the span doubling per 60 dp, held between the viewport's
+ * closest and widest levels), each drag locked to its first direction (a mostly sideways one only scrolls, a mostly vertical one only zooms); a tap
+ * outside the window centres it there; a double tap animates to the fit of the project, then calls [onFit]. While [playing] the line
  * reads [telemetry] once per frame in draw, on its own layer so the blocks are not redrawn; stopped it sits at
  * [positionBeats]. Nothing is allocated per frame. Tagged `timeline.overview` ("Overview", "bars 6 to 15 in view"),
  * the window `timeline.overview.window`. [height] is [OverviewStripDefaults.CompactHeight] on compact windows and
@@ -89,6 +99,7 @@ internal fun OverviewStrip(
     telemetry: TransportTelemetry,
     onScrollTo: (Beats) -> Unit,
     onZoomTo: (startBeats: Beats, endBeats: Beats) -> Unit,
+    onFit: () -> Unit = {},
     modifier: Modifier = Modifier,
     height: Dp = OverviewStripDefaults.CompactHeight,
     margin: Dp = TembraTheme.spacing.pageMargin,
@@ -125,7 +136,18 @@ internal fun OverviewStrip(
     val currentViewport by rememberUpdatedState(viewport)
     val currentOnScrollTo by rememberUpdatedState(onScrollTo)
     val currentOnZoomTo by rememberUpdatedState(onZoomTo)
+    val currentOnFit by rememberUpdatedState(onFit)
     val described = barsInView(viewport)
+    val scope = rememberCoroutineScope()
+    val fitJob = remember { FitJob() }
+    val cancelFit = remember(fitJob) { { fitJob.job?.cancel(); Unit } }
+    val animateToFit = remember(fitJob, scope) {
+        {
+            fitJob.job?.cancel()
+            fitJob.job = scope.launch { animateFit(currentViewport, currentOnZoomTo, currentOnFit) }
+            Unit
+        }
+    }
     // The zones' reach past the margin; windowInsetsPadding then takes off what the ancestors consumed on that side.
     val gestureReach = remember(gestureInsets, margin) {
         gestureInsets.only(WindowInsetsSides.Horizontal).exclude(WindowInsets(left = margin, right = margin))
@@ -171,6 +193,8 @@ internal fun OverviewStrip(
                     viewport = { currentViewport },
                     onScrollTo = { currentOnScrollTo(it) },
                     onZoomTo = { start, end -> currentOnZoomTo(start, end) },
+                    animateToFit = animateToFit,
+                    cancelFit = cancelFit,
                 )
             },
     ) { measurables, constraints ->
@@ -188,6 +212,41 @@ internal fun OverviewStrip(
             line.place(0, 0)
         }
     }
+}
+
+/** The running double-tap fit animation, if any. */
+private class FitJob {
+    var job: Job? = null
+}
+
+/**
+ * The double-tap fit, animated: from the lanes' current span and left edge to the fit span at its rest position (the
+ * lead-in before the project's start), the span geometrically and the left edge linearly along an ease-out curve, then
+ * [onFit] so the final state is exactly the fit and is saved. Already there: [onFit] alone. Cancelled by a new press.
+ */
+private suspend fun animateFit(from: TimelineViewport, onZoomTo: (Beats, Beats) -> Unit, onFit: () -> Unit) {
+    if (from.widthPx <= 0.0) {
+        onFit()
+        return
+    }
+    val s0 = from.visibleBeats
+    val a0 = from.scrollBeats.value
+    val s1 = from.widthPx / (from.fitPixelsPerBeat * from.densityScale)
+    val a1 = if (from.leadInPx > 0.0 && from.leadInPx < from.widthPx) -from.leadInPx * s1 / from.widthPx else 0.0
+    if (s0 <= 0.0 || s1 <= 0.0 || (abs(s1 - s0) <= FIT_TOLERANCE * s1 && abs(a1 - a0) <= FIT_TOLERANCE * s1)) {
+        onFit()
+        return
+    }
+    val ratio = s1 / s0
+    PerfTrace.animation(PerfSection.TIMELINE_ZOOM) {
+        Animatable(0f).animateTo(1f, tween(FIT_MILLIS, easing = FastOutSlowInEasing)) {
+            val t = value.toDouble()
+            val span = s0 * ratio.pow(t)
+            val start = a0 + (a1 - a0) * t
+            onZoomTo(Beats(start), Beats(start + span))
+        }
+    }
+    onFit()
 }
 
 /** The strip's two heights (spec FR-015, D1). */
@@ -286,98 +345,125 @@ private fun barsInView(viewport: TimelineViewport): String {
     return TimelineCopy.barsInView(first, last)
 }
 
-/** What a press lands on: the window's body, one of its edges (within reach of the drawn handle) or the strip outside it. */
-private enum class OverviewTarget {
-    Window,
-    LeftEdge,
-    RightEdge,
-    Outside,
-    ;
-
-    companion object {
-        fun at(x: Float, left: Float, width: Float, reach: Float): OverviewTarget {
-            val right = left + width
-            // A narrow window keeps its middle third for scrolling.
-            val inward = min(reach, width / 3)
-            return when {
-                x >= left - reach && x <= left + inward && abs(x - left) <= abs(x - right) -> LeftEdge
-                x >= right - inward && x <= right + reach -> RightEdge
-                x > left && x < right -> Window
-                else -> Outside
-            }
-        }
-    }
-}
-
-/** One gesture's arithmetic in beats, fixed at the press: the edge that stays put never drifts while the viewport follows. */
-private class OverviewDrag(port: TimelineViewport, private val stripWidth: Float, private val target: OverviewTarget, downX: Float) {
+/**
+ * One gesture's arithmetic in beats, fixed at the press: the window's centre and span at the press are the origin, and
+ * every move is computed from the total offset since the press, so nothing drifts while the viewport follows.
+ */
+private class OverviewDrag(port: TimelineViewport, private val stripWidth: Float, downX: Float, downY: Float, private val zoomPx: Float) {
+    /** Where the offsets are measured from: the press, moved by the slop once the drag starts (see [startAt]). */
+    private var originX = downX
+    private var originY = downY
     private val span = port.overviewSpanBeats()
-    /** The earliest scroll: the window held at the strip's start still leaves the lead-in showing in the lanes. */
-    private val earliest = port.startScrollBeats.value
+    private val leadInPx = port.leadInPx
+    private val widthPx = port.widthPx
     private val beatsPerPx = span / stripWidth
-    private val start = port.scrollBeats.value
-    private val visible = port.visibleBeats
-    private val end = start + visible
+    private val startSpan = port.visibleBeats
+    private val startCentre = port.scrollBeats.value + startSpan / 2
     private val narrowest = port.widthPx / (port.closestPixelsPerBeat * port.densityScale)
     private val widest = port.widthPx / (port.fitPixelsPerBeat * port.densityScale)
-    private val grab = downX * beatsPerPx - when (target) {
-        OverviewTarget.Window, OverviewTarget.LeftEdge -> start
-        OverviewTarget.RightEdge -> end
-        OverviewTarget.Outside -> 0.0
-    }
 
     /** The scroll that centres the window on [x], held inside the project. */
-    fun centredAt(x: Float): Beats = Beats(clamp(at(x) - visible / 2, earliest, max(earliest, span - visible)))
-
-    fun moveTo(x: Float, onScrollTo: (Beats) -> Unit, onZoomTo: (Beats, Beats) -> Unit) {
-        when (target) {
-            OverviewTarget.Window -> onScrollTo(Beats(clamp(at(x) - grab, earliest, max(earliest, span - visible))))
-            OverviewTarget.Outside -> onScrollTo(centredAt(x))
-            OverviewTarget.RightEdge -> onZoomTo(Beats(start), Beats(clamp(at(x) - grab, start + narrowest, start + widest)))
-            OverviewTarget.LeftEdge -> onZoomTo(Beats(clamp(at(x) - grab, max(0.0, end - widest), end - narrowest)), Beats(end))
-        }
+    fun centredAt(x: Float): Beats {
+        val earliest = earliestFor(startSpan)
+        return Beats(clamp(x.coerceIn(0f, stripWidth) * beatsPerPx - startSpan / 2, earliest, max(earliest, span - startSpan)))
     }
 
-    private fun at(x: Float): Double = x.coerceIn(0f, stripWidth) * beatsPerPx
+    /** The earliest scroll at a zoom showing [visible] beats: the window held at the strip's start still leaves the lead-in showing in the lanes. */
+    private fun earliestFor(visible: Double): Double = if (leadInPx > 0.0 && leadInPx < widthPx) -leadInPx * visible / widthPx else 0.0
+
+    /** True once the drag is locked to the vertical axis (zoom); false while undecided or locked horizontal (scroll). */
+    private var vertical = false
+
+    /**
+     * The drag has started with the finger [moved] from the press: the axis is locked once, to the larger offset
+     * (horizontal when equal), and the origin goes [slop] along that axis only, so the first frame does not leap.
+     */
+    fun lockAxis(downX: Float, downY: Float, moved: Offset, slop: Float) {
+        vertical = abs(moved.x) < abs(moved.y)
+        if (vertical) originY = downY + sign(moved.y) * slop else originX = downX + sign(moved.x) * slop
+    }
+
+    /**
+     * The window for a finger at ([x], [y]) on the locked axis. Horizontal: the span stays as it was and the centre moves
+     * by the horizontal offset ([onScrollTo]). Vertical: the centre stays and the span doubles per [zoomPx] of downward
+     * travel (halves per [zoomPx] upward), held between the closest and widest levels ([onZoomTo]). Both are held inside
+     * the project and the lead-in.
+     */
+    fun moveTo(x: Float, y: Float, onScrollTo: (Beats) -> Unit, onZoomTo: (Beats, Beats) -> Unit) {
+        if (vertical) {
+            val newSpan = clamp(startSpan * 2.0.pow(((y - originY) / zoomPx).toDouble()), narrowest, widest)
+            val earliest = earliestFor(newSpan)
+            val start = clamp(startCentre - newSpan / 2, earliest, max(earliest, span - newSpan))
+            onZoomTo(Beats(start), Beats(start + newSpan))
+        } else {
+            val earliest = earliestFor(startSpan)
+            val centre = startCentre + (x - originX) * beatsPerPx
+            onScrollTo(Beats(clamp(centre - startSpan / 2, earliest, max(earliest, span - startSpan))))
+        }
+    }
 
     /** [value] within [low]..[high]; [low] when the range is empty (a project shorter than the closest span). */
     private fun clamp(value: Double, low: Double, high: Double): Double = if (high < low) low else value.coerceIn(low, high)
 }
 
 /**
- * The strip's pointer input: a press past the touch slop drags (the window, an edge, or from outside the window, which
- * then follows the finger's centre), inside `PerfTrace.animation(TIMELINE_SCROLL)` or `TIMELINE_ZOOM`; a release
- * before the slop outside the window centres it there.
+ * The strip's pointer input, the same wherever the press lands: a move past the touch slop (in either axis) starts a drag
+ * locked to its first direction, inside `PerfTrace.animation(TIMELINE_SCROLL)` (mostly horizontal at the slop: only
+ * scrolls, the window's centre following the horizontal offset) or `TIMELINE_ZOOM` (mostly vertical: only zooms about
+ * the window's centre, up zooms in, 2x per 60 dp); the finger may leave the strip. A release before the slop outside the
+ * window centres it there; a second such tap close to the first calls [animateToFit]. A press calls [cancelFit] first.
  */
 private suspend fun PointerInputScope.detectOverviewGestures(
     viewport: () -> TimelineViewport,
     onScrollTo: (Beats) -> Unit,
     onZoomTo: (Beats, Beats) -> Unit,
+    animateToFit: () -> Unit,
+    cancelFit: () -> Unit,
 ) {
     val minWindow = MIN_WINDOW.toPx()
-    val reach = HANDLE_REACH.toPx()
+    val zoomPx = ZOOM_DISTANCE.toPx()
+    val tapReach = DOUBLE_TAP_REACH.toPx()
+    var lastTapUp = -1L
+    var lastTapX = 0f
     awaitEachGesture {
         val down = awaitFirstDown()
+        cancelFit()
         val port = viewport()
         val stripWidth = size.width.toFloat()
         if (port.widthPx <= 0.0 || stripWidth <= 0f) return@awaitEachGesture
-        val target = OverviewTarget.at(down.position.x, port.windowLeftOn(stripWidth, minWindow), port.windowWidthOn(stripWidth, minWindow), reach)
-        val drag = OverviewDrag(port, stripWidth, target, down.position.x)
+        val windowLeft = port.windowLeftOn(stripWidth, minWindow)
+        val windowWidth = port.windowWidthOn(stripWidth, minWindow)
+        val drag = OverviewDrag(port, stripWidth, down.position.x, down.position.y, zoomPx)
+        // No lower bound on the gap (Compose's detectTapGestures waits doubleTapMinTimeMillis): XCUITest's doubleTap()
+        // puts the second press at the first release's very time, and no finger taps that fast.
+        val elapsed = down.uptimeMillis - lastTapUp
+        val secondTap = lastTapUp >= 0 && elapsed in 0..viewConfiguration.doubleTapTimeoutMillis &&
+            abs(down.position.x - lastTapX) <= tapReach
+        lastTapUp = -1L
         down.consume()
         val slop = viewConfiguration.touchSlop
         var change = down
-        while (abs(change.position.x - down.position.x) <= slop) {
+        while ((change.position - down.position).getDistance() <= slop) {
             change = awaitPointerEvent().changes.firstOrNull { it.id == down.id } ?: return@awaitEachGesture
             if (!change.pressed) {
-                if (target == OverviewTarget.Outside) onScrollTo(drag.centredAt(change.position.x))
+                if (secondTap) {
+                    animateToFit()
+                } else {
+                    val x = change.position.x
+                    if (x < windowLeft || x > windowLeft + windowWidth) onScrollTo(drag.centredAt(x))
+                    lastTapUp = change.uptimeMillis
+                    lastTapX = down.position.x
+                }
                 change.consume()
                 return@awaitEachGesture
             }
         }
-        val section = if (target == OverviewTarget.LeftEdge || target == OverviewTarget.RightEdge) PerfSection.TIMELINE_ZOOM else PerfSection.TIMELINE_SCROLL
+        val moved = change.position - down.position
+        drag.lockAxis(down.position.x, down.position.y, moved, slop)
+        val section = if (abs(moved.y) > abs(moved.x)) PerfSection.TIMELINE_ZOOM else PerfSection.TIMELINE_SCROLL
         PerfTrace.animation(section) {
             while (change.pressed) {
-                drag.moveTo(change.position.x, onScrollTo, onZoomTo)
+                drag.moveTo(change.position.x, change.position.y, onScrollTo, onZoomTo)
                 change.consume()
                 change = awaitPointerEvent().changes.firstOrNull { it.id == down.id } ?: break
             }
@@ -396,8 +482,14 @@ private val ROW_PAD = 3.dp
 private val MIN_ROW = 2.dp
 private val ROW_GAP = 1.dp
 private val HANDLE = 8.dp
-/** How far outside the drawn handle a press still takes the edge: a finger's half-width. */
-private val HANDLE_REACH = 16.dp
+/** The double-tap fit's duration. */
+private const val FIT_MILLIS = 300
+/** How close, as a share of the fit span, the view must be to the fit for the double tap to skip the animation. */
+private const val FIT_TOLERANCE = 1e-3
+/** Vertical finger travel that doubles (down) or halves (up) the visible span. */
+private val ZOOM_DISTANCE = 60.dp
+/** How far apart two taps may land and still make a double tap. */
+private val DOUBLE_TAP_REACH = 48.dp
 private val MIN_WINDOW = 24.dp
 private val CORNER = 4.dp
 private val PLAYHEAD = 1.dp
