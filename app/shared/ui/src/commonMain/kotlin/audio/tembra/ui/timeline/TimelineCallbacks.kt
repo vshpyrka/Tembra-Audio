@@ -113,6 +113,8 @@ data class TimelineCallbacks(
     val onOpenMixerWindow: () -> Unit = {},
     /** The lanes box measured under a layout: the sheet's anchors and strip form follow it (spec FR-016, FR-021, FR-022). */
     val onLanesMeasured: (TimelineLayout, Dp) -> Unit = { _, _ -> },
+    /** A double tap on the overview strip: the whole project in view (the "Fit project" of the viewport). */
+    val onFit: () -> Unit = {},
 ) {
     companion object {
         val None = TimelineCallbacks(
