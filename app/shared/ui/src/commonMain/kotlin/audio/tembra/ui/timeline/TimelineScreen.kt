@@ -89,6 +89,7 @@ fun TimelineScreen(
                 onScrollBy = viewModel::scrollBy,
                 onScrollTo = viewModel::scrollTo,
                 onZoomTo = viewModel::zoomTo,
+                onFit = viewModel::fitProject,
                 onOverviewStripShown = viewModel::setOverviewStripShown,
                 onFullScreen = viewModel::setFullScreen,
                 onGrid = viewModel::setGrid,

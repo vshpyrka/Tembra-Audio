@@ -176,6 +176,25 @@ they are). The amendment names this specification.
   hidden the pinch, the wheel with the modifier, the trackpad pinch and the "+" and "−" keys
   still zoom (FR-015, FR-055).
 
+### Session 2026-11-11 (the strip's gestures)
+
+- Q: How should the overview strip zoom, given that its 8 dp edge handles are hard to grab? →
+  A: The owner: "It's hard to use side handles to scale it up and down … when I touch the bar and
+  move the finger up or down it makes zoom in and out … When I make double tap it should zoom
+  out to the entire track, if the project is empty it makes zoom out to a default zoom state".
+  A press anywhere on the strip now behaves the same, on the window, on its drawn handles or
+  outside it: a vertical drag zooms around the window's centre (up zooms in, down zooms out,
+  a factor of 2 per 60 dp, held between the closest and the widest levels), a sideways drag
+  scrolls and a single tap outside the window still centres it there. A double tap zooms out
+  to the fit of the project (the whole project and at least 32 bars from the start; an empty
+  project gets 32 bars). The handles stay drawn and the strip looks the same (FR-015).
+- Q: What if a drag starts sideways and drifts up or down? → A: The owner: "I would like to
+  apply the lock … to its first directional vector … because right now it's a little bit
+  confusing when I start dragging left and it also applies the zoom-in operation". A drag is
+  locked to its first direction once it passes the touch slop: mostly sideways only scrolls,
+  mostly vertical only zooms. The owner also asked for the fit to be animated: it runs over
+  about 300 ms and a press stops it.
+
 ## User Scenarios & Testing *(mandatory)*
 
 The users of this feature are musicians arranging a song from imported audio on a phone held in
@@ -305,7 +324,8 @@ minutes and seconds. The musician pinches on the ruler or the tracks to zoom in;
 become labelled beats, then subdivisions, and the time labels change to seconds, then tenths and
 hundredths. Pinching out shows the whole song at once with only bars and minutes labelled. The
 overview strip above the transport bar shows the whole song with a window over the part in
-view; a scroll wheel with the modifier key or a trackpad pinch does the same with a mouse. Scrolling sideways moves along the song and, during playback, the view
+view: dragging it sideways scrolls, dragging it up or down zooms in or out and a double tap
+fits the whole song; a scroll wheel with the modifier key or a trackpad pinch does the same with a mouse. Scrolling sideways moves along the song and, during playback, the view
 follows the playhead. The grid picker sets the snap for taps on the ruler, playhead drags and
 clip moves to a bar, a quarter, an eighth, a sixteenth or off.
 
@@ -765,9 +785,16 @@ clips, overlaps or hides behind the transport bar.
   pinch centre), by the scroll wheel with the platform's modifier key and by a trackpad pinch
   (zooming around the pointer), by the "+" and "−" keys, and by the overview strip (D1; the
   owner's verdict of 2026-10-27): a strip above the transport bar that draws the whole project
-  with its clips as blocks, the playhead and a window for the visible span, where dragging the
-  window scrolls, dragging its edges zooms and a tap outside the window centres it there. The
-  strip MUST be shown by default and MUST be shown or hidden from the overflow menu's "Overview
+  with its clips as blocks, the playhead and a window for the visible span, where a press anywhere on the strip (on the window, on its drawn
+  handles or outside it) behaves the same: a drag locks to its first direction once it passes
+  the touch slop and a mostly sideways drag only scrolls (the window moves by the finger's
+  distance with no jump, held between the lead-in and the project's end) while a mostly
+  vertical drag only zooms around the window's centre (up zooms in, down zooms out, by a factor
+  of 2 per 60 dp, held between the closest and the widest levels); a single tap outside the
+  window centres it there; a double tap zooms out to the fit of the project (the widest level,
+  the whole project and at least 32 bars from the start; an empty project gets 32 bars),
+  animated over about 300 ms, and a press stops the animation (the owner's request of
+  2026-11-11). The strip MUST be shown by default and MUST be shown or hidden from the overflow menu's "Overview
   strip" entry, checked while shown and remembered on the device, outside every project; with
   the strip hidden the pinch, wheel, trackpad and key paths remain. The strip MUST be inset from
   the window's left and right sides by at least 16 dp, plus whatever part of the system's
@@ -1099,7 +1126,9 @@ clips, overlaps or hides behind the transport bar.
   phone, open the master volume pop-up, move its slider a little and close it with a tap
   outside (the change is undone, so the project is the same after every pass), and, unless the
   device hid the overview strip, drag the strip's window once and back (measured by the existing
-  scroll section). It adds one section, the pop-up's opening (master popup), and
+  scroll section). The strip's gestures (2026-11-11) add two steps to the same journey, measured
+  in the existing zoom section and skipped with the strip: drag the strip up from its centre by
+  a third of the screen height and back down, then double-tap it and wait for the fit. It adds one section, the pop-up's opening (master popup), and
   anchors on the speaker button, the volume slider, the strip and its window.
 - Counters added: playback underruns during the journey, clip reads that were not ready when
   the engine needed them (starvation), peak and average callback load during playback, and the

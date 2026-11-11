@@ -72,14 +72,13 @@ data class TimelineViewport(
     }
 
     /**
-     * The span from [start] to [end] across the lanes, the zoom clamped to the bounds and [start] at the left edge. A span
-     * from the project's start fills what the lead-in leaves and rests at the start; an empty span changes nothing.
+     * [spanBeats] across the whole lanes width, the zoom clamped to the bounds and [start] at the left edge (held at the new
+     * zoom's [startScrollBeats] at the earliest). The span never depends on where [start] lies, so a drag carrying the
+     * window across the project's start does not change the zoom; an empty span or an unmeasured viewport changes nothing.
      */
-    fun zoomToSpan(start: Beats, end: Beats): TimelineViewport {
-        if (widthPx <= 0.0 || end <= start) return this
-        if (start.value > 0.0) return withZoom(ZoomLevel(widthPx / ((end.value - start.value) * densityScale))).scrollTo(start)
-        if (end.value <= 0.0) return this
-        return copy(pixelsPerBeat = clampZoom(contentWidthPx / (end.value * densityScale))).scrollToStart()
+    fun zoomToVisible(start: Beats, spanBeats: Double): TimelineViewport {
+        if (widthPx <= 0.0 || spanBeats <= 0.0) return this
+        return copy(pixelsPerBeat = clampZoom(widthPx / (spanBeats * densityScale))).scrollTo(start)
     }
 
     /** "Fit project": the widest zoom from the start. */

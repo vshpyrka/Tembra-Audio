@@ -242,6 +242,7 @@ internal fun TimelineScreenContent(
                     telemetry = telemetry,
                     onScrollTo = callbacks.onScrollTo,
                     onZoomTo = callbacks.onZoomTo,
+                    onFit = callbacks.onFit,
                     modifier = Modifier.padding(start = headerColumn).consumeWindowInsets(PaddingValues(start = headerColumn)),
                     height = stripHeight,
                 )
