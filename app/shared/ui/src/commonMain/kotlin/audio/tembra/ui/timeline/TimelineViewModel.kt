@@ -298,30 +298,15 @@ class TimelineViewModel(
     }
 
     /**
-     * The overview strip's edge dragged (spec FR-015, D1): the span from [startBeats] to [endBeats] fills the lanes,
-     * the zoom clamped to the widest and closest levels and [startBeats] kept at the left edge (a span from the project's
-     * start keeps the lead-in before it); an empty span is ignored.
+     * The overview strip zoomed (spec FR-015): the span from [startBeats] to [endBeats] fills the lanes, the zoom clamped to
+     * the widest and closest levels and [startBeats] at the left edge, held at the lead-in at the earliest; following stops
+     * and an empty span is ignored.
      */
     fun zoomTo(startBeats: Beats, endBeats: Beats) {
         val span = endBeats.value - startBeats.value
         if (span <= 0.0) return
         view.update { it.copy(following = false) }
-        updateViewport { port ->
-            port.zoomToSpan(startBeats, endBeats)
-        }
-        scheduleViewStateSave()
-    }
-
-    /**
-     * The overview strip dragged (experiment): [spanBeats] fills the lanes, the zoom clamped to the widest and closest
-     * levels and [startBeats] at the left edge, held at the lead-in at the earliest; an empty span is ignored.
-     */
-    fun zoomWindow(startBeats: Beats, spanBeats: Double) {
-        if (spanBeats <= 0.0) return
-        view.update { it.copy(following = false) }
-        updateViewport { port ->
-            port.zoomToVisible(startBeats, spanBeats)
-        }
+        updateViewport { port -> port.zoomToVisible(startBeats, span) }
         scheduleViewStateSave()
     }
 

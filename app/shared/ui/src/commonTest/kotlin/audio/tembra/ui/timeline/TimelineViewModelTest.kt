@@ -457,14 +457,19 @@ class TimelineViewModelTest {
         assertEquals(48.0, ui().viewport.xOf(Beats(target)), 1e-9, "the page starts with the playhead past the lead-in")
     }
 
-    /** Dragging the overview's edge from the project's start keeps the lead-in before 0:00. */
+    /** A zoom from before the project's start keeps its span and is held at the new zoom's lead-in. */
     @Test
-    fun aZoomSpanFromTheStartKeepsTheLeadIn() = test {
+    fun aZoomStartingBeforeTheProjectKeepsItsSpanAndTheLeadIn() = test {
         openDemo()
         viewModel.viewportMeasured(widthPx = 1000.0, densityScale = 2.0, leadInPx = 48.0)
+        viewModel.zoomTo(Beats(-8.0), Beats(8.0))
+        val port = ui().viewport
+        assertEquals(16.0, port.visibleBeats, 1e-9, "the span does not depend on where the start lies")
+        assertEquals(port.startScrollBeats, port.scrollBeats)
+        assertEquals(48.0, port.xOf(Beats.Zero), 1e-9)
         viewModel.zoomTo(Beats.Zero, Beats(16.0))
-        assertEquals(48.0, ui().viewport.xOf(Beats.Zero), 1e-9)
-        assertEquals(1000.0, ui().viewport.xOf(Beats(16.0)), 1e-9)
+        assertEquals(16.0, ui().viewport.visibleBeats, 1e-9)
+        assertEquals(0.0, ui().viewport.xOf(Beats.Zero), 1e-9, "the start sits at the left edge")
     }
 
     // --- User Story 6 (T112) --------------------------------------------------------------------------------------------
@@ -696,7 +701,7 @@ class TimelineViewModelTest {
         assertEquals(fitted.fitPixelsPerBeat, fitted.pixelsPerBeat, 1e-9)
     }
 
-    /** The overview strip's entry points (spec FR-015, D1): a span fills the lanes from its start, clamped; a scroll stops following. */
+    /** The overview strip's entry points (spec FR-015): a span fills the lanes from its start, clamped; a scroll stops following. */
     @Test
     fun theOverviewStripScrollsAndZoomsTheSameViewport() = test {
         openDemo()
