@@ -144,7 +144,8 @@ card, wait for the waveforms, play eight bars, seek, pinch in and out, split the
 close a track's settings, toggle the metronome twice; since design iteration D1, on a phone open the master
 volume pop-up (`transport.masterPopup`), drag its slider a little, close it with a tap outside and undo the
 change, and with the overview strip as the device's zoom control drag its window a quarter of its width and
-back (inside `timeline.scroll`); then pause, skip to start; both D1 steps are skipped where their control is
+back (inside `timeline.scroll`), then drag the strip up from its centre by a third of the screen height and back
+down and double-tap it, waiting for the fit (inside `timeline.zoom`; the strip's gestures, 2026-11-11); then pause, skip to start; both D1 steps are skipped where their control is
 absent), `recording` (feature 010: Projects → the demo card, add a track, arm it, switch monitoring on and
 off, record one bar of count-in plus four bars, stop the take while playback continues, pause, undo twice,
 skip to start; the runner grants the microphone first), `mixer` (feature 012: Projects → the demo card, play, open the

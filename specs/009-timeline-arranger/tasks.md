@@ -461,6 +461,17 @@ every target with zero warnings.
   `TimelineViewModelTest`, `TimelineRulerTest`, `OverviewStripTest`, `PlaceAcrossLayoutsTest`), and the transport
   bar's controls centred from 600 dp (`TransportBarTest.theWideBarCentresItsControls`), and the compact header's name
   started past 0:00 so the playhead at rest does not cross it (FR-016; `TrackHeaderCompact.nameStart`, `TrackHeaderTest`)
+- [X] T156 The overview strip's gestures (spec FR-015; the owner's request of 2026-11-11, the 8 dp edge handles being hard
+  to grab): `UI/timeline/components/OverviewStrip.kt` treats a press anywhere on the strip alike, a drag locked to its first
+  direction once past the touch slop (sideways scrolls by the finger's distance with no jump; vertical zooms around the
+  window's centre, 2x per 60 dp), a tap outside the window centres it, a double tap animates the fit of the project over
+  about 300 ms and a press stops it; the handles stay drawn; `TimelineViewport.zoomToVisible(start, spanBeats)` replaces
+  `zoomToSpan` and `TimelineViewModel.zoomTo` calls it, the fit wired as `onFit` (`TimelineCallbacks`, `TimelineScreen`,
+  `TimelineScreenContent`). Tests: `OverviewStripTest`, `TimelineViewportTest`, `TimelineViewModelTest`. The `timeline`
+  journey gains two steps on both platforms (`PERF/journeys/TimelineJourney.kt`, `IOSPERF/Journeys/TimelineJourney.swift`),
+  measured in `timeline.zoom`: drag the strip up from its centre by a third of the screen height and back down, then
+  double-tap it and wait for the fit; `IOSPERF/ScreenshotMatrix.swift` sets its zoom states by a vertical drag and a
+  double tap instead of the handles; the baseline profile regenerated on the Pixel 6 Pro
 
 ---
 
