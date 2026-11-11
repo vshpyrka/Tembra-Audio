@@ -73,18 +73,17 @@ final class ScreenshotMatrix: XCTestCase {
         return XCTWaiter.wait(for: [gone], timeout: timeout) == .completed
     }
 
-    /// Drags the overview strip's window by its right handle (8 pt wide; a press within 16 pt of the window's right edge
-    /// takes it) to the screen x [toX], through screen coordinates from the app's origin; false when there is no strip.
-    /// The press lands 1 pt inside the edge, so the edge follows the finger to within less than the closest level's
-    /// one beat (about 2.6 pt on a phone's strip) and a drag onto either limit lands exactly on it.
+    /// Presses the overview strip's centre and drags by ([dx], [dy]) points (up is negative and zooms in), through screen
+    /// coordinates from the app's origin; false when there is no strip. A drag locks to its first direction, so a
+    /// vertical zoom and a sideways scroll are separate presses.
     @discardableResult
-    private func dragWindowRightHandle(toX: CGFloat) -> Bool {
-        let window = app.anchor(Anchors.timelineOverviewWindow)
-        guard app.anchor(Anchors.timelineOverview).exists, window.waitForExistence(timeout: 2) else { print("ScreenshotMatrix: no overview strip"); return false }
-        let frame = window.frame
+    private func dragStrip(dx: CGFloat = 0, dy: CGFloat = 0) -> Bool {
+        let strip = app.anchor(Anchors.timelineOverview)
+        guard strip.exists else { print("ScreenshotMatrix: no overview strip"); return false }
+        let frame = strip.frame
         let origin = app.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0))
-        let handle = origin.withOffset(CGVector(dx: frame.maxX - 1, dy: frame.midY))
-        handle.press(forDuration: 0.1, thenDragTo: origin.withOffset(CGVector(dx: toX, dy: frame.midY)))
+        let start = origin.withOffset(CGVector(dx: frame.midX, dy: frame.midY))
+        start.press(forDuration: 0.1, thenDragTo: start.withOffset(CGVector(dx: dx, dy: dy)))
         return true
     }
 
@@ -149,20 +148,27 @@ final class ScreenshotMatrix: XCTestCase {
             }
         }
         if want("zoom-widest") || want("zoom-closest") {
-            // The strip's right handle zooms with the window's left edge fixed: dragged onto that edge it reaches the
-            // closest level, dragged to the strip's right end the widest (a second drag once the first left it short,
-            // as the drawn window is never narrower than 24 pt).
+            // The strip zooms by a vertical drag from its centre (x2 per 60 pt, up zooms in), around the window's centre,
+            // and a double tap fits the whole project. From the fit the closest level is at most 8 doublings (480 pt)
+            // up; a second drag follows when the first left the window wider than its 24 pt minimum.
             tapIfPresent(Anchors.transportSkipStart, timeout: 2)
             let window = app.anchor(Anchors.timelineOverviewWindow)
-            if want("zoom-closest"), window.waitForExistence(timeout: 2), dragWindowRightHandle(toX: window.frame.minX) {
+            let strip = app.anchor(Anchors.timelineOverview)
+            if want("zoom-closest"), window.waitForExistence(timeout: 2), strip.exists {
+                let up = min(480, strip.frame.midY - 40)
+                for _ in 0..<2 where window.frame.width > 24.5 { dragStrip(dy: -up); sleep(1) }
+                // The window moves by the finger's distance: far enough left to stop at bar 1.
+                dragStrip(dx: -strip.frame.width)
                 tapIfPresent(Anchors.transportSkipStart); sleep(1)
                 shot("zoom-closest")
             }
-            let strip = app.anchor(Anchors.timelineOverview)
-            if strip.exists {
-                for _ in 0..<2 where window.frame.maxX < strip.frame.maxX - 1 { dragWindowRightHandle(toX: strip.frame.maxX) }
+            if want("zoom-widest"), strip.exists {
+                let centre = app.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0)).withOffset(CGVector(dx: strip.frame.midX, dy: strip.frame.midY))
+                centre.doubleTap()
+                let deadline = Date().addingTimeInterval(4)
+                while window.frame.width < strip.frame.width - 4, Date() < deadline { Thread.sleep(forTimeInterval: 0.1) }
                 sleep(1)
-                if want("zoom-widest") { shot("zoom-widest") }
+                shot("zoom-widest")
             }
         }
         if want("empty-project"), tapIfPresent(Anchors.navProjects) {

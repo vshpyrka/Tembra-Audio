@@ -1,5 +1,9 @@
 package audio.tembra.perf.journeys
 
+import android.os.SystemClock
+import android.view.InputDevice
+import android.view.MotionEvent
+import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
@@ -10,8 +14,8 @@ import audio.tembra.perf.journeys.Anchors.tap
  * The timeline journey (feature 009, contracts/perf-instrumentation.md): open Projects, open the demo card, wait for
  * every visible overview, play eight bars, seek on the ruler, pinch the first lane in and out, split the first clip,
  * open and close the first track's settings, toggle the metronome twice, on a phone open the master volume pop-up,
- * drag its slider and close it, drag the overview strip's window there and back (unless the device hid the strip),
- * pause, skip to start.
+ * drag its slider and close it, drag the overview strip's window there and back, drag the strip up and down from its centre to zoom in and
+ * out, double-tap it to fit the whole project (all three unless the device hid the strip), pause, skip to start.
  */
 class TimelineJourney {
     fun run(device: UiDevice) {
@@ -58,6 +62,8 @@ class TimelineJourney {
         device.tap(Anchors.TRANSPORT_METRONOME)
         adjustMasterVolume(device)
         dragOverviewWindow(device)
+        zoomOverviewStrip(device)
+        fitOverviewStrip(device)
         device.tap(Anchors.TRANSPORT_PLAY)
         device.tap(Anchors.TRANSPORT_SKIP_START)
     }
@@ -104,6 +110,73 @@ class TimelineJourney {
         }
     }
 
+    /**
+     * Step 8c, with the strip shown: a press at the strip's centre dragged straight up by a third of the screen's
+     * height zooms in about 2^(h/3/60 dp) around the window's centre (the drag locks to its first direction, and
+     * straight vertical picks zoom), then the same drag straight down zooms back out to about the same level. The
+     * move events are 5 ms apart, [ZOOM_STEPS] of them, so it is a drag and not a fling.
+     */
+    private fun zoomOverviewStrip(device: UiDevice) {
+        val strip = device.findObject(By.res(Anchors.TIMELINE_OVERVIEW)) ?: return
+        val bounds = strip.visibleBounds
+        val x = bounds.centerX()
+        val y = bounds.centerY()
+        val distance = device.displayHeight / 3
+        device.swipe(x, y, x, y - distance, ZOOM_STEPS)
+        device.waitForIdle()
+        device.swipe(x, y - distance, x, y, ZOOM_STEPS)
+        device.waitForIdle()
+    }
+
+    /**
+     * Step 8d, with the strip shown: a double tap at the strip's centre animates over 300 ms to the fit (the whole project
+     * from its start, the window spanning the strip), so every iteration ends at the same view whatever zoom the
+     * earlier steps and the saved view state left. The strip's width is then compared with the window's.
+     *
+     * The second tap must land within Compose's double-tap timeout (300 ms of the first). Two `UiDevice.click` calls
+     * each wait for idle and cross the adb-driven shell, which may exceed that, so the events are injected straight
+     * through `UiAutomation.injectInputEvent` (synchronously): down, up, a 50 ms gap, down, up, stamped with
+     * `SystemClock.uptimeMillis()` times on a touchscreen source, from the instrumentation process with no round trip
+     * between the taps.
+     */
+    private fun fitOverviewStrip(device: UiDevice) {
+        val strip = device.findObject(By.res(Anchors.TIMELINE_OVERVIEW)) ?: return
+        val bounds = strip.visibleBounds
+        doubleTap(bounds.centerX().toFloat(), bounds.centerY().toFloat())
+        val stripWidth = bounds.width()
+        val deadline = SystemClock.uptimeMillis() + FIT_TIMEOUT_MS
+        var windowWidth = 0
+        do {
+            device.waitForIdle()
+            windowWidth = device.anchor(Anchors.TIMELINE_OVERVIEW_WINDOW).visibleBounds.width()
+            if (kotlin.math.abs(windowWidth - stripWidth) <= FIT_TOLERANCE_PX) return
+            SystemClock.sleep(FIT_POLL_MS)
+        } while (SystemClock.uptimeMillis() < deadline)
+        fail("the double tap did not fit the overview strip: the window is $windowWidth px wide, the strip $stripWidth px")
+    }
+
+    private fun doubleTap(x: Float, y: Float) {
+        val automation = InstrumentationRegistry.getInstrumentation().uiAutomation
+        repeat(2) { tap ->
+            if (tap > 0) SystemClock.sleep(DOUBLE_TAP_GAP_MS)
+            val down = SystemClock.uptimeMillis()
+            inject(automation, down, down, MotionEvent.ACTION_DOWN, x, y)
+            inject(automation, down, SystemClock.uptimeMillis(), MotionEvent.ACTION_UP, x, y)
+        }
+    }
+
+    private fun inject(automation: android.app.UiAutomation, down: Long, time: Long, action: Int, x: Float, y: Float) {
+        val event = MotionEvent.obtain(down, time, action, x, y, 0)
+        event.source = InputDevice.SOURCE_TOUCHSCREEN
+        try {
+            check(automation.injectInputEvent(event, true)) { "the touch event was not injected" }
+        } finally {
+            event.recycle()
+        }
+    }
+
+    private fun fail(message: String): Nothing = throw IllegalStateException(message)
+
     private companion object {
         const val READY_TIMEOUT_MS = 10_000L
         const val PLAY_TIMEOUT_MS = 30_000L
@@ -112,5 +185,11 @@ class TimelineJourney {
         /** Move events of a slider or strip drag, 5 ms apart. */
         const val SWIPE_STEPS = 20
         const val CLOSE_TIMEOUT_MS = 5_000L
+        /** Move events of the strip's vertical zoom drags, 5 ms apart. */
+        const val ZOOM_STEPS = 60
+        const val DOUBLE_TAP_GAP_MS = 50L
+        const val FIT_TIMEOUT_MS = 4_000L
+        const val FIT_POLL_MS = 100L
+        const val FIT_TOLERANCE_PX = 4
     }
 }
