@@ -52,7 +52,7 @@ Every touch gesture has a pointer or keyboard equivalent that needs no precise o
 | Long-press a clip, then drag it (`TrackLane`) | press-drag past the slop (exists since 009); Escape cancels (T080) | none: moving a clip by keys is not offered by feature 009 (follow-up note, not an FR-016 gap: the mouse path needs no touchscreen) |
 | Pinch the timeline (`ViewportGestures`) | Ctrl/⌘+wheel (exists), Android trackpad `Scale` and the iPad bridge (T074, T081) | + / − (exists) |
 | Two-finger pan of the timeline (`ViewportGestures`) | wheel, Shift+wheel (T074), trackpad pan | ←/→ move the playhead a bar; the viewport follows the playhead |
-| Drag or pinch the overview strip (`OverviewStrip`) | press-drag the window; Ctrl/⌘+wheel over the timeline | + / − |
+| Drag or pinch the overview strip (`OverviewStrip`) | press-drag anywhere on the strip (sideways scrolls, up or down zooms), double-click fits the project; Ctrl/⌘+wheel over the timeline | + / − |
 | Tap or drag on the ruler to seek (`TimelineRuler`) | click, press-drag | ←/→, Shift+←/→, Home |
 | Drag a gain readout up or down; double-tap for 0 dB (`GainReadout`) | press-drag, double-click | ↑/↓/←/→ (0.5 dB), Page Up/Down |
 | Rotate the tempo dial (`TempoDial`) | drag, wheel (exists) | ↑/↓, Shift+↑/↓ on the Metronome (T095) |
