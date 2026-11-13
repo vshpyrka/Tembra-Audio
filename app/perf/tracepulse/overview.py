@@ -53,14 +53,24 @@ def _journey_rank(journey: str) -> Tuple[int, str]:
     return (JOURNEY_ORDER.index(journey), "") if journey in JOURNEY_ORDER else (len(JOURNEY_ORDER), journey)
 
 
-def _features(store: Store, cfg: Config, device_id: str) -> List[Tuple[str, List[Any]]]:
-    """(label, rounds) in order of first appearance, over the rounds that can be compared."""
+def _eligible(store: Store, cfg: Config) -> Dict[str, List[Any]]:
+    """Per device id, the rounds that can be compared, judged from each round's own columns:
+    succeeded, a physical reference device, not injected, not an experiment label."""
     skip = set(cfg.report.experiment_labels)
+    out: Dict[str, List[Any]] = {}
+    for row in store.rounds():
+        if (row["status"] != "succeeded" or row["kind"] != "device" or not row["reference"]
+                or not row["device_id"] or row["label"] in skip or store.injected(row["id"])):
+            continue
+        out.setdefault(row["device_id"], []).append(row)
+    return out
+
+
+def _features(rows: List[Any]) -> List[Tuple[str, List[Any]]]:
+    """(label, rounds) in order of first appearance."""
     order: List[str] = []
     by_label: Dict[str, List[Any]] = {}
-    for row in store.rounds(device_id):
-        if row["status"] != "succeeded" or row["label"] in skip or store.injected(row["id"]):
-            continue
+    for row in rows:
         if row["label"] not in by_label:
             order.append(row["label"])
             by_label[row["label"]] = []
@@ -77,9 +87,20 @@ def _empty_cell() -> Dict[str, Any]:
             "sections_added": [], "sections_removed": [], "new": [], "gone": []}
 
 
-def _device(store: Store, cfg: Config, dev: Any, items: List[Dict[str, Any]]) -> Dict[str, Any]:
-    device_id = dev["device_id"]
-    features = _features(store, cfg, device_id)
+def _judged(platform: str, metric: str, cfg: Config) -> bool:
+    """Whether a series is compared at all: in the catalogue, enabled, repeated per journey, not a count."""
+    try:
+        entry = lookup(platform, metric, cfg.catalogue)
+    except CatalogueError:
+        return False
+    return entry.enabled and not entry.single_valued and not metric.endswith(".count")
+
+
+def _device(store: Store, cfg: Config, device_id: str, rows: List[Any],
+            items: List[Dict[str, Any]]) -> Dict[str, Any]:
+    latest = rows[-1]
+    dev = {"device_id": device_id, "model": latest["model"], "platform": latest["platform"]}
+    features = _features(rows)
     after_label, after_rounds = features[-1] if features else (None, [])
     before_label, before_rounds = features[-2] if len(features) > 1 else (None, [])
     flags = {"noisy": 0, "thermal": 0, "dirty": 0}
@@ -107,6 +128,7 @@ def _device(store: Store, cfg: Config, dev: Any, items: List[Dict[str, Any]]) ->
                     present.setdefault(series, {"before": [], "after": []})[side].append((row, agg["median"]))
 
     sides: Dict[str, Dict[str, set]] = {}  # journey -> side -> metric keys
+    judged: Dict[str, Dict[str, set]] = {}  # the same, only the series that are compared
     for series, per_side in present.items():
         journey, metric = split_series_key(series)
         if journey is None:
@@ -114,13 +136,16 @@ def _device(store: Store, cfg: Config, dev: Any, items: List[Dict[str, Any]]) ->
         for side in ("before", "after"):
             if per_side[side]:
                 sides.setdefault(journey, {"before": set(), "after": set()})[side].add(metric)
+                judged.setdefault(journey, {"before": set(), "after": set()})
+                if _judged(dev["platform"], metric, cfg):
+                    judged[journey][side].add(metric)
 
     cells: Dict[str, Dict[str, Any]] = {}
     changed: set = set()
     for journey, per_side in sides.items():
         cell = _empty_cell()
         cells[journey] = cell
-        if not per_side["before"] or not per_side["after"]:
+        if not judged[journey]["before"] or not judged[journey]["after"]:
             continue
         sections = {side: {m for m in per_side[side] if _is_section_sum(m)} for side in per_side}
         cell["sections_added"] = sorted(sections["after"] - sections["before"])
@@ -130,7 +155,8 @@ def _device(store: Store, cfg: Config, dev: Any, items: List[Dict[str, Any]]) ->
         cell["gone"] = sorted(m for m in per_side["before"] - per_side["after"] if not _is_section_sum(m)
                               and not m.startswith("section."))
         cell["state"] = "same"
-        if cell["sections_added"] or cell["sections_removed"]:
+        # startup has no sections of its own; whatever it carries never marks it as redefined
+        if journey != "startup" and (cell["sections_added"] or cell["sections_removed"]):
             changed.add(journey)
             cell["state"] = "changed"
 
@@ -140,12 +166,9 @@ def _device(store: Store, cfg: Config, dev: Any, items: List[Dict[str, Any]]) ->
         if journey is None or not per_side["before"] or not per_side["after"]:
             continue
         cell = cells[journey]
-        try:
-            entry = lookup(dev["platform"], metric, cfg.catalogue)
-        except CatalogueError:
+        if not _judged(dev["platform"], metric, cfg):
             continue
-        if entry.single_valued or not entry.enabled or metric.endswith(".count"):
-            continue
+        entry = lookup(dev["platform"], metric, cfg.catalogue)
         before = statistics.median(m for _r, m in per_side["before"])
         after = statistics.median(m for _r, m in per_side["after"])
         verdict = judge(before, after, entry)
@@ -186,8 +209,7 @@ def _item_order(item: Dict[str, Any]) -> Tuple[int, int, float]:
 def overview_data(store: Store, cfg: Config) -> Dict[str, Any]:
     """Every reference device's newest feature against the one before it (see the module docstring)."""
     items: List[Dict[str, Any]] = []
-    devices = [_device(store, cfg, dev, items) for dev in store.devices()
-               if dev["reference"] and dev["kind"] != "simulator"]
+    devices = [_device(store, cfg, device_id, rows, items) for device_id, rows in _eligible(store, cfg).items()]
     items.sort(key=_item_order)
     journeys = sorted({j for d in devices for j in d["cells"]}, key=_journey_rank)
     return {"journeys": journeys, "devices": devices, "items": items}

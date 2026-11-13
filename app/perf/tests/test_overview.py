@@ -209,3 +209,34 @@ def test_judge_returns_the_limits_used():
     verdict = judge(10.0, 13.0, entry)
     assert verdict["state"] == "worse" and verdict["limit_pct"] == 25
     assert verdict["delta_abs"] == pytest.approx(3.0) and verdict["delta_pct"] == pytest.approx(30.0)
+
+
+def test_rounds_are_filtered_by_their_own_columns_not_the_devices(store, cfg):
+    _round(store, "A", {P99: 10.0}, model="Old")
+    _round(store, "A", {P99: 10.0}, reference=False, model="Spare")
+    _round(store, "B", {P99: 10.0}, model="New")
+    _round(store, "B", {P99: 10.0}, kind="simulator", model="Sim")
+    _round(store, "B", {P99: 10.0}, reference=False, model="Spare")
+    row = overview_data(store, cfg)["devices"][0]
+    assert (row["rounds_before"], row["rounds_after"]) == (1, 1)
+    assert row["model"] == "New"
+
+
+def test_a_device_with_no_comparable_rounds_has_no_row(store, cfg):
+    _round(store, "A", {P99: 10.0}, device_id="X", reference=False)
+    assert overview_data(store, cfg)["devices"] == []
+
+
+def test_journey_with_only_unjudged_series_on_one_side_is_none(store, cfg):
+    count = "tuner/section.tuner.load.count"
+    _round(store, "A", {count: 10.0})
+    _round(store, "B", {P99: 10.0, count: 10.0})
+    assert _cell(overview_data(store, cfg), "tuner")["state"] == "none"
+
+
+def test_startup_is_never_changed_by_its_sections(store, cfg):
+    ttid = "startup/startup.ttid_ms"
+    _round(store, "A", {ttid: 300.0, "startup/section.shell.a.sum_ms": 5.0})
+    _round(store, "B", {ttid: 300.0, "startup/section.shell.b.sum_ms": 5.0})
+    cell = _cell(overview_data(store, cfg), "startup")
+    assert cell["state"] == "same"
