@@ -165,3 +165,28 @@ def test_onset_with_a_label_is_described_in_that_label_on_the_device_and_in_chan
     change = next(c for c in data["changes"] if c["device_id"] == PIXEL and c["metric"] == "startup/startup.ttid_ms")
     assert change["label_at_onset"] == "007-performance-pipeline" and "in 007-performance-pipeline" in change["sentence"]
     assert data["summary"]["text"].startswith("3 devices, 32 rounds")
+
+
+# --- the overview on the front page ----------------------------------------------------------------------
+
+def test_overview_is_in_the_data(data):
+    rows = {d["device_id"]: d for d in data["overview"]["devices"]}
+    assert set(rows) == {PIXEL, IPHONE}, "the simulator has no row"
+    for device_id in (PIXEL, IPHONE):
+        assert rows[device_id]["before"] == "006-tuner-noise-gate"
+        assert rows[device_id]["after"] == "007-performance-pipeline"
+
+
+def test_static_page_prints_the_where_table(html_text, data):
+    assert 'id="overview-where"' in html_text
+    table = html_text[html_text.index('id="overview-where"'):]
+    table = table[:table.index("</table>")]
+    for device in data["overview"]["devices"]:
+        assert device["model"] in table
+    assert "006-tuner-noise-gate" in table and "007-performance-pipeline" in table
+
+
+def test_overview_adds_no_requests(html_text):
+    overview = html_text[html_text.index("function overviewHtml"):]
+    assert not re.search(r"https?://|fetch\(|XMLHttpRequest|@import", overview[:20000])
+    assert "<link" not in html_text
