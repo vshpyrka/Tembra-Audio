@@ -1,5 +1,7 @@
 # Tembra Audio
 
+[![Performance report](https://img.shields.io/badge/Performance-report-a78bfa?style=for-the-badge)](https://vshpyrka.github.io/Tembra-Audio/)
+
 A free, open-source mobile DAW for Android and iOS. One shared C++ real-time audio engine does the
 audio work; a Kotlin Multiplatform control plane and a Compose Multiplatform UI run on top of it, so
 both platforms share the same DSP and the same screens.

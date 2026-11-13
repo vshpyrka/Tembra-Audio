@@ -83,6 +83,7 @@ uv run tracepulse publish [--device <id>]              # push records a failed p
 uv run tracepulse sync                                 # pull perf-history, rebuild data/tracepulse.db
 uv run tracepulse analyze                              # detections (ratchet) + gate decisions over the rebuilt history
 uv run tracepulse report [--open] [--out <file>]       # reports/report.html, self-contained
+uv run tracepulse report --public --out <file>      # the page published on GitHub Pages: no host names, no home paths
 uv run tracepulse status [--series [--label <label>] [--last N]]  # cache, unpublished records, branch state (+ CoV per series: one label, last N rounds)
 uv run tracepulse inject R1 | revert R1 | revert --all  # the regression-injection self-test
 uv run tracepulse profile generate --device pixel6      # baseline + startup profile from the journeys into androidApp/src/main/generated/baselineProfiles/
@@ -101,6 +102,12 @@ compiles the instrumentation out (`PerfBuild.PERF_ENABLED` false, no `TEMBRA_TRA
 `build_type: release`. On iOS `--configuration Release` is the Release configuration itself (its
 Gradle phase passes no `tembra.perf`), and the stress journey skips the absent "write engine health"
 control.
+
+`report --public` leaves out each round's `machine` (the build Mac's host name) and the `artifacts` list (local
+paths of traces), and rewrites absolute paths in every other string of the embedded data: a path under the
+repository becomes repository-relative, any other home-directory path becomes `~/…`. A local `report` without the
+flag keeps both. The published page is always built with `--public`; a test renders the fixture history with it
+and fails if the page contains `/Users/`, `/home/` or a round's `machine` value.
 
 ### Exit statuses
 
@@ -122,6 +129,7 @@ control.
 | Raw artifacts (traces, result bundles, logs) | `app/perf/data/rounds/<round_id>/` (~110 MB per Android round) | no — they stay on the producing machine |
 | Session builds | `app/perf/data/sessions/<id>/` | no |
 | Rendered report | `app/perf/reports/report.html` | no |
+| Public report | `https://vshpyrka.github.io/Tembra-Audio/` (`index.html`, built with `report --public`) and `history-commit.txt`, the `perf-history` commit the page was built from | no — deployed by `.github/workflows/perf-report.yml` |
 | Per-device lock | `app/perf/data/locks/<device_id>` | no |
 
 The heavy folders under `app/perf/data/` (`rounds/`, `sessions/`, `comparisons/`, `profile-generate/`) may live
@@ -248,6 +256,24 @@ from `file://` with the network off (checked in Chrome's developer tools, quicks
 experiment on 2026-10-11 (`gate.limits_pct` journey.duration_ms and memory.peak_kb at 1 for one round,
 `20261011T201444Z`) exited 0, printed `gate: 3 above limit — …` and put the three flags at the top of
 the grid; the limits went back to the catalogue defaults afterwards.
+
+The front page opens with "Since the last feature" (2026-11-13), above the device grid. For each reference
+device (simulators are left out: their numbers are not a performance reference) it compares the device's newest
+feature with the one before it, over succeeded rounds only. A grid has one row per device and one column per
+journey; a cell says how many series got worse and by how much at most (`▲ 3 worse, up to +12 %`), how many got
+better, "same", "test changed" (the journey's sections differ between the two features) or "no rounds to compare".
+Below it, "What got worse" lists each worse series, largest change first, with the plain title, before and after
+in readable units, a sparkline of the round medians and, opened, a chart of every iteration; "What got better" is
+the same list, collapsed. Since 2026-10-17 (commit `11bea31e`) the startup journey measures Timeline, the start
+destination, where it measured Home before, so a startup "worse" against features measured before that date is
+partly a different screen. The overview cannot mark startup "test changed", because startup has no sections.
+
+The same page is published at https://vshpyrka.github.io/Tembra-Audio/ (built with `report --public`) by
+`.github/workflows/perf-report.yml`: on a manual run, on a push to `main` that touches `app/perf/`,
+`app/tracepulse.yml` or the workflow, and every hour at minute 17. A push to `perf-history` cannot start it (GitHub
+reads workflows from the pushed branch, and that branch holds records only), so the hourly run picks up new rounds:
+it compares the head of `perf-history` with `history-commit.txt` on the deployed site and stops when they match.
+Manual and push runs always build.
 
 The gate (`gate.py`): per metric, the change of the round's median against the median of the last N
 clean rounds (N = `gate.clean_rounds`, 5) in the worse direction, against the catalogue limit
