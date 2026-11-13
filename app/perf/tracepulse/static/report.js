@@ -167,19 +167,20 @@
     else body = "✓ same";
     return '<td class="c ' + esc(c.state) + '" title="' + esc(ovCellTitle(c)) + '">' + (href ? '<a href="' + esc(href) + '">' + body + "</a>" : body) + "</td>";
   }
+  var OV_LEGEND = "▲ worse · ▼ better · ✓ same · test changed: the journey was redefined between the two features · hatched cell: no rounds to compare";
   function ovWhere() {
     var h = ['<div class="ov-scroll"><table class="ov-where" id="overview-where"><tr><th></th>'];
     OV.journeys.forEach(function (j) { h.push("<th>" + esc(capital(j)) + "</th>"); });
     h.push("</tr>");
     OV.devices.forEach(function (d) {
       var f = d.flags_after;
-      var sub = d.before ? d.before + " → " + d.after + " · " + d.rounds_before + " vs " + d.rounds_after + " rounds" + (f.noisy ? ", " + f.noisy + " noisy" : "") + (f.dirty ? ", " + f.dirty + " dirty" : "")
+      var sub = d.before ? d.before + " → " + d.after + " · " + d.rounds_before + " vs " + d.rounds_after + " rounds" + (f.noisy ? ", " + f.noisy + " noisy" : "") + (f.thermal ? ", " + f.thermal + " thermal" : "") + (f.dirty ? ", " + f.dirty + " dirty" : "")
         : d.rounds_after + " round" + (d.rounds_after === 1 ? "" : "s") + ", one feature only";
       h.push('<tr><th class="ov-dev">' + esc(d.model) + "<small>" + esc(sub) + "</small></th>");
       OV.journeys.forEach(function (j) { h.push(ovCell(d, j)); });
       h.push("</tr>");
     });
-    h.push("</table></div>");
+    h.push('</table></div><p class="ov-legend">' + OV_LEGEND + "</p>");
     return h.join("");
   }
   function sparkline(item) {
@@ -254,8 +255,8 @@
     if (!anchors[key]) { anchors[key] = true; id = ' id="ov-' + esc(key) + '"'; }
     var changed = item.state === "changed", arrow = item.state === "better" ? "▼ " : "▲ ";
     var before = item.rounds.filter(function (r) { return r.side === "before"; }), after = item.rounds.filter(function (r) { return r.side === "after"; });
-    var limit = item.limit_pct != null ? item.limit_pct + " %" : item.limit_abs + (item.unit ? " " + item.unit : "");
-    var ratio = item.before ? item.after / item.before : 0;
+    var limit = item.limit_pct != null ? item.limit_pct + " %" : ovValue(item.limit_abs, item.unit);
+    var ratio = 1 + (item.delta_pct || 0) / 100;
     return '<details class="ov-item"' + id + ' data-item="' + idx + '"' + (open ? " open" : "") + "><summary>" +
       '<span class="chip">' + esc(item.model) + '</span><span class="ov-name">' + esc(item.title) + "<small>" + esc(item.series) + "</small></span>" +
       '<span class="ov-nums">' + esc(ovValue(item.before, item.unit) + " → " + ovValue(item.after, item.unit)) + "</span>" +

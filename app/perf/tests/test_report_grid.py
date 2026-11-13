@@ -190,3 +190,7 @@ def test_overview_adds_no_requests(html_text):
     overview = html_text[html_text.index("function overviewHtml"):]
     assert not re.search(r"https?://|fetch\(|XMLHttpRequest|@import", overview[:20000])
     assert "<link" not in html_text
+
+
+def test_static_page_explains_the_where_grid(html_text):
+    assert 'class="ov-legend"' in html_text and "hatched cell: no rounds to compare" in html_text

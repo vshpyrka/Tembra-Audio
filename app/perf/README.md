@@ -103,11 +103,14 @@ compiles the instrumentation out (`PerfBuild.PERF_ENABLED` false, no `TEMBRA_TRA
 Gradle phase passes no `tembra.perf`), and the stress journey skips the absent "write engine health"
 control.
 
-`report --public` leaves out each round's `machine` (the build Mac's host name) and the `artifacts` list (local
-paths of traces), and rewrites absolute paths in every other string of the embedded data: a path under the
-repository becomes repository-relative, any other home-directory path becomes `~/…`. A local `report` without the
-flag keeps both. The published page is always built with `--public`; a test renders the fixture history with it
-and fails if the page contains `/Users/`, `/home/` or a round's `machine` value.
+`report --public` drops each round's `machine` (the build Mac's host name) and the `artifacts` list (local paths of
+traces). In every other string of the embedded data it replaces each machine's host name, with and without `.local`
+(case-insensitive), by "build machine", and shortens `/Users/<name>/…` and `/home/<name>/…` to `~/…` (a bare
+`/Users/<name>` becomes `~`). Other absolute paths, such as `/Volumes/…`, are left as they are. The public build
+refuses to write the file (exit status 2, `refused: …`, naming what it found, not the text around it) when the
+rendered page still contains `/Users/`, `/home/`, a machine value or its first host-name label. A local `report`
+without the flag keeps everything. The published page is always built with `--public`; tests render the fixture
+history with it and fail if the page contains `/Users/`, `/home/` or a round's `machine` value.
 
 ### Exit statuses
 
@@ -267,6 +270,8 @@ in readable units, a sparkline of the round medians and, opened, a chart of ever
 the same list, collapsed. Since 2026-10-17 (commit `11bea31e`) the startup journey measures Timeline, the start
 destination, where it measured Home before, so a startup "worse" against features measured before that date is
 partly a different screen. The overview cannot mark startup "test changed", because startup has no sections.
+Injected (self-test) rounds and the experiment labels (`report.experiment_labels` in `app/tracepulse.yml`) are
+left out of the overview.
 
 The same page is published at https://vshpyrka.github.io/Tembra-Audio/ (built with `report --public`) by
 `.github/workflows/perf-report.yml`: on a manual run, on a push to `main` that touches `app/perf/`,

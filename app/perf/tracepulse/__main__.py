@@ -219,12 +219,15 @@ def _handle_analyze(args, cfg: Config, paths: Paths) -> Tuple[int, Payload]:
 
 
 def _handle_report(args, cfg: Config, paths: Paths) -> Tuple[int, Payload]:
-    from .report import generate_report
+    from .report import PublicLeak, generate_report
     os.makedirs(paths.data_dir, exist_ok=True)
     os.makedirs(paths.reports_dir, exist_ok=True)
     out = args.out or os.path.join(paths.reports_dir, "report.html")
     with Store(paths.db_path) as store:
-        written = generate_report(store, cfg, out, now_ts=int(time.time()), public=args.public)
+        try:
+            written = generate_report(store, cfg, out, now_ts=int(time.time()), public=args.public)
+        except PublicLeak as exc:
+            raise Refused(str(exc)) from exc
     print(written)
     if args.open:
         webbrowser.open(f"file://{os.path.abspath(written)}")

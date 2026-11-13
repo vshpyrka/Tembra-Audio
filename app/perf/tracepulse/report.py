@@ -21,7 +21,7 @@ from .analysis import device_overview
 from .catalogue import CATALOGUE, CatalogueError, FAMILIES, lookup
 from .config import Config
 from .overview import overview_data
-from .public import publicise
+from .public import host_terms, leaks, publicise
 from .store import Store, split_series_key
 from .text import (
     PLAIN_STATUS, SIMULATOR_NOTE, chart_sentence, device_headline, plain_metric, plain_series, status_ladder,
@@ -175,6 +175,10 @@ def _device_entry(store: Store, cfg: Config, row) -> Dict[str, Any]:
     }
 
 
+class PublicLeak(Exception):
+    """The public page still carries a host name or a home path; nothing was written."""
+
+
 def report_data(store: Store, cfg: Config, public: bool = False) -> Dict[str, Any]:
     devices = [_device_entry(store, cfg, row) for row in store.devices()]
     devices.sort(key=lambda d: (d["kind"] != "device", _PLATFORM_ORDER.get(d["platform"], 9), d["model"]))
@@ -272,7 +276,10 @@ def _read(path: str) -> str:
 
 
 def generate_report(store: Store, cfg: Config, out_path: str, now_ts: int, public: bool = False) -> str:
-    data = report_data(store, cfg, public=public)
+    data = report_data(store, cfg)
+    terms = host_terms(data) if public else []
+    if public:
+        data = publicise(data)
     env = jinja2.Environment(loader=jinja2.FileSystemLoader(_TEMPLATE_DIR), autoescape=True,
                              trim_blocks=True, lstrip_blocks=True)
     env.globals["where_cell"] = where_cell
@@ -284,6 +291,10 @@ def generate_report(store: Store, cfg: Config, out_path: str, now_ts: int, publi
         js=_read(os.path.join(_STATIC_DIR, "report.js")),
         generated=datetime.fromtimestamp(now_ts, tz=timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
     )
+    if public:
+        found = leaks(html, terms)
+        if found:
+            raise PublicLeak("the public report was not written; it still contains " + ", ".join(found))
     os.makedirs(os.path.dirname(os.path.abspath(out_path)), exist_ok=True)
     with open(out_path, "w", encoding="utf-8") as fh:
         fh.write(html)
