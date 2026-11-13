@@ -21,6 +21,7 @@ from .analysis import device_overview
 from .catalogue import CATALOGUE, CatalogueError, FAMILIES, lookup
 from .config import Config
 from .overview import overview_data
+from .public import publicise
 from .store import Store, split_series_key
 from .text import (
     PLAIN_STATUS, SIMULATOR_NOTE, chart_sentence, device_headline, plain_metric, plain_series, status_ladder,
@@ -174,7 +175,7 @@ def _device_entry(store: Store, cfg: Config, row) -> Dict[str, Any]:
     }
 
 
-def report_data(store: Store, cfg: Config) -> Dict[str, Any]:
+def report_data(store: Store, cfg: Config, public: bool = False) -> Dict[str, Any]:
     devices = [_device_entry(store, cfg, row) for row in store.devices()]
     devices.sort(key=lambda d: (d["kind"] != "device", _PLATFORM_ORDER.get(d["platform"], 9), d["model"]))
     flagged: List[Dict[str, Any]] = []
@@ -213,7 +214,7 @@ def report_data(store: Store, cfg: Config) -> Dict[str, Any]:
             by_device[f["device_model"]] = by_device.get(f["device_model"], 0) + 1
         summary_parts.append("; ".join(f"{n} metric{'s' if n != 1 else ''} above their limit on {m}" for m, n in by_device.items()))
     summary_parts.append(f"{confirmed} confirmed" if confirmed else "nothing confirmed")
-    return {
+    data = {
         "summary": {"devices": len(devices), "rounds": total_rounds, "text": "; ".join(summary_parts) + ".",
                     "flagged": len(flagged), "confirmed": confirmed},
         "flagged": flagged,
@@ -225,6 +226,7 @@ def report_data(store: Store, cfg: Config) -> Dict[str, Any]:
         "config": {"min_history": cfg.detection.min_history, "clean_rounds": cfg.gate.clean_rounds,
                    "iterations": cfg.collection.iterations},
     }
+    return publicise(data) if public else data
 
 
 def change_text(pct: Optional[float]) -> str:
@@ -269,8 +271,8 @@ def _read(path: str) -> str:
         return fh.read()
 
 
-def generate_report(store: Store, cfg: Config, out_path: str, now_ts: int) -> str:
-    data = report_data(store, cfg)
+def generate_report(store: Store, cfg: Config, out_path: str, now_ts: int, public: bool = False) -> str:
+    data = report_data(store, cfg, public=public)
     env = jinja2.Environment(loader=jinja2.FileSystemLoader(_TEMPLATE_DIR), autoescape=True,
                              trim_blocks=True, lstrip_blocks=True)
     env.globals["where_cell"] = where_cell
