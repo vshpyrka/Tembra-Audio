@@ -101,6 +101,12 @@ class Gate:
 
 
 @dataclass
+class Report:
+    # labels of measurement experiments (noise baselines), never a feature to compare
+    experiment_labels: List[str] = field(default_factory=lambda: ["noise-baseline", "release-baseline"])
+
+
+@dataclass
 class DeviceEntry:
     platform: str = ""
     model: str = ""
@@ -144,6 +150,7 @@ class Config:
     devices: Dict[str, DeviceEntry] = field(default_factory=dict)
     android: Android = field(default_factory=Android)
     ios: IOS = field(default_factory=IOS)
+    report: Report = field(default_factory=Report)
     journeys: List[str] = field(default_factory=lambda: list(DEFAULT_JOURNEYS))
     path: str = DEFAULT_CONFIG_PATH
     catalogue: Dict[Tuple[str, str], Metric] = field(default_factory=dict)
@@ -166,7 +173,7 @@ class Config:
 _SECTIONS = {
     "detection": Detection, "confirm": Confirm, "apk": APK, "ab": AB, "quality": Quality,
     "suite_spike": SuiteSpike, "collection": Collection, "history": History, "gate": Gate,
-    "android": Android, "ios": IOS,
+    "android": Android, "ios": IOS, "report": Report,
 }
 _FREE_MAPS = {("quality", "cov_max_overrides"), ("gate", "limits_pct"), ("gate", "limits_abs"),
               ("detection", "screening_gates")}
