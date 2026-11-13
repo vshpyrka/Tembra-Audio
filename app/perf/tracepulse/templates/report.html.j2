@@ -18,6 +18,24 @@
   {# The grid is rendered here too, so the page lists every device before any script runs. #}
   <section class="grid-view" id="static-grid">
     <p class="summary">{{ data.summary.text }}</p>
+    {% if data.overview.devices %}
+    <h2>Since the last feature</h2>
+    <p class="sub">Each device compares its newest feature with the one before it.</p>
+    <div class="ov-scroll">
+      <table class="ov-where" id="overview-where">
+        <tr><th></th>{% for journey in data.overview.journeys %}<th>{{ journey | capitalize }}</th>{% endfor %}</tr>
+        {% for device in data.overview.devices %}
+        <tr>
+          <th class="ov-dev">{{ device.model }}<small>{% if device.before %}{{ device.before }} → {{ device.after }} · {{ device.rounds_before }} vs {{ device.rounds_after }} rounds{% if device.flags_after.noisy %}, {{ device.flags_after.noisy }} noisy{% endif %}{% if device.flags_after.dirty %}, {{ device.flags_after.dirty }} dirty{% endif %}{% else %}{{ device.rounds_after }} round{{ "" if device.rounds_after == 1 else "s" }}, one feature only{% endif %}</small></th>
+          {% for journey in data.overview.journeys %}
+          {% set cell = where_cell(device.cells.get(journey)) %}
+          <td class="c {{ cell.cls }}" title="{{ cell.title }}">{{ cell.text }}{% if cell.small %}<br><small>{{ cell.small }}</small>{% endif %}</td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+    {% endif %}
     <div class="grid">
       {% for device in data.devices %}
       <a class="card{% if not device.reference %} non-reference{% endif %}" href="#/device/{{ device.device_id }}">
