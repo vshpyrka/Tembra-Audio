@@ -26,7 +26,7 @@
         <tr><th></th>{% for journey in data.overview.journeys %}<th>{{ journey | capitalize }}</th>{% endfor %}</tr>
         {% for device in data.overview.devices %}
         <tr>
-          <th class="ov-dev">{{ device.model }}<small>{% if device.before %}{{ device.before }} → {{ device.after }} · {{ device.rounds_before }} vs {{ device.rounds_after }} rounds{% if device.flags_after.noisy %}, {{ device.flags_after.noisy }} noisy{% endif %}{% if device.flags_after.dirty %}, {{ device.flags_after.dirty }} dirty{% endif %}{% else %}{{ device.rounds_after }} round{{ "" if device.rounds_after == 1 else "s" }}, one feature only{% endif %}</small></th>
+          <th class="ov-dev">{{ device.model }}<small>{% if device.before %}{{ device.before }} → {{ device.after }} · {{ device.rounds_before }} vs {{ device.rounds_after }} rounds{% if device.flags_after.noisy %}, {{ device.flags_after.noisy }} noisy{% endif %}{% if device.flags_after.thermal %}, {{ device.flags_after.thermal }} thermal{% endif %}{% if device.flags_after.dirty %}, {{ device.flags_after.dirty }} dirty{% endif %}{% else %}{{ device.rounds_after }} round{{ "" if device.rounds_after == 1 else "s" }}, one feature only{% endif %}</small></th>
           {% for journey in data.overview.journeys %}
           {% set cell = where_cell(device.cells.get(journey)) %}
           <td class="c {{ cell.cls }}" title="{{ cell.title }}">{{ cell.text }}{% if cell.small %}<br><small>{{ cell.small }}</small>{% endif %}</td>
@@ -35,6 +35,7 @@
         {% endfor %}
       </table>
     </div>
+    <p class="ov-legend">▲ worse · ▼ better · ✓ same · test changed: the journey was redefined between the two features · hatched cell: no rounds to compare</p>
     {% endif %}
     <div class="grid">
       {% for device in data.devices %}

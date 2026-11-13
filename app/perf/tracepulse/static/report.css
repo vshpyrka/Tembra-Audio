@@ -156,6 +156,7 @@ table.ov-where { border-collapse: separate; border-spacing: 4px; min-width: 640p
 .ov-where .ic { font-weight: 700; }
 .ov-where .worse .ic { color: var(--status-serious); }
 .ov-where .better .ic { color: var(--status-good); }
+.ov-legend { color: var(--on-surface-variant); font-size: 12px; margin: 6px 0 0; }
 .ov-heading { margin-top: 28px; }
 .ov-item { background: var(--surface-low); border: 1px solid var(--outline-variant); border-radius: 10px; margin-bottom: 8px; overflow: hidden; }
 .ov-item summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: 110px minmax(0, 1fr) 190px 92px 150px; gap: 12px; align-items: center; padding: 10px 14px; }

@@ -189,8 +189,8 @@ def _device(store: Store, cfg: Config, device_id: str, rows: List[Any],
             "device_id": device_id, "model": dev["model"], "series": series, "journey": journey,
             "metric": metric, "title": plain_series(series), "unit": entry.unit, "state": state,
             "before": _round(before), "after": _round(after), "delta_abs": _round(verdict["delta_abs"]),
-            "delta_pct": _round(verdict["delta_pct"]), "limit_pct": verdict["limit_pct"],
-            "limit_abs": verdict["limit_abs"], "rounds": rounds,
+            "delta_pct": _round(verdict["delta_pct"]), "limit_pct": _round(verdict["limit_pct"]),
+            "limit_abs": _round(verdict["limit_abs"]), "rounds": rounds,
         })
 
     for journey, cell in cells.items():

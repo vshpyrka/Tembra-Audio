@@ -13,7 +13,7 @@ from tracepulse.config import DEFAULT_CONFIG_PATH, load_config
 from tracepulse.gate import record_all_gates
 from tracepulse.public import publicise
 from tracepulse.records import RoundRecord
-from tracepulse.report import generate_report, report_data
+from tracepulse.report import PublicLeak, generate_report, report_data
 from tracepulse.store import Store
 
 HISTORY = os.path.join(os.path.dirname(__file__), "fixtures", "history-3-devices")
@@ -33,7 +33,7 @@ def store(tmp_path_factory, cfg):
     failed = RoundRecord.from_dict(copy.deepcopy(base.to_dict()))
     failed.round_id = "20261020T140000Z_failed"
     failed.status = "failed"
-    failed.failure_reason = FAILURE
+    failed.failure_reason = FAILURE + " (on Someones-MacBook, then SOMEONES-macbook.local)"
     failed.machine = {"hostname": "Someones-MacBook.local", "os": "Darwin", "tool_version": "0.2.0"}
     failed.fingerprint = {**failed.fingerprint, "build_dir": "/Users/someone"}
     failed.journeys = []
@@ -61,7 +61,7 @@ def test_public_page_has_no_host_names_or_home_paths(store, cfg, tmp_path):
 
 def test_public_page_keeps_failure_reasons_readable(store, cfg):
     reasons = [r["failure_reason"] for r in _rounds(report_data(store, cfg, public=True)) if r["failure_reason"]]
-    assert "Failed to launch at ~/Workspace/Dev/Tembra Audio/app/perf/data/rounds/x and ~/y" in reasons
+    assert any(r.startswith("Failed to launch at ~/Workspace/Dev/Tembra Audio/app/perf/data/rounds/x and ~/y") for r in reasons)
 
 
 def test_public_rounds_have_no_machine_or_artifacts(store, cfg):
@@ -105,3 +105,29 @@ def test_publicise_shortens_paths_without_a_trailing_slash():
 
 def test_the_seeded_fingerprint_path_reaches_the_private_page(store, cfg):
     assert any(r["fingerprint"].get("build_dir") == "/Users/someone" for r in _rounds(report_data(store, cfg)))
+
+
+def test_a_host_name_without_local_is_replaced_case_insensitively(store, cfg):
+    reasons = [r["failure_reason"] for r in _rounds(report_data(store, cfg, public=True)) if r["failure_reason"]]
+    assert any(r.endswith("(on build machine, then build machine)") for r in reasons)
+
+
+def test_a_leak_that_survives_publicise_is_not_written(store, cfg, tmp_path, monkeypatch):
+    monkeypatch.setattr("tracepulse.report.publicise", lambda data: data)
+    out = tmp_path / "leaky.html"
+    with pytest.raises(PublicLeak) as caught:
+        generate_report(store, cfg, str(out), now_ts=NOW_TS, public=True)
+    assert "mbp-m4" in str(caught.value) and "/Users/" in str(caught.value)
+    assert "someone" not in str(caught.value).replace("Someones", "")
+    assert not out.exists()
+
+
+def test_cli_public_refuses_and_writes_nothing_on_a_leak(tmp_path, monkeypatch):
+    records = [RoundRecord.load(p) for p in sorted(glob.glob(os.path.join(HISTORY, "records", "*", "*.json")))]
+    os.makedirs(tmp_path / "data")
+    Store.rebuild(str(tmp_path / "data" / "tracepulse.db"), records).close()
+    monkeypatch.setattr("tracepulse.__main__.PERF_DIR", str(tmp_path))
+    monkeypatch.setattr("tracepulse.report.publicise", lambda data: data)
+    out = tmp_path / "public.html"
+    assert main(["report", "--public", "--out", str(out)]) == 2
+    assert not out.exists()
