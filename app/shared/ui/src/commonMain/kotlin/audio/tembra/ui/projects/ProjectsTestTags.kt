@@ -12,7 +12,7 @@ object ProjectsTestTags {
     const val SEARCH_CLEAR = "projects.search.clear"
     const val FILTER = "projects.filter"
     const val SORT = "projects.sort"
-    const val GRID = "projects.grid"
+    const val GRID = PerfAnchors.PROJECTS_GRID
     const val EMPTY = "projects.empty"
     const val EMPTY_RESTORE = "projects.empty.restore"
     const val NO_MATCH = "projects.noMatch"

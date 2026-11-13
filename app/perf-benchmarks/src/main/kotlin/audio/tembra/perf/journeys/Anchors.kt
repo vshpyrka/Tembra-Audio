@@ -2,9 +2,11 @@ package audio.tembra.perf.journeys
 
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.BySelector
+import androidx.test.uiautomator.Direction
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiObject2
 import androidx.test.uiautomator.Until
+import java.util.regex.Pattern
 
 /**
  * The perf anchors as UiAutomator sees them: every `testTag` of `audio.tembra.ui.perf.PerfAnchors` is a view
@@ -81,6 +83,7 @@ object Anchors {
     // Feature 012 (contracts/perf-instrumentation.md, journey `mixer`): the Mixer button, the sheet, the first strip's
     // controls (strip i through the functions below), the master strip, the window button and the settings' pan slider.
     const val PROJECTS_CARD_STRESS = "projects.card.stressTracks"
+    const val PROJECTS_GRID = "projects.grid"
     const val TIMELINE_OVERFLOW_BUTTON = "timeline.toolbar.overflow.button"
     const val TIMELINE_MIXER = "timeline.toolbar.mixer"
     const val TIMELINE_OVERFLOW_MIXER = "timeline.toolbar.overflow.mixer"
@@ -129,6 +132,28 @@ object Anchors {
         anchor(tag).click()
         waitForIdle()
     }
+
+    /**
+     * Taps the Projects card [tag], scrolling the grid to it first when it is off screen. The grid composes only the
+     * cards on screen, so a card below them has no node to find: since feature 012 the stress project, edited last,
+     * sorts above the demo, and a phone in landscape shows one card (the windowing journey's failure of 2026-11-13).
+     * The cards arrive after the grid (the library loads asynchronously), hence the wait for the first one. A card the
+     * grid does not hold fails in [tap], as before.
+     */
+    fun UiDevice.tapProjectCard(tag: String) {
+        val card = selector(tag)
+        anchor(PROJECTS_GRID)
+        wait(Until.hasObject(By.res(ANY_PROJECT_CARD)), TIMEOUT_MS)
+        if (!hasObject(card)) {
+            val grid = anchor(PROJECTS_GRID)
+            grid.scrollUntil(Direction.DOWN, Until.findObject(card)) ?: grid.scrollUntil(Direction.UP, Until.findObject(card))
+            waitForIdle()
+        }
+        tap(tag)
+    }
+
+    /** A card's own tag, `projects.card.<id>`, not its children's (`.open`, `.menu`, `.overview`). */
+    private val ANY_PROJECT_CARD: Pattern = Pattern.compile("""projects\.card\.[^.]+""")
 
     /** Tap an anchor the build may not have (devtools in the release baseline); a short wait, never a failure. */
     fun UiDevice.tapIfPresent(tag: String, timeoutMs: Long = 2_000L) {

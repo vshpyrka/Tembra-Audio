@@ -11,6 +11,7 @@ import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import audio.tembra.perf.journeys.Anchors.anchor
 import audio.tembra.perf.journeys.Anchors.tap
+import audio.tembra.perf.journeys.Anchors.tapProjectCard
 
 /**
  * The windowing journey (feature 011, contracts/perf-instrumentation.md): open Metronome and start it; change the window
@@ -35,7 +36,7 @@ class WindowingJourney {
 
             device.tap(Anchors.NAV_PROJECTS)
             device.anchor(Anchors.PROJECTS_ROOT)
-            device.tap(Anchors.PROJECTS_CARD_DEMO)
+            device.tapProjectCard(Anchors.PROJECTS_CARD_DEMO)
             device.anchor(Anchors.TIMELINE_ROOT)
             // From the start: the playhead stays where the last iteration paused, and a start in the demo's last seconds is
             // refused (as in the timeline journey).
