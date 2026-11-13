@@ -9,6 +9,7 @@ import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import audio.tembra.perf.journeys.Anchors.anchor
 import audio.tembra.perf.journeys.Anchors.tap
+import audio.tembra.perf.journeys.Anchors.tapProjectCard
 
 /**
  * The timeline journey (feature 009, contracts/perf-instrumentation.md): open Projects, open the demo card, wait for
@@ -21,7 +22,7 @@ class TimelineJourney {
     fun run(device: UiDevice) {
         device.tap(Anchors.NAV_PROJECTS)
         device.anchor(Anchors.PROJECTS_ROOT)
-        device.tap(Anchors.PROJECTS_CARD_DEMO)
+        device.tapProjectCard(Anchors.PROJECTS_CARD_DEMO)
         device.anchor(Anchors.TIMELINE_ROOT)
         // The waveforms: the screen carries a 1 dp marker node once every visible overview is built (the
         // `stateDescription` "ready" of the contract is not reachable through UiAutomator's selectors).
