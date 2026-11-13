@@ -8,7 +8,7 @@ import copy
 import re
 from typing import Any, Dict, Set
 
-_HOME_PATH = re.compile(r"/(?:Users|home)/[^/\s\"']+/")
+_HOME_PATH = re.compile(r"/(?:Users|home)/[^/\s\"']+(/|(?=[\s\"']|$))")
 _MACHINE_TEXT = "build machine"
 
 
@@ -24,7 +24,7 @@ def publicise(data: Dict[str, Any]) -> Dict[str, Any]:
         if isinstance(value, str):
             for machine in machines:
                 value = value.replace(machine, _MACHINE_TEXT)
-            return _HOME_PATH.sub("~/", value)
+            return _HOME_PATH.sub(lambda m: "~/" if m.group(1) else "~", value)
         if isinstance(value, list):
             return [clean(v) for v in value]
         if isinstance(value, dict):

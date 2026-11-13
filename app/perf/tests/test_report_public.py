@@ -3,6 +3,7 @@
 import copy
 import glob
 import os
+from pathlib import Path
 
 import pytest
 
@@ -34,6 +35,7 @@ def store(tmp_path_factory, cfg):
     failed.status = "failed"
     failed.failure_reason = FAILURE
     failed.machine = {"hostname": "Someones-MacBook.local", "os": "Darwin", "tool_version": "0.2.0"}
+    failed.fingerprint = {**failed.fingerprint, "build_dir": "/Users/someone"}
     failed.journeys = []
     failed.gate = []
     failed.started_at, failed.finished_at = "2026-10-20T14:00:00Z", "2026-10-20T14:01:00Z"
@@ -52,7 +54,7 @@ def _rounds(data):
 def test_public_page_has_no_host_names_or_home_paths(store, cfg, tmp_path):
     out = str(tmp_path / "public.html")
     generate_report(store, cfg, out, now_ts=NOW_TS, public=True)
-    html = open(out, encoding="utf-8").read()
+    html = Path(out).read_text(encoding="utf-8")
     for forbidden in ("/Users/", "/home/", "mbp-m4", "Someones-MacBook.local"):
         assert forbidden not in html
 
@@ -83,7 +85,7 @@ def test_publicise_does_not_mutate_its_input(store, cfg):
     assert data == before
 
 
-def test_cli_report_public_flag(tmp_path, monkeypatch, store, cfg):
+def test_cli_report_public_flag(tmp_path, monkeypatch):
     records = [RoundRecord.load(p) for p in sorted(glob.glob(os.path.join(HISTORY, "records", "*", "*.json")))]
     os.makedirs(tmp_path / "data")
     Store.rebuild(str(tmp_path / "data" / "tracepulse.db"), records).close()
@@ -93,3 +95,13 @@ def test_cli_report_public_flag(tmp_path, monkeypatch, store, cfg):
     html = out.read_text(encoding="utf-8")
     assert "mbp-m4" not in html
     assert "<html" in html
+
+
+def test_publicise_shortens_paths_without_a_trailing_slash():
+    data = {"devices": [], "a": "cd '/Users/someone' failed", "b": "home is /home/runner", "c": "/Users/x/y"}
+    out = publicise(data)
+    assert (out["a"], out["b"], out["c"]) == ("cd '~' failed", "home is ~", "~/y")
+
+
+def test_the_seeded_fingerprint_path_reaches_the_private_page(store, cfg):
+    assert any(r["fingerprint"].get("build_dir") == "/Users/someone" for r in _rounds(report_data(store, cfg)))
