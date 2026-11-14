@@ -53,10 +53,13 @@ def _m(platform: str, key: str, family: str, source: str, unit: str, journeys, *
 
 _ANDROID: List[Metric] = [
     _m("android", "startup.ttid_ms", "startup", "macrobenchmark StartupTimingMetric.timeToInitialDisplayMs",
-       "ms", ("startup",), gate_limit_pct=15, screening_pct=3),
+       "ms", ("startup",), gate_limit_pct=15, screening_pct=3,
+       note="the start screen's first frame: Timeline since 2026-10-17, Home before; on Android every cold launch "
+            "begins with the shader cache dropped, so it includes compiling that frame's GPU pipelines"),
     _m("android", "startup.ttfd_ms", "startup", "macrobenchmark StartupTimingMetric.timeToFullDisplayMs",
        "ms", ("startup",), gate_limit_pct=15, screening_pct=3,
-       note="app-declared through ReportDrawnWhen on Android; OS-defined on iOS"),
+       note="app-declared through ReportDrawnWhen on Android (since feature 009, Timeline with its project open "
+            "and waveform overviews read); OS-defined on iOS, which never waits for a project"),
     _m("android", "frames.p50_ms", "frames", "macrobenchmark FrameTimingMetric.frameDurationCpuMs P50",
        "ms", JOURNEYS_MEASURED, gate_limit_pct=25, screening_pct=3),
     _m("android", "frames.p90_ms", "frames", "macrobenchmark FrameTimingMetric.frameDurationCpuMs P90",
