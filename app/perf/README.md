@@ -316,8 +316,8 @@ got 50 % slower (first hint)" for a 2 → 3 µs step.
 2. **Anchor**: a `testTag` on the control, named in `PerfAnchors` (`:shared:ui`), mirrored in
    `perf-benchmarks/.../journeys/Anchors.kt` and `TembraPerfTests/Anchors.swift`.
 3. **Journey**: a class in `perf-benchmarks/.../journeys/` + a benchmark class, a struct in
-   `TembraPerfTests/Journeys/` + a test case, the name in `tracepulse.yml` `journeys:`,
-   `config.DEFAULT_JOURNEYS`, `catalogue.JOURNEYS_MEASURED`, `orchestrate_android.BENCHMARK_CLASS_OF`,
+   `TembraPerfTests/Journeys/` + a test case, the name in `tracepulse.yml` `journeys:` and
+   `config.DEFAULT_JOURNEYS` (before `stress`, which runs last: its project then sorts first in Projects), `catalogue.JOURNEYS_MEASURED`, `orchestrate_android.BENCHMARK_CLASS_OF`,
    `collect_android._JOURNEY_OF_CLASS` / `_REQUIRED`, `collect_ios._TEST_JOURNEYS` and its `order`,
    `report._JOURNEY_ORDER`, the two JSON schemas' journey enums, `PerfMetrics.sectionsOf` and
    `Metrics.sections(of:)`, and the pytest fixtures that enumerate journeys (feature 009 did this for

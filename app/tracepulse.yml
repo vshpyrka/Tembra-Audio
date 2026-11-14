@@ -60,4 +60,7 @@ ios:
   test_target: TembraPerfTests
   size_variant: iPhone14,7
 
-journeys: [startup, tuner, metronome, timeline, recording, mixer, stress, windowing]
+# The order an Android round runs them in (an iOS round runs the whole test target in XCTest's order). `stress` stays
+# last: the project it builds is then the last edited and sorts first in Projects, so a journey after it that opens the
+# demo on a phone in landscape (one card on screen) scrolls to it, about 3 s an iteration (windowing, 2026-11-13).
+journeys: [startup, tuner, metronome, timeline, recording, mixer, windowing, stress]
