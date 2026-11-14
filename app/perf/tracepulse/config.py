@@ -20,7 +20,8 @@ from .catalogue import CatalogueError, Metric, apply_overrides
 PERF_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_CONFIG_PATH = os.path.join(os.path.dirname(PERF_DIR), "tracepulse.yml")
 
-DEFAULT_JOURNEYS = ["startup", "tuner", "metronome", "timeline", "recording", "mixer", "stress", "windowing"]
+# The run order of an Android round; `stress` stays last (why: the comment on `journeys:` in tracepulse.yml).
+DEFAULT_JOURNEYS = ["startup", "tuner", "metronome", "timeline", "recording", "mixer", "windowing", "stress"]
 
 
 class ConfigError(Exception):
