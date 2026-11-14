@@ -1,5 +1,5 @@
 /* Tembra Audio performance report: hash router and inline-SVG charts over the embedded JSON.
-   Views: #/ (device grid), #/device/<id>, #/device/<id>/<series>. No network, no libraries. */
+   Views: #/ (overview and device grid), #/device/<id>, #/device/<id>/<series>. No network, no libraries. */
 (function () {
   "use strict";
   var DATA = JSON.parse(document.getElementById("tracepulse-data").textContent);
@@ -138,12 +138,162 @@
     return out.join("");
   }
 
+  /* ---------- overview: the newest feature against the one before it ---------- */
+  var OV = DATA.overview;
+  function capital(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+  function ovValue(v, unit) { return unit === "kB" ? fmt(v / 1024, "MB") : fmt(v, unit); }
+  function ovChange(pctValue, ratio) {
+    if (pctValue == null) return "from 0";
+    if (pctValue > 1000) return "×" + Math.round(ratio).toLocaleString("en-US");
+    return (pctValue > 0 ? "+" : "") + Math.round(pctValue) + " %";
+  }
+  function ovCellTitle(c) {
+    var t = [];
+    if (c.sections_added.length) t.push("sections added: " + c.sections_added.join(", "));
+    if (c.sections_removed.length) t.push("sections removed: " + c.sections_removed.join(", "));
+    if (c.new.length) t.push("new series: " + c.new.join(", "));
+    if (c.gone.length) t.push("gone series: " + c.gone.join(", "));
+    return t.join("; ");
+  }
+  function ovCell(d, journey) {
+    var c = d.cells[journey];
+    if (!c || c.state === "none") return '<td class="c none" title="no rounds to compare">—</td>';
+    var body, href = null;
+    if (c.state === "worse") {
+      body = '<span class="ic">▲ ' + c.worse + "</span> worse" + (c.worst_pct != null ? "<br><small>up to " + esc(ovChange(c.worst_pct, 1 + c.worst_pct / 100)) + "</small>" : "");
+      href = "#ov-" + d.device_id + "-" + journey;
+    } else if (c.state === "better") body = '<span class="ic">▼ ' + c.better + "</span> better";
+    else if (c.state === "changed") body = "test changed";
+    else body = "✓ same";
+    return '<td class="c ' + esc(c.state) + '" title="' + esc(ovCellTitle(c)) + '">' + (href ? '<a href="' + esc(href) + '">' + body + "</a>" : body) + "</td>";
+  }
+  var OV_LEGEND = "▲ worse · ▼ better · ✓ same · test changed: the journey was redefined between the two features · hatched cell: no rounds to compare";
+  function ovWhere() {
+    var h = ['<div class="ov-scroll"><table class="ov-where" id="overview-where"><tr><th></th>'];
+    OV.journeys.forEach(function (j) { h.push("<th>" + esc(capital(j)) + "</th>"); });
+    h.push("</tr>");
+    OV.devices.forEach(function (d) {
+      var f = d.flags_after;
+      var sub = d.before ? d.before + " → " + d.after + " · " + d.rounds_before + " vs " + d.rounds_after + " rounds" + (f.noisy ? ", " + f.noisy + " noisy" : "") + (f.thermal ? ", " + f.thermal + " thermal" : "") + (f.dirty ? ", " + f.dirty + " dirty" : "")
+        : d.rounds_after + " round" + (d.rounds_after === 1 ? "" : "s") + ", one feature only";
+      h.push('<tr><th class="ov-dev">' + esc(d.model) + "<small>" + esc(sub) + "</small></th>");
+      OV.journeys.forEach(function (j) { h.push(ovCell(d, j)); });
+      h.push("</tr>");
+    });
+    h.push('</table></div><p class="ov-legend">' + OV_LEGEND + "</p>");
+    return h.join("");
+  }
+  function sparkline(item) {
+    var w = 150, h = 34, m = item.rounds.map(function (r) { return r.median; });
+    var lo = Math.min.apply(null, m), hi = Math.max.apply(null, m), span = hi - lo || 1;
+    var x = function (i) { return m.length < 2 ? w / 2 : 3 + (w - 6) * i / (m.length - 1); };
+    var y = function (v) { return 4 + (h - 8) * (1 - (v - lo) / span); };
+    var split = item.rounds.filter(function (r) { return r.side === "before"; }).length;
+    var pts = m.map(function (v, i) { return x(i).toFixed(1) + "," + y(v).toFixed(1); });
+    var bx = split > 0 && split < m.length ? (x(split - 1) + x(split)) / 2 : null;
+    return '<svg class="spark" viewBox="0 0 ' + w + " " + h + '" aria-hidden="true">' + (bx == null ? "" : '<line class="boundary" x1="' + bx.toFixed(1) + '" x2="' + bx.toFixed(1) + '" y1="0" y2="' + h + '"/>') + '<polyline class="line" points="' + pts.join(" ") + '"/></svg>';
+  }
+  function itemChart(item) {
+    var w = 980, h = 320, pad = PAD, conv = item.unit === "kB" ? 1 / 1024 : 1, unit = item.unit === "kB" ? "MB" : item.unit;
+    var rounds = item.rounds, n = rounds.length;
+    var dev = device(item.device_id), dates = {};
+    if (dev) dev.rounds.forEach(function (r) { dates[r.round_key] = r.date; });
+    var lo = Infinity, hi = -Infinity;
+    rounds.forEach(function (r) { r.values.concat([r.median]).forEach(function (v) { lo = Math.min(lo, v * conv); hi = Math.max(hi, v * conv); }); });
+    var sc = scale([[lo, lo, hi]], []);
+    var slot = (w - pad.l - pad.r) / n;
+    var x = function (i) { return pad.l + slot * (i + 0.5); };
+    var y = function (v) { return pad.t + (h - pad.t - pad.b) * (1 - (v - sc.lo) / (sc.hi - sc.lo)); };
+    var out = ['<svg class="plot" viewBox="0 0 ' + w + " " + h + '" role="img" aria-label="' + esc(item.title) + '">'];
+    var tv = ticks(sc.lo, sc.hi, 4), step = tv.length > 1 ? tv[1] - tv[0] : 1;
+    var integral = tv.every(function (t) { return Math.abs(t - Math.round(t)) < 1e-9; });
+    var decimals = integral ? 0 : Math.min(6, Math.max(0, -Math.floor(Math.log10(step))));
+    tv.forEach(function (t) {
+      out.push('<line class="grid-line" x1="' + pad.l + '" x2="' + (w - pad.r) + '" y1="' + y(t).toFixed(1) + '" y2="' + y(t).toFixed(1) + '"/>');
+      out.push('<g class="axis"><text x="' + (pad.l - 6) + '" y="' + (y(t) + 3).toFixed(1) + '" text-anchor="end">' + esc(integral ? Math.round(t).toLocaleString("en-US") : t.toFixed(decimals)) + "</text></g>");
+    });
+    // Each round's date under its slot; every second or third one when the slots are narrow.
+    var days = {};
+    rounds.forEach(function (r) { var d = (dates[r.round_key] || "").slice(0, 10); days[d] = (days[d] || 0) + 1; });
+    var sameDay = Object.keys(days).some(function (d) { return days[d] > 1; });
+    var labels = rounds.map(function (r) { var d = dates[r.round_key] || r.round_key; return sameDay ? d.slice(5, 16) : d.slice(5, 10); });
+    var every = Math.max(1, Math.ceil((labels[0].length * 5.5 + 8) / slot));
+    labels.forEach(function (l, i) { if (i % every === 0) out.push('<g class="axis"><text x="' + x(i).toFixed(1) + '" y="' + (h - 10) + '" text-anchor="middle">' + esc(l) + "</text></g>"); });
+    // The two features: a dashed boundary between them, their names and round counts above the plot, a dashed median level each.
+    var sides = ["before", "after"].map(function (s) { var idx = []; rounds.forEach(function (r, i) { if (r.side === s) idx.push(i); }); return idx; });
+    var bx = pad.l + slot * sides[0].length;
+    out.push('<line class="boundary" x1="' + bx.toFixed(1) + '" x2="' + bx.toFixed(1) + '" y1="2" y2="' + (h - pad.b) + '"/>');
+    sides.forEach(function (idx) {
+      if (!idx.length) return;
+      var left = pad.l + slot * idx[0], right = pad.l + slot * (idx[idx.length - 1] + 1);
+      var name = rounds[idx[0]].label + " · " + idx.length + " round" + (idx.length === 1 ? "" : "s");
+      out.push('<text class="boundary-label" x="' + (left + 4).toFixed(1) + '" y="10"><title>' + esc(name) + "</title>" + esc(fitLabel(name, right - left - 8)) + "</text>");
+      var meds = idx.map(function (i) { return rounds[i].median * conv; }).sort(function (a, b) { return a - b; });
+      var mid = meds.length % 2 ? meds[(meds.length - 1) / 2] : (meds[meds.length / 2 - 1] + meds[meds.length / 2]) / 2;
+      out.push('<line class="level" x1="' + left.toFixed(1) + '" x2="' + right.toFixed(1) + '" y1="' + y(mid).toFixed(1) + '" y2="' + y(mid).toFixed(1) + '"/>');
+      out.push('<text class="level-label" x="' + (right - 4).toFixed(1) + '" y="' + (y(mid) - 5).toFixed(1) + '" text-anchor="end">median ' + esc(fmt(mid, unit)) + "</text>");
+    });
+    var line = [];
+    rounds.forEach(function (r, i) {
+      r.values.forEach(function (v, k) {
+        var jitter = ((k * 0.6180339887) % 1 - 0.5) * slot * 0.7;
+        out.push('<circle class="dot" cx="' + (x(i) + jitter).toFixed(1) + '" cy="' + y(v * conv).toFixed(1) + '" r="2.6"/>');
+      });
+      line.push(x(i).toFixed(1) + "," + y(r.median * conv).toFixed(1));
+    });
+    out.push('<polyline class="line" points="' + line.join(" ") + '"/>');
+    rounds.forEach(function (r, i) { out.push('<circle class="pt" cx="' + x(i).toFixed(1) + '" cy="' + y(r.median * conv).toFixed(1) + '" r="3.5"/>'); });
+    rounds.forEach(function (r, i) {
+      var tip = (dates[r.round_key] || r.round_key) + " · " + r.label + "\nmedian " + fmt(r.median * conv, unit) + "\nn = " + r.values.length;
+      out.push('<rect class="hit" x="' + (x(i) - slot / 2).toFixed(1) + '" y="' + pad.t + '" width="' + slot.toFixed(1) + '" height="' + (h - pad.t - pad.b) + '" data-tip="' + esc(tip) + '"/>');
+    });
+    out.push("</svg>");
+    return out.join("");
+  }
+  function ovItem(item, idx, anchors, open) {
+    var key = item.device_id + "-" + item.journey, id = "";
+    if (!anchors[key]) { anchors[key] = true; id = ' id="ov-' + esc(key) + '"'; }
+    var changed = item.state === "changed", arrow = item.state === "better" ? "▼ " : "▲ ";
+    var before = item.rounds.filter(function (r) { return r.side === "before"; }), after = item.rounds.filter(function (r) { return r.side === "after"; });
+    var limit = item.limit_pct != null ? item.limit_pct + " %" : ovValue(item.limit_abs, item.unit);
+    var ratio = 1 + (item.delta_pct || 0) / 100;
+    return '<details class="ov-item"' + id + ' data-item="' + idx + '"' + (open ? " open" : "") + "><summary>" +
+      '<span class="chip">' + esc(item.model) + '</span><span class="ov-name">' + esc(item.title) + "<small>" + esc(item.series) + "</small></span>" +
+      '<span class="ov-nums">' + esc(ovValue(item.before, item.unit) + " → " + ovValue(item.after, item.unit)) + "</span>" +
+      '<span class="ov-pct' + (changed ? "" : " " + esc(item.state)) + '">' + (changed ? "" : arrow) + esc(ovChange(item.delta_pct, ratio)) + "</span>" + sparkline(item) + "</summary>" +
+      '<div class="ov-body"><div class="ov-meta"><span>' + esc((before[0] ? before[0].label : "") + ": " + ovValue(item.before, item.unit)) + "</span><span>" + esc((after[0] ? after[0].label : "") + ": " + ovValue(item.after, item.unit)) + "</span><span>limit " + esc(limit) + '</span><a href="#/device/' + esc(item.device_id) + "/" + encodeURIComponent(item.series) + '">this series in the full report →</a></div><div class="ov-chart"></div></div></details>';
+  }
+  function overviewHtml() {
+    if (!OV.devices.length) return "";
+    var h = ['<section class="overview"><h2>Since the last feature</h2><p class="sub">Each device compares its newest feature with the one before it: the median of each feature\'s rounds, judged against the limits the gate uses. The gate is a different check: it compares the latest round with the last ' + esc(DATA.config.clean_rounds) + " clean rounds.</p>", ovWhere()];
+    var groups = [["worse", "What got worse", "biggest change first", true], ["better", "What got better", "", false], ["changed", "The test changed", "these journeys were redefined between the two features, so their numbers are not compared", false]];
+    var anchors = {}, opened = false;
+    groups.forEach(function (g) {
+      var list = [];
+      OV.items.forEach(function (item, idx) { if (item.state === g[0]) list.push([item, idx]); });
+      if (!list.length) return;
+      h.push('<h3 class="ov-heading">' + g[1] + ' <span class="muted">· ' + list.length + (g[2] ? " · " + esc(g[2]) : "") + "</span></h3>");
+      list.forEach(function (e) { var open = g[3] && !opened; opened = opened || open; h.push(ovItem(e[0], e[1], anchors, open)); });
+    });
+    h.push("</section>");
+    return h.join("");
+  }
+  // A chart is drawn the first time its row is open.
+  function drawOpenCharts() {
+    var open = view.querySelectorAll("details.ov-item[open]");
+    for (var i = 0; i < open.length; i++) {
+      var box = open[i].querySelector(".ov-chart");
+      if (box && !box.firstChild) box.innerHTML = itemChart(OV.items[+open[i].getAttribute("data-item")]);
+    }
+  }
+  view.addEventListener("toggle", drawOpenCharts, true);
+
   /* ---------- views ---------- */
   function legend() {
     return '<p class="legend"><span class="l-confirmed">confirmed</span><span class="l-suspect">suspect</span><span class="l-preliminary">first hint</span><span class="l-improved">improved</span><span class="l-env">environment-suspect</span><span class="l-gate">gate flag + limit</span><span class="l-boundary">label boundary</span></p>';
   }
   function gridView() {
-    var h = ['<section class="grid-view"><p class="summary">' + esc(DATA.summary.text) + "</p>"];
+    var h = ['<section class="grid-view"><p class="summary">' + esc(DATA.summary.text) + "</p>", overviewHtml()];
     if (DATA.flagged.length) {
       h.push("<h2>Flagged</h2><ul class=\"list\">");
       DATA.flagged.forEach(function (f) { h.push('<li class="above_limit"><a href="#/device/' + esc(f.device_id) + "/" + encodeURIComponent(f.metric) + '">' + esc(f.device_model + ": " + f.title) + "</a> " + esc(gateObserved(f, f.unit)) + " against the limit of " + esc(gateLimit(f, f.unit)) + " in round " + esc(f.round_key) + "</li>"); });
@@ -240,7 +390,10 @@
     } else html = gridView();
     view.innerHTML = html;
     crumbs.innerHTML = crumb;
-    window.scrollTo(0, 0);
+    drawOpenCharts();
+    // A "worse" cell links to its first row in the list: open that row and scroll to it.
+    var target = /^#ov-/.test(hash) ? document.getElementById(hash.slice(1)) : null;
+    if (target) { target.open = true; drawOpenCharts(); target.scrollIntoView(); } else window.scrollTo(0, 0);
     tooltip.hidden = true;
   }
   view.addEventListener("mousemove", function (e) {

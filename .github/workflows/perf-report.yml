@@ -1,0 +1,99 @@
+# Publishes the public performance report on GitHub Pages (https://vshpyrka.github.io/Tembra-Audio/): the
+# `tracepulse report --public` page built from the records on the perf-history branch. A push to perf-history cannot
+# start a workflow that lives on main, so the hourly schedule picks up new rounds; it stops early when the deployed
+# page already carries perf-history's head. Details: app/perf/README.md § Reading the report and § Where things live.
+name: Performance report
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - app/perf/**
+      - app/tracepulse.yml
+      - .github/workflows/perf-report.yml
+  schedule:
+    - cron: "17 * * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: perf-report
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pages: read
+    outputs:
+      skip: ${{ steps.check.outputs.skip }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Skip when the deployed page is current
+        id: check
+        env:
+          EVENT: ${{ github.event_name }}
+        run: |
+          HEAD=$(git ls-remote origin refs/heads/perf-history | cut -f1)
+          DEPLOYED=
+          if [ "$EVENT" = schedule ]; then
+            DEPLOYED=$(curl -fsS https://vshpyrka.github.io/Tembra-Audio/history-commit.txt || true)
+          fi
+          echo "perf-history: ${HEAD:-none}, deployed: ${DEPLOYED:-none}"
+          echo "head=$HEAD" >> "$GITHUB_OUTPUT"
+          if [ -n "$HEAD" ] && [ "$HEAD" = "$DEPLOYED" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        if: steps.check.outputs.skip != 'true'
+        with:
+          working-directory: app/perf
+      - name: Install the dependencies
+        if: steps.check.outputs.skip != 'true'
+        working-directory: app/perf
+        run: uv sync --locked
+      - name: Rebuild the store from perf-history
+        if: steps.check.outputs.skip != 'true'
+        working-directory: app/perf
+        run: |
+          # checkout maps only one branch; without this refspec tracepulse's `worktree add --track origin/perf-history` fails
+          git config --add remote.origin.fetch '+refs/heads/perf-history:refs/remotes/origin/perf-history'
+          uv run tracepulse analyze
+      - name: Render the public page
+        if: steps.check.outputs.skip != 'true'
+        working-directory: app/perf
+        env:
+          HEAD: ${{ steps.check.outputs.head }}
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/site"
+          uv run tracepulse report --public --out "$GITHUB_WORKSPACE/site/index.html"
+          echo "$HEAD" > "$GITHUB_WORKSPACE/site/history-commit.txt"
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+        if: steps.check.outputs.skip != 'true'
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        if: steps.check.outputs.skip != 'true'
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    if: needs.build.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

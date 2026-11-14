@@ -219,12 +219,15 @@ def _handle_analyze(args, cfg: Config, paths: Paths) -> Tuple[int, Payload]:
 
 
 def _handle_report(args, cfg: Config, paths: Paths) -> Tuple[int, Payload]:
-    from .report import generate_report
+    from .report import PublicLeak, generate_report
     os.makedirs(paths.data_dir, exist_ok=True)
     os.makedirs(paths.reports_dir, exist_ok=True)
     out = args.out or os.path.join(paths.reports_dir, "report.html")
     with Store(paths.db_path) as store:
-        written = generate_report(store, cfg, out, now_ts=int(time.time()))
+        try:
+            written = generate_report(store, cfg, out, now_ts=int(time.time()), public=args.public)
+        except PublicLeak as exc:
+            raise Refused(str(exc)) from exc
     print(written)
     if args.open:
         webbrowser.open(f"file://{os.path.abspath(written)}")
@@ -354,6 +357,8 @@ def build_parser() -> argparse.ArgumentParser:
     report = sub.add_parser("report", help="render reports/report.html")
     report.add_argument("--open", action="store_true", help="open the report in the default browser")
     report.add_argument("--out", help="output path (default reports/report.html)")
+    report.add_argument("--public", action="store_true",
+                        help="drop host names and local paths, for publishing on GitHub Pages")
 
     status = sub.add_parser("status", help="local rounds, unpublished records, history branch state")
     status.add_argument("--series", action="store_true",

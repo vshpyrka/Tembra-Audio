@@ -124,3 +124,15 @@ def test_screening_gate_override_lands_in_catalogue(tmp_path):
     cfg = load_config(_write(tmp_path, raw))
     assert cfg.catalogue[("android", "startup.ttid_ms")].screening_pct == 7
     assert cfg.catalogue[("android", "startup.ttfd_ms")].screening_pct == 3
+
+
+def test_report_section_defaults_load_from_the_shipped_yml():
+    cfg = load_config(DEFAULT_CONFIG_PATH)
+    assert cfg.report.experiment_labels == ["noise-baseline", "release-baseline"]
+
+
+def test_unknown_report_key_is_a_config_error(tmp_path):
+    raw = _raw()
+    raw["report"] = {"experiment_label": ["x"]}
+    with pytest.raises(ConfigError, match="report.experiment_label"):
+        load_config(_write(tmp_path, raw))

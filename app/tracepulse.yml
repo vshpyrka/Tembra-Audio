@@ -30,6 +30,9 @@ gate:
   limits_pct: { startup.ttid_ms: 15, memory.peak_kb: 15, app.size_bytes: 2 }
   simulators: inactive
 
+# Labels of measurement experiments: the overview page never compares a feature with one of these.
+report: { experiment_labels: [noise-baseline, release-baseline] }
+
 devices:
   e9446ac2: { platform: android, model: "Redmi Note 5", kind: device, reference: true }
   3621105H803UFX: { platform: android, model: "Pixel Tablet", kind: device, reference: true }
