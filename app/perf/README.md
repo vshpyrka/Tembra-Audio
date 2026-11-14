@@ -275,9 +275,11 @@ journey; a cell says how many series got worse and by how much at most (`▲ 3 w
 better, "same", "test changed" (the journey's sections differ between the two features) or "no rounds to compare".
 Below it, "What got worse" lists each worse series, largest change first, with the plain title, before and after
 in readable units, a sparkline of the round medians and, opened, a chart of every iteration; "What got better" is
-the same list, collapsed. Since 2026-10-17 (commit `11bea31e`) the startup journey measures Timeline, the start
+the same list, collapsed. Since 2026-10-17 (commit `30c1fb25`) the startup journey measures Timeline, the start
 destination, where it measured Home before, so a startup "worse" against features measured before that date is
-partly a different screen. The overview cannot mark startup "test changed", because startup has no sections.
+mostly a different screen: on 2026-11-14 that is the Pixel 7 Pro's startup cell (`010-recording` against
+`baseline-profiles`), and "Startup from Home to Timeline" at the end of this file splits the rise by phase. The
+overview cannot mark startup "test changed", because startup has no sections.
 Injected (self-test) rounds and the experiment labels (`report.experiment_labels` in `app/tracepulse.yml`) are
 left out of the overview.
 
@@ -618,3 +620,61 @@ the lock screen until the user swiped; then round `20261012T083611Z` (unpublishe
 Release round were refused `runner_trusted` by a phone that *had* trusted the developer — the denial is
 transient, which is why a round now retries it twice two minutes apart; the audio-trace pass of the
 first four rounds found no process to attach to, which is why it records system-wide (above).
+
+## Startup from Home to Timeline (Pixel 6 Pro traces, 2026-11-14)
+
+The Pixel 6 Pro's cold start took 177 ms to both first and full display in `baseline-profiles` (2026-10-13),
+249 / 349 ms in `010-closeout` (2026-11-05) and 239 / 332 ms in `012-mixer` (2026-11-13): the middle round
+median of `startup.ttid_ms` / `startup.ttfd_ms` in each five-round session. There are no Pixel 6 Pro rounds
+between the first two. The Pixel 7 Pro moved the same way (about 194 ms, then 257 / 353 ms in `010-recording`).
+The startup traces of the three sessions (`StartupBenchmark/*.perfetto-trace`, 295 of the 300 cold launches;
+five gave no breakdown) split it by phase. Medians in ms over every traced launch, so they differ from the round
+medians by a few ms:
+
+| Phase | `baseline-profiles` (Home) | `010-closeout` | `012-mixer` |
+|---|---|---|---|
+| Process start, `bindApplication`, activity create and resume, until the first frame begins | 102 | 113 | 111 |
+| First frame, main thread: Compose builds, measures and draws the screen | 58 | 91 | 83 |
+| First frame, RenderThread: the GPU flush, with Skia compiling its Vulkan pipelines | 18.5 (3 pipelines, 9 ms) | 47 (8, 34 ms) | 45 (8, 32 ms) |
+| Time to initial display | 178 | 249 | 238 |
+| `timeline.projectOpen`, after the first frame | none | 59 | 56 |
+| Time to full display | 178 | 351 | 333 |
+
+Most of the rise is the start screen. Since `30c1fb25` (2026-10-17) the journey waits for Timeline, and
+feature 009 made Timeline open the last project at launch and report full display only once that project and
+its waveform overviews are read (`ReportFirstContentDrawn`). Home drew in one frame and reported both at once.
+
+- Of the 60 ms added before the first frame is shown, 25 ms is Timeline's larger first composition and measure
+  on the main thread (`Compose:recompose` 23 → 32 ms, `measure` 8 → 21 ms) and 26 ms is the RenderThread's
+  flush, 23 ms of it pipeline compilation: Timeline's first frame needs eight pipelines where Home needed three,
+  and the one for filled rounded rectangles alone takes about 11 ms (circles about 6 ms). The other 9 ms come
+  before the first frame: `bindApplication` +6 ms, 4.5 ms of it opening the dex files, and the activity start
+  +3 ms. The phone's OS build also changed between the first two sessions (`CP3A.260905.009` →
+  `CP3A.261005.002.A1`).
+- The pipelines are compiled in every iteration because Macrobenchmark drops the app's shader cache before each
+  cold launch (since benchmark 1.2.0-alpha07; `androidx.benchmark.dropShaders.enable=false` turns it off). The
+  numbers are a cold start with an empty shader cache, every time. A user's later launches can reuse compiled
+  shaders; how much that saves on this phone was not measured.
+- Between the first frame and full display (about 95 ms in `012-mixer`) the project open starts 6–17 ms after
+  the first frame in every iteration and takes 56 ms. About 29 ms of that is starting the audio output: AAudio's
+  `openStream` (8.5 ms) and `startStream` (20 ms), binder calls to `audioserver` from a background thread. Full
+  display follows about 27 ms after the open ends, once the waveform overviews are read and drawn.
+
+What the traces rule out:
+
+- Nothing the app does itself holds the main thread before the first frame. The project, the preferences and
+  the audio engine are opened after it (`AppStartup` runs from a `LaunchedEffect`, the screens' dependencies are
+  built after the first `withFrameNanos`). The main thread's I/O waits before the first frame are 14 ms in
+  `baseline-profiles` and 17 ms in `012-mixer`, spread over about 80 short waits.
+- `012-mixer` against `010-closeout`: initial display −11 ms, full display −19 ms, every phase flat or faster.
+- The startup benchmark compiles the whole app ahead of time (`CompilationMode.Full()`), so the baseline profile
+  plays no part in these numbers; `profile compare` measures what it gains.
+- iOS is not comparable here. Its startup tests stop at the first frame (`XCTApplicationLaunchMetric(waitUntilResponsive:
+  false)`) or at the responsive point, and `ReportFirstContentDrawn` does nothing on iOS, so the iPhone's startup
+  never waited for a project. Its 514 → 534 ms (first frame) and 519 → 566 ms (responsive) between
+  `baseline-profiles` (one round) and `012-mixer` span an iOS update and were not traced.
+
+Two changes could shorten the Android numbers, and both change behaviour, so neither was made. Full display
+could come up to about 30 ms sooner if the session showed the opened project before the audio output starts, or
+started the output on the first play, which would move that cost to the first play. The first frame's pipeline
+cost only falls with fewer kinds of shapes on Timeline's first frame, which changes how it looks.
