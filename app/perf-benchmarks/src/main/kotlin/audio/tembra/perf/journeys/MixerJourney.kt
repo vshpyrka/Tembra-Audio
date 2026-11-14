@@ -6,6 +6,7 @@ import androidx.test.uiautomator.UiObject2
 import androidx.test.uiautomator.Until
 import audio.tembra.perf.journeys.Anchors.anchor
 import audio.tembra.perf.journeys.Anchors.tap
+import audio.tembra.perf.journeys.Anchors.tapProjectCard
 
 /**
  * The mixer journey (feature 012, contracts/perf-instrumentation.md "Journey `mixer`", the same fourteen steps on both
@@ -25,7 +26,7 @@ class MixerJourney {
     private fun runSteps(device: UiDevice) {
         device.tap(Anchors.NAV_PROJECTS)
         device.anchor(Anchors.PROJECTS_ROOT)
-        device.tap(Anchors.PROJECTS_CARD_DEMO)
+        device.tapProjectCard(Anchors.PROJECTS_CARD_DEMO)
         device.anchor(Anchors.TIMELINE_ROOT)
         check(device.wait(Until.hasObject(By.res(Anchors.TIMELINE_READY_MARKER)), READY_TIMEOUT_MS)) {
             "the timeline's overviews were not ready within $READY_TIMEOUT_MS ms"

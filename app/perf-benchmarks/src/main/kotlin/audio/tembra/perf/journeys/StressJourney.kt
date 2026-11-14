@@ -9,6 +9,7 @@ import androidx.test.uiautomator.Until
 import audio.tembra.perf.journeys.Anchors.anchor
 import audio.tembra.perf.journeys.Anchors.tap
 import audio.tembra.perf.journeys.Anchors.tapIfPresent
+import audio.tembra.perf.journeys.Anchors.tapProjectCard
 
 /**
  * The stress journey (spec FR-007; extended by feature 009): the demo project plays with the click on while the lane
@@ -24,7 +25,7 @@ class StressJourney {
         device.anchor(Anchors.PROJECTS_ROOT)
         // The stress project's card when the launch built it, the demo's otherwise (a release baseline has no launch argument).
         val stress = device.wait(Until.hasObject(By.res(Anchors.PROJECTS_CARD_STRESS)), STRESS_CARD_TIMEOUT_MS)
-        device.tap(if (stress) Anchors.PROJECTS_CARD_STRESS else Anchors.PROJECTS_CARD_DEMO)
+        device.tapProjectCard(if (stress) Anchors.PROJECTS_CARD_STRESS else Anchors.PROJECTS_CARD_DEMO)
         device.anchor(Anchors.TIMELINE_ROOT)
         device.tap(Anchors.TRANSPORT_METRONOME)
         device.tap(Anchors.TRANSPORT_PLAY)
