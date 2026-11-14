@@ -15,7 +15,6 @@ the records or the store.
 
 import json
 import os
-import socket
 import statistics
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -35,6 +34,7 @@ from .orchestrate_android import (
 from .records import JourneyResult, make_round_id
 from .run import _repo_root, git_info
 from .runner import Clock, Runner
+from .scrub import machine_id
 
 EXIT_OK = 0
 EXIT_REFUSED = 2
@@ -324,7 +324,7 @@ def _compare(args, cfg: Config, paths, runner: Runner, clock: Clock, device: Dev
                   "apk": app_apk, "test_apk": test_apk},
         "device": {"device_id": device.device_id, "model": device.model or fp.get("model", device.device_id),
                    "fingerprint": fp},
-        "driver": socket.gethostname(), "states": states, "iterations": iterations, "journeys": journeys,
+        "driver": machine_id(), "states": states, "iterations": iterations, "journeys": journeys,
         "metrics": {key: m.to_dict() for key, m in metrics.items()}, "artifacts": artifacts,
     }
     validate(data)

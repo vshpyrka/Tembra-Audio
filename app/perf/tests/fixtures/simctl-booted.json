@@ -2,9 +2,9 @@
  "devices": {
   "com.apple.CoreSimulator.SimRuntime.iOS-27-1": [
    {
-    "dataPath": "/Users/<you>/Library/Developer/CoreSimulator/Devices/EB59DDD2-6D13-4503-A77E-BDFB69BF8CCD/data",
+    "dataPath": "/Users/example/Library/Developer/CoreSimulator/Devices/EB59DDD2-6D13-4503-A77E-BDFB69BF8CCD/data",
     "dataPathSize": 5108060160,
-    "logPath": "/Users/<you>/Library/Logs/CoreSimulator/EB59DDD2-6D13-4503-A77E-BDFB69BF8CCD",
+    "logPath": "/Users/example/Library/Logs/CoreSimulator/EB59DDD2-6D13-4503-A77E-BDFB69BF8CCD",
     "udid": "EB59DDD2-6D13-4503-A77E-BDFB69BF8CCD",
     "lastUsedAt": "2026-10-06T07:16:44Z",
     "isAvailable": true,
@@ -16,9 +16,9 @@
   ],
   "com.apple.CoreSimulator.SimRuntime.iOS-26-5": [
    {
-    "dataPath": "/Users/<you>/Library/Developer/CoreSimulator/Devices/4CD6879C-8FBA-4CEF-B4EC-31968D0144B0/data",
+    "dataPath": "/Users/example/Library/Developer/CoreSimulator/Devices/4CD6879C-8FBA-4CEF-B4EC-31968D0144B0/data",
     "dataPathSize": 4183101440,
-    "logPath": "/Users/<you>/Library/Logs/CoreSimulator/4CD6879C-8FBA-4CEF-B4EC-31968D0144B0",
+    "logPath": "/Users/example/Library/Logs/CoreSimulator/4CD6879C-8FBA-4CEF-B4EC-31968D0144B0",
     "udid": "4CD6879C-8FBA-4CEF-B4EC-31968D0144B0",
     "lastUsedAt": "2026-10-06T07:16:42Z",
     "isAvailable": true,
@@ -28,9 +28,9 @@
     "name": "iPhone 17"
    },
    {
-    "dataPath": "/Users/<you>/Library/Developer/CoreSimulator/Devices/C9A67FF1-62FC-4BE6-89F9-685DC39FBD46/data",
+    "dataPath": "/Users/example/Library/Developer/CoreSimulator/Devices/C9A67FF1-62FC-4BE6-89F9-685DC39FBD46/data",
     "dataPathSize": 4723847168,
-    "logPath": "/Users/<you>/Library/Logs/CoreSimulator/C9A67FF1-62FC-4BE6-89F9-685DC39FBD46",
+    "logPath": "/Users/example/Library/Logs/CoreSimulator/C9A67FF1-62FC-4BE6-89F9-685DC39FBD46",
     "udid": "C9A67FF1-62FC-4BE6-89F9-685DC39FBD46",
     "lastUsedAt": "2026-10-06T07:16:38Z",
     "isAvailable": true,

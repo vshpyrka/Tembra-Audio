@@ -7,7 +7,6 @@ A per-device lock file guards the whole invocation.
 
 import json
 import os
-import socket
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -20,6 +19,7 @@ from .history import PublishError
 from .orchestrate_android import BuildError, JourneyFailed, Refused, RoundOptions, RoundOutcome
 from .records import DeviceInfo, JourneyResult, MetricResult, RoundRecord, instrumented_build, make_round_id
 from .runner import Clock, Runner
+from .scrub import default_scrub, machine_id
 from .store import Store, split_series_key
 from .text import gate_limit, gate_observed
 
@@ -92,7 +92,8 @@ def git_info(repo_root: str, runner: Runner) -> Dict[str, Any]:
 
 
 def _machine() -> Dict[str, str]:
-    return {"hostname": socket.gethostname(), "os": _os_name(), "tool_version": __version__}
+    """`hostname` holds `machine_id()`: records are public, so they never name the machine."""
+    return {"hostname": machine_id(), "os": _os_name(), "tool_version": __version__}
 
 
 def _os_name() -> str:
@@ -133,7 +134,7 @@ def assemble_record(cfg: Config, device: Device, outcome: RoundOutcome, label: s
     if device.kind == "simulator" and "simulator" not in badges:
         badges.append("simulator")
     fingerprint = {k: v for k, v in outcome.fingerprint.items() if k != "model"}
-    return RoundRecord(
+    record = RoundRecord(
         round_id=round_id,
         device=DeviceInfo(device_id=device.device_id, platform=device.platform, kind=device.kind,
                           model=device.model or outcome.fingerprint.get("model", device.device_id),
@@ -143,6 +144,8 @@ def assemble_record(cfg: Config, device: Device, outcome: RoundOutcome, label: s
         session=dict(session), failure_reason=outcome.failure_reason, badges=badges,
         gate=[], artifacts=list(outcome.artifacts),
     )
+    # perf-history is public: no host name and no home-directory path leave this function
+    return RoundRecord.from_dict(default_scrub(record.to_dict(), _repo_root(cfg)))
 
 
 # ============================================================

@@ -4,6 +4,7 @@ rebuild -> detect -> report; a per-device lock held for the invocation."""
 
 import json
 import os
+import socket
 
 import pytest
 
@@ -13,8 +14,9 @@ from tracepulse.devices import Device, DeviceError
 from tracepulse.orchestrate_android import JourneyFailed, Refused, Check, RoundOptions, RoundOutcome
 from tracepulse.records import JourneyResult, MetricResult, RoundRecord
 from tracepulse.run import (
-    EXIT_FAILED, EXIT_OK, EXIT_REFUSED, SessionDeps, acquire_lock, git_info, run_session,
+    EXIT_FAILED, EXIT_OK, EXIT_REFUSED, SessionDeps, _repo_root, acquire_lock, git_info, run_session,
 )
+from tracepulse.scrub import machine_id
 from tracepulse.__main__ import Paths
 
 PIXEL = Device(device_id="PIXEL", platform="android", kind="device", model="Pixel 6 Pro", alias="pixel6")
@@ -117,7 +119,7 @@ def test_session_builds_the_record_and_runs_publish_sync_rebuild_detect_report(c
     assert rec.device.device_id == "PIXEL" and rec.label == "007-performance-pipeline"
     assert rec.build["commit"] == "c0ffee1234" and rec.build["dirty"] is True and rec.build["branch"] == "007-performance-pipeline"
     assert rec.build["app_size_bytes"] == 4321 and rec.build["type"] == "perf"
-    assert rec.machine["hostname"] and rec.machine["tool_version"]
+    assert rec.machine["hostname"] == machine_id() and rec.machine["tool_version"]
     assert rec.checks == [{"name": "battery", "passed": True, "value": 87, "limit": 50}]
     assert rec.badges == ["noisy"] and rec.status == "succeeded"
     assert rec.round_id.endswith("_007-performance-pipeline") and rec.session == {"index": 1, "size": 1}
@@ -127,6 +129,23 @@ def test_session_builds_the_record_and_runs_publish_sync_rebuild_detect_report(c
     assert os.path.isfile(paths.db_path) and os.path.isfile(result.report_path)
     assert result.records[0].round_id == rec.round_id
     assert not os.path.exists(os.path.join(paths.data_dir, "locks", "PIXEL")), "the lock is released"
+
+
+def test_the_record_carries_no_host_name_or_home_path(cfg, paths):
+    home, host, repo = os.path.expanduser("~"), socket.gethostname(), _repo_root(cfg)
+    outcome = _outcome()
+    outcome.checks.append({"name": "java_home", "passed": True, "value": f"{home}/Library/Java/jdk-21/Contents/Home"})
+    outcome.artifacts.append({"kind": "trace", "path": f"{repo}/app/perf/data/rounds/r1/startup.perfetto-trace"})
+    outcome.failure_reason = f"adb on {host} wrote {home}/x.log"
+    deps, history, _ = _deps(lambda *a, **k: outcome)
+    run_session(cfg, paths, PIXEL, "007-performance-pipeline", 1, RoundOptions(journeys=cfg.journeys),
+                _git_runner(), FakeClock(), deps)
+    rec: RoundRecord = history.published[0]
+    text = rec.to_json()
+    assert home not in text and host.split(".")[0].lower() not in text.lower()
+    assert {"kind": "trace", "path": "app/perf/data/rounds/r1/startup.perfetto-trace"} in rec.artifacts
+    assert rec.checks[-1]["value"] == "~/Library/Java/jdk-21/Contents/Home"
+    assert rec.failure_reason == f"adb on {machine_id()} wrote ~/x.log"
 
 
 def test_a_release_round_records_its_type_and_no_section(cfg, paths):
