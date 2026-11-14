@@ -2,7 +2,7 @@
 # (spec FR-009). Evidence for each pin: specs/001-project-scaffold/research.md R2.
 [versions]
 kotlin = "2.4.21"
-agp = "9.3.3"
+agp = "9.5.1"
 compose-multiplatform = "1.12.2"
 # Material 3 is published on its own track. Experiment: 1.12.0-alpha03 is the newest JetBrains build on Compose 1.12
 # (it ports androidx material3 1.5.0-alpha22 to iOS); Android is pinned to androidx 1.5.0-beta02 below.
