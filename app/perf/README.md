@@ -103,7 +103,15 @@ compiles the instrumentation out (`PerfBuild.PERF_ENABLED` false, no `TEMBRA_TRA
 Gradle phase passes no `tembra.perf`), and the stress journey skips the absent "write engine health"
 control.
 
-`report --public` drops each round's `machine` (the build Mac's host name) and the `artifacts` list (local paths of
+Records carry no host name and no home path, because `perf-history` is public. Before a record is stored or
+published, every string in it is scrubbed (`tracepulse/scrub.py`): a path under the repository becomes
+repository-relative (`app/perf/data/rounds/…`), any other `/Users/<name>/…` or `/home/<name>/…` becomes `~/…`, and
+the host name, with and without `.local`, becomes the machine id. `machine.hostname` holds that id too:
+`machine-` and eight hex digits of a hash of the Mac's hardware UUID (`/etc/machine-id` on Linux), the same on every
+round from one machine, or `machine-unknown` when neither can be read. Records written before 2026-11-14 named the
+Mac; that day the branch was rewritten once with the same scrub.
+
+`report --public` drops each round's `machine` (the machine id) and the `artifacts` list (local paths of
 traces). In every other string of the embedded data it replaces each machine's host name, with and without `.local`
 (case-insensitive), by "build machine", and shortens `/Users/<name>/…` and `/home/<name>/…` to `~/…` (a bare
 `/Users/<name>` becomes `~`). Other absolute paths, such as `/Volumes/…`, are left as they are. The public build
@@ -126,7 +134,7 @@ history with it and fail if the page contains `/Users/`, `/home/` or a round's `
 
 | What | Where | In git? |
 |---|---|---|
-| Round records (source of truth) | branch `perf-history`, `records/<device_id>/<round_id>.json` | yes, append-only; never rebase or rewrite it |
+| Round records (source of truth) | branch `perf-history`, `records/<device_id>/<round_id>.json` | yes, append-only; never rebase or rewrite it (rewritten once, on 2026-11-14, to remove host names and home paths) |
 | Worktree of that branch | `app/perf/.history/` | no |
 | Derived cache | `app/perf/data/tracepulse.db` (rebuilt by `sync`) | no |
 | Raw artifacts (traces, result bundles, logs) | `app/perf/data/rounds/<round_id>/` (~110 MB per Android round) | no — they stay on the producing machine |

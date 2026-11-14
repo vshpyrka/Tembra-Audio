@@ -14,7 +14,6 @@ import argparse
 import contextlib
 import json
 import os
-import socket
 import sys
 import time
 import webbrowser
@@ -26,6 +25,7 @@ from .config import DEFAULT_CONFIG_PATH, PERF_DIR, Config, ConfigError, load_con
 from .devices import DeviceError, attached, register, resolve
 from .history import History, HistoryError, PublishError
 from .runner import SystemClock, SystemRunner
+from .scrub import machine_id
 from .store import Store
 
 EXIT_OK = 0
@@ -244,7 +244,7 @@ def _handle_status(args, cfg: Config, paths: Paths) -> Tuple[int, Payload]:
     branch = {"branch": cfg.history.branch, "worktree": paths.worktree,
               "present": os.path.isdir(paths.worktree)}
     payload = {"rounds": rounds, "devices": devices, "unpublished": unpublished, "history": branch,
-               "db": paths.db_path, "machine": socket.gethostname()}
+               "db": paths.db_path, "machine": machine_id()}
     print(f"history: {branch['branch']} at {branch['worktree']} ({'present' if branch['present'] else 'absent'})")
     print(f"rounds in the cache: {len(rounds)} across {len(devices)} devices")
     for d in devices:

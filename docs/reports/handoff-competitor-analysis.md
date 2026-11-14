@@ -21,7 +21,7 @@ do not re-derive it, read it:
 ## Key facts (so the next agent doesn't re-discover them)
 - Device: **Pixel 6 Pro (codename raven)**, arm64-v8a, adb serial `19021FDEE001AH`.
   Note: user called it "Pixel 6"; it is actually the **Pro**. It was the only device attached.
-- `adb` is at `/Users/<you>/Tools/platform-tools/adb` (v37.0.1). Device authorized.
+- `adb` is at `~/Tools/platform-tools/adb` (v37.0.1). Device authorized.
 - Packages / versions pulled:
   - BandLab — `com.bandlab.bandlab` 11.30.1
   - n-Track Studio — `com.ntrack.studio.demo` 10.5.185 (**demo** build)
