@@ -21,7 +21,7 @@ Point Gradle at the SDK once (git-ignored file):
 echo "sdk.dir=$HOME/Library/Android/sdk" > app/local.properties
 ```
 
-Gradle itself is the committed wrapper (`./gradlew`, Gradle 9.7.0). A missing NDK or CMake fails
+Gradle itself is the committed wrapper (`./gradlew`, Gradle 9.9.1). A missing NDK or CMake fails
 configuration with a message that names the exact `android sdk install` command.
 
 ## Build and run

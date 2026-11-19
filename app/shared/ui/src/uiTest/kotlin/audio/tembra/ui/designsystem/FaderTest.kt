@@ -117,7 +117,7 @@ class FaderTest {
             .assertContentDescriptionEquals(DESCRIPTION)
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "−12.0dB"))
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.ProgressBarRangeInfo, ProgressBarRangeInfo(-12f, FaderScale.Gain.range, 0)))
-        onNodeWithTag(TAG).performSemanticsAction(SemanticsActions.SetProgress) { it(-6f) }
+        onNodeWithTag(TAG).performSemanticsAction(SemanticsActions.SetProgress) { val _ = it(-6f) }
         assertEquals(listOf(-6f), changes)
         assertEquals(1, settled, "a screen-reader step is a settled gesture")
     }

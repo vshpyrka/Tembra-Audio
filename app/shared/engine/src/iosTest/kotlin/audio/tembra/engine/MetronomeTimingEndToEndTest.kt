@@ -76,7 +76,7 @@ class MetronomeTimingEndToEndTest {
         val spacingsMs = audibleAt.zipWithNext { a, b -> (b - a) / 1e6 }
         println("MetronomeTimingEndToEndTest: ${audibleAt.size} crossings, spacings $spacingsMs ms")
         assertTrue(audibleAt.size >= 9, "only ${audibleAt.size} crossings: $indices")
-        indices.zipWithNext { a, b -> assertEquals(a + 1, b, "tick indices $indices") }
+        for ((a, b) in indices.zipWithNext()) assertEquals(a + 1, b, "tick indices $indices")
         assertOnTime(indices, audibleAt, spacingsMs)
     }
 }

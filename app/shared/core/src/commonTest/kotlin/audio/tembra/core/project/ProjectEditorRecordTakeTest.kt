@@ -50,7 +50,7 @@ class ProjectEditorRecordTakeTest {
     private fun assertNoOverlap(project: Project, trackId: TrackId) {
         val clips = project.findTrack(trackId)!!.clips
         assertEquals(clips.sortedBy { it.startBeats.value }, clips.toList(), "clips are not in start order")
-        clips.zipWithNext { a, b ->
+        for ((a, b) in clips.zipWithNext()) {
             assertTrue(project.clipEndBeats(a).value <= b.startBeats.value + 1e-9, "${a.id} ends at ${project.clipEndBeats(a).value} after ${b.id} starts at ${b.startBeats.value}")
         }
     }

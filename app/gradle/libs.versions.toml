@@ -1,8 +1,8 @@
 # Tembra Audio version catalog. Every version and library used by any module lives here
 # (spec FR-009). Evidence for each pin: specs/001-project-scaffold/research.md R2.
 [versions]
-kotlin = "2.4.21"
-agp = "9.3.3"
+kotlin = "2.5.0-RC"
+agp = "9.5.1"
 compose-multiplatform = "1.12.2"
 # Material 3 is published on its own track. Experiment: 1.12.0-alpha03 is the newest JetBrains build on Compose 1.12
 # (it ports androidx material3 1.5.0-alpha22 to iOS); Android is pinned to androidx 1.5.0-beta02 below.
@@ -20,7 +20,7 @@ kotlinx-serialization = "1.12.0"
 kotlinx-collections-immutable = "0.5.2"
 # Local date-time for the Projects library's relative times (feature 009, FR-051).
 kotlinx-datetime = "0.8.0"
-metro = "1.5.1"
+metro = "1.6.0"
 androidx-activity = "1.13.0"
 androidx-compose = "1.12.1"
 androidx-test-runner = "1.7.0"

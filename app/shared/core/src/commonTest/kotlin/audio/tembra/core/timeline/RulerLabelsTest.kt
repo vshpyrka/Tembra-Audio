@@ -38,8 +38,8 @@ class RulerLabelsTest {
     fun noTwoLabelsInARowAreCloserThanTheirWidthPlusTheGap() {
         for (ppb in sweep) {
             val result = labels(ppb)
-            result.bars.labels.zipWithNext { a, b -> assertTrue(b.x - a.x >= barWidth + gap - 1e-6, "bars at $ppb px/beat: ${a.text}@${a.x} ${b.text}@${b.x}") }
-            result.time.labels.zipWithNext { a, b -> assertTrue(b.x - a.x >= timeWidth + gap - 1e-6, "time at $ppb px/beat: ${a.text}@${a.x} ${b.text}@${b.x}") }
+            for ((a, b) in result.bars.labels.zipWithNext()) assertTrue(b.x - a.x >= barWidth + gap - 1e-6, "bars at $ppb px/beat: ${a.text}@${a.x} ${b.text}@${b.x}")
+            for ((a, b) in result.time.labels.zipWithNext()) assertTrue(b.x - a.x >= timeWidth + gap - 1e-6, "time at $ppb px/beat: ${a.text}@${a.x} ${b.text}@${b.x}")
             assertTrue(result.bars.labels.isNotEmpty(), "bar labels at $ppb")
             assertTrue(result.time.labels.isNotEmpty(), "time labels at $ppb")
             for (label in result.bars.labels + result.time.labels) assertTrue(label.x >= -1e-6 && label.x <= 1_000.0 + 1e-6, "${label.text} at ${label.x}")

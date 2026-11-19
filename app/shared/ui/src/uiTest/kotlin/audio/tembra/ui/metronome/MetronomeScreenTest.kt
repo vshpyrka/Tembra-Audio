@@ -232,7 +232,7 @@ class MetronomeScreenTest {
     @Test
     fun theSliderSetsTheTempo() = runComposeUiTest {
         setScreen()
-        onNodeWithTag("metronome.slider").performSemanticsAction(SemanticsActions.SetProgress) { it(200f) }
+        onNodeWithTag("metronome.slider").performSemanticsAction(SemanticsActions.SetProgress) { val _ = it(200f) }
         settle()
         assertEquals(Tempo(200), tempos.last())
     }

@@ -140,7 +140,7 @@ class MixerStripTest {
         val knob = onNodeWithTag(MixerTestTags.pan(0)).assertContentDescriptionEquals(MixerCopy.panDescription("Drums"))
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "C")).getUnclippedBoundsInRoot()
         assertTrue(knob.top >= dial.bottom && knob.bottom <= solo.top, "the knob $knob is not between the dial $dial and Solo $solo")
-        onNodeWithTag(MixerTestTags.pan(0)).performSemanticsAction(SemanticsActions.SetProgress) { it(-35f) }
+        onNodeWithTag(MixerTestTags.pan(0)).performSemanticsAction(SemanticsActions.SetProgress) { val _ = it(-35f) }
         assertEquals(listOf("pan(t1,L 35)", "panSettled"), calls)
         calls.clear()
         assertTrue(meter.left >= fader.right, "the meter $meter is not beside the fader $fader")
@@ -207,7 +207,7 @@ class MixerStripTest {
         onNodeWithTag(MixerTestTags.fader(0))
             .assertContentDescriptionEquals(MixerCopy.gainDescription("Drums"))
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "−3.0dB"))
-            .performSemanticsAction(SemanticsActions.SetProgress) { it(-6f) }
+            .performSemanticsAction(SemanticsActions.SetProgress) { val _ = it(-6f) }
         onNodeWithTag(MixerTestTags.number(0)).performClick()
         onNodeWithTag(MixerTestTags.name(0)).performClick()
         assertEquals(listOf("solo(t1)", "mute(t1)", "gain(t1,−6.0dB)", "settled", "select(t1)", "select(t1)"), calls)

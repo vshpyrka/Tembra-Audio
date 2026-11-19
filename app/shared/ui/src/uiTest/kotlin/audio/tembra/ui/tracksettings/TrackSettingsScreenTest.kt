@@ -86,7 +86,7 @@ class TrackSettingsScreenTest {
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "L 35")).getUnclippedBoundsInRoot()
         assertTrue(pan.top >= gain.bottom, "the pan row $pan is not under the gain row $gain")
         onNodeWithText("L 35").assertExists()
-        onNodeWithTag(TrackSettingsTestTags.PAN).performSemanticsAction(SemanticsActions.SetProgress) { it(20f) }
+        onNodeWithTag(TrackSettingsTestTags.PAN).performSemanticsAction(SemanticsActions.SetProgress) { val _ = it(20f) }
         assertEquals(listOf("pan(R 20)", "panSettled"), calls)
         calls.clear()
         onNodeWithTag(TrackSettingsTestTags.MUTE).assertIsOn()
