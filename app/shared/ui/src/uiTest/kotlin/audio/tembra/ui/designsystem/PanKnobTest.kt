@@ -88,7 +88,7 @@ class PanKnobTest {
             .assertContentDescriptionEquals(DESCRIPTION)
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "L 35"))
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.ProgressBarRangeInfo, ProgressBarRangeInfo(-35f, -100f..100f, 0)))
-        onNodeWithTag(TAG).performSemanticsAction(SemanticsActions.SetProgress) { it(20f) }
+        onNodeWithTag(TAG).performSemanticsAction(SemanticsActions.SetProgress) { val _ = it(20f) }
         assertEquals(listOf(Pan(20)), changes)
         assertEquals(1, settled)
     }

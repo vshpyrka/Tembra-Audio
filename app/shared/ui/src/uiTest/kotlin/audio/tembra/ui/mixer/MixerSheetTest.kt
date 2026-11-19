@@ -347,7 +347,7 @@ class MixerSheetTest {
             assertTrue(bounds.left >= strip.left - 0.5.dp && bounds.right <= strip.right + 0.5.dp, "$tag $bounds runs past the strip $strip")
         }
         val layouts = mutableListOf<TextLayoutResult>()
-        onNodeWithTag(MixerTestTags.name(0)).performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
+        onNodeWithTag(MixerTestTags.name(0)).performSemanticsAction(SemanticsActions.GetTextLayoutResult) { val _ = it(layouts) }
         // Truncated to the label's width (Skia's layout reports the truncation as overflow, not as an ellipsised line).
         val layout = layouts.single()
         val stripPx = with(density) { MixerStripDefaults.Width.roundToPx() }

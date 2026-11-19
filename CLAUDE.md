@@ -8,7 +8,7 @@ Tembra Audio is a free, open-source mobile DAW for Android and iOS: a Kotlin Mul
 
 **Application code lives in `app/`** (Gradle root; scaffold landed with feature 001 on 2026-09-24). Modules: `:shared:core` (pure domain), `:shared:engine` (`AudioEngine` facade over the C++ engine: JNI on Android, cinterop on iOS), `:shared:data` (persistence), `:shared:ui` (Compose Multiplatform screens, ViewModels, theme, Metro graph, navigation shell (Navigation 3), design-system chrome components, debug-only devtools; iOS framework `TembraShared`), `:androidApp`, `iosApp/` (Xcode), `engine/` (CMake C++ core, `include/tembra_engine.h` is the C ABI), `:engine:android` (CMake/NDK + Prefab Oboe build helper). Module map and "where does X go" table: `app/README.md`.
 
-Commands (run from `app/`, Gradle wrapper 9.7.0; prerequisites in `app/README.md`):
+Commands (run from `app/`, Gradle wrapper 9.9.1; prerequisites in `app/README.md`):
 
 - Build and run Android: `./gradlew :androidApp:installDebug` then `adb shell am start -n com.tembraaudio/audio.tembra.android.MainActivity`
 - Build and run iOS: `cd iosApp && xcodebuild -project iosApp.xcodeproj -scheme iosApp -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 18 Pro' -derivedDataPath build build`, then `xcrun simctl install/launch "iPhone 18 Pro" … com.tembraaudio`

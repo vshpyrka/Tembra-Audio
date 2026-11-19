@@ -122,7 +122,7 @@ class TrackHeaderTest {
     fun aMovedNameIsNotCutOffOnAPhone() = runComposeUiTest {
         setCompact(nameStart = 54.dp, width = 411.dp)
         val layouts = mutableListOf<TextLayoutResult>()
-        onNodeWithText("Track 2", useUnmergedTree = true).performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
+        onNodeWithText("Track 2", useUnmergedTree = true).performSemanticsAction(SemanticsActions.GetTextLayoutResult) { val _ = it(layouts) }
         val name = layouts.single()
         assertFalse(name.isLineEllipsized(0), "the name is cut off: ${name.size} wide against ${name.multiParagraph.width}, overflow ${name.didOverflowWidth}/${name.didOverflowHeight}")
     }

@@ -101,7 +101,7 @@ class GainReadoutTest {
     @Test
     fun setProgressAdjustsInHalfDecibels() = runComposeUiTest {
         setReadout(GainDb.Unity)
-        onNodeWithTag("gain").performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.SetProgress) { it(-2.3f) }
+        onNodeWithTag("gain").performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.SetProgress) { val _ = it(-2.3f) }
         assertEquals(listOf(-2.5f), changes.map { it.value })
     }
 }

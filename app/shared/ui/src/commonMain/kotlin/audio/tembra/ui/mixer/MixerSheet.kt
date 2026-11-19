@@ -153,7 +153,15 @@ internal fun MixerSheet(
     val inputModeManager = LocalInputModeManager.current
     LaunchedEffect(ui.open) {
         if (inputModeManager.inputMode != InputMode.Keyboard) return@LaunchedEffect
-        if (ui.open) handleFocus.requestFocus() else runCatching { returnFocusTo?.requestFocus() }
+        if (ui.open) {
+            handleFocus.requestFocus()
+        } else {
+            // A requester whose node is not composed (the Mixer button off the toolbar) throws; the focus then stays.
+            try {
+                returnFocusTo?.requestFocus()
+            } catch (_: IllegalStateException) {
+            }
+        }
     }
     val fling = AnchoredDraggableDefaults.flingBehavior(
         state = state,

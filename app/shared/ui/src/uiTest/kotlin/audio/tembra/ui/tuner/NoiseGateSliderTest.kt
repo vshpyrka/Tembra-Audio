@@ -519,7 +519,7 @@ class NoiseGateSliderTest {
         slider.assert(SemanticsMatcher.expectValue(SemanticsProperties.ProgressBarRangeInfo, ProgressBarRangeInfo(0f, 0f..NoiseGate.STEPS.toFloat(), NoiseGate.STEPS - 1)))
 
         // The platform's adjust gestures arrive as the set-progress action.
-        slider.performSemanticsAction(SemanticsActions.SetProgress) { it(15f) }
+        slider.performSemanticsAction(SemanticsActions.SetProgress) { val _ = it(15f) }
         waitForIdle()
         assertEquals(NoiseGate.ofStep(15), gate())
         slider.assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "50 percent"))
